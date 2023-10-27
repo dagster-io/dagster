@@ -21,11 +21,11 @@ from dagster._core.events import (
     DagsterEvent,
     StepMaterializationData,
 )
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.partition_status_cache import (
     AssetStatusCacheValue,
     get_and_update_asset_status_cache_value,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._utils import Counter, traced_counter
 
@@ -36,7 +36,7 @@ def test_get_cached_status_unpartitioned():
         return 1
 
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     asset_key = AssetKey("asset1")
 
@@ -80,12 +80,12 @@ def test_get_cached_partition_status_changed_time_partitions():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     def _swap_partitions_def(new_partitions_def, asset, asset_graph, asset_job):
         asset._partitions_def = new_partitions_def  # noqa: SLF001
-        asset_job = define_asset_job("asset_job").resolve([asset], [])
         asset_graph = AssetGraph.from_assets([asset])
+        asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
         return asset, asset_job, asset_graph
 
     with instance_for_test() as created_instance:
@@ -117,7 +117,7 @@ def test_get_cached_partition_status_changed_time_partitions():
         )
         assert set(materialized_keys) == {"2022-02-02"}
         counts = traced_counter.get().counts()
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 1
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
 
 def test_get_cached_partition_status_by_asset():
@@ -129,12 +129,12 @@ def test_get_cached_partition_status_by_asset():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     def _swap_partitions_def(new_partitions_def, asset, asset_graph, asset_job):
         asset._partitions_def = new_partitions_def  # noqa: SLF001
-        asset_job = define_asset_job("asset_job").resolve([asset], [])
         asset_graph = AssetGraph.from_assets([asset])
+        asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
         return asset, asset_job, asset_graph
 
     with instance_for_test() as created_instance:
@@ -160,7 +160,7 @@ def test_get_cached_partition_status_by_asset():
         assert len(materialized_keys) == 1
         assert "2022-02-01" in materialized_keys
         counts = traced_counter.get().counts()
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 1
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
         asset_job.execute_in_process(instance=created_instance, partition_key="2022-02-02")
 
@@ -181,8 +181,8 @@ def test_get_cached_partition_status_by_asset():
             partition_key in materialized_keys for partition_key in ["2022-02-01", "2022-02-02"]
         )
         counts = traced_counter.get().counts()
-        # Assert that get_materialization_count_by_partition is not called again via cache rebuild
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 1
+        # Assert that get_materialized_partitions is not called again via cache rebuild
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
 
         static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
         asset1, asset_job, asset_graph = _swap_partitions_def(
@@ -203,8 +203,8 @@ def test_get_cached_partition_status_by_asset():
             for partition in ["b", "c"]
         )
         counts = traced_counter.get().counts()
-        # Assert that get_materialization_count_by_partition is called again when partitions_def changes
-        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 2
+        # Assert that get_materialized_partitions is called again when partitions_def changes
+        assert counts.get("DagsterInstance.get_materialized_partitions") == 2
 
 
 def test_multipartition_get_cached_partition_status():
@@ -221,7 +221,7 @@ def test_multipartition_get_cached_partition_status():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         traced_counter.set(Counter())
@@ -283,7 +283,7 @@ def test_cached_status_on_wipe():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         asset_records = list(created_instance.get_asset_records([AssetKey("asset1")]))
@@ -315,7 +315,7 @@ def test_dynamic_partitions_status_not_cached():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         asset_records = list(created_instance.get_asset_records([AssetKey("asset1")]))
@@ -340,7 +340,7 @@ def test_failure_cache():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         # no events
@@ -458,7 +458,7 @@ def test_failure_cache_added():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+    asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         created_instance.update_asset_cached_status_data(
@@ -492,7 +492,7 @@ def test_failure_cache_in_progress_runs():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    define_asset_job("asset_job").resolve([asset1], [])
+    define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         run_1 = create_run_for_test(created_instance)
@@ -586,7 +586,7 @@ def test_cache_cancelled_runs():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    define_asset_job("asset_job").resolve([asset1], [])
+    define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         run_1 = create_run_for_test(created_instance)
@@ -687,7 +687,7 @@ def test_failure_cache_concurrent_materializations():
 
     asset_key = AssetKey("asset1")
     asset_graph = AssetGraph.from_assets([asset1])
-    define_asset_job("asset_job").resolve([asset1], [])
+    define_asset_job("asset_job").resolve(asset_graph=asset_graph)
 
     with instance_for_test() as created_instance:
         run_1 = create_run_for_test(created_instance)
@@ -762,7 +762,10 @@ def test_failed_partitioned_asset_converted_to_multipartitioned():
         raise Exception("oops")
 
     with instance_for_test() as created_instance:
-        my_job = define_asset_job("asset_job", partitions_def=daily_def).resolve([my_asset], [])
+        asset_graph = AssetGraph.from_assets([my_asset])
+        my_job = define_asset_job("asset_job", partitions_def=daily_def).resolve(
+            asset_graph=asset_graph
+        )
 
         my_job.execute_in_process(
             instance=created_instance, partition_key="2023-01-01", raise_on_error=False
@@ -774,8 +777,8 @@ def test_failed_partitioned_asset_converted_to_multipartitioned():
                 "b": StaticPartitionsDefinition(["a", "b"]),
             }
         )
-        my_job = define_asset_job("asset_job").resolve([my_asset], [])
         asset_graph = AssetGraph.from_assets([my_asset])
+        my_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
         asset_key = AssetKey("my_asset")
 
         cached_status = get_and_update_asset_status_cache_value(

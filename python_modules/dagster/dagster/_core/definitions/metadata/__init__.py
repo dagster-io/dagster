@@ -19,7 +19,7 @@ from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, deprecated, experimental, public
+from dagster._annotations import PublicAttr, deprecated, deprecated_param, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
@@ -29,9 +29,9 @@ from dagster._serdes.serdes import (
     WhitelistMap,
     pack_value,
 )
-from dagster._utils.backcompat import (
-    canonicalize_backcompat_args,
+from dagster._utils.warnings import (
     deprecation_warning,
+    normalize_renamed_param,
 )
 
 from .table import (  # re-exported
@@ -86,8 +86,8 @@ def normalize_metadata(
             if allow_invalid:
                 deprecation_warning(
                     "Support for arbitrary metadata values",
-                    "1.4.0",
-                    additional_warn_txt=(
+                    "2.0.0",
+                    additional_warn_text=(
                         "In the future, all user-supplied metadata values must be one of"
                         f" {RawMetadataValue}"
                     ),
@@ -140,7 +140,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
 
 class MetadataValue(ABC, Generic[T_Packable]):
     """Utility class to wrap metadata values passed into Dagster events so that they can be
-    displayed in Dagit and other tooling.
+    displayed in the Dagster UI and other tooling.
 
     .. code-block:: python
 
@@ -160,6 +160,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
     @property
     @abstractmethod
     def value(self) -> T_Packable:
+        """The wrapped value."""
         raise NotImplementedError()
 
     @public
@@ -553,6 +554,7 @@ class TextMetadataValue(
     @public
     @property
     def value(self) -> Optional[str]:
+        """Optional[str]: The wrapped text data."""
         return self.text
 
 
@@ -580,6 +582,7 @@ class UrlMetadataValue(
     @public
     @property
     def value(self) -> Optional[str]:
+        """Optional[str]: The wrapped URL."""
         return self.url
 
 
@@ -601,6 +604,7 @@ class PathMetadataValue(
     @public
     @property
     def value(self) -> Optional[str]:
+        """Optional[str]: The wrapped path."""
         return self.path
 
 
@@ -622,6 +626,7 @@ class NotebookMetadataValue(
     @public
     @property
     def value(self) -> Optional[str]:
+        """Optional[str]: The wrapped path to the notebook as a string."""
         return self.path
 
 
@@ -653,6 +658,7 @@ class JsonMetadataValue(
     @public
     @property
     def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
+        """Optional[Union[Sequence[Any], Dict[str, Any]]]: The wrapped JSON data."""
         return self.data
 
 
@@ -677,8 +683,10 @@ class MarkdownMetadataValue(
             cls, check.opt_str_param(md_str, "md_str", default="")
         )
 
+    @public
     @property
     def value(self) -> Optional[str]:
+        """Optional[str]: The wrapped markdown as a string."""
         return self.md_str
 
 
@@ -709,6 +717,7 @@ class PythonArtifactMetadataValue(
     @public
     @property
     def value(self) -> Self:
+        """PythonArtifactMetadataValue: Identity function."""
         return self
 
 
@@ -786,8 +795,10 @@ class DagsterRunMetadataValue(
     def __new__(cls, run_id: str):
         return super(DagsterRunMetadataValue, cls).__new__(cls, check.str_param(run_id, "run_id"))
 
+    @public
     @property
     def value(self) -> str:
+        """str: The wrapped run id."""
         return self.run_id
 
 
@@ -812,7 +823,8 @@ class DagsterAssetMetadataValue(
     @public
     @property
     def value(self) -> "AssetKey":
-        return self.value
+        """AssetKey: The wrapped :py:class:`AssetKey`."""
+        return self.asset_key
 
 
 # This should be deprecated or fixed so that `value` does not return itself.
@@ -838,6 +850,7 @@ class TableMetadataValue(
     @public
     @staticmethod
     def infer_column_type(value: object) -> str:
+        """str: Infer the :py:class:`TableSchema` column type that will be used for a value."""
         if isinstance(value, bool):
             return "bool"
         elif isinstance(value, int):
@@ -875,6 +888,7 @@ class TableMetadataValue(
     @public
     @property
     def value(self) -> Self:
+        """TableMetadataValue: Identity function."""
         return self
 
 
@@ -894,8 +908,10 @@ class TableSchemaMetadataValue(
             cls, check.inst_param(schema, "schema", TableSchema)
         )
 
+    @public
     @property
     def value(self) -> TableSchema:
+        """TableSchema: The wrapped :py:class:`TableSchema`."""
         return self.schema
 
 
@@ -903,8 +919,10 @@ class TableSchemaMetadataValue(
 class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None]):
     """Representation of null."""
 
+    @public
     @property
     def value(self) -> None:
+        """None: The wrapped null value."""
         return None
 
 
@@ -953,10 +971,16 @@ class MetadataFieldSerializer(FieldSerializer):
 T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True)
 
 
-# NOTE: This currently stores value in the `entry_data` NamedTuple attribute. In the next release,
-# we will change the name of the NamedTuple property to `value`, and need to implement custom
-# serialization so that it continues to be saved as `entry_data` for backcompat purposes.
-@deprecated
+# NOTE: MetadataEntry is no longer accessible via the public API-- all metadata APIs use metadata
+# dicts. This clas shas only been preserved to adhere strictly to our backcompat guarantees. It is
+# still instantiated in the above `MetadataFieldSerializer` but that can easily be changed.
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use a dict with `MetadataValue` values instead.",
+)
+@deprecated_param(
+    param="entry_data", breaking_version="2.0", additional_warn_text="Use `value` instead."
+)
 @whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
@@ -974,7 +998,7 @@ class MetadataEntry(
     .. note:: This class is no longer usable in any Dagster API, and will be completely removed in 2.0.
 
     Lists of objects of this type can be passed as arguments to Dagster events and will be displayed
-    in Dagit and other tooling.
+    in the Dagster UI and other tooling.
 
     Should be yielded from within an IO manager to append metadata for a given input/output event.
     For other event types, passing a dict with `MetadataValue` values to the `metadata` argument
@@ -984,7 +1008,7 @@ class MetadataEntry(
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
         value (MetadataValue): Typed metadata entry data. The different types allow
-            for customized display in tools like dagit.
+            for customized display in tools like the Dagster UI.
     """
 
     def __new__(
@@ -994,21 +1018,13 @@ class MetadataEntry(
         entry_data: Optional["RawMetadataValue"] = None,
         value: Optional["RawMetadataValue"] = None,
     ):
-        deprecation_warning(
-            (
-                "The `MetadataEntry` class is deprecated. Please use a dict with `MetadataValue`"
-                " values instead."
-            ),
-            "2.0.0",
-        )
         value = cast(
             RawMetadataValue,
-            canonicalize_backcompat_args(
+            normalize_renamed_param(
                 new_val=value,
                 new_arg="value",
                 old_val=entry_data,
                 old_arg="entry_data",
-                breaking_version="1.0.0",
             ),
         )
         value = normalize_metadata_value(value)

@@ -1,12 +1,11 @@
-from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 from .api import (
@@ -15,11 +14,14 @@ from .api import (
     ephemeral_instance_if_missing,
     job_execution_iterator,
 )
-from .context_creation_pipeline import (
+from .context_creation_job import (
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
 )
 from .execute_in_process_result import ExecuteInProcessResult
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 
 def core_execute_in_process(
@@ -125,13 +127,12 @@ def _check_top_level_inputs_for_node(
         if (
             not input_def.dagster_type.loader
             and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-            and not input_def.root_manager_key
             and not input_def.has_default_value
             and not top_level_input_provided
         ):
             raise DagsterInvalidInvocationError(
                 f"Attempted to invoke execute_in_process for '{job_name}' without specifying an"
                 f" input_value for input '{top_level_input_name}', but downstream input"
-                f" {input_def.name} of op '{str(cur_node_handle)}' has no other way of being"
+                f" {input_def.name} of op '{cur_node_handle}' has no other way of being"
                 " loaded."
             )

@@ -4,6 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Callable, Optional
 
+import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster._core.storage.event_log.base import EventLogCursor
@@ -19,7 +20,7 @@ from .sql_event_log import SqlEventLogStorage
 class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """In memory only event log storage. Used by ephemeral DagsterInstance or for testing purposes.
 
-    WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
+    WARNING: The Dagster UI and other core functionality will not work if this is used on a real DagsterInstance
     """
 
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None, preload=None):
@@ -33,10 +34,11 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # hold one connection for life of instance, but vend new ones for specific calls
         self._held_conn = self._engine.connect()
+        with self._held_conn.begin():
+            SqlEventLogStorageMetadata.create_all(self._held_conn)
+            alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
+            stamp_alembic_rev(alembic_config, self._held_conn)
 
-        SqlEventLogStorageMetadata.create_all(self._held_conn)
-        alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
-        stamp_alembic_rev(alembic_config, self._held_conn)
         self.reindex_events()
         self.reindex_assets()
 
@@ -46,18 +48,18 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     self.store_event(event)
 
     @contextmanager
-    def run_connection(self, run_id=None):
+    def _connect(self):
         with self._engine.connect() as conn:
-            conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA foreign_keys=ON;")
-            yield conn
+            with conn.begin():
+                conn.execute(db.text("PRAGMA journal_mode=WAL;"))
+                conn.execute(db.text("PRAGMA foreign_keys=ON;"))
+                yield conn
 
-    @contextmanager
+    def run_connection(self, run_id=None):
+        return self._connect()
+
     def index_connection(self):
-        with self._engine.connect() as conn:
-            conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA foreign_keys=ON;")
-            yield conn
+        return self._connect()
 
     def has_table(self, table_name: str) -> bool:
         with self._engine.connect() as conn:
@@ -98,6 +100,10 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @property
     def is_persistent(self) -> bool:
+        return False
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
         return False
 
     def dispose(self):

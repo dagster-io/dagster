@@ -11,7 +11,7 @@ from dagster._core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils.merger import merge_dicts
 
@@ -24,6 +24,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     get_partitions,
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
+from dagster_graphql.implementation.utils import capture_error
 
 from .asset_key import GrapheneAssetKey
 from .backfill import GraphenePartitionBackfill
@@ -198,10 +199,11 @@ class GraphenePartition(graphene.ObjectType):
         super().__init__(
             name=partition_name,
             partition_set_name=external_partition_set.name,
-            solid_selection=external_partition_set.solid_selection,
+            solid_selection=external_partition_set.op_selection,
             mode=external_partition_set.mode,
         )
 
+    @capture_error
     def resolve_runConfigOrError(self, graphene_info: ResolveInfo):
         return get_partition_config(
             graphene_info,
@@ -210,6 +212,7 @@ class GraphenePartition(graphene.ObjectType):
             self._partition_name,
         )
 
+    @capture_error
     def resolve_tagsOrError(self, graphene_info: ResolveInfo):
         return get_partition_tags(
             graphene_info,
@@ -296,13 +299,14 @@ class GraphenePartitionSet(graphene.ObjectType):
         super().__init__(
             name=external_partition_set.name,
             pipeline_name=external_partition_set.job_name,
-            solid_selection=external_partition_set.solid_selection,
+            solid_selection=external_partition_set.op_selection,
             mode=external_partition_set.mode,
         )
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_partition_set.get_external_origin_id()
 
+    @capture_error
     def resolve_partitionsOrError(
         self,
         graphene_info: ResolveInfo,
@@ -330,6 +334,7 @@ class GraphenePartitionSet(graphene.ObjectType):
     def resolve_partitionRuns(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
 
+    @capture_error
     def resolve_partitionStatusesOrError(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_statuses(
             graphene_info,
@@ -436,11 +441,14 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     == cast(
                         MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
                     ).primary_dimension.name,
-                    dynamicPartitionsDefinitionName=dim.external_partitions_def_data.name
-                    if isinstance(
-                        dim.external_partitions_def_data, ExternalDynamicPartitionsDefinitionData
-                    )
-                    else None,
+                    dynamicPartitionsDefinitionName=(
+                        dim.external_partitions_def_data.name
+                        if isinstance(
+                            dim.external_partitions_def_data,
+                            ExternalDynamicPartitionsDefinitionData,
+                        )
+                        else None
+                    ),
                 )
                 for dim in partition_def_data.external_partition_dimension_definitions
             ]
@@ -453,9 +461,11 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                         partition_def_data
                     ),
                     isPrimaryDimension=True,
-                    dynamicPartitionsDefinitionName=partition_def_data.name
-                    if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
-                    else None,
+                    dynamicPartitionsDefinitionName=(
+                        partition_def_data.name
+                        if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                        else None
+                    ),
                 )
             ]
         )
@@ -465,9 +475,11 @@ class GraphenePartitionDefinition(graphene.ObjectType):
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
-            name=partition_def_data.name
-            if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
-            else None,
+            name=(
+                partition_def_data.name
+                if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                else None
+            ),
         )
 
 

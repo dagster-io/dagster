@@ -17,6 +17,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
@@ -469,10 +470,8 @@ class DbtCloudClient:
                 ):
                     self.cancel_run(run_id)
                     raise Failure(
-                        (
-                            f"Run {run_id} timed out after "
-                            f"{datetime.datetime.now() - poll_start}. Attempted to cancel."
-                        ),
+                        f"Run {run_id} timed out after "
+                        f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
                         metadata={"run_page_url": MetadataValue.url(href)},
                     )
 
@@ -591,10 +590,6 @@ class DbtCloudResource(DbtCloudClient):
     pass
 
 
-# This is a temporary shim to support the old resource name.
-DbtCloudResourceV2 = DbtCloudResource
-
-
 class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """This resource helps interact with dbt Cloud connectors."""
 
@@ -638,6 +633,10 @@ class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpCon
         ),
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_dbt_client(self) -> DbtCloudClient:
         context = self.get_resource_context()
         assert context.log
@@ -656,6 +655,7 @@ class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpCon
         return self.get_dbt_client()
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=DbtCloudClientResource.to_config_schema(),
     description="This resource helps interact with dbt Cloud connectors",

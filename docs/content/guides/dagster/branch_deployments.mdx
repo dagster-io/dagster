@@ -19,7 +19,7 @@ Here’s an overview of the main concepts we’ll be using:
 - [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake.
 - [Ops](/concepts/ops-jobs-graphs/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
 - [Graphs](/concepts/ops-jobs-graphs/graphs) - We'll build graphs that define the order our ops should run.
-- [Jobs](/concepts/ops-jobs-graphs/jobs) - We'll define jobs by binding our graphs to resources.
+- [Jobs](/concepts/assets/asset-jobs) - We'll define jobs by binding our graphs to resources.
 - [Resources](/concepts/resources) - We'll use the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource) to swap in different Snowflake connections to our jobs depending on environment.
 - [I/O managers](/concepts/io-management/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 
@@ -43,7 +43,7 @@ To complete the steps in this guide, you'll need:
 - An existing Branch Deployments setup that uses [GitHub actions](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/branch-deployments.yaml`) or a Gitlab CI/CD file (e.g. `.gitlab-ci.yml`)
   - Dockerfile that installs your Dagster project
-- User permissions in Dagster Cloud that allow you to [access Branch Deployments](/dagster-cloud/account/managing-users#branch-deployment-permissions)
+- User permissions in Dagster Cloud that allow you to [access Branch Deployments](/dagster-cloud/account/managing-users/managing-user-roles-permissions)
 
 ---
 
@@ -150,7 +150,7 @@ resources = {
             database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
     },
-    "production": {
+    "prod": {
         "snowflake_io_manager": SnowflakePandasIOManager(
             **snowflake_config,
             database="PRODUCTION",
@@ -231,7 +231,7 @@ resources = {
             }
         ),
     },
-    "production": {
+    "prod": {
         "snowflake_io_manager": SnowflakePandasIOManager(
             **snowflake_config,
             database="PRODUCTION",
@@ -253,9 +253,11 @@ branch_deployment_jobs = [
 defs = Definitions(
     assets=[items, comments, stories],
     resources=resources[get_current_env()],
-    jobs=branch_deployment_jobs
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-    else [],
+    jobs=(
+        branch_deployment_jobs
+        if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+        else []
+    ),
 )
 ```
 
@@ -265,7 +267,8 @@ defs = Definitions(
 
 <TabGroup>
   <TabItem name="Using GitHub Actions">
-    The `branch_deployments.yml` file located in `.github/workflows/branch_deployments.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
+
+The `branch_deployments.yml` file located in `.github/workflows/branch_deployments.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
 
 ```yaml file=/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml
 # .github/workflows/branch_deployments.yml
@@ -316,9 +319,7 @@ alt="instance-overview"
 src="/images/guides/development_to_production/branch_deployments/snowflake.png"
 width={1431}
 height={537}
-/>
-
-  </TabItem>
+/> </TabItem>
 
   <TabItem name="Using Gitlab CI/CD">
 
@@ -388,7 +389,9 @@ alt="instance-overview"
 src="/images/guides/development_to_production/branch_deployments/snowflake.png"
 width={1431}
 height={537}
-/> </TabItem>
+/>
+
+</TabItem>
 
 </TabGroup>
 

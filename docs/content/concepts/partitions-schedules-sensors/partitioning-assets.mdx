@@ -1,0 +1,429 @@
+---
+title: Partitioning assets | Dagster
+description: Partitioned assets and jobs enable launching backfills, where each partition processes a subset of data.
+---
+
+# Partitioning assets
+
+<Note>
+  This page is specific to <strong>Software-defined Assets (SDAs)</strong>.
+  Looking for ops? Refer to the{" "}
+  <a href="/concepts/partitions-schedules-sensors/partitioning-ops">
+    Partitioned ops
+  </a>{" "}
+  documentation.
+</Note>
+
+A [Software-defined Asset](/concepts/assets/software-defined-assets) (SDA) can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file or a slice of a table in a database.
+
+A common use is for each partition to represent all the records in a data set that fall within a particular time window, e.g. hourly, daily or monthly. Alternatively, each partition can represent a region, a customer, an experiment - any dimension along which you want to be able to materialize and monitor independently. An asset can also be partitioned along multiple dimensions, e.g. by region and by hour.
+
+A graph of assets with the same partitions implicitly forms a partitioned data pipeline, and you can launch a run that selects multiple assets and materializes the same partition in each asset.
+
+Once an asset has a set of partitions, you can launch materializations of individual partitions and view the materialization history by partition in the Dagster UI.
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Software-defined Assets](/concepts/assets/software-defined-assets)
+- [Jobs](/concepts/ops-jobs-graphs/jobs)
+
+---
+
+## Relevant APIs
+
+| Name                                                               | Description                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| <PyObject object="PartitionsDefinition" />                         | Superclass - defines the set of partitions that can be materialized for an asset. |
+| <PyObject object="HourlyPartitionsDefinition" />                   | A partitions definition with a partition for each hour.                           |
+| <PyObject object="DailyPartitionsDefinition" />                    | A partitions definition with a partition for each day.                            |
+| <PyObject object="WeeklyPartitionsDefinition" />                   | A partitions definition with a partition for each week.                           |
+| <PyObject object="MonthlyPartitionsDefinition" />                  | A partitions definition with a partition for each month.                          |
+| <PyObject object="StaticPartitionsDefinition" />                   | A partitions definition with a fixed set of partitions.                           |
+| <PyObject object="MultiPartitionsDefinition" />                    | A partitions definition with multiple dimensions.                                 |
+| <PyObject object="MultiPartitionKey" />                            | A multi-dimensional partition key.                                                |
+| <PyObject object="DynamicPartitionsDefinition" />                  | A partitions definition whose partitions can be dynamically added and removed.    |
+| <PyObject object="AssetExecutionContext" method="partition_key" /> | The partition key for the current run, which can be accessed in the computation.  |
+
+---
+
+## Defining partitioned assets
+
+A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
+
+The following example demonstrates creating an asset that has a partition for each day since the first day of 2022. Materializing partition `2022-07-23` of this asset would result in fetching data from the URL `coolweatherwebsite.com/weather_obs\&=2022-07-23`and storing it at the path `weather_observations/2022-07-23.csv`:
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
+import urllib.request
+
+from dagster import DailyPartitionsDefinition, asset
+
+
+@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+def my_daily_partitioned_asset(context) -> None:
+    partition_date_str = context.asset_partition_key_for_output()
+
+    url = f"coolweatherwebsite.com/weather_obs&date={partition_date_str}"
+    target_location = f"weather_observations/{partition_date_str}.csv"
+
+    urllib.request.urlretrieve(url, target_location)
+```
+
+In the following sections, we'll demonstrate a few additional ways to partition assets:
+
+- [**Multi-dimensionally partitioning assets**](#multi-dimensionally-partitioned-assets), for when you want assets to be partitioned by multiple dimensions
+- [**Dynamically partitioning assets**](#dynamically-partitioned-assets), for when you don't know the partition set before defining assets
+- [**Defining partitioned assets to use partitioned I/O managers**](#partitioned-assets-with-partitioned-io-managers), for when you want an I/O manager to handle partitioned asset output
+
+### Multi-dimensionally partitioned assets
+
+<Note>
+  <strong>Heads up!</strong> Multipartitions definitions are currently limited
+  to <strong>two</strong> dimensions.
+</Note>
+
+The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension names to a `PartitionsDefinition`, creating a partition for each unique combination of dimension partitions.
+
+Consider the following asset:
+
+```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_marker endbefore=end_multi_partitions_marker
+from dagster import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    asset,
+)
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    )
+)
+def multi_partitions_asset(context):
+    context.log.info(context.partition_key.keys_by_dimension)
+```
+
+In this example, the asset would contain a partition for each combination of color and date:
+
+- `red|2022-01-01`
+- `yellow|2022-01-01`
+- `blue|2022-01-01`
+- `red|2022-01-02`
+- ... and so on
+
+Additionally, notice the code snippet above fetches the partition key from the asset context. Multi-dimensional partition keys are returned as <PyObject object="MultiPartitionKey"/> objects, which contain a <PyObject object="MultiPartitionKey" method="keys_by_dimension"/> method that returns the key per dimension. This object can also be passed into partition key execution parameters:
+
+```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_key_marker endbefore=end_multi_partitions_key_marker
+from dagster import MultiPartitionKey, materialize
+
+result = materialize(
+    [multi_partitions_asset],
+    partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "red"}),
+)
+```
+
+### Dynamically partitioned assets
+
+<Note>
+  <strong>Looking for example projects?</strong> Check out the{" "}
+  <a href="https://github.com/dagster-io/dagster/tree/master/examples/assets_dynamic_partitions">
+    Dynamic Partitions example
+  </a>{" "}
+  for a look at a full project that uses dynamic asset partitions.
+</Note>
+
+Sometimes you don't know the set of partitions ahead of time when defining assets. For example, maybe you want to add a new partition every time a new data file lands in a directory or every time you want to experiment with a new set of hyperparameters. In these cases, you can use a <PyObject object="DynamicPartitionsDefinition"/>.
+
+The <PyObject object="DynamicPartitionsDefinition" /> class accepts a `name` argument, representing the name of the partition set:
+
+```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_marker endbefore=end_dynamic_partitions_marker
+images_partitions_def = DynamicPartitionsDefinition(name="images")
+
+
+@asset(partitions_def=images_partitions_def)
+def images(context):
+    ...
+```
+
+Partition keys can be added and removed for a given dynamic partition set. For example, the following code snippet demonstrates the usage of a [sensor](/concepts/partitions-schedules-sensors/sensors) to detect the presence of a new partition and then trigger a run for that partition:
+
+```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_2 endbefore=end_dynamic_partitions_2
+images_job = define_asset_job(
+    "images_job", AssetSelection.keys("images"), partitions_def=images_partitions_def
+)
+
+
+@sensor(job=images_job)
+def image_sensor(context):
+    new_images = [
+        img_filename
+        for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))
+        if not context.instance.has_dynamic_partition(
+            images_partitions_def.name, img_filename
+        )
+    ]
+
+    return SensorResult(
+        run_requests=[
+            RunRequest(partition_key=img_filename) for img_filename in new_images
+        ],
+        dynamic_partitions_requests=[
+            images_partitions_def.build_add_request(new_images)
+        ],
+    )
+```
+
+### Partitioned assets with partitioned I/O managers
+
+<Note>
+  <strong>Heads up!</strong> Familiarity with{" "}
+  <a href="/concepts/io-management/io-managers">I/O managers</a> is required for
+  this section.
+</Note>
+
+Asset functions can write data out to files, but they can also delegate the writing operation to an [I/O manager](/concepts/io-management/io-managers). Dagster's [built-in I/O managers](/concepts/io-management/io-managers#built-in-io-managers) support handling partitioned assets, but you can also [write your own I/O manager](/concepts/io-management/io-managers#handling-partitioned-assets) if you want additional customization.
+
+For example, this example demonstrates how to define an asset that relies on an I/O manager to store its output:
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset_uses_io_manager.py
+import pandas as pd
+
+from dagster import DailyPartitionsDefinition, asset
+
+
+@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+def my_daily_partitioned_asset(context) -> pd.DataFrame:
+    partition_date_str = context.asset_partition_key_for_output()
+    return pd.read_csv(f"coolweatherwebsite.com/weather_obs&date={partition_date_str}")
+```
+
+If using the default I/O manager, materializing partition `2022-07-23` of this asset would store the output `DataFrame` in a pickle file at a path like `my_daily_partitioned_asset/2022-07-23`.
+
+---
+
+## Defining partition dependencies
+
+Partitioned assets can depend on other partitioned assets. In this case, each partition in the downstream asset will depend on a partition or multiple partitions in the upstream asset.
+
+### Default partition dependency rules
+
+A few rules govern default partition-to-partition dependencies:
+
+- When the upstream asset and downstream asset have the same <PyObject object="PartitionsDefinition" />, each partition in the downstream asset will depend on the same partition in the upstream asset.
+- When the upstream asset and downstream asset are both time window-partitioned, each partition in the downstream asset will depend on all partitions in the upstream asset that intersect its time window.
+
+  For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
+
+### Overriding default dependency rules
+
+Default partition dependency rules can be overridden by providing a <PyObject object="PartitionMapping" /> when specifying a dependency on an asset. How this is accomplished depends on the type of [dependency the asset has](/concepts/assets/software-defined-assets#assets-with-dependencies) - refer to the following tabs for more info.
+
+<TabGroup>
+<TabItem name="For basic asset dependencies">
+
+#### Basic dependencies
+
+To override partition dependency rules for [basic asset dependencies](/concepts/assets/software-defined-assets#defining-basic-dependencies), you can use `AssetDep` to specify the partition dependency on an upstream asset:
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset_mappings.py
+from dagster import (
+    AssetDep,
+    DailyPartitionsDefinition,
+    TimeWindowPartitionMapping,
+    asset,
+)
+
+partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
+
+
+@asset(partitions_def=partitions_def)
+def events():
+    ...
+
+
+@asset(
+    partitions_def=partitions_def,
+    deps=[
+        AssetDep(
+            events,
+            partition_mapping=TimeWindowPartitionMapping(
+                start_offset=-1, end_offset=-1
+            ),
+        )
+    ],
+)
+def yesterday_event_stats():
+    ...
+```
+
+</TabItem>
+<TabItem name="For managed-loading asset dependencies">
+
+#### Managed-loading dependencies
+
+To override partition dependency rules for [managed-loading asset dependencies](/concepts/assets/software-defined-assets#defining-explicit-managed-loading-dependencies), you can use a `PartitionMapping` to specify that each partition of an asset should depend on a partition in an upstream asset.
+
+In the following code snippet, we used a <PyObject object="TimeWindowPartitionMapping" /> to specify that each partition of a daily-partitioned asset should depend on the prior day's partition in an upstream asset:
+
+```python file=/concepts/partitions_schedules_sensors/partition_mapping.py
+from dagster import (
+    AssetIn,
+    DailyPartitionsDefinition,
+    TimeWindowPartitionMapping,
+    asset,
+)
+
+partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
+
+
+@asset(partitions_def=partitions_def)
+def events():
+    ...
+
+
+@asset(
+    partitions_def=partitions_def,
+    ins={
+        "events": AssetIn(
+            partition_mapping=TimeWindowPartitionMapping(
+                start_offset=-1, end_offset=-1
+            ),
+        )
+    },
+)
+def yesterday_event_stats(events):
+    ...
+```
+
+</TabItem>
+</TabGroup>
+
+Refer to the [API docs](https://docs.dagster.io/\_apidocs/partitions#partition-mapping) for a list of available `PartitionMappings`.
+
+---
+
+## Partitioned asset jobs
+
+A partitioned asset job is a job that materializes a particular set of partitioned assets every time it runs.
+
+In the following code snippet, the `partitioned_asset_job` will materialize two hourly-materialized assets (`asset1` and `asset2`) every time it runs:
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset_job.py
+from dagster import (
+    AssetSelection,
+    Definitions,
+    HourlyPartitionsDefinition,
+    asset,
+    define_asset_job,
+)
+
+hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00")
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset1():
+    ...
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset2():
+    ...
+
+
+partitioned_asset_job = define_asset_job(
+    name="asset_1_and_2_job",
+    selection=AssetSelection.assets(asset1, asset2),
+    partitions_def=hourly_partitions_def,
+)
+
+
+defs = Definitions(
+    assets=[asset1, asset2],
+    jobs=[partitioned_asset_job],
+)
+```
+
+---
+
+## Asset partitions in the Dagster UI
+
+### Viewing the status of asset partitions
+
+To view all partitions for an asset, open the **Definition** tab of the asset's details page. The bar in the **Partitions** section represents all of the partitions for the asset.
+
+In the following image, the partitions bar is entirely gray. This is because none of the partitions have been materialized:
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset.png"
+width={2662}
+height={1618}
+/>
+
+### Materializing partitioned assets
+
+When you materialize a partitioned asset, you choose which partitions to materialize and Dagster will launch a run for each partition. **Note**: If you choose more than one partition, the [Dagster daemon](/deployment/dagster-daemon) needs to be running to queue the multiple runs.
+
+The following image shows the **Launch runs** dialog on an asset's **Details** page, where you'll be prompted to select a partition to materialize:
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/rematerialize-partition.png"
+width={2662}
+height={1618}
+/>
+
+After a partition has been successfully materialized, it will display as green in the partitions bar:
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset.png"
+width={2662}
+height={1618}
+/>
+
+### Viewing materializations by partition
+
+To view materializations by partition for a specific asset, navigate to the **Activity** tab of the asset's **Details** page:
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset-activity.png"
+width={2662}
+height={1618}
+/>
+
+---
+
+## See it in action
+
+For more examples of partitions, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
+
+- [Defining partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/core/items.py)
+- [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitions"
+    title="Partitions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitioning-ops"
+    title="Partitioned op jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/testing-partitions"
+    title="Testing partitioned config and jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/assets/software-defined-assets"
+    title="Software-defined Assets"
+  ></ArticleListItem>
+</ArticleList>

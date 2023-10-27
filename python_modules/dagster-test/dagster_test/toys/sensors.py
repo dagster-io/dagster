@@ -64,9 +64,9 @@ def get_toys_sensors():
 
         for filename, mtime in directory_files:
             yield RunRequest(
-                run_key=f"{filename}:{str(mtime)}",
+                run_key=f"{filename}:{mtime}",
                 run_config={
-                    "solids": {
+                    "ops": {
                         "read_file": {"config": {"directory": directory_name, "filename": filename}}
                     }
                 },
@@ -92,7 +92,7 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=s3_key,
                 run_config={
-                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
+                    "ops": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
                 },
             )
 
@@ -102,7 +102,7 @@ def get_toys_sensors():
 
         slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
 
-        run_page_url = f"{base_url}/instance/runs/{context.dagster_run.run_id}"
+        run_page_url = f"{base_url}/runs/{context.dagster_run.run_id}"
         channel = "#toy-test"
         message = "\n".join(
             [
@@ -122,7 +122,7 @@ def get_toys_sensors():
         channel="#toy-test",
         slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
         monitored_jobs=[error_monster_failing_job],
-        dagit_base_url="http://localhost:3000",
+        webserver_base_url="http://localhost:3000",
     )
 
     @asset_sensor(asset_key=AssetKey("model"), job=log_asset_job)

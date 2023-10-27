@@ -11,11 +11,12 @@ Dagster can detect hanging runs and restart crashed [run workers](/deployment/ov
 - Enabling run monitoring in the Dagster Instance:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_run_monitoring endbefore=end_run_monitoring
-# Opt in to the experimental Monitoring Daemon
+# Opt in to run monitoring
 run_monitoring:
   enabled: true
-  # values below are the defaults, and don't need to be specified execpt to override them
+  # values below are the defaults, and don't need to be specified except to override them
   start_timeout_seconds: 180
+  cancel_timeout_seconds: 180
   max_resume_run_attempts: 3 # experimental if above 0
   poll_interval_seconds: 120
 ```
@@ -23,6 +24,10 @@ run_monitoring:
 ## Run start timeouts
 
 When Dagster launches a run, the run stays in STARTING status until the run worker spins up and marks the run as STARTED. In the event that some failure causes the run worker to not spin up, the run might be stuck in STARTING status. The `start_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as failed.
+
+## Run cancelation timeouts
+
+When Dagster terminates a run, the run moves into CANCELING status and sends a termination signal to the run worker. When the run worker cleans up its resources, it moves into CANCELED status. In the event that some failure causes the run worker to not spin down cleanly, the run might be stuck in CANCELING status. The `cancel_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as canceled.
 
 ## General run timeouts
 

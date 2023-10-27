@@ -1,4 +1,4 @@
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import dagster._check as check
 import graphene
@@ -10,7 +10,6 @@ from dagster._core.host_representation.external_data import (
     NestedResourceType,
     ResourceJobUsageEntry,
 )
-from dagster._core.workspace.workspace import IWorkspace
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
@@ -23,6 +22,9 @@ from dagster_graphql.schema.solids import GrapheneSolidHandle, build_solid_handl
 from dagster_graphql.schema.util import non_null_list
 
 from .config_types import GrapheneConfigTypeField
+
+if TYPE_CHECKING:
+    from dagster._core.workspace.workspace import IWorkspace
 
 
 class GrapheneConfiguredValueType(graphene.Enum):
@@ -74,6 +76,7 @@ class GrapheneJobAndSpecificOps(graphene.ObjectType):
 
 
 class GrapheneResourceDetails(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     configFields = graphene.Field(
@@ -99,6 +102,8 @@ class GrapheneResourceDetails(graphene.ObjectType):
     resourceType = graphene.NonNull(graphene.String)
     assetKeysUsing = graphene.Field(non_null_list(GrapheneAssetKey))
     jobsOpsUsing = graphene.Field(non_null_list(GrapheneJobAndSpecificOps))
+    schedulesUsing = graphene.Field(non_null_list(graphene.String))
+    sensorsUsing = graphene.Field(non_null_list(graphene.String))
 
     class Meta:
         name = "ResourceDetails"
@@ -107,6 +112,8 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self, location_name: str, repository_name: str, external_resource: ExternalResource
     ):
         super().__init__()
+
+        self.id = f"{location_name}-{repository_name}-{external_resource.name}"
 
         self._location_name = check.str_param(location_name, "location_name")
         self._repository_name = check.str_param(repository_name, "repository_name")
@@ -126,6 +133,8 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self.resourceType = external_resource.resource_type
         self._asset_keys_using = external_resource.asset_keys_using
         self._job_ops_using = external_resource.job_ops_using
+        self._schedules_using = external_resource.schedules_using
+        self._sensors_using = external_resource.sensors_using
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -149,16 +158,18 @@ class GrapheneResourceDetails(graphene.ObjectType):
             GrapheneNestedResourceEntry(
                 name=k,
                 type=v.type,
-                resource=get_resource_or_error(
-                    graphene_info,
-                    ResourceSelector(
-                        location_name=self._location_name,
-                        repository_name=self._repository_name,
-                        resource_name=v.name,
-                    ),
-                )
-                if v.type == NestedResourceType.TOP_LEVEL
-                else None,
+                resource=(
+                    get_resource_or_error(
+                        graphene_info,
+                        ResourceSelector(
+                            location_name=self._location_name,
+                            repository_name=self._repository_name,
+                            resource_name=v.name,
+                        ),
+                    )
+                    if v.type == NestedResourceType.TOP_LEVEL
+                    else None
+                ),
             )
             for k, v in self._nested_resources.items()
         ]
@@ -202,6 +213,12 @@ class GrapheneResourceDetails(graphene.ObjectType):
         repo = context.get_code_location(self._location_name).get_repository(self._repository_name)
 
         return [self._construct_job_and_specific_ops(repo, entry) for entry in self._job_ops_using]
+
+    def resolve_schedulesUsing(self, _graphene_info) -> List[str]:
+        return self._schedules_using
+
+    def resolve_sensorsUsing(self, _graphene_info) -> List[str]:
+        return self._sensors_using
 
 
 class GrapheneResourceDetailsOrError(graphene.Union):

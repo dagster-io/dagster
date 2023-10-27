@@ -18,13 +18,12 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-dbt",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="A Dagster integration for dbt",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -33,18 +32,21 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
+    include_package_data=True,
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
-        "dbt-core<1.6",
+        "dbt-core<1.7",
+        "Jinja2",
         "networkx",
+        "orjson",
         "requests",
-        "typer[all]",
+        "rich",
+        "typer>=0.9.0",
+        "packaging",
     ],
     extras_require={
         "test": [
-            "Jinja2",
-            "dbt-rpc<0.3.0",
             "dbt-duckdb",
             "dagster-duckdb",
             "dagster-duckdb-pandas",
@@ -53,6 +55,7 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-dbt-cloud = dagster_dbt.cloud.cli:app",
+            "dagster-dbt = dagster_dbt.cli.app:app",
         ]
     },
     zip_safe=False,

@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
 from pydantic import Field
@@ -6,7 +6,7 @@ from pydantic import Field
 from .types import DbtOutput
 from .utils import generate_events, generate_materializations
 
-_DEFAULT_OP_PROPS = dict(
+_DEFAULT_OP_PROPS: Dict[str, Any] = dict(
     required_resource_keys={"dbt"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtOutput, description="Parsed output from running the dbt command."),
@@ -17,22 +17,17 @@ _DEFAULT_OP_PROPS = dict(
 def _get_doc(op_name: str, dbt_command: str) -> str:
     return f"""
 This op executes a ``dbt {dbt_command}`` command. It requires the use of a dbt resource, which can be
-set to execute this command through the CLI (using the :py:class:`~dagster_dbt.dbt_cli_resource`) or
-over RPC (using the :py:class:`~dbt_rpc_sync_resource`).
+set to execute this command through the CLI (using the :py:class:`~dagster_dbt.dbt_cli_resource`).
 
 Examples:
 
 .. code-block:: python
 
     from dagster import job
-    from dagster_dbt import {op_name}, dbt_cli_resource, dbt_rpc_sync_resource
+    from dagster_dbt import {op_name}, dbt_cli_resource
 
     @job(resource_defs={{"dbt":dbt_cli_resource}})
     def my_dbt_cli_job():
-        {op_name}()
-
-    @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
-    def my_dbt_rpc_job():
         {op_name}()
     """
 

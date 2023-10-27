@@ -91,6 +91,61 @@ def test_wait_for_job_success():
     assert not mock_client.sleeper.mock_calls
 
 
+def test_create_job_success():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    # Finishes without issue
+    mock_client.create_namespaced_job_with_retries(
+        body=V1Job(metadata=a_job_metadata),
+        namespace=namespace,
+    )
+
+
+def test_create_job_failure_errors():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    mock_client.batch_api.create_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(status=500, reason="Bad"),
+        kubernetes.client.rest.ApiException(status=500, reason="Worse"),
+        kubernetes.client.rest.ApiException(status=500, reason="Even worse"),
+        kubernetes.client.rest.ApiException(status=500, reason="The worst"),
+    ]
+
+    with pytest.raises(DagsterK8sAPIRetryLimitExceeded):
+        mock_client.create_namespaced_job_with_retries(
+            body=V1Job(metadata=a_job_metadata),
+            namespace=namespace,
+        )
+
+
+def test_create_job_with_idempotence_api_errors():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    mock_client.batch_api.create_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(
+            status=500, reason="This is a lie, I actually made the job"
+        ),
+        kubernetes.client.rest.ApiException(status=409, reason="Job already exists"),
+    ]
+
+    mock_client.create_namespaced_job_with_retries(
+        body=V1Job(metadata=a_job_metadata),
+        namespace=namespace,
+    )
+
+
 def test_wait_for_job_success_with_api_errors():
     mock_client = create_mocked_client()
 
@@ -327,6 +382,29 @@ def test_long_running_job():
 
     # slept once waiting for job to complete
     assert len(mock_client.sleeper.mock_calls) == 1
+
+
+def test_job_succeded_after_failure():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [a_job_is_launched_list]
+
+    # failed job
+    failed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(active=1, failed=1, succeeded=0))
+    completed_job = V1Job(
+        metadata=a_job_metadata, status=V1JobStatus(active=0, failed=0, succeeded=1)
+    )
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [failed_job, completed_job]
+
+    mock_client.wait_for_job_success(job_name, namespace)
+
+    assert len(mock_client.batch_api.read_namespaced_job_status.mock_calls) == 2
 
 
 ###
@@ -684,9 +762,7 @@ def test_valid_failure_waiting_reasons():
         pod_name = "a_pod"
         with pytest.raises(DagsterK8sError) as exc_info:
             mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
-        assert str(exc_info.value) == 'Failed: Reason="{reason}" Message="bad things"'.format(
-            reason=reason
-        )
+        assert f'Failed: Reason="{reason}" Message="bad things"' in str(exc_info.value)
 
 
 def test_bad_waiting_state():

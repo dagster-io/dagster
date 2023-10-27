@@ -87,8 +87,6 @@ This environment shared across all User Code containers
 {{- $dagsterHome := $global.dagsterHome | default .Values.dagsterHome }}
 
 DAGSTER_HOME: {{ $dagsterHome | quote }}
-DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagsterUserDeployments.postgresql.secretName" . | quote }}
-DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
 {{- end -}}

@@ -2,14 +2,13 @@ import copy
 import logging
 import sys
 import traceback
-from contextlib import contextmanager
 from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
-import pendulum
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._annotations import deprecated
 from dagster._config import Enum, EnumValue
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
@@ -206,13 +205,6 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
-def _mockable_formatTime(record, datefmt=None):
-    """Uses pendulum.now to determine the logging time, causing pendulum
-    mocking to affect the logger timestamp in tests.
-    """
-    return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
-
-
 def default_format_string():
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
@@ -225,17 +217,11 @@ def define_default_formatter():
     return logging.Formatter(default_format_string(), default_date_format_string())
 
 
-@contextmanager
-def quieten(quiet=True, level=logging.WARNING):
-    if quiet:
-        logging.disable(level)
-    try:
-        yield
-    finally:
-        if quiet:
-            logging.disable(logging.NOTSET)
-
-
+@deprecated(
+    breaking_version="2.0",
+    subject="loggers.dagit",
+    emit_runtime_warning=False,
+)
 def configure_loggers(handler="default", log_level="INFO"):
     LOGGING_CONFIG = {
         "version": 1,
@@ -263,20 +249,22 @@ def configure_loggers(handler="default", log_level="INFO"):
         "loggers": {
             "dagster": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
             },
+            # Only one of dagster or dagster-webserver will be used at a time. We configure them
+            # both here to avoid a dependency on the dagster-webserver package.
             "dagit": {
                 "handlers": [handler],
-                "level": "INFO",
+                "level": log_level,
+            },
+            "dagster-webserver": {
+                "handlers": [handler],
+                "level": log_level,
             },
         },
     }
 
     logging.config.dictConfig(LOGGING_CONFIG)
-
-    if handler == "default":
-        for name in ["dagster", "dagit"]:
-            logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime
 
 
 def create_console_logger(name, level):

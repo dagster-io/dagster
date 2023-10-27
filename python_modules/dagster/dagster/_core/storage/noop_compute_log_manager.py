@@ -22,6 +22,8 @@ from .compute_log_manager import (
 
 
 class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
+    """When enabled for a Dagster instance, stdout and stderr will not be available for any step."""
+
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 

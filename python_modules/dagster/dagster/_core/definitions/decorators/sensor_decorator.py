@@ -61,7 +61,7 @@ def sensor(
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
             the sensor condition is met. This can be provided instead of specifying a job.
     """
@@ -70,7 +70,7 @@ def sensor(
     def inner(fn: RawSensorEvaluationFunction) -> SensorDefinition:
         check.callable_param(fn, "fn")
 
-        sensor_def = SensorDefinition(
+        sensor_def = SensorDefinition.dagster_internal_init(
             name=name,
             job_name=job_name,
             evaluation_fn=fn,
@@ -100,9 +100,18 @@ def asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
+    required_resource_keys: Optional[Set[str]] = None,
+) -> Callable[
+    [
+        AssetMaterializationFunction,
+    ],
+    AssetSensorDefinition,
+]:
     """Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
     function.
+
+    If the asset has been materialized multiple times between since the last sensor tick, the
+    evaluation function will only be invoked once, with the latest materialization.
 
     The decorated function may:
 
@@ -127,7 +136,7 @@ def asset_sensor(
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
 
 
     Example:
@@ -177,16 +186,14 @@ def asset_sensor(
 
             elif result is not None:
                 raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
+                    f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                    f"{result} of type {type(result)}.  Should only return SkipReason or "
+                    "RunRequest objects."
                 )
 
         # Preserve any resource arguments from the underlying function, for when we inspect the
         # wrapped function later on
-        _wrapped_fn.__signature__ = inspect.signature(fn)
+        _wrapped_fn = update_wrapper(_wrapped_fn, wrapped=fn)
 
         return AssetSensorDefinition(
             name=sensor_name,
@@ -198,6 +205,7 @@ def asset_sensor(
             job=job,
             jobs=jobs,
             default_status=default_status,
+            required_resource_keys=required_resource_keys,
         )
 
     return inner
@@ -215,7 +223,13 @@ def multi_asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
-) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
+    required_resource_keys: Optional[Set[str]] = None,
+) -> Callable[
+    [
+        MultiAssetMaterializationFunction,
+    ],
+    MultiAssetSensorDefinition,
+]:
     """Creates an asset sensor that can monitor multiple assets.
 
     The decorated function is used as the asset sensor's evaluation
@@ -243,7 +257,7 @@ def multi_asset_sensor(
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
     """
@@ -273,6 +287,7 @@ def multi_asset_sensor(
             jobs=jobs,
             default_status=default_status,
             request_assets=request_assets,
+            required_resource_keys=required_resource_keys,
         )
         update_wrapper(sensor_def, wrapped=fn)
         return sensor_def

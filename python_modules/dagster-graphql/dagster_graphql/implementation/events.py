@@ -19,6 +19,7 @@ from dagster import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
     MetadataValue,
@@ -171,6 +172,8 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneAlertFailureEvent,
         GrapheneAlertStartEvent,
         GrapheneAlertSuccessEvent,
+        GrapheneAssetCheckEvaluationEvent,
+        GrapheneAssetCheckEvaluationPlannedEvent,
         GrapheneAssetMaterializationPlannedEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,
@@ -345,9 +348,9 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         data = dagster_event.engine_event_data
         return GrapheneEngineEvent(
             metadataEntries=_to_metadata_entries(data.metadata),
-            error=GraphenePythonError(data.error)
-            if dagster_event.engine_event_data.error
-            else None,
+            error=(
+                GraphenePythonError(data.error) if dagster_event.engine_event_data.error else None
+            ),
             markerStart=data.marker_start,
             markerEnd=data.marker_end,
             **basic_params,
@@ -369,6 +372,8 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             logKey=data.file_key,
             stepKeys=data.step_keys,
             externalUrl=data.external_url,
+            externalStdoutUrl=data.external_stdout_url or data.external_url,
+            externalStderrUrl=data.external_stderr_url or data.external_url,
             pid=dagster_event.pid,
             **basic_params,
         )
@@ -413,6 +418,17 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             error=GraphenePythonError(data.error),
             **basic_params,
         )
+    elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
+        data = cast(AssetCheckEvaluationPlanned, dagster_event.event_specific_data)
+        return GrapheneAssetCheckEvaluationPlannedEvent(
+            assetKey=data.asset_key, checkName=data.check_name, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+        from ..schema.asset_checks import GrapheneAssetCheckEvaluation
+
+        evaluation = GrapheneAssetCheckEvaluation(event_record)
+        return GrapheneAssetCheckEvaluationEvent(evaluation=evaluation, **basic_params)
+
     else:
         raise Exception(f"Unknown DAGSTER_EVENT type {dagster_event.event_type} found in logs")
 
@@ -439,11 +455,13 @@ def construct_basic_params(event_record: EventLogEntry) -> Any:
         "message": event_record.message,
         "timestamp": int(event_record.timestamp * 1000),
         "level": GrapheneLogLevel.from_level(event_record.level),
-        "eventType": dagster_event.event_type
-        if (dagster_event and dagster_event.event_type)
-        else None,
+        "eventType": (
+            dagster_event.event_type if (dagster_event and dagster_event.event_type) else None
+        ),
         "stepKey": event_record.step_key,
-        "solidHandleID": event_record.dagster_event.node_handle.to_string()  # type: ignore
-        if dagster_event and dagster_event.node_handle
-        else None,
+        "solidHandleID": (
+            event_record.dagster_event.node_handle.to_string()  # type: ignore
+            if dagster_event and dagster_event.node_handle
+            else None
+        ),
     }

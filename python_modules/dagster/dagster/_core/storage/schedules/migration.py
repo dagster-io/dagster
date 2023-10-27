@@ -1,11 +1,11 @@
 from typing import Callable, Mapping, Optional
 
-import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from tqdm import tqdm
 
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import deserialize_value
 from dagster._utils import PrintFn
 
@@ -33,7 +33,7 @@ def add_selector_id_to_jobs_table(
 
     with storage.connect() as conn:  # type: ignore
         rows = conn.execute(
-            db.select(
+            db_select(
                 [
                     JobTable.c.id,
                     JobTable.c.job_body,

@@ -1,0 +1,26 @@
+{
+  "name": "@dagster-io/dagster-ui-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "yarn workspace @dagster-io/app-oss build && yarn replace-asset-prefix && yarn post-build",
+    "replace-asset-prefix": "node ./packages/app-oss/replace-asset-prefix.js",
+    "build-with-profiling": "yarn workspace @dagster-io/app-oss build --profile && yarn post-build",
+    "post-build": "cd ../../python_modules/dagster-webserver/dagster_webserver && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagster-ui/packages/app-oss/build ./webapp/ && mkdir -p webapp/build/vendor && cp -r graphql-playground ./webapp/build/vendor && cp ../../../js_modules/dagster-ui/packages/app-oss/csp-header.txt ./webapp/build",
+    "lint": "yarn workspace @dagster-io/app-oss lint && yarn workspace @dagster-io/ui-core lint && yarn workspace @dagster-io/ui-components lint",
+    "start": "yarn workspace @dagster-io/app-oss start",
+    "ts": "yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-components ts"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "packageManager": "yarn@3.6.4",
+  "dependencies": {
+    "graphql.macro": "^1.4.2"
+  },
+  "devDependencies": {
+    "file-loader": "^6.2.0"
+  }
+}

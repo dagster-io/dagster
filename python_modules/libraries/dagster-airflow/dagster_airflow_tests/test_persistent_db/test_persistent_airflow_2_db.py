@@ -136,6 +136,7 @@ def test_pools(postgres_airflow_db: str):
             "test_pool",
             slots=1,
             description="Limit to 1 run",
+            include_deferred=True,
         )
 
         airflow_db = make_persistent_airflow_db_resource(uri=postgres_airflow_db)
@@ -230,6 +231,7 @@ def get_examples_airflow_repo_params() -> List[ParameterSet]:
         # runs slow
         "example_sensors",
         "example_dynamic_task_mapping",
+        "example_dynamic_task_mapping_with_no_taskflow_operators",
     ]
     for job_name in repo.job_names:
         params.append(

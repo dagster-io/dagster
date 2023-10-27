@@ -2,32 +2,36 @@
 title: Concepts | Dagster Docs
 ---
 
-# Concepts
+# Core concepts
 
 Learn about Dagster's core concepts and how to use them in your data platform.
 
 ---
 
-## Software-defined assets
+## Software-defined Assets
 
-An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets used to produce its contents.
+An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A Software-defined Asset is a Dagster object that couples an asset to the function and upstream assets used to produce its contents.
 
 <ArticleList>
   <ArticleListItem
-    title="Software-defined assets"
+    title="Software-defined Assets"
     href="/concepts/assets/software-defined-assets"
   ></ArticleListItem>
   <ArticleListItem
-    title="Asset materializations"
-    href="/concepts/assets/asset-materializations"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Asset observations"
-    href="/concepts/assets/asset-observations"
+    title="Graph-backed Assets"
+    href="/concepts/assets/graph-backed-assets"
   ></ArticleListItem>
   <ArticleListItem
     title="Multi-assets"
     href="/concepts/assets/multi-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset jobs"
+    href="/concepts/assets/asset-jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset observations"
+    href="/concepts/assets/asset-observations"
   ></ArticleListItem>
   <ArticleListItem
     title="Asset selection syntax"
@@ -37,72 +41,13 @@ An asset is an object in persistent storage, such as a table, file, or persisted
     title="Auto-materializing assets"
     href="/concepts/assets/asset-auto-execution"
   ></ArticleListItem>
-</ArticleList>
-
----
-
-## Ops
-
-Ops are the core unit of computation in Dagster. They typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
-
-<ArticleList>
   <ArticleListItem
-    title="Ops"
-    href="/concepts/ops-jobs-graphs/ops"
+    title="Asset checks (Experimental)"
+    href="/concepts/assets/asset-checks"
   ></ArticleListItem>
   <ArticleListItem
-    title="Op events"
-    href="/concepts/ops-jobs-graphs/op-events"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Op hooks"
-    href="/concepts/ops-jobs-graphs/op-hooks"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Op retries"
-    href="/concepts/ops-jobs-graphs/op-retries"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
-## Graphs
-
-A graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
-
-<ArticleList>
-  <ArticleListItem
-    title="Graphs"
-    href="/concepts/ops-jobs-graphs/graphs"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Nesting graphs"
-    href="/concepts/ops-jobs-graphs/nesting-graphs"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Dynamic graphs"
-    href="/concepts/ops-jobs-graphs/dynamic-graphs"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
-## Jobs
-
-Jobs are the main unit of execution and monitoring in Dagster. The core of a job is a graph of ops connected via data dependencies.
-
-<ArticleList>
-  <ArticleListItem
-    title="Jobs"
-    href="/concepts/ops-jobs-graphs/jobs"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Job execution"
-    href="/concepts/ops-jobs-graphs/job-execution"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Metadata and tags"
-    href="/concepts/ops-jobs-graphs/metadata-tags"
+    title="External assets (Experimental)"
+    href="/concepts/assets/external-assets"
   ></ArticleListItem>
 </ArticleList>
 
@@ -120,6 +65,10 @@ Schedules launch runs on a fixed interval, while sensors allow you to do so base
   <ArticleListItem
     title="Sensors"
     href="/concepts/partitions-schedules-sensors/sensors"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset Sensors"
+    href="/concepts/partitions-schedules-sensors/asset-sensors"
   ></ArticleListItem>
 </ArticleList>
 
@@ -142,9 +91,121 @@ A software-defined asset or job can represent a collection of _partitions_ that 
 
 ---
 
-## I/O management
+## Resources & configuration
 
-IO Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
+Resources enable you to separate logic from external dependencies, making developing and testing possible in multiple environments.
+
+[Learn more about resources](/concepts/resources).
+
+Additionally, Dagster provides a configuration system that allows you to document, schematize, and error-check your configuration.
+
+<ArticleList>
+  <ArticleListItem
+    title="Run configuration"
+    href="/concepts/configuration/config-schema"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Advanced config types"
+    href="/concepts/configuration/advanced-config-types"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Code locations
+
+A code location is a collection of Dagster definitions, including assets, jobs, schedules, sensors, and resources. Dagster tools like the Dagster webserver/UI and CLI use code locations to load your code.
+
+<ArticleList>
+  <ArticleListItem
+    title="Code locations (Definitions)"
+    href="/concepts/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Workspace files"
+    href="/concepts/code-locations/workspace-files"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Dagster UI
+
+The Dagster UI is a web-based interface for viewing and interacting with Dagster objects.
+
+[Learn more about the Dagster UI](/concepts/webserver/ui).
+
+---
+
+## Testing
+
+Dagster enables you to build testable and maintainable data applications. It provides ways to allow you unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
+
+[Learn more about testing](/concepts/testing).
+
+---
+
+## Advanced concepts
+
+### Ops
+
+Ops typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
+
+An op graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph or job to accomplish complex tasks.
+
+<ArticleList>
+  <ArticleListItem
+    title="Ops"
+    href="/concepts/ops-jobs-graphs/ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op jobs"
+    href="/concepts/ops-jobs-graphs/jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op events"
+    href="/concepts/ops-jobs-graphs/op-events"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op hooks"
+    href="/concepts/ops-jobs-graphs/op-hooks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op retries"
+    href="/concepts/ops-jobs-graphs/op-retries"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op graphs"
+    href="/concepts/ops-jobs-graphs/graphs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Nesting op graphs"
+    href="/concepts/ops-jobs-graphs/nesting-graphs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dynamic op graphs"
+    href="/concepts/ops-jobs-graphs/dynamic-graphs"
+  ></ArticleListItem>
+</ArticleList>
+
+### Job execution, metadata, & tags
+
+Learn to execute op and asset jobs, and apply metadata and tags.
+
+<ArticleList>
+  <ArticleListItem
+    title="Job execution"
+    href="/concepts/ops-jobs-graphs/job-execution"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Metadata and tags"
+    href="/concepts/ops-jobs-graphs/metadata-tags"
+  ></ArticleListItem>
+</ArticleList>
+
+### I/O management
+
+I/O managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
 
 <ArticleList>
   <ArticleListItem
@@ -157,71 +218,13 @@ IO Managers are user-provided objects that store asset and op outputs and load t
   ></ArticleListItem>
 </ArticleList>
 
----
+### Dagster Types
 
-## Configuration
-
-Dagster provides a configuration system that allows you to document, schematize, and error-check your configuration.
-
-<ArticleList>
-  <ArticleListItem
-    title="Run configuration"
-    href="/concepts/configuration/config-schema"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
-## Code locations
-
-A code location is a collection of Dagster definitions, including assets, jobs, schedules, sensors, and resources. Dagster tools like Dagit and the Dagster CLI use code locations to load your code.
-
-[Learn more about code locations](/concepts/code-locations).
-
----
-
-## Resources
-
-Resources enable you to separate logic from external dependencies, making developing and testing possible in multiple environments.
-
-[Learn more about resources](/concepts/resources).
-
----
-
-## Dagit
-
-Dagit is a web-based interface for viewing and interacting with Dagster objects.
-
-[Learn more about Dagit](/concepts/dagit/dagit).
-
----
-
-## GraphQL API
-
-The GraphQL API allows you to interact programmatically with Dagster.
-
-<ArticleList>
-  <ArticleListItem
-    title="GraphQL API"
-    href="/concepts/dagit/graphql"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="GraphQL Python client"
-    href="/concepts/dagit/graphql-client"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
-## Dagster types
-
-The Dagster type system provides gradual, opt-in typing for the inputs and outputs of assets and ops.
+The Dagster Type system provides gradual, opt-in typing for the inputs and outputs of assets and ops.
 
 [Learn more about Dagster types](/concepts/types).
 
----
-
-## Logging
+### Logging
 
 A rich, extensible logging system, Dagster's built-in logger tracks all execution events. Loggers can also be customized to fit your infrastructure.
 
@@ -236,10 +239,17 @@ A rich, extensible logging system, Dagster's built-in logger tracks all executio
   ></ArticleListItem>
 </ArticleList>
 
----
+### GraphQL API
 
-## Testing
+The GraphQL API allows you to interact programmatically with Dagster.
 
-Dagster enables you to build testable and maintainable data applications. It provides ways to allow you unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
-
-[Learn more about testing](/concepts/testing).
+<ArticleList>
+  <ArticleListItem
+    title="GraphQL API"
+    href="/concepts/webserver/graphql"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="GraphQL Python client"
+    href="/concepts/webserver/graphql-client"
+  ></ArticleListItem>
+</ArticleList>

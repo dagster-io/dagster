@@ -63,7 +63,7 @@ height={1130}
     </td>
   </tr>
   <tr>
-    <td>Dagit</td>
+    <td>Dagster webserver</td>
     <td>
       <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
         Deployment
@@ -183,7 +183,7 @@ The step worker is responsible for executing a single step, writing the structur
 
 ## Walkthrough
 
-We assume that you've followed the initial steps in the [previous walkthrough](/deployment/guides/kubernetes/deploying-with-helm#walkthrough) by building your docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `celery_step_isolated_job`.
+We assume that you've followed the initial steps in the [previous walkthrough](/deployment/guides/kubernetes/deploying-with-helm#walkthrough) by building your docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `pod_per_op_celery_job`.
 
 ### Configure Persistent Object Storage
 
@@ -205,21 +205,21 @@ Helm will launch several pods. You can check the status of the installation with
     NAME                                                     READY   STATUS      RESTARTS   AGE
     dagster-celery-workers-74886cfbfb-m9cbc                  1/1     Running     1          3m42s
     dagster-daemon-68c4b8d68d-vvpls                          1/1     Running     1          3m42s
-    dagster-dagit-69974dd75b-5m8gg                           1/1     Running     0          3m42s
+    dagster-webserver-69974dd75b-5m8gg                           1/1     Running     0          3m42s
     dagster-k8s-example-user-code-1-88764b4f4-25mbd          1/1     Running     0          3m42s
     dagster-postgresql-0                                     1/1     Running     0          3m42s
     dagster-rabbitmq-0                                       1/1     Running     0          3m42s
 
 ### Run a job in your deployment
 
-After Helm has successfully installed all the required kubernetes resources, start port forwarding to the Dagit pod via:
+After Helm has successfully installed all the required kubernetes resources, start port forwarding to the webserver pod via:
 
-    export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+    DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
+      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=webserver" \
       -o jsonpath="{.items[0].metadata.name}")
-    kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
+    kubectl --namespace default port-forward $DAGSTER_WEBSERVER_POD_NAME 8080:80
 
-Visit <http://127.0.0.1:8080>, and navigate to the [launchpad](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/celery_step_isolated_job/launchpad). Notice how `resources.io_manager.config.s3_bucket` is set to `dagster-test`. You can replace this string with any other accessible S3 bucket. Then, click _Launch Run_.
+Visit <http://127.0.0.1:8080>, and navigate to the [launchpad](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/pod_per_op_celery_job/launchpad). Notice how `resources.io_manager.config.s3_bucket` is set to `dagster-test`. You can replace this string with any other accessible S3 bucket. Then, click _Launch Run_.
 
 You can introspect the jobs that were launched with `kubectl`:
 
@@ -231,7 +231,7 @@ You can introspect the jobs that were launched with `kubectl`:
 
 `dagster-step-` entries correspond to step workers and `dagster-run-` entries correspond to run workers.
 
-Within Dagit, you can watch the job as it executes.
+Within the Dagster UI, you can watch the job as it executes.
 
 ### Configuring Celery Queues
 

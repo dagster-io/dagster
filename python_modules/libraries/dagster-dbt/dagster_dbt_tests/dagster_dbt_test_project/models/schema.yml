@@ -1,6 +1,13 @@
 
 version: 2
 
+sources:
+  - name: jaffle_shop
+    database: jaffle_shop
+    schema: main
+    tables:
+      - name: sort_by_calories
+
 models:
     - name: sort_by_calories
       description: "Sort the cereals table by calorie count"

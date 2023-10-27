@@ -22,6 +22,5 @@ Related Guides:
 .. autofunction:: yield_result
 
 .. autoclass:: DagstermillExecutionContext
-    :members:
 
 .. autoclass:: DagstermillError

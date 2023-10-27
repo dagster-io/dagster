@@ -1,5 +1,6 @@
 import pickle
 
+import pytest
 from dagster import (
     AssetsDefinition,
     DagsterInstance,
@@ -23,14 +24,13 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_plan
+from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     DagsterRun as DagsterRun,
 )
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -38,7 +38,7 @@ from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_gcp.gcs import FakeConfigurableGCSClient, FakeGCSClient
 from dagster_gcp.gcs.io_manager import (
-    ConfigurablePickledObjectGCSIOManager,
+    GCSPickleIOManager,
     PickledObjectGCSIOManager,
     gcs_pickle_io_manager,
 )
@@ -82,6 +82,7 @@ def define_inty_job():
     return basic_external_plan_execution
 
 
+@pytest.mark.integration
 def test_gcs_pickle_io_manager_execution(gcs_bucket):
     inty_job = define_inty_job()
 
@@ -98,7 +99,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(inty_job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryJob(inty_job), resolved_run_config)
+    execution_plan = create_execution_plan(inty_job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
@@ -249,7 +250,7 @@ def test_nothing(gcs_bucket):
     def asset1() -> None:
         ...
 
-    @asset(non_argument_deps={"asset1"})
+    @asset(deps=[asset1])
     def asset2() -> None:
         ...
 
@@ -305,7 +306,7 @@ def test_asset_pythonic_io_manager(gcs_bucket):
         [upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
         partition_key="apple",
         resources={
-            "io_manager": ConfigurablePickledObjectGCSIOManager(
+            "io_manager": GCSPickleIOManager(
                 gcs_bucket=gcs_bucket,
                 gcs_prefix="assets",
                 gcs=ResourceDefinition.hardcoded_resource(fake_gcs_client),
@@ -327,7 +328,7 @@ def test_nothing_pythonic_io_manager(gcs_bucket):
     def asset1() -> None:
         ...
 
-    @asset(non_argument_deps={"asset1"})
+    @asset(deps=[asset1])
     def asset2() -> None:
         ...
 
@@ -335,7 +336,7 @@ def test_nothing_pythonic_io_manager(gcs_bucket):
         with_resources(
             [asset1, asset2],
             resource_defs={
-                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                "io_manager": GCSPickleIOManager(
                     gcs_bucket=gcs_bucket,
                     gcs_prefix="assets",
                     gcs=ResourceDefinition.hardcoded_resource(FakeConfigurableGCSClient()),

@@ -70,8 +70,7 @@ def normalize_dependency_dict(
         for input_key, dep in dep_dict.items():
             if not isinstance(input_key, str):
                 raise DagsterInvalidDefinitionError(
-                    prelude
-                    + f"Received non-string key in the inner dict for key {key}. "
+                    prelude + f"Received non-string key in the inner dict for key {key}. "
                     f"Unexpected inner dict key type: {type(input_key)}"
                 )
             if not isinstance(dep, IDependencyDefinition):
@@ -87,8 +86,7 @@ def normalize_dependency_dict(
             normalized_dependencies[key] = dep_dict
         else:
             raise DagsterInvalidDefinitionError(
-                prelude
-                + "Expected str or NodeInvocation key in the top level dict. "
+                prelude + "Expected str or NodeInvocation key in the top level dict. "
                 "Received value {key} of type {type(key)}"
             )
 
@@ -131,12 +129,12 @@ def create_execution_structure(
     This will create:
 
     node_dict = {
-        'giver': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_1': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_2': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_3': <dagster._core.definitions.dependency.Solid object>,
-        'sleeper_4': <dagster._core.definitions.dependency.Solid object>,
-        'total': <dagster._core.definitions.dependency.Solid object>
+        'giver': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_1': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_2': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_3': <dagster._core.definitions.dependency.Node object>,
+        'sleeper_4': <dagster._core.definitions.dependency.Node object>,
+        'total': <dagster._core.definitions.dependency.Node object>
     }
 
     as well as a dagster._core.definitions.dependency.DependencyStructure object.

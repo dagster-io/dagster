@@ -3,7 +3,7 @@ import os
 
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.bash_operator import BashOperator  # type: ignore
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
@@ -81,7 +81,7 @@ def get_dag():
 
 
 @requires_no_db
-def test_pipeline_tags():
+def test_job_tags():
     dag = get_dag()
 
     with instance_for_test() as instance:
@@ -102,7 +102,7 @@ def test_pipeline_tags():
 
 
 @requires_no_db
-def test_pipeline_auto_tag():
+def test_job_auto_tag():
     dag = get_dag()
 
     with instance_for_test() as instance:

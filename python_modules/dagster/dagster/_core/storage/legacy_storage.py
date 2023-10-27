@@ -9,11 +9,19 @@ from typing import (
     Union,
 )
 
-from dagster import _check as check
+from dagster import (
+    _check as check,
+)
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 from .base_storage import DagsterStorage
 from .event_log.base import (
@@ -23,11 +31,11 @@ from .event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
 )
-from .runs.base import RunGroupInfo, RunStorage
+from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.events import AssetKey
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
@@ -36,6 +44,7 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.origin import ExternalJobOrigin
     from dagster._core.instance import DagsterInstance
     from dagster._core.scheduler.instigation import (
+        AutoMaterializeAssetEvaluationRecord,
         InstigatorState,
         InstigatorStatus,
         InstigatorTick,
@@ -43,9 +52,8 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.pipeline_snapshot import JobSnapshot
-    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-    from dagster._core.storage.pipeline_run import (
+    from dagster._core.snap.job_snapshot import JobSnapshot
+    from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,
         JobBucket,
@@ -54,6 +62,7 @@ if TYPE_CHECKING:
         RunsFilter,
         TagBucket,
     )
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._daemon.types import DaemonHeartbeat
 
 
@@ -196,19 +205,19 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     ) -> Iterable["DagsterRun"]:
         return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by)
 
+    def get_run_ids(
+        self,
+        filters: Optional["RunsFilter"] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Iterable[str]:
+        return self._storage.run_storage.get_run_ids(filters, cursor=cursor, limit=limit)
+
     def get_runs_count(self, filters: Optional["RunsFilter"] = None) -> int:
         return self._storage.run_storage.get_runs_count(filters)
 
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable["DagsterRun"]]]:
         return self._storage.run_storage.get_run_group(run_id)
-
-    def get_run_groups(
-        self,
-        filters: Optional["RunsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> Mapping[str, RunGroupInfo]:
-        return self._storage.run_storage.get_run_groups(filters, cursor, limit)
 
     def get_run_records(
         self,
@@ -282,10 +291,6 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def delete_run(self, run_id: str) -> None:
         return self._storage.run_storage.delete_run(run_id)
 
-    @property
-    def supports_bucket_queries(self) -> bool:
-        return self._storage.run_storage.supports_bucket_queries
-
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.migrate(print_fn, force_rebuild_all)
 
@@ -295,8 +300,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.run_storage.dispose()
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.run_storage.optimize_for_dagit(statement_timeout, pool_recycle)
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        return self._storage.run_storage.optimize_for_webserver(statement_timeout, pool_recycle)
 
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
         return self._storage.run_storage.add_daemon_heartbeat(daemon_heartbeat)
@@ -372,6 +377,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def _instance(self) -> Optional["DagsterInstance"]:
         return self._storage._instance  # noqa: SLF001
 
+    def index_connection(self):
+        return self._storage.event_log_storage.index_connection()
+
     def register_instance(self, instance: "DagsterInstance") -> None:
         if not self._storage.has_instance:
             self._storage.register_instance(instance)
@@ -382,8 +390,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> Iterable["EventLogEntry"]:
-        return self._storage.event_log_storage.get_logs_for_run(run_id, cursor, of_type, limit)
+        return self._storage.event_log_storage.get_logs_for_run(
+            run_id, cursor, of_type, limit, ascending
+        )
 
     def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
@@ -424,8 +435,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.event_log_storage.dispose()
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.event_log_storage.optimize_for_dagit(statement_timeout, pool_recycle)
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        return self._storage.event_log_storage.optimize_for_webserver(
+            statement_timeout, pool_recycle
+        )
 
     def get_event_records(
         self,
@@ -436,7 +449,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         # type ignored because `get_event_records` does not accept None. Unclear which type
         # annotation is wrong.
         return self._storage.event_log_storage.get_event_records(
-            event_records_filter, limit, ascending  # type: ignore
+            event_records_filter,  # type: ignore
+            limit,
+            ascending,
         )
 
     def get_asset_records(
@@ -459,15 +474,22 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_asset_keys(prefix, limit, cursor)
 
     def get_latest_materialization_events(
-        self, asset_keys: Sequence["AssetKey"]
+        self, asset_keys: Iterable["AssetKey"]
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         return self._storage.event_log_storage.get_latest_materialization_events(asset_keys)
 
-    def get_asset_run_ids(self, asset_key: "AssetKey") -> Iterable[str]:
-        return self._storage.event_log_storage.get_asset_run_ids(asset_key)
-
     def wipe_asset(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset(asset_key)
+
+    def get_materialized_partitions(
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_materialized_partitions(
+            asset_key, before_cursor, after_cursor
+        )
 
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence["AssetKey"], after_cursor: Optional[int] = None
@@ -476,11 +498,31 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_keys, after_cursor
         )
 
+    def get_latest_storage_id_by_partition(
+        self, asset_key: "AssetKey", event_type: "DagsterEventType"
+    ) -> Mapping[str, int]:
+        return self._storage.event_log_storage.get_latest_storage_id_by_partition(
+            asset_key, event_type
+        )
+
+    def get_latest_tags_by_partition(
+        self,
+        asset_key: "AssetKey",
+        event_type: "DagsterEventType",
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
+        return self._storage.event_log_storage.get_latest_tags_by_partition(
+            asset_key, event_type, tag_keys, asset_partitions, before_cursor, after_cursor
+        )
+
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: "AssetKey"
+        self, asset_key: "AssetKey", after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         return self._storage.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-            asset_key
+            asset_key, after_storage_id
         )
 
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
@@ -532,8 +574,59 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         cursor: Optional[str] = None,
         of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> EventLogConnection:
-        return self._storage.event_log_storage.get_records_for_run(run_id, cursor, of_type, limit)
+        return self._storage.event_log_storage.get_records_for_run(
+            run_id, cursor, of_type, limit, ascending
+        )
+
+    def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
+        return self._storage.event_log_storage.set_concurrency_slots(concurrency_key, num)
+
+    def get_concurrency_keys(self) -> Set[str]:
+        return self._storage.event_log_storage.get_concurrency_keys()
+
+    def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
+        return self._storage.event_log_storage.get_concurrency_info(concurrency_key)
+
+    def claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+    ) -> ConcurrencyClaimStatus:
+        return self._storage.event_log_storage.claim_concurrency_slot(
+            concurrency_key, run_id, step_key, priority
+        )
+
+    def check_concurrency_claim(self, concurrency_key: str, run_id: str, step_key: str):
+        return self._storage.event_log_storage.check_concurrency_claim(
+            concurrency_key, run_id, step_key
+        )
+
+    def get_concurrency_run_ids(self) -> Set[str]:
+        return self._storage.event_log_storage.get_concurrency_run_ids()
+
+    def free_concurrency_slots_for_run(self, run_id: str) -> None:
+        return self._storage.event_log_storage.free_concurrency_slots_for_run(run_id)
+
+    def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
+        return self._storage.event_log_storage.free_concurrency_slot_for_step(run_id, step_key)
+
+    def get_asset_check_execution_history(
+        self,
+        check_key: "AssetCheckKey",
+        limit: int,
+        cursor: Optional[int] = None,
+    ) -> Sequence[AssetCheckExecutionRecord]:
+        return self._storage.event_log_storage.get_asset_check_execution_history(
+            check_key=check_key,
+            limit=limit,
+            cursor=cursor,
+        )
+
+    def get_latest_asset_check_execution_by_key(
+        self,
+        check_keys: Sequence["AssetCheckKey"],
+    ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
+        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
@@ -641,6 +734,32 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
             origin_id, selector_id, before, tick_statuses
         )
 
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ) -> None:
+        return self._storage.schedule_storage.add_auto_materialize_asset_evaluations(
+            evaluation_id, asset_evaluations
+        )
+
+    def get_auto_materialize_asset_evaluations(
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
+        return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
+            asset_key, limit, cursor
+        )
+
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
+        return self._storage.schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+            evaluation_id
+        )
+
+    def purge_asset_evaluations(self, before: float):
+        return self._storage.schedule_storage.purge_asset_evaluations(before)
+
     def upgrade(self) -> None:
         return self._storage.schedule_storage.upgrade()
 
@@ -650,8 +769,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.schedule_storage.optimize_for_dagit(statement_timeout, pool_recycle)
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        return self._storage.schedule_storage.optimize_for_webserver(
+            statement_timeout, pool_recycle
+        )
 
     def dispose(self) -> None:
         return self._storage.schedule_storage.dispose()

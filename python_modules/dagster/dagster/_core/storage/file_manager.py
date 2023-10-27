@@ -11,7 +11,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._config import Field, StringSource
-from dagster._core.definitions.resource_definition import resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.instance import DagsterInstance
 from dagster._utils import mkdir_p
@@ -167,6 +167,7 @@ class FileManager(ABC):
         raise NotImplementedError()
 
 
+@dagster_maintained_resource
 @resource(config_schema={"base_dir": Field(StringSource, is_required=False)})
 def local_file_manager(init_context: InitResourceContext) -> "LocalFileManager":
     """FileManager that provides abstract access to a local filesystem.
@@ -223,7 +224,8 @@ def local_file_manager(init_context: InitResourceContext) -> "LocalFileManager":
     """
     return LocalFileManager(
         base_dir=init_context.resource_config.get(
-            "base_dir", os.path.join(init_context.instance.storage_directory(), "file_manager")  # type: ignore  # (possible none)
+            "base_dir",
+            os.path.join(init_context.instance.storage_directory(), "file_manager"),  # type: ignore  # (possible none)
         )
     )
 

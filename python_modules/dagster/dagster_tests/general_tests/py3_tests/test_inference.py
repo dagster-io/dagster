@@ -19,7 +19,7 @@ from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-def test_infer_solid_description_from_docstring():
+def test_infer_op_description_from_docstring():
     @op
     def my_op(_):
         """Here is some docstring."""
@@ -27,7 +27,7 @@ def test_infer_solid_description_from_docstring():
     assert my_op.description == "Here is some docstring."
 
 
-def test_infer_solid_description_no_docstring():
+def test_infer_op_description_no_docstring():
     @op
     def my_op(_):
         pass
@@ -109,6 +109,37 @@ def test_single_typed_input_and_output_lambda():
 
     assert len(add_one.output_defs) == 1
     assert add_one.output_defs[0].dagster_type.unique_name == "Int"
+
+
+def test_string_typed_input_and_output():
+    @op
+    def add_one(_context, num: "Optional[int]") -> "int":
+        return num + 1 if num else 1
+
+    assert add_one
+    assert len(add_one.input_defs) == 1
+    assert add_one.input_defs[0].name == "num"
+    assert add_one.input_defs[0].dagster_type.display_name == "Int?"
+
+    assert len(add_one.output_defs) == 1
+    assert add_one.output_defs[0].dagster_type.unique_name == "Int"
+
+
+def _make_foo():
+    class Foo:
+        pass
+
+    def foo(x: "Foo") -> "Foo":
+        return x
+
+    return foo
+
+
+def test_invalid_string_typed_input():
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='Failed to resolve type annotation "Foo"'
+    ):
+        op(_make_foo())
 
 
 def test_wrapped_input_and_output_lambda():
@@ -498,7 +529,7 @@ def test_use_auto_type_twice():
     my_job.execute_in_process()
 
 
-def test_register_after_solid_definition():
+def test_register_after_op_definition():
     class MyClass:
         pass
 

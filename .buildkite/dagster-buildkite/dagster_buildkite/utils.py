@@ -12,9 +12,9 @@ from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 from dagster_buildkite.git import ChangedFiles, get_commit_message
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
-    "rex@elementl.com": "eng-buildkite-rex",
-    "dish@elementl.com": "eng-buildkite-dish",
-    "johann@elementl.com": "eng-buildkite-johann",
+    "rex@dagsterlabs.com": "eng-buildkite-rex",
+    "dish@dagsterlabs.com": "eng-buildkite-dish",
+    "johann@dagsterlabs.com": "eng-buildkite-johann",
 }
 
 # ########################
@@ -131,13 +131,11 @@ def network_buildkite_container(network_name: str) -> List[str]:
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
-        "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
+        "export CONTAINER_ID=`cat /etc/hostname`",
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
         # network to make the target containers visible...
-        "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
-            network_name=network_name
-        ),
+        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
     ]
 
 

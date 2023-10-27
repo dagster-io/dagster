@@ -14,7 +14,7 @@ from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.instance import T_DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
@@ -71,10 +71,8 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         )
         check.invariant(
             self._max_concurrent_runs >= -1,
-            (
-                "Negative values other than -1 (which disables the limit) for max_concurrent_runs"
-                " are disallowed."
-            ),
+            "Negative values other than -1 (which disables the limit) for max_concurrent_runs"
+            " are disallowed.",
         )
         self._tag_concurrency_limits: Sequence[Mapping[str, Any]] = check.opt_list_param(
             tag_concurrency_limits,

@@ -1,9 +1,8 @@
 import os
 import pickle
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field
-from upath import UPath
 
 import dagster._check as check
 from dagster import (
@@ -18,9 +17,13 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL, mkdir_p
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
+    from upath import UPath
 
 
 class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemIOManager"]):
@@ -120,11 +123,16 @@ class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemI
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def create_io_manager(self, context: InitResourceContext) -> "PickledObjectFilesystemIOManager":
         base_dir = self.base_dir or check.not_none(context.instance).storage_directory()
         return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
+@dagster_maintained_io_manager
 @io_manager(
     config_schema=FilesystemIOManager.to_config_schema(),
     description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
@@ -240,11 +248,13 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
     extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
 
     def __init__(self, base_dir=None, **kwargs):
+        from upath import UPath
+
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
 
         super().__init__(base_path=UPath(base_dir, **kwargs))
 
-    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+    def dump_to_path(self, context: OutputContext, obj: Any, path: "UPath"):
         try:
             with path.open("wb") as file:
                 pickle.dump(obj, file, PICKLE_PROTOCOL)
@@ -269,7 +279,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
                 "https://docs.dagster.io/deployment/executors#overview"
             ) from e
 
-    def load_from_path(self, context: InputContext, path: UPath) -> Any:
+    def load_from_path(self, context: InputContext, path: "UPath") -> Any:
         with path.open("rb") as file:
             return pickle.load(file)
 
@@ -285,8 +295,8 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
     def __init__(self, base_dir: Optional[str] = None):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
-        self.write_mode = "wb"
-        self.read_mode = "rb"
+        self.write_mode: Literal["wb"] = "wb"
+        self.read_mode: Literal["rb"] = "rb"
 
     def _get_path(self, path: str) -> str:
         return os.path.join(self.base_dir, path)  # type: ignore  # (possible none)
@@ -327,6 +337,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             return pickle.load(read_obj)
 
 
+@dagster_maintained_io_manager
 @io_manager(config_schema={"base_dir": DagsterField(StringSource, is_required=True)})
 @experimental
 def custom_path_fs_io_manager(

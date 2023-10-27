@@ -144,7 +144,7 @@ def test_even_type_loader():
     with pytest.raises(AssertionError):
         wrap_op_in_graph_and_execute(
             double_even,
-            run_config={"solids": {"double_even": {"inputs": {"even_num": 3}}}},
+            run_config={"ops": {"double_even": {"inputs": {"even_num": 3}}}},
             do_input_mapping=False,
         )
 

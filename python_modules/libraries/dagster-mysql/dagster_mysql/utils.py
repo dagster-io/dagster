@@ -58,13 +58,7 @@ def mysql_url_from_config(config_value: MySqlStorageConfig) -> str:
 def get_conn_string(
     username: str, password: str, hostname: str, db_name: str, port: Union[int, str] = "3306"
 ) -> str:
-    return "mysql+mysqlconnector://{username}:{password}@{hostname}:{port}/{db_name}".format(
-        username=username,
-        password=urlquote(password),
-        hostname=hostname,
-        db_name=db_name,
-        port=port,
-    )
+    return f"mysql+mysqlconnector://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
 
 
 def parse_mysql_version(version: str) -> Tuple[int, ...]:
@@ -178,6 +172,16 @@ def mysql_alembic_config(dunder_file: str) -> Config:
     return get_alembic_config(dunder_file, config_path="../alembic/alembic.ini")
 
 
+def mysql_isolation_level():
+    if db.__version__.startswith("2.") or db.__version__.startswith("1.4"):
+        # Starting with 1.4, the ability to emulate autocommit was deprecated, so we need to
+        # explicitly call commit on the connection for MySQL where the AUTOCOMMIT isolation
+        # level is not supported.  We should then set the isolation level to the MySQL default
+        return "REPEATABLE READ"
+
+    return "AUTOCOMMIT"
+
+
 @contextmanager
 def create_mysql_connection(
     engine: db.engine.Engine, dunder_file: str, storage_type_desc: Optional[str] = None
@@ -191,11 +195,7 @@ def create_mysql_connection(
     else:
         storage_type_desc = ""
 
-    conn = None
-    try:
-        # Retry connection to gracefully handle transient connection issues
-        conn = retry_mysql_connection_fn(engine.connect)
-        yield conn
-    finally:
-        if conn:
-            conn.close()
+    conn_cm = retry_mysql_connection_fn(engine.connect)
+    with conn_cm as conn:
+        with conn.begin():
+            yield conn

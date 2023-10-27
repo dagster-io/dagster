@@ -9,7 +9,7 @@ from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.scheduler.instigation import TickStatus
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,

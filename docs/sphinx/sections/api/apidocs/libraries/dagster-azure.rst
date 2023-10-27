@@ -4,24 +4,28 @@ Azure (dagster-azure)
 Utilities for using Azure Storage Accounts with Dagster. This is mostly aimed at Azure Data Lake
 Storage Gen 2 (ADLS2) but also contains some utilities for Azure Blob Storage.
 
-|
-
-**NOTE:** This package is incompatible with ``dagster-snowflake``! This is due to a version mismatch
-between the underlying ``azure-storage-blob`` package; ``dagster-snowflake`` has a transitive
-dependency on an old version, via ``snowflake-connector-python``.
-
 
 .. currentmodule:: dagster_azure
 
-.. autoconfigurable:: dagster_azure.adls2.adls2_resource
+Resources
+^^^^^^^^^^
+
+.. autoconfigurable:: dagster_azure.adls2.ADLS2Resource
   :annotation: ResourceDefinition
 
-.. autoclass:: dagster_azure.adls2.FakeADLS2Resource
+.. autoconfigurable:: dagster_azure.adls2.FakeADLS2Resource
+    :annotation: ResourceDefinition
 
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
 
-.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
+
+I/O Manager
+^^^^^^^^^^^
+
+.. autoconfigurable::  dagster_azure.adls2.ADLS2PickleIOManager
   :annotation: IOManagerDefinition
+
+
 
 File Manager (Experimental)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,3 +35,15 @@ File Manager (Experimental)
 
 .. autoclass:: dagster_azure.adls2.ADLS2FileHandle
   :members:
+
+
+Legacy
+^^^^^^^
+.. autoconfigurable::  dagster_azure.adls2.ConfigurablePickledObjectADLS2IOManager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: dagster_azure.adls2.adls2_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
+  :annotation: IOManagerDefinition

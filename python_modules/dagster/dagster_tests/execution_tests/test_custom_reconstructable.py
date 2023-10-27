@@ -36,7 +36,7 @@ def reconstruct_job(factory_prefix: str, has_nested_scope_op: bool, name: str) -
     return factory.make_job(has_nested_scope_op, name=name)
 
 
-def test_build_reconstructable_pipeline():
+def test_build_reconstructable_job():
     sys_path = sys.path
     try:
         factory = JobFactory("foo_")
@@ -64,7 +64,7 @@ def test_build_reconstructable_pipeline():
         sys.path = sys_path
 
 
-def test_build_reconstructable_pipeline_serdes():
+def test_build_reconstructable_job_serdes():
     sys_path = sys.path
     try:
         factory = JobFactory("foo_")

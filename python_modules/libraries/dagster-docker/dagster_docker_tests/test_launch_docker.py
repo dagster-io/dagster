@@ -7,23 +7,24 @@ import time
 
 import docker
 import pytest
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
 from dagster._utils.yaml_utils import merge_yamls
 from dagster_docker.docker_run_launcher import DOCKER_CONTAINER_ID_TAG, DOCKER_IMAGE_TAG
 from dagster_test.test_project import (
-    ReOriginatedExternalPipelineForTest,
+    ReOriginatedExternalJobForTest,
     find_local_test_image,
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_recon_job,
-    get_test_project_workspace_and_external_pipeline,
+    get_test_project_workspace_and_external_job,
 )
 
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
+@pytest.mark.integration
 def test_launch_docker_no_network(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {"env_vars": aws_env}
@@ -53,11 +54,11 @@ def test_launch_docker_no_network(aws_env):
         },
     ) as instance:
         recon_job = get_test_project_recon_job("demo_job_s3", docker_image)
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance, "demo_job_s3", container_image=docker_image
-        ) as (workspace, orig_pipeline):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline,
+        ) as (workspace, orig_job):
+            external_job = ReOriginatedExternalJobForTest(
+                orig_job,
                 container_image=docker_image,
             )
             run = instance.create_run_for_job(
@@ -100,8 +101,9 @@ def test_launch_docker_no_network(aws_env):
                     container.remove(force=True)
 
 
-def test_launch_docker_image_on_pipeline_config(aws_env):
-    # Docker image name to use for launch specified as part of the pipeline origin
+@pytest.mark.integration
+def test_launch_docker_image_on_job_config(aws_env):
+    # Docker image name to use for launch specified as part of the job origin
     # rather than in the run launcher instance config
 
     docker_image = get_test_project_docker_image()
@@ -136,11 +138,11 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
             }
         ) as instance:
             recon_job = get_test_project_recon_job("demo_job_s3", docker_image)
-            with get_test_project_workspace_and_external_pipeline(
+            with get_test_project_workspace_and_external_job(
                 instance, "demo_job_s3", container_image=docker_image
-            ) as (workspace, orig_pipeline):
-                external_job = ReOriginatedExternalPipelineForTest(
-                    orig_pipeline,
+            ) as (workspace, orig_job):
+                external_job = ReOriginatedExternalJobForTest(
+                    orig_job,
                     container_image=docker_image,
                 )
                 run = instance.create_run_for_job(
@@ -172,6 +174,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
         )
 
 
+@pytest.mark.integration
 def test_terminate_launched_docker_run(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -200,11 +203,11 @@ def test_terminate_launched_docker_run(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("hanging_job", docker_image)
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance, "hanging_job", container_image=docker_image
-        ) as (workspace, orig_pipeline):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline,
+        ) as (workspace, orig_job):
+            external_job = ReOriginatedExternalJobForTest(
+                orig_job,
                 container_image=docker_image,
             )
 
@@ -240,6 +243,7 @@ def test_terminate_launched_docker_run(aws_env):
             )
 
 
+@pytest.mark.integration
 def test_launch_docker_invalid_image(aws_env):
     docker_image = "_invalid_format_image"
     launcher_config = {
@@ -268,11 +272,11 @@ def test_launch_docker_invalid_image(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_job_s3")
-        with get_test_project_workspace_and_external_pipeline(instance, "demo_job_s3") as (
+        with get_test_project_workspace_and_external_job(instance, "demo_job_s3") as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(orig_pipeline)
+            external_job = ReOriginatedExternalJobForTest(orig_job)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
@@ -290,6 +294,7 @@ def test_launch_docker_invalid_image(aws_env):
                 instance.launch_run(run.run_id, workspace)
 
 
+@pytest.mark.integration
 def test_launch_docker_image_on_instance_config(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -301,6 +306,7 @@ def test_launch_docker_image_on_instance_config(aws_env):
     _test_launch(docker_image, launcher_config)
 
 
+@pytest.mark.integration
 def test_launch_docker_image_multiple_networks(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -314,6 +320,7 @@ def test_launch_docker_image_multiple_networks(aws_env):
     _test_launch(docker_image, launcher_config)
 
 
+@pytest.mark.integration
 def test_launch_docker_config_on_container_context(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {}
@@ -333,6 +340,7 @@ def test_launch_docker_config_on_container_context(aws_env):
     )
 
 
+@pytest.mark.integration
 def test_cant_combine_network_and_networks(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -356,6 +364,7 @@ def test_cant_combine_network_and_networks(aws_env):
             print(instance.run_launcher)  # noqa: T201
 
 
+@pytest.mark.integration
 def test_terminate(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -394,13 +403,13 @@ def _test_launch(
         recon_job = get_test_project_recon_job(
             "demo_job_s3", container_image=container_image, container_context=container_context
         )
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance, "demo_job_s3", container_image=container_image
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(orig_pipeline)
+            external_job = ReOriginatedExternalJobForTest(orig_job)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),

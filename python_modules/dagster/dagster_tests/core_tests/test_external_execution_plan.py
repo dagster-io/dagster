@@ -27,7 +27,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
@@ -37,7 +37,6 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
@@ -90,7 +89,7 @@ def test_using_file_system_for_subplan():
     instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(foo_job)
-    execution_plan = ExecutionPlan.build(InMemoryJob(foo_job), resolved_run_config)
+    execution_plan = create_execution_plan(foo_job)
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
     assert execution_plan.get_step_by_key("return_one")
 
@@ -135,9 +134,8 @@ def test_using_file_system_for_subplan_multiprocessing():
             foo_job.get_definition(),
         )
 
-        execution_plan = ExecutionPlan.build(
+        execution_plan = create_execution_plan(
             foo_job,
-            resolved_run_config,
         )
         run = instance.create_run_for_job(
             job_def=foo_job.get_definition(), execution_plan=execution_plan
@@ -193,13 +191,8 @@ def test_execute_step_wrong_step_key():
     foo_job = define_inty_job()
     instance = DagsterInstance.ephemeral()
 
-    resolved_run_config = ResolvedRunConfig.build(
-        foo_job,
-    )
-    execution_plan = ExecutionPlan.build(
-        InMemoryJob(foo_job),
-        resolved_run_config,
-    )
+    resolved_run_config = ResolvedRunConfig.build(foo_job)
+    execution_plan = create_execution_plan(foo_job)
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
@@ -233,13 +226,8 @@ def test_using_file_system_for_subplan_missing_input():
     foo_job = define_inty_job(using_file_system=True)
 
     instance = DagsterInstance.ephemeral()
-    resolved_run_config = ResolvedRunConfig.build(
-        foo_job,
-    )
-    execution_plan = ExecutionPlan.build(
-        InMemoryJob(foo_job),
-        resolved_run_config,
-    )
+    resolved_run_config = ResolvedRunConfig.build(foo_job)
+    execution_plan = create_execution_plan(foo_job)
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 
     events = execute_plan(
@@ -259,13 +247,8 @@ def test_using_file_system_for_subplan_invalid_step():
 
     instance = DagsterInstance.ephemeral()
 
-    resolved_run_config = ResolvedRunConfig.build(
-        foo_job,
-    )
-    execution_plan = ExecutionPlan.build(
-        InMemoryJob(foo_job),
-        resolved_run_config,
-    )
+    resolved_run_config = ResolvedRunConfig.build(foo_job)
+    execution_plan = create_execution_plan(foo_job)
 
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 

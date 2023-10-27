@@ -1,6 +1,239 @@
-# Introduction
+# Version migration
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
+
+## Migrating to 1.5.0
+
+### Breaking changes
+
+- The UI dialog for launching a backfill no longer includes a toggle to determine whether the backfill is launched as a single run or multiple runs. This toggle was misleading, because it implied that all backfills could be launched as single-run backfills, when it actually required special handling in the implementations of the assets targeted by the backfill to achieve this behavior. Instead, whether to execute a backfill as a single run is now determined by a setting on the asset definition. To enable single-run backfills, set `backfill_policy=BackfillPolicy.single_run()` on the asset definitions. Refer to the [docs on single-run backfills](/concepts/partitions-schedules-sensors/backfills#single-run-backfills) for more information.
+
+- `AssetExecutionContext` is now a subclass of `OpExecutionContext`, not a type alias. The code
+
+```python
+def my_helper_function(context: AssetExecutionContext):
+    ...
+
+@op
+def my_op(context: OpExecutionContext):
+    my_helper_function(context)
+```
+
+will cause type checking errors. To migrate, update type hints to respect the new subclassing.
+
+- `AssetExecutionContext` cannot be used as the type annotation for `@op`s. To migrate, update the type hint in `@op` to `OpExecutionContext`. `@op`s that are used in `@graph_assets` may still use the `AssetExecutionContext` type hint.
+
+```python
+# old
+@op
+def my_op(context: AssetExecutionContext):
+    ...
+
+# correct
+@op
+def my_op(context: OpExecutionContext):
+    ...
+```
+
+- `AssetCheckResult(success=True)` is renamed to `AssetCheckResult(passed=True)`
+
+- Asset checks defined with Dagster version 1.4 will no longer work with Dagster Cloud, or with Dagster UI 1.5. Upgrade your `dagster` library to continue using checks.
+
+## Migrating to 1.4.0
+
+### Deprecations
+
+- The `dagit` python package and all references to it are now deprecated. We will continue to publish `dagit` and support APIs that used the term “dagit” until v2.0, but you should transition to newer `dagster-webserver` package. This is a drop-in replacement for `dagit`. Like `dagit`, it exposes an executable of the same name as the package itself, i.e. `dagster-webserver`.
+- Any Dockerfiles or other Python environment specifications used for running the webserver now use `dagster-webserver` instead, e.g.:
+
+```dockerfile
+# no (deprecated)
+RUN pip install dagster dagit ...
+...
+ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
+
+# yes
+RUN pip install dagster dagster-webserver
+...
+ENTRYPOINT ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
+```
+
+- [Helm Chart] Three fields that were using the term “dagit” have been deprecated and replaced with “dagsterWebserver” instead:
+
+```yaml
+# no (deprecated)
+dagit:
+  ...
+  # ...
+ingress:
+  dagit: ...
+  readOnlyDagit: ...
+
+# yes
+dagsterWebserver:
+  ...
+  # ...
+ingress:
+  dagsterWebserver: ...
+  readOnlyDagsterWebserver: ...
+```
+
+- We’ve deprecated the `non_argument_deps` parameter of `@asset` and `@multi_asset` in favor of a new `deps` parameter. To update your code to use `deps`, simply rename any instances of `non_argument_deps` to `deps` and change the type from a set to list. Additionally, you may also want to begin passing the python symbols for assets, rather than their `AssetKey`s to improve in-editor experience with type-aheads and linting.
+
+```python
+@asset
+def my_asset():
+   ...
+
+@asset(
+   non_argument_deps={"my_asset"}
+)
+def a_downstream_asset():
+   ...
+
+# becomes
+
+@asset
+def my_asset():
+   ...
+
+@asset(
+   deps=["my_asset"]
+)
+def a_downstream_asset():
+   ...
+
+# or
+
+@asset
+def my_asset():
+   ...
+
+@asset(
+   deps=[my_asset]
+)
+def a_downstream_asset():
+   ...
+```
+
+- [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:DescribeResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
+- [dagster-dbt] `DbtCliClientResource`, `dbt_cli_resource` and `DbtCliOutput` are now being deprecated in favor of `DbtCliResource`. `dagster-dbt` Asset APIs like `load_assets_from_dbt_manifest` and `load_assets_from_dbt_project` will continue to work if given either a `DbtCliClientResource` or `DbtCliResource`.
+
+```python
+# old
+@op
+def my_dbt_op(dbt_resource: DbtCliClientResource):
+    dbt: DbtCliClient = dbt.get_client()
+
+    dbt.cli("run")
+
+    dbt.cli("run", full_refresh=True)
+
+    dbt.cli("test")
+    manifest_json = dbt.get_manifest_json()
+
+# new
+with Path("my/dbt/manifest").open() as handle:
+    manifest = json.loads(dbt_manifest.read())
+
+@op
+def my_dbt_op(dbt: DbtCliResource):
+   dbt.cli(["run"], manifest=manifest).stream()
+
+   dbt.cli(["run", "--full-refresh"], manifest=manifest).stream()
+
+   dbt_test_invocation = dbt.cli(["test"], manifest_manifest).stream()
+   manifest_json = dbt_test_invocation.get_artifact("manifest.json")
+
+# old
+dbt_assets = load_assets_from_dbt_project(project_dir="my/dbt/project")
+
+defs = Definitions(
+    assets=dbt_assets,
+    resources={
+        "dbt": DbtCliClientResource(project_dir="my/dbt/project")
+    },
+)
+
+# new
+dbt_assets = load_assets_from_dbt_project(project_dir="my/dbt/project")
+
+defs = Definitions(
+    assets=dbt_assets,
+    resources={
+        "dbt": DbtCliResource(project_dir="my/dbt/project")
+    }
+)
+
+```
+
+- The following arguments on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` are now deprecated in favor of other options. Arguments will continue to work when passed into these functions, but a deprecation warning will be emitted.
+
+| Deprecated Arguments                      | Recommendation                                                                                                                                                   |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key_prefix`                              | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`                                                                                  |
+| `source_key_prefix`                       | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`                                                                                  |
+| `op_name`                                 | Use the `@dbt_assets` decorator if you need to customize your op name.                                                                                           |
+| `manifest_json`                           | Use the `manifest` parameter instead.                                                                                                                            |
+| `display_raw_sql`                         | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_description`.                                                                               |
+| `selected_unique_ids`                     | Use the `select` parameter instead.                                                                                                                              |
+| `dbt_resource_key`                        | Use the `@dbt_assets` decorator if you need to customize your resource key.                                                                                      |
+| `use_build_command`                       | Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands.                                                                            |
+| `partitions_def`                          | Use the `@dbt_assets` decorator to define partitioned dbt assets.                                                                                                |
+| `partition_key_to_vars_fn`                | Use the `@dbt_assets` decorator to define partitioned dbt assets.                                                                                                |
+| `runtime_metadata_fn`                     | Use the `@dbt_assets` decorator if you need to customize runtime metadata.                                                                                       |
+| `node_info_to_asset_key_fn`               | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`.                                                                                 |
+| `node_info_to_group_fn`                   | Instead, configure dagster groups on a dbt resource's meta field, assign dbt groups, or provide a custom `DagsterDbtTranslator` that overrides `get_group_name`. |
+| `node_info_to_auto_materialize_policy_fn` | Instead, configure Dagster auto-materialize policies on a dbt resource's meta field.                                                                             |
+| `node_info_to_freshness_policy_fn`        | Instead, configure Dagster freshness policies on a dbt resource's meta field.                                                                                    |
+| `node_info_to_definition_metadata_fn`     | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_metadata`.                                                                                  |
+
+### Breaking changes
+
+- From this release forward Dagster will no longer be tested against Python 3.7. Python 3.7 reached end of life on June 27th 2023 meaning it will no longer receive any security fixes. Previously releases will continue to work on 3.7. Details about moving to 3.8 or beyond can be found at https://docs.python.org/3/whatsnew/3.8.html#porting-to-python-3-8 .
+- `build_asset_reconciliation_sensor` (Experimental) has been removed. It was deprecated in 1.3 in favor of `AutoMaterializePolicy`. Docs are [here](https://docs.dagster.io/concepts/assets/asset-auto-execution).
+- The `dagster-dbt` integration with `dbt-rpc` has been removed, as [the dbt plugin is being deprecated](https://github.com/dbt-labs/dbt-rpc).
+- Previously, `DbtCliResource` was a class alias for `DbtCliClientResource`. Now, `DbtCliResource` is a new resource with a different API. Furthermore, it requires at least `dbt-core>=1.4` to run.
+- [Helm Chart] If upgrading an existing installation to 1.4 and the `dagit.nameOverride` value is set, you will need to either change the value or delete the existing deployment to allow helm to update values that can not be patched for the rename from dagit to dagster-webserver.
+- [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now default to `use_build=True`. To switch back to the previous behavior, use `use_build=False`.
+
+```python
+from dagster_dbt import group_from_dbt_resource_props_fallback_to_directory
+
+load_assets_from_dbt_project(
+    ...,
+    use_build=False,
+)
+```
+
+- [dagster-dbt] The default assignment of groups to dbt models loaded from `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` has changed. Rather than assigning a group name using the model’s subdirectory, a group name will be assigned using the dbt model’s [dbt group](https://docs.getdbt.com/docs/build/groups). To switch back to the previous behavior, use the following utility function, `group_from_dbt_resource_props_fallback_to_directory`:
+
+```python
+from dagster_dbt import group_from_dbt_resource_props_fallback_to_directory
+
+load_assets_from_dbt_project(
+    ...,
+    node_info_to_group_fn=group_from_dbt_resource_props_fallback_to_directory,
+)
+```
+
+- [dagster-dbt] The argument `node_info_to_definition_metadata_fn` for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now overrides metadata instead of adding to it. To switch back to the previous behavior, use the following utility function:
+
+```python
+from dagster_dbt import default_metadata_from_dbt_resource_props
+
+def my_metadata_from_dbt_resource_props(dbt_resource_props):
+    my_metadata = {...}
+    return {**default_metadata_from_dbt_resource_props(dbt_resource_props), **my_metadata}
+
+load_assets_from_dbt_manifest(
+    ...,
+    node_info_to_definition_metadata_fn=my_metadata_from_dbt_resource_props
+)
+```
+
+- [dagster-dbt] The arguments for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now must be specified using keyword arguments.
+- [dagster-dbt] When using the new `DbtCliResource` with `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, stdout logs from the dbt process will now appear in the compute logs instead of the event logs. To view these compute logs, you should ensure that your Dagster instance has [compute log storage configured](https://docs.dagster.io/deployment/dagster-instance#compute-log-storage).
 
 ## Migrating to 1.3.0
 
@@ -127,7 +360,7 @@ to make sure the correct library version is installed.
 
 ### Legacy API Removals
 
-- Dagster's legacy APIs, which were marked "legacy" in 0.13.0, have been removed. This includes `@solid`, `SolidDefinition`, `@pipeline`, `PipelineDefinition`, `@composite_solid`, `CompositeSolidDefinition`, `ModeDefinition`, `PresetDefinition`, `PartitionSetDefinition`, `InputDefinition`, `OutputDefinition`, `DynamicOutputDefinition`, `pipeline_failure_sensor`, `@hourly_schedule`, `@daily_schedule`, `@weekly_schedule`, and `@monthly_schedule`. [Here is a guide](https://docs.dagster.io/0.15.6/guides/dagster/graph_job_op) to migrating from the legacy APIs to the stable APIs.
+- Dagster's legacy APIs, which were marked "legacy" in 0.13.0, have been removed. This includes `@solid`, `SolidDefinition`, `@pipeline`, `PipelineDefinition`, `@composite_solid`, `CompositeSolidDefinition`, `ModeDefinition`, `PresetDefinition`, `PartitionSetDefinition`, `InputDefinition`, `OutputDefinition`, `DynamicOutputDefinition`, `pipeline_failure_sensor`, `@hourly_schedule`, `@daily_schedule`, `@weekly_schedule`, and `@monthly_schedule`. [Here is a guide](https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.6/guides/dagster/graph_job_op) to migrating from the legacy APIs to the stable APIs.
 - Deprecated arguments to library ops have been switched to reflect stable APIs. This includes `input_defs`/`output_defs` arguments on `define_dagstermill_op`, which have been changed to `ins`/`outs` respectively, and `input_defs` argument on `create_shell_script_op`, which has been changed to `ins`.
 - The `pipeline_selection` argument has been removed from `run_failure_sensor` and related decorators / functions, and `job_selection` has been deprecated. Instead, use `monitored_jobs`.
 - `ScheduleExecutionContext` and `SensorExecutionContext` APIs have been removed. In 0.13.0, these were renamed to `ScheduleEvaluationContext` and `SensorEvaluationContext` respectively, and marked deprecated.
@@ -313,7 +546,7 @@ Dagster’s metadata API has undergone a signficant overhaul. Changes include:
 ## Migrating to 0.13.0
 
 Jobs, ops, and graphs have replaced pipelines, solids, modes, and presets as the stable core of the
-system. [Here](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
+system. [Here](https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.7/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
 
 ## Migrating to 0.12.0
 
@@ -429,7 +662,7 @@ set up and run the daemon process for local development, Docker, or Kubernetes d
 3. Start the `dagster-daemon` process. Guides can be found in our
    [deployment documentations](https://docs.dagster.io/deployment).
 
-See our [schedules troubleshooting guide](https://docs.dagster.io/troubleshooting/schedules) for
+See our [schedules troubleshooting guide](/concepts/partitions-schedules-sensors/schedules) for
 help if you experience any problems with the new scheduler.
 
 **If you are not using a legacy scheduler:**
@@ -572,7 +805,7 @@ should now be expressed as:
     location_name: dagster_examples
 ```
 
-See our [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces#loading-from-an-external-environment)
+See our [Workspaces Overview](/concepts/code-locations/workspace-files)
 for more information and examples.
 
 ### Removal: config_field property on definition classes

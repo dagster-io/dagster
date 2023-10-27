@@ -44,7 +44,6 @@ def _get_client(docker_container_context: DockerContainerContext):
 def _get_container_name(run_id, op_name, retry_number):
     container_name = hash_str(run_id + op_name)
 
-    retry_number = retry_number
     if retry_number > 0:
         container_name = f"{container_name}-{retry_number}"
 
@@ -105,9 +104,11 @@ def execute_docker_container(
     """
     run_container_context = DockerContainerContext.create_for_run(
         context.dagster_run,
-        context.instance.run_launcher
-        if isinstance(context.instance.run_launcher, DockerRunLauncher)
-        else None,
+        (
+            context.instance.run_launcher
+            if isinstance(context.instance.run_launcher, DockerRunLauncher)
+            else None
+        ),
     )
 
     validate_docker_image(image)

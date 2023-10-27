@@ -55,7 +55,7 @@ def test_file_logger(init_context):
         "output_notebook_io_manager": local_output_notebook_io_manager,
     },
 )
-def hello_logging_pipeline():
+def hello_logging_job():
     hello_logging()
 
 
@@ -65,27 +65,29 @@ def hello_logging_pipeline():
         "critical": test_file_logger,
     },
     resource_defs={
-        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
+        "output_notebook_io_manager": (
+            ConfigurableLocalOutputNotebookIOManager.configure_at_launch()
+        ),
     },
 )
-def hello_logging_pipeline_pythonic():
+def hello_logging_job_pythonic():
     hello_logging()
 
 
-@pytest.fixture(name="hello_logging_pipeline_type", params=[True, False])
-def hello_logging_pipeline_type_fixture(request):
+@pytest.fixture(name="hello_logging_job_type", params=[True, False])
+def hello_logging_job_type_fixture(request):
     if request.param:
-        return hello_logging_pipeline
+        return hello_logging_job
     else:
-        return hello_logging_pipeline_pythonic
+        return hello_logging_job_pythonic
 
 
-def test_logging(hello_logging_pipeline_type) -> None:
+def test_logging(hello_logging_job_type) -> None:
     with safe_tempfile_path() as test_file_path:
         with safe_tempfile_path() as critical_file_path:
             with instance_for_test() as instance:
                 execute_job(
-                    reconstructable(hello_logging_pipeline_type),
+                    reconstructable(hello_logging_job_type),
                     run_config={
                         "loggers": {
                             "test": {

@@ -17,8 +17,10 @@ paths = [
     ### dagster packages
     "../../python_modules/automation",
     "../../python_modules/dagster",
+    "../../python_modules/dagster-pipes",
     "../../python_modules/dagster-graphql",
     "../../python_modules/dagit",
+    "../../python_modules/dagster-webserver",
     "../../python_modules/libraries/dagster-airbyte",
     "../../python_modules/libraries/dagster-airflow",
     "../../python_modules/libraries/dagster-aws",
@@ -30,6 +32,8 @@ paths = [
     "../../python_modules/libraries/dagster-datadog",
     "../../python_modules/libraries/dagster-datahub",
     "../../python_modules/libraries/dagster-docker",
+    "../../python_modules/libraries/dagster-embedded-elt",
+    "../../python_modules/libraries/dagster-embedded-elt/sling",
     "../../python_modules/libraries/dagster-fivetran",
     "../../python_modules/libraries/dagster-github",
     "../../python_modules/libraries/dagster-k8s",
@@ -39,6 +43,7 @@ paths = [
     "../../python_modules/libraries/dagster-mysql",
     "../../python_modules/libraries/dagster-pagerduty",
     "../../python_modules/libraries/dagster-pandas",
+    "../../python_modules/libraries/dagster-pandera",
     "../../python_modules/libraries/dagster-papertrail",
     "../../python_modules/libraries/dagster-postgres",
     "../../python_modules/libraries/dagster-prometheus",
@@ -74,13 +79,8 @@ for path in paths:
 # -- Project information -----------------------------------------------------
 
 project = "Dagster"
-copyright = "2019, Elementl, Inc"  # noqa: A001
-author = "The Dagster Team"
-
-# The short X.Y version
-version = ""
-# The full version, including alpha/beta/rc tags
-release = ""
+copyright = "2019, Dagster Labs, Inc"  # noqa: A001
+author = "Dagster Labs"
 
 # -- General configuration ---------------------------------------------------
 
@@ -99,8 +99,8 @@ extensions = [
     "sphinx.ext.viewcode",
     # Directives for automatically documenting CLIs built with the `click` package.
     "sphinx_click.ext",
-    # Elementl-authored extension with custom directives and sphinx processing.
-    "autodoc_dagster",
+    # Dagster-labs-authored extension with custom directives and sphinx processing.
+    "dagster_sphinx",
     # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
 ]
@@ -118,7 +118,7 @@ extensions = [
 # directive invocation. Note that filtration by publicity (done in the `autodoc_dagster` extension)
 # is performed on the member list controlled by this option-- without `members` set, even a method
 # marked `@public` will _not_ be included in the docs!
-autodoc_default_options = {"members": True}
+autodoc_default_options = {"members": True, "undoc-members": True}
 
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those
@@ -132,6 +132,7 @@ autodoc_mock_imports = [
     "coloredlogs",
     "croniter",
     "dask",
+    "databricks",
     "databricks_api",
     "databricks_cli",
     "datadog",
@@ -147,6 +148,8 @@ autodoc_mock_imports = [
     "mlflow",
     "mysql",
     "oauth2client",
+    "orjson",
+    "pandera",
     "prometheus_client",
     "psycopg2",
     "pypd",

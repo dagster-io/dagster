@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, deprecated_param, experimental_param
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -27,7 +27,6 @@ from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
-from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
@@ -53,25 +52,20 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
             type_check = dagster_type.type_check_scalar_value(default_value)
             if not type_check.success:
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "Type check failed for the default_value of InputDefinition "
-                        "{input_name} of type {dagster_type}. "
-                        "Received value {value} of type {type}"
-                    ).format(
-                        input_name=input_name,
-                        dagster_type=dagster_type.display_name,
-                        value=default_value,
-                        type=type(default_value),
-                    ),
+                    "Type check failed for the default_value of InputDefinition "
+                    f"{input_name} of type {dagster_type.display_name}. "
+                    f"Received value {default_value} of type {type(default_value)}",
                 )
 
     return default_value
 
 
+@experimental_param(param="asset_key")
+@experimental_param(param="asset_partitions")
 class InputDefinition:
-    """Defines an argument to a solid's compute function.
+    """Defines an argument to an op's compute function.
 
-    Inputs may flow from previous solids' outputs, or be stubbed using config. They may optionally
+    Inputs may flow from previous op outputs, or be stubbed using config. They may optionally
     be typed using the Dagster type system.
 
     Args:
@@ -82,9 +76,6 @@ class InputDefinition:
             to be run on this input. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
-        root_manager_key (Optional[str]): (Experimental) The resource key for the
-            :py:class:`RootInputManager` used for loading this input when it is not connected to an
-            upstream output.
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
@@ -92,6 +83,9 @@ class InputDefinition:
         asset_partitions (Optional[Union[AbstractSet[str], InputContext -> AbstractSet[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this InputDefinition.
+        input_manager_key (Optional[str]): (Experimental) The resource key for the
+            :py:class:`InputManager` used for loading this input when it is not connected to an
+            upstream output.
     """
 
     _name: str
@@ -100,7 +94,6 @@ class InputDefinition:
     _description: Optional[str]
     _default_value: Any
     _input_manager_key: Optional[str]
-    _root_manager_key: Optional[str]
     _raw_metadata: ArbitraryMetadataMapping
     _metadata: Mapping[str, MetadataValue]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
@@ -112,11 +105,10 @@ class InputDefinition:
         dagster_type: object = None,
         description: Optional[str] = None,
         default_value: object = NoValueSentinel,
-        root_manager_key: Optional[str] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
-        input_manager_key: Optional[str] = None
+        input_manager_key: Optional[str] = None,
         # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
         self._name = check_valid_name(name, allow_list=["config"])
@@ -128,28 +120,10 @@ class InputDefinition:
 
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
 
-        if root_manager_key:
-            deprecation_warning(
-                "root_manager_key",
-                "1.0.0",
-                additional_warn_txt="Use an InputManager with input_manager_key instead.",
-            )
-
-        if root_manager_key and input_manager_key:
-            raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key"
-                f" {input_manager_key} on InputDefinition."
-            )
-
-        self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
-
         self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
 
         self._raw_metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._metadata = normalize_metadata(self._raw_metadata, allow_invalid=True)
-
-        if asset_key:
-            experimental_arg_warning("asset_key", "InputDefinition.__init__")
 
         if not callable(asset_key):
             check.opt_inst_param(asset_key, "asset_key", AssetKey)
@@ -157,7 +131,6 @@ class InputDefinition:
         self._asset_key = asset_key
 
         if asset_partitions:
-            experimental_arg_warning("asset_partitions", "InputDefinition.__init__")
             check.param_invariant(
                 asset_key is not None,
                 "asset_partitions",
@@ -193,10 +166,6 @@ class InputDefinition:
         return self._default_value
 
     @property
-    def root_manager_key(self) -> Optional[str]:
-        return self._root_manager_key
-
-    @property
     def input_manager_key(self) -> Optional[str]:
         return self._input_manager_key
 
@@ -229,7 +198,7 @@ class InputDefinition:
             return self.hardcoded_asset_key
 
     def get_asset_partitions(self, context: "InputContext") -> Optional[Set[str]]:
-        """Get the set of partitions that this solid will read from this InputDefinition for the given
+        """Get the set of partitions that this op will read from this InputDefinition for the given
         :py:class:`InputContext` (if any).
 
         Args:
@@ -242,32 +211,32 @@ class InputDefinition:
         return self._asset_partitions_fn(context)
 
     def mapping_to(
-        self, solid_name: str, input_name: str, fan_in_index: Optional[int] = None
+        self, node_name: str, input_name: str, fan_in_index: Optional[int] = None
     ) -> "InputMapping":
-        """Create an input mapping to an input of a child solid.
+        """Create an input mapping to an input of a child node.
 
-        In a CompositeSolidDefinition, you can use this helper function to construct
-        an :py:class:`InputMapping` to the input of a child solid.
+        In a GraphDefinition, you can use this helper function to construct
+        an :py:class:`InputMapping` to the input of a child node.
 
         Args:
-            solid_name (str): The name of the child solid to which to map this input.
-            input_name (str): The name of the child solid' input to which to map this input.
+            node_name (str): The name of the child node to which to map this input.
+            input_name (str): The name of the child node' input to which to map this input.
             fan_in_index (Optional[int]): The index in to a fanned in input, else None
 
         Examples:
             .. code-block:: python
 
                 input_mapping = InputDefinition('composite_input', Int).mapping_to(
-                    'child_solid', 'int_input'
+                    'child_node', 'int_input'
                 )
         """
-        check.str_param(solid_name, "solid_name")
+        check.str_param(node_name, "node_name")
         check.str_param(input_name, "input_name")
         check.opt_int_param(fan_in_index, "fan_in_index")
 
         return InputMapping(
             graph_input_name=self.name,
-            mapped_node_name=solid_name,
+            mapped_node_name=node_name,
             mapped_node_input_name=input_name,
             fan_in_index=fan_in_index,
             graph_input_description=self.description,
@@ -289,10 +258,8 @@ class InputDefinition:
         """
         check.invariant(
             self.name == inferred.name,
-            (
-                f"InferredInputProps name {inferred.name} did not align with InputDefinition name"
-                f" {self.name}"
-            ),
+            f"InferredInputProps name {inferred.name} did not align with InputDefinition name"
+            f" {self.name}",
         )
 
         dagster_type = self._dagster_type
@@ -312,7 +279,6 @@ class InputDefinition:
             dagster_type=dagster_type,
             description=description,
             default_value=default_value,
-            root_manager_key=self._root_manager_key,
             metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
@@ -325,7 +291,6 @@ class InputDefinition:
             dagster_type=dagster_type,
             description=self.description,
             default_value=self.default_value if self.has_default_value else NoValueSentinel,
-            root_manager_key=self._root_manager_key,
             metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
@@ -377,6 +342,14 @@ class FanInInputPointer(
         )
 
 
+@deprecated_param(
+    param="dagster_type",
+    breaking_version="2.0",
+    additional_warn_text="Any defined `dagster_type` should come from the upstream op `Output`.",
+    # Disabling warning here since we're passing this internally and I'm not sure whether it is
+    # actually used or discarded.
+    emit_runtime_warning=False,
+)
 class InputMapping(NamedTuple):
     """Defines an input mapping for a graph.
 
@@ -386,8 +359,8 @@ class InputMapping(NamedTuple):
         mapped_node_input_name (str): Name of the input in the node (op/graph) that is being mapped to.
         fan_in_index (Optional[int]): The index in to a fanned input, otherwise None.
         graph_input_description (Optional[str]): A description of the input in the graph being mapped from.
-        dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's input
-            being mapped from. Users should not use this argument when instantiating the class.
+        dagster_type (Optional[DagsterType]): The dagster type of the graph's input
+            being mapped from.
 
     Examples:
         .. code-block:: python
@@ -453,7 +426,6 @@ class In(
             ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
             ("description", PublicAttr[Optional[str]]),
             ("default_value", PublicAttr[Any]),
-            ("root_manager_key", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
             (
                 "asset_key",
@@ -478,9 +450,6 @@ class In(
             be inferred directly from the type signature of the decorated function.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
-        root_manager_key (Optional[str]): (Experimental) The resource key for the
-            :py:class:`RootInputManager` used for loading this input when it is not connected to an
-            upstream output.
         metadata (Optional[Dict[str, RawMetadataValue]]): A dict of metadata for the input.
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
@@ -488,6 +457,9 @@ class In(
         asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this In.
+        input_manager_key (Optional[str]): (Experimental) The resource key for the
+            :py:class:`InputManager` used for loading this input when it is not connected to an
+            upstream output.
     """
 
     def __new__(
@@ -495,33 +467,20 @@ class In(
         dagster_type: Union[Type, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
-        root_manager_key: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
         input_manager_key: Optional[str] = None,
     ):
-        if root_manager_key and input_manager_key:
-            raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key"
-                f" {input_manager_key} on InputDefinition."
-            )
-
-        if root_manager_key:
-            deprecation_warning(
-                "root_manager_key",
-                "1.0.0",
-                additional_warn_txt="Use an InputManager with input_manager_key instead.",
-            )
-
         return super(In, cls).__new__(
             cls,
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
             description=check.opt_str_param(description, "description"),
             default_value=default_value,
-            root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=asset_partitions,
@@ -534,7 +493,6 @@ class In(
             dagster_type=input_def.dagster_type,
             description=input_def.description,
             default_value=input_def._default_value,  # noqa: SLF001
-            root_manager_key=input_def.root_manager_key,
             metadata=input_def.metadata,
             asset_key=input_def._asset_key,  # noqa: SLF001
             asset_partitions=input_def._asset_partitions_fn,  # noqa: SLF001
@@ -548,7 +506,6 @@ class In(
             dagster_type=dagster_type,
             description=self.description,
             default_value=self.default_value,
-            root_manager_key=self.root_manager_key,
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,

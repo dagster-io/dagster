@@ -59,6 +59,8 @@ spec:
         - name: "init-user-deployment-{{- $deployment.name -}}"
           image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
           command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
+          securityContext:
+            {{- toYaml $.Values.dagsterDaemon.securityContext | nindent 12 }}
         {{- end }}
         {{- end }}
       containers:
@@ -136,7 +138,7 @@ spec:
         {{- if $userDeployments.enabled }}
         - name: dagster-workspace-yaml
           configMap:
-            name: {{ include "dagit.workspace.configmapName" . }}
+            name: {{ include "dagster.workspace.configmapName" . }}
         {{- end }}
         {{- if .Values.dagsterDaemon.volumes }}
         {{- range $volume := .Values.dagsterDaemon.volumes }}

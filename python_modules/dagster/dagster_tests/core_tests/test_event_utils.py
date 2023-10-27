@@ -53,9 +53,7 @@ def test_filter_dagster_events_from_cli_logs():
     solid_definition = "do_input"
             step_key = "do_input"
 {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 13.923579000000075}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input"}, "message": "Finished execution of step \\"do_input.compute\\" in 13ms.", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input", "step_kind_value": "COMPUTE"}
-""".split(
-        "\n"
-    )
+""".split("\n")
     res = filter_dagster_events_from_cli_logs(sameple_output)
 
     assert len(res) == 7
@@ -71,9 +69,7 @@ def test_filter_dagster_events_from_cli_logs_coalesce():
     _data": {"__class__": "StepSuccessData", "duration_ms": 13.923579000000075}, "event_typ
     e_value": "STEP_SUCCESS", "logging_tags": {"pipeline": "foo", "so
     lid": "do_input", "solid_definition": "do_input", "step_key": "do_input"}, "message": "Finished execution of step \\"do_input.compute\\" in 13ms.", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input", "step_kind_value": "COMPUTE"}
-    """.split(
-        "\n"
-    )
+    """.split("\n")
     res = filter_dagster_events_from_cli_logs(logs)
     assert len(res) == 1
 
@@ -85,8 +81,6 @@ def test_filter_dagster_events_from_cli_logs_coalesce():
 def test_filter_dagster_events_from_cli_logs_user_json():
     logs = """
     {}
-    """.split(
-        "\n"
-    )
+    """.split("\n")
 
     assert filter_dagster_events_from_cli_logs(logs) == []

@@ -12,7 +12,7 @@ from dagster import Definitions, EnvVar, asset
 @asset(io_manager_key="warehouse_io_manager")
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",

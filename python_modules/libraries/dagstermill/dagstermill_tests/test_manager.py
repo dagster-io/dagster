@@ -14,7 +14,7 @@ from dagster import (
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._serdes import pack_value

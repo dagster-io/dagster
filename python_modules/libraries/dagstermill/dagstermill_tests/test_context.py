@@ -30,7 +30,7 @@ def test_environment_config():
     assert isinstance(BARE_OUT_OF_JOB_CONTEXT.resolved_run_config, ResolvedRunConfig)
 
 
-def test_pipeline_def():
+def test_job_def():
     assert BARE_OUT_OF_JOB_CONTEXT.job_def.name == "ephemeral_dagstermill_pipeline"
     assert len(BARE_OUT_OF_JOB_CONTEXT.job_def.nodes) == 1
     assert BARE_OUT_OF_JOB_CONTEXT.job_def.nodes[0].name == "this_op"

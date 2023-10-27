@@ -6,7 +6,7 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import EngineEventData
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunRecord
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -89,7 +89,7 @@ def retry_run(
     workspace = workspace_context.create_request_context()
     if not failed_run.external_job_origin:
         instance.report_engine_event(
-            "Run does not have an external pipeline origin, unable to retry the run.",
+            "Run does not have an external job origin, unable to retry the run.",
             failed_run,
         )
         return
@@ -100,10 +100,8 @@ def retry_run(
 
     if not code_location.has_repository(repo_name):
         instance.report_engine_event(
-            (
-                f"Could not find repository {repo_name} in location {code_location.name}, unable to"
-                " retry the run. It was likely renamed or deleted."
-            ),
+            f"Could not find repository {repo_name} in location {code_location.name}, unable to"
+            " retry the run. It was likely renamed or deleted.",
             failed_run,
         )
         return
@@ -112,10 +110,8 @@ def retry_run(
 
     if not external_repo.has_external_job(failed_run.job_name):
         instance.report_engine_event(
-            (
-                f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
-                " to retry the run. It was likely renamed or deleted."
-            ),
+            f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
+            " to retry the run. It was likely renamed or deleted.",
             failed_run,
         )
         return
@@ -125,10 +121,10 @@ def retry_run(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,
             job_name=failed_run.job_name,
-            solid_selection=failed_run.solid_selection,
-            asset_selection=None
-            if failed_run.asset_selection is None
-            else list(failed_run.asset_selection),
+            op_selection=failed_run.op_selection,
+            asset_selection=(
+                None if failed_run.asset_selection is None else list(failed_run.asset_selection)
+            ),
         )
     )
 

@@ -6,6 +6,7 @@ from dagster import (
     AssetIn,
     AssetSelection,
     Field,
+    FilesystemIOManager,
     In,
     List,
     Out,
@@ -13,7 +14,6 @@ from dagster import (
     String,
     asset,
     define_asset_job,
-    fs_io_manager,
     graph,
     job,
     mem_io_manager,
@@ -23,6 +23,7 @@ from dagster import (
     with_resources,
 )
 from dagster._config.pythonic_config import Config
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
@@ -59,7 +60,7 @@ class BasicTest:
         self.x = x
 
     def __repr__(self):
-        return f"BasicTest: {str(self.x)}"
+        return f"BasicTest: {self.x}"
 
 
 def nb_test_path(name):
@@ -82,7 +83,7 @@ def test_nb_op(name, **kwargs):
 
 common_resource_defs = {
     "output_notebook_io_manager": local_output_notebook_io_manager,
-    "io_manager": fs_io_manager,  # TODO check if necessary
+    "io_manager": FilesystemIOManager(),  # TODO check if necessary
 }
 
 hello_world = test_nb_op("hello_world", outs={})
@@ -95,8 +96,10 @@ def hello_world_job():
 
 @job(
     resource_defs={
-        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
-        "io_manager": fs_io_manager,
+        "output_notebook_io_manager": (
+            ConfigurableLocalOutputNotebookIOManager.configure_at_launch()
+        ),
+        "io_manager": FilesystemIOManager(),
     }
 )
 def hello_world_job_struct_resource() -> None:
@@ -382,7 +385,7 @@ def filepicklelist_resource(init_context):
     resource_defs={
         "list": filepicklelist_resource,
         "output_notebook_io_manager": local_output_notebook_io_manager,
-        "io_manager": fs_io_manager,
+        "io_manager": FilesystemIOManager(),
     }
 )
 def resource_job():
@@ -393,7 +396,7 @@ def resource_job():
     resource_defs={
         "list": filepicklelist_resource,
         "output_notebook_io_manager": local_output_notebook_io_manager,
-        "io_manager": fs_io_manager,
+        "io_manager": FilesystemIOManager(),
     }
 )
 def resource_with_exception_job():
@@ -601,7 +604,7 @@ assets = with_resources(
 def make_resolved_job(asset):
     return define_asset_job(
         name=f"{asset.key.to_user_string()}_job", selection=AssetSelection.assets(asset).upstream()
-    ).resolve(assets, [])
+    ).resolve(asset_graph=AssetGraph.from_assets(assets))
 
 
 hello_world_asset_job = make_resolved_job(hello_world_asset)

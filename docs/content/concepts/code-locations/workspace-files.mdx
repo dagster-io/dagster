@@ -91,7 +91,7 @@ load_from:
 
 ## Loading workspace files
 
-By default, Dagster command-line tools (like `dagster dev`, `dagit`, or `dagster-daemon run`) look for workspace files (by default, `workspace.yaml`) in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments:
+By default, Dagster command-line tools (like `dagster dev`, `dagster-webserver`, or `dagster-daemon run`) look for workspace files (by default, `workspace.yaml`) in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments:
 
 ```shell
 dagster dev
@@ -105,9 +105,9 @@ dagster dev -w path/to/workspace.yaml
 
 When `dagster dev` is run, Dagster will load all the code locations defined by the workspace file. Refer to the [CLI reference](/\_apidocs/cli#dagster-dev) for more info and examples.
 
-If a code location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in Dagit. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
+If a code location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in the Dagster UI. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
 
-**Note**: If a code location is re-named or its configuration in a workspace file is modified, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in Dagit by navigating to the [**Deployment overview** page](/concepts/dagit/dagit#deployment-overview) and using the **Schedules** and **Sensors** tabs.
+**Note**: If a code location is re-named or its configuration in a workspace file is modified, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in the UI by navigating to the [**Deployment overview** page](/concepts/webserver/ui#deployment), clicking a code location, and using the **Schedules** and **Sensors** tabs.
 
 This is required because when you start a schedule or a sensor, a serialized representation of the entry in your workspace file is stored in a database. The Dagster daemon process uses this serialized representation to identify and load your schedule or sensor. If the code location is modified and its schedules and sensors aren't restarted, the Dagster daemon process will use an outdated serialized representation, resulting in issues.
 
@@ -115,7 +115,7 @@ This is required because when you start a schedule or a sensor, a serialized rep
 
 ## Running your own gRPC server
 
-By default, Dagster tools automatically create a process on your local machine for each of your code locations. However, it's also possible to run your own gRPC server that's responsible for serving information about your code locations. This can be useful in more complex system architectures that deploy user code separately from Dagit.
+By default, Dagster tools automatically create a process on your local machine for each of your code locations. However, it's also possible to run your own gRPC server that's responsible for serving information about your code locations. This can be useful in more complex system architectures that deploy user code separately from the Dagster webserver.
 
 - [Initializing the server](#initializing-the-server)
 - [Specifying a Docker image](#specifying-a-docker-image)
@@ -204,9 +204,9 @@ load_from:
 
 ### Specifying a Docker image
 
-When running your own gRPC server within a container, you can tell Dagit that any runs launched from a code location should be launched in a container with that same image.
+When running your own gRPC server within a container, you can tell the webserver that any runs launched from a code location should be launched in a container with that same image.
 
-To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the code location on the **Status** page in Dagit.
+To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the code location on the **Status** page in the UI.
 
 This image will only be used by [run launchers](/deployment/run-launcher) and [executors](/deployment/executors) that expect to use Docker images (like the <PyObject module="dagster_docker" object="DockerRunLauncher" />, <PyObject module="dagster_k8s" object="K8sRunLauncher" />, <PyObject module="dagster_docker" object="docker_executor" />, or <PyObject module="dagster_k8s" object="k8s_job_executor" />).
 
@@ -221,7 +221,7 @@ If you're using the built-in [Helm chart](/deployment/guides/kubernetes/deployin
 
 ### Loading relative imports
 
-By default, code is loaded with Dagit's working directory as the base path to resolve any local imports in your code. Using the `working_directory` key, you can specify a custom working directory for relative imports. For example:
+By default, code is loaded with `dagster-webserver`'s working directory as the base path to resolve any local imports in your code. Using the `working_directory` key, you can specify a custom working directory for relative imports. For example:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_working_directory.yaml
 # workspace.yaml
@@ -237,7 +237,7 @@ load_from:
 
 ### Loading multiple Python environments
 
-By default, Dagit and other Dagster tools assume that code locations should be loaded using the same Python environment used to load Dagster. However, it's often useful for code locations to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
+By default, the webserver and other Dagster tools assume that code locations should be loaded using the same Python environment used to load Dagster. However, it's often useful for code locations to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
 
 To enable this use case, Dagster supports customizing the Python environment for each code location by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
 
@@ -253,7 +253,7 @@ load_from:
       executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
 
-The example above also illustrates the `location_name` key. Each code location in a workspace file has a unique name that is displayed in Dagit, and is also used to disambiguate definitions with the same name across multiple code locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
+The example above also illustrates the `location_name` key. Each code location in a workspace file has a unique name that is displayed in the UI, and is also used to disambiguate definitions with the same name across multiple code locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
 
 </TabItem>
 </TabGroup>

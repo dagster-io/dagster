@@ -1,9 +1,4 @@
-from attr import define
-
 from dagster import asset
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.execution.context.compute import OpExecutionContext
 
 
 @asset
@@ -14,10 +9,10 @@ def upstream_asset() -> int:
 def old_config() -> None:
     # begin_old_config
 
-    from dagster import Definitions, OpExecutionContext, asset
+    from dagster import AssetExecutionContext, Definitions, asset
 
     @asset(config_schema={"conn_string": str, "port": int})
-    def an_asset(context: OpExecutionContext, upstream_asset):
+    def an_asset(context: AssetExecutionContext, upstream_asset):
         assert context.op_config["conn_string"]
         assert context.op_config["port"]
 

@@ -89,6 +89,14 @@ def test_merge(
         "ephemeral_storage": 25,
     }
 
+    assert merged.server_ecs_tags == [
+        {"key": "BAZ", "value": "QUUX"},
+        {
+            "key": "FOO",  # no value
+        },
+    ]
+    assert merged.run_ecs_tags == [{"key": "GHI"}, {"key": "ABC", "value": "DEF"}]
+
     assert merged.task_role_arn == "other-task-role"
     assert merged.execution_role_arn == "other-fake-execution-role"
 
@@ -105,6 +113,8 @@ def test_merge(
         },
     ]
 
+    assert merged.repository_credentials == "fake-secret-arn"
+
     assert merged.volumes == [
         {
             "name": "myOtherEfsVolume",
@@ -119,6 +129,30 @@ def test_merge(
                 "fileSystemId": "fs-1234",
                 "rootDirectory": "/path/to/my/data",
             },
+        },
+    ]
+
+    assert merged.server_sidecar_containers == [
+        {
+            "name": "OtherServerAgent",
+            "image": "public.ecr.aws/other/agent:latest",
+        },
+        {
+            "name": "DatadogAgent",
+            "image": "public.ecr.aws/datadog/agent:latest",
+            "environment": [
+                {"name": "ECS_FARGATE", "value": "true"},
+            ],
+        },
+    ]
+    assert merged.run_sidecar_containers == [
+        {
+            "name": "OtherRunAgent",
+            "image": "otherrun:latest",
+        },
+        {
+            "name": "busyrun",
+            "image": "busybox:latest",
         },
     ]
 

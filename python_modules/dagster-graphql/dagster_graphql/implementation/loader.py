@@ -17,8 +17,7 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
-from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
+from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
@@ -67,109 +66,7 @@ class RepositoryScopedBatchLoader:
 
         fetched: Dict[str, List[Any]] = defaultdict(list)
 
-        if data_type == RepositoryDataType.JOB_RUNS:
-            job_names = [x.name for x in self._repository.get_all_external_jobs()]
-            if self._instance.supports_bucket_queries and len(job_names) > 1:
-                records = self._instance.get_run_records(
-                    filters=RunsFilter(
-                        tags={
-                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
-                        },
-                    ),
-                    bucket_by=JobBucket(bucket_limit=limit, job_names=job_names),
-                )
-            else:
-                records = []
-                for job_name in job_names:
-                    records.extend(
-                        list(
-                            self._instance.get_run_records(
-                                filters=RunsFilter(
-                                    job_name=job_name,
-                                    tags={
-                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
-                                    },
-                                ),
-                                limit=limit,
-                            )
-                        )
-                    )
-            for record in records:
-                fetched[record.dagster_run.job_name].append(record)
-
-        elif data_type == RepositoryDataType.SCHEDULE_RUNS:
-            schedule_names = [
-                schedule.name for schedule in self._repository.get_external_schedules()
-            ]
-            if self._instance.supports_bucket_queries and len(schedule_names) > 1:
-                records = self._instance.get_run_records(
-                    filters=RunsFilter(
-                        tags={
-                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
-                        }
-                    ),
-                    bucket_by=TagBucket(
-                        tag_key=SCHEDULE_NAME_TAG,
-                        bucket_limit=limit,
-                        tag_values=schedule_names,
-                    ),
-                )
-            else:
-                records = []
-                for schedule_name in schedule_names:
-                    records.extend(
-                        list(
-                            self._instance.get_run_records(
-                                filters=RunsFilter(
-                                    tags={
-                                        SCHEDULE_NAME_TAG: schedule_name,
-                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
-                                    }
-                                ),
-                                limit=limit,
-                            )
-                        )
-                    )
-            for record in records:
-                tag: str = check.not_none(record.dagster_run.tags.get(SCHEDULE_NAME_TAG))
-                fetched[tag].append(record)
-
-        elif data_type == RepositoryDataType.SENSOR_RUNS:
-            sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
-            if self._instance.supports_bucket_queries and len(sensor_names) > 1:
-                records = self._instance.get_run_records(
-                    filters=RunsFilter(
-                        tags={
-                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
-                        }
-                    ),
-                    bucket_by=TagBucket(
-                        tag_key=SENSOR_NAME_TAG,
-                        bucket_limit=limit,
-                        tag_values=sensor_names,
-                    ),
-                )
-            else:
-                records = []
-                for sensor_name in sensor_names:
-                    records.extend(
-                        list(
-                            self._instance.get_run_records(
-                                filters=RunsFilter(
-                                    tags={
-                                        SENSOR_NAME_TAG: sensor_name,
-                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
-                                    }
-                                ),
-                                limit=limit,
-                            )
-                        )
-                    )
-            for record in records:
-                tag = check.not_none(record.dagster_run.tags.get(SENSOR_NAME_TAG))
-                fetched[tag].append(record)
-
-        elif data_type == RepositoryDataType.SCHEDULE_STATES:
+        if data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
                 repository_selector_id=self._repository.selector_id,
@@ -226,18 +123,6 @@ class RepositoryScopedBatchLoader:
 
         self._data[data_type] = fetched
         self._limits[data_type] = limit
-
-    def get_run_records_for_job(self, job_name: str, limit: int) -> Sequence[Any]:
-        check.invariant(self._repository.has_external_job(job_name))
-        return self._get(RepositoryDataType.JOB_RUNS, job_name, limit)
-
-    def get_run_records_for_schedule(self, schedule_name: str, limit: int) -> Sequence[Any]:
-        check.invariant(self._repository.has_external_schedule(schedule_name))
-        return self._get(RepositoryDataType.SCHEDULE_RUNS, schedule_name, limit)
-
-    def get_run_records_for_sensor(self, sensor_name: str, limit: int) -> Sequence[Any]:
-        check.invariant(self._repository.has_external_sensor(sensor_name))
-        return self._get(RepositoryDataType.SENSOR_RUNS, sensor_name, limit)
 
     def get_schedule_state(self, schedule_name: str) -> Optional[InstigatorState]:
         check.invariant(self._repository.has_external_schedule(schedule_name))
@@ -417,7 +302,7 @@ class CrossRepoAssetDependedByLoader:
 
             for asset in all_depended_by_assets:
                 # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
-                # no output or partition definition data) and no job_names. Dagit displays
+                # no output or partition definition data) and no job_names. The Dagster UI displays
                 # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
                 # are defined as ExternalAssetNodes with no definition data.
                 sink_assets[asset.downstream_asset_key] = ExternalAssetNode(

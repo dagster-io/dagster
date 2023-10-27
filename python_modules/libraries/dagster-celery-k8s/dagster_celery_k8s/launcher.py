@@ -12,7 +12,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -169,12 +169,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             if job_image_from_executor_config:
                 job_image = job_image_from_executor_config
                 self._instance.report_engine_event(
-                    (
-                        f"You have specified a job_image {job_image_from_executor_config} in your"
-                        f" executor configuration, but also {job_image} in your user-code"
-                        f" deployment. Using the job image {job_image_from_executor_config} from"
-                        " executor configuration as it takes precedence."
-                    ),
+                    f"You have specified a job_image {job_image_from_executor_config} in your"
+                    f" executor configuration, but also {job_image} in your user-code"
+                    f" deployment. Using the job image {job_image_from_executor_config} from"
+                    " executor configuration as it takes precedence.",
                     run,
                     cls=self.__class__,
                 )
@@ -209,6 +207,15 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
+        labels = {
+            "dagster/job": job_origin.job_name,
+            "dagster/run-id": run.run_id,
+        }
+        if run.external_job_origin:
+            labels[
+                "dagster/code-location"
+            ] = run.external_job_origin.external_repository_origin.code_location_origin.location_name
+
         job = construct_dagster_k8s_job(
             job_config,
             args=run_args,
@@ -216,10 +223,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             pod_name=pod_name,
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
-            labels={
-                "dagster/job": job_origin.job_name,
-                "dagster/run-id": run.run_id,
-            },
+            labels=labels,
             env_vars=[{"name": "DAGSTER_RUN_JOB_NAME", "value": job_origin.job_name}],
         )
 
@@ -268,19 +272,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             labels=merge_dicts(self._labels, exc_config.get("labels", {})),
         )
 
-    # https://github.com/dagster-io/dagster/issues/2741
-    def can_terminate(self, run_id):
-        check.str_param(run_id, "run_id")
-
-        dagster_run = self._instance.get_run_by_id(run_id)
-        if not dagster_run:
-            return False
-
-        if dagster_run.status != DagsterRunStatus.STARTED:
-            return False
-
-        return True
-
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
@@ -288,22 +279,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
-        can_terminate = self.can_terminate(run_id)
-        if not can_terminate:
-            self._instance.report_engine_event(
-                message="Unable to terminate dagster job: can_terminate returned {}.".format(
-                    can_terminate
-                ),
-                dagster_run=run,
-                cls=self.__class__,
-            )
-            return False
+        self._instance.report_run_canceling(run)
 
         job_name = get_job_name_from_run_id(run_id)
 
         job_namespace = self.get_namespace_from_run_config(run_id)
-
-        self._instance.report_run_canceling(run)
 
         try:
             termination_result = self._api_client.delete_job(
@@ -318,8 +298,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             else:
                 self._instance.report_engine_event(
                     message=(
-                        "Dagster Job was not terminated successfully; delete_job returned {}"
-                        .format(termination_result)
+                        "Dagster Job was not terminated successfully; delete_job returned {}".format(
+                            termination_result
+                        )
                     ),
                     dagster_run=run,
                     cls=self.__class__,
@@ -385,11 +366,8 @@ def _get_validated_celery_k8s_executor_config(run_config):
         res.success,
         "Incorrect execution schema provided. Note: You may also be seeing this error "
         "because you are using the configured API. "
-        "Using configured with the {config_key} executor is not supported at this time, "
-        "and all executor config must be directly in the run config without using configured."
-        .format(
-            config_key=CELERY_K8S_CONFIG_KEY,
-        ),
+        f"Using configured with the {CELERY_K8S_CONFIG_KEY} executor is not supported at this time, "
+        "and all executor config must be directly in the run config without using configured.",
     )
 
     return res.value

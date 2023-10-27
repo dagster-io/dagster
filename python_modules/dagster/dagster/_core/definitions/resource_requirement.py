@@ -10,7 +10,9 @@ from typing import (
     Type,
 )
 
-from ..errors import DagsterInvalidDefinitionError
+from dagster._utils.merger import merge_dicts
+
+from ..errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from .utils import DEFAULT_IO_MANAGER_KEY
 
 if TYPE_CHECKING:
@@ -222,11 +224,12 @@ def ensure_requirements_satisfied(
     # Error if resource defs don't provide the correct resource key
     for requirement in requirements:
         if not requirement.resources_contain_key(resource_defs):
+            requirement_expected_type_name = requirement.expected_type.__name__
             raise DagsterInvalidDefinitionError(
                 f"{requirement.describe_requirement()} was not provided. Please"
-                f" provide a {str(requirement.expected_type)} to key '{requirement.key}', or change"
+                f" provide a {requirement_expected_type_name} to key '{requirement.key}', or change"
                 " the required key to one of the following keys which points to an"
-                f" {str(requirement.expected_type)}:"
+                f" {requirement_expected_type_name}:"
                 f" {requirement.keys_of_expected_type(resource_defs)}"
             )
 
@@ -238,3 +241,40 @@ def get_resource_key_conflicts(
     overlapping_keys = set(resource_defs.keys()).intersection(set(other_resource_defs.keys()))
     overlapping_keys = {key for key in overlapping_keys if key != DEFAULT_IO_MANAGER_KEY}
     return overlapping_keys
+
+
+def merge_resource_defs(
+    old_resource_defs: Mapping[str, "ResourceDefinition"],
+    resource_defs_to_merge_in: Mapping[str, "ResourceDefinition"],
+    requires_resources: RequiresResources,
+) -> Mapping[str, "ResourceDefinition"]:
+    from dagster._core.execution.resources_init import get_transitive_required_resource_keys
+
+    overlapping_keys = get_resource_key_conflicts(old_resource_defs, resource_defs_to_merge_in)
+    if overlapping_keys:
+        overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
+        raise DagsterInvalidInvocationError(
+            f"{requires_resources} has conflicting resource "
+            "definitions with provided resources for the following keys: "
+            f"{overlapping_keys_str}. Either remove the existing "
+            "resources from the asset or change the resource keys so that "
+            "they don't overlap."
+        )
+
+    merged_resource_defs = merge_dicts(resource_defs_to_merge_in, old_resource_defs)
+
+    # Ensure top-level resource requirements are met - except for
+    # io_manager, since that is a default it can be resolved later.
+    ensure_requirements_satisfied(
+        merged_resource_defs, list(requires_resources.get_resource_requirements())
+    )
+
+    # Get all transitive resource dependencies from other resources.
+    relevant_keys = get_transitive_required_resource_keys(
+        requires_resources.required_resource_keys, merged_resource_defs
+    )
+    return {
+        key: resource_def
+        for key, resource_def in merged_resource_defs.items()
+        if key in relevant_keys
+    }

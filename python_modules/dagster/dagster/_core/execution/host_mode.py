@@ -22,7 +22,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._loggers import default_system_loggers
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -30,7 +30,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from .api import ExecuteRunWithPlanIterable, job_execution_iterator
 from .context.logger import InitLoggerContext
 from .context.system import PlanData, PlanOrchestrationContext
-from .context_creation_pipeline import PlanOrchestrationContextManager
+from .context_creation_job import PlanOrchestrationContextManager
 
 
 def _get_host_mode_executor(
@@ -149,7 +149,9 @@ def host_mode_execution_context_event_generator(
                 error_info=error_info,
             )
             log_manager.log_dagster_event(
-                level=logging.ERROR, msg=event.message, dagster_event=event  # type: ignore
+                level=logging.ERROR,
+                msg=event.message,  # type: ignore
+                dagster_event=event,
             )
             yield event
         else:
@@ -189,10 +191,8 @@ def execute_run_host_mode(
         ),
     )
 
-    recon_job = recon_job.subset_for_execution_from_existing_job(
-        solids_to_execute=frozenset(dagster_run.solids_to_execute)
-        if dagster_run.solids_to_execute
-        else None,
+    recon_job = recon_job.get_subset(
+        op_selection=dagster_run.resolved_op_selection,
         asset_selection=dagster_run.asset_selection,
     )
 

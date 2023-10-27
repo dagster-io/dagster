@@ -5,6 +5,9 @@ from unittest import mock
 
 from dagster import file_relative_path
 from dagster._core.host_representation import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.host_representation.feature_flags import (
+    CodeLocationFeatureFlags,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster.version import __version__ as dagster_version
@@ -46,6 +49,10 @@ query {
             value
           }
           updatedTimestamp
+          featureFlags {
+            name
+            enabled
+          }
         }
       }
       ... on PythonError {
@@ -148,6 +155,13 @@ class TestLoadWorkspace(BaseTestSuite):
 
                 metadatas = node["displayMetadata"]
                 metadata_dict = {metadata["key"]: metadata["value"] for metadata in metadatas}
+
+                feature_flags = node["featureFlags"]
+                assert len(feature_flags) == 1
+                assert (
+                    feature_flags[0]["name"]
+                    == CodeLocationFeatureFlags.SHOW_SINGLE_RUN_BACKFILL_TOGGLE.value
+                )
 
                 assert (
                     "python_file" in metadata_dict

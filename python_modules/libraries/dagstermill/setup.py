@@ -19,12 +19,11 @@ setup(
     name="dagstermill",
     version=ver,
     description="run notebooks using the Dagster tools",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     packages=find_packages(exclude=["dagstermill_tests*"]),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -50,9 +49,6 @@ setup(
         "scrapbook>=0.5.0",
         "nbconvert",
         "jupyter-client<8",  # jupyter-client 8 causing test hangs
-        # 8.13+ explicitly does not support python 3.8
-        # Can remove when this resolves https://github.com/ipython/ipython/issues/14053
-        "ipython<=8.12; python_version<='3.8'",
     ],
     extras_require={
         "test": [

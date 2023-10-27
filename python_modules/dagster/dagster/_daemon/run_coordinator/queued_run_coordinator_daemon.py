@@ -10,7 +10,10 @@ from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import LaunchRunContext
@@ -18,13 +21,14 @@ from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator,
     RunQueueConfig,
 )
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
@@ -48,7 +52,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         if self._executor is None:
             # assumes max_workers wont change
             self._executor = self._exit_stack.enter_context(
-                ThreadPoolExecutor(
+                InheritContextThreadPoolExecutor(
                     max_workers=max_workers,
                     thread_name_prefix="run_dequeue_worker",
                 )
@@ -162,11 +166,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         fixed_iteration_time: Optional[float],
     ) -> Iterator[None]:
         num_dequeued_runs = 0
-        workspace = workspace_process_context.create_request_context()
         for run in runs_to_dequeue:
             run_launched = self._dequeue_run(
                 workspace_process_context.instance,
-                workspace,
+                workspace_process_context.create_request_context(),
                 run,
                 run_queue_config,
                 fixed_iteration_time=fixed_iteration_time,
@@ -227,7 +230,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             )
 
         self._logger.info(
-            f"Retrieved %d queued runs, checking limits.{locations_clause}", len(queued_runs)
+            f"Retrieved %d queued runs, checking limits.{locations_clause}",
+            len(queued_runs),
         )
 
         # place in order
@@ -310,10 +314,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         if location_name and self._is_location_pausing_dequeues(location_name, now):
             self._logger.info(
-                (
-                    "Pausing dequeues for runs from code location %s to give its code server time"
-                    " to recover"
-                ),
+                "Pausing dequeues for runs from code location %s to give its code server time"
+                " to recover",
                 location_name,
             )
             return False

@@ -1,6 +1,7 @@
 from typing import Any, Optional, TypeVar
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
 from .file_manager import S3FileManager
@@ -11,7 +12,7 @@ T = TypeVar("T")
 
 class ResourceWithS3Configuration(ConfigurableResource):
     use_unsigned_session: bool = Field(
-        default=False, description="Specifiesw whether to use an unsigned S3 session."
+        default=False, description="Specifies whether to use an unsigned S3 session."
     )
     region_name: Optional[str] = Field(
         default=None, description="Specifies a custom region for the S3 session."
@@ -46,7 +47,7 @@ class ResourceWithS3Configuration(ConfigurableResource):
     aws_secret_access_key: Optional[str] = Field(
         default=None, description="AWS secret access key to use when creating the boto3 session."
     )
-    aws_session_token: str = Field(
+    aws_session_token: Optional[str] = Field(
         default=None, description="AWS session token to use when creating the boto3 session."
     )
 
@@ -82,6 +83,10 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
 
     """
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> Any:
         return construct_s3_client(
             max_attempts=self.max_attempts,
@@ -100,6 +105,7 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
         return self.get_client()
 
 
+@dagster_maintained_resource
 @resource(config_schema=S3Resource.to_config_schema())
 def s3_resource(context) -> Any:
     """Resource that gives access to S3.
@@ -201,6 +207,7 @@ class S3FileManagerResource(ResourceWithS3Configuration, IAttachDifferentObjectT
         return self.get_client()
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=S3FileManagerResource.to_config_schema(),
 )

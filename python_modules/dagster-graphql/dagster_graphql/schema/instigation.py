@@ -1,5 +1,4 @@
 import sys
-import warnings
 from typing import Optional, Union
 
 import dagster._check as check
@@ -14,14 +13,14 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.scheduler.instigation import (
+    DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorTick,
     InstigatorType,
     ScheduleInstigatorData,
     SensorInstigatorData,
-    TickStatus,
 )
-from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
 from dagster._seven.compat.pendulum import to_timezone
@@ -33,6 +32,7 @@ from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from ..implementation.fetch_instigators import get_tick_log_events
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
+from ..implementation.fetch_ticks import get_instigation_ticks
 from ..implementation.loader import RepositoryScopedBatchLoader
 from ..implementation.utils import UserFacingGraphQLError
 from .errors import (
@@ -48,13 +48,7 @@ from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import ResolveInfo, non_null_list
 
-
-class GrapheneInstigationType(graphene.Enum):
-    SCHEDULE = "SCHEDULE"
-    SENSOR = "SENSOR"
-
-    class Meta:
-        name = "InstigationType"
+GrapheneInstigationType = graphene.Enum.from_enum(InstigatorType, "InstigationType")
 
 
 class GrapheneInstigationStatus(graphene.Enum):
@@ -139,11 +133,43 @@ class GrapheneDynamicPartitionsRequestType(graphene.Enum):
         name = "DynamicPartitionsRequestType"
 
 
-class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
+class DynamicPartitionsRequestMixin:
+    # Mixin this class to implement DynamicPartitionsRequest
+    #
+    # Graphene has some strange properties that make it so that you cannot
+    # implement ABCs nor use properties in an overridable way. So the way
+    # the mixin works is that the target classes have to have a method
+    # get_dynamic_partitions_request()
     partitionKeys = graphene.List(graphene.NonNull(graphene.String))
     partitionsDefName = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GrapheneDynamicPartitionsRequestType)
 
+    class Meta:
+        name = "DynamicPartitionRequestMixin"
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[
+        AddDynamicPartitionsRequest,
+        DeleteDynamicPartitionsRequest,
+    ]:
+        raise NotImplementedError()
+
+    def resolve_partitionKeys(self, _graphene_info: ResolveInfo):
+        return self.get_dynamic_partitions_request().partition_keys
+
+    def resolve_partitionsDefName(self, _graphene_info: ResolveInfo):
+        return self.get_dynamic_partitions_request().partitions_def_name
+
+    def resolve_type(self, _graphene_info: ResolveInfo):
+        return (
+            GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
+            if isinstance(self.get_dynamic_partitions_request(), AddDynamicPartitionsRequest)
+            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
+        )
+
+
+class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
     class Meta:
         name = "DynamicPartitionRequest"
 
@@ -153,13 +179,57 @@ class GrapheneDynamicPartitionsRequest(graphene.ObjectType):
             AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
         ],
     ):
-        super().__init__(
-            type=GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
-            if isinstance(dynamic_partition_request, AddDynamicPartitionsRequest)
-            else GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS,
-            partitionKeys=dynamic_partition_request.partition_keys,
-            partitionsDefName=dynamic_partition_request.partitions_def_name,
-        )
+        super().__init__()
+        self._dynamic_partitions_request = dynamic_partition_request
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[
+        AddDynamicPartitionsRequest,
+        DeleteDynamicPartitionsRequest,
+    ]:
+        return self._dynamic_partitions_request
+
+
+class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
+    class Meta:
+        name = "DynamicPartitionsRequestResult"
+
+    skippedPartitionKeys = non_null_list(graphene.String)
+
+    def __init__(self, dynamic_partitions_request_result: DynamicPartitionsRequestResult):
+        super().__init__()
+        self._dynamic_partitions_request_result = dynamic_partitions_request_result
+
+    def get_dynamic_partitions_request(
+        self,
+    ) -> Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]:
+        if self._dynamic_partitions_request_result.added_partitions is not None:
+            return AddDynamicPartitionsRequest(
+                partition_keys=self._dynamic_partitions_request_result.added_partitions,
+                partitions_def_name=self._dynamic_partitions_request_result.partitions_def_name,
+            )
+        elif self._dynamic_partitions_request_result.deleted_partitions is not None:
+            return DeleteDynamicPartitionsRequest(
+                partition_keys=self._dynamic_partitions_request_result.deleted_partitions,
+                partitions_def_name=self._dynamic_partitions_request_result.partitions_def_name,
+            )
+        else:
+            check.failed(
+                "Unexpected dynamic_partitions_request_result"
+                f" {self._dynamic_partitions_request_result}"
+            )
+
+    def resolve_skippedPartitionKeys(self, _graphene_info: ResolveInfo):
+        return self._dynamic_partitions_request_result.skipped_partitions
+
+
+class GrapheneRequestedMaterializationsForAsset(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    partitionKeys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "RequestedMaterializationsForAsset"
 
 
 class GrapheneInstigationTick(graphene.ObjectType):
@@ -175,6 +245,13 @@ class GrapheneInstigationTick(graphene.ObjectType):
     originRunIds = non_null_list(graphene.String)
     logKey = graphene.List(graphene.NonNull(graphene.String))
     logEvents = graphene.Field(graphene.NonNull(GrapheneInstigationEventConnection))
+    dynamicPartitionsRequestResults = non_null_list(GrapheneDynamicPartitionsRequestResult)
+    endTimestamp = graphene.Field(graphene.Float)
+    requestedAssetKeys = non_null_list(GrapheneAssetKey)
+    requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
+    requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
+    autoMaterializeAssetEvaluationId = graphene.Field(graphene.Int)
+    instigationType = graphene.NonNull(GrapheneInstigationType)
 
     class Meta:
         name = "InstigationTick"
@@ -188,10 +265,13 @@ class GrapheneInstigationTick(graphene.ObjectType):
             runIds=tick.run_ids,
             runKeys=tick.run_keys,
             error=GraphenePythonError(tick.error) if tick.error else None,
+            instigationType=tick.instigator_type,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
             cursor=tick.cursor,
             logKey=tick.log_key,
+            endTimestamp=tick.end_timestamp,
+            autoMaterializeAssetEvaluationId=tick.tick_data.auto_materialize_evaluation_id,
         )
 
     def resolve_id(self, _):
@@ -214,6 +294,28 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
     def resolve_logEvents(self, graphene_info: ResolveInfo):
         return get_tick_log_events(graphene_info, self._tick)
+
+    def resolve_dynamicPartitionsRequestResults(self, _):
+        return [
+            GrapheneDynamicPartitionsRequestResult(request_result)
+            for request_result in self._tick.dynamic_partitions_request_results
+        ]
+
+    def resolve_requestedAssetKeys(self, _):
+        return [
+            GrapheneAssetKey(path=asset_key.path) for asset_key in self._tick.requested_asset_keys
+        ]
+
+    def resolve_requestedMaterializationsForAssets(self, _):
+        return [
+            GrapheneRequestedMaterializationsForAsset(
+                assetKey=GrapheneAssetKey(path=asset_key.path), partitionKeys=list(partition_keys)
+            )
+            for asset_key, partition_keys in self._tick.requested_assets_and_partitions.items()
+        ]
+
+    def resolve_requestedAssetMaterializationCount(self, _):
+        return self._tick.requested_asset_materialization_count
 
 
 class GrapheneDryRunInstigationTick(graphene.ObjectType):
@@ -313,7 +415,10 @@ class GrapheneTickEvaluation(graphene.ObjectType):
     class Meta:
         name = "TickEvaluation"
 
-    def __init__(self, execution_data):
+    def __init__(
+        self,
+        execution_data: Union[ScheduleExecutionData, SensorExecutionData, SerializableErrorInfo],
+    ):
         check.inst_param(
             execution_data,
             "execution_data",
@@ -335,18 +440,18 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             if not isinstance(execution_data, SerializableErrorInfo)
             else None
         )
-        dynamicPartitionsRequests = None
-        if isinstance(execution_data, SensorExecutionData):
-            dynamicPartitionsRequests = [
-                GrapheneDynamicPartitionsRequest(request)
-                for request in execution_data.dynamic_partitions_requests
-            ]
+
+        self._dynamic_partitions_requests = (
+            execution_data.dynamic_partitions_requests
+            if isinstance(execution_data, SensorExecutionData)
+            else None
+        )
+
         cursor = execution_data.cursor if isinstance(execution_data, SensorExecutionData) else None
         super().__init__(
             skipReason=skip_reason,
             error=error,
             cursor=cursor,
-            dynamicPartitionsRequests=dynamicPartitionsRequests,
         )
 
     def resolve_runRequests(self, _graphene_info: ResolveInfo):
@@ -354,6 +459,15 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             return self._run_requests
 
         return [GrapheneRunRequest(run_request) for run_request in self._run_requests]
+
+    def resolve_dynamicPartitionsRequests(self, _graphene_info: ResolveInfo):
+        if not self._dynamic_partitions_requests:
+            return self._dynamic_partitions_requests
+
+        return [
+            GrapheneDynamicPartitionsRequest(request)
+            for request in self._dynamic_partitions_requests
+        ]
 
 
 class GrapheneRunRequest(graphene.ObjectType):
@@ -421,6 +535,8 @@ class GrapheneInstigationState(graphene.ObjectType):
         limit=graphene.Int(),
         cursor=graphene.String(),
         statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        beforeTimestamp=graphene.Float(),
+        afterTimestamp=graphene.Float(),
     )
     nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
@@ -505,16 +621,6 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_runs(self, graphene_info: ResolveInfo, limit: Optional[int] = None):
         from .pipelines.pipeline import GrapheneRun
 
-        if limit and self._batch_loader:
-            records = (
-                self._batch_loader.get_run_records_for_sensor(self._instigator_state.name, limit)
-                if self._instigator_state.instigator_type == InstigatorType.SENSOR
-                else self._batch_loader.get_run_records_for_schedule(
-                    self._instigator_state.name, limit
-                )
-            )
-            return [GrapheneRun(record) for record in records]
-
         repository_label = self._instigator_state.origin.external_repository_origin.get_label()
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:
             filters = RunsFilter(
@@ -556,54 +662,30 @@ class GrapheneInstigationState(graphene.ObjectType):
         return GrapheneInstigationTick(graphene_info, matches[0]) if matches else None
 
     def resolve_ticks(
-        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+        self,
+        graphene_info,
+        dayRange=None,
+        dayOffset=None,
+        limit=None,
+        cursor=None,
+        statuses=None,
+        beforeTimestamp=None,
+        afterTimestamp=None,
     ):
-        before = None
-        if dayOffset:
-            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
-        elif cursor:
-            parts = cursor.split(":")
-            if parts:
-                try:
-                    before = float(parts[-1])
-                except (ValueError, IndexError):
-                    warnings.warn(f"Invalid cursor for {self.name} ticks: {cursor}")
-
-        after = (
-            pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
-            if dayRange
-            else None
+        return get_instigation_ticks(
+            graphene_info=graphene_info,
+            instigator_type=self._instigator_state.instigator_type,
+            instigator_origin_id=self._instigator_state.instigator_origin_id,
+            selector_id=self._instigator_state.selector_id,
+            batch_loader=self._batch_loader,
+            dayRange=dayRange,
+            dayOffset=dayOffset,
+            limit=limit,
+            cursor=cursor,
+            status_strings=statuses,
+            before=beforeTimestamp,
+            after=afterTimestamp,
         )
-        if statuses:
-            statuses = [TickStatus(status) for status in statuses]
-
-        if self._batch_loader and limit and not cursor and not before and not after:
-            ticks = (
-                self._batch_loader.get_sensor_ticks(
-                    self._instigator_state.instigator_origin_id,
-                    self._instigator_state.selector_id,
-                    limit,
-                )
-                if self._instigator_state.instigator_type == InstigatorType.SENSOR
-                else self._batch_loader.get_schedule_ticks(
-                    self._instigator_state.instigator_origin_id,
-                    self._instigator_state.selector_id,
-                    limit,
-                )
-            )
-            return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
-
-        return [
-            GrapheneInstigationTick(graphene_info, tick)
-            for tick in graphene_info.context.instance.get_ticks(
-                self._instigator_state.instigator_origin_id,
-                self._instigator_state.selector_id,
-                before=before,
-                after=after,
-                limit=limit,
-                statuses=statuses,
-            )
-        ]
 
     def resolve_nextTick(self, graphene_info: ResolveInfo):
         # sensor

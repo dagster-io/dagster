@@ -20,7 +20,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
@@ -101,10 +101,8 @@ def celery_k8s_job_executor(init_context):
 
     if not isinstance(run_launcher, CeleryK8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(
-            (
-                "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
-                "CeleryK8sRunLauncher on your instance to use it."
-            ),
+            "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
+            "CeleryK8sRunLauncher on your instance to use it.",
         )
 
     job_config = run_launcher.get_k8s_job_config(
@@ -208,6 +206,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
         should_verify_step=True,
+        print_serialized_events=True,
     )
 
     job_config = plan_context.executor.job_config
@@ -235,10 +234,10 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     )
 
 
-def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instance):
+def construct_step_failure_event_and_handle(dagster_run, step_key, err, instance):
     step_failure_event = DagsterEvent(
         event_type_value=DagsterEventType.STEP_FAILURE.value,
-        job_name=pipeline_run.job_name,
+        job_name=dagster_run.job_name,
         step_key=step_key,
         event_specific_data=StepFailureData(
             error=serializable_error_info_from_exc_info(sys.exc_info()),
@@ -248,8 +247,8 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
     event_record = EventLogEntry(
         user_message=str(err),
         level=logging.ERROR,
-        job_name=pipeline_run.job_name,
-        run_id=pipeline_run.run_id,
+        job_name=dagster_run.job_name,
+        run_id=dagster_run.run_id,
         error_info=None,
         step_key=step_key,
         timestamp=time.time(),
@@ -362,6 +361,15 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         args = execute_step_args.get_command_args()
 
+        labels = {
+            "dagster/job": dagster_run.job_name,
+            "dagster/op": step_key,
+            "dagster/run-id": execute_step_args.run_id,
+        }
+        if dagster_run.external_job_origin:
+            labels[
+                "dagster/code-location"
+            ] = dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
         job = construct_dagster_k8s_job(
             job_config,
             args,
@@ -369,11 +377,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             user_defined_k8s_config,
             pod_name,
             component="step_worker",
-            labels={
-                "dagster/job": dagster_run.job_name,
-                "dagster/op": step_key,
-                "dagster/run-id": execute_step_args.run_id,
-            },
+            labels=labels,
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
@@ -528,7 +532,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             try:
                 raw_logs = api_client.retrieve_pod_logs(pod_name, namespace=job_namespace)
                 logs += raw_logs.split("\n")
-            except kubernetes.client.rest.ApiException:
+            except kubernetes.client.exceptions.ApiException:
                 instance.report_engine_event(
                     "Encountered unexpected error while fetching pod logs for Kubernetes job {}, "
                     "Pod name {} for step {}. Will attempt to continue with other pods.".format(

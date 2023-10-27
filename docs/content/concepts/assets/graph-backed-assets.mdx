@@ -1,11 +1,11 @@
 ---
 title: Graph-Backed Assets | Dagster
-description: Defining a software-defined asset with multiple discrete computations combined in a graph.
+description: Defining a software-defined asset with multiple discrete computations combined in an op graph.
 ---
 
 # Graph-Backed Assets
 
-[Basic software-defined assets](/concepts/assets/software-defined-assets#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries, but doesn't require you to link each intermediate value to an asset in persistent storage.
+[Basic software-defined assets](/concepts/assets/software-defined-assets#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and assembling them into an op graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries, but doesn't require you to link each intermediate value to an asset in persistent storage.
 
 ---
 
@@ -28,11 +28,12 @@ In this case, when you tell Dagster to materialize the `slack_files_table` asset
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
 import pandas as pd
 from dagster import graph_asset, op
+from dagster_slack import SlackResource
 
 
-@op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context) -> pd.DataFrame:
-    files = context.resources.slack.files_list(channel="#random")
+@op
+def fetch_files_from_slack(context, slack: SlackResource) -> pd.DataFrame:
+    files = slack.get_client().files_list(channel="#random")
     return pd.DataFrame(
         [
             {
@@ -56,9 +57,9 @@ def slack_files_table():
     return store_files(fetch_files_from_slack())
 ```
 
-### Defining basic dependencies for graph-backed assets
+### Defining managed-loading dependencies for graph-backed assets
 
-Similar to with basic software-defined assets, Dagster infers the upstream assets from the names of the arguments to the decorated function.
+Similar to software-defined assets, Dagster infers the upstream assets from the names of the arguments to the decorated function. Dagster will then delegate loading the data to an [I/O manager](/concepts/io-management/io-managers).
 
 The example below includes an asset named `middle_asset`. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`:
 
@@ -138,7 +139,7 @@ def foo(context, bar_1):
         yield Output(bar_1 + 2, output_name="foo_2")
 ```
 
-Because Dagster flattens each graph into a flat input/output mapping between ops under the hood, any op that produces an output of the graph must be structured to yield its outputs optionally, enabling the outputs to be returned independently.
+Because Dagster flattens each op graph into a flat input/output mapping between ops under the hood, any op that produces an output of the graph must be structured to yield its outputs optionally, enabling the outputs to be returned independently.
 
 In the example, `foo` and `baz` produce outputs of `my_graph`. Subsequently, their outputs need to be yielded optionally. Because `foo` yields multiple outputs, we must structure our code to conditionally yield its outputs like in the code snippet above.
 

@@ -118,8 +118,13 @@ dagit_run_logs
 
 python_modules/libraries/dagster-aws/dagster_aws/ecs/config.yaml
 
+python_modules/dagster-webserver/node_modules/
+python_modules/dagster-webserver/yarn.lock
+
+# old dagit stuff
 python_modules/dagit/node_modules/
 python_modules/dagit/yarn.lock
+js_modules/dagit
 
 # Gatsby stuff
 docs/gatsby/**/node_modules/
@@ -167,3 +172,6 @@ pyrightconfig.json
 
 # Scripts working directory
 scripts/.build
+
+# dbt .user files
+.user.yml

@@ -1,27 +1,27 @@
 ---
 title: Running Dagster as a Service | Dagster"
-description: Dagit serves a user interface and offers a GraphQL API to Dagster. Here's how to run it.
+description: The Dagster webserver serves a user interface and offers a GraphQL API to Dagster. Here's how to run it.
 ---
 
 # Running Dagster as a Service
 
-## Running Dagit
+## Running the Dagster webserver
 
-The core of any deployment of Dagster is [Dagit](/concepts/dagit/dagit), a process that serves a user interface and responds to GraphQL queries.
+The core of any deployment of Dagster is [the Dagster webserver](/concepts/webserver/ui), a process that serves the Dagster UI and responds to GraphQL queries.
 
-To run dagit locally, first ensure that you are running a recent Python version. Typically, you'll want to run Dagit inside a [virtualenv](https://virtualenv.pypa.io/en/stable/). Then, you can install Dagit and any additional libraries you might need.
-
-```shell
-pip install dagit
-```
-
-To run Dagit, use a command like the following:
+To run the webserver locally, first ensure that you are running a recent Python version. Typically, you'll want to run the webserver inside a [virtualenv](https://virtualenv.pypa.io/en/stable/). Then, you can install the webserver and any additional libraries you might need.
 
 ```shell
-DAGSTER_HOME=/opt/dagster/dagster_home dagit -h 0.0.0.0 -p 3000
+pip install dagster-webserver
 ```
 
-In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` and listen on _0.0.0.0:3000_.
+To run the webserver, use a command like the following:
+
+```shell
+DAGSTER_HOME=/opt/dagster/dagster_home dagster-webserver -h 0.0.0.0 -p 3000
+```
+
+In this configuration, the webserver will write execution logs to `$DAGSTER_HOME/logs` and listen on _0.0.0.0:3000_.
 
 ## Running the Dagster daemon
 
@@ -33,6 +33,6 @@ pip install dagster
 DAGSTER_HOME=/opt/dagster/dagster_home dagster-daemon run
 ```
 
-The `dagster-daemon` process will periodically check your instance for any new runs that should be launched from your run queue or triggered by your running schedules or sensors. If you're running `dagster-daemon` in a different environment than dagit, it must also have access to your `dagster.yaml` file and `workspace.yaml` file and be able to access the components defined on your instance, and also be able to load the [repositories](/concepts/repositories-workspaces/repositories) defined in your [workspace](/concepts/code-locations/workspace-files).
+The `dagster-daemon` process will periodically check your instance for any new runs that should be launched from your run queue or triggered by your running schedules or sensors. If you're running `dagster-daemon` in a different environment than `dagster-webserver`, it must also have access to your `dagster.yaml` file and `workspace.yaml` file and be able to access the components defined on your instance, and also be able to load the [repositories](/concepts/repositories-workspaces/repositories) defined in your [workspace](/concepts/code-locations/workspace-files).
 
-You can check the status of your `dagster-daemon` process in Dagit by navigating to the Instance tab in the navigation bar on the left-hand side of the screen. A deployment can have multiple instances of dagit running at once, but should only include a single `dagster-daemon` process.
+You can check the status of your `dagster-daemon` process in the UI by navigating to the Instance tab in the navigation bar on the left-hand side of the screen. A deployment can have multiple simultaneous instances of `dagster-webserver`, but should include only a single `dagster-daemon` process.

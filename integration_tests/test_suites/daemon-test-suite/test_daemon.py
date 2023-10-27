@@ -14,7 +14,7 @@ def test_heartbeat():
     with instance_for_test() as instance:
         assert all_daemons_healthy(instance) is False
 
-        with start_daemon():
+        with start_daemon(log_level="debug"):
             time.sleep(5)
             assert all_daemons_healthy(instance) is True
 

@@ -7,7 +7,7 @@ from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
@@ -29,7 +29,7 @@ from dagster_test.test_project import (
 def test_k8s_run_launcher_default(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     pods = DagsterKubernetesClient.production_client().core_api.list_namespaced_pod(
         namespace=user_code_namespace_for_k8s_run_launcher
@@ -41,14 +41,14 @@ def test_k8s_run_launcher_default(
     job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
+    assert "RUN_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
@@ -73,7 +73,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
     dagster_docker_image,
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -91,7 +91,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
     job_name = "demo_job_celery_k8s"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     timeout = datetime.timedelta(0, 120)
@@ -123,14 +123,14 @@ def test_k8s_run_launcher_with_celery_executor_fails(
 def test_failing_k8s_run_launcher(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
 
     job_name = "always_fail_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -148,7 +148,7 @@ def test_failing_k8s_run_launcher(
 def test_k8s_run_launcher_terminate(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     job_name = "slow_job_k8s"
 
@@ -157,7 +157,7 @@ def test_k8s_run_launcher_terminate(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
@@ -168,11 +168,11 @@ def test_k8s_run_launcher_terminate(
     start_time = datetime.datetime.now()
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for can_terminate"
-        if can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id):
+        if can_terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id):
             break
         time.sleep(5)
 
-    terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id=run_id)
+    terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id=run_id)
 
     start_time = datetime.datetime.now()
     dagster_run = None
@@ -185,13 +185,13 @@ def test_k8s_run_launcher_terminate(
 
     assert dagster_run.status == DagsterRunStatus.CANCELED
 
-    assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
+    assert not can_terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id)
 
 
 @pytest.mark.integration
 def test_k8s_run_launcher_secret_from_deployment(
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     # This run_config requires that WORD_FACTOR be set on both the user code deployment
     # and the run launcher. It will only work if secrets are propagated from the deployment
@@ -203,11 +203,11 @@ def test_k8s_run_launcher_secret_from_deployment(
     job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
+    assert "RUN_SUCCESS" in result, f"no match, result: {result}"

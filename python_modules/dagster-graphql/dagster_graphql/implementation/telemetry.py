@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ..schema.roots.mutation import GrapheneLogTelemetrySuccess
 
 
-def log_dagit_telemetry_event(
+def log_ui_telemetry_event(
     graphene_info: "ResolveInfo", action: str, client_time: str, client_id, metadata: str
 ) -> "GrapheneLogTelemetrySuccess":
     from ..schema.roots.mutation import GrapheneLogTelemetrySuccess

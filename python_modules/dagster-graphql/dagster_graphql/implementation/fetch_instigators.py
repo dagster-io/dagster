@@ -8,8 +8,6 @@ from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorStatus
 
-from .utils import capture_error
-
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
@@ -21,7 +19,6 @@ if TYPE_CHECKING:
     )
 
 
-@capture_error
 def get_unloadable_instigator_states_or_error(
     graphene_info: "ResolveInfo", instigator_type: Optional[InstigatorType] = None
 ) -> "GrapheneInstigationStates":
@@ -56,7 +53,6 @@ def get_unloadable_instigator_states_or_error(
     )
 
 
-@capture_error
 def get_instigator_state_or_error(
     graphene_info: "ResolveInfo", selector: InstigatorSelector
 ) -> Union["GrapheneInstigationState", "GrapheneInstigationStateNotFoundError"]:

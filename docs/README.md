@@ -17,7 +17,7 @@ The content for the site is of several types and stored in several places:
 - [**Prose docs**](#prose-docs) make up the majority of the docs site: Tutorials, Concepts, Guides, etc. All prose docs live directly in the `content` folder as `mdx` files (markdown with React components). You should edit these files directly to update prose docs.
 - [**API docs**](#api-docs) contain the formal specification of Dagster's APIs. The built representation of the API docs consists of a few large JSON files in `content/api`. These files should not be edited directly-- they are the output of a build process that extracts the docstrings in Dagster source. The primary build tools are [Sphinx](https://www.sphinx-doc.org/en/master/) and its [autodoc extension](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html). Sphinx processes a set of `rst` files (found in `sphinx/index.rst` and `sphinx/sections`) into JSON, which is then massaged into a (still-JSON) structure that NextJS can understand (`scripts/pack_json.py` script) and written to `content/api`. Note that there is little text in the `rst` files, because their main purpose is to invoke `autodoc` directives which pull in docstrings from all over the dagster codebase.
 - [**Code snippets**](#code-snippets) are embedded throughout the prose docs. All code snippets used in the docs site live (outside the `docs` folder) in `examples/docs_snippets`. This is just a regular python package, which makes it easy to test and specify dependencies for the snippets.
-- [**Screenshots**](#screenshots) are image files living in `next/public/images`, typically under a subdirectory corresponding to the page on which they appear. There's no need to manually manage the screenshots in this directory-- instead you can add a specification your screenshot to `screenshots` and run `dagit-screenshot capture` to quasi-automatically generate the screenshot and place it in the appropriate subdirectory of `next/public/images`.
+- [**Screenshots**](#screenshots) are image files living in `next/public/images`, typically under a subdirectory corresponding to the page on which they appear. There's no need to manually manage the screenshots in this directory-- instead you can add a specification your screenshot to `screenshots` and run `dagster-ui-screenshot capture` to quasi-automatically generate the screenshot and place it in the appropriate subdirectory of `next/public/images`.
 - [**Navigation schema**](#navigation-schema) is a JSON file specifying the contents of the main nav for the site (found in the left sidebar). This typically needs to be updated to include a link when new prose doc is added.
 
 ## Prose docs
@@ -34,7 +34,7 @@ See the subsections below for details.
 
 ### React components
 
-The set of React components available to our MDX files is defined in `next/components/mdx/MDXComponents.tsx`. Note that the various other compenents defined in `next/components` _are not available to MDX_; if you want to use a component in MDX, it must be exported from `MDXComponents.tsx`.
+The set of React components available to our MDX files is defined in `next/components/mdx/MDXComponents.tsx`. Note that the various other components defined in `next/components` _are not available to MDX_; if you want to use a component in MDX, it must be exported from `MDXComponents.tsx`.
 
 MDX doesn't support imports, so components aren't imported into the MDX file in which they are used. Instead, the full set of `MDXComponents` components is injected into the build environment when the MDX is rendered to HTML (this happens in `next/pages/[...page].js`).
 
@@ -99,7 +99,7 @@ The build is a two-step process. First, `sphinx-build` builds JSON (written to `
 
 The most convenient way to build the API docs is to run `make apidoc-build` (from `dagster/docs`). This will execute the Sphinx build step using the `sphinx` tox environment (see `tox.ini`) and then run `scripts/pack_json.py` (only if the sphinx build executed with no warnings/errors). Note that it is important to use `tox` to run Sphinx rather than your normal dev environment-- that's because our Sphinx configuration requires a different set of packages than are installed by `scripts/install_dev_python_modules.py`.
 
-If you are making changes to the API docs, you can use `make apidoc-watch-build` together with `make dev`. `apidoc-watch-build` uses the file watcher `watchmedo` (should be installed in your dev env from `watchdog`) to re-run `make apidoc-build` everytime either RST source or the sphinx configuration file changes. If it completes successfully, the updated API doc JSON will be picked up by the NextJS file watcher for `make dev` and trigger live reload of the docs site. This is very useful for experimenting with sphinx options and extensions.
+If you are making changes to the API docs, you can use `make apidoc-watch-build` together with `make dev`. `apidoc-watch-build` uses the file watcher `watchmedo` (should be installed in your dev env from `watchdog`) to re-run `make apidoc-build` every time either RST source or the sphinx configuration file changes. If it completes successfully, the updated API doc JSON will be picked up by the NextJS file watcher for `make dev` and trigger live reload of the docs site. This is very useful for experimenting with sphinx options and extensions.
 
 ### Mocking runtime dependencies
 
@@ -127,7 +127,7 @@ All non-remotely-sourced images should be stored in `next/public/images`. This d
 
 ### Screenshots
 
-Most of the site's images are screenshots of Dagit. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in YAML files in the `screenshots` directory. This directory contains a "screenshot spec database", which is just a tree of YAML files that matches the hierarchical structure of `content`. These files are intended to be read by the command-line tool `dagit-screenshot`, which generates and writes screenshot image files to `next/public/images`. See `dagit-screenshot/README.md` for details.
+Most of the site's images are screenshots of the Dagster UI. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in YAML files in the `screenshots` directory. This directory contains a "screenshot spec database", which is just a tree of YAML files that matches the hierarchical structure of `content`. These files are intended to be read by the command-line tool `dagster-ui-screenshot`, which generates and writes screenshot image files to `next/public/images`. See `dagster-ui-screenshot/README.md` for details.
 
 ## Navigation schema
 

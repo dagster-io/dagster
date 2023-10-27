@@ -22,7 +22,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._core.storage.sqlite import create_db_conn_string, get_sqlite_version
+from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
 
@@ -38,7 +38,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     """SQLite-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     This is the default run storage when none is specified in the ``dagster.yaml``.
@@ -90,7 +90,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 RunStorageSqlMetadata.create_all(engine)
-                connection.execute("PRAGMA journal_mode=WAL;")
+                connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                 stamp_alembic_rev(alembic_config, connection)
                 should_mark_indexes = True
 
@@ -109,11 +109,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     @contextmanager
     def connect(self) -> Iterator[Connection]:
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        conn = engine.connect()
-        try:
-            yield conn
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            with conn.begin():
+                yield conn
 
     def _alembic_upgrade(self, rev: str = "head") -> None:
         alembic_config = get_alembic_config(__file__)
@@ -124,21 +122,6 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_downgrade(alembic_config, conn, rev=rev)
-
-    @property
-    def supports_bucket_queries(self) -> bool:
-        parts = get_sqlite_version().split(".")
-        try:
-            for i in range(min(len(parts), len(MINIMUM_SQLITE_BUCKET_VERSION))):
-                curr = int(parts[i])
-                if curr < MINIMUM_SQLITE_BUCKET_VERSION[i]:
-                    return False
-                if curr > MINIMUM_SQLITE_BUCKET_VERSION[i]:
-                    return True
-        except ValueError:
-            return False
-
-        return False
 
     def upgrade(self) -> None:
         self._check_for_version_066_migration_and_perform()

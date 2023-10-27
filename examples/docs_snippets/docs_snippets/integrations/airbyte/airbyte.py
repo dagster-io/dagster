@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 
 def scope_define_instance():
@@ -143,7 +143,12 @@ def scope_add_downstream_assets():
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets
         import json
-        from dagster import asset, Definitions, define_asset_job, AssetSelection
+        from dagster import (
+            AssetSelection,
+            Definitions,
+            asset,
+            define_asset_job,
+        )
         from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
         from dagster_snowflake_pandas import SnowflakePandasIOManager
         import pandas as pd
@@ -180,13 +185,70 @@ def scope_add_downstream_assets():
         # end_add_downstream_assets
 
 
+def scope_add_downstream_assets_w_deps():
+    import mock
+
+    with mock.patch("dagster_snowflake.SnowflakeResource"):
+        # start_with_deps_add_downstream_assets
+        import json
+        from dagster import (
+            AssetSelection,
+            AssetKey,
+            Definitions,
+            asset,
+            define_asset_job,
+        )
+        from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
+        from dagster_snowflake import SnowflakeResource
+
+        airbyte_instance = AirbyteResource(
+            host="localhost",
+            port="8000",
+        )
+
+        airbyte_assets = load_assets_from_airbyte_instance(
+            airbyte_instance,
+        )
+
+        @asset(deps=[AssetKey("stargazers")])
+        def stargazers_file(snowflake: SnowflakeResource):
+            with snowflake.get_connection() as conn:
+                stargazers = conn.cursor.execute(
+                    "SELECT * FROM STARGAZERS"
+                ).fetch_pandas_all()
+            with open("stargazers.json", "w", encoding="utf8") as f:
+                f.write(json.dumps(stargazers.to_json(), indent=2))
+
+        # only run the airbyte syncs necessary to materialize stargazers_file
+        my_upstream_job = define_asset_job(
+            "my_upstream_job",
+            AssetSelection.keys("stargazers_file")
+            .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
+            .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
+        )
+
+        defs = Definitions(
+            jobs=[my_upstream_job],
+            assets=[airbyte_assets, stargazers_file],
+            resources={"snowflake": SnowflakeResource(...)},
+        )
+
+        # end_with_deps_add_downstream_assets
+
+
 def scope_add_downstream_assets_cloud():
     import mock
 
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets_cloud
         import json
-        from dagster import asset, Definitions, define_asset_job, AssetSelection, EnvVar
+        from dagster import (
+            AssetSelection,
+            EnvVar,
+            Definitions,
+            asset,
+            define_asset_job,
+        )
         from dagster_airbyte import (
             build_airbyte_assets,
             AirbyteCloudResource,
@@ -225,6 +287,63 @@ def scope_add_downstream_assets_cloud():
         )
 
         # end_add_downstream_assets_cloud
+
+
+def scope_add_downstream_assets_cloud_with_deps():
+    import mock
+
+    with mock.patch("dagster_snowflake.SnowflakeResource"):
+        # start_with_deps_add_downstream_assets_cloud
+        import json
+        from dagster import (
+            AssetKey,
+            AssetSelection,
+            EnvVar,
+            Definitions,
+            asset,
+            define_asset_job,
+        )
+        from dagster_airbyte import (
+            build_airbyte_assets,
+            AirbyteCloudResource,
+        )
+        from dagster_snowflake import SnowflakeResource
+
+        airbyte_instance = AirbyteCloudResource(
+            api_key=EnvVar("AIRBYTE_API_KEY"),
+        )
+        airbyte_assets = build_airbyte_assets(
+            connection_id="43908042-8399-4a58-82f1-71a45099fff7",
+            destination_tables=["releases", "tags", "teams"],
+        )
+
+        @asset(deps=[AssetKey("stargazers")])
+        def stargazers_file(snowflake: SnowflakeResource):
+            with snowflake.get_connection() as conn:
+                stargazers = conn.cursor.execute(
+                    "SELECT * FROM STARGAZERS"
+                ).fetch_pandas_all()
+            with open("stargazers.json", "w", encoding="utf8") as f:
+                f.write(json.dumps(stargazers.to_json(), indent=2))
+
+        # only run the airbyte syncs necessary to materialize stargazers_file
+        my_upstream_job = define_asset_job(
+            "my_upstream_job",
+            AssetSelection.keys("stargazers_file")
+            .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
+            .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
+        )
+
+        defs = Definitions(
+            jobs=[my_upstream_job],
+            assets=[airbyte_assets, stargazers_file],
+            resources={
+                "snowflake": SnowflakeResource(...),
+                "airbyte_instance": airbyte_instance,
+            },
+        )
+
+        # end_with_deps_add_downstream_assets_cloud
 
 
 def scope_schedule_assets():

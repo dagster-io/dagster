@@ -1,9 +1,8 @@
-from typing import Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import dagster._check as check
 import graphene
 from dagster._core.snap import JobSnapshot
-from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.types.dagster_type import DagsterTypeKind
 from typing_extensions import TypeAlias
 
@@ -17,6 +16,9 @@ from .errors import (
     GraphenePythonError,
 )
 from .util import non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.snap.dagster_types import DagsterTypeSnap
 
 GrapheneDagsterTypeUnion: TypeAlias = Union[
     "GrapheneListDagsterType", "GrapheneNullableDagsterType", "GrapheneRegularDagsterType"
@@ -37,9 +39,9 @@ def to_dagster_type(
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
     check.str_param(dagster_type_key, "dagster_type_key")
 
-    dagster_type_meta: DagsterTypeSnap = (
-        pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(dagster_type_key)
-    )
+    dagster_type_meta: (
+        DagsterTypeSnap
+    ) = pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(dagster_type_key)
 
     base_args: Dict[str, Any] = dict(
         key=dagster_type_meta.key,

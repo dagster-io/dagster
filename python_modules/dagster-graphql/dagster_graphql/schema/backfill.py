@@ -15,8 +15,8 @@ from dagster._core.execution.backfill import (
     PartitionBackfill,
 )
 from dagster._core.host_representation.external import ExternalPartitionSet
-from dagster._core.storage.pipeline_run import RunPartitionData, RunRecord, RunsFilter
-from dagster._core.storage.tags import BACKFILL_ID_TAG
+from dagster._core.storage.dagster_run import RunPartitionData, RunRecord, RunsFilter
+from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
 
 from ..implementation.fetch_partition_sets import (
@@ -25,6 +25,7 @@ from ..implementation.fetch_partition_sets import (
 )
 from .asset_key import GrapheneAssetKey
 from .errors import (
+    GrapheneError,
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
     GrapheneInvalidSubsetError,
@@ -108,6 +109,7 @@ class GrapheneBulkActionStatus(graphene.Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELED = "CANCELED"
+    CANCELING = "CANCELING"
 
     class Meta:
         name = "BulkActionStatus"
@@ -152,7 +154,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
-    partitionStatuses = graphene.NonNull(
+    partitionStatuses = graphene.Field(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
     )
     partitionStatusCounts = non_null_list(
@@ -164,6 +166,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
     hasResumePermission = graphene.NonNull(graphene.Boolean)
     user = graphene.Field(graphene.String)
+    tags = non_null_list("dagster_graphql.schema.tags.GraphenePipelineTag")
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -239,6 +242,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records]
 
+    def resolve_tags(self, _graphene_info: ResolveInfo):
+        from .tags import GraphenePipelineTag
+
+        return [
+            GraphenePipelineTag(key=key, value=value)
+            for key, value in self._backfill_job.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
+        ]
+
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
             # if it's still in progress then there is no end time
@@ -275,6 +287,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_partitionStatuses(self, graphene_info: ResolveInfo):
+        if self._backfill_job.is_asset_backfill:
+            return None
+
         partition_set_origin = self._backfill_job.partition_set_origin
         partition_set_name = (
             partition_set_origin.partition_set_name if partition_set_origin else None
@@ -290,6 +305,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_partitionStatusCounts(
         self, graphene_info: ResolveInfo
     ) -> Sequence["GraphenePartitionStatusCounts"]:
+        # This resolver is only enabled for job backfills, since it assumes a unique run per
+        # partition key (which is not true for asset backfills). Asset backfills should rely on
+        # the assetBackfillData resolver instead.
+        if self._backfill_job.is_asset_backfill:
+            return []
+
         partition_run_data = self._get_partition_run_data(graphene_info)
         return partition_status_counts_from_run_partition_data(
             partition_run_data,
@@ -396,9 +417,22 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._backfill_job.user
 
 
+class GrapheneBackfillNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "BackfillNotFoundError"
+
+    backfill_id = graphene.NonNull(graphene.String)
+
+    def __init__(self, backfill_id: str):
+        super().__init__()
+        self.backfill_id = backfill_id
+        self.message = f"Backfill {backfill_id} could not be found."
+
+
 class GraphenePartitionBackfillOrError(graphene.Union):
     class Meta:
-        types = (GraphenePartitionBackfill, GraphenePythonError)
+        types = (GraphenePartitionBackfill, GrapheneBackfillNotFoundError, GraphenePythonError)
         name = "PartitionBackfillOrError"
 
 

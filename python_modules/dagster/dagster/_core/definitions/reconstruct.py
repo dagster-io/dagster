@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import inspect
+import json
 import os
 import sys
 from functools import lru_cache
@@ -9,6 +8,8 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -20,7 +21,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -32,18 +33,19 @@ from dagster._core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.selector import parse_solid_selection
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
 from .events import AssetKey
-from .pipeline_base import IJob
+from .job_base import IJob
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -84,7 +86,7 @@ class ReconstructableRepository(
         executable_path: Optional[str] = None,
         entry_point: Optional[Sequence[str]] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-        repository_load_data: Optional[RepositoryLoadData] = None,
+        repository_load_data: Optional["RepositoryLoadData"] = None,
     ):
         from dagster._core.definitions.repository_definition import RepositoryLoadData
 
@@ -116,7 +118,7 @@ class ReconstructableRepository(
     def get_definition(self) -> "RepositoryDefinition":
         return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
-    def get_reconstructable_job(self, name: str) -> ReconstructableJob:
+    def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
 
     @classmethod
@@ -127,7 +129,7 @@ class ReconstructableRepository(
         working_directory: Optional[str] = None,
         container_image: Optional[str] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-    ) -> ReconstructableRepository:
+    ) -> "ReconstructableRepository":
         if not working_directory:
             working_directory = os.getcwd()
         return cls(
@@ -144,7 +146,7 @@ class ReconstructableRepository(
         working_directory: Optional[str] = None,
         container_image: Optional[str] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-    ) -> ReconstructableRepository:
+    ) -> "ReconstructableRepository":
         return cls(
             ModuleCodePointer(module, fn_name, working_directory),
             container_image=container_image,
@@ -173,7 +175,27 @@ class ReconstructableRepository(
         return self._hash
 
 
+class ReconstructableJobSerializer(NamedTupleSerializer):
+    def before_unpack(self, _, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+        solid_selection_str = unpacked_dict.get("solid_selection_str")
+        solids_to_execute = unpacked_dict.get("solids_to_execute")
+        if solid_selection_str:
+            unpacked_dict["op_selection"] = json.loads(solid_selection_str)
+        elif solids_to_execute:
+            unpacked_dict["op_selection"] = solids_to_execute
+        return unpacked_dict
+
+    def after_pack(self, **packed_dict: Any) -> Dict[str, Any]:
+        if packed_dict["op_selection"]:
+            packed_dict["solid_selection_str"] = json.dumps(packed_dict["op_selection"]["__set__"])
+        else:
+            packed_dict["solid_selection_str"] = None
+        del packed_dict["op_selection"]
+        return packed_dict
+
+
 @whitelist_for_serdes(
+    serializer=ReconstructableJobSerializer,
     storage_name="ReconstructablePipeline",
     storage_field_names={
         "job_name": "pipeline_name",
@@ -185,9 +207,9 @@ class ReconstructableJob(
         [
             ("repository", ReconstructableRepository),
             ("job_name", str),
-            ("solid_selection_str", Optional[str]),
-            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     ),
     IJob,
@@ -199,12 +221,9 @@ class ReconstructableJob(
         repository (ReconstructableRepository): The reconstructable representation of the repository
             the job belongs to.
         job_name (str): The name of the job.
-        solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
-            solid/op selection. None if no selection is specified, i.e. the entire job will
-            be run.
-        solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
-            is specified, i.e. the entire job will be run.
-        asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
+        op_selection (Optional[AbstractSet[str]]): A set of op query strings. Ops matching any of
+            these queries will be selected. None if no selection is specified.
+        asset_selection (Optional[AbstractSet[AssetKey]]) A set of assets to execute. None if no selection
             is specified, i.e. the entire job will be run.
     """
 
@@ -212,159 +231,86 @@ class ReconstructableJob(
         cls,
         repository: ReconstructableRepository,
         job_name: str,
-        solid_selection_str: Optional[str] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", AssetKey)
+        op_selection = set(op_selection) if op_selection else None
         return super(ReconstructableJob, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
-            solids_to_execute=solids_to_execute,
-            asset_selection=asset_selection,
+            op_selection=check.opt_nullable_set_param(op_selection, "op_selection", of_type=str),
+            asset_selection=check.opt_nullable_set_param(
+                asset_selection, "asset_selection", AssetKey
+            ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", AssetCheckKey
+            ),
         )
 
     def with_repository_load_data(
         self, metadata: Optional["RepositoryLoadData"]
-    ) -> ReconstructableJob:
+    ) -> "ReconstructableJob":
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
-
-    @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
-    def get_definition(self) -> Union[JobDefinition, "JobDefinition"]:
+    def get_definition(self) -> "JobDefinition":
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.job_name,
-            self.solid_selection,
+            self.op_selection,
             self.asset_selection,
-            self.solids_to_execute,
+            self.asset_check_selection,
         )
 
     def get_reconstructable_repository(self) -> ReconstructableRepository:
         return self.repository
 
-    def _subset_for_execution(
+    def get_subset(
         self,
-        solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[AbstractSet[AssetKey]],
-    ) -> "ReconstructableJob":
-        # no selection
-        if solid_selection is None and solids_to_execute is None and asset_selection is None:
-            return ReconstructableJob(
-                repository=self.repository,
-                job_name=self.job_name,
-            )
-
-        from dagster._core.definitions import JobDefinition
-
-        job_def = self.get_definition()
-        if isinstance(job_def, JobDefinition):
-            # jobs use pre-resolved selection
-            # when subselecting a job
-            # * job subselection depend on solid_selection rather than solids_to_execute
-            # * we'll resolve the op selection later in the stack
-            if solid_selection is None:
-                # when the pre-resolution info is unavailable (e.g. subset from existing run),
-                # we need to fill the solid_selection in order to pass the value down to deeper stack.
-                solid_selection = list(solids_to_execute) if solids_to_execute else None
-            return ReconstructableJob(
-                repository=self.repository,
-                job_name=self.job_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=None,
-                asset_selection=asset_selection,
-            )
-        elif isinstance(job_def, JobDefinition):
-            # when subselecting a job
-            # * job subselection depend on solids_to_excute rather than solid_selection
-            # * we resolve a list of solid selection queries to a frozenset of qualified solid names
-            #   e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-            if solid_selection and solids_to_execute is None:
-                # when post-resolution query is unavailable, resolve the query
-                solids_to_execute = parse_solid_selection(job_def, solid_selection)
-            return ReconstructableJob(
-                repository=self.repository,
-                job_name=self.job_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
-            )
-        else:
-            raise Exception(f"Unexpected job type {job_def.__class__.__name__}")
-
-    def subset_for_execution(
-        self,
-        solid_selection: Optional[Sequence[str]] = None,
+        *,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "ReconstructableJob":
-        # take a list of unresolved selection queries
-        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        check.invariant(
-            not (solid_selection and asset_selection),
-            "solid_selection and asset_selection cannot both be provided as arguments",
-        )
-
-        return self._subset_for_execution(
-            solids_to_execute=None, solid_selection=solid_selection, asset_selection=asset_selection
-        )
-
-    def subset_for_execution_from_existing_job(
-        self,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> ReconstructableJob:
-        # take a frozenset of resolved solid names from an existing job
-        # so there's no need to parse the selection
-
-        check.invariant(
-            not (solids_to_execute and asset_selection),
-            "solids_to_execute and asset_selection cannot both be provided as arguments",
-        )
-
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        return self._subset_for_execution(
-            solids_to_execute=solids_to_execute,
-            solid_selection=None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    ) -> Self:
+        if op_selection and (asset_selection or asset_check_selection):
+            check.failed(
+                "op_selection and asset_selection or asset_check_selection cannot both be provided"
+                " as arguments",
+            )
+        op_selection = set(op_selection) if op_selection else None
+        return ReconstructableJob(
+            repository=self.repository,
+            job_name=self.job_name,
+            op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
         )
 
     def describe(self) -> str:
-        return '"{name}" in repository ({repo})'.format(
-            repo=self.repository.pointer.describe, name=self.job_name
-        )
+        return f'"{self.job_name}" in repository ({self.repository.pointer.describe})'
 
     @staticmethod
-    def for_file(python_file: str, fn_name: str) -> ReconstructableJob:
+    def for_file(python_file: str, fn_name: str) -> "ReconstructableJob":
         return bootstrap_standalone_recon_job(FileCodePointer(python_file, fn_name, os.getcwd()))
 
     @staticmethod
-    def for_module(module: str, fn_name: str) -> ReconstructableJob:
+    def for_module(module: str, fn_name: str) -> "ReconstructableJob":
         return bootstrap_standalone_recon_job(ModuleCodePointer(module, fn_name, os.getcwd()))
 
     def to_dict(self) -> Mapping[str, object]:
         return pack_value(self)
 
     @staticmethod
-    def from_dict(val: Mapping[str, Any]) -> ReconstructableJob:
+    def from_dict(val: Mapping[str, Any]) -> "ReconstructableJob":
         check.mapping_param(val, "val")
 
         inst = unpack_value(val)
         check.invariant(
             isinstance(inst, ReconstructableJob),
-            "Deserialized object is not instance of ReconstructableJob, got {type}".format(
-                type=type(inst)
-            ),
+            f"Deserialized object is not instance of ReconstructableJob, got {type(inst)}",
         )
         return inst  # type: ignore  # (illegible runtime check)
 
@@ -381,6 +327,12 @@ class ReconstructableJob(
             return pointer.module
 
         return None
+
+    # Allow this to be hashed for `lru_cache` in `get_definition`
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJob:
@@ -453,7 +405,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
             )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
-            "by a decorated function, got {type}.".format(type=type(target)),
+            f"by a decorated function, got {type(target)}.",
         )
 
     if seven.is_lambda(target):
@@ -465,12 +417,10 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
 
     if seven.qualname_differs(target):
         raise DagsterInvariantViolationError(
-            'Reconstructable target "{target.__name__}" has a different '
-            '__qualname__ "{target.__qualname__}" indicating it is not '
+            f'Reconstructable target "{target.__name__}" has a different '
+            f'__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_job.".format(
-                target=target
-            )
+            "defined at module scope instead, or use build_reconstructable_job."
         )
 
     try:
@@ -654,7 +604,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
     ):
         raise DagsterInvariantViolationError(
             "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-            f"or RepositoryDefinition. Got {repr(definition)}."
+            f"or RepositoryDefinition. Got {definition!r}."
         )
     return definition
 
@@ -704,10 +654,8 @@ def def_from_pointer(
 
     if seven.get_arg_names(target):
         raise DagsterInvariantViolationError(
-            "Error invoking function at {target} with no arguments. "
-            "Reconstructable target must be callable with no arguments".format(
-                target=pointer.describe()
-            )
+            f"Error invoking function at {pointer.describe()} with no arguments. "
+            "Reconstructable target must be callable with no arguments"
         )
 
     return _check_is_loadable(target())
@@ -794,8 +742,8 @@ def repository_def_from_pointer(
     repo_def = repository_def_from_target_def(target, repository_load_data)
     if not repo_def:
         raise DagsterInvariantViolationError(
-            "CodePointer ({str}) must resolve to a "
+            f"CodePointer ({pointer.describe()}) must resolve to a "
             "RepositoryDefinition, JobDefinition, or JobDefinition. "
-            "Received a {type}".format(str=pointer.describe(), type=type(target))
+            f"Received a {type(target)}"
         )
     return repo_def

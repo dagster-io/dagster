@@ -15,8 +15,11 @@ Related Guides:
 
 .. autoconfigurable:: BigQueryPySparkIOManager
   :annotation: IOManagerDefinition
-  
-.. autoconfigurable:: bigquery_pyspark_io_manager
-  :annotation: IOManagerDefinition
 
 .. autoclass:: BigQueryPySparkTypeHandler
+
+Legacy
+=======
+
+.. autoconfigurable:: bigquery_pyspark_io_manager
+  :annotation: IOManagerDefinition

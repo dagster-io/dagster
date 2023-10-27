@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 
 from typing import Dict, List
@@ -164,8 +164,16 @@ def nested_schema_config() -> None:
             {
                 "average_age": MyNestedConfig(
                     user_data={
-                        "Alice": UserData(age=10, email="alice@gmail.com", profile_picture_url=...),  # type: ignore
-                        "Bob": UserData(age=20, email="bob@gmail.com", profile_picture_url=...),  # type: ignore
+                        "Alice": UserData(
+                            age=10,
+                            email="alice@gmail.com",
+                            profile_picture_url=...,  # type: ignore
+                        ),
+                        "Bob": UserData(
+                            age=20,
+                            email="bob@gmail.com",
+                            profile_picture_url=...,  # type: ignore
+                        ),
                     }
                 )
             }
@@ -285,7 +293,9 @@ def execute_with_bad_config() -> None:
         print_greeting()
 
     op_result = greeting_job.execute_in_process(
-        run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_value=1)}),  # type: ignore
+        run_config=RunConfig(
+            {"print_greeting": MyOpConfig(nonexistent_config_value=1)}  # type: ignore
+        ),
     )
 
     asset_result = materialize(

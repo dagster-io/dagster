@@ -8,5 +8,5 @@ setup(
         "dagster-duckdb-pandas",
         "requests",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

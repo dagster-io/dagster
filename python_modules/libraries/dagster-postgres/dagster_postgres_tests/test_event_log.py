@@ -82,17 +82,15 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
         assert [int(evt.message) for evt in watched_2] == [4, 5]
 
     def test_load_from_config(self, hostname):
-        url_cfg = """
+        url_cfg = f"""
         event_log_storage:
             module: dagster_postgres.event_log
             class: PostgresEventLogStorage
             config:
                 postgres_url: postgresql://test:test@{hostname}:5432/test
-        """.format(
-            hostname=hostname
-        )
+        """
 
-        explicit_cfg = """
+        explicit_cfg = f"""
         event_log_storage:
             module: dagster_postgres.event_log
             class: PostgresEventLogStorage
@@ -102,9 +100,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
                     password: test
                     hostname: {hostname}
                     db_name: test
-        """.format(
-            hostname=hostname
-        )
+        """
 
         with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
             from_url = from_url_instance._event_storage  # noqa: SLF001

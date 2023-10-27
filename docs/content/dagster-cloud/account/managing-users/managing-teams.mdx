@@ -1,0 +1,125 @@
+---
+title: Managing teams in Dagster Cloud | Dagster Docs
+---
+
+# Managing teams in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud Enterprise.</Note>
+
+As part of our [role-based access control (RBAC) feature](/dagster-cloud/account/managing-users/managing-user-roles-permissions), Dagster Cloud supports the ability to assign users to teams. A team is a group of users with a set of default deployment, code location, and Branch Deployment user roles.
+
+In this guide, we'll cover how to add, manage, and remove teams in Dagster Cloud.
+
+---
+
+## Prerequisites
+
+To use this feature, you'll need a **Dagster Cloud Enterprise plan.**
+
+---
+
+## Adding teams
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users/managing-user-roles-permissions#teams">
+    Organization Admin permissions
+  </a>{" "}
+  are required to add teams.
+</Note>
+
+1. In the Dagster Cloud UI, click the **user menu (your icon) > Organization Settings**.
+2. Click the **Teams** tab.
+3. Click the **Create a team** button.
+4. In the window that displays, enter a name in the **Team name** field.
+5. Click **Create team**.
+
+After the team is created, you can [add users and assign user roles to deployments](#managing-team-members-and-roles).
+
+---
+
+## Managing team members and roles
+
+In the **Organization Settings > Teams** tab:
+
+1. Locate the team you want to modify in the table of teams.
+2. Click the **Edit** button in the team's row.
+
+From here, you can [manage team members](#managing-team-members) and [the team's roles for deployments](#managing-team-roles).
+
+### Managing team members
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users/managing-user-roles-permissions#teams">
+    Organization Admin permissions
+  </a>{" "}
+  are required to add and remove team members.
+</Note>
+
+#### Adding team members
+
+1. In the **Members** tab, use the search bar to locate a user in your organization.
+2. Once located, click the user.
+3. Click **Add user to team**.
+4. Repeat as needed, clicking **Done** when finished.
+
+#### Removing team members
+
+1. In the **Members** tab, locate the user in the list of team members.
+2. Click **Remove from team**.
+3. Repeat as needed, clicking **Done** when finished.
+
+### Managing team roles
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users/managing-user-roles-permissions#teams">
+    Organization Admin or Admin permissions
+  </a>{" "}
+  are required to manage team roles. Additionally, Admins can only manage teams
+  for deployments where they are an Admin.
+</Note>
+
+1. In the **Roles** tab, click the **Edit team role** button next to the deployment where you want to modify the team's role.
+2. In the window that displays, select the team role for the deployment. This [role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) will be used as the default for this team for all code locations in the deployment.
+3. Click **Save**.
+4. To set permissions for individual [code locations](/dagster-cloud/account/managing-users/managing-user-roles-permissions#code-locations) in a deployment:
+   1. Click the toggle to the left of the deployment to open a list of code locations.
+   2. Next to a code location, click **Edit team role**.
+   3. Select the team role for the code location.
+   4. Click **Save**.
+
+---
+
+## Removing teams
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users/managing-user-roles-permissions#teams">
+    Organization Admin permissions
+  </a>{" "}
+  are required to remove teams.
+</Note>
+
+1. In the Dagster Cloud UI, click the **user menu (your icon) > Organization Settings**.
+2. Click the **Teams** tab.
+3. Locate the team you want to delete in the table of teams.
+4. Click the **Edit** button in the team's row.
+5. Click the **Delete team** button.
+6. When prompted, confirm the deletion.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users"
+    title="Managing users"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users/managing-user-roles-permissions"
+    title="Managing user roles and permissions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication"
+    title="SSO and SAML authentication"
+  ></ArticleListItem>
+</ArticleList>

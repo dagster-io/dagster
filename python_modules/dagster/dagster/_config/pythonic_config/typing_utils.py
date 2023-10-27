@@ -1,10 +1,18 @@
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, cast
 
-import pydantic
 from pydantic import Field
-from typing_extensions import dataclass_transform, get_origin
+from typing_extensions import Annotated, dataclass_transform, get_origin
 
-from .utils import safe_is_subclass
+from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
+
+from .type_check_utils import safe_is_subclass
+
+try:
+    # Pydantic 2.x
+    from pydantic.main import ModelMetaclass
+except ImportError:
+    # Pydantic 1.x
+    from pydantic._internal._model_construction import ModelMetaclass  # type: ignore
 
 if TYPE_CHECKING:
     from dagster._config.pythonic_config import PartialResource
@@ -29,29 +37,49 @@ class LateBoundTypesForResourceTypeChecking:
 
     @staticmethod
     def get_resource_rep_type() -> Type:
-        return LateBoundTypesForResourceTypeChecking._ResourceDep  # noqa: SLF001
+        return LateBoundTypesForResourceTypeChecking._ResourceDep
 
     @staticmethod
     def get_resource_type() -> Type:
-        return LateBoundTypesForResourceTypeChecking._Resource  # noqa: SLF001
+        return LateBoundTypesForResourceTypeChecking._Resource
 
     @staticmethod
     def get_partial_resource_type(base: Type) -> Type:
-        return LateBoundTypesForResourceTypeChecking._PartialResource[base]  # noqa: SLF001
+        return LateBoundTypesForResourceTypeChecking._PartialResource[base]
 
     @staticmethod
     def set_actual_types_for_type_checking(
         resource_dep_type: Type, resource_type: Type, partial_resource_type: Type
     ) -> None:
-        LateBoundTypesForResourceTypeChecking._ResourceDep = resource_dep_type  # noqa: SLF001
-        LateBoundTypesForResourceTypeChecking._Resource = resource_type  # noqa: SLF001
-        LateBoundTypesForResourceTypeChecking._PartialResource = (  # noqa: SLF001
-            partial_resource_type
-        )
+        LateBoundTypesForResourceTypeChecking._ResourceDep = resource_dep_type
+        LateBoundTypesForResourceTypeChecking._Resource = resource_type
+        LateBoundTypesForResourceTypeChecking._PartialResource = partial_resource_type
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-class BaseResourceMeta(pydantic.main.ModelMetaclass):
+class BaseConfigMeta(ModelMetaclass):  # type: ignore
+    def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
+        annotations = namespaces.get("__annotations__", {})
+
+        # Need try/catch because DagsterType may not be loaded when some of the base Config classes are
+        # being created
+        # Any user-created Config class will have DagsterType loaded by the time it's created, so this
+        # will only affect the base Config classes (where this error won't be an issue)
+        try:
+            from dagster._core.types.dagster_type import DagsterType
+
+            for field in annotations:
+                if isinstance(annotations[field], DagsterType):
+                    raise DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(name, field)
+
+        except ImportError:
+            pass
+
+        return super().__new__(cls, name, bases, namespaces, **kwargs)
+
+
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
+class BaseResourceMeta(BaseConfigMeta):
     """Custom metaclass for Resource and PartialResource. This metaclass is responsible for
     transforming the type annotations on the class so that Pydantic constructor-time validation
     does not error when users provide partially configured resources to resource params.
@@ -86,7 +114,7 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
                     # arg = get_args(annotations[field])[0]
                     # If so, we treat it as a Union of a PartialResource and a Resource
                     # for Pydantic's sake.
-                    annotations[field] = Any
+                    annotations[field] = Annotated[Any, "resource_dependency"]
                 elif safe_is_subclass(
                     annotations[field], LateBoundTypesForResourceTypeChecking.get_resource_type()
                 ):
@@ -94,8 +122,12 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
                     # and a Resource for Pydantic's sake, so that a user can pass in a partially
                     # configured resource.
                     base = annotations[field]
-                    annotations[field] = Union[
-                        LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base), base
+                    annotations[field] = Annotated[
+                        Union[
+                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
+                            base,
+                        ],
+                        "resource_dependency",
                     ]
 
         namespaces["__annotations__"] = annotations

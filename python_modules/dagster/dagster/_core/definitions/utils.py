@@ -82,7 +82,7 @@ def is_valid_name(name: str) -> bool:
 
 
 def _kv_str(key: object, value: object) -> str:
-    return f'{key}="{repr(value)}"'
+    return f'{key}="{value!r}"'
 
 
 def struct_to_string(name: str, **kwargs: object) -> str:
@@ -102,10 +102,7 @@ def validate_tags(
             str_val = None
             try:
                 str_val = seven.json.dumps(value)
-                err_reason = (
-                    'JSON encoding "{json}" of value "{val}" is not equivalent to original value'
-                    .format(json=str_val, val=value)
-                )
+                err_reason = f'JSON encoding "{str_val}" of value "{value}" is not equivalent to original value'
 
                 valid = seven.json.loads(str_val) == value
             except Exception:
@@ -113,10 +110,8 @@ def validate_tags(
 
             if not valid:
                 raise DagsterInvalidDefinitionError(
-                    'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
-                    "or meet the constraint that json.loads(json.dumps(value)) == value.".format(
-                        key=key, err_reason=err_reason
-                    )
+                    f'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
+                    "or meet the constraint that json.loads(json.dumps(value)) == value."
                 )
 
             valid_tags[key] = str_val  # type: ignore  # (possible none)
@@ -159,9 +154,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
         globbed_files = glob(file_glob)
         if not globbed_files:
             raise DagsterInvariantViolationError(
-                'File or glob pattern "{file_glob}" for "config_files" produced no results.'.format(
-                    file_glob=file_glob
-                )
+                f'File or glob pattern "{file_glob}" for "config_files" produced no results.'
             )
 
         filenames += [os.path.realpath(globbed_file) for globbed_file in globbed_files]

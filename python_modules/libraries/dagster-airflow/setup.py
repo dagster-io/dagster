@@ -18,13 +18,12 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-airflow",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Airflow plugin for Dagster",
     url="https://github.com/dagster-io/dagster",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
@@ -48,7 +47,7 @@ setup(
             "boto3>=1.26.7",
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
-            "apache-airflow-providers-apache-spark>=3.0.0,<4",
+            "apache-airflow-providers-apache-spark",
             # Logging messages are set to debug starting 4.1.1
             "apache-airflow-providers-http<4.1.1",
         ],

@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Mapping, NamedTuple, Sequence, Union
 
 import dagster._check as check
+from dagster._config.field_utils import EnvVar, IntEnvVar
 from dagster._utils.error import SerializableErrorInfo
 
 from .config_type import ConfigTypeKind
@@ -249,8 +250,7 @@ def create_field_not_defined_error(context: ContextData, received_field: str) ->
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
         message=(
-            'Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'
-            .format(
+            'Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'.format(
                 path_msg=get_friendly_path_msg(context.stack),
                 type_name=print_config_type_key_to_string(
                     context.config_schema_snapshot, context.config_type_key, with_lines=False
@@ -378,6 +378,26 @@ def create_scalar_error(context: ContextData, config_value: object) -> Evaluatio
     )
 
 
+def create_pydantic_env_var_error(
+    context: ContextData, config_value: Union[EnvVar, IntEnvVar]
+) -> EvaluationError:
+    env_var_name = config_value.env_var_name
+
+    correct_env_var = str({"env": env_var_name})
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message=(
+            f'Invalid use of environment variable wrapper. Value "{env_var_name}" is wrapped with'
+            " EnvVar(), which is reserved for passing to structured pydantic config objects only."
+            " To provide an environment variable to a run config dictionary, replace"
+            f' EnvVar("{env_var_name}") with {correct_env_var}, or pass a structured RunConfig'
+            " object."
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(env_var_name)),
+    )
+
+
 def create_selector_multiple_fields_error(
     context: ContextData, config_value: Mapping[str, object]
 ) -> EvaluationError:
@@ -429,9 +449,7 @@ def create_selector_type_error(context: ContextData, config_value: object) -> Ev
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message="Value for selector type {path_msg} must be a dict".format(
-            path_msg=get_friendly_path_msg(context.stack)
-        ),
+        message=f"Value for selector type {get_friendly_path_msg(context.stack)} must be a dict",
         error_data=RuntimeMismatchErrorData(
             config_type_snap=context.config_type_snap, value_rep=repr(config_value)
         ),

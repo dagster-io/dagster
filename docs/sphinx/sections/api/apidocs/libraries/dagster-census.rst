@@ -12,7 +12,5 @@ This library provides an integration with Census.
   :annotation: ResourceDefinition
 
 .. autoclass:: CensusResource
-    :members:
 
 .. autoclass:: CensusOutput
-    :members:

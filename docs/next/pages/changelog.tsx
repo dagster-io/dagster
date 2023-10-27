@@ -145,6 +145,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
           frontMatter: data,
           tableOfContents,
           githubLink,
+          asPath: '/changelog',
         },
         totalPageCount,
       },

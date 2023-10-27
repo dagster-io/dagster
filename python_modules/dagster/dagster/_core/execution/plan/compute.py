@@ -17,6 +17,8 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import (
+    AssetCheckEvaluation,
+    AssetCheckResult,
     AssetMaterialization,
     AssetObservation,
     DynamicOutput,
@@ -25,11 +27,13 @@ from dagster._core.definitions import (
     NodeHandle,
     Output,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.compute import build_execution_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
@@ -46,26 +50,30 @@ OpOutputUnion: TypeAlias = Union[
     ExpectationResult,
     AssetObservation,
     DagsterEvent,
+    AssetCheckEvaluation,
+    AssetCheckResult,
+    MaterializeResult,
 ]
 
 
 def create_step_outputs(
-    solid: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
+    node: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
 ) -> Sequence[StepOutput]:
-    check.inst_param(solid, "solid", Node)
+    check.inst_param(node, "node", Node)
     check.inst_param(handle, "handle", NodeHandle)
 
-    # the run config has the solid output name configured
+    # the run config has the node output name configured
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        solid_config = resolved_run_config.ops[current_handle.to_string()]
+        op_config = resolved_run_config.ops[current_handle.to_string()]
         current_handle = current_handle.parent
-        config_output_names = config_output_names.union(solid_config.outputs.output_names)
+        config_output_names = config_output_names.union(op_config.outputs.output_names)
 
     step_outputs: List[StepOutput] = []
-    for name, output_def in solid.definition.output_dict.items():
+    for name, output_def in node.definition.output_dict.items():
         asset_info = asset_layer.asset_info_for_output(handle, name)
+
         step_outputs.append(
             StepOutput(
                 node_handle=handle,
@@ -78,6 +86,7 @@ def create_step_outputs(
                     should_materialize=output_def.name in config_output_names,
                     asset_key=asset_info.key if asset_info and asset_info.is_required else None,
                     is_asset_partitioned=bool(asset_info.partitions_def) if asset_info else False,
+                    asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
                 ),
             )
         )
@@ -94,6 +103,9 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
             ExpectationResult,
             AssetObservation,
             DagsterEvent,
+            AssetCheckResult,
+            AssetCheckEvaluation,
+            MaterializeResult,
         ),
     ):
         raise DagsterInvariantViolationError(
@@ -135,7 +147,7 @@ def _yield_compute_results(
 ) -> Iterator[OpOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
-    context = OpExecutionContext(step_context)
+    context = build_execution_context(step_context)
     user_event_generator = compute_fn(context, inputs)
 
     if isinstance(user_event_generator, Output):
@@ -165,7 +177,7 @@ def _yield_compute_results(
             step_context=step_context,
             step_key=step_context.step.key,
             op_def_name=step_context.op_def.name,
-            op_name=step_context.solid.name,
+            op_name=step_context.op.name,
         ),
         user_event_generator,
     ):
@@ -193,11 +205,50 @@ def execute_core_compute(
         yield step_output
         if isinstance(step_output, (DynamicOutput, Output)):
             emitted_result_names.add(step_output.output_name)
+        elif isinstance(step_output, MaterializeResult):
+            asset_key = (
+                step_output.asset_key
+                or step_context.job_def.asset_layer.asset_key_for_node(step_context.node_handle)
+            )
+            emitted_result_names.add(
+                step_context.job_def.asset_layer.node_output_handle_for_asset(asset_key).output_name
+            )
+            # Check results embedded in MaterializeResult are counted
+            for check_result in step_output.check_results or []:
+                handle = check_result.to_asset_check_evaluation(step_context).asset_check_key
+                output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
+                    handle
+                )
+                emitted_result_names.add(output_name)
+        elif isinstance(step_output, AssetCheckEvaluation):
+            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
+                step_output.asset_check_key
+            )
+            emitted_result_names.add(output_name)
+        elif isinstance(step_output, AssetCheckResult):
+            if step_output.asset_key and step_output.check_name:
+                handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
+            else:
+                handle = step_output.to_asset_check_evaluation(step_context).asset_check_key
+            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(handle)
+            emitted_result_names.add(output_name)
 
-    solid_output_names = {output.name for output in step.step_outputs}
-    omitted_outputs = solid_output_names.difference(emitted_result_names)
+    expected_op_output_names = {
+        output.name
+        for output in step.step_outputs
+        # checks are required if we're in requires_typed_event_stream mode
+        if step_context.requires_typed_event_stream or output.properties.asset_check_key
+    }
+    omitted_outputs = expected_op_output_names.difference(emitted_result_names)
     if omitted_outputs:
-        step_context.log.info(
-            f"{step_context.op_def.node_type_str} '{str(step.node_handle)}' did not fire "
-            f"outputs {repr(omitted_outputs)}"
+        message = (
+            f"{step_context.op_def.node_type_str} '{step.node_handle}' did not yield or return "
+            f"expected outputs {omitted_outputs!r}."
         )
+
+        if step_context.requires_typed_event_stream:
+            if step_context.typed_event_stream_error_message:
+                message += " " + step_context.typed_event_stream_error_message
+            raise DagsterInvariantViolationError(message)
+        else:
+            step_context.log.info(message)

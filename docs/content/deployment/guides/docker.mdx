@@ -5,16 +5,16 @@ description: A guide to deploying Dagster to Docker.
 
 # Deploying Dagster to Docker
 
-If you are running on AWS ECS or another container-based orchestration system, you'll likely want to package Dagit using a Docker image.
+If you are running on AWS ECS or another container-based orchestration system, you'll likely want to package the Dagster webserver using a Docker image.
 
-A minimal skeleton `Dockerfile` that will run Dagit is shown below:
+A minimal skeleton `Dockerfile` that will run the webserver is shown below:
 
 ```dockerfile file=/deploying/docker/Dockerfile
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 RUN mkdir -p /opt/dagster/dagster_home /opt/dagster/app
 
-RUN pip install dagit dagster-postgres dagster-aws
+RUN pip install dagster-webserver dagster-postgres dagster-aws
 
 # Copy your code and workspace to /opt/dagster/app
 COPY repo.py workspace.yaml /opt/dagster/app/
@@ -28,7 +28,7 @@ WORKDIR /opt/dagster/app
 
 EXPOSE 3000
 
-ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
+ENTRYPOINT ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
 ```
 
 You'll also need to include a [workspace file (`workspace.yaml`)](/concepts/code-locations/workspace-files) file in the same directory as the Dockerfile to configure your code location server:
@@ -69,13 +69,13 @@ local_artifact_storage:
     base_dir: "/opt/dagster/local/"
 ```
 
-In cases where you're using environment variables to configure the instance, you should ensure these environment variables are exposed in the container running Dagit.
+In cases where you're using environment variables to configure the instance, you should ensure these environment variables are exposed in the container running `dagster-webserver`.
 
-Dagit servers expose a health check endpoint at `/dagit_info`, which returns a JSON response like:
+The webserver exposes a health check endpoint at `/server_info`, which returns a JSON response like:
 
 ```JSON
 {
-  "dagit_version": "0.12.0",
+  "dagster_webserver_version": "0.12.0",
   "dagster_graphql_version": "0.12.0",
   "dagster_version": "0.12.0"
 }
@@ -87,16 +87,16 @@ Dagit servers expose a health check endpoint at `/dagit_info`, which returns a J
 
 More advanced Dagster deployments will require deploying more than one container. For example, if you are using the [Dagster daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs, you'll likely want a separate container running the `dagster-daemon` service.
 
-This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the Dagit container. You can also configure your code location server (gRPC server) so that your code can be updated and deployed separately in its own container, without needing to redeploy the other Dagster services. To enable this setup, include a container exposing a gRPC server at a port and add that port in your `workspace.yaml` file.
+This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the webserver container. You can also configure your code location server (gRPC server) so that your code can be updated and deployed separately in its own container, without needing to redeploy the other Dagster services. To enable this setup, include a container exposing a gRPC server at a port and add that port in your `workspace.yaml` file.
 
 For example, your user code container might have the following Dockerfile:
 
 ```dockerfile file=/deploying/docker/Dockerfile_user_code
-FROM python:3.7-slim
+FROM python:3.10-slim
 
-# Checkout and install dagster libraries needed to run the gRPC server
-# exposing your repository to dagit and dagster-daemon, and to load
-# the DagsterInstance
+# Checkout and install dagster libraries needed to run the gRPC server by exposing
+# your code location to dagster-webserver and dagster-daemon, and loading the
+# DagsterInstance.
 
 RUN pip install \
     dagster \
@@ -137,9 +137,9 @@ load_from:
       location_name: "example_user_code"
 ```
 
-When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh.
+When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. The Dagster UI will automatically notice that a new server has been redeployed and prompt you to refresh.
 
-When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the Dagit and Dagster daemon containers as a volume, you can pick up the changes in Dagit by reloading from the **Deployment** tab. The Dagster daemon container will automatically pick up the changes by periodically reloading the `workspace.yaml` file.
+When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the webserver Dagster daemon containers as a volume, you can pick up the changes in the UI by reloading from the **Deployment** tab. The Dagster daemon container will automatically pick up the changes by periodically reloading the `workspace.yaml` file.
 
 ---
 
@@ -192,7 +192,7 @@ run_launcher:
 
 This example demonstrates a Dagster deployment using `docker-compose` that includes:
 
-- A Dagit container for loading and launching jobs
+- A webserver container for loading and launching jobs
 - A `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors
 - A Postgres container for persistent storage
 - A container with user code. The Dagster instance uses <PyObject module="dagster_docker" object="DockerRunLauncher" /> to launch each run in its own container.

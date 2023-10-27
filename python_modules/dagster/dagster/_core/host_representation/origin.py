@@ -13,6 +13,8 @@ from typing import (
     cast,
 )
 
+import grpc
+
 import dagster._check as check
 from dagster._core.definitions.selector import PartitionSetSelector, RepositorySelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
@@ -48,9 +50,7 @@ def _assign_grpc_location_name(port, socket, host):
     check.opt_str_param(socket, "socket")
     check.str_param(host, "host")
     check.invariant(port or socket)
-    return "grpc:{host}:{socket_or_port}".format(
-        host=host, socket_or_port=(socket if socket else port)
-    )
+    return f"grpc:{host}:{socket if socket else port}"
 
 
 def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOrigin) -> str:
@@ -67,15 +67,13 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
     )
 
     return (
-        "{file_or_module}:{attribute}".format(
-            file_or_module=file_or_module, attribute=loadable_target_origin.attribute
-        )
+        f"{file_or_module}:{loadable_target_origin.attribute}"
         if loadable_target_origin.attribute
         else file_or_module
     )
 
 
-class CodeLocationOrigin(ABC, tuple):
+class CodeLocationOrigin(ABC):
     """Serializable representation of a CodeLocation that can be used to
     uniquely identify the location or reload it in across process boundaries.
     """
@@ -109,6 +107,10 @@ class CodeLocationOrigin(ABC, tuple):
     def create_location(self) -> "CodeLocation":
         pass
 
+    @abstractmethod
+    def reload_location(self, instance: "DagsterInstance") -> "CodeLocation":
+        pass
+
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
@@ -129,8 +131,14 @@ class RegisteredCodeLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A RegisteredCodeLocationOrigin does not have enough information to load its "
-            "repository location on its own."
+            "A RegisteredCodeLocationOrigin does not have enough information to create its "
+            "code location on its own."
+        )
+
+    def reload_location(self, instance: "DagsterInstance") -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "A RegisteredCodeLocationOrigin does not have enough information to reload its "
+            "code location on its own."
         )
 
 
@@ -150,7 +158,7 @@ class InProcessCodeLocationOrigin(
     CodeLocationOrigin,
 ):
     """Identifies a repository location constructed in the same process. Primarily
-    used in tests, since Dagster system processes like Dagit and the daemon do not
+    used in tests, since Dagster system processes like the webserver and daemon do not
     load user code in the same process.
     """
 
@@ -193,6 +201,9 @@ class InProcessCodeLocationOrigin(
 
         return InProcessCodeLocation(self)
 
+    def reload_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
+        raise NotImplementedError
+
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
@@ -215,9 +226,11 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
             ),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_loadable_target_origin_name(loadable_target_origin),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_loadable_target_origin_name(loadable_target_origin)
+            ),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -233,8 +246,14 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a DynamicWorkspace"
-            " in order to create a handle."
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a GrpcServerRegistry"
+            " in order to create a code location."
+        )
+
+    def reload_location(self, instance: "DagsterInstance") -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a GrpcServerRegistry"
+            " in order to reload a code location."
         )
 
     @contextmanager
@@ -242,18 +261,21 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         self,
         instance: "DagsterInstance",
     ) -> Iterator["GrpcServerCodeLocation"]:
-        from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
+        from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
 
         from .code_location import GrpcServerCodeLocation
         from .grpc_server_registry import GrpcServerRegistry
 
         with GrpcServerRegistry(
-            instance=instance,
+            instance_ref=instance.get_ref(),
             reload_interval=0,
-            heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            startup_timeout=instance.code_server_process_startup_timeout
-            if instance
-            else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+            heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
+            startup_timeout=(
+                instance.code_server_process_startup_timeout
+                if instance
+                else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+            ),
+            wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerCodeLocation(
@@ -303,9 +325,11 @@ class GrpcServerCodeLocationOrigin(
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
             check.opt_str_param(socket, "socket"),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_grpc_location_name(port, socket, host),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_grpc_location_name(port, socket, host)
+            ),
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
         )
 
@@ -316,6 +340,25 @@ class GrpcServerCodeLocationOrigin(
             "socket": self.socket,
         }
         return {key: value for key, value in metadata.items() if value is not None}
+
+    def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
+        from dagster._core.host_representation.code_location import (
+            GrpcServerCodeLocation,
+        )
+
+        try:
+            self.create_client().reload_code(timeout=instance.code_server_reload_timeout)
+        except Exception as e:
+            # Handle case when this is called against `dagster api grpc` servers that don't have this API method implemented
+            if (
+                isinstance(e.__cause__, grpc.RpcError)
+                and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+            ):
+                pass
+            else:
+                raise
+
+        return GrpcServerCodeLocation(self)
 
     def create_location(self) -> "GrpcServerCodeLocation":
         from dagster._core.host_representation.code_location import (

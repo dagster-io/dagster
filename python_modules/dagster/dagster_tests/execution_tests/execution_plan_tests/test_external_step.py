@@ -45,7 +45,7 @@ from dagster._core.execution.api import (
     execute_run_iterator,
 )
 from dagster._core.execution.context.system import IStepContext
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
@@ -55,7 +55,7 @@ from dagster._core.execution.plan.external_step import (
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts

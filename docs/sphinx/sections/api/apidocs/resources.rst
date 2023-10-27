@@ -15,7 +15,6 @@ The following classes are used as part of the new `Pythonic resources system </c
     :members: hardcoded_resource, mock_resource, none_resource, configured
 
 .. autoclass:: InitResourceContext
-    :members:
 
 .. autofunction:: make_values_resource
 

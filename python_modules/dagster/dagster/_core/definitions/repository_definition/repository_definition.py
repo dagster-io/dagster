@@ -2,6 +2,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -14,6 +15,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
 from dagster._core.definitions.assets_job import (
     ASSET_BASE_JOB_PREFIX,
@@ -23,6 +25,7 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -35,9 +38,6 @@ from dagster._utils import hash_collection
 
 from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import (
-    SINGLETON_REPOSITORY_NAME as SINGLETON_REPOSITORY_NAME,
-    VALID_REPOSITORY_DATA_DICT_KEYS as VALID_REPOSITORY_DATA_DICT_KEYS,
-    PendingRepositoryListDefinition as PendingRepositoryListDefinition,
     RepositoryListDefinition as RepositoryListDefinition,
 )
 
@@ -90,6 +90,7 @@ class RepositoryDefinition:
         name (str): The name of the repository.
         repository_data (RepositoryData): Contains the definitions making up the repository.
         description (Optional[str]): A string description of the repository.
+        metadata (Optional[MetadataMapping]): A map of arbitrary metadata for the repository.
     """
 
     def __init__(
@@ -98,6 +99,7 @@ class RepositoryDefinition:
         *,
         repository_data,
         description=None,
+        metadata=None,
         repository_load_data=None,
     ):
         self._name = check_valid_name(name)
@@ -105,6 +107,7 @@ class RepositoryDefinition:
         self._repository_data: RepositoryData = check.inst_param(
             repository_data, "repository_data", RepositoryData
         )
+        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
         )
@@ -116,12 +119,20 @@ class RepositoryDefinition:
     @public
     @property
     def name(self) -> str:
+        """str: The name of the repository."""
         return self._name
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A human-readable description of the repository."""
         return self._description
+
+    @public
+    @property
+    def metadata(self) -> Optional[MetadataMapping]:
+        """Optional[MetadataMapping]: Arbitrary metadata for the repository."""
+        return self._metadata
 
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
@@ -186,27 +197,47 @@ class RepositoryDefinition:
     @public
     @property
     def schedule_defs(self) -> Sequence[ScheduleDefinition]:
+        """List[ScheduleDefinition]: All schedules in the repository."""
         return self._repository_data.get_all_schedules()
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
+        """Get a schedule definition by name.
+
+        Args:
+            name (str): The name of the schedule.
+
+        Returns:
+            ScheduleDefinition: The schedule definition.
+        """
         return self._repository_data.get_schedule(name)
 
     @public
     def has_schedule_def(self, name: str) -> bool:
+        """bool: Check if a schedule with a given name is present in the repository."""
         return self._repository_data.has_schedule(name)
 
     @public
     @property
     def sensor_defs(self) -> Sequence[SensorDefinition]:
+        """Sequence[SensorDefinition]: All sensors in the repository."""
         return self._repository_data.get_all_sensors()
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
+        """Get a sensor definition by name.
+
+        Args:
+            name (str): The name of the sensor.
+
+        Returns:
+            SensorDefinition: The sensor definition.
+        """
         return self._repository_data.get_sensor(name)
 
     @public
     def has_sensor_def(self, name: str) -> bool:
+        """bool: Check if a sensor with a given name is present in the repository."""
         return self._repository_data.has_sensor(name)
 
     @property
@@ -218,8 +249,7 @@ class RepositoryDefinition:
         return self._repository_data.get_assets_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
-        """Returns true is there is a single implicit asset job for all asset keys in a repository.
-        """
+        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
         return self.has_job(ASSET_BASE_JOB_PREFIX)
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
@@ -249,7 +279,11 @@ class RepositoryDefinition:
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
             base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
-            if all(key in base_job.asset_layer.assets_defs_by_key for key in asset_keys):
+            if all(
+                key in base_job.asset_layer.assets_defs_by_key
+                or base_job.asset_layer.is_observable_for_asset(key)
+                for key in asset_keys
+            ):
                 return base_job
         else:
             i = 0
@@ -270,13 +304,16 @@ class RepositoryDefinition:
     def get_maybe_subset_job_def(
         self,
         job_name: str,
-        op_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
-        # named job forward expecting pipeline distinction to be removed soon
         defn = self.get_job(job_name)
-        return defn.get_job_def_for_subset_selection(op_selection, asset_selection)
+        return defn.get_subset(
+            op_selection=op_selection,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+        )
 
     @public
     def load_asset_value(
@@ -286,6 +323,7 @@ class RepositoryDefinition:
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
@@ -301,6 +339,8 @@ class RepositoryDefinition:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
+                (is equivalent to setting the metadata argument in `In` or `AssetIn`).
             resource_config (Optional[Any]): A dictionary of resource configurations to be passed
                 to the :py:class:`IOManager`.
 
@@ -316,6 +356,7 @@ class RepositoryDefinition:
                 asset_key,
                 python_type=python_type,
                 partition_key=partition_key,
+                metadata=metadata,
                 resource_config=resource_config,
             )
 
@@ -363,6 +404,7 @@ class PendingRepositoryDefinition:
             Union[RepositoryListDefinition, "CacheableAssetsDefinition"]
         ],
         description: Optional[str] = None,
+        metadata: Optional[MetadataMapping] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -377,6 +419,7 @@ class PendingRepositoryDefinition:
         )
         self._name = name
         self._description = description
+        self._metadata = metadata
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
@@ -408,10 +451,8 @@ class PendingRepositoryDefinition:
                 # should always have metadata for each cached defn at this point
                 check.invariant(
                     defn.unique_id in repository_load_data.cached_data_by_key,
-                    (
-                        "No metadata found for CacheableAssetsDefinition with unique_id"
-                        f" {defn.unique_id}."
-                    ),
+                    "No metadata found for CacheableAssetsDefinition with unique_id"
+                    f" {defn.unique_id}.",
                 )
                 # use the emtadata to generate definitions
                 resolved_definitions.extend(
@@ -434,6 +475,7 @@ class PendingRepositoryDefinition:
             self._name,
             repository_data=repository_data,
             description=self._description,
+            metadata=self._metadata,
             repository_load_data=repository_load_data,
         )
 
@@ -445,7 +487,6 @@ class PendingRepositoryDefinition:
         return self._get_repository_definition(repository_load_data)
 
     def compute_repository_definition(self) -> RepositoryDefinition:
-        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition.
-        """
+        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition."""
         repository_load_data = self._compute_repository_load_data()
         return self._get_repository_definition(repository_load_data)

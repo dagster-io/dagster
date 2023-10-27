@@ -25,7 +25,7 @@ def define_pass_value_op(name, description=None):
     return pass_value_op
 
 
-def test_execute_solid_with_input_same_name():
+def test_execute_op_with_input_same_name():
     @op
     def a_thing(_, a_thing):
         return a_thing + a_thing
@@ -36,13 +36,13 @@ def test_execute_solid_with_input_same_name():
         a_thing(pass_value())
 
     result = pipe.execute_in_process(
-        run_config={"solids": {"pass_value": {"config": {"value": "foo"}}}}
+        run_config={"ops": {"pass_value": {"config": {"value": "foo"}}}}
     )
 
     assert result.output_for_node("a_thing") == "foofoo"
 
 
-def test_execute_two_solids_with_same_input_name():
+def test_execute_two_ops_with_same_input_name():
     @op
     def op_one(_, a_thing):
         return a_thing + a_thing
@@ -58,7 +58,7 @@ def test_execute_two_solids_with_same_input_name():
 
     result = pipe.execute_in_process(
         run_config={
-            "solids": {
+            "ops": {
                 "pass_to_one": {"config": {"value": "foo"}},
                 "pass_to_two": {"config": {"value": "bar"}},
             }
@@ -70,7 +70,7 @@ def test_execute_two_solids_with_same_input_name():
     assert result.output_for_node("op_two") == "barbar"
 
 
-def test_execute_dep_solid_different_input_name():
+def test_execute_dep_op_different_input_name():
     pass_to_first = define_pass_value_op("pass_to_first")
 
     @op
@@ -86,7 +86,7 @@ def test_execute_dep_solid_different_input_name():
         second_op(first_op(pass_to_first()))
 
     result = foo_job.execute_in_process(
-        run_config={"solids": {"pass_to_first": {"config": {"value": "bar"}}}}
+        run_config={"ops": {"pass_to_first": {"config": {"value": "bar"}}}}
     )
 
     assert result.success

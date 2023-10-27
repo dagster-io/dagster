@@ -13,12 +13,12 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.resources_init import resource_initialization_manager
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
-from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.system_config.objects import ResourceConfig, config_map_resources
 
 from .api import ephemeral_instance_if_missing
-from .context_creation_pipeline import initialize_console_manager
+from .context_creation_job import initialize_console_manager
 
 
 def get_mapped_resource_config(
@@ -115,19 +115,26 @@ def build_resources(
 def wrap_resources_for_execution(
     resources: Optional[Mapping[str, Any]] = None
 ) -> Dict[str, ResourceDefinition]:
+    return (
+        {
+            resource_key: wrap_resource_for_execution(resource)
+            for resource_key, resource in resources.items()
+        }
+        if resources
+        else {}
+    )
+
+
+def wrap_resource_for_execution(resource: Any) -> ResourceDefinition:
     from dagster._config.pythonic_config import ConfigurableResourceFactory, PartialResource
 
-    resources = check.opt_mapping_param(resources, "resources", key_type=str)
-    resource_defs = {}
     # Wrap instantiated resource values in a resource definition.
     # If an instantiated IO manager is provided, wrap it in an IO manager definition.
-    for resource_key, resource in resources.items():
-        if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
-            resource_defs[resource_key] = resource.get_resource_definition()
-        elif isinstance(resource, ResourceDefinition):
-            resource_defs[resource_key] = resource
-        elif isinstance(resource, IOManager):
-            resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
-        else:
-            resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
-    return resource_defs
+    if isinstance(resource, (ConfigurableResourceFactory, PartialResource)):
+        return resource.get_resource_definition()
+    elif isinstance(resource, ResourceDefinition):
+        return resource
+    elif isinstance(resource, IOManager):
+        return IOManagerDefinition.hardcoded_io_manager(resource)
+    else:
+        return ResourceDefinition.hardcoded_resource(resource)

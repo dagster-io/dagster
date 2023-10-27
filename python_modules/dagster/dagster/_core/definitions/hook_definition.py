@@ -76,8 +76,8 @@ class HookDefinition(
         from .job_definition import JobDefinition
 
         if len(args) > 0 and isinstance(args[0], (JobDefinition, GraphDefinition)):
-            # when it decorates a pipeline, we apply this hook to all the solid invocations within
-            # the pipeline.
+            # when it decorates a job, we apply this hook to all the op invocations within
+            # the job.
             return args[0].with_hooks({self})
         else:
             if not self.decorated_fn:
@@ -142,7 +142,7 @@ class HookDefinition(
     def get_resource_requirements(
         self, outer_context: Optional[object] = None
     ) -> Iterator[ResourceRequirement]:
-        # outer_context in this case is a string of (pipeline/job, pipeline/job name) or (node, node name)
+        # outer_context in this case is a string of (job, job name) or (node, node name)
         attached_to = cast(Optional[str], outer_context)
         for resource_key in sorted(list(self.required_resource_keys)):
             yield HookResourceRequirement(

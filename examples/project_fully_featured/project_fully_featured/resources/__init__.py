@@ -2,8 +2,8 @@ import os
 
 from dagster._utils import file_relative_path
 from dagster_aws.s3 import S3Resource
-from dagster_aws.s3.io_manager import ConfigurablePickledObjectS3IOManager
-from dagster_dbt import DbtCliClientResource
+from dagster_aws.s3.io_manager import S3PickleIOManager
+from dagster_dbt import DbtCliResource
 from dagster_pyspark import pyspark_resource
 
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
@@ -15,19 +15,15 @@ from .parquet_io_manager import (
 from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
-DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
-dbt_local_resource = DbtCliClientResource(
-    profiles_dir=DBT_PROFILES_DIR,
+dbt_local_resource = DbtCliResource(
     project_dir=DBT_PROJECT_DIR,
     target="local",
 )
-dbt_staging_resource = DbtCliClientResource(
-    profiles_dir=DBT_PROFILES_DIR,
+dbt_staging_resource = DbtCliResource(
     project_dir=DBT_PROJECT_DIR,
     target="staging",
 )
-dbt_prod_resource = DbtCliClientResource(
-    profiles_dir=DBT_PROFILES_DIR,
+dbt_prod_resource = DbtCliResource(
     project_dir=DBT_PROJECT_DIR,
     target="prod",
 )
@@ -59,7 +55,7 @@ SHARED_SNOWFLAKE_CONF = {
 }
 
 RESOURCES_PROD = {
-    "io_manager": ConfigurablePickledObjectS3IOManager(
+    "io_manager": S3PickleIOManager(
         s3_resource=S3Resource.configure_at_launch(),
         s3_bucket="hackernews-elementl-prod",
     ),
@@ -73,7 +69,7 @@ RESOURCES_PROD = {
 
 
 RESOURCES_STAGING = {
-    "io_manager": ConfigurablePickledObjectS3IOManager(
+    "io_manager": S3PickleIOManager(
         s3_resource=S3Resource.configure_at_launch(),
         s3_bucket="hackernews-elementl-dev",
     ),

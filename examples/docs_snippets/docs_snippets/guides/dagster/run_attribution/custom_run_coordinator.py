@@ -3,8 +3,7 @@ from base64 import b64decode
 from json import JSONDecodeError, loads
 from typing import Optional
 
-from dagster._core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster import DagsterRun, QueuedRunCoordinator, SubmitRunContext
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):

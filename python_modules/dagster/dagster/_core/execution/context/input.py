@@ -13,7 +13,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataValue,
@@ -37,45 +37,20 @@ if TYPE_CHECKING:
 
 
 class InputContext:
-    """The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
+    """The ``context`` object available to the load_input method of :py:class:`InputManager`.
 
     Users should not instantiate this object directly. In order to construct
     an `InputContext` for testing an IO Manager's `load_input` method, use
     :py:func:`dagster.build_input_context`.
 
-    Attributes:
-        name (Optional[str]): The name of the input that we're loading.
-        config (Optional[Any]): The config attached to the input that we're loading.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
-            InputDefinition that we're loading for.
-            This property only contains metadata passed in explicitly with :py:class:`AssetIn`
-            or :py:class:`In`. To access metadata of an upstream asset or operation definition,
-            use the metadata in :py:attr:`.InputContext.upstream_output`.
-        upstream_output (Optional[OutputContext]): Info about the output that produced the object
-            we're loading.
-        dagster_type (Optional[DagsterType]): The type of this input.
-            Dagster types do not propagate from an upstream output to downstream inputs,
-            and this property only captures type information for the input that is either
-            passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
-            infered from type hints. For an asset input, the Dagster type from the upstream
-            asset definition is ignored.
-        log (Optional[DagsterLogManager]): The log manager to use for this input.
-        resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (Optional[Resources]): The resources required by the resource that initializes the
-            input manager. If using the :py:func:`@root_input_manager` decorator, these resources
-            correspond to those requested with the `required_resource_keys` parameter.
-        op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
-
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import IOManager, InputContext
+            from dagster import IOManager, InputContext
 
-        class MyIOManager(IOManager):
-            def load_input(self, context: InputContext):
-                ...
-
+            class MyIOManager(IOManager):
+                def load_input(self, context: InputContext):
+                    ...
     """
 
     def __init__(
@@ -168,6 +143,7 @@ class InputContext:
     @public
     @property
     def name(self) -> str:
+        """The name of the input that we're loading."""
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -188,6 +164,7 @@ class InputContext:
     @public
     @property
     def op_def(self) -> "OpDefinition":
+        """The definition of the op that's loading the input."""
         if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -199,21 +176,35 @@ class InputContext:
     @public
     @property
     def config(self) -> Any:
+        """The config attached to the input that we're loading."""
         return self._config
 
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """A dict of metadata that is assigned to the InputDefinition that we're loading for.
+        This property only contains metadata passed in explicitly with :py:class:`AssetIn`
+        or :py:class:`In`. To access metadata of an upstream asset or operation definition,
+        use the metadata in :py:attr:`.InputContext.upstream_output`.
+        """
         return self._metadata
 
     @public
     @property
     def upstream_output(self) -> Optional["OutputContext"]:
+        """Info about the output that produced the object we're loading."""
         return self._upstream_output
 
     @public
     @property
     def dagster_type(self) -> "DagsterType":
+        """The type of this input.
+        Dagster types do not propagate from an upstream output to downstream inputs,
+        and this property only captures type information for the input that is either
+        passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
+        infered from type hints. For an asset input, the Dagster type from the upstream
+        asset definition is ignored.
+        """
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -225,6 +216,7 @@ class InputContext:
     @public
     @property
     def log(self) -> "DagsterLogManager":
+        """The log manager to use for this input."""
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -236,11 +228,16 @@ class InputContext:
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, Any]]:
+        """The config associated with the resource that initializes the InputManager."""
         return self._resource_config
 
     @public
     @property
     def resources(self) -> Any:
+        """The resources required by the resource that initializes the
+        input manager. If using the :py:func:`@input_manager` decorator, these resources
+        correspond to those requested with the `required_resource_keys` parameter.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -258,11 +255,15 @@ class InputContext:
     @public
     @property
     def has_asset_key(self) -> bool:
+        """Returns True if an asset is being loaded as input, otherwise returns False. A return value of False
+        indicates that an output from an op is being loaded as the input.
+        """
         return self._asset_key is not None
 
     @public
     @property
     def asset_key(self) -> AssetKey:
+        """The ``AssetKey`` of the asset that is being loaded as an input."""
         if self._asset_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, but no asset is associated with this input"
@@ -321,6 +322,7 @@ class InputContext:
     @public
     @property
     def has_asset_partitions(self) -> bool:
+        """Returns True if the asset being loaded as input is partitioned."""
         return self._asset_partitions_subset is not None
 
     @public
@@ -364,10 +366,8 @@ class InputContext:
         )
         if len(partition_key_ranges) != 1:
             check.failed(
-                (
-                    "Tried to access asset_partition_key_range, but there are "
-                    f"({len(partition_key_ranges)}) key ranges associated with this input."
-                ),
+                "Tried to access asset_partition_key_range, but there are "
+                f"({len(partition_key_ranges)}) key ranges associated with this input.",
             )
 
         return partition_key_ranges[0]
@@ -404,19 +404,15 @@ class InputContext:
 
         if not isinstance(subset, TimeWindowPartitionsSubset):
             check.failed(
-                (
-                    "Tried to access asset_partitions_time_window, but the asset is not partitioned"
-                    " with time windows."
-                ),
+                "Tried to access asset_partitions_time_window, but the asset is not partitioned"
+                " with time windows.",
             )
 
         time_windows = subset.included_time_windows
         if len(time_windows) != 1:
             check.failed(
-                (
-                    "Tried to access asset_partition_key_range, but there are "
-                    f"({len(time_windows)}) partitions associated with this input."
-                ),
+                "Tried to access asset_partitions_time_window, but there are "
+                f"({len(time_windows)}) time windows associated with this input.",
             )
 
         return time_windows[0]
@@ -450,6 +446,11 @@ class InputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
+        """The sequence of strings making up the AssetKey for the asset being loaded as an input.
+        If the asset is partitioned, the identifier contains the partition key as the final element in the
+        sequence. For example, for the asset key ``AssetKey(["foo", "bar", "baz"])``, materialized with
+        partition key "2023-06-01", ``get_asset_identifier`` will return ``["foo", "bar", "baz", "2023-06-01"]``.
+        """
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
@@ -538,7 +539,7 @@ def build_input_context(
     resources: Optional[Mapping[str, Any]] = None,
     op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
-    asset_key: Optional["AssetKey"] = None,
+    asset_key: Optional[CoercibleToAssetKey] = None,
     partition_key: Optional[str] = None,
     asset_partition_key_range: Optional[PartitionKeyRange] = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
@@ -564,7 +565,7 @@ def build_input_context(
         resources (Optional[Dict[str, Any]]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
-        asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
+        asset_key (Optional[Union[AssetKey, Sequence[str], str]]): The asset key attached to the InputDefinition.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
@@ -583,7 +584,7 @@ def build_input_context(
     from dagster._core.definitions import OpDefinition, PartitionsDefinition
     from dagster._core.execution.context.output import OutputContext
     from dagster._core.execution.context.system import StepExecutionContext
-    from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster._core.execution.context_creation_job import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
@@ -594,7 +595,7 @@ def build_input_context(
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
-    asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+    asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
     asset_partition_key_range = check.opt_inst_param(
         asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange

@@ -103,11 +103,9 @@ class DbIOManager(IOManager):
             for handled_type in type_handler.supported_types:
                 check.invariant(
                     handled_type not in self._handlers_by_type,
-                    (
-                        f"{self._io_manager_name} provided with two handlers for the same type. "
-                        f"Type: '{handled_type}'. Handler classes: '{type(type_handler)}' and "
-                        f"'{type(self._handlers_by_type.get(handled_type))}'."
-                    ),
+                    f"{self._io_manager_name} provided with two handlers for the same type. "
+                    f"Type: '{handled_type}'. Handler classes: '{type(type_handler)}' and "
+                    f"'{type(self._handlers_by_type.get(handled_type))}'.",
                 )
 
                 self._handlers_by_type[handled_type] = type_handler
@@ -141,10 +139,8 @@ class DbIOManager(IOManager):
         else:
             check.invariant(
                 context.dagster_type.is_nothing,
-                (
-                    "Unexpected 'None' output value. If a 'None' value is intentional, set the"
-                    " output type to None."
-                ),
+                "Unexpected 'None' output value. If a 'None' value is intentional, set the"
+                " output type to None.",
             )
             # if obj is None, assume that I/O was handled in the op body
             handler_metadata = {}
@@ -232,7 +228,11 @@ class DbIOManager(IOManager):
                     partition_dimensions.append(
                         TablePartitionDimension(
                             partition_expr=cast(str, partition_expr),
-                            partitions=context.asset_partitions_time_window,
+                            partitions=(
+                                context.asset_partitions_time_window
+                                if context.asset_partition_keys
+                                else []
+                            ),
                         )
                     )
                 else:

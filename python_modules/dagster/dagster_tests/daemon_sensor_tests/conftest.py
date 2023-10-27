@@ -5,10 +5,32 @@ from typing import Iterator, Optional
 import pytest
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
+from dagster._core.test_utils import (
+    SingleThreadPoolExecutor,
+    create_test_daemon_workspace_context,
+    instance_for_test,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
+
+
+@pytest.fixture(params=["synchronous", "threadpool"])
+def executor(request):
+    if request.param == "synchronous":
+        yield None
+    elif request.param == "threadpool":
+        with SingleThreadPoolExecutor() as executor:
+            yield executor
+
+
+@pytest.fixture(params=["synchronous", "threadpool"])
+def submit_executor(request):
+    if request.param == "synchronous":
+        yield None
+    elif request.param == "threadpool":
+        with SingleThreadPoolExecutor() as executor:
+            yield executor
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")

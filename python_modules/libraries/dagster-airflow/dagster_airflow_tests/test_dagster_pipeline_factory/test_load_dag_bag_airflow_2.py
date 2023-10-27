@@ -77,6 +77,7 @@ def get_examples_airflow_repo_params():
         # runs slow
         "example_sensors",
         "example_dynamic_task_mapping",
+        "example_dynamic_task_mapping_with_no_taskflow_operators",
         # wrong state
         "example_short_circuit_operator",
     ]

@@ -93,7 +93,7 @@ def templated(context, ds: datetime):
         context.log.info(ds - timedelta(days=7))
 ```
 
-Which would yield the following graph of computations in Dagit, Dagster's web-based UI. We'll spin up Dagit later in the tutorial, but wanted to demonstrate:
+Which would yield the following graph of computations in the Dagster UI. We'll spin up the UI later in the tutorial, but wanted to demonstrate:
 
 <center>
   <Image
@@ -149,7 +149,7 @@ defs = Definitions(
 )
 ```
 
-We can now load this file with Dagit, the interactive web-UI for Dagster:
+We can now load this file with the UI:
 
 ```bash
 dagster dev -f <your_dagster_file>.py

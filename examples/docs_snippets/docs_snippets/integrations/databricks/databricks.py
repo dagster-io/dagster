@@ -22,14 +22,14 @@ def scope_define_databricks_custom_asset():
     from databricks_cli.sdk import JobsService
 
     from dagster import (
+        AssetExecutionContext,
         AssetSelection,
-        OpExecutionContext,
         asset,
         define_asset_job,
     )
 
     @asset(required_resource_keys={"databricks"})
-    def my_databricks_table(context: OpExecutionContext) -> None:
+    def my_databricks_table(context: AssetExecutionContext) -> None:
         databricks_api_client = context.resources.databricks.api_client
         jobs_service = JobsService(databricks_api_client)
 
@@ -50,13 +50,13 @@ def scope_define_databricks_custom_op():
     from databricks_cli.sdk import DbfsService
 
     from dagster import (
-        OpExecutionContext,
+        AssetExecutionContext,
         job,
         op,
     )
 
     @op(required_resource_keys={"databricks"})
-    def my_databricks_op(context: OpExecutionContext) -> None:
+    def my_databricks_op(context: AssetExecutionContext) -> None:
         databricks_api_client = context.resources.databricks.api_client
         dbfs_service = DbfsService(databricks_api_client)
 

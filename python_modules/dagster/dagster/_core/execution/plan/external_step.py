@@ -8,15 +8,16 @@ from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, cast
 import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.definitions.resource_definition import resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import StepExecutionContext
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.execute_plan import dagster_event_sequence_for_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep
 
 
+@dagster_maintained_resource
 @resource(
     config_schema={
         "scratch_dir": Field(
@@ -93,10 +95,7 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
     abs_package_dir = os.path.abspath(package_dir)
     check.invariant(
         os.path.commonprefix([abs_path, abs_package_dir]) == abs_package_dir,
-        "File {abs_path} is not underneath package dir {abs_package_dir}".format(
-            abs_path=abs_path,
-            abs_package_dir=abs_package_dir,
-        ),
+        f"File {abs_path} is not underneath package dir {abs_package_dir}",
     )
 
     relative_path = os.path.relpath(abs_path, abs_package_dir)
@@ -144,7 +143,7 @@ def step_context_to_step_run_ref(
                     repository_load_data=step_context.plan_data.execution_plan.repository_load_data,
                 ),
                 job_name=recon_job.job_name,
-                solids_to_execute=recon_job.solids_to_execute,
+                op_selection=recon_job.op_selection,
             )
 
     return StepRunRef(
@@ -186,10 +185,10 @@ def step_run_ref_to_step_context(
 
     job = step_run_ref.recon_job
 
-    solids_to_execute = step_run_ref.dagster_run.solids_to_execute
-    if solids_to_execute or step_run_ref.dagster_run.asset_selection:
-        job = step_run_ref.recon_job.subset_for_execution_from_existing_job(
-            frozenset(solids_to_execute) if solids_to_execute else None,
+    resolved_op_selection = step_run_ref.dagster_run.resolved_op_selection
+    if resolved_op_selection or step_run_ref.dagster_run.asset_selection:
+        job = step_run_ref.recon_job.get_subset(
+            op_selection=resolved_op_selection,
             asset_selection=step_run_ref.dagster_run.asset_selection,
         )
 
@@ -234,6 +233,25 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
+
+    # Note: This is a patch that enables using DynamicPartitionsDefinitions with step launchers in the specific case where:
+    # 1. The external step operates on a single dynamic partition.
+    # 2. No dynamic partitions are added in this external step.
+    # A more complete solution would require including all dynamic partitions on the StepRunRef object.
+    if step_context.has_partition_key:
+        partitions_def = next(
+            step_context.partitions_def_for_output(output_name=output_name)
+            for output_name in step_context.op_def.output_dict.keys()
+        )
+
+        # If we deal with DynamicPartitions, add the relevant partition to the remote instance
+        if (
+            isinstance(partitions_def, DynamicPartitionsDefinition)
+            and partitions_def.name is not None
+        ):
+            step_context.instance.add_dynamic_partitions(
+                partitions_def_name=partitions_def.name, partition_keys=[step_context.partition_key]
+            )
 
     # The step should be forced to run locally with respect to the remote process that this step
     # context is being deserialized in

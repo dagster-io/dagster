@@ -20,9 +20,12 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (
+    AutoMaterializeAssetEvaluationRecord,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -30,6 +33,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
@@ -41,7 +45,13 @@ from .migration import (
     SCHEDULE_JOBS_SELECTOR_ID,
     SCHEDULE_TICKS_SELECTOR_ID,
 )
-from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
+from .schema import (
+    AssetDaemonAssetEvaluationsTable,
+    InstigatorsTable,
+    JobTable,
+    JobTickTable,
+    SecondaryIndexMigrationTable,
+)
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
@@ -76,7 +86,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
-            query = db.select([InstigatorsTable.c.instigator_body]).select_from(InstigatorsTable)
+            query = db_select([InstigatorsTable.c.instigator_body]).select_from(InstigatorsTable)
             if repository_selector_id:
                 query = query.where(
                     InstigatorsTable.c.repository_selector_id == repository_selector_id
@@ -89,7 +99,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
 
         else:
-            query = db.select([JobTable.c.job_body]).select_from(JobTable)
+            query = db_select([JobTable.c.job_body]).select_from(JobTable)
             if repository_origin_id:
                 query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
             if instigator_type:
@@ -108,13 +118,13 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
             query = (
-                db.select([InstigatorsTable.c.instigator_body])
+                db_select([InstigatorsTable.c.instigator_body])
                 .select_from(InstigatorsTable)
                 .where(InstigatorsTable.c.selector_id == selector_id)
             )
         else:
             query = (
-                db.select([JobTable.c.job_body])
+                db_select([JobTable.c.job_body])
                 .select_from(JobTable)
                 .where(JobTable.c.job_origin_id == origin_id)
             )
@@ -126,7 +136,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.str_param(selector_id, "selector_id")
 
         query = (
-            db.select([JobTable.c.job_body])
+            db_select([JobTable.c.job_body])
             .select_from(JobTable)
             .where(JobTable.c.selector_id == selector_id)
         )
@@ -186,9 +196,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.inst_param(state, "state", InstigatorState)
         if not self.get_instigator_state(state.instigator_origin_id, state.selector_id):
             raise DagsterInvariantViolationError(
-                "InstigatorState {id} is not present in storage".format(
-                    id=state.instigator_origin_id
-                )
+                f"InstigatorState {state.instigator_origin_id} is not present in storage"
             )
 
         values = {
@@ -232,7 +240,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def _jobs_has_selector_state(self, conn: Connection, selector_id: str) -> bool:
         query = (
-            db.select([db.func.count()])
+            db_select([db.func.count()])
             .select_from(JobTable)
             .where(JobTable.c.selector_id == selector_id)
         )
@@ -276,6 +284,10 @@ class SqlScheduleStorage(ScheduleStorage):
         table_names = db.inspect(conn).get_table_names()
         return "instigators" in table_names
 
+    def _has_asset_daemon_asset_evaluations_table(self, conn: Connection) -> bool:
+        table_names = db.inspect(conn).get_table_names()
+        return "asset_daemon_asset_evaluations" in table_names
+
     def get_batch_ticks(
         self,
         selector_ids: Sequence[str],
@@ -294,8 +306,8 @@ class SqlScheduleStorage(ScheduleStorage):
             )
             .label("rank")
         )
-        subquery = (
-            db.select(
+        subquery = db_subquery(
+            db_select(
                 [
                     JobTickTable.c.id,
                     JobTickTable.c.selector_id,
@@ -305,7 +317,6 @@ class SqlScheduleStorage(ScheduleStorage):
             )
             .select_from(JobTickTable)
             .where(JobTickTable.c.selector_id.in_(selector_ids))
-            .alias("subquery")
         )
         if statuses:
             subquery = subquery.where(
@@ -313,7 +324,7 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         query = (
-            db.select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body])
+            db_select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body])
             .order_by(subquery.c.rank.asc())
             .where(subquery.c.rank <= limit)
         )
@@ -343,7 +354,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
         base_query = (
-            db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
+            db_select([JobTickTable.c.id, JobTickTable.c.tick_body])
             .select_from(JobTickTable)
             .order_by(JobTickTable.c.timestamp.desc())
         )
@@ -446,6 +457,105 @@ class SqlScheduleStorage(ScheduleStorage):
         with self.connect() as conn:
             conn.execute(query)
 
+    @property
+    def supports_auto_materialize_asset_evaluations(self) -> bool:
+        with self.connect() as conn:
+            return self._has_asset_daemon_asset_evaluations_table(conn)
+
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ):
+        if not asset_evaluations:
+            return
+
+        with self.connect() as conn:
+            for evaluation in asset_evaluations:
+                insert_stmt = AssetDaemonAssetEvaluationsTable.insert().values(
+                    [
+                        {
+                            "evaluation_id": evaluation_id,
+                            "asset_key": evaluation.asset_key.to_string(),
+                            "asset_evaluation_body": serialize_value(evaluation),
+                            "num_requested": evaluation.num_requested,
+                            "num_skipped": evaluation.num_skipped,
+                            "num_discarded": evaluation.num_discarded,
+                        }
+                    ]
+                )
+                try:
+                    conn.execute(insert_stmt)
+                except db_exc.IntegrityError:
+                    conn.execute(
+                        AssetDaemonAssetEvaluationsTable.update()
+                        .where(
+                            db.and_(
+                                AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id,
+                                AssetDaemonAssetEvaluationsTable.c.asset_key
+                                == evaluation.asset_key.to_string(),
+                            )
+                        )
+                        .values(
+                            asset_evaluation_body=serialize_value(evaluation),
+                            num_requested=evaluation.num_requested,
+                            num_skipped=evaluation.num_skipped,
+                            num_discarded=evaluation.num_discarded,
+                        )
+                    )
+
+    def get_auto_materialize_asset_evaluations(
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        with self.connect() as conn:
+            query = (
+                db_select(
+                    [
+                        AssetDaemonAssetEvaluationsTable.c.id,
+                        AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                        AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                        AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                        AssetDaemonAssetEvaluationsTable.c.asset_key,
+                    ]
+                )
+                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
+                .order_by(AssetDaemonAssetEvaluationsTable.c.evaluation_id.desc())
+            ).limit(limit)
+
+            if cursor:
+                query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
+
+            rows = db_fetch_mappings(conn, query)
+            return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
+
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        with self.connect() as conn:
+            query = db_select(
+                [
+                    AssetDaemonAssetEvaluationsTable.c.id,
+                    AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                    AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                    AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                    AssetDaemonAssetEvaluationsTable.c.asset_key,
+                ]
+            ).where(AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id)
+
+            rows = db_fetch_mappings(conn, query)
+            return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
+
+    def purge_asset_evaluations(self, before: float):
+        check.float_param(before, "before")
+
+        utc_before = utc_datetime_from_timestamp(before)
+        query = AssetDaemonAssetEvaluationsTable.delete().where(
+            AssetDaemonAssetEvaluationsTable.c.create_timestamp < utc_before
+        )
+
+        with self.connect() as conn:
+            conn.execute(query)
+
     def wipe(self) -> None:
         """Clears the schedule storage."""
         with self.connect() as conn:
@@ -454,6 +564,8 @@ class SqlScheduleStorage(ScheduleStorage):
             conn.execute(JobTickTable.delete())
             if self._has_instigators_table(conn):
                 conn.execute(InstigatorsTable.delete())
+            if self._has_asset_daemon_asset_evaluations_table(conn):
+                conn.execute(AssetDaemonAssetEvaluationsTable.delete())
 
     # MIGRATIONS
 
@@ -466,7 +578,7 @@ class SqlScheduleStorage(ScheduleStorage):
             return False
 
         query = (
-            db.select([1])
+            db_select([1])
             .where(SecondaryIndexMigrationTable.c.name == migration_name)
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)

@@ -23,8 +23,8 @@
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.
 from airflow import models
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.bash_operator import BashOperator  # type: ignore
+from airflow.operators.python_operator import PythonOperator  # type: ignore
 from airflow.utils.dates import days_ago
 from airflow.utils.helpers import chain
 

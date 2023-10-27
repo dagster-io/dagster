@@ -45,7 +45,7 @@ class GrapheneTarget(graphene.ObjectType):
         super().__init__(
             pipelineName=external_target.job_name,
             mode=external_target.mode,
-            solidSelection=external_target.solid_selection,
+            solidSelection=external_target.op_selection,
         )
 
 

@@ -1,4 +1,5 @@
 {{/* vim: set filetype=mustache: */}}
+
 {{/*
 Expand the name of the chart.
 */}}
@@ -39,15 +40,16 @@ If release name contains chart name it will be used as a full name.
   {{- end }}
 {{- end }}
 
-{{- define "dagster.dagit.dagitCommand" -}}
+{{- define "dagster.webserver.dagsterWebserverCommand" -}}
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
-dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
+dagster-webserver -h 0.0.0.0 -p {{ $_.Values.dagsterWebserver.service.port }}
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
-{{- with .Values.dagit.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
-{{- with .Values.dagit.dbPoolRecycle }} --db-pool-recycle {{ . }} {{- end -}}
-{{- if .Values.dagit.pathPrefix }} --path-prefix {{ .Values.dagit.pathPrefix }} {{- end -}}
-{{- with .Values.dagit.logLevel }} --log-level {{ . }} {{- end -}}
-{{- if .dagitReadOnly }} --read-only {{- end -}}
+{{- with $_.Values.dagsterWebserver.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
+{{- with $_.Values.dagsterWebserver.dbPoolRecycle }} --db-pool-recycle {{ . }} {{- end -}}
+{{- if $_.Values.dagsterWebserver.pathPrefix }} --path-prefix {{ $_.Values.dagsterWebserver.pathPrefix }} {{- end -}}
+{{- with $_.Values.dagsterWebserver.logLevel }} --log-level {{ . }} {{- end -}}
+{{- if .webserverReadOnly }} --read-only {{- end -}}
 {{- end -}}
 
 {{- define "dagster.dagsterDaemon.daemonCommand" -}}
@@ -56,18 +58,20 @@ dagster-daemon run
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
 {{- end -}}
 
-{{- define "dagster.dagit.fullname" -}}
-{{- $name := default "dagit" .Values.dagit.nameOverride -}}
+{{- define "dagster.webserver.fullname" -}}
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
+{{- $name := default "webserver" $_.Values.dagsterWebserver.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- if .dagitReadOnly -}} -read-only {{- end -}}
+{{- if .webserverReadOnly -}} -read-only {{- end -}}
 {{- end -}}
 
-{{- define "dagster.dagit.componentName" -}}
-dagit {{- if .dagitReadOnly -}} -read-only {{- end -}}
+{{- define "dagster.webserver.componentName" -}}
+dagster-webserver {{- if .webserverReadOnly -}} -read-only {{- end -}}
 {{- end -}}
 
-{{- define "dagster.dagit.migrate" -}}
-{{- $name := default "dagit" .Values.dagit.nameOverride -}}
+{{- define "dagster.webserver.migrate" -}}
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
+{{- $name := default "dagster-webserver" $_.Values.dagsterWebserver.nameOverride -}}
 {{- printf "%s-%s-instance-migrate" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -188,12 +192,10 @@ until wget http://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.r
 {{/*
 This environment shared across all containers.
 
-This includes Dagit, Celery Workers, Run Worker, and Step Worker containers.
+This includes the Dagster webserver, Celery Workers, Run Worker, and Step Worker containers.
 */}}
 {{- define "dagster.shared_env" -}}
 DAGSTER_HOME: {{ .Values.global.dagsterHome | quote }}
-DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagster.postgresql.secretName" . | quote }}
-DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
 DAGSTER_K8S_PIPELINE_RUN_IMAGE: {{ include "dagster.dagsterImage.name" (list $ .Values.pipelineRun.image) | quote }}
@@ -210,10 +212,11 @@ DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPo
   {{- end }}
 {{- end }}
 
-{{- define "dagit.workspace.configmapName" -}}
-{{- $dagitWorkspace := .Values.dagit.workspace }}
-{{- if and $dagitWorkspace.enabled $dagitWorkspace.externalConfigmap }}
-{{- $dagitWorkspace.externalConfigmap -}}
+{{- define "dagster.workspace.configmapName" -}}
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
+{{- $webserverWorkspace := $_.Values.dagsterWebserver.workspace }}
+{{- if and $webserverWorkspace.enabled $webserverWorkspace.externalConfigmap }}
+{{- $webserverWorkspace.externalConfigmap -}}
 {{- else -}}
 {{ template "dagster.fullname" . }}-workspace-yaml
 {{- end -}}

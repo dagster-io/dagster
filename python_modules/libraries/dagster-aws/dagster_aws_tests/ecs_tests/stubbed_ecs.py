@@ -424,6 +424,9 @@ class StubbedEcs:
                         "capacityProvider"
                     ]
 
+                if tags:
+                    task["tags"] = tags
+
                 if vpc_configuration:
                     for subnet_name in vpc_configuration["subnets"]:
                         ec2 = boto3.resource("ec2", region_name=self.client.meta.region_name)
@@ -535,9 +538,9 @@ class StubbedEcs:
 
     def _long_arn_enabled(self):
         settings = self.list_account_settings(effectiveSettings=True)["settings"]
-        task_arn_format_setting = [
+        task_arn_format_setting = next(
             setting for setting in settings if setting["name"] == "taskLongArnFormat"
-        ][0]
+        )
         return task_arn_format_setting["value"] != "disabled"
 
     def _valid_cpu_and_memory(self, cpu, memory):

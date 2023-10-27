@@ -1,7 +1,6 @@
 import copy
 from functools import update_wrapper
 from typing import (
-    TYPE_CHECKING,
     Callable,
     List,
     Mapping,
@@ -37,9 +36,6 @@ from ..schedule_definition import (
 )
 from ..target import ExecutableDefinition
 from ..utils import validate_tags
-
-if TYPE_CHECKING:
-    pass
 
 
 def schedule(
@@ -96,7 +92,7 @@ def schedule(
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             that should execute when this schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
@@ -126,7 +122,10 @@ def schedule(
             if should_execute:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of should_execute for schedule {schedule_name}",
+                    lambda: (
+                        "Error occurred during the execution of should_execute for schedule"
+                        f" {schedule_name}"
+                    ),
                 ):
                     if not should_execute(context):
                         yield SkipReason(
@@ -171,7 +170,7 @@ def schedule(
             has_context_arg=has_context_arg,
         )
 
-        schedule_def = ScheduleDefinition(
+        schedule_def = ScheduleDefinition.dagster_internal_init(
             name=schedule_name,
             cron_schedule=cron_schedule,
             job_name=job_name,
@@ -182,6 +181,11 @@ def schedule(
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            run_config=None,  # cannot supply run_config or run_config_fn to decorator
+            run_config_fn=None,
+            tags=None,  # cannot supply tags or tags_fn to decorator
+            tags_fn=None,
+            should_execute=None,  # already encompassed in evaluation_fn
         )
 
         update_wrapper(schedule_def, wrapped=fn)

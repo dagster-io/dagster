@@ -1,3 +1,4 @@
+import contextlib
 import glob
 import logging
 import os
@@ -24,10 +25,10 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_EVENTS
+from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, EVENT_TYPE_TO_PIPELINE_RUN_STATUS
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -36,6 +37,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import (
     ConfigurableClass,
@@ -57,7 +59,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file insqliteve
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     This is the default event log storage when none is specified in the ``dagster.yaml``.
@@ -168,13 +170,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         SqlEventLogStorageMetadata.create_all(engine)
-                        connection.execute("PRAGMA journal_mode=WAL;")
+                        connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                         stamp_alembic_rev(alembic_config, connection)
 
                 break
             except (db_exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:
                 # This is SQLite-specific handling for concurrency issues that can arise when
-                # multiple processes (e.g. the dagit process and user code process) contend with
+                # multiple processes (e.g. the dagster-webserver process and user code process) contend with
                 # each other to init the db. When we hit the following errors, we know that another
                 # process is on the case and we should retry.
                 err_msg = str(exc)
@@ -190,10 +192,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     raise
                 else:
                     logging.info(
-                        (
-                            "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
-                            "retrying (%s retries left). Exception: %s"
-                        ),
+                        "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
+                        "retrying (%s retries left). Exception: %s",
                         retry_limit,
                         err_msg,
                     )
@@ -212,12 +212,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 self._initdb(engine)
                 self._initialized_dbs.add(shard)
 
-            conn = engine.connect()
-
-            try:
-                yield conn
-            finally:
-                conn.close()
+            with engine.connect() as conn:
+                with conn.begin():
+                    yield conn
             engine.dispose()
 
     def run_connection(self, run_id: Optional[str] = None) -> Any:
@@ -243,10 +240,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event.asset_key:  # type: ignore
             check.invariant(
                 event.dagster_event_type in ASSET_EVENTS,
-                (
-                    "Can only store asset materializations, materialization_planned, and"
-                    " observations in index database"
-                ),
+                "Can only store asset materializations, materialization_planned, and"
+                " observations in index database",
             )
 
             event_id = None
@@ -265,6 +260,14 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             self.store_asset_event_tags(event, event_id)
 
+        if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
+            self.store_asset_check_event(event, None)
+
+        if event.is_dagster_event and event.dagster_event_type in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            # should mirror run status change events in the index shard
+            with self.index_connection() as conn:
+                result = conn.execute(insert_event_statement)
+
     def get_event_records(
         self,
         event_records_filter: EventRecordsFilter,
@@ -282,13 +285,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         is_asset_query = event_records_filter and event_records_filter.event_type in ASSET_EVENTS
         if is_asset_query:
-            # asset materializations, observations and materialization planned events
-            # get mirrored into the index shard, so no custom run shard-aware cursor logic needed
+            # asset materializations, observations and materialization planned events get mirrored
+            # into the index shard, so no custom run shard-aware cursor logic needed
             return super(SqliteEventLogStorage, self).get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+        query = db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
@@ -370,15 +373,22 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.delete_events_for_run(conn, run_id)
 
     def wipe(self) -> None:
-        # should delete all the run-sharded dbs as well as the index db
+        # should delete all the run-sharded db files and drop the contents of the index
         for filename in (
             glob.glob(os.path.join(self._base_dir, "*.db"))
             + glob.glob(os.path.join(self._base_dir, "*.db-wal"))
             + glob.glob(os.path.join(self._base_dir, "*.db-shm"))
         ):
-            os.unlink(filename)
+            if (
+                not filename.endswith(f"{INDEX_SHARD_NAME}.db")
+                and not filename.endswith(f"{INDEX_SHARD_NAME}.db-wal")
+                and not filename.endswith(f"{INDEX_SHARD_NAME}.db-shm")
+            ):
+                with contextlib.suppress(FileNotFoundError):
+                    os.unlink(filename)
 
         self._initialized_dbs = set()
+        self._wipe_index()
 
     def _delete_mirrored_events_for_asset_key(self, asset_key: AssetKey) -> None:
         with self.index_connection() as conn:
@@ -426,6 +436,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def is_run_sharded(self) -> bool:
         return True
 
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return False
+
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(
@@ -434,7 +448,7 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         run_id: str,
         callback: EventHandlerFn,
         cursor: Optional[str],
-        **kwargs: object,
+        **kwargs: Any,
     ):
         self._event_log_storage = check.inst_param(
             event_log_storage, "event_log_storage", SqliteEventLogStorage

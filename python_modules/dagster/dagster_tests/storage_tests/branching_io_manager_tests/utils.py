@@ -39,7 +39,7 @@ class DefinitionsRunner:
     def materialize_assets(
         self, asset_selection: Sequence[CoercibleToAssetKey], partition_key: Optional[str] = None
     ) -> ExecuteInProcessResult:
-        asset_keys = [AssetKey.from_coerceable(asset_key) for asset_key in asset_selection]
+        asset_keys = [AssetKey.from_coercible(asset_key) for asset_key in asset_selection]
         job_def = self.defs.get_implicit_job_def_for_assets(asset_keys)
         assert job_def
         return job_def.execute_in_process(
@@ -67,7 +67,7 @@ class DefinitionsRunner:
             *self.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey.from_coerceable(asset_key),
+                    asset_key=AssetKey.from_coercible(asset_key),
                 )
             )
         ]
@@ -92,10 +92,10 @@ class AssetBasedInMemoryIOManager(IOManager):
     def has_value(
         self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
     ) -> bool:
-        return self._get_key(AssetKey.from_coerceable(asset_key), partition_key) in self.values
+        return self._get_key(AssetKey.from_coercible(asset_key), partition_key) in self.values
 
     def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
-        return self.values.get(self._get_key(AssetKey.from_coerceable(asset_key), partition_key))
+        return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _key_from_context(self, context: Union[InputContext, OutputContext]):
         return self._get_key(

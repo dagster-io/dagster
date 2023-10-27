@@ -27,6 +27,7 @@ run_queue:
 
 run_monitoring:
   start_timeout_seconds: 1200
+  cancel_timeout_seconds: 1200
 
 run_retries:
   max_retries: 0
@@ -119,11 +120,12 @@ run_queue:
 
 ### Run monitoring (run_monitoring)
 
-The `run_monitoring` settings allow you to define how long Dagster Cloud should wait for runs to start before failing them in the deployment.
+The `run_monitoring` settings allow you to define how long Dagster Cloud should wait for runs to start before making them as failed, or to terminate before marking them as canceled.
 
 ```yaml
 run_monitoring:
   start_timeout_seconds: 1200
+  cancel_timeout_seconds: 1200
 ```
 
 <ReferenceTable>
@@ -163,7 +165,7 @@ run_retries:
 
 ### SSO default role
 
-The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster Cloud permissions reference](/dagster-cloud/account/managing-users#understanding-user-roles).
+The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster Cloud permissions reference](/dagster-cloud/account/managing-users/managing-user-roles-permissions#user-permissions-reference).
 
 ```yaml
 sso_default_role: EDITOR

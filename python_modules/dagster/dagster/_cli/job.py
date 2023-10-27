@@ -48,7 +48,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
@@ -63,7 +63,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
 from .config_scaffolder import scaffold_job_config
-from .utils import get_instance_for_service
+from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
@@ -90,7 +90,7 @@ def job_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn):
-    with get_instance_for_service("``dagster job list``") as instance:
+    with get_possibly_temporary_instance_for_cli("``dagster job list``") as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repository:
@@ -110,18 +110,18 @@ def execute_list_command(cli_args, print_fn):
                     print_fn("Description:")
                     print_fn(format_description(job.description, indent=" " * 4))
                 print_fn("Ops: (Execution Order)")
-                for solid_name in job.job_snapshot.node_names_in_topological_order:
-                    print_fn("    " + solid_name)
+                for node_name in job.job_snapshot.node_names_in_topological_order:
+                    print_fn("    " + node_name)
 
 
 def get_job_in_same_python_env_instructions(command_name):
     return (
         "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
-        " job {command_name} -f /path/to/file.py -a define_some_job\n\n2. dagster job"
-        " {command_name} -m a_module.submodule -a define_some_job\n\n3. dagster job {command_name}"
-        " -f /path/to/file.py -a define_some_repo -j <<job_name>>\n\n4. dagster job {command_name}"
+        f" job {command_name} -f /path/to/file.py -a define_some_job\n\n2. dagster job"
+        f" {command_name} -m a_module.submodule -a define_some_job\n\n3. dagster job {command_name}"
+        f" -f /path/to/file.py -a define_some_repo -j <<job_name>>\n\n4. dagster job {command_name}"
         " -m a_module.submodule -a define_some_repo -j <<job_name>>"
-    ).format(command_name=command_name)
+    )
 
 
 def get_job_instructions(command_name):
@@ -143,7 +143,7 @@ def get_job_instructions(command_name):
 @click.option("--verbose", is_flag=True)
 @job_target_argument
 def job_print_command(verbose, **cli_args):
-    with get_instance_for_service("``dagster job print``") as instance:
+    with get_possibly_temporary_instance_for_cli("``dagster job print``") as instance:
         return execute_print_command(instance, verbose, cli_args, click.echo)
 
 
@@ -178,9 +178,9 @@ def print_ops(
     printer.line(f"Job: {job_snapshot.name}")
 
     printer.line("Ops")
-    for solid in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
+    for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
-            printer.line(f"Op: {solid.node_name}")
+            printer.line(f"Op: {node.node_name}")
 
 
 def print_job(
@@ -194,9 +194,9 @@ def print_job(
     print_description(printer, job_snapshot.description)
 
     printer.line("Ops")
-    for solid in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
+    for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
-            print_op(printer, job_snapshot, solid)
+            print_op(printer, job_snapshot, node)
 
 
 def print_description(printer, desc):
@@ -220,20 +220,20 @@ def format_description(desc: str, indent: str):
 def print_op(
     printer: IndentingPrinter,
     job_snapshot: JobSnapshot,
-    solid_invocation_snap: NodeInvocationSnap,
+    node_invocation_snap: NodeInvocationSnap,
 ) -> None:
     check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
-    check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
-    printer.line(f"Op: {solid_invocation_snap.node_name}")
+    check.inst_param(node_invocation_snap, "node_invocation_snap", NodeInvocationSnap)
+    printer.line(f"Op: {node_invocation_snap.node_name}")
     with printer.with_indent():
         printer.line("Inputs:")
-        for input_dep_snap in solid_invocation_snap.input_dep_snaps:
+        for input_dep_snap in node_invocation_snap.input_dep_snaps:
             with printer.with_indent():
                 printer.line(f"Input: {input_dep_snap.input_name}")
 
         printer.line("Outputs:")
         for output_def_snap in job_snapshot.get_node_def_snap(
-            solid_invocation_snap.node_def_name
+            node_invocation_snap.node_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
 
@@ -247,7 +247,7 @@ def print_op(
 @python_job_target_argument
 @python_job_config_argument("list_versions")
 def job_list_versions_command(**kwargs):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         execute_list_versions_command(instance, kwargs)
 
 
@@ -284,14 +284,13 @@ def add_step_to_table(memoized_plan):
     for step_output_handle, version in memoized_plan.step_output_versions.items():
         table.append(
             [
-                "{key}.{output}".format(
-                    key=step_output_handle.step_key,
-                    output=step_output_handle.output_name,
-                ),
+                f"{step_output_handle.step_key}.{step_output_handle.output_name}",
                 version,
-                "stored"
-                if step_output_handle.step_key not in step_keys_not_stored
-                else "to-be-recomputed",
+                (
+                    "stored"
+                    if step_output_handle.step_key not in step_keys_not_stored
+                    else "to-be-recomputed"
+                ),
             ]
         )
     table_str = tabulate(
@@ -309,9 +308,24 @@ def add_step_to_table(memoized_plan):
 @python_job_target_argument
 @python_job_config_argument("execute")
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
+@click.option(
+    "-o",
+    "--op-selection",
+    type=click.STRING,
+    help=(
+        "Specify the op subselection to execute. It can be multiple clauses separated by commas."
+        "Examples:"
+        '\n- "some_op" will execute "some_op" itself'
+        '\n- "*some_op" will execute "some_op" and all its ancestors (upstream dependencies)'
+        '\n- "*some_op+++" will execute "some_op", all its ancestors, and its descendants'
+        "   (downstream dependencies) within 3 levels down"
+        '\n- "*some_op,other_op_a,other_op_b+" will execute "some_op" and all its'
+        '   ancestors, "other_op_a" itself, and "other_op_b" and its direct child ops'
+    ),
+)
 def job_execute_command(**kwargs: ClickArgValue):
     with capture_interrupts():
-        with get_instance_for_service("``dagster job execute``") as instance:
+        with get_possibly_temporary_instance_for_cli("``dagster job execute``") as instance:
             execute_execute_command(instance, kwargs)
 
 
@@ -327,8 +341,8 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
 
     job_origin = get_job_python_origin_from_kwargs(kwargs)
     recon_job = recon_job_from_origin(job_origin)
-    solid_selection = get_solid_selection_from_args(kwargs)
-    result = do_execute_command(recon_job, instance, config, tags, solid_selection)
+    op_selection = get_op_selection_from_args(kwargs)
+    result = do_execute_command(recon_job, instance, config, tags, op_selection)
 
     if not result.success:
         raise click.ClickException(f"Run {result.run_id} resulted in failure.")
@@ -381,12 +395,12 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
         check.failed("Unhandled case getting config from kwargs")
 
 
-def get_solid_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
-    solid_selection_str = kwargs.get("solid_selection")
-    if not isinstance(solid_selection_str, str):
+def get_op_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
+    op_selection_str = kwargs.get("op_selection")
+    if not isinstance(op_selection_str, str):
         return None
 
-    return [ele.strip() for ele in solid_selection_str.split(",")] if solid_selection_str else None
+    return [ele.strip() for ele in op_selection_str.split(",")] if op_selection_str else None
 
 
 def do_execute_command(
@@ -414,8 +428,9 @@ def do_execute_command(
 @job_cli.command(
     name="launch",
     help=(
-        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}"
-        .format(instructions=get_job_instructions("launch"))
+        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}".format(
+            instructions=get_job_instructions("launch")
+        )
     ),
 )
 @job_target_argument
@@ -428,7 +443,7 @@ def do_execute_command(
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option("--run-id", type=click.STRING, help="The ID to give to the launched job run")
 def job_launch_command(**kwargs) -> DagsterRun:
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         return execute_launch_command(instance, kwargs)
 
 
@@ -463,7 +478,7 @@ def execute_launch_command(
 
         run_tags = get_tags_from_args(kwargs)
 
-        solid_selection = get_solid_selection_from_args(kwargs)
+        op_selection = get_op_selection_from_args(kwargs)
 
         dagster_run = _create_external_run(
             instance=instance,
@@ -472,7 +487,7 @@ def execute_launch_command(
             external_job=external_job,
             run_config=config,
             tags=run_tags,
-            solid_selection=solid_selection,
+            op_selection=op_selection,
             run_id=cast(Optional[str], kwargs.get("run_id")),
         )
 
@@ -486,7 +501,7 @@ def _create_external_run(
     external_job: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
-    solid_selection: Optional[Sequence[str]],
+    op_selection: Optional[Sequence[str]],
     run_id: Optional[str],
 ) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
@@ -496,25 +511,25 @@ def _create_external_run(
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
-    run_config, tags, solid_selection = _check_execute_external_job_args(
+    run_config, tags, op_selection = _check_execute_external_job_args(
         external_job,
         run_config,
         tags,
-        solid_selection,
+        op_selection,
     )
 
     job_name = external_job.name
-    pipeline_selector = JobSubsetSelector(
+    job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=external_repo.name,
         job_name=job_name,
-        solid_selection=solid_selection,
+        op_selection=op_selection,
     )
 
-    external_job = code_location.get_external_job(pipeline_selector)
+    external_job = code_location.get_external_job(job_subset_selector)
 
     external_execution_plan = code_location.get_external_execution_plan(
         external_job,
@@ -529,9 +544,9 @@ def _create_external_run(
         job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        solids_to_execute=external_job.solids_to_execute,
+        resolved_op_selection=external_job.resolved_op_selection,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
-        solid_selection=solid_selection,
+        op_selection=op_selection,
         status=None,
         root_run_id=None,
         parent_run_id=None,
@@ -542,6 +557,7 @@ def _create_external_run(
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
+        asset_check_selection=None,
     )
 
 
@@ -549,19 +565,19 @@ def _check_execute_external_job_args(
     external_job: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
-    solid_selection: Optional[Sequence[str]],
+    op_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
     check.inst_param(external_job, "external_job", ExternalJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     tags = merge_dicts(external_job.tags, tags)
 
     return (
         run_config,
         validate_tags(tags),
-        solid_selection,
+        op_selection,
     )
 
 
@@ -636,7 +652,7 @@ def do_scaffold_command(
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option("--noprompt", is_flag=True)
 def job_backfill_command(**kwargs):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         execute_backfill_command(kwargs, click.echo, instance)
 
 

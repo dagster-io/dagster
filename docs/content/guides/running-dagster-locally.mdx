@@ -13,9 +13,9 @@ In this guide, we'll walk you through how to run Dagster on your local machine u
 
 ## Understanding the dagster dev command
 
-The `dagster dev` command launches [Dagit](/concepts/dagit/dagit) and the [Dagster daemon](/deployment/dagster-daemon), allowing you to start a full deployment of Dagster from the command line.
+The `dagster dev` command launches [the Dagster webserver/UI](/concepts/webserver/ui) and the [Dagster daemon](/deployment/dagster-daemon), allowing you to start a full deployment of Dagster from the command line.
 
-This command should be run in a Python environment where the `dagster` and `dagit` packages are installed. **Once started, the process should be kept running.**
+This command should be run in a Python environment where the `dagster` and `dagster-webserver` packages are installed. **Once started, the process should be kept running.**
 
 ---
 
@@ -58,7 +58,7 @@ For the full list of options that can be set in the `dagster.yaml` file, refer t
 
 ## Moving to production
 
-`dagster dev` is primarily useful for running Dagster for local development and testing, but isn't suitable for the demands of most production deployments. For example, in a production deployment, you might want to run multiple Dagit replicas, have zero downtime continuous deployment of your code, or set up your Dagster daemon to automatically restart if it crashes.
+`dagster dev` is primarily useful for running Dagster for local development and testing, but isn't suitable for the demands of most production deployments. For example, in a production deployment, you might want to run multiple webserver replicas, have zero downtime continuous deployment of your code, or set up your Dagster daemon to automatically restart if it crashes.
 
 For information about deploying Dagster in production, refer to the [Deploying Dagster guides](/deployment/open-source#deploying-dagster).
 

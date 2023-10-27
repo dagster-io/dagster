@@ -10,12 +10,12 @@ from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_a
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleStorage
-from dagster_mysql.utils import get_conn
+from dagster_mysql.utils import mysql_isolation_level
 from sqlalchemy.pool import NullPool
 
 
 def full_mysql_config(hostname, port):
-    return """
+    return f"""
       run_storage:
         module: dagster_mysql.run_storage
         class: MySQLRunStorage
@@ -48,9 +48,7 @@ def full_mysql_config(hostname, port):
               hostname: {hostname}
               port: {port}
               db_name: test
-    """.format(
-        hostname=hostname, port=port
-    )
+    """
 
 
 def unified_mysql_config(hostname, port):
@@ -84,15 +82,16 @@ def test_connection_leak(conn_string):
             )
         )
 
-    with get_conn(conn_string) as conn:
-        curs = conn.cursor()
-        # count open connections
-        curs.execute("SELECT count(*) FROM information_schema.processlist")
-        res = curs.fetchall()
+    engine = create_engine(conn_string, isolation_level=mysql_isolation_level(), poolclass=NullPool)
+    with engine.connect() as conn:
+        with conn.begin():
+            row = conn.execute(
+                db.text("SELECT count(*) FROM information_schema.processlist")
+            ).fetchone()
 
     # This includes a number of internal connections, so just ensure it did not scale
     # with number of instances
-    assert res[0][0] < num_instances
+    assert row[0] < num_instances
 
     for copy in copies:
         copy.dispose()
@@ -114,7 +113,7 @@ def test_load_instance(conn_string):
         file_relative_path(__file__, "../dagster_mysql/__init__.py")
     )
     with engine.connect() as conn:
-        stamp_alembic_rev(alembic_config, conn, rev=None, quiet=False)
+        stamp_alembic_rev(alembic_config, conn, rev=None)
 
     # Now load from scratch, verify it loads without errors
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))):
@@ -132,19 +131,19 @@ def test_statement_timeouts(conn_string):
     port = parse_result.port
 
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))) as instance:
-        instance.optimize_for_dagit(statement_timeout=500, pool_recycle=-1)  # 500ms
+        instance.optimize_for_webserver(statement_timeout=500, pool_recycle=-1)  # 500ms
 
         # ensure migration error is not raised by being up to date
         instance.upgrade()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
             with instance._run_storage.connect() as conn:  # noqa: SLF001
-                conn.execute("select pg_sleep(1)").fetchone()
+                conn.execute(db.text("select sleep(1)")).fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
             with instance._event_storage.connect() as conn:  # noqa: SLF001
-                conn.execute("select pg_sleep(1)").fetchone()
+                conn.execute(db.text("select sleep(1)")).fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
             with instance._schedule_storage.connect() as conn:  # noqa: SLF001
-                conn.execute("select pg_sleep(1)").fetchone()
+                conn.execute(db.text("select sleep(1)")).fetchone()

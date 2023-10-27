@@ -18,13 +18,12 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-k8s",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="A Dagster integration for k8s",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-k8s",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -33,6 +32,11 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_k8s_tests*"]),
-    install_requires=[f"dagster{pin}", "kubernetes"],
+    install_requires=[
+        f"dagster{pin}",
+        "kubernetes",
+        # exclude a google-auth release that added an overly restrictive urllib3 pin that confuses dependency resolvers
+        "google-auth!=2.23.1",
+    ],
     zip_safe=False,
 )

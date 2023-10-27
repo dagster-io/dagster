@@ -27,9 +27,9 @@ rbacEnabled: true
 imagePullSecrets: []
 
 ####################################################################################################
-# Dagit: Configuration for the Dagit webserver
+# Dagster Webserver: Configuration for the Dagster webserver
 ####################################################################################################
-dagit:
+dagsterWebserver:
   replicaCount: 1
   image:
     # When a tag is not supplied for a Dagster provided image,
@@ -38,22 +38,22 @@ dagit:
     tag: ~
     pullPolicy: Always
 
-  # Support overriding the name prefix of the Dagit pods
-  nameOverride: "dagit"
+  # Support overriding the name prefix of the webserver pods
+  nameOverride: "dagster-webserver"
 
   # Support path prefix (i.e. /dagster)
   pathPrefix: ~
 
   service:
     type: ClusterIP
-    # Defines the port where Dagit will serve requests; if changed, don't forget to update the
+    # Defines the port where the webserver will serve requests; if changed, don't forget to update the
     # livenessProbe and startupProbe entries below as well.
     port: 80
     annotations: {}
 
-  # Defines a workspace for Dagit. This should only be set if user deployments are enabled, but
+  # Defines a workspace for the webserver. This should only be set if user deployments are enabled, but
   # the subchart is disabled to manage user deployments in a separate Helm release.
-  # In this case, Dagit will need the addresses of the servers in order to load the user code,
+  # In this case, the webserver will need the addresses of the code servers in order to load the user code,
   # or the name of an existing configmap to mount as the workspace file.
   workspace:
     enabled: false
@@ -70,7 +70,7 @@ dagit:
     # must be empty.
     externalConfigmap: ~
 
-  # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
+  # Deploy a separate instance of the webserver in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
 
   # The timeout in milliseconds to set on database statements sent to the Dagster instance.
@@ -152,7 +152,7 @@ dagit:
   #     subPath: test_file.yaml
   volumeMounts: []
 
-  # Support Node, affinity and tolerations for Dagit pod assignment. See:
+  # Support Node, affinity and tolerations for webserver pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
@@ -179,10 +179,10 @@ dagit:
   # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
   readinessProbe:
     httpGet:
-      path: "/dagit_info"
+      path: "/server_info"
       port: 80
     periodSeconds: 20
-    timeoutSeconds: 3
+    timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 3
 
@@ -193,7 +193,13 @@ dagit:
     enabled: false
 
 ####################################################################################################
-# Compute Log Manager: Configuration for the compute log manager
+# Compute Log Manager: Configuration for the compute log manager.
+#
+# By default, NoOpComputeLogManager is set as a compute log manager. As a result, stdout and stderr
+# logs will be unavailable in the Dagster UI. To change this behavior, choose a compute log
+# manager with a storage backend to capture and persist stdout and stderr logs.
+#
+# See https://docs.dagster.io/deployment/dagster-instance#compute-log-storage for more information.
 ####################################################################################################
 computeLogManager:
   # Type can be one of [
@@ -234,7 +240,7 @@ computeLogManager:
   #     uploadInterval: ~
   #     uploadExtraArgs: {}
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
-  ##  Using this setting requires a custom Dagit image that defines the user specified
+  ##  Using this setting requires a custom webserver image that defines the user specified
   ##  compute log manager in an installed python module.
   #   customComputeLogManager:
   #     module: ~
@@ -259,12 +265,12 @@ pythonLogs: {}
 ####################################################################################################
 # User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
 # each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
-# GRPC server that Dagit/Dagster communicates with to get repository information and the current
-# image information. These deployments can be updated independently of Dagit, and Dagit/Dagster
+# GRPC server that the Dagster webserver communicates with to get definitions information and the current
+# image information. These deployments can be updated independently of the Dagster webserver, and the webserver
 # will pull the current image for all execution. When using a distributed executor (such as
-# Celery-K8s) for pipeline run, the current image will be queried once and used for all
-# solid executions for that pipeline run. In order to guarantee that all solid executions within a
-# pipeline execution use the same image, we recommend using a unique tag (ie not "latest").
+# Celery-K8s) for job execution, the current image will be queried once and used for all
+# op executions for that run. In order to guarantee that all op executions within a job
+# execution use the same image, we recommend using a unique tag (ie not "latest").
 #
 # All user code will be invoked within the images.
 ####################################################################################################
@@ -293,13 +299,18 @@ dagster-user-deployments:
         pullPolicy: Always
 
       # Arguments to `dagster api grpc`.
-      # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+      # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
       # would translate to:
       # dagsterApiGrpcArgs:
       #   - "-m"
-      #   - "dagster_test.test_project.test_pipelines.repo"
+      #   - "dagster_test.test_project.test_jobs.repo"
       #   - "-a"
       #   - "define_demo_execution_repo"
+      #
+      # The `dagsterApiGrpcArgs` key can also be replaced with `codeServerArgs` to use a new
+      # experimental `dagster code-server start` command instead of `dagster api grpc`, which takes
+      # identical arguments but can reload its definitions from within the Dagster UI without
+      # needing to restart the user code deployment pod.
       dagsterApiGrpcArgs:
         - "--python-file"
         - "/example_project/example_repo/repo.py"
@@ -384,13 +395,16 @@ dagster-user-deployments:
       # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
       readinessProbe:
+        # Readiness probes are enabled by default.
+        enabled: true
         # If `readinessProbe` has no `exec` field, then the following default will be used:
         # exec:
         #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
         periodSeconds: 20
-        timeoutSeconds: 3
+        timeoutSeconds: 10
         successThreshold: 1
-        failureThreshold: 3
+        # Allow roughly 300 seconds to start up by default
+        failureThreshold: 1
 
       # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
       # enable startup probes.
@@ -400,33 +414,6 @@ dagster-user-deployments:
 
       service:
         annotations: {}
-
-####################################################################################################
-# Pipeline Run: Configuration for user code containers.
-#
-# `DAGSTER_K8S_PIPELINE_RUN_IMAGE` environment variable will point to the image specified below.
-# The run config for the celery executor can set `job_image` to fetch from environment variable
-# `DAGSTER_K8S_PIPELINE_RUN_IMAGE`, so that celery workers will launch k8s jobs with said image.
-#
-####################################################################################################
-pipelineRun:
-  image:
-    # When a tag is not supplied for a Dagster provided image,
-    # it will default as the Helm chart version.
-    repository: "docker.io/dagster/user-code-example"
-    tag: ~
-    pullPolicy: Always
-
-  # Additional environment variables to set.
-  # A Kubernetes ConfigMap will be created with these environment variables. See:
-  # https://kubernetes.io/docs/concepts/configuration/configmap/
-  #
-  # Example:
-  #
-  # env:
-  #   ENV_ONE: one
-  #   ENV_TWO: two
-  env: {}
 
 ####################################################################################################
 # Scheduler: Configuration for the scheduler
@@ -440,7 +427,7 @@ scheduler:
 
   config: {}
   ## Uncomment this configuration will only be used if the CustomScheduler is selected.
-  ## Using this setting requires a custom Dagit image that defines the user specified
+  ## Using this setting requires a custom webserver image that defines the user specified
   ## scheduler in an installed python module.
   #   customScheduler:
   #     module: ~
@@ -729,7 +716,7 @@ runLauncher:
       failPodOnRunFailure: false
 
     ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
-    ## Using this setting requires a custom Dagit image that defines the user specified
+    ## Using this setting requires a custom webserver image that defines the user specified
     ## run launcher in an installed python module.
     # customRunLauncher:
     #   module: ~
@@ -909,7 +896,7 @@ flower:
     failureThreshold: 6
 
 ####################################################################################################
-# Ingress: (Optional) Create ingresses for Dagit and Flower
+# Ingress: (Optional) Create ingresses for the Dagster webserver and Flower
 ####################################################################################################
 ingress:
   enabled: false
@@ -922,11 +909,10 @@ ingress:
   # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
   ingressClassName: ~
 
-  dagit:
-    # Ingress hostname for Dagit e.g. dagit.mycompany.com
+  dagsterWebserver:
+    # Ingress hostname for the webserver e.g. dagster.mycompany.com
     # This variable allows customizing the route pattern in the ingress. Some
     # ingress controllers may only support "/", whereas some may need "/*".
-    # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
     pathType: ImplementationSpecific
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
@@ -937,7 +923,7 @@ ingress:
       enabled: false
       secretName: ""
 
-    # Different http paths to add to the ingress before the default dagit path
+    # Different http paths to add to the ingress before the default webserver path
     # Example:
     #
     # precedingPaths:
@@ -947,7 +933,7 @@ ingress:
     #     servicePort: "use-annotation"
     precedingPaths: []
 
-    # Different http paths to add to the ingress after the default dagit path
+    # Different http paths to add to the ingress after the default webserver path
     # Example:
     #
     # succeedingPaths:
@@ -957,11 +943,10 @@ ingress:
     #     servicePort: "use-annotation"
     succeedingPaths: []
 
-  readOnlyDagit:
-    # Ingress hostname for read only Dagit e.g. viewer.dagit.mycompany.com
+  readOnlyDagsterWebserver:
+    # Ingress hostname for read only webserver e.g. viewer.dagster.mycompany.com
     # This variable allows customizing the route pattern in the ingress. Some
     # ingress controllers may only support "/", whereas some may need "/*".
-    # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
     pathType: ImplementationSpecific
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
@@ -972,7 +957,7 @@ ingress:
       enabled: false
       secretName: ""
 
-    # Different http paths to add to the ingress before the default dagit path
+    # Different http paths to add to the ingress before the default webserver path
     # Example:
     #
     # precedingPaths:
@@ -982,7 +967,7 @@ ingress:
     #     servicePort: "use-annotation"
     precedingPaths: []
 
-    # Different http paths to add to the ingress after the default dagit path
+    # Different http paths to add to the ingress after the default webserver path
     # Example:
     #
     # succeedingPaths:
@@ -1091,8 +1076,10 @@ dagsterDaemon:
   # will either fail the run or attempt to resume the run with a new run worker.
   runMonitoring:
     enabled: true
-    # Timeout for runs to start (avoids runs hanging in STARTED)
+    # Timeout for runs to start (avoids runs hanging in STARTING)
     startTimeoutSeconds: 300
+    # Timeout for runs to cancel (avoids runs hanging in CANCELING)
+    # cancelTimeoutSeconds: 300
     # How often to check on in progress runs
     pollIntervalSeconds: 120
     # [Experimental] Max number of times to attempt to resume a run with a new run worker instead
@@ -1100,6 +1087,9 @@ dagsterDaemon:
     # `k8s_job_executor` to run each op in its own Kubernetes job. To enable, set this value
     # to a value greater than 0.
     maxResumeRunAttempts: 0
+    # [Experimental] Number of seconds to wait after a run has ended with a success/failed/canceled
+    # status before freeing any concurrency slots that may have been retained.
+    freeSlotsAfterRunEndSeconds: 0
 
   runRetries:
     enabled: true
@@ -1113,6 +1103,9 @@ dagsterDaemon:
     # to allow more sensors to run in parallel, but may require allocating more resources to the
     # daemon.
     numWorkers: 4
+    # Uncomment to use a threadpool to submit runs from a single sensor tick in parallel. Can be
+    # used to decrease latency when a sensor emits multiple run requests within a single tick.
+    # numSubmitWorkers: 4
 
   schedules:
     # Whether to evaluate schedules using an asynchronous thread pool, allowing schedules
@@ -1122,6 +1115,9 @@ dagsterDaemon:
     # to allow more schedules to run in parallel, but may require allocating more resources to the
     # daemon.
     numWorkers: 4
+    # Uncomment to use a threadpool to submit runs from a single schedule tick in parallel. Can be
+    # used to decrease latency when a schedule emits multiple run requests within a single tick.
+    # numSubmitWorkers: 4
 
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See
@@ -1223,7 +1219,7 @@ busybox:
 extraManifests:
 #  # Set default container resource requests/limits for the namespace
 #  #   * To override these for dagster system containers; edit the resources sections of
-#  #     this values yaml -  eg: dagit.resources & celery.resources
+#  #     this values yaml -  eg: webserver.resources & celery.resources
 #  #   * To override these in solid execution containers; add a @solid(tag=) similar to:
 #  #      { "dagster-k8s/config": { "container_config": { "resources": {...
 #  - apiVersion: v1
@@ -1293,14 +1289,58 @@ retention:
   schedule:
     # For schedule ticks, specifies after how many days ticks can be removed.  This field can either
     # be a dict of tick types to integers, or an integer (applies to all tick types).  A value of -1
-    # indicates that ticks should be retained indefinitely
+    # indicates that ticks should be retained indefinitely.
     purgeAfterDays: -1
   sensor:
     # For sensor ticks, specifies after how many days ticks can be removed.  This field can either
     # be a dict of tick types to integers, or an integer (applies to all tick types).  A value of -1
-    # indicates that ticks should be retained indefinitely
+    # indicates that ticks should be retained indefinitely.
     purgeAfterDays:
       failure: -1
       skipped: 7
       started: -1
       success: -1
+  autoMaterialize:
+    # For auto-materialization ticks, specifies after how many days ticks can be removed.  This
+    # field can either be a dict of tick types to integers, or an integer (applies to all tick
+    # types).  A value of -1 indicates that ticks should be retained indefinitely.
+    purgeAfterDays:
+      failure: -1
+      skipped: 7
+      started: -1
+      success: -1
+####################################################################################################
+# Additional fields on the instance to configure that aren't already determined by a key above.
+# See https://docs.dagster.io/deployment/dagster-instance for the full set of available fields.
+####################################################################################################
+# Example:
+#
+# additionalInstanceConfig:
+#   auto_materialize: # See: https://docs.dagster.io/deployment/dagster-instance#auto-materialize
+#     run_tags:
+#       key: value
+additionalInstanceConfig: {}
+
+####################################################################################################
+# [DEPRECATED] Pipeline Run
+#
+# This config can now be set with dagster-user-deployments.
+####################################################################################################
+pipelineRun:
+  image:
+    # When a tag is not supplied for a Dagster provided image,
+    # it will default as the Helm chart version.
+    repository: "docker.io/dagster/user-code-example"
+    tag: ~
+    pullPolicy: Always
+
+  # Additional environment variables to set.
+  # A Kubernetes ConfigMap will be created with these environment variables. See:
+  # https://kubernetes.io/docs/concepts/configuration/configmap/
+  #
+  # Example:
+  #
+  # env:
+  #   ENV_ONE: one
+  #   ENV_TWO: two
+  env: {}

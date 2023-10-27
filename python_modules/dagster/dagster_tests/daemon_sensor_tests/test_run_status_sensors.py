@@ -30,7 +30,6 @@ from .test_sensor_run import (
     failure_job,
     failure_job_2,
     foo_job,
-    get_sensor_executors,
     hanging_job,
     the_job,
     validate_tick,
@@ -119,7 +118,6 @@ def instance_with_multiple_code_locations(
             yield location_infos
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_status_sensor(
     caplog,
     executor: Optional[ThreadPoolExecutor],
@@ -235,7 +233,6 @@ def test_run_status_sensor(
         assert 'Sensor "my_job_success_sensor" acted on run status SUCCESS of run' in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_failure_sensor(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
@@ -292,7 +289,6 @@ def test_run_failure_sensor(
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_failure_sensor_that_fails(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
@@ -369,7 +365,6 @@ def test_run_failure_sensor_that_fails(
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_failure_sensor_filtered(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
@@ -493,7 +488,6 @@ def sql_event_log_storage_config_fn(temp_dir: str):
     "storage_config_fn",
     [default_storage_config_fn, sqlite_storage_config_fn],
 )
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -593,7 +587,6 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
 
 
 @pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_failure_sensor_empty_run_records(
     storage_config_fn, executor: Optional[ThreadPoolExecutor]
 ):
@@ -663,7 +656,6 @@ def test_run_failure_sensor_empty_run_records(
                 )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
 
@@ -738,7 +730,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            dagster_run = list(instance.get_runs())[0]
+            dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
@@ -759,7 +751,6 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cross_code_location_job_selector_on_defs_run_status_sensor(
     executor: Optional[ThreadPoolExecutor],
 ):
@@ -836,7 +827,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            dagster_run = list(instance.get_runs())[0]
+            dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
@@ -883,7 +874,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
-            dagster_run = list(instance.get_runs())[0]
+            dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
@@ -909,7 +900,6 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
@@ -968,7 +958,6 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
@@ -1056,7 +1045,6 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_partitioned_job_run_status_sensor(
     caplog,
     executor: Optional[ThreadPoolExecutor],
@@ -1124,7 +1112,6 @@ def test_partitioned_job_run_status_sensor(
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_sensors() as (
@@ -1188,7 +1175,6 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = pendulum.now()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
@@ -1247,7 +1233,6 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_logging_run_status_sensor(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
@@ -1273,7 +1258,6 @@ def test_logging_run_status_sensor(
         )
 
         freeze_datetime = freeze_datetime.add(seconds=60)
-        time.sleep(1)
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("foo_job")
@@ -1306,6 +1290,7 @@ def test_logging_run_status_sensor(
         assert tick.log_key
         records = get_instigation_log_records(instance, tick.log_key)
         assert len(records) == 1
+        assert records
         record = records[0]
         assert record[DAGSTER_META_KEY]["orig_message"] == f"run succeeded: {run.run_id}"
         instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore

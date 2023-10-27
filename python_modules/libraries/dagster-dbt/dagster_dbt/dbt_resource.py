@@ -3,7 +3,6 @@ from abc import abstractmethod
 from typing import Any, Mapping, Optional, Sequence
 
 from dagster import get_dagster_logger
-from dagster._annotations import deprecated
 
 from .types import DbtOutput
 
@@ -217,6 +216,5 @@ class DbtClient:
         """
 
 
-@deprecated
 class DbtResource(DbtClient):
     pass

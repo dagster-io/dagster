@@ -47,12 +47,10 @@ def external_repo_from_def(
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
 
 
-def external_job_from_recon_job(
-    recon_job, solid_selection, repository_handle, asset_selection=None
-):
-    if solid_selection or asset_selection:
-        sub_recon_job = recon_job.subset_for_execution(
-            solid_selection=solid_selection, asset_selection=asset_selection
+def external_job_from_recon_job(recon_job, op_selection, repository_handle, asset_selection=None):
+    if op_selection or asset_selection:
+        sub_recon_job = recon_job.get_subset(
+            op_selection=op_selection, asset_selection=asset_selection
         )
         job_def = sub_recon_job.get_definition()
     else:

@@ -18,13 +18,12 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-gcp-pandas",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for storing Pandas DataFrames in GCP.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp-pandas",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -37,7 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-gcp{pin}",
-        "pandas<2",  # See: https://github.com/dagster-io/dagster/issues/13339
+        "pandas",
     ],
     extras_require={"test": ["pandas-gbq"]},
     zip_safe=False,

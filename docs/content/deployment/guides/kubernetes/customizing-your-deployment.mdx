@@ -1,11 +1,13 @@
 ---
-title: Customizing Helm | Dagster
-description: This section covers common ways to customize your Dagster Helm deployment.
+title: Customizing your Kubernetes Deployment | Dagster
+description: This section covers common ways to customize your Dagster Kubernetes deployment.
 ---
 
 # Customizing your Kubernetes Deployment
 
-This section covers common ways to customize your Dagster Helm deployment.
+This guide covers common ways to customize your Dagster Helm deployment.
+
+---
 
 ## Specifying custom Kubernetes configuration
 
@@ -17,13 +19,15 @@ If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLaunc
 
 `k8sRunLauncher.runK8sConfig` is a dictionary with the following keys:
 
-- `containerConfig`: The Pod's [Container](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
-- `podSpecConfig`: The Pod's [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core).
-- `podTemplateSpecMetadata`: The Pod's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
-- `jobSpecConfig`: The Job's [JobSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
-- `jobMetadata`: The Job's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
+- `containerConfig`: The Pod's container
+- `podSpecConfig`: The Pod's PodSpec
+- `podTemplateSpecMetadata`: The Pod's Metadata
+- `jobSpecConfig`: The Job's JobSpec
+- `jobMetadata`: The Job's Metadata
 
-The values for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+
+The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
 ```yaml file=/deploying/kubernetes/run_k8s_config.yaml
 runLauncher:
@@ -49,21 +53,23 @@ runLauncher:
             mykey: myvalue
 ```
 
-### Per-job or per-op Kubernetes configuration
+If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set in `runK8sConfig` will also be propagated to the pods that are created for each step, unless that step's configuration is overridden using one of the methods below.
 
-The `dagster-k8s/config` tag allows you to pass custom configuration to the Kubernetes Jobs and Pods created by Dagster for specific jobs or ops.
+### Per-job Kubernetes configuration
+
+If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLauncher" /> or <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, you can use the `dagster-k8s/config` tag on a Dagster job to pass custom configuration to the Kubernetes Jobs and Pods created by Dagster for that job.
 
 `dagster-k8s/config` is a dictionary with the following keys:
 
-- `container_config`: The Pod's [Container](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
-- `pod_spec_config`: The Pod's [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core).
-- `pod_template_spec_metadata`: The Pod's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
-- `job_spec_config`: The Job's [JobSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
-- `job_metadata`: The Job's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
+- `container_config`: The Pod's Container
+- `pod_spec_config`: The Pod's PodSpec
+- `pod_template_spec_metadata`: The Pod's Metadata
+- `job_spec_config`: The Job's JobSpec
+- `job_metadata`: The Job's Metadata
 
-The values for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`).
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
 
-If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLauncher" /> or <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, you can use the `dagster-k8s/config` tag on a Dagster job. For example:
+The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
 ```python file=/deploying/kubernetes/k8s_config_tag_job.py startafter=start_k8s_config endbefore=end_k8s_config
 @job(
@@ -108,7 +114,81 @@ def my_job():
     my_op()
 ```
 
-If your Dagster job is configured with an executor that runs each op in its own pod, like the <PyObject module="dagster_k8s" object="k8s_job_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />, you can also use the `dagster-k8s/config` tag on a Dagster op to control the Kubernetes configuration for that specific op. For example:
+Other run launchers will ignore the `dagster-k8s/config` tag.
+
+If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set on a job using the `dagster-k8s/config` tag will _not_ be propagated to any of those step pods.
+
+### Kubernetes configuration on every step in a run
+
+If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, you can use the `step_k8s_config` field on the executor to control the Kubernetes configuration for every step pod.
+
+`step_k8s_config` is a dictionary with the following keys:
+
+- `container_config`: The Pod's Container
+- `pod_spec_config`: The Pod's PodSpec
+- `pod_template_spec_metadata`: The Pod's Metadata
+- `job_spec_config`: The Job's JobSpec
+- `job_metadata`: The Job's Metadata
+
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+
+The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
+
+```python file=/deploying/kubernetes/step_k8s_config.py startafter=start_step_k8s_config endbefore=end_step_k8s_config
+my_k8s_executor = k8s_job_executor.configured(
+    {
+        "step_k8s_config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            }
+        }
+    }
+)
+
+@job(executor_def=my_k8s_executor)
+def my_job():
+    ...
+```
+
+### Kubernetes configuration on individual steps in a run
+
+If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" /> that run each step in its own Kubernetes pod, you can use the `dagster-k8s/config` tag on a Dagster op to control the Kubernetes configuration for that specific op.
+
+As above when used on jobs, `dagster-k8s/config` is a dictionary with the following keys:
+
+- `container_config`: The Pod's Container
+- `pod_spec_config`: The Pod's PodSpec
+- `pod_template_spec_metadata`: The Pod's Metadata
+- `job_spec_config`: The Job's JobSpec
+- `job_metadata`: The Job's Metadata
+
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+
+The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
+
+For example, for an asset:
+
+```python file=/deploying/kubernetes/k8s_config_tag_asset.py startafter=start_k8s_config endbefore=end_k8s_config
+@asset(
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    }
+)
+def my_asset(context):
+    context.log.info("running")
+
+my_job = define_asset_job(name="my_job", selection="my_asset", executor_def=k8s_job_executor)
+```
+
+or an op:
 
 ```python file=/deploying/kubernetes/k8s_config_tag_op.py startafter=start_k8s_config endbefore=end_k8s_config
 @op(
@@ -130,13 +210,49 @@ def my_job():
     my_op()
 ```
 
-Non-k8s run launchers and executors will ignore the `dagster-k8s/config` tag.
+Other executors will ignore the `dagster-k8s/config` tag when it is set on an op or asset.
 
-If a Kubernetes configuration dictionary (like `container_config`) is specified at both the instance level in the Helm chart and in a specific Dagster job or op, the two dictionaries will be shallowly merged. The more specific configuration takes precedence if the same key is set in both dictionaries.
+### Precedence rules
 
-For example, if `k8sRunLauncher.runK8sConfig.podSpecConfig` is set to `{"nodeSelector": {"disktype": "ssd"}, "dns_policy": "ClusterFirst"}` in the Helm chart, but a specific job has the `pod_spec_config` key in the `dagster-k8s/config` tag set to `{"nodeSelector": {"region": "east"}}`, the node selector from the job and the DNS policy from the Helm chart will be applied, since only the node selector is overridden in the job.
+By default, if a Kubernetes configuration dictionary (like `container_config`) is specified at both the instance level in the Helm chart and in a specific Dagster job or op, the dictionaries will be shallowly merged. The more specific configuration takes precedence if the same key is set in both dictionaries.
 
-## Configuring an External Database
+Consider the following example:
+
+- **In the Helm chart**, `k8sRunLauncher.runK8sConfig.podSpecConfig` is set to:
+
+  ```json
+  { "node_selector": { "disktype": "ssd" }, "dns_policy": "ClusterFirst" }
+  ```
+
+- **But a specific job** has the `pod_spec_config` key in the `dagster-k8s/config` tag set to:
+
+  ```json
+  { "node_selector": { "region": "east" } }
+  ```
+
+Then the node selector from the job and the DNS policy from the Helm chart will be applied, since only the node selector is overridden in the job.
+
+To customize this behavior, you can also set the `merge_behavior` key in the `dagster-k8s/config` tag to `DEEP` instead of `SHALLOW`. When `merge_behavior` is set to `DEEP`, the config dictionaries are merged recursively. Scalar values will still be replaced by the more specific configuration, but any dictionary fields will be combined, and list fields will be appended to each other.
+
+To modify the previous example:
+
+- **In the Helm chart**, `k8sRunLauncher.runK8sConfig.podSpecConfig` is again set to:
+
+  ```json
+  { "node_selector": { "disktype": "ssd" }, "dns_policy": "ClusterFirst" }
+  ```
+
+- **But a specific job** has the `pod_spec_config` key in the `dagster-k8s/config` tag set to:
+
+  ```json
+  { "node_selector": { "region": "east" }, "merge_behavior": "DEEP" }
+  ```
+
+Then the job will merge the two `node_selector` dictionaries and use `{ "disktype": "ssd", "region": "east" }` as its `node_selector` configuration.
+
+---
+
+## Configuring an external database
 
 In a real deployment, users will likely want to set up an external PostgreSQL database and configure the `postgresql` section of `values.yaml`.
 
@@ -162,22 +278,26 @@ global:
 generatePostgresqlPasswordSecret: false
 ```
 
+---
+
 ## Security
 
 Users will likely want to permission a ServiceAccount bound to a properly scoped Role to launch Jobs and create other Kubernetes resources.
 
 Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for managing secure information such as database logins.
 
-### Separately Deploying Dagster Infrastructure and User Code
+### Separately deploying Dagster infrastructure and user code
 
-It may be desirable to manage two Helm releases for your Dagster deployment: one release for the Dagster infrastructure, which consists of Dagit and the Daemon, and another release for your User Code, which contains the definitions of your pipelines written in Dagster. This way, changes to User Code can be decoupled from upgrades to core Dagster infrastructure.
+It may be desirable to manage two Helm releases for your Dagster deployment: one release for the Dagster infrastructure, which consists of the Dagster webserver and the Dagster daemon, and another release for your User Code, which contains the definitions of your pipelines written in Dagster. This way, changes to User Code can be decoupled from upgrades to core Dagster infrastructure.
 
 To do this, we offer the [`dagster` chart](https://artifacthub.io/packages/helm/dagster/dagster) and the [`dagster-user-deployments` chart](https://artifacthub.io/packages/helm/dagster/dagster-user-deployments).
 
-    $ helm search repo dagster
-    NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
-    dagster/dagster                 	0.11.0       	0.11.0     	Dagster is a system for building modern data ap...
-    dagster/dagster-user-deployments	0.11.0       	0.11.0     	A Helm subchart to deploy Dagster User Code dep...
+```shell
+$ helm search repo dagster
+NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
+dagster/dagster                 	0.11.0       	0.11.0     	Dagster is a system for building modern data ap...
+dagster/dagster-user-deployments	0.11.0       	0.11.0     	A Helm subchart to deploy Dagster User Code dep...
+```
 
 To manage these separate deployments, we first need to isolate Dagster infrastructure to its own deployment. This can be done by disabling the subchart that deploys the User Code in the `dagster` chart. This will prevent the `dagster` chart from creating the services and deployments related to User Code, as these will be managed in a separate release.
 
@@ -186,10 +306,10 @@ dagster-user-deployments:
   enableSubchart: false
 ```
 
-Next, the workspace for Dagit must be configured with the future hosts and ports of the services exposing access to the User Code.
+Next, the workspace for the webserver must be configured with the future hosts and ports of the services exposing access to the User Code.
 
 ```yaml
-dagit:
+dagsterWebserver:
   workspace:
     enabled: true
     servers:
@@ -200,7 +320,11 @@ dagit:
 
 Finally, the `dagster-user-deployments` subchart can now be managed in its own release. The list of possible overrides for the subchart can be found in [its `values.yaml`](https://github.com/dagster-io/dagster/blob/master/helm/dagster/charts/dagster-user-deployments/values.yaml).
 
-    helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/values.yaml
+```shell
+helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/values.yaml
+```
+
+---
 
 ## Kubernetes Job and Pod TTL management
 
@@ -222,13 +346,19 @@ def my_job():
 
 If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
 
-Delete dagster [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) older than one day
+- Delete Dagster [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) older than one day:
 
-    kubectl get job | grep -e dagster-run -e dagster-step | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
+  ```shell
+  kubectl get job | grep -e dagster-run -e dagster-step | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
+  ```
 
-Delete completed [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) older than one day
+- Delete completed [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) older than one day:
 
-    kubectl get pod | grep -e dagster-run -e dagster-step | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
+  ```shell
+  kubectl get pod | grep -e dagster-run -e dagster-step | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
+  ```
+
+---
 
 ## Conclusion
 

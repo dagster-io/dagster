@@ -27,7 +27,7 @@ By the end of this tutorial, you will:
 In this guide, we'll use the following Dagster concepts:
 
 - [Assets](/concepts/assets/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage. An executed Jupyter notebook file can also be an asset! That's what we'll be creating in this guide.
-- [Repositories](/concepts/repositories-workspaces/repositories) - A Dagster repository is a collection of Dagster objects, including assets.
+- [Definitions](/concepts/code-locations) - A Dagster `Definitions` object is a collection of Dagster objects, including assets.
 - [I/O managers](/concepts/io-management/io-managers) - An I/O manager handles storing and loading assets. In this guide, we'll be using a special I/O manager to store executed Jupyter notebook files.
 
 ---
@@ -140,55 +140,52 @@ Using `define_dagstermill_asset`, we've created and returned a Dagster asset. Le
 
 - `name` - This argument names the asset, in this case `iris_kmeans_jupyter`
 - `notebook_path` - This argument tells Dagster where to find the notebook the asset should use as a source. In this case, that's our `/notebooks/iris-kmeans.ipynb` file.
-- `group_name` - This optional argument places the asset into a group named `template_tutorial`, which is helpful for organization in Dagit.
+- `group_name` - This optional argument places the asset into a group named `template_tutorial`, which is helpful for organizating your assets in the UI.
 
 When materialized, the `iris_kmeans_jupyter` asset will execute the notebook (`/notebooks/iris-kmeans.ipynb`) and store the resulting `.ipynb` file in a persistent location.
 
 ---
 
-## Step 3: Add a Dagster Repository and supply an I/O manager
+## Step 3: Add a Dagster Definitions object and supply an I/O manager
 
-We want to execute our Dagster asset and save the resulting notebook to a persistent location. This is called materializing the asset and to do this, we need to add the asset to a Dagster [repository](/concepts/repositories-workspaces/repositories).
+We want to execute our Dagster asset and save the resulting notebook to a persistent location. This is called materializing the asset and to do this, we need to add the asset to a Dagster <PyObject module="dagster" object="Definitions" /> object.
 
 Additionally, we need to provide a [resource](/concepts/resources) to the notebook to tell Dagster how to store the resulting `.ipynb` file. We'll use an [I/O manager](/concepts/io-management/io-managers) to accomplish this.
 
-Open the `/tutorial_template/repository.py` file and add the following code:
+Open the `/tutorial_template/__init__.py` file and add the following code:
 
 ```python
-# tutorial_template/repository.py
+# tutorial_template/__init__.py
 
+from dagster import load_assets_from_package_module, Definitions
 from dagstermill import ConfigurableLocalOutputNotebookIOManager
-from dagster import repository, with_resources
+
 from . import assets
 
-@repository
-def template_tutorial():
-    return
-        with_resources(
-            load_assets_from_package_module(assets),
-            resource_defs={
-                "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
-            },
-        ),
+defs = Definitions(
+    assets=load_assets_from_package_module(assets),
+    resources={
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager()
+    }
+)
+
 ```
 
 Let's take a look at what's happening here:
 
-- Using <PyObject object="with_resources"/>, we've provided resources to the assets in the repository. In this example, that's the <PyObject module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
+- Using <PyObject object="load_assets_from_package_module" />, we've imported all assets in the `assets` module. This approach allows any new assets we create to be automatically added to the `Definitions` object instead of needing to manually add them one by one.
+
+- We provided a dictionary of resources to the `resources` parameter. In this example, that's the <PyObject module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
 
   This I/O manager, bound to the `output_notebook_io_manager` key, is responsible for handling the storage of the notebook asset's resulting `.ipynb` file.
-
-- Using <PyObject object="load_assets_from_package_module" />, we've imported all assets in the `assets` module into the repository. This approach allows any new assets we create to be automatically added to the repository instead of needing to manually add them one by one.
-
-- Finally, we return the result of `with_resources` from the <PyObject object="repository" decorator /> decorated function. This allows Dagster to find the assets we've defined and instantiate the necessary resource when the asset is materialized.
 
 ---
 
 ## Step 4: Materialize the notebook asset
 
-Now that you've created an asset, a resource, and a repository, it's time to materialize the notebook asset! Materializing an asset runs the op it contains and saves the results to persistent storage.
+Now that you've created an asset, a resource, and a `Definitions` object, it's time to materialize the notebook asset! Materializing an asset runs the op it contains and saves the results to persistent storage.
 
-1. To start Dagit, Dagster's web interface, run the following in `/tutorial_template`:
+1. To start the Dagster UI, run the following in `/tutorial_template`:
 
    ```shell
    dagster dev
@@ -197,7 +194,7 @@ Now that you've created an asset, a resource, and a repository, it's time to mat
    Which will result in output similar to:
 
    ```shell
-   Serving dagit on http://127.0.0.1:3000 in process 70635
+   Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
    ```
 
 2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the notebook asset in the **Asset Graph**.
@@ -205,15 +202,15 @@ Now that you've created an asset, a resource, and a repository, it's time to mat
    If you click the notebook asset, a sidebar containing info about the asset will slide out from the right side of the page. In the **Description** section of the panel is a **View Source Notebook** button:
 
    <Image
-   src="/images/integrations/dagstermill/dagit-one.png"
+   src="/images/integrations/dagstermill/ui-one.png"
    width={2870}
    height={1398}
    />
 
-   This button allows you to view the notebook directly in Dagit. When clicked, Dagster will render the notebook - referenced in the `notebook_path` parameter - that'll be executed when the `iris_kmeans_jupyter` asset is materialized:
+   This button allows you to view the notebook directly in the UI. When clicked, Dagster will render the notebook - referenced in the `notebook_path` parameter - that'll be executed when the `iris_kmeans_jupyter` asset is materialized:
 
    <Image
-   alt="View Source Notebook display in Dagit"
+   alt="View Source Notebook display in the Dagster UI"
    src="/images/integrations/dagstermill/view-source-notebook.png"
    width={895}
    height={643}
@@ -221,10 +218,10 @@ Now that you've created an asset, a resource, and a repository, it's time to mat
 
 3. Click the **Materialize** button. To view the execution as it happens, click the **View** button in the alert that displays.
 
-After the run completes successfully, you can view the executed notebook in Dagit. Click the asset again and locate the **View Notebook** button in the **Materialization in Last Run** section of the sidebar:
+After the run completes successfully, you can view the executed notebook in the UI. Click the asset again and locate the **View Notebook** button in the **Materialization in Last Run** section of the sidebar:
 
 <Image
-src="/images/integrations/dagstermill/dagit-two.png"
+src="/images/integrations/dagstermill/ui-two.png"
 width={2870}
 height={1398}
 />
@@ -232,7 +229,7 @@ height={1398}
 Click the button to display the executed notebook - specifically, the notebook that was executed and written to a persistent location:
 
 <Image
-alt="Executed notebook display in Dagit"
+alt="Executed notebook display in the Dagster UI"
 src="/images/integrations/dagstermill/view-executed-notebook.png"
 width={897}
 height={643}
@@ -288,7 +285,7 @@ If you're following along in the template tutorial, uncomment the code block und
 Let's go over what's happening in this code block:
 
 - Using <PyObject object="asset" decorator />, we create a standard Dagster asset. The name of the Python function (`iris_dataset`) is the name of the asset.
-- As with the `iris_kmeans_jupyter` asset, we set the `group_name` parameter to organize our assets in Dagit.
+- As with the `iris_kmeans_jupyter` asset, we set the `group_name` parameter to organize our assets in the UI.
 - The body of the Python function fetches the Iris dataset, renames the columns, and outputs a Pandas DataFrame.
 
 ### Step 5.2: Provide the iris_dataset asset to the notebook asset
@@ -345,14 +342,14 @@ To add the `parameters` tag, you may need to turn on the display of cell tags in
 
 Next, we'll materialize our `iris_dataset` and notebook assets.
 
-1. In Dagit, open the **Asset Graph** page.
+1. In the UI, open the **Asset Graph** page.
 
-2. Click the **Reload definitions** button. This ensures that Dagit picks up the changes you made in the previous steps.
+2. Click the **Reload definitions** button. This ensures that the UI picks up the changes you made in the previous steps.
 
    At this point, the `iris_dataset` asset should display above the `iris_kmeans_jupyter` asset as an upstream dependency:
 
    <Image
-   src="/images/integrations/dagstermill/dagit-three.png"
+   src="/images/integrations/dagstermill/ui-three.png"
    width={2870}
    height={1398}
    />
@@ -369,7 +366,7 @@ What if you want to do additional analysis of the Iris dataset and create a new 
 
 The answer is simple: use the `iris_dataset` Dagster asset!
 
-In the Jupyter notebook, import the Dagster repository and use the <PyObject object="RepositoryDefinition" method="load_asset_value" /> function to load the data for the `iris_dataset` asset we created in [Step 5.1: Create the Iris dataset asset](#step-51-create-the-iris-dataset-asset):
+In the Jupyter notebook, import the Dagster `Definitions` object and use the <PyObject object="Definitions" method="load_asset_value" /> function to load the data for the `iris_dataset` asset we created in [Step 5.1: Create the Iris dataset asset](#step-51-create-the-iris-dataset-asset):
 
 ```python
 from tutorial_template import template_tutorial

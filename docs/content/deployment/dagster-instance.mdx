@@ -28,7 +28,7 @@ All of the processes and services that make up your Dagster deployment should sh
 
 ## Default local behavior
 
-When a Dagster process like Dagit or Dagster CLI commands are launched, Dagster tries to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.
+When a Dagster process like the Dagster webserver or Dagster CLI commands are launched, Dagster tries to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.
 
 If `DAGSTER_HOME` isn't set, Dagster tools will use a temporary directory for storage that is cleaned up when the process exits. This can be useful when using Dagster for temporary local development or testing, when you don't care about the results being persisted.
 
@@ -91,7 +91,7 @@ Here's a breakdown of the files and directories that are generated:
 
 In persistent Dagster deployments, you'll typically want to configure many of the components on the instance. For example, you may want to use a Postgres instance to store runs and the corresponding event logs, but stream compute logs to an Amazon S3 bucket.
 
-To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dagster tools will look for on startup. In this file, you can configure different aspects of your Dagster instance, including:
+To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which the webserver and all other Dagster tools will look for on startup. In this file, you can configure different aspects of your Dagster instance, including:
 
 <table
   className="table"
@@ -113,7 +113,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
   <tbody>
     <tr>
       <td>
-        <a href="#dagster-stoage">Dagster storage</a>
+        <a href="#dagster-storage">Dagster storage</a>
       </td>
       <td>
         <code>storage</code>
@@ -167,7 +167,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
       <td>
         Configures storage for artifacts that require a local disk or when using
         the filesystem I/O manager (
-        <PyObject module="dagster" object="fs_io_manager" />
+        <PyObject module="dagster" object="FilesytemIOManager" />
         ).
       </td>
     </tr>
@@ -199,7 +199,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
         <code>data_retention</code>
       </td>
       <td>
-        Controls ow long Dagster retains certain types of data that have
+        Controls how long Dagster retains certain types of data that have
         diminishing value over time, such as schedule/sensor tick data.
       </td>
     </tr>
@@ -572,6 +572,21 @@ compute_logs:
 ---
 
 </TabItem>
+<TabItem name="NoOpComputeLogManager">
+
+#### NoOpComputeLogManager
+
+The <PyObject module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" /> does not store `stdout` and `stderr` logs for any step.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_noop endbefore=end_marker_compute_log_storage_noop
+compute_logs:
+  module: dagster.core.storage.noop_compute_log_manager
+  class: NoOpComputeLogManager
+```
+
+---
+
+</TabItem>
 <TabItem name="AzureBlobComputeLogManager">
 
 #### AzureBlobComputeLogManager
@@ -618,33 +633,24 @@ compute_logs:
 
 The <PyObject module="dagster_gcp.gcs" object="GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
 
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_blob endbefore=end_marker_compute_log_storage_blob
-# there are multiple ways to configure the AzureBlobComputeLogManager
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_gcs endbefore=end_marker_compute_log_storage_gcs
+# there are multiple ways to configure the GCSComputeLogManager
 
 # you can set the necessary configuration values directly:
 compute_logs:
-  module: dagster_azure.blob.compute_log_manager
-  class: AzureBlobComputeLogManager
+  module: dagster_gcp.gcs.compute_log_manager
+  class: GCSComputeLogManager
   config:
-    storage_account: mycorp-dagster
-    container: compute-logs
-    secret_key: foo
-    local_dir: /tmp/bar
+    bucket: mycorp-dagster-compute-logs
     prefix: dagster-test-
 
 # alternatively, you can obtain any of these config values from environment variables
 compute_logs:
-  module: dagster_azure.blob.compute_log_manager
-  class: AzureBlobComputeLogManager
+  module: dagster_gcp.gcs.compute_log_manager
+  class: GCSComputeLogManager
   config:
-    storage_account:
-      env: MYCORP_DAGSTER_STORAGE_ACCOUNT_NAME
-    container:
-      env: CONTAINER_NAME
-    secret_key:
-      env: SECRET_KEY
-    local_dir:
-      env: LOCAL_DIR_PATH
+    bucket:
+      env: MYCORP_DAGSTER_COMPUTE_LOGS_BUCKET
     prefix:
       env: DAGSTER_COMPUTE_LOG_PREFIX
 ```
@@ -690,7 +696,7 @@ compute_logs:
 The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to:
 
 - Configure storage for artifacts that require a local disk, or
-- Store inputs and outputs when using the filesystem I/O manager (<PyObject module="dagster" object="fs_io_manager" />). Refer to the <Link href="/concepts/io-management/io-managers">I/O managers documentation</Link> for more information on how other I/O managers store artifacts.
+- Store inputs and outputs when using the filesystem I/O manager (<PyObject module="dagster" object="FilesytemIOManager" />). Refer to the <Link href="/concepts/io-management/io-managers">I/O managers documentation</Link> for more information on how other I/O managers store artifacts.
 
 **Note**: <PyObject module="dagster._core.storage.root" object="LocalArtifactStorage" /> is currently the only option for local artifact storage. This option configures the directory used by the default filesystem I/O Manager, as well as any artifacts that require a local disk.
 
@@ -729,7 +735,7 @@ Refer to the [Telemetry documentation](/getting-started/telemetry) for more info
 
 The `code_servers` key allows you to configure how Dagster loads the code in a [code location](/concepts/code-locations/workspace-files).
 
-When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), Dagit and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
+When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), the webserver and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
 
 If you expect that your code will take longer than 60 seconds to load, set the `code_servers.local_startup_timeout` key. The value should be an integer that indicates the maximum timeout, in seconds.
 
@@ -765,7 +771,7 @@ The `purge_after_days` key accepts either:
 
 ### Sensor evaluation
 
-The `sensors` key allows you to configure how sensors are evaluated. To asynchronously evaluate sensors, set the `use_threads` and `num_workers` keys:
+The `sensors` key allows you to configure how sensors are evaluated. To evaluate multiple sensors in parallel simultaneously, set the `use_threads` and `num_workers` keys:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_sensors endbefore=end_marker_sensors
 sensors:
@@ -773,17 +779,21 @@ sensors:
   num_workers: 8
 ```
 
+You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same sensor tick in parallel, which can help decrease latency when a single sensor tick returns many run requests.
+
 ### Schedule evaluation
 
-The `schedules` key allows you to configure how schedules are evaluated. By default, Dagster evaluates schedules synchronously.
+The `schedules` key allows you to configure how schedules are evaluated. By default, Dagster evaluates schedules one at a time.
 
-To asynchronously evaluate schedules, set the `use_threads` and `num_workers` keys:
+To evaluate multiple schedules in parallel simultaneously, set the `use_threads` and `num_workers` keys:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedules endbefore=end_marker_schedules
 schedules:
   use_threads: true
   num_workers: 8
 ```
+
+You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same schedule tick in parallel, which can help decrease latency when a single schedule tick returns many run requests.
 
 ### Auto-materialize
 

@@ -2,7 +2,7 @@ import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import Any, Dict, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence
 
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
@@ -11,6 +11,7 @@ from dagster._serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
+    SetToSequenceFieldSerializer,
     UnpackContext,
     WhitelistMap,
     _whitelist_for_serdes,
@@ -161,8 +162,6 @@ def test_serdes_enum_backcompat():
         def unpack(self, value):
             if value == "FOO":
                 value = "FOO_FOO"
-            else:
-                value = value
 
             return super().unpack(value)
 
@@ -285,8 +284,7 @@ def test_incorrect_order():
                 return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple WrongOrder: "
+        str(exc_info.value) == "For namedtuple WrongOrder: "
         "Params to __new__ must match the order of field declaration "
         "in the namedtuple. Declared field number 1 in the namedtuple "
         'is "field_one". Parameter 1 in __new__ method is "field_two".'
@@ -302,8 +300,7 @@ def test_missing_one_parameter():
                 return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -322,8 +319,7 @@ def test_missing_many_parameters():
                 return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldsInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldsInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -350,8 +346,7 @@ def test_extra_parameters_must_have_defaults():
                 return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple OldFieldsWithoutDefaults: "
+        str(exc_info.value) == "For namedtuple OldFieldsWithoutDefaults: "
         'Parameter "field_one" is a parameter to the __new__ '
         "method but is not a field in this namedtuple. "
         "The only reason why this should exist is that "
@@ -531,6 +526,20 @@ def test_named_tuple_field_serializers() -> None:
     val = Foo({"a": "b", "c": "d"})
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Foo", "entries": [["a", "b"], ["c", "d"]]}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_set_to_sequence_field_serializer() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, field_serializers={"colors": SetToSequenceFieldSerializer})
+    class Foo(NamedTuple):
+        colors: AbstractSet[str]
+
+    val = Foo({"red", "green"})
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "colors": ["green", "red"]}'
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 

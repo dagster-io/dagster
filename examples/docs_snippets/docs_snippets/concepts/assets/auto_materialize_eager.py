@@ -6,6 +6,6 @@ def asset1():
     ...
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
-def asset2(asset1):
+@asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[asset1])
+def asset2():
     ...

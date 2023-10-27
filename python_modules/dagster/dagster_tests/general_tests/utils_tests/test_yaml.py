@@ -100,9 +100,7 @@ final: "result"
     }
 
     string_yaml = "this is a valid YAML string but not a dictionary"
-    expected = 'Expected YAML dictionary, instead got: "{string_yaml}"'.format(
-        string_yaml=string_yaml
-    )
+    expected = f'Expected YAML dictionary, instead got: "{string_yaml}"'
 
     with pytest.raises(check.CheckError, match=expected):
         merge_yaml_strings([a, string_yaml])

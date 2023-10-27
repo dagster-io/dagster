@@ -4,14 +4,20 @@ on:
     branches:
       - master
     paths:
-      - js_modules/dagit/packages/core/**
+      - js_modules/dagster-ui/packages/ui-core/**
   pull_request:
     paths:
-      - js_modules/dagit/packages/core/**
+      - js_modules/dagster-ui/packages/ui-core/**
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Get branch preview subdomain
+        if: github.event_name == 'pull_request'
+        run: |
+          BRANCH_PREVIEW_SUBDOMAIN=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
+          echo "$BRANCH_PREVIEW_SUBDOMAIN"
+          echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
       - uses: actions/checkout@v3
       - uses: amondnet/vercel-action@v25
         if: github.event_name == 'pull_request'
@@ -21,6 +27,7 @@ jobs:
           vercel-project-id: ${{ secrets.STORYBOOK_CORE_VERCEL_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.core-storybook.dagster-docs.io
       - uses: amondnet/vercel-action@v25
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:

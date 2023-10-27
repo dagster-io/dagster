@@ -113,7 +113,7 @@ Because our outputs are now optional, we can no longer rely on returning a tuple
 
 When a multi-asset is created, it is assumed that each output asset depends on all of the input assets. This may not always be the case, however.
 
-In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information is used to display lineage information in Dagit and for parsing selections over your asset graph.
+In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information is used to display lineage information in the Dagster UI and for parsing selections over your asset graph.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_asset_deps_multi_asset endbefore=end_asset_deps_multi_asset
 from dagster import AssetKey, AssetOut, Output, multi_asset

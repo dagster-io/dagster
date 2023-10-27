@@ -35,7 +35,6 @@ def region(partition_key: str):
 
 
 @op(
-    config_schema={"aws_region": str},
     out=Out(
         metadata={
             "wandb_artifact_configuration": {
@@ -51,7 +50,6 @@ def write_partitioned_artifact() -> List[int]:
 
 
 @op(
-    config_schema={"aws_region": str},
     ins={
         "content": In(
             metadata={

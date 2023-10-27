@@ -28,6 +28,7 @@ class DagsterEcsTaskDefinitionConfig(
             ("runtime_platform", Mapping[str, Any]),
             ("mount_points", Sequence[Mapping[str, Any]]),
             ("volumes", Sequence[Mapping[str, Any]]),
+            ("repository_credentials", Optional[str]),
         ],
     )
 ):
@@ -54,6 +55,7 @@ class DagsterEcsTaskDefinitionConfig(
         runtime_platform: Optional[Mapping[str, Any]] = None,
         mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        repository_credentials: Optional[str] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -74,6 +76,7 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_mapping_param(runtime_platform, "runtime_platform"),
             check.opt_sequence_param(mount_points, "mount_points"),
             check.opt_sequence_param(volumes, "volumes"),
+            check.opt_str_param(repository_credentials, "repository_credentials"),
         )
 
     def task_definition_dict(self):
@@ -96,6 +99,15 @@ class DagsterEcsTaskDefinitionConfig(
                     ({"secrets": self.secrets} if self.secrets else {}),
                     ({"environment": self.environment} if self.environment else {}),
                     ({"mountPoints": self.mount_points} if self.mount_points else {}),
+                    (
+                        {
+                            "repositoryCredentials": {
+                                "credentialsParameter": self.repository_credentials
+                            }
+                        }
+                        if self.repository_credentials
+                        else {}
+                    ),
                 ),
                 *self.sidecars,
             ],
@@ -157,6 +169,9 @@ class DagsterEcsTaskDefinitionConfig(
             runtime_platform=task_definition_dict.get("runtimePlatform"),
             mount_points=container_definition.get("mountPoints"),
             volumes=task_definition_dict.get("volumes"),
+            repository_credentials=container_definition.get("repositoryCredentials", {}).get(
+                "credentialsParameter"
+            ),
         )
 
 
@@ -193,6 +208,8 @@ def get_task_definition_dict_from_current_task(
     ephemeral_storage=None,
     mount_points=None,
     volumes=None,
+    additional_sidecars=None,
+    repository_credentials=None,
 ):
     current_container_name = current_ecs_container_name()
 
@@ -224,9 +241,9 @@ def get_task_definition_dict_from_current_task(
     )
 
     # The current process might not be running in a container that has the
-    # pipeline's code installed. Inherit most of the process's container
+    # job's code installed. Inherit most of the process's container
     # definition (things like environment, dependencies, etc.) but replace
-    # the image with the pipeline origin's image and give it a new name.
+    # the image with the job origin's image and give it a new name.
     # Also remove entryPoint. We plan to set containerOverrides. If both
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail
@@ -237,6 +254,11 @@ def get_task_definition_dict_from_current_task(
         "image": image,
         "entryPoint": [],
         "command": command if command else [],
+        **(
+            {"repositoryCredentials": {"credentialsParameter": repository_credentials}}
+            if repository_credentials
+            else {}
+        ),
         **({"secrets": secrets} if secrets else {}),
         **({} if include_sidecars else {"dependsOn": []}),
     }
@@ -257,6 +279,9 @@ def get_task_definition_dict_from_current_task(
         container_definitions.append(new_container_definition)
     else:
         container_definitions = [new_container_definition]
+
+    if additional_sidecars:
+        container_definitions = [*container_definitions, *additional_sidecars]
 
     task_definition = {
         **task_definition,
@@ -332,38 +357,38 @@ def get_task_kwargs_from_current_task(
     cluster,
     task,
 ):
-    enis = []
-    subnets = []
-    for attachment in task["attachments"]:
-        if attachment["type"] == "ElasticNetworkInterface":
-            for detail in attachment["details"]:
-                if detail["name"] == "subnetId":
-                    subnets.append(detail["value"])
-                if detail["name"] == "networkInterfaceId":
-                    enis.append(ec2.NetworkInterface(detail["value"]))
-
-    public_ip = False
-    security_groups = []
-    for eni in enis:
-        if (eni.association_attribute or {}).get("PublicIp"):
-            public_ip = True
-        for group in eni.groups:
-            security_groups.append(group["GroupId"])
-
-    run_task_kwargs = {
-        "cluster": cluster,
-        "networkConfiguration": {
-            "awsvpcConfiguration": {
-                "subnets": subnets,
-                "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
-                "securityGroups": security_groups,
-            },
-        },
-    }
+    run_task_kwargs = {"cluster": cluster}
 
     if not task.get("capacityProviderStrategy"):
         run_task_kwargs["launchType"] = task.get("launchType") or "FARGATE"
     else:
         run_task_kwargs["capacityProviderStrategy"] = task.get("capacityProviderStrategy")
+
+    if run_task_kwargs["launchType"] != "EXTERNAL":
+        enis = []
+        subnets = []
+        for attachment in task["attachments"]:
+            if attachment["type"] == "ElasticNetworkInterface":
+                for detail in attachment["details"]:
+                    if detail["name"] == "subnetId":
+                        subnets.append(detail["value"])
+                    if detail["name"] == "networkInterfaceId":
+                        enis.append(ec2.NetworkInterface(detail["value"]))
+
+        public_ip = False
+        security_groups = []
+
+        for eni in enis:
+            if (eni.association_attribute or {}).get("PublicIp"):
+                public_ip = True
+            for group in eni.groups:
+                security_groups.append(group["GroupId"])
+
+        aws_vpc_config = {
+            "subnets": subnets,
+            "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
+            "securityGroups": security_groups,
+        }
+        run_task_kwargs["networkConfiguration"] = {"awsvpcConfiguration": aws_vpc_config}
 
     return run_task_kwargs

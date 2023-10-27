@@ -1,16 +1,18 @@
 import logging
 import os
-from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster import DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
 
 from ..daemon import IntervalDaemon
 from .auto_run_reexecution import consume_new_runs_for_automatic_reexecution
+
+if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
 
 _INTERVAL_SECONDS = int(os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_INTERVAL_SECONDS", 5))
 _EVENT_LOG_FETCH_LIMIT = int(os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_FETCH_LIMIT", 500))
@@ -35,8 +37,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
     def handle_updated_runs_fns(
         self,
     ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
-        """List of functions that will be called with the list of run records that have new events.
-        """
+        """List of functions that will be called with the list of run records that have new events."""
         return [consume_new_runs_for_automatic_reexecution]
 
     def run_iteration(self, workspace_process_context: IWorkspaceProcessContext):
@@ -85,9 +86,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
                     yield from fn(workspace_process_context, run_records)
                 except Exception:
                     self._logger.exception(
-                        "Error calling event event log consumer handler: {handler_fn}".format(
-                            handler_fn=fn.__name__,
-                        )
+                        f"Error calling event event log consumer handler: {fn.__name__}"
                     )
 
         # persist cursors now that we've processed all the events through the handlers
@@ -185,9 +184,7 @@ def get_new_cursor(
 
     check.invariant(
         max_new_event_id > persisted_cursor,
-        "The new cursor {} should be greater than the previous {}".format(
-            max_new_event_id, persisted_cursor
-        ),
+        f"The new cursor {max_new_event_id} should be greater than the previous {persisted_cursor}",
     )
 
     num_new_events = len(new_event_ids)

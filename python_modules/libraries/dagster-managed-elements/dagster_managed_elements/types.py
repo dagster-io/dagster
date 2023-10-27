@@ -163,8 +163,7 @@ class ManagedElementDiff(
     def get_diff_display_entries(
         self, indent: int = 0
     ) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
-        """Returns a tuple of additions, deletions, and modification entries associated with this diff object.
-        """
+        """Returns a tuple of additions, deletions, and modification entries associated with this diff object."""
         # Get top-level additions/deletions/modifications
         my_additions = [
             click.style(f"{' ' * indent}+ {k}: {_sanitize(k, v)}", fg="green")

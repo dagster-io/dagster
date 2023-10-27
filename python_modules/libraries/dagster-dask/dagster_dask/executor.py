@@ -23,7 +23,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils import iterate_with_context
 
 # Dask resource requirements are specified under this key
@@ -131,7 +131,7 @@ def query_on_dask_worker(
     scheduling, even though we do not use this argument within the function.
     """
     with DagsterInstance.from_ref(instance_ref) as instance:
-        subset_job = recon_job.subset_for_execution_from_existing_job(dagster_run.solids_to_execute)
+        subset_job = recon_job.get_subset(op_selection=dagster_run.resolved_op_selection)
 
         execution_plan = create_execution_plan(
             subset_job,

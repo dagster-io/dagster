@@ -31,6 +31,8 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -41,6 +43,8 @@ from dagster._core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
+from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
+from dagster._core.execution.context.invocation import build_asset_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -83,6 +87,18 @@ def test_op_invocation_none_arg():
 
     result = basic_op(None)
     assert result == 5
+
+
+def test_op_invocation_lifecycle():
+    @op
+    def basic_op(context):
+        return 5
+
+    with build_op_context() as context:
+        pass
+
+    # Verify dispose was called on the instance
+    assert context.instance.run_storage._held_conn.closed  # noqa
 
 
 def test_op_invocation_context_arg():
@@ -135,28 +151,21 @@ def test_op_invocation_with_resources():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'op_requires_resources' has context argument, but no "
+            "Decorated function 'op_requires_resources' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
         op_requires_resources()
 
-    # Ensure that alias is accounted for in error message
+    # alias still refers back to decorated function
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'aliased_op_requires_resources' has context argument, but no "
+            "Decorated function 'op_requires_resources' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
         op_requires_resources.alias("aliased_op_requires_resources")()
-
-    # Ensure that error is raised when we attempt to invoke with a None context
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='op "op_requires_resources" has required resources, but no context was provided.',
-    ):
-        op_requires_resources(None)
 
     # Ensure that error is raised when we attempt to invoke with a context without the required
     # resource.
@@ -210,17 +219,17 @@ def test_op_invocation_with_config():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'op_requires_config' has context argument, but no "
+            "Decorated function 'op_requires_config' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
         op_requires_config()
 
-    # Ensure that alias is accounted for in error message
+    # alias still refers back to decorated function
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'aliased_op_requires_config' has context argument, but no "
+            "Decorated function 'op_requires_config' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
@@ -228,8 +237,8 @@ def test_op_invocation_with_config():
 
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='op "op_requires_config" has required config schema, but no context was provided.',
+        DagsterInvalidConfigError,
+        match="Error in config for op",
     ):
         op_requires_config(None)
 
@@ -246,7 +255,7 @@ def test_op_invocation_with_config():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'configured_op' has context argument, but no "
+            "Decorated function 'op_requires_config' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
@@ -536,7 +545,7 @@ def test_optional_output_yielded():
     def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
-    assert list(op_multiple_outputs_not_sent())[0].value == 2
+    assert next(iter(op_multiple_outputs_not_sent())).value == 2
 
 
 def test_optional_output_yielded_async():
@@ -588,8 +597,8 @@ def test_missing_required_output_generator():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Invocation of op 'op_multiple_outputs_not_sent' did not return an output "
-            "for non-optional output '1'"
+            'Invocation of op "op_multiple_outputs_not_sent" did not return an output '
+            'for non-optional output "1"'
         ),
     ):
         list(op_multiple_outputs_not_sent())
@@ -681,28 +690,56 @@ def test_output_sent_multiple_times():
         list(op_yields_twice())
 
 
+_invalid_on_bound = [
+    ("dagster_run", None),
+    ("step_launcher", None),
+    ("job_def", None),
+    ("job_name", None),
+    ("node_handle", None),
+    ("op", None),
+    ("get_step_execution_context", None),
+]
+
+
 @pytest.mark.parametrize(
     "property_or_method_name,val_to_pass",
-    [
-        ("dagster_run", None),
-        ("step_launcher", None),
-        ("job_def", None),
-        ("job_name", None),
-        ("node_handle", None),
-        ("op", None),
-        ("get_step_execution_context", None),
-    ],
+    _invalid_on_bound,
 )
-def test_invalid_properties_on_context(property_or_method_name: str, val_to_pass: object):
+def test_invalid_properties_on_bound_context(property_or_method_name: str, val_to_pass: object):
     @op
     def op_fails_getting_property(context):
         result = getattr(context, property_or_method_name)
-        # for the case where property_or_method_name is a method, getting an attribute won't cause
-        # an error, but invoking the method should.
-        result(val_to_pass) if val_to_pass else result()
+        (  # for the case where property_or_method_name is a method, getting an attribute won't cause
+            # an error, but invoking the method should.
+            result(val_to_pass) if val_to_pass else result()
+        )
 
     with pytest.raises(DagsterInvalidPropertyError):
-        op_fails_getting_property(None)
+        op_fails_getting_property(build_op_context())
+
+
+def test_bound_context():
+    @op
+    def access_bound_details(context: OpExecutionContext):
+        assert context.op_def
+
+    access_bound_details(build_op_context())
+
+
+@pytest.mark.parametrize(
+    "property_or_method_name,val_to_pass",
+    [
+        *_invalid_on_bound,
+        ("op_def", None),
+        ("assets_def", None),
+    ],
+)
+def test_invalid_properties_on_unbound_context(property_or_method_name: str, val_to_pass: object):
+    context = build_op_context()
+
+    with pytest.raises(DagsterInvalidPropertyError):
+        result = getattr(context, property_or_method_name)
+        result(val_to_pass) if val_to_pass else result()
 
 
 def test_op_retry_requested():
@@ -802,7 +839,7 @@ def test_graph_invocation_out_of_composition():
         the_graph()
 
 
-def test_pipeline_invocation():
+def test_job_invocation():
     @job
     def basic_job():
         pass
@@ -1099,7 +1136,7 @@ def test_kwarg_inputs():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="op 'the_op' has 0 positional inputs, but 1 positional inputs were provided.",
+        match="'the_op' has 0 positional inputs, but 1 positional inputs were provided.",
     ):
         the_op("bar")
 
@@ -1125,7 +1162,7 @@ def test_kwarg_inputs_context():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="op 'the_op' has 0 positional inputs, but 1 positional inputs were provided.",
+        match="'the_op' has 0 positional inputs, but 1 positional inputs were provided.",
     ):
         the_op(context, "bar")
 
@@ -1199,7 +1236,7 @@ def test_assets_def_invocation():
 
     @op
     def non_asset_op(context):
-        context.assets_def
+        context.assets_def  # noqa: B018
 
     with build_op_context(
         partition_key="2023-02-02",
@@ -1239,9 +1276,13 @@ def test_multipartitioned_time_window_asset_invocation():
     def my_asset(context):
         time_window = TimeWindow(
             start=pendulum.instance(
-                datetime(year=2020, month=1, day=1), tz=partitions_def.timezone
+                datetime(year=2020, month=1, day=1),
+                tz=get_time_partitions_def(partitions_def).timezone,
             ),
-            end=pendulum.instance(datetime(year=2020, month=1, day=2), tz=partitions_def.timezone),
+            end=pendulum.instance(
+                datetime(year=2020, month=1, day=2),
+                tz=get_time_partitions_def(partitions_def).timezone,
+            ),
         )
         assert context.asset_partitions_time_window_for_output() == time_window
         return 1
@@ -1270,3 +1311,22 @@ def test_multipartitioned_time_window_asset_invocation():
         partition_key="a|a",
     )
     static_multipartitioned_asset(context)
+
+
+def test_partition_range_asset_invocation():
+    partitions_def = DailyPartitionsDefinition(start_date=datetime(2023, 1, 1))
+
+    @asset(partitions_def=partitions_def)
+    def foo(context: AssetExecutionContext):
+        keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
+        return {k: True for k in keys}
+
+    context = build_op_context(
+        partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
+    )
+    assert foo(context) == {"2023-01-01": True, "2023-01-02": True}
+
+    context = build_asset_context(
+        partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
+    )
+    assert foo(context) == {"2023-01-01": True, "2023-01-02": True}

@@ -284,7 +284,7 @@ def test_separate_sub_dags():
                 pipe,
                 run_config={
                     "execution": {"config": {"multiprocess": {"max_concurrent": 2}}},
-                    "solids": {
+                    "ops": {
                         "waiter": {"config": filename},
                         "writer": {"config": filename},
                     },
@@ -397,7 +397,7 @@ def sys_exit(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # noqa: T201
     sys.stdout.flush()
-    os._exit(1)  # noqa: SLF001
+    os._exit(1)
 
 
 @job

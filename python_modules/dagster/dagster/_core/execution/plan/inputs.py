@@ -1,5 +1,5 @@
 import hashlib
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -240,10 +240,8 @@ class FromSourceAsset(
         input_asset_key = job_def.asset_layer.asset_key_for_input(self.node_handle, self.input_name)
         if input_asset_key is None:
             check.failed(
-                (
-                    f"Must have an asset key associated with input {self.input_name} to load it"
-                    " using FromSourceAsset"
-                ),
+                f"Must have an asset key associated with input {self.input_name} to load it"
+                " using FromSourceAsset",
             )
 
         input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
@@ -260,10 +258,12 @@ class FromSourceAsset(
         return {input_manager_key}
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromRootInputManager(
+@whitelist_for_serdes(
+    storage_name="FromRootInputManager", storage_field_names={"node_handle": "solid_handle"}
+)
+class FromInputManager(
     NamedTuple(
-        "_FromRootInputManager",
+        "_FromInputManager",
         [
             ("node_handle", NodeHandle),
             ("input_name", str),
@@ -271,7 +271,7 @@ class FromRootInputManager(
     ),
     StepInputSource,
 ):
-    """Load input value via a RootInputManager."""
+    """Load input value via a InputManager."""
 
     def load_input_object(
         self,
@@ -282,23 +282,17 @@ class FromRootInputManager(
 
         check.invariant(
             step_context.node_handle == self.node_handle and input_def.name == self.input_name,
-            (
-                "RootInputManager source must be op input and not one along composition mapping. "
-                f"Loading for op {step_context.node_handle}.{input_def.name} "
-                f"but source is {self.node_handle}.{self.input_name}."
-            ),
+            "InputManager source must be op input and not one along composition mapping. "
+            f"Loading for op {step_context.node_handle}.{input_def.name} "
+            f"but source is {self.node_handle}.{self.input_name}.",
         )
 
         input_def = step_context.op_def.input_def_named(input_def.name)
 
-        solid_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
-        config_data = solid_config.inputs.get(self.input_name) if solid_config else None
+        op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
+        config_data = op_config.inputs.get(self.input_name) if op_config else None
 
-        input_manager_key = check.not_none(
-            input_def.root_manager_key
-            if input_def.root_manager_key
-            else input_def.input_manager_key
-        )
+        input_manager_key = check.not_none(input_def.input_manager_key)
 
         loader = getattr(step_context.resources, input_manager_key)
 
@@ -330,16 +324,14 @@ class FromRootInputManager(
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        solid = job_def.get_node(self.node_handle)
+        node = job_def.get_node(self.node_handle)
         input_manager_key: str = check.not_none(
-            solid.input_def_named(self.input_name).root_manager_key
-            if solid.input_def_named(self.input_name).root_manager_key
-            else solid.input_def_named(self.input_name).input_manager_key
+            node.input_def_named(self.input_name).input_manager_key
         )
         input_manager_def = job_def.resource_defs[input_manager_key]
 
-        solid_config = resolved_run_config.ops[solid.name]
-        input_config = solid_config.inputs.get(self.input_name)
+        op_config = resolved_run_config.ops[node.name]
+        input_config = op_config.inputs.get(self.input_name)
         resource_config = check.not_none(
             resolved_run_config.resources.get(input_manager_key)
         ).config
@@ -350,34 +342,30 @@ class FromRootInputManager(
         )
 
         if job_def.version_strategy is not None:
-            root_manager_def_version = job_def.version_strategy.get_resource_version(
+            input_manager_def_version = job_def.version_strategy.get_resource_version(
                 version_context
             )
         else:
-            root_manager_def_version = input_manager_def.version
+            input_manager_def_version = input_manager_def.version
 
-        if root_manager_def_version is None:
+        if input_manager_def_version is None:
             raise DagsterInvariantViolationError(
                 f"While using memoization, version for input manager '{input_manager_key}' was "
                 "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the root_input_manager or input_manager decorator."
+                "version using the input_manager decorator."
             )
 
-        check_valid_version(root_manager_def_version)
+        check_valid_version(input_manager_def_version)
         return join_and_hash(
             resolve_config_version(input_config),
             resolve_config_version(resource_config),
-            root_manager_def_version,
+            input_manager_def_version,
         )
 
     def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
         input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
 
-        input_manager_key: str = check.not_none(
-            input_def.root_manager_key
-            if input_def.root_manager_key
-            else input_def.input_manager_key
-        )
+        input_manager_key: str = check.not_none(input_def.input_manager_key)
 
         return {input_manager_key}
 
@@ -474,12 +462,10 @@ class FromStepOutput(
             input_manager = getattr(step_context.resources, manager_key)
             check.invariant(
                 isinstance(input_manager, InputManager),
-                (
-                    f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                    f'the manager "{manager_key}" to load it, but it is not an InputManager. '
-                    "Please ensure that the resource returned for resource key "
-                    f'"{manager_key}" is an InputManager.'
-                ),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager "{manager_key}" to load it, but it is not an InputManager. '
+                "Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an InputManager.',
             )
         else:
             manager_key = step_context.execution_plan.get_manager_key(
@@ -488,13 +474,11 @@ class FromStepOutput(
             input_manager = step_context.get_io_manager(source_handle)
             check.invariant(
                 isinstance(input_manager, IOManager),
-                (
-                    f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                    f'the manager of upstream output "{source_handle.output_name}" from step '
-                    f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
-                    "Please ensure that the resource returned for resource key "
-                    f'"{manager_key}" is an IOManager.'
-                ),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager of upstream output "{source_handle.output_name}" from step '
+                f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
+                "Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an IOManager.',
             )
         load_input_context = self.get_load_context(
             step_context, input_def, io_manager_key=manager_key
@@ -681,44 +665,10 @@ class FromDefaultValue(
         return join_and_hash(repr(self._load_value(job_def)))
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromMultipleSources(
-    NamedTuple(
-        "_FromMultipleSources",
-        [
-            ("sources", Sequence[StepInputSource]),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
-    """This step input is fans-in multiple sources in to a single input. The input will receive a list.
-    """
-
-    def __new__(
-        cls,
-        sources: Sequence[StepInputSource],
-        # deprecated, preserved for back-compat
-        node_handle: Optional[NodeHandle] = None,
-        input_name: Optional[str] = None,
-    ):
-        check.sequence_param(sources, "sources", StepInputSource)
-        for source in sources:
-            check.invariant(
-                not isinstance(source, FromMultipleSources),
-                "Can not have multiple levels of FromMultipleSources StepInputSource",
-            )
-        return super().__new__(
-            cls,
-            sources=sources,
-            # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
-        )
+class MultiStepInputSource(StepInputSource):
+    @abstractproperty
+    def sources(self) -> Sequence[StepInputSource]:
+        raise NotImplementedError
 
     @property
     def step_key_dependencies(self) -> AbstractSet[str]:
@@ -735,38 +685,6 @@ class FromMultipleSources(
             handles.extend(source.step_output_handle_dependencies)
 
         return handles
-
-    def load_input_object(
-        self,
-        step_context: "StepExecutionContext",
-        input_def: InputDefinition,
-    ) -> Iterator[object]:
-        from dagster._core.events import DagsterEvent
-
-        values = []
-
-        # some upstream steps may have skipped and we allow fan-in to continue in their absence
-        source_handles_to_skip = list(
-            filter(
-                lambda x: not step_context.can_load(x),
-                self.step_output_handle_dependencies,
-            )
-        )
-
-        for inner_source in self.sources:
-            if (
-                isinstance(inner_source, FromStepOutput)
-                and inner_source.step_output_handle in source_handles_to_skip
-            ):
-                continue
-
-            for event_or_input_value in inner_source.load_input_object(step_context, input_def):
-                if isinstance(event_or_input_value, DagsterEvent):
-                    yield event_or_input_value
-                else:
-                    values.append(event_or_input_value)
-
-        yield values
 
     def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
         resource_keys: Set[str] = set()
@@ -786,6 +704,115 @@ class FromMultipleSources(
                 for inner_source in self.sources
             ]
         )
+
+
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
+class FromMultipleSources(
+    NamedTuple(
+        "_FromMultipleSources",
+        [
+            ("sources", Sequence[StepInputSource]),
+            # deprecated, preserved for back-compat
+            ("node_handle", NodeHandle),
+            ("input_name", str),
+        ],
+    ),
+    MultiStepInputSource,
+):
+    """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
+
+    def __new__(
+        cls,
+        sources: Sequence[StepInputSource],
+        # deprecated, preserved for back-compat
+        node_handle: Optional[NodeHandle] = None,
+        input_name: Optional[str] = None,
+    ):
+        check.sequence_param(sources, "sources", StepInputSource)
+        for source in sources:
+            check.invariant(
+                not isinstance(source, MultiStepInputSource),
+                "Can not have multiple levels of MultiStepInputSource StepInputSource",
+            )
+        return super().__new__(
+            cls,
+            sources=sources,
+            # add placeholder values for back-compat
+            node_handle=check.opt_inst_param(
+                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
+            ),
+            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+        )
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator[object]:
+        from dagster._core.events import DagsterEvent
+
+        # some upstream steps may have skipped and we allow fan-in to continue in their absence
+        source_handles_to_skip = list(
+            filter(
+                lambda x: not step_context.can_load(x),
+                self.step_output_handle_dependencies,
+            )
+        )
+
+        values = []
+
+        for inner_source in self.sources:
+            if (
+                isinstance(inner_source, FromStepOutput)
+                and inner_source.step_output_handle in source_handles_to_skip
+            ):
+                continue
+
+            for event_or_input_value in inner_source.load_input_object(step_context, input_def):
+                if isinstance(event_or_input_value, DagsterEvent):
+                    yield event_or_input_value
+                else:
+                    values.append(event_or_input_value)
+
+        yield values
+
+
+@whitelist_for_serdes
+class FromMultipleSourcesLoadSingleSource(
+    NamedTuple(
+        "_FromMultipleSourcesLoadSingleSource",
+        [
+            ("sources", Sequence[StepInputSource]),
+            ("source_to_load_from", StepInputSource),
+        ],
+    ),
+    MultiStepInputSource,
+):
+    """This step input fans-in multiple sources in to a single input. The input will receive just
+    the value from loading source_to_load_from.
+    """
+
+    def __new__(cls, sources: Sequence[StepInputSource], source_to_load_from: StepInputSource):
+        check.sequence_param(sources, "sources", StepInputSource)
+        for source in sources:
+            check.invariant(
+                not isinstance(source, MultiStepInputSource),
+                "Can not have multiple levels of MultiStepInputSource StepInputSource",
+            )
+        return super().__new__(
+            cls,
+            sources=sources,
+            source_to_load_from=check.inst_param(
+                source_to_load_from, "source_to_load_from", StepInputSource
+            ),
+        )
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator[object]:
+        yield from self.source_to_load_from.load_input_object(step_context, input_def)
 
 
 def _load_input_with_input_manager(
@@ -1015,8 +1042,7 @@ class UnresolvedMappedStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
-        """
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys."""
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
@@ -1043,8 +1069,7 @@ class UnresolvedCollectStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
-        """
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys."""
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 

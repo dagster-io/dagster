@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import requests
 from dagster import file_relative_path
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -126,15 +126,15 @@ def test_deploy_docker():
 
         start_time = time.time()
 
-        dagit_host = os.environ.get("DEPLOY_DOCKER_DAGIT_HOST", "localhost")
+        webserver_host = os.environ.get("DEPLOY_DOCKER_WEBSERVER_HOST", "localhost")
 
         while True:
             if time.time() - start_time > 15:
-                raise Exception("Timed out waiting for dagit server to be available")
+                raise Exception("Timed out waiting for webserver to be available")
 
             try:
-                sanity_check = requests.get(f"http://{dagit_host}:3000/dagit_info")
-                assert "dagit" in sanity_check.text
+                sanity_check = requests.get(f"http://{webserver_host}:3000/server_info")
+                assert "dagster_webserver" in sanity_check.text
                 break
             except requests.exceptions.ConnectionError:
                 pass
@@ -142,10 +142,7 @@ def test_deploy_docker():
             time.sleep(1)
 
         res = requests.get(
-            "http://{dagit_host}:3000/graphql?query={query_string}".format(
-                dagit_host=dagit_host,
-                query_string=PIPELINES_OR_ERROR_QUERY,
-            )
+            f"http://{webserver_host}:3000/graphql?query={PIPELINES_OR_ERROR_QUERY}"
         ).json()
 
         data = res.get("data")
@@ -172,8 +169,8 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                dagit_host=dagit_host,
+            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
+                webserver_host=webserver_host,
                 query_string=LAUNCH_PIPELINE_MUTATION,
                 variables=json.dumps(variables),
             )
@@ -185,7 +182,7 @@ def test_deploy_docker():
         run_id = run["runId"]
         assert run["status"] == "QUEUED"
 
-        _wait_for_run_status(run_id, dagit_host, DagsterRunStatus.SUCCESS)
+        _wait_for_run_status(run_id, webserver_host, DagsterRunStatus.SUCCESS)
 
         # Launch a job that uses the docker executor
 
@@ -201,8 +198,8 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                dagit_host=dagit_host,
+            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
+                webserver_host=webserver_host,
                 query_string=LAUNCH_PIPELINE_MUTATION,
                 variables=json.dumps(variables),
             )
@@ -214,7 +211,7 @@ def test_deploy_docker():
         run_id = run["runId"]
         assert run["status"] == "QUEUED"
 
-        _wait_for_run_status(run_id, dagit_host, DagsterRunStatus.SUCCESS)
+        _wait_for_run_status(run_id, webserver_host, DagsterRunStatus.SUCCESS)
 
         # Launch a hanging pipeline and terminate it
         variables = {
@@ -229,8 +226,8 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                dagit_host=dagit_host,
+            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
+                webserver_host=webserver_host,
                 query_string=LAUNCH_PIPELINE_MUTATION,
                 variables=json.dumps(variables),
             )
@@ -241,11 +238,11 @@ def test_deploy_docker():
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         hanging_run_id = run["runId"]
 
-        _wait_for_run_status(hanging_run_id, dagit_host, DagsterRunStatus.STARTED)
+        _wait_for_run_status(hanging_run_id, webserver_host, DagsterRunStatus.STARTED)
 
         terminate_res = requests.post(
-            "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                dagit_host=dagit_host,
+            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
+                webserver_host=webserver_host,
                 query_string=TERMINATE_MUTATION,
                 variables=json.dumps({"runId": hanging_run_id}),
             )
@@ -256,10 +253,10 @@ def test_deploy_docker():
             == "TerminateRunSuccess"
         ), str(terminate_res)
 
-        _wait_for_run_status(hanging_run_id, dagit_host, DagsterRunStatus.CANCELED)
+        _wait_for_run_status(hanging_run_id, webserver_host, DagsterRunStatus.CANCELED)
 
 
-def _wait_for_run_status(run_id, dagit_host, desired_status):
+def _wait_for_run_status(run_id, webserver_host, desired_status):
     start_time = time.time()
 
     while True:
@@ -267,8 +264,8 @@ def _wait_for_run_status(run_id, dagit_host, desired_status):
             raise Exception(f"Timed out waiting for run to reach status {desired_status}")
 
         run_res = requests.get(
-            "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
-                dagit_host=dagit_host,
+            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
+                webserver_host=webserver_host,
                 query_string=RUN_QUERY,
                 variables=json.dumps({"runId": run_id}),
             )

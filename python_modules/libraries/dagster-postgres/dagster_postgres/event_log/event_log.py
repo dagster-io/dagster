@@ -7,7 +7,7 @@ import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_EVENTS
+from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -27,6 +27,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
 from sqlalchemy.engine import Connection
 
@@ -46,7 +47,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """Postgres-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     To use Postgres for all of the components of your instance storage, you can add the following
@@ -111,8 +112,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 SqlEventLogStorageMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold an open connection and set statement_timeout
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        # When running in dagster-webserver, hold an open connection and set statement_timeout
         existing_options = self._engine.url.query.get("options")
         timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:
@@ -165,7 +166,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
     def store_event(self, event: EventLogEntry) -> None:
-        """Store an event corresponding to a pipeline run.
+        """Store an event corresponding to a run.
 
         Args:
             event (EventLogEntry): The event to store.
@@ -183,10 +184,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             # LISTEN/NOTIFY no longer used for pg event watch - preserved here to support version skew
             conn.execute(
-                f"""NOTIFY {CHANNEL_NAME}, %s; """,
-                (res[0] + "_" + str(res[1]),),  # type: ignore
+                db.text(f"""NOTIFY {CHANNEL_NAME}, :notify_id; """),
+                {"notify_id": res[0] + "_" + str(res[1])},  # type: ignore
             )
-            event_id = res[1]  # type: ignore
+            event_id = int(res[1])  # type: ignore
 
         if (
             event.is_dagster_event
@@ -202,6 +203,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             self.store_asset_event_tags(event, event_id)
 
+        if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
+            self.store_asset_check_event(event, event_id)
+
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
         if not (event.dagster_event and event.dagster_event.asset_key):
@@ -209,7 +213,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # We switched to storing the entire event record of the last materialization instead of just
         # the AssetMaterialization object, so that we have access to metadata like timestamp,
-        # pipeline, run_id, etc.
+        # job, run_id, etc.
         #
         # This should make certain asset queries way more performant, without having to do extra
         # queries against the event log.
@@ -224,7 +228,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
         # event creation, we want to extend this functionality to ensure that assets with any event
         # (observation, materialization, or materialization planned) yielded with timestamp
-        # > wipe timestamp display in Dagit.
+        # > wipe timestamp display in the Dagster UI.
 
         # As of the following PRs, we update last_materialization_timestamp to store the timestamp
         # of the latest asset observation, materialization, or materialization_planned that has occurred.
@@ -312,7 +316,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
         with self._engine.connect() as conn:
             cursor_res = conn.execute(
-                db.select([SqlEventLogStorageTable.c.event]).where(
+                db_select([SqlEventLogStorageTable.c.event]).where(
                     SqlEventLogStorageTable.c.id == cursor
                 ),
             )

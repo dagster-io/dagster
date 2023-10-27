@@ -222,7 +222,7 @@ def test_kitchen_sink():
     assert kitchen_sink_snap == rehydrated_snap
 
 
-def test_simple_pipeline_smoke_test():
+def test_simple_job_smoke_test():
     @op
     def op_without_config(_):
         pass

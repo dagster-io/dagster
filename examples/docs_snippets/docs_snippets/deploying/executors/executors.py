@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 # start_executor_on_job
 from dagster import graph, job, multiprocess_executor

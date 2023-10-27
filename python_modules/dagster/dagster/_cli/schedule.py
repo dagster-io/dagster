@@ -19,6 +19,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorStatus
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 
+from .utils import get_instance_for_cli
+
 
 @click.group(name="schedule")
 def schedule_cli():
@@ -90,9 +92,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
 
         print_fn(
             click.style(
-                "  ~ {name} (update) [{id}]".format(
-                    name=external_schedule.name, id=schedule_origin_id
-                ),
+                f"  ~ {external_schedule.name} (update) [{schedule_origin_id}]",
                 fg="yellow",
             )
         )
@@ -146,7 +146,7 @@ def schedule_preview_command(**kwargs):
 
 
 def execute_preview_command(cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -168,7 +168,7 @@ def schedule_list_command(running, stopped, name, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -223,11 +223,7 @@ def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) ->
         if len(schedule_name) == 1:
             return schedule_name[0]
         else:
-            check.failed(
-                "Can only handle zero or one schedule args. Got {schedule_name}".format(
-                    schedule_name=repr(schedule_name)
-                )
-            )
+            check.failed(f"Can only handle zero or one schedule args. Got {schedule_name!r}")
     return None
 
 
@@ -247,7 +243,7 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -262,11 +258,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                     except DagsterInvariantViolationError as ex:
                         raise click.UsageError(ex)
 
-                print_fn(
-                    "Started all schedules for repository {repository_name}".format(
-                        repository_name=repository_name
-                    )
-                )
+                print_fn(f"Started all schedules for repository {repository_name}")
             else:
                 try:
                     instance.start_schedule(external_repo.get_external_schedule(schedule_name))
@@ -285,7 +277,7 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -319,7 +311,7 @@ def schedule_logs_command(schedule_name, **kwargs):
 
 
 def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -385,7 +377,7 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -413,11 +405,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                         except DagsterInvariantViolationError as ex:
                             raise click.UsageError(ex)
 
-                print_fn(
-                    "Restarted all running schedules for repository {name}".format(
-                        name=repository_name
-                    )
-                )
+                print_fn(f"Restarted all running schedules for repository {repository_name}")
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 schedule_state = instance.get_instigator_state(
@@ -450,7 +438,7 @@ def schedule_wipe_command():
 
 
 def execute_wipe_command(print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         confirmation = click.prompt(
             "Are you sure you want to turn off all schedules and delete all schedule history? Type"
             " DELETE"
@@ -468,7 +456,7 @@ def schedule_debug_command():
 
 
 def execute_debug_command(print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         debug_info = instance.scheduler_debug_info()
 
         output = ""

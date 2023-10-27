@@ -25,11 +25,14 @@ If you have an existing data pipeline, you likely already have assets.
 
 _Software-defined assets_ are a Dagster concept that allows you to write data pipelines in terms of the assets that they produce. How they work: you write code that describes an asset that you want to exist, along with any other assets that the asset is derived from, and a function that can be run to compute the contents of the asset.
 
-Here's an example. The asset is a dataset called `topstories`, and it's computed by starting with an asset called `topstory_ids` and then fetching data for each of those IDs.
+Here's an example. The asset is a dataset called `topstories`, and it depends on another asset called `topstory_ids`. `topstories` gets the IDs computed in `topstory_ids`, then fetches data for each of those IDs.
 
 ```python
-@asset
-def topstories(topstory_ids):
+@asset(deps=[topstory_ids])
+def topstories() -> None:
+    with open("data/topstory_ids.json", "r") as f:
+        topstory_ids = json.load(f)
+
     results = []
     for item_id in topstory_ids:
         item = requests.get(
@@ -37,7 +40,11 @@ def topstories(topstory_ids):
         ).json()
         results.append(item)
 
-    return pd.DataFrame(results)
+        if len(results) % 20 == 0:
+            print(f"Got {len(results)} items so far.")
+
+    df = pd.DataFrame(results)
+    df.to_csv("data/topstories.csv")
 ```
 
 ### Building a DAG of assets
@@ -58,8 +65,9 @@ height={405}
 
 <Note>
   Assets enable the best long-term approach for building pipelines in Dagster
-  and this tutorial focuses on them. However, developers can use Dagster's Ops
-  and Graphs when tasks are needed. For more on Ops and Graphs, refer to{" "}
+  and this tutorial focuses on them. However, developers can use Dagster's
+  underlying Ops and Graphs when granular workflows are needed. For more on Ops
+  and Graphs, refer to{" "}
   <a href="/guides/dagster/intro-to-ops-jobs">their tutorial</a> and a guide on{" "}
   <a href="/guides/dagster/how-assets-relate-to-ops-and-graphs">
     how SDAs relate to ops and graphs

@@ -4,16 +4,21 @@ import uuid
 from unittest import mock
 
 import httplib2
-from dagster import _seven, job
-from dagster_gcp import dataproc_op, dataproc_resource
+import pytest
+from dagster import RunConfig, _seven, job
+from dagster_gcp import (
+    DataprocOpConfig,
+    DataprocResource,
+    configurable_dataproc_op,
+    dataproc_op,
+    dataproc_resource,
+)
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")
 CLUSTER_NAME = "test-%s" % uuid.uuid4().hex
 REGION = "us-west1"
 
-DATAPROC_BASE_URI = "https://dataproc.googleapis.com/v1/projects/{project}/regions/{region}".format(
-    project=PROJECT_ID, region=REGION
-)
+DATAPROC_BASE_URI = f"https://dataproc.googleapis.com/v1/projects/{PROJECT_ID}/regions/{REGION}"
 DATAPROC_CLUSTERS_URI = f"{DATAPROC_BASE_URI}/clusters"
 DATAPROC_JOBS_URI = f"{DATAPROC_BASE_URI}/jobs"
 DATAPROC_SCHEMA_URI = "https://www.googleapis.com/discovery/v1/apis/dataproc/v1/rest"
@@ -69,6 +74,7 @@ class HttpSnooper(httplib2.Http):
             return response, content
 
 
+@pytest.mark.integration
 def test_dataproc_resource():
     """Tests dataproc cluster creation/deletion. Requests are captured by the responses library, so
     no actual HTTP requests are made here.
@@ -126,6 +132,7 @@ def test_dataproc_resource():
         assert result.success
 
 
+@pytest.mark.integration
 def test_wait_for_job_with_timeout():
     """Test submitting a job with timeout of 0 second so that it always fails."""
     with mock.patch("httplib2.Http", new=HttpSnooper):
@@ -174,6 +181,107 @@ def test_wait_for_job_with_timeout():
                         }
                     },
                 }
+            )
+            assert False
+        except Exception as e:
+            assert "Job run timed out" in str(e)
+
+
+@pytest.mark.integration
+def test_pydantic_dataproc_resource():
+    """Tests pydantic dataproc cluster creation/deletion. Requests are captured by the responses library, so
+    no actual HTTP requests are made here.
+
+    Note that inspecting the HTTP requests can be useful for debugging, which can be done by adding:
+
+    import httplib2
+    httplib2.debuglevel = 4
+    """
+    with mock.patch("httplib2.Http", new=HttpSnooper):
+
+        @job
+        def test_dataproc():
+            configurable_dataproc_op()
+
+        result = test_dataproc.execute_in_process(
+            run_config=RunConfig(
+                ops={
+                    "configurable_dataproc_op": DataprocOpConfig(
+                        job_scoped_cluster=True,
+                        project_id=PROJECT_ID,
+                        region=REGION,
+                        job_config={
+                            "reference": {"projectId": PROJECT_ID},
+                            "placement": {"clusterName": CLUSTER_NAME},
+                            "hiveJob": {"queryList": {"queries": ["SHOW DATABASES"]}},
+                        },
+                    )
+                },
+            ),
+            resources={
+                "dataproc": DataprocResource(
+                    project_id=PROJECT_ID,
+                    cluster_name=CLUSTER_NAME,
+                    region=REGION,
+                    cluster_config_dict={
+                        "softwareConfig": {
+                            "properties": {
+                                # Create a single-node cluster
+                                # This needs to be the string "true" when
+                                # serialized, not a boolean true
+                                "dataproc:dataproc.allow.zero.workers": "true"
+                            }
+                        }
+                    },
+                )
+            },
+        )
+        assert result.success
+
+
+@pytest.mark.integration
+def test_wait_for_job_with_timeout_pydantic():
+    """Test submitting a job with timeout of 0 second so that it always fails."""
+    with mock.patch("httplib2.Http", new=HttpSnooper):
+
+        @job
+        def test_dataproc():
+            configurable_dataproc_op()
+
+        try:
+            test_dataproc.execute_in_process(
+                run_config=RunConfig(
+                    ops={
+                        "configurable_dataproc_op": DataprocOpConfig(
+                            job_scoped_cluster=True,
+                            project_id=PROJECT_ID,
+                            region=REGION,
+                            job_timeout_in_seconds=0,
+                            job_config={
+                                "reference": {"projectId": PROJECT_ID},
+                                "placement": {"clusterName": CLUSTER_NAME},
+                                "hiveJob": {"queryList": {"queries": ["SHOW DATABASES"]}},
+                            },
+                        )
+                    },
+                ),
+                resources={
+                    "dataproc": DataprocResource(
+                        project_id=PROJECT_ID,
+                        cluster_name=CLUSTER_NAME,
+                        region=REGION,
+                        cluster_config_dict={
+                            "softwareConfig": {
+                                "properties": {
+                                    # Create a single-node cluster
+                                    # This needs to be the string "true" when
+                                    # serialized, not a boolean true
+                                    "dataproc:dataproc.allow.zero.workers": "true"
+                                }
+                            }
+                        },
+                    )
+                },
             )
             assert False
         except Exception as e:

@@ -8,24 +8,29 @@ description: Resources enable you to separate graph logic from environment, and 
 <Note>
   This guide covers using the new Pythonic resources system introduced in
   Dagster 1.3. If your code is still using the legacy resources system, see the{" "}
-  <a href="/concepts/resources-legacy">legacy resources guide</a>. To migrate
+  <a href="/concepts/resources-legacy">Legacy resources guide</a>. To migrate
   your code, refer to the{" "}
   <a href="/guides/dagster/migrating-to-pythonic-resources-and-config">
-    migrating to Pythonic resources and config
+    Migrating to Pythonic resources and config
   </a>{" "}
   guide.
 </Note>
 
-Resources are objects that are shared across the implementations of multiple [software-defined assets](/concepts/assets/software-defined-assets), [ops](/concepts/ops-jobs-graphs/ops), [schedules](/concepts/partitions-schedules-sensors/schedules), and [sensors](/concepts/partitions-schedules-sensors/sensors). These resources can be plugged in after the definitions of your assets or ops, and can be easily swapped out.
+In data engineering, resources are the external services, tools, and storage you use to do your job. For example, a simple ETL (Extract Transform Load) pipeline fetches data from an API, ingests it into a database, and updates a dashboard. External tools and services this pipeline uses could be:
 
-Resources typically model external components that assets and ops interact with. For example, a resource might be a connection to a data warehouse like Snowflake or a service like Slack.
+- The API the data is fetched from
+- The AWS S3 bucket where the API’s response is stored
+- The Snowflake/Databricks/BigQuery account the data is ingested into
+- The BI tool the dashboard was made in
+
+Using Dagster resources, you can standardize connections and integrations to these tools across Dagster definitions like [Software-defined Assets](/concepts/assets/software-defined-assets), [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), [ops](/concepts/ops-jobs-graphs/ops), and [jobs](/concepts/ops-jobs-graphs/jobs).
 
 So, why use resources?
 
-- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production, but avoid using in testing, you can accomplish this by providing different resources in each environment. Check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments) for more info about this capability.
-- **Surface configuration in the UI** - Resources and their configuration are surfaced in the Dagster UI, making it easy to see where your resources are used and how they are configured.
-- **Share configuration across multiple ops or assets** - Resources are configurable and shared, so you can supply configuration in one place instead of configuring the ops and assets individually.
-- **Share implementations across multiple ops or assets** - When multiple ops access the same external services, resources provide a standard way to structure your code to share the implementations.
+- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production but avoid using in testing, you can accomplish this by providing different resources in each environment. Refer to the [Separating business logic from environments](/concepts/testing#separating-business-logic-from-environments) section of the Testing documentation for more info about this capability.
+- **Surface configuration in the Dagster UI** - Resources and their configuration are surfaced in the UI, making it easy to see where resources are used and how they're configured.
+- **Share configuration across multiple assets or ops** - Resources are configurable and shared, so configuration can be supplied in one place instead of individually.
+- **Share implementations across multiple assets or ops** - When multiple assets access the same external services, resources provide a standard way to structure your code to share the implementations.
 
 ---
 
@@ -34,31 +39,24 @@ So, why use resources?
 | Name                                             | Description                                                                                                                                                                                                                             |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="ConfigurableResource"/>        | The base class extended to define resources. Under the hood, implements <PyObject object="ResourceDefinition" />.                                                                                                                       |
-| <PyObject object="ResourceParam"/>               | An annotation used to specify that a plain Python object parameter for an op or asset is a resource.                                                                                                                                    |
+| <PyObject object="ResourceParam"/>               | An annotation used to specify that a plain Python object parameter for an asset or op is a resource.                                                                                                                                    |
 | <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should extend the <PyObject object="ConfigurableResource" /> class which implements <PyObject object="ResourceDefinition" />. |
-| <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                             |
+| <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resources, config, and other run information.                                                                                            |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                               |
-| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of software-defined assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
+| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of Software-defined Assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
 
 ---
 
 ## Defining a resource
 
-Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Attributes on the class are used to define the resource's [configuration schema](/concepts/configuration/config-schema). The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the Dagster UI and can be set dynamically using environment variables. Binding resource config values can also be delayed so that they can be specified at run launch time.
+Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Attributes on the class are used to define the resource's [configuration schema](/concepts/configuration/config-schema). The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the UI and can be set dynamically using environment variables. Binding resource config values can also be delayed so that they can be specified at run launch time.
 
-Assets and ops specify resource dependencies by annotating the resource as a parameter to the asset or op function.
+### With Software-defined Assets
 
-To provide resource values to your assets and ops, attach them to your <PyObject object="Definitions" /> call. These resources are automatically passed to the function at runtime.
+The following example demonstrates defining a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 
-<TabGroup persistentKey="assetsorops">
-<TabItem name="Using software-defined-assets">
-
-### Using software-defined assets
-
-Here, we define a subclass of <PyObject object="ConfigurableResource"/> representing a connection to an external service. We can configure the resource by constructing it in the <PyObject object="Definitions" /> call.
-
-We can define methods on the resource class which depend on config values. These methods can be used by assets and ops.
+You can define methods on the resource class which depend on config values.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_configurable_defs endbefore=end_new_resources_configurable_defs dedent=4
 from dagster import asset, Definitions, ConfigurableResource
@@ -86,14 +84,27 @@ defs = Definitions(
 )
 ```
 
-</TabItem>
-<TabItem name="Using ops and jobs">
+Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
-### Using ops and jobs
+To provide resource values to assets, attach them to the <PyObject object="Definitions" /> objects. These resources are automatically passed to the function at runtime.
 
-Here, we define a subclass of <PyObject object="ConfigurableResource"/> representing a connection to an external service. We can configure the resource by constructing it in the <PyObject object="Definitions" /> call.
+### With sensors
 
-We can define methods on the resource class which depend on config values. These methods can be used by assets and ops.
+[Sensors](/concepts/partitions-schedules-sensors/sensors) use resources in the same way as assets, which can be useful for querying external services for data.
+
+To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, refer to the [Sensors documentation](/concepts/partitions-schedules-sensors/sensors#using-resources-in-sensors).
+
+### With schedules
+
+[Schedules](/concepts/partitions-schedules-sensors/schedules) can use resources in case your schedule logic needs to interface with an external tool or to make your schedule logic more testable.
+
+To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information and examples, refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#using-resources-in-schedules).
+
+### With ops and jobs
+
+The following example defines a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
+
+You can define methods on the resource class which depend on config values.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_configurable_defs_ops endbefore=end_new_resources_configurable_defs_ops dedent=4
 from dagster import Definitions, job, op, ConfigurableResource
@@ -125,28 +136,21 @@ defs = Definitions(
 )
 ```
 
-</TabItem>
-</TabGroup>
+Ops specify resource dependencies by annotating the resource as a parameter to the op function.
 
-There are many supported config types that can be used when defining resources. See the [advanced config types documentation](/concepts/configuration/advanced-config-types) for a more comprehensive overview on the available config types.
+To provide resource values to ops, attach them to the <PyObject object="Definitions" /> objects. These resources are automatically passed to the function at runtime.
 
-### Using resources with sensors
+There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/concepts/configuration/advanced-config-types) for a more comprehensive overview of the available config types.
 
-[Sensors](/concepts/partitions-schedules-sensors/sensors) can use resources in the same way as ops and assets, which can be useful for querying external services for data.
+---
 
-To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, refer to the [Sensors documentation](/concepts/partitions-schedules-sensors/sensors#using-resources-in-sensors).
-
-### Using resources with schedules
-
-[Schedules](/concepts/partitions-schedules-sensors/schedules) can also use resources in case your schedule logic needs to interface with an external tool, or to make your schedule logic more testable.
-
-To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information and examples, refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#using-resources-in-schedules).
+## Configuring resources
 
 ### Using environment variables with resources
 
-Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using Dagster Cloud, environment variables can be [configured directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
+Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster Cloud](/dagster-cloud), environment variables can be [configured directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
 
-To use environment variables, pass an <PyObject object="EnvVar" /> when constructing your resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated at launch time.
+To use environment variables, pass an <PyObject object="EnvVar" /> when constructing the resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated when a run is launched.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_env_vars endbefore=end_new_resources_env_vars dedent=4
 from dagster import EnvVar, Definitions, ConfigurableResource
@@ -166,13 +170,19 @@ defs = Definitions(
 )
 ```
 
+**What about `os.getenv()`?** When `os.getenv()` is used, the value of the variable is retrieved when Dagster loads the code location. Using `EnvVar` not only tells Dagster to retrieve the value at runtime, but also not to display the value in the UI.
+
+<!-- Lives in /next/components/includes/EnvVarsBenefits.mdx -->
+
+<EnvVarsBenefits />
+
 For more information on using environment variables with Dagster, refer to the [Environment variables guide](/guides/dagster/using-environment-variables-and-secrets).
 
 ### Configuring resources at launch time
 
-In some cases, you may want to specify configuration for a resource at launch time, in the launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
+In some cases, you may want to specify configuration for a resource at launch time, in the Launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
 
-You can use the `configure_at_launch()` method to defer the construction of a configurable resource until launch time.
+You can use the `configure_at_launch()` method to defer the construction of a configurable resource until launch time:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime endbefore=end_new_resource_runtime dedent=4
 from dagster import ConfigurableResource, Definitions, asset
@@ -195,7 +205,7 @@ defs = Definitions(
 
 #### Providing resource launch time configuration in Python code
 
-Then, configuration for the resource can be provided at launch time in the launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
+Then, configuration for the resource can be provided at launch time in the Launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest, RunConfig
@@ -217,11 +227,11 @@ def table_update_sensor():
         )
 ```
 
-### Resources which depend on other resources
+### Resources that depend on other resources
 
-In some situations, you may want to define a resource which depends on other resources. This is useful for common configuration. For example, separate resources for a database and for a filestore may both depend on credentials for a particular cloud provider. Defining these credentials as a separate, nested resource allows you to specify configuration in a single place. It also makes it easier to test your resources, since you can mock the nested resource.
+In some situations, you may want to define a resource that depends on other resources. This is useful for common configuration. For example, separate resources for a database and for a filestore may both depend on credentials for a particular cloud provider. Defining these credentials as a separate, nested resource allows you to specify configuration in a single place. It also makes it easier to test resources, since the nested resource can be mocked.
 
-In this case, you can list that nested resource as an attribute of your resource class.
+In this case, you can list that nested resource as an attribute of the resource class:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_nesting endbefore=end_new_resources_nesting dedent=4
 from dagster import Definitions, ConfigurableResource
@@ -254,7 +264,7 @@ defs = Definitions(
 )
 ```
 
-If we instead would like the configuration for our credentials to be provided at launch time, we can use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until launch time.
+If it's preferred to provide the configuration for credentials at launch time, use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until launch time.
 
 Because `credentials` requires launch time configuration through the launchpad, it must also be passed to the <PyObject object="Definitions" /> object, so that configuration can be provided at launch time. Nested resources only need to be passed to the <PyObject object="Definitions" /> object if they require launch time configuration.
 
@@ -275,78 +285,86 @@ defs = Definitions(
 
 ---
 
-## Defining resources which require state
+## Managing state in resources
 
-Once a resource reaches a certain complexity, it may be desirable to manage the state of the resource over its lifetime. This is useful for resources which require special initilization or cleanup such as database connections or file handles. Since `ConfigurableResource` is a dataclass meant to encapsulate config, it is not a good fit for managing state. The recommended pattern in this case is to build a separate class which manages the state of the resource which is provided by the `ConfigurableResource` class.
+Once a resource reaches a certain complexity, you may want to manage the state of the resource over its lifetime. This is useful for resources that require special initialization or cleanup. `ConfigurableResource` is a data class meant to encapsulate config, but can also be used to set up basic state.
 
-In this instance, we have a client which generates an API token from user-supplied credentials. This client class is provided by the resource, which handles config.
+You can mark any private state attributes using Pydantic's [`PrivateAttr`](https://docs.pydantic.dev/latest/usage/models/#private-model-attributes). These attributes, which must start with an underscore, won't be included in the resource's config.
+
+The `setup_for_execution` and `teardown_after_execution` methods can be overridden to initialize or teardown a resource before each run execution, and are free to modify any private state attributes.
+
+In the following example, we set up an API token for a client resource based on the username and password provided in the config. The API token can then be used to query an API in the asset body.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_with_state_example endbefore=end_with_state_example dedent=4
 from dagster import ConfigurableResource, asset
 import requests
 
-class MyClient:
-    """Client class with mutable state."""
-
-    def __init__(self, username: str, password: str):
-        self.username = username
-        self.password = password
-        self._api_token = requests.get(
-            "https://my-api.com/token", auth=(username, password)
-        ).text
-
-    def query(self, body: str):
-        return requests.get(
-            "https://my-api.com/query",
-            headers={"Authorization": self._api_token},
-            data=body,
-        )
+from pydantic import PrivateAttr
 
 class MyClientResource(ConfigurableResource):
     username: str
     password: str
 
-    def get_client(self):
-        return MyClient(self.username, self.password)
+    _api_token: str = PrivateAttr()
+
+    def setup_for_execution(self, context) -> None:
+        # Fetch and set up an API token based on the username and password
+        self._api_token = requests.get(
+            "https://my-api.com/token", auth=(self.username, self.password)
+        ).text
+
+    def get_all_users(self):
+        return requests.get(
+            "https://my-api.com/users",
+            headers={"Authorization": self._api_token},
+        )
 
 @asset
 def my_asset(client: MyClientResource):
-    return client.get_client().query("SELECT * FROM my_table")
+    return client.get_all_users()
 ```
 
-For more information on the recommended way to test with resources which require state, see the [testing section](#testing-resources-with-state).
+`setup_for_execution` and `teardown_after_execution` are each called once per run, per process. When using the in-process executor, this means that they will be called once per run. When using the multiprocess executor, each process's instance of the resource will be initialized and torn down.
 
----
+For more complex use cases, you can override the `yield_for_execution`. By default, this context manager calls `setup_for_execution`, yields the resource, and then calls `teardown_after_execution`, but you can override it to provide any custom behavior. This is useful for resources that require a context to be open for the duration of a run, such as database connections or file handles.
 
-## Defining Pythonic I/O managers
+```python file=/concepts/resources/pythonic_resources.py startafter=start_with_complex_state_example endbefore=end_with_complex_state_example dedent=4
+from dagster import ConfigurableResource, asset
+from contextlib import contextmanager
+from pydantic import PrivateAttr
 
-Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
+class DBConnection:
+    ...
 
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4
-from dagster import (
-    Definitions,
-    AssetKey,
-    OutputContext,
-    InputContext,
-    ConfigurableIOManager,
-)
+    def query(self, body: str):
+        ...
 
-class MyIOManager(ConfigurableIOManager):
-    root_path: str
+@contextmanager
+def get_database_connection(username: str, password: str):
+    ...
 
-    def _get_path(self, asset_key: AssetKey) -> str:
-        return self.root_path + "/".join(asset_key.path)
+class MyClientResource(ConfigurableResource):
+    username: str
+    password: str
 
-    def handle_output(self, context: OutputContext, obj):
-        write_csv(self._get_path(context.asset_key), obj)
+    _db_connection: DBConnection = PrivateAttr()
 
-    def load_input(self, context: InputContext):
-        return read_csv(self._get_path(context.asset_key))
+    @contextmanager
+    def yield_for_execution(self, context):
+        # keep connection open for the duration of the execution
+        with get_database_connection(self.username, self.password) as conn:
+            # set up the connection attribute so it can be used in the execution
+            self._db_connection = conn
 
-defs = Definitions(
-    assets=...,
-    resources={"io_manager": MyIOManager(root_path="/tmp/")},
-)
+            # yield, allowing execution to occur
+            yield self
+
+    def query(self, body: str):
+        return self._db_connection.query(body)
+
+@asset
+def my_asset(client: MyClientResource):
+    client.query("SELECT * FROM my_table")
 ```
 
 ---
@@ -355,7 +373,7 @@ defs = Definitions(
 
 When starting to build a set of assets or jobs, you may want to use a bare Python object without configuration as a resource, such as a third-party API client.
 
-Dagster supports passing plain Python objects as resources. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="ResourceParam"/>. This annotation lets Dagster know that the parameter is a resource and not an upstream input.
+Dagster supports passing plain Python objects as resources. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass; however, assets and ops that use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="ResourceParam"/>. This annotation lets Dagster know that the parameter is a resource and not an upstream input.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource endbefore=end_raw_github_resource dedent=4
 from dagster import Definitions, asset, ResourceParam
@@ -379,7 +397,7 @@ defs = Definitions(
 
 ## Testing configurable resources
 
-You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, you can construct your resource directly:
+You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, the resource can be constructed directly:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing endbefore=end_new_resource_testing dedent=4
 from dagster import ConfigurableResource
@@ -394,7 +412,7 @@ def test_my_resource():
     assert MyResource(value="foo").get_value() == "foo"
 ```
 
-If your resource requires other resources, then you can pass them as constructor arguments.
+If the resource requires other resources, you can pass them as constructor arguments:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_nesting endbefore=end_new_resource_testing_with_nesting dedent=4
 from dagster import ConfigurableResource
@@ -413,46 +431,9 @@ def test_my_resource_with_nesting():
     assert resource.bar == "bar"
 ```
 
-### Testing resources with state
-
-If you have separated out a stateful client class from your resource class as detailed above in the [Defining resources which require state](#defining-resources-which-require-state) section, you can use tools such as the `mock` library to easily fake your resource and associated client.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_state endbefore=end_new_resource_testing_with_state dedent=4
-from dagster import ConfigurableResource, asset
-import mock
-
-class MyClient:
-    ...
-
-    def query(self, body: str):
-        ...
-
-class MyClientResource(ConfigurableResource):
-    username: str
-    password: str
-
-    def get_client(self):
-        return MyClient(self.username, self.password)
-
-@asset
-def my_asset(client: MyClientResource):
-    return client.get_client().query("SELECT * FROM my_table")
-
-def test_my_asset():
-    class FakeClient:
-        def query(self, body: str):
-            assert body == "SELECT * FROM my_table"
-            return "my_result"
-
-    mocked_client_resource = mock.Mock()
-    mocked_client_resource.get_client.return_value = FakeClient()
-
-    assert my_asset(mocked_client_resource) == "my_result"
-```
-
 ### Testing with resource context
 
-In the case that your resource makes use of the resource initialization context, you can use the <PyObject object="build_init_resource_context"/> utility alongside the `with_init_resource_context` helper on your resource class:
+In the case that a resource uses the resource initialization context, you can use the <PyObject object="build_init_resource_context"/> utility alongside the `with_init_resource_context` helper on the resource class:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
 from dagster import (
@@ -487,4 +468,4 @@ def test_my_context_resource():
 
 ## Next steps
 
-Resources are a powerful way to encapsulate reusable logic in your assets and ops. For more information on the supported config types for resources, see [the advanced config types documentation](/concepts/configuration/advanced-config-types). For information on the Dagster config system, which you can use to parameterize ops and assets, see the [run configuration documentation](/concepts/configuration/config-schema).
+Resources are a powerful way to encapsulate reusable logic in your assets and ops. For more information on the supported config types for resources, see [the advanced config types documentation](/concepts/configuration/advanced-config-types). For information on the Dagster config system, which you can use to parameterize assets and ops, refer to the [run configuration documentation](/concepts/configuration/config-schema).

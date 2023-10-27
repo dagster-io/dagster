@@ -11,7 +11,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import (
     DagsterEvent,
@@ -23,7 +23,7 @@ from dagster._core.execution.api import (
     execute_run,
     execute_run_iterator,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._grpc.impl import core_execute_run
 
@@ -83,7 +83,7 @@ def test_execute_run_iterator():
         iterator = execute_run_iterator(
             InMemoryJob(job_def),
             dagster_run,
-            instance=instance
+            instance=instance,
             # reconstructable(job_def), dagster_run, instance=instance
         )
 
@@ -121,7 +121,7 @@ def test_execute_run_iterator():
                     "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
                     "class": "TestRunLauncher",
                 },
-                "run_monitoring": {"enabled": True},
+                "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
             }
         ) as run_monitoring_instance:
             dagster_run = instance.create_run_for_job(
@@ -138,8 +138,7 @@ def test_execute_run_iterator():
             )
             assert (
                 "Ignoring a duplicate run that was started from somewhere other than the run"
-                " monitor daemon"
-                in event.message
+                " monitor daemon" in event.message
             )
 
             with pytest.raises(
@@ -190,8 +189,7 @@ def test_restart_running_run_worker():
         assert any(
             [
                 f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"
-                " while the run was already in state DagsterRunStatus.STARTED. "
-                in event.message
+                " while the run was already in state DagsterRunStatus.STARTED. " in event.message
                 for event in events
             ]
         )
@@ -291,10 +289,8 @@ def test_execute_run_bad_state():
 
         with pytest.raises(
             check.CheckError,
-            match=r"Run basic_resource_pipeline \({}\) in state"
-            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
-                dagster_run.run_id
-            ),
+            match=rf"Run basic_resource_pipeline \({dagster_run.run_id}\) in state"
+            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING",
         ):
             execute_run(InMemoryJob(job_def), dagster_run, instance=instance)
 

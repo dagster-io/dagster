@@ -64,7 +64,7 @@ def foo_job():
     do_input(do_something())
 
 
-def define_foo_pipeline():
+def define_foo_job():
     return foo_job
 
 
@@ -892,16 +892,9 @@ def runner_job_execute(runner, cli_args):
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
-            (
-                "dagster job execute commands with cli_args {cli_args} "
-                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
-                '\nresult as string: "{result}"'
-            ).format(
-                cli_args=cli_args,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                result=result,
-            )
+            f"dagster job execute commands with cli_args {cli_args} "
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}" and '
+            f'\nresult as string: "{result}"'
         )
     return result
 
@@ -944,7 +937,7 @@ def create_repo_run(instance):
 
 
 def get_repo_runs(instance, repo_label):
-    from dagster._core.storage.pipeline_run import RunsFilter
+    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
     return instance.get_runs(filters=RunsFilter(tags={REPOSITORY_LABEL_TAG: repo_label}))

@@ -11,6 +11,8 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from dagster._annotations import deprecated
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.cached_method import cached_method
@@ -35,7 +37,11 @@ class PickledObjectS3IOManager(UPathIOManager):
         super().__init__(base_path=base_path)
 
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        return pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=str(path))["Body"].read())
+        try:
+            s3_obj = self.s3.get_object(Bucket=self.bucket, Key=str(path))["Body"].read()
+            return pickle.loads(s3_obj)
+        except self.s3.exceptions.NoSuchKey:
+            raise FileNotFoundError(f"Could not find file {path} in S3 bucket {self.bucket}")
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         if self.path_exists(path):
@@ -77,7 +83,7 @@ class PickledObjectS3IOManager(UPathIOManager):
         return f"s3://{self.bucket}/{path}"
 
 
-class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
+class S3PickleIOManager(ConfigurableIOManager):
     """Persistent IO manager using S3 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -98,7 +104,7 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import asset, Definitions
-        from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+        from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 
         @asset
@@ -113,7 +119,7 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                "io_manager": ConfigurablePickledObjectS3IOManager(
+                "io_manager": S3PickleIOManager(
                     s3_resource=S3Resource(),
                     s3_bucket="my-cool-bucket",
                     s3_prefix="my-cool-prefix",
@@ -128,6 +134,10 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
     s3_prefix: str = Field(
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
     )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @cached_method
     def inner_io_manager(self) -> PickledObjectS3IOManager:
@@ -144,8 +154,19 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
         return self.inner_io_manager().handle_output(context, obj)
 
 
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use S3PickleIOManager instead.",
+)
+class ConfigurablePickledObjectS3IOManager(S3PickleIOManager):
+    """Renamed to S3PickleIOManager. See S3PickleIOManager for documentation."""
+
+    pass
+
+
+@dagster_maintained_io_manager
 @io_manager(
-    config_schema=ConfigurablePickledObjectS3IOManager.to_config_schema(),
+    config_schema=S3PickleIOManager.to_config_schema(),
     required_resource_keys={"s3"},
 )
 def s3_pickle_io_manager(init_context):

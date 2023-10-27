@@ -75,7 +75,7 @@ class GrapheneSchedule(graphene.ObjectType):
                 external_schedule.cron_schedule
             ),  # can be sequence, coercing to str for now
             pipeline_name=external_schedule.job_name,
-            solid_selection=external_schedule.solid_selection,
+            solid_selection=external_schedule.op_selection,
             mode=external_schedule.mode,
             execution_timezone=(
                 self._external_schedule.execution_timezone

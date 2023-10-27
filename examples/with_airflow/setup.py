@@ -6,10 +6,10 @@ setup(
     install_requires=[
         "dagster",
         "dagster_airflow",
-        "apache-airflow==2.3.0",
+        "apache-airflow",
         # for the kubernetes operator
         "apache-airflow-providers-cncf-kubernetes>=4.4.0",
         "apache-airflow-providers-docker>=3.1.0",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

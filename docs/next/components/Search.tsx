@@ -25,6 +25,7 @@ function Hit({hit, children}) {
 export function Search() {
   const [isOpen, setIsOpen] = useState(false);
   const searchButtonRef = useRef();
+
   const [initialQuery, setInitialQuery] = useState(null);
   const [browserDetected, setBrowserDetected] = useState(false);
   const [actionKey, setActionKey] = useState(ACTION_KEY_DEFAULT);
@@ -69,7 +70,7 @@ export function Search() {
       <Head>
         <link
           rel="preconnect"
-          href={`https://${process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}-dsn.algolia.net`}
+          href={`https://${process.env.NEXT_PUBLIC_ALGOLIA_APP_ID_TEST}-dsn.algolia.net`}
           crossOrigin="true"
         />
       </Head>
@@ -116,66 +117,70 @@ export function Search() {
       </button>
       {isOpen &&
         createPortal(
-          <DocSearchModal
-            initialQuery={initialQuery}
-            initialScrollY={window.scrollY}
-            searchParameters={{
-              distinct: 1,
-            }}
-            onClose={onClose}
-            indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME}
-            apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY}
-            appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}
-            navigator={{
-              navigate({itemUrl}) {
-                setIsOpen(false);
-                window.location.href = itemUrl;
-              },
-            }}
-            hitComponent={Hit}
-            transformItems={(items) => {
-              return items.map((item) => {
-                // We transform the absolute URL into a relative URL to
-                // leverage Next's preloading.
-                const a = document.createElement('a');
-                a.href = item.url;
+          <div className="search-container">
+            <DocSearchModal
+              initialQuery={initialQuery}
+              initialScrollY={window.scrollY}
+              searchParameters={{
+                distinct: 1,
+              }}
+              onClose={onClose}
+              insights
+              indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME_TEST}
+              apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY_TEST}
+              appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID_TEST}
+              navigator={{
+                navigate({itemUrl}) {
+                  setIsOpen(false);
+                  window.location.href = itemUrl;
+                },
+              }}
+              hitComponent={Hit}
+              transformItems={(items) => {
+                return items.map((item) => {
+                  // We transform the absolute URL into a relative URL to
+                  // leverage Next's preloading.
+                  const a = document.createElement('a');
+                  a.href = item.url;
 
-                const hash = a.hash === '#content-wrapper' ? '' : a.hash;
+                  const hash = a.hash === '#content-wrapper' ? '' : a.hash;
 
-                let url = `${a.pathname}${hash}`;
+                  let url = `${a.pathname}${hash}`;
 
-                // Handle URLs for GitHub Discussions which are external links
-                if (a.pathname.startsWith('/dagster-io/dagster/discussions/')) {
-                  url = a.pathname.replace(
-                    '/dagster-io/dagster/discussions',
-                    'https://github.com/dagster-io/dagster/discussions',
-                  );
-                }
+                  // Handle URLs for GitHub Discussions which are external links
+                  if (a.pathname.startsWith('/dagster-io/dagster/discussions/')) {
+                    url = a.pathname.replace(
+                      '/dagster-io/dagster/discussions',
+                      'https://github.com/dagster-io/dagster/discussions',
+                    );
+                  }
 
-                return {
-                  ...item,
-                  url,
-                };
-              });
-            }}
-            resultsFooterComponent={({state}) => {
-              return (
-                <Link
-                  href={{
-                    pathname: '/searchpage',
-                    query: {query: encodeURIComponent(state.query)},
-                  }}
-                >
-                  <a
-                    onClick={() => setIsOpen(false)}
-                    className="justify-center flex mt-3 text-gray-500"
+                  return {
+                    ...item,
+                    url,
+                  };
+                });
+              }}
+              resultsFooterComponent={({state}) => {
+                return (
+                  <Link
+                    href={{
+                      pathname: '/searchpage',
+                      query: {query: encodeURIComponent(state.query)},
+                    }}
+                    legacyBehavior
                   >
-                    See all {state.context.nbHits} search results
-                  </a>
-                </Link>
-              );
-            }}
-          />,
+                    <a
+                      onClick={() => setIsOpen(false)}
+                      className="justify-center flex mt-3 text-gray-500"
+                    >
+                      See all {state.context.nbHits} search results
+                    </a>
+                  </Link>
+                );
+              }}
+            />
+          </div>,
           document.body,
         )}
     </>

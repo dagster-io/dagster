@@ -6,17 +6,17 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.errors import (
-    DagsterDefinitionChangedDeserializationError,
-)
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
+from ..definitions.selector import PartitionsByAssetSelector
 from .asset_backfill import (
     AssetBackfillData,
     PartitionedAssetBackfillStatus,
@@ -29,6 +29,7 @@ class BulkActionStatus(Enum):
     REQUESTED = "REQUESTED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCELING = "CANCELING"
     CANCELED = "CANCELED"
 
     @staticmethod
@@ -152,6 +153,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return []
@@ -171,6 +173,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return None
@@ -188,6 +191,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return 0
@@ -208,6 +212,7 @@ class PartitionBackfill(
                 asset_backfill_data = AssetBackfillData.from_serialized(
                     self.serialized_asset_backfill_data,
                     ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
                 )
             except DagsterDefinitionChangedDeserializationError:
                 return None
@@ -220,6 +225,11 @@ class PartitionBackfill(
             return self.partition_names
 
     def get_num_cancelable(self) -> int:
+        """This method is only valid for job backfills. It eturns the number of partitions that are have
+        not yet been requested by the backfill.
+
+        For asset backfills, returns 0.
+        """
         if self.is_asset_backfill:
             return 0
 
@@ -344,5 +354,30 @@ class PartitionBackfill(
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
                 all_partitions=all_partitions,
+                backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+            ).serialize(dynamic_partitions_store=dynamic_partitions_store),
+        )
+
+    @classmethod
+    def from_partitions_by_assets(
+        cls,
+        backfill_id: str,
+        asset_graph: AssetGraph,
+        backfill_timestamp: float,
+        tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
+        partitions_by_assets: Sequence[PartitionsByAssetSelector],
+    ):
+        return cls(
+            backfill_id=backfill_id,
+            status=BulkActionStatus.REQUESTED,
+            from_failure=False,
+            tags=tags,
+            backfill_timestamp=backfill_timestamp,
+            serialized_asset_backfill_data=AssetBackfillData.from_partitions_by_assets(
+                asset_graph=asset_graph,
+                dynamic_partitions_store=dynamic_partitions_store,
+                backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+                partitions_by_assets=partitions_by_assets,
             ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

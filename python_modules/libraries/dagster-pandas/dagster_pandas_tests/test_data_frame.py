@@ -36,7 +36,7 @@ def test_create_pandas_dataframe_dagster_type():
     assert isinstance(TestDataFrame, DagsterType)
 
 
-def test_basic_pipeline_with_pandas_dataframe_dagster_type():
+def test_basic_job_with_pandas_dataframe_dagster_type():
     def compute_metadata(dataframe):
         return {"max_pid": str(max(dataframe["pid"]))}
 
@@ -204,7 +204,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
         )
     )
     def silly_loader(_, config):
-        which_door = list(config.keys())[0]
+        which_door = next(iter(config.keys()))
         if which_door == "door_a":
             return DataFrame({"foo": ["goat"]})
         elif which_door == "door_b":
@@ -247,7 +247,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
     assert output_df["foo"].tolist() == ["goat"]
 
 
-def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata():
+def test_basic_job_with_pandas_dataframe_dagster_type_metadata():
     def compute_metadata(dataframe):
         return {
             "max_pid": MetadataValue.text(str(max(dataframe["pid"]))),

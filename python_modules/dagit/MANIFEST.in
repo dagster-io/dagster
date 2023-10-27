@@ -1,6 +1,3 @@
 include README.rst
 include LICENSE
 include dagit/py.typed
-recursive-include dagit/graphql-playground *
-recursive-include dagit/webapp/build *
-recursive-include dagit/templates/assets *

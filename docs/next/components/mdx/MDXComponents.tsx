@@ -4,8 +4,7 @@
 
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
-
-import path from 'path';
+import {LATEST_VERSION} from 'util/version';
 
 import {Tab, Transition} from '@headlessui/react';
 import cx from 'classnames';
@@ -15,17 +14,18 @@ import NextLink from 'next/link';
 import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
-import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';
 import Link from '../Link';
 
 import 'react-medium-image-zoom/dist/styles.css';
 import {RenderedDAG} from './RenderedDAG';
+import EnvVarsBenefits from './includes/EnvVarsBenefits.mdx';
 import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
 import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
+import ScimSupportedFeatures from './includes/dagster-cloud/ScimSupportedFeatures.mdx';
 import AmazonEcsEnvVarsConfiguration from './includes/dagster-cloud/agents/AmazonEcsEnvVarsConfiguration.mdx';
 import DockerEnvVarsConfiguration from './includes/dagster-cloud/agents/DockerEnvVarsConfiguration.mdx';
 import K8sEnvVarsConfiguration from './includes/dagster-cloud/agents/K8sEnvVarsConfiguration.mdx';
@@ -283,8 +283,7 @@ const Warning = ({children}) => {
 };
 
 const CodeReferenceLink = ({filePath, isInline, children}) => {
-  const {version} = useVersion();
-  const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
+  const url = `https://github.com/dagster-io/dagster/tree/${LATEST_VERSION}/${filePath}`;
 
   if (isInline) {
     return <a href={url}>{children}</a>;
@@ -367,8 +366,24 @@ const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
 
 const Experimental = () => {
   return (
-    <div className="inline-flex items-center px-3 py-0.5 rounded-full align-baseline text-xs uppercase font-medium bg-sea-foam text-gable-green">
-      Experimental
+    <div className="experimental-tag">
+      <span className="hidden">(</span>Experimental<span className="hidden">)</span>
+    </div>
+  );
+};
+
+const Deprecated = () => {
+  return (
+    <div className="deprecated-tag">
+      <span className="hidden">(</span>Deprecated<span className="hidden">)</span>
+    </div>
+  );
+};
+
+const Legacy = () => {
+  return (
+    <div className="legacy-tag">
+      <span className="hidden">(</span>Legacy<span className="hidden">)</span>
     </div>
   );
 };
@@ -508,7 +523,9 @@ const ArticleListItem = ({title, href}) => {
       }}
     >
       {href.startsWith('http') ? (
-        <NextLink href={href}>{title}</NextLink>
+        <NextLink href={href} legacyBehavior>
+          {title}
+        </NextLink>
       ) : (
         <Link href={href}>{title}</Link>
       )}
@@ -616,7 +633,7 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
                   'w-full py-3 text-sm font-bold leading-5',
                   'focus:outline-none border-gray-200',
                   selected
-                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    ? 'border-b-2 border-primary-500 text-primary-500 bg-gray-150'
                     : 'border-b hover:border-gray-500 hover:text-gray-700',
                 )
               }
@@ -668,7 +685,6 @@ const Image = ({children, ...props}) => {
    * - on non-master version
    * - in public/images/ dir
    */
-  const {version} = useVersion();
   const {src} = props;
   if (!src.startsWith('/images/')) {
     return (
@@ -677,19 +693,10 @@ const Image = ({children, ...props}) => {
       </span>
     );
   }
-
-  const resolvedPath =
-    version === 'master'
-      ? src
-      : new URL(
-          path.join('versioned_images', version, src.replace('/images/', '')),
-          'https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com',
-        ).href;
-
   return (
     <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
       <span className="block mx-auto">
-        <NextImage src={resolvedPath} width={props.width} height={props.height} alt={props.alt} />
+        <NextImage src={src} width={props.width} height={props.height} alt={props.alt} />
       </span>
     </Zoom>
   );
@@ -756,6 +763,8 @@ export default {
   TODO,
   PlaceholderImage,
   Experimental,
+  Deprecated,
+  Legacy,
   Icons,
   ReferenceTable,
   ReferenceTableItem,
@@ -764,9 +773,11 @@ export default {
   AddGitlabVariable,
   AddGitubRepositorySecret,
   GenerateAgentToken,
+  ScimSupportedFeatures,
   BDCreateConfigureAgent,
   DbtModelAssetExplanation,
   EnvironmentVariablesIntro,
+  EnvVarsBenefits,
   K8sEnvVarsConfiguration,
   DockerEnvVarsConfiguration,
   AmazonEcsEnvVarsConfiguration,

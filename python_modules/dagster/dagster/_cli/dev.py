@@ -9,15 +9,17 @@ from typing import Optional
 import click
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
 
 from .job import apply_click_params
-from .utils import get_instance_for_service
+from .utils import get_possibly_temporary_instance_for_cli
 from .workspace.cli_target import (
     ClickArgValue,
     get_workspace_load_target,
+    grpc_server_target_click_options,
     python_file_option,
     python_module_option,
     working_directory_option,
@@ -35,14 +37,19 @@ def dev_command_options(f):
         python_file_option(allow_multiple=True),
         python_module_option(allow_multiple=True),
         working_directory_option(),
+        *grpc_server_target_click_options(hidden=True),
     )
 
 
 @click.command(
     name="dev",
     help=(
-        "Start a local deployment of Dagster, including dagit running on localhost and the"
-        " dagster-daemon running in the background"
+        "Start a local deployment of Dagster, including dagster-webserver running on localhost and"
+        " the dagster-daemon running in the background"
+    ),
+    context_settings=dict(
+        max_content_width=120,
+        help_option_names=["--help"],  # Don't show '-h' since that's the webserver host
     ),
 )
 @dev_command_options
@@ -51,29 +58,58 @@ def dev_command_options(f):
     help="Set the log level for code servers spun up by dagster services.",
     show_default=True,
     default="warning",
-    type=click.Choice(
-        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
-    ),
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
-@click.option("--dagit-port", "-p", help="Port to use for the Dagit UI.", required=False)
-@click.option("--dagit-host", "-h", help="Host to use for the Dagit UI.", required=False)
+@click.option(
+    "--log-level",
+    help="Set the log level for dagster services.",
+    show_default=True,
+    default="info",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+)
+@click.option(
+    "--port",
+    "--dagit-port",
+    "-p",
+    help="Port to use for the Dagster webserver.",
+    required=False,
+)
+@click.option(
+    "--host",
+    "--dagit-host",
+    "-h",
+    help="Host to use for the Dagster webserver.",
+    required=False,
+)
+@click.option(
+    "--live-data-poll-rate",
+    help="Rate at which the dagster UI polls for updated asset data (in milliseconds)",
+    default="2000",
+    show_default=True,
+    required=False,
+)
+@deprecated(
+    breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
+)
 def dev_command(
     code_server_log_level: str,
-    dagit_port: Optional[str],
-    dagit_host: Optional[str],
+    log_level: str,
+    port: Optional[str],
+    host: Optional[str],
+    live_data_poll_rate: Optional[str],
     **kwargs: ClickArgValue,
 ) -> None:
-    # check if dagit installed, crash if not
+    # check if dagster-webserver installed, crash if not
     try:
-        import dagit  #  # noqa: F401
+        import dagster_webserver  #  # noqa: F401
     except ImportError:
         raise click.UsageError(
-            "The dagit Python package must be installed in order to use the dagster dev command. If"
-            ' you\'re using pip, you can install the dagit package by running "pip install dagit"'
-            " in your Python environment."
+            "The dagster-webserver Python package must be installed in order to use the dagster dev"
+            " command. If you're using pip, you can install the dagster-webserver package by"
+            ' running "pip install dagster-webserver" in your Python environment.'
         )
 
-    configure_loggers()
+    configure_loggers(log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 
     # Sanity check workspace args
@@ -93,7 +129,7 @@ def dev_command(
                 " unless it is placed in the same folder as DAGSTER_HOME."
             )
 
-    with get_instance_for_service("dagster dev", logger_fn=logger.info) as instance:
+    with get_possibly_temporary_instance_for_cli("dagster dev", logger=logger) as instance:
         logger.info("Launching Dagster services...")
 
         args = [
@@ -118,23 +154,37 @@ def dev_command(
         if kwargs.get("working_directory"):
             args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
 
-        dagit_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagit"]
-            + (["--port", dagit_port] if dagit_port else [])
-            + (["--host", dagit_host] if dagit_host else [])
+        if kwargs.get("grpc_port"):
+            args.extend(["--grpc-port", str(kwargs["grpc_port"])])
+
+        if kwargs.get("grpc_host"):
+            args.extend(["--grpc-host", str(kwargs["grpc_host"])])
+
+        if kwargs.get("grpc_socket"):
+            args.extend(["--grpc-socket", str(kwargs["grpc_socket"])])
+
+        if kwargs.get("use_ssl"):
+            args.extend(["--use-ssl"])
+
+        webserver_process = open_ipc_subprocess(
+            [sys.executable, "-m", "dagster_webserver"]
+            + (["--port", port] if port else [])
+            + (["--host", host] if host else [])
+            + (["--dagster-log-level", log_level])
+            + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
             + args
         )
         daemon_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagster._daemon", "run"] + args
+            [sys.executable, "-m", "dagster._daemon", "run", "--log-level", log_level] + args
         )
         try:
             while True:
                 time.sleep(_CHECK_SUBPROCESS_INTERVAL)
 
-                if dagit_process.poll() is not None:
+                if webserver_process.poll() is not None:
                     raise Exception(
-                        "Dagit process shut down unexpectedly with return code"
-                        f" {dagit_process.returncode}"
+                        "dagster-webserver process shut down unexpectedly with return code"
+                        f" {webserver_process.returncode}"
                     )
 
                 if daemon_process.poll() is not None:
@@ -143,16 +193,22 @@ def dev_command(
                         f" {daemon_process.returncode}"
                     )
 
+        except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt received")
         except:
+            logger.exception("An unexpected exception has occurred")
+        finally:
             logger.info("Shutting down Dagster services...")
             interrupt_ipc_subprocess(daemon_process)
-            interrupt_ipc_subprocess(dagit_process)
+            interrupt_ipc_subprocess(webserver_process)
 
             try:
-                dagit_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
+                webserver_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
             except subprocess.TimeoutExpired:
-                logger.warning("dagit process did not terminate cleanly, killing the process")
-                dagit_process.kill()
+                logger.warning(
+                    "dagster-webserver process did not terminate cleanly, killing the process"
+                )
+                webserver_process.kill()
 
             try:
                 daemon_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)

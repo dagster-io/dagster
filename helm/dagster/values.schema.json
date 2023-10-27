@@ -3,8 +3,8 @@
     "description": "@generated",
     "type": "object",
     "properties": {
-        "dagit": {
-            "$ref": "#/definitions/Dagit"
+        "dagsterWebserver": {
+            "$ref": "#/definitions/Webserver"
         },
         "dagster-user-deployments": {
             "$ref": "#/definitions/UserDeployments"
@@ -71,10 +71,14 @@
         },
         "retention": {
             "$ref": "#/definitions/Retention"
+        },
+        "additionalInstanceConfig": {
+            "title": "Additionalinstanceconfig",
+            "type": "object"
         }
     },
     "required": [
-        "dagit",
+        "dagsterWebserver",
         "dagster-user-deployments",
         "postgresql",
         "generatePostgresqlPasswordSecret",
@@ -185,6 +189,17 @@
                     "anyOf": [
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "ssl": {
+                    "title": "Ssl",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
                         },
                         {
                             "type": "null"
@@ -319,8 +334,8 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
-        "Dagit": {
-            "title": "Dagit",
+        "Webserver": {
+            "title": "Webserver",
             "type": "object",
             "properties": {
                 "replicaCount": {
@@ -547,6 +562,12 @@
                 "enabled"
             ]
         },
+        "ReadinessProbeWithEnabled": {
+            "title": "ReadinessProbeWithEnabled",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
         "UserDeployment": {
             "title": "UserDeployment",
             "type": "object",
@@ -560,6 +581,13 @@
                 },
                 "dagsterApiGrpcArgs": {
                     "title": "Dagsterapigrpcargs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "codeServerArgs": {
+                    "title": "Codeserverargs",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -628,7 +656,7 @@
                     "$ref": "#/definitions/LivenessProbe"
                 },
                 "readinessProbe": {
-                    "$ref": "#/definitions/ReadinessProbe"
+                    "$ref": "#/definitions/ReadinessProbeWithEnabled"
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
@@ -662,7 +690,6 @@
             "required": [
                 "name",
                 "image",
-                "dagsterApiGrpcArgs",
                 "port"
             ]
         },
@@ -1045,8 +1072,8 @@
                 "servicePort"
             ]
         },
-        "DagitIngressConfiguration": {
-            "title": "DagitIngressConfiguration",
+        "FlowerIngressConfiguration": {
+            "title": "FlowerIngressConfiguration",
             "type": "object",
             "properties": {
                 "host": {
@@ -1087,8 +1114,8 @@
                 "succeedingPaths"
             ]
         },
-        "FlowerIngressConfiguration": {
-            "title": "FlowerIngressConfiguration",
+        "WebserverIngressConfiguration": {
+            "title": "WebserverIngressConfiguration",
             "type": "object",
             "properties": {
                 "host": {
@@ -1147,23 +1174,23 @@
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
                 },
-                "dagit": {
-                    "$ref": "#/definitions/DagitIngressConfiguration"
-                },
-                "readOnlyDagit": {
-                    "$ref": "#/definitions/DagitIngressConfiguration"
-                },
                 "flower": {
                     "$ref": "#/definitions/FlowerIngressConfiguration"
+                },
+                "dagsterWebserver": {
+                    "$ref": "#/definitions/WebserverIngressConfiguration"
+                },
+                "readOnlyDagsterWebserver": {
+                    "$ref": "#/definitions/WebserverIngressConfiguration"
                 }
             },
             "required": [
                 "enabled",
                 "labels",
                 "annotations",
-                "dagit",
-                "readOnlyDagit",
-                "flower"
+                "flower",
+                "dagsterWebserver",
+                "readOnlyDagsterWebserver"
             ]
         },
         "ComputeLogManagerType": {
@@ -1481,6 +1508,31 @@
                     "anyOf": [
                         {
                             "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "showUrlOnly": {
+                    "title": "Showurlonly",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "region": {
+                    "title": "Region",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -2572,6 +2624,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "numSubmitWorkers": {
+                    "title": "Numsubmitworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2588,6 +2651,17 @@
                 },
                 "numWorkers": {
                     "title": "Numworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "numSubmitWorkers": {
+                    "title": "Numsubmitworkers",
                     "anyOf": [
                         {
                             "type": "integer"
@@ -2926,6 +3000,9 @@
                     "$ref": "#/definitions/TickRetention"
                 },
                 "schedule": {
+                    "$ref": "#/definitions/TickRetention"
+                },
+                "autoMaterialize": {
                     "$ref": "#/definitions/TickRetention"
                 }
             },

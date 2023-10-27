@@ -1,0 +1,3 @@
+nodeLinker: node-modules
+
+yarnPath: .yarn/releases/yarn-3.6.4.cjs

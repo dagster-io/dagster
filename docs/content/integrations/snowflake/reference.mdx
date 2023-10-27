@@ -51,21 +51,19 @@ defs = Definitions(
 <TabItem name="Via a file">
 
 ```python file=/integrations/snowflake/private_key_auth_file.py startafter=start_key_file endbefore=end_key_file
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "private_key_path": "/path/to/private/key/file.p8",
-                "private_key_password": {"env": "SNOWFLAKE_PK_PASSWORD"},
-                "database": "FLOWERS",
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            private_key_path="/path/to/private/key/file.p8",
+            private_key_password=EnvVar("SNOWFLAKE_PK_PASSWORD"),
+            database="FLOWERS",
         )
     },
 )
@@ -84,7 +82,6 @@ Sometimes you may not want to fetch an entire table as the input to a downstream
 import pandas as pd
 
 from dagster import AssetIn, asset
-
 
 # this example uses the iris_dataset asset from Step 2 of the Using Dagster with Snowflake tutorial
 
@@ -106,7 +103,7 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
 
 In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
-When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
+When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
 
 ---
 
@@ -137,7 +134,7 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -164,7 +161,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -212,7 +209,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -273,7 +270,7 @@ def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
 SELECT *
@@ -306,7 +303,7 @@ daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -359,7 +356,7 @@ from dagster import Definitions, EnvVar, asset
 @asset(io_manager_key="warehouse_io_manager")
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -398,13 +395,13 @@ In this example, the `iris_dataset` asset uses the I/O manager bound to the key 
 
 ## Storing and loading PySpark DataFrames in Snowflake
 
-The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_snowflake_pyspark" object="snowflake_pyspark_io_manager" />, first install the package:
+The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
 
 ```shell
 pip install dagster-snowflake-pyspark
 ```
 
-Then you can use the `snowflake_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
 ```python file=/integrations/snowflake/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
@@ -432,7 +429,7 @@ defs = Definitions(
   <code>warehouse</code> configuration is required.
 </Note>
 
-The `snowflake_pyspark_io_manager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
+The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
 
 <TabGroup>
 <TabItem name="With the spark_resource">
@@ -470,10 +467,10 @@ def iris_dataset(context) -> DataFrame:
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = "https://docs.dagster.io/assets/iris.csv"
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(
@@ -533,10 +530,10 @@ def iris_dataset() -> DataFrame:
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = ("https://docs.dagster.io/assets/iris.csv",)
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(
@@ -651,6 +648,6 @@ defs = Definitions(
 )
 ```
 
-In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `execute_query` method of the resource to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager method of the resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection). We use this connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource).
+For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource).

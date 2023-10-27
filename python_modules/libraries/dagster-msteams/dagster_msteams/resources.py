@@ -1,4 +1,7 @@
+from typing import Optional
+
 from dagster import ConfigurableResource, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
 from dagster_msteams.client import TeamsClient
@@ -44,7 +47,6 @@ class MSTeamsResource(ConfigurableResource):
     """
 
     hook_url: str = Field(
-        default=None,
         description=(
             "To send messages to MS Teams channel, an incoming webhook has to be created. The"
             " incoming webhook url must be given as a part of the resource config to the"
@@ -53,12 +55,16 @@ class MSTeamsResource(ConfigurableResource):
             " https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook"
         ),
     )
-    http_proxy: str = Field(default=None, description="HTTP proxy URL")
-    https_proxy: str = Field(default=None, description="HTTPS proxy URL")
+    http_proxy: Optional[str] = Field(default=None, description="HTTP proxy URL")
+    https_proxy: Optional[str] = Field(default=None, description="HTTPS proxy URL")
     timeout: float = Field(default=60, description="Timeout for requests to MS Teams")
     verify: bool = Field(
         default=True, description="Whether to verify SSL certificates, defaults to True"
     )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     def get_client(self) -> TeamsClient:
         return TeamsClient(
@@ -70,6 +76,7 @@ class MSTeamsResource(ConfigurableResource):
         )
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=MSTeamsResource.to_config_schema(),
     description="This resource is for connecting to MS Teams",

@@ -19,18 +19,22 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import (
     GraphDefinition,
-    IJob,
     InputDefinition,
     Node,
     NodeHandle,
     NodeOutput,
     OpDefinition,
 )
+from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.dependency import DependencyStructure
+from dagster._core.definitions.dependency import (
+    BlockingAssetChecksDependencyDefinition,
+    DependencyStructure,
+    MultiDependencyDefinition,
+    NodeInput,
+)
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -42,6 +46,7 @@ from dagster._core.execution.plan.handle import (
     StepHandle,
     UnresolvedStepHandle,
 )
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.mem_io_manager import mem_io_manager
@@ -56,9 +61,10 @@ from .inputs import (
     FromDefaultValue,
     FromDirectInputValue,
     FromDynamicCollect,
+    FromInputManager,
     FromMultipleSources,
+    FromMultipleSourcesLoadSingleSource,
     FromPendingDynamicStepOutput,
-    FromRootInputManager,
     FromSourceAsset,
     FromStepOutput,
     FromUnresolvedStepOutput,
@@ -100,7 +106,7 @@ class _PlanBuilder:
 
     def __init__(
         self,
-        job: IJob,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: KnownExecutionState,
@@ -108,46 +114,31 @@ class _PlanBuilder:
         tags: Mapping[str, str],
         repository_load_data: Optional[RepositoryLoadData],
     ):
-        if isinstance(job, ReconstructableJob) and repository_load_data is not None:
-            check.invariant(
-                job.repository.repository_load_data == repository_load_data,
-                (
-                    "When building an ExecutionPlan with explicit repository_load_data and a"
-                    " ReconstructableJob, the repository_load_data on the job must be"
-                    " identical to passed-in repository_load_data."
-                ),
-            )
-        self.job = check.inst_param(job, "job", IJob)
+        self.job_def = check.inst_param(job_def, "job", JobDefinition)
         self.resolved_run_config = check.inst_param(
             resolved_run_config, "resolved_run_config", ResolvedRunConfig
         )
-        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", str)
-        self.step_keys_to_execute = step_keys_to_execute
-        self._steps: Dict[str, IExecutionStep] = {}
-        self.step_output_map: Dict[
-            NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]
-        ] = {}
+        self.step_keys_to_execute = check.opt_nullable_sequence_param(
+            step_keys_to_execute, "step_keys_to_execute", str
+        )
         self.known_state = check.inst_param(known_state, "known_state", KnownExecutionState)
         self._instance_ref = instance_ref
-        self._seen_handles: Set[StepHandleUnion] = set()
         self._tags = check.mapping_param(tags, "tags", key_type=str, value_type=str)
         self.repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
         )
 
-    @property
-    def job_name(self) -> str:
-        return self.job.get_definition().name
+        self._steps: Dict[str, IExecutionStep] = {}
+        self.step_output_map: Dict[
+            NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]
+        ] = {}
+        self._seen_handles: Set[StepHandleUnion] = set()
 
     def add_step(self, step: IExecutionStep) -> None:
         # Keep track of the step keys we've seen so far to ensure we don't add duplicates
         if step.handle in self._seen_handles:
             keys = list(self._steps.keys())
-            check.failed(
-                "Duplicated key {key}. Full list seen so far: {key_list}.".format(
-                    key=step.key, key_list=keys
-                )
-            )
+            check.failed(f"Duplicated key {step.key}. Full list seen so far: {keys}.")
         self._seen_handles.add(step.handle)
         self._steps[step.node_handle.to_string()] = step
 
@@ -158,21 +149,19 @@ class _PlanBuilder:
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan."""
         _check_persistent_storage_requirement(
-            self.job,
+            self.job_def,
             self.resolved_run_config,
         )
 
-        job_def = self.job.get_definition()
         root_inputs: List[
             Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]
         ] = []
-        # Recursively build the execution plan starting at the root pipeline
-        for input_def in job_def.graph.input_defs:
+        # Recursively bjob_defd the execution plan starting at the root pipeline
+        for input_def in self.job_def.graph.input_defs:
             input_name = input_def.name
 
-            input_source = get_root_graph_input_source(
-                plan_builder=self,
-                job_def=job_def,
+            input_source = self.get_root_graph_input_source(
+                job_def=self.job_def,
                 input_name=input_name,
                 input_def=input_def,
             )
@@ -191,8 +180,8 @@ class _PlanBuilder:
             )
 
         self._build_from_sorted_nodes(
-            job_def.nodes_in_topological_order,
-            job_def.dependency_structure,
+            self.job_def.nodes_in_topological_order,
+            self.job_def.dependency_structure,
             parent_step_inputs=root_inputs,
         )
 
@@ -220,7 +209,7 @@ class _PlanBuilder:
                 step_dict,
                 step_dict_by_key,
                 step_handles_to_execute,
-                job_def,
+                self.job_def,
                 self.resolved_run_config,
                 executable_map,
             ),
@@ -230,12 +219,12 @@ class _PlanBuilder:
 
         if self.step_keys_to_execute is not None:
             plan = plan.build_subset_plan(
-                self.step_keys_to_execute, job_def, self.resolved_run_config
+                self.step_keys_to_execute, self.job_def, self.resolved_run_config
             )
 
         # Expects that if step_keys_to_execute was set, that the `plan` variable will have the
         # reflected step_keys_to_execute
-        if job_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
+        if self.job_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
                     "Attempted to build memoized execution plan without providing a persistent "
@@ -243,7 +232,7 @@ class _PlanBuilder:
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)
             plan = plan.build_memoized_plan(
-                job_def, self.resolved_run_config, instance, self.step_keys_to_execute
+                self.job_def, self.resolved_run_config, instance, self.step_keys_to_execute
             )
 
         return plan
@@ -255,7 +244,7 @@ class _PlanBuilder:
         parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[Sequence[StepInputUnion]] = None,
     ) -> None:
-        asset_layer = self.job.get_definition().asset_layer
+        asset_layer = self.job_def.asset_layer
         step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]] = {}
         for node in nodes:
             handle = NodeHandle(node.name, parent_handle)
@@ -267,7 +256,7 @@ class _PlanBuilder:
             step_inputs: List[StepInputUnion] = []
             for input_name, input_def in node.definition.input_dict.items():
                 step_input_source = get_step_input_source(
-                    self.job.get_definition(),
+                    self.job_def,
                     node,
                     input_name,
                     input_def,
@@ -331,7 +320,7 @@ class _PlanBuilder:
                 elif has_unresolved_input:
                     new_step = UnresolvedMappedExecutionStep(
                         handle=UnresolvedStepHandle(node_handle=handle),
-                        job_name=self.job_name,
+                        job_name=self.job_def.name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedMappedStepInput]], step_inputs
                         ),
@@ -341,7 +330,7 @@ class _PlanBuilder:
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        job_name=self.job_name,
+                        job_name=self.job_def.name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedCollectStepInput]], step_inputs
                         ),
@@ -351,7 +340,7 @@ class _PlanBuilder:
                 else:
                     new_step = ExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        job_name=self.job_name,
+                        job_name=self.job_def.name,
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
                         tags=node.tags,
@@ -372,9 +361,8 @@ class _PlanBuilder:
             else:
                 check.invariant(
                     False,
-                    "Unexpected solid type {type} encountered during execution planning".format(
-                        type=type(node.definition)
-                    ),
+                    f"Unexpected node type {type(node.definition)} encountered during execution"
+                    " planning",
                 )
 
             ### 3. OUTPUTS
@@ -404,35 +392,29 @@ class _PlanBuilder:
 
                 step_output_map[node_output] = step_output_handle
 
+    def get_root_graph_input_source(
+        self,
+        input_name: str,
+        input_def: InputDefinition,
+        job_def: JobDefinition,
+    ) -> Optional[Union[FromConfig, FromDirectInputValue]]:
+        input_values = job_def.input_values
+        if input_values and input_name in input_values:
+            return FromDirectInputValue(input_name=input_name)
 
-def get_root_graph_input_source(
-    plan_builder: _PlanBuilder,
-    input_name: str,
-    input_def: InputDefinition,
-    job_def: JobDefinition,
-) -> Optional[Union[FromConfig, FromDirectInputValue]]:
-    input_values = job_def.input_values
-    if input_values and input_name in input_values:
-        return FromDirectInputValue(input_name=input_name)
+        input_config = self.resolved_run_config.inputs
 
-    input_config = plan_builder.resolved_run_config.inputs
+        if input_config and input_name in input_config:
+            return FromConfig(input_name=input_name, node_handle=None)
 
-    if input_config and input_name in input_config:
-        return FromConfig(input_name=input_name, node_handle=None)
+        if input_def.dagster_type.is_nothing:
+            return None
 
-    if input_def.dagster_type.is_nothing:
-        return None
-
-    # Otherwise we throw an error.
-    raise DagsterInvariantViolationError(
-        (
-            "In top-level graph of {described_target}, input {input_name} "
+        # Otherwise we throw an error.
+        raise DagsterInvariantViolationError(
+            f"In top-level graph of {self.job_def.describe_target()}, input {input_name} "
             "must get a value from the inputs section of its configuration."
-        ).format(
-            described_target=plan_builder.job.get_definition().describe_target(),
-            input_name=input_name,
         )
-    )
 
 
 def get_step_input_source(
@@ -460,8 +442,8 @@ def get_step_input_source(
         # can only load from source asset if assets defs are available
         if asset_layer.asset_key_for_input(handle, input_handle.input_name):
             return FromSourceAsset(node_handle=handle, input_name=input_name)
-        elif input_def.root_manager_key or input_def.input_manager_key:
-            return FromRootInputManager(node_handle=handle, input_name=input_name)
+        elif input_def.input_manager_key:
+            return FromInputManager(node_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
         node_output_handle = dependency_structure.get_direct_dep(input_handle)
@@ -482,44 +464,32 @@ def get_step_input_source(
         )
 
     if dependency_structure.has_fan_in_deps(input_handle):
-        sources: List[StepInputSource] = []
-        deps = dependency_structure.get_fan_in_deps(input_handle)
-        for idx, handle_or_placeholder in enumerate(deps):
-            if isinstance(handle_or_placeholder, NodeOutput):
-                step_output_handle = step_output_map[handle_or_placeholder]
-                if (
-                    isinstance(step_output_handle, UnresolvedStepOutputHandle)
-                    or handle_or_placeholder.output_def.is_dynamic
-                ):
-                    check.failed(
-                        "Unexpected dynamic output dependency in regular fan in, "
-                        "should have been caught at definition time."
-                    )
-
-                sources.append(
-                    FromStepOutput(
-                        step_output_handle=step_output_handle,
-                        fan_in=True,
-                    )
-                )
-            else:
-                check.invariant(
-                    handle_or_placeholder is MappedInputPlaceholder,
-                    f"Expected NodeOutput or MappedInputPlaceholder, got {handle_or_placeholder}",
-                )
-                if parent_step_inputs is None:
-                    check.failed("unexpected error in composition descent during plan building")
-
-                parent_name = node.container_mapped_fan_in_input(input_name, idx).graph_input_name
-                parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
-                parent_input = parent_inputs[parent_name]
-                source = parent_input.source
-                if not isinstance(source, StepInputSource):
-                    check.failed(f"Unexpected parent mapped input source type {source}")
-                sources.append(source)
-
-        return FromMultipleSources(sources=sources)
-
+        dep_def = dependency_structure.get_dependency_definition(input_handle)
+        if isinstance(dep_def, MultiDependencyDefinition):
+            return _step_input_source_from_multi_dep_def(
+                dependency_structure=dependency_structure,
+                input_handle=input_handle,
+                step_output_map=step_output_map,
+                parent_step_inputs=parent_step_inputs,
+                node=node,
+                input_name=input_name,
+            )
+        elif isinstance(dep_def, BlockingAssetChecksDependencyDefinition):
+            return _step_input_source_from_blocking_asset_checks_dep_def(
+                dep_def=dep_def,
+                node_handle=handle,
+                dependency_structure=dependency_structure,
+                input_handle=input_handle,
+                step_output_map=step_output_map,
+                parent_step_inputs=parent_step_inputs,
+                input_name=input_name,
+                asset_layer=asset_layer,
+            )
+        else:
+            check.failed(
+                "Expected fan-in deps to correspond to a MultiDependencyDefinition or"
+                f" BlockingAssetChecksDependencyDefinition, but was {type(dep_def)}"
+            )
     if dependency_structure.has_dynamic_fan_in_dep(input_handle):
         node_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
         step_output_handle = step_output_map[node_output_handle]
@@ -554,7 +524,7 @@ def get_step_input_source(
         return FromDefaultValue(node_handle=handle, input_name=input_name)
 
     # At this point we have an input that is not hooked up to
-    # the output of another solid or provided via run config.
+    # the output of another op or provided via run config.
 
     # We will allow this for "Nothing" type inputs and continue.
     if input_def.dagster_type.is_nothing:
@@ -562,15 +532,107 @@ def get_step_input_source(
 
     # Otherwise we throw an error.
     raise DagsterInvariantViolationError(
-        (
-            "In {described_target} {described_node}, input {input_name} "
-            "must get a value either (a) from a dependency or (b) from the "
-            "inputs section of its configuration."
-        ).format(
-            described_target=job_def.describe_target(),
-            described_node=node.describe_node(),
-            input_name=input_name,
-        )
+        f"In {job_def.describe_target()} {node.describe_node()}, input {input_name} "
+        "must get a value either (a) from a dependency or (b) from the "
+        "inputs section of its configuration."
+    )
+
+
+def _step_input_source_from_multi_dep_def(
+    dependency_structure: DependencyStructure,
+    input_handle: NodeInput,
+    step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]],
+    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    node: Node,
+    input_name: str,
+) -> FromMultipleSources:
+    sources: List[StepInputSource] = []
+    deps = dependency_structure.get_fan_in_deps(input_handle)
+
+    for idx, handle_or_placeholder in enumerate(deps):
+        if isinstance(handle_or_placeholder, NodeOutput):
+            step_output_handle = step_output_map[handle_or_placeholder]
+            if (
+                isinstance(step_output_handle, UnresolvedStepOutputHandle)
+                or handle_or_placeholder.output_def.is_dynamic
+            ):
+                check.failed(
+                    "Unexpected dynamic output dependency in regular fan in, "
+                    "should have been caught at definition time."
+                )
+
+            sources.append(
+                FromStepOutput(
+                    step_output_handle=step_output_handle,
+                    fan_in=True,
+                )
+            )
+        else:
+            check.invariant(
+                handle_or_placeholder is MappedInputPlaceholder,
+                f"Expected NodeOutput or MappedInputPlaceholder, got {handle_or_placeholder}",
+            )
+            if parent_step_inputs is None:
+                check.failed("unexpected error in composition descent during plan building")
+
+            parent_name = node.container_mapped_fan_in_input(input_name, idx).graph_input_name
+            parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
+            parent_input = parent_inputs[parent_name]
+            source = parent_input.source
+            if not isinstance(source, StepInputSource):
+                check.failed(f"Unexpected parent mapped input source type {source}")
+            sources.append(source)
+
+    return FromMultipleSources(sources=sources)
+
+
+def _step_input_source_from_blocking_asset_checks_dep_def(
+    dep_def: BlockingAssetChecksDependencyDefinition,
+    dependency_structure: DependencyStructure,
+    input_handle: NodeInput,
+    step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]],
+    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    node_handle: NodeHandle,
+    input_name: str,
+    asset_layer: AssetLayer,
+) -> FromMultipleSourcesLoadSingleSource:
+    sources: List[StepInputSource] = []
+    source_to_load_from: Optional[StepInputSource] = None
+    deps = dependency_structure.get_fan_in_deps(input_handle)
+
+    for idx, node_output in enumerate(deps):
+        if isinstance(node_output, NodeOutput):
+            step_output_handle = step_output_map[node_output]
+            if (
+                isinstance(step_output_handle, UnresolvedStepOutputHandle)
+                or node_output.output_def.is_dynamic
+            ):
+                check.failed(
+                    "Unexpected dynamic output dependency in regular fan in, "
+                    "should have been caught at definition time."
+                )
+
+            source = FromStepOutput(step_output_handle=step_output_handle, fan_in=True)
+            sources.append(source)
+            if (
+                dep_def.other_dependency is not None
+                and dep_def.other_dependency.node == node_output.node_name
+                and dep_def.other_dependency.output == node_output.output_name
+            ):
+                source_to_load_from = source
+        else:
+            check.invariant(f"Expected NodeOutput, got {node_output}")
+
+    if source_to_load_from is None:
+        asset_key_for_input = asset_layer.asset_key_for_input(node_handle, input_handle.input_name)
+        if asset_key_for_input:
+            source_to_load_from = FromSourceAsset(node_handle=node_handle, input_name=input_name)
+            sources.append(source_to_load_from)
+        else:
+            check.failed("Unexpected: no sources to load from and no asset key to load from")
+
+    return FromMultipleSourcesLoadSingleSource(
+        sources=sources, source_to_load_from=source_to_load_from
     )
 
 
@@ -626,17 +688,19 @@ class ExecutionPlan(
             ),
             known_state=check.inst_param(known_state, "known_state", KnownExecutionState),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
-            step_dict_by_key={step.key: step for step in step_dict.values()}
-            if step_dict_by_key is None
-            else check.dict_param(
-                step_dict_by_key,
-                "step_dict_by_key",
-                key_type=str,
-                value_type=(
-                    ExecutionStep,
-                    UnresolvedMappedExecutionStep,
-                    UnresolvedCollectExecutionStep,
-                ),
+            step_dict_by_key=(
+                {step.key: step for step in step_dict.values()}
+                if step_dict_by_key is None
+                else check.dict_param(
+                    step_dict_by_key,
+                    "step_dict_by_key",
+                    key_type=str,
+                    value_type=(
+                        ExecutionStep,
+                        UnresolvedMappedExecutionStep,
+                        UnresolvedCollectExecutionStep,
+                    ),
+                )
             ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
             repository_load_data=check.opt_inst_param(
@@ -788,10 +852,8 @@ class ExecutionPlan(
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
-                (
-                    f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
-                    f" {', '.join(bad_keys)}"
-                ),
+                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
+                f" {', '.join(bad_keys)}",
                 step_keys=bad_keys,
             )
 
@@ -938,6 +1000,7 @@ class ExecutionPlan(
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -947,6 +1010,7 @@ class ExecutionPlan(
             sort_key_fn,
             max_concurrent,
             tag_concurrency_limits,
+            instance_concurrency_context=instance_concurrency_context,
         )
 
     def step_handle_for_single_step_plans(
@@ -968,7 +1032,7 @@ class ExecutionPlan(
 
     @staticmethod
     def build(
-        job: IJob,
+        job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]] = None,
         known_state: Optional[KnownExecutionState] = None,
@@ -984,33 +1048,15 @@ class ExecutionPlan(
         Once we've processed the entire job, we invoke _PlanBuilder.build() to construct the
         ExecutionPlan object.
         """
-        check.inst_param(job, "job", IJob)
-        check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
-        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-        known_state = check.opt_inst_param(
-            known_state,
-            "known_state",
-            KnownExecutionState,
-            # may be good to force call sites to specify instead of defaulting to unknown
-            default=KnownExecutionState(),
-        )
-        tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
-        repository_load_data = check.opt_inst_param(
-            repository_load_data, "repository_load_data", RepositoryLoadData
-        )
-
-        plan_builder = _PlanBuilder(
-            job,
+        return _PlanBuilder(
+            job_def,
             resolved_run_config=resolved_run_config,
             step_keys_to_execute=step_keys_to_execute,
-            known_state=known_state,
+            known_state=known_state or KnownExecutionState(),
             instance_ref=instance_ref,
-            tags=tags,
+            tags=tags or {},
             repository_load_data=repository_load_data,
-        )
-
-        # Finally, we build and return the execution plan
-        return plan_builder.build()
+        ).build()
 
     @staticmethod
     def rebuild_step_input(
@@ -1111,7 +1157,7 @@ class ExecutionPlan(
                     step_snap.tags,
                 )
             else:
-                raise Exception(f"Unexpected step kind {str(step_snap.kind)}")
+                raise Exception(f"Unexpected step kind {step_snap.kind}")
 
             step_dict[step.handle] = step
             step_dict_by_key[step.key] = step
@@ -1198,10 +1244,9 @@ def can_isolate_steps(job_def: JobDefinition) -> bool:
 
 
 def _check_persistent_storage_requirement(
-    pipeline: IJob,
+    job_def: JobDefinition,
     resolved_run_config: ResolvedRunConfig,
 ) -> None:
-    job_def = pipeline.get_definition()
     executor_def = job_def.executor_def
     requirements_lst = executor_def.get_requirements(
         resolved_run_config.execution.execution_engine_config
@@ -1278,7 +1323,7 @@ def _compute_artifacts_persisted(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
     step_dict_by_key: Dict[str, IExecutionStep],
     step_handles_to_execute: Sequence[StepHandleUnion],
-    pipeline_def: JobDefinition,
+    job_def: JobDefinition,
     resolved_run_config: ResolvedRunConfig,
     executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> bool:
@@ -1300,10 +1345,8 @@ def _compute_artifacts_persisted(
         # check if all its inputs' upstream step outputs have non-in-memory IO manager configured
         for step_input in step.step_inputs:
             for step_output_handle in step_input.get_step_output_handle_dependencies():
-                io_manager_key = _get_manager_key(
-                    step_dict_by_key, step_output_handle, pipeline_def
-                )
-                manager_def = pipeline_def.resource_defs.get(io_manager_key)
+                io_manager_key = _get_manager_key(step_dict_by_key, step_output_handle, job_def)
+                manager_def = job_def.resource_defs.get(io_manager_key)
                 if (
                     # no IO manager is configured
                     not manager_def

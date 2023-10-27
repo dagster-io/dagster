@@ -22,7 +22,7 @@ Using this approach to branch deployments may be a good fit if:
 
 To complete the steps in this guide, you'll need:
 
-- **Editor** or **Admin** permissions in Dagster Cloud
+- **Organization Admin** permissions in Dagster Cloud
 - **The ability to run a new agent in your infrastructure**. This isn't required if you're using [Serverless deployment](/dagster-cloud/deployment/serverless).
 - **The ability to configure Gitlab CI/CD for your project**. This isn't required if you used the Dagster Cloud Gitlab app to connect your project as a [code location](/dagster-cloud/managing-deployments/code-locations).
 
@@ -35,6 +35,14 @@ To complete the steps in this guide, you'll need:
 ---
 
 ## Step 2: Create and configure an agent
+
+<Note>
+  <strong>
+    If using{" "}
+    <a href="/dagster-cloud/deployment/serverless">Serverless deployment</a>
+  </strong>
+  , this step isn't required.
+</Note>
 
 <BDCreateConfigureAgent />
 
@@ -190,7 +198,7 @@ Now that Branch Deployments are configured, you can check out the preview in Dag
 
 <Image
 alt="Highlighted branch deployment in the Dagster Cloud deployment switcher"
-src="/images/dagster-cloud/developing-testing/branch-deployments/dagit-deployment-switcher.png"
+src="/images/dagster-cloud/developing-testing/branch-deployments/dagster-ui-deployment-switcher.png"
 width={563}
 height={311}
 />

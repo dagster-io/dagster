@@ -5,16 +5,32 @@ description: Store your Dagster assets in BigQuery
 
 # Using Dagster with Google BigQuery
 
-This tutorial focuses on how to store and load Dagster's [software-defined assets (SDAs)](/concepts/assets/software-defined-assets) in BigQuery.
+This tutorial focuses on creating and interacting with BigQuery tables using Dagster's [software-defined assets (SDAs)](/concepts/assets/software-defined-assets).
+
+The `dagster-gcp` library provides two ways to interact with BigQuery tables:
+
+- [Resource](/concepts/resources): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject module="dagster_gcp" object="BigQueryResource" />
+- [I/O manager](/concepts/io-management/io-managers): The I/O manager transfers the responsibility of storing and loading DataFrames as BigQuery tables to Dagster. Available I/O managers: <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />, <PyObject module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />
+
+This tutorial is divided into two sections to demonstrate the differences between the BigQuery resource and the BigQuery I/O manager. Each section will create the same assets, but the first section will use the BigQuery resource to store data in BigQuery, whereas the second section will use the BigQuery I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. See [When to use I/O managers](/concepts/io-management/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources.
+
+In [Option 1](#option-1-using-the-bigquery-resource) you will:
+
+- Set up and configure the BigQuery resource.
+- Use the BigQuery resource to execute a SQL query to create a table.
+- Use the BigQuery resource to execute a SQL query to interact with the table.
+
+In [Option 2](#option-2-using-the-bigquery-io-manager) you will:
+
+- Set up and configure the BigQuery I/O manager.
+- Use Pandas to create a DataFrame, then delegate responsibility creating a table to the BigQuery I/O manager.
+- Use the BigQuery I/O manager to load the table into memory so that you can interact with it using the Pandas library.
 
 By the end of the tutorial, you will:
 
-- Configure a BigQuery I/O manager
-- Create a table in BigQuery using a Dagster asset
-- Make a BigQuery table available in Dagster
-- Load BigQuery tables in downstream assets
-
-This guide focuses on storing and loading Pandas DataFrames in BigQuery. Dagster also supports using PySpark DataFrames with BigQuery. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the BigQuery I/O manager with PySpark DataFrames in the [reference guide](/integrations/bigquery/reference).
+- Understand how to interact with a BigQuery database using the BigQuery resource.
+- Understand how to use the BigQuery I/O manager to store and load DataFrames as BigQuery tables.
+- Understand how to define dependencies between assets corresponding to tables in a BigQuery database.
 
 ---
 
@@ -34,20 +50,202 @@ To complete this tutorial, you'll need:
 
   - **GCP credentials**: You can authenticate with GCP two ways: by following GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or by providing credentials directly to the BigQuery I/O manager.
 
-    In this guide, we assume that you have run one of the `gcloud auth` commands or have set `GOOGLE_APPLICATION_CREDENTIALS` as specified in the linked instructions. For more information on providing credentials directly to the BigQuery I/O manager, see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
+    In this guide, we assume that you have run one of the `gcloud auth` commands or have set `GOOGLE_APPLICATION_CREDENTIALS` as specified in the linked instructions. For more information on providing credentials directly to the BigQuery resource and I/O manager, see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
 
 ---
 
-## Step 1: Configure the BigQuery I/O manager
+## Option 1: Using the BigQuery resource
 
-The BigQuery I/O manager requires some configuration to connect to your Bigquery instance:
+### Step 1: Configure the BigQuery resource
+
+To use the BigQuery resource, you'll need to add it to your `Definitions` object. The BigQuery resource requires some configuration:
 
 - A `project`
 - One method of authentication. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
 
-You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` and number of `retries` when working with Pandas DataFrames.
+You can also specify a `location` where computation should take place.
 
-```python file=/integrations/bigquery/configuration.py startafter=start_example endbefore=end_example
+```python file=/integrations/bigquery/tutorial/resource/configuration.py startafter=start_example endbefore=end_example
+from dagster_gcp import BigQueryResource
+
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[iris_data],
+    resources={
+        "bigquery": BigQueryResource(
+            project="my-gcp-project",  # required
+            location="us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
+        )
+    },
+)
+```
+
+### Step 2: Create tables in BigQuery
+
+<TabGroup>
+
+<TabItem name="Create BigQuery tables in Dagster">
+
+#### Create BigQuery tables in Dagster
+
+Using the BigQuery resource, you can create BigQuery tables using the BigQuery Python API:
+
+```python file=/integrations/bigquery/tutorial/resource/create_table.py startafter=start_example endbefore=end_example
+import pandas as pd
+from dagster_gcp import BigQueryResource
+
+from dagster import asset
+
+
+@asset
+def iris_data(bigquery: BigQueryResource) -> None:
+    iris_df = pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+    with bigquery.get_client() as client:
+        job = client.load_table_from_dataframe(
+            dataframe=iris_df,
+            destination="iris.iris_data",
+        )
+        job.result()
+```
+
+In this example, you're defining an asset that fetches the Iris dataset as a Pandas DataFrame and renames the columns. Then, using the BigQuery resource, the DataFrame is stored in BigQuery as the `iris.iris_data` table.
+
+Now you can run `dagster dev` and materialize the `iris_data` asset from the Dagster UI.
+
+</TabItem>
+
+<TabItem name="Making Dagster aware of existing tables">
+
+#### Making Dagster aware of existing tables
+
+If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables.
+
+```python file=/integrations/bigquery/tutorial/resource/source_asset.py
+from dagster import SourceAsset
+
+iris_harvest_data = SourceAsset(key="iris_harvest_data")
+```
+
+In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-existing table called `iris_harvest_data`.
+
+</TabItem>
+
+</TabGroup>
+
+### Step 3: Define downstream assets
+
+Once you have created an asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data.
+
+```python file=/integrations/bigquery/tutorial/resource/downstream.py startafter=start_example endbefore=end_example
+from dagster import asset
+
+from .create_table import iris_data
+
+# this example uses the iris_dataset asset from Step 2
+
+
+@asset(deps=[iris_data])
+def iris_setosa(bigquery: BigQueryResource) -> None:
+    job_config = bq.QueryJobConfig(destination="iris.iris_setosa")
+    sql = "SELECT * FROM iris.iris_data WHERE species = 'Iris-setosa'"
+
+    with bigquery.get_client() as client:
+        job = client.query(sql, job_config=job_config)
+        job.result()
+```
+
+In this asset, you're creating second table that only contains the data for the _Iris Setosa_ species. This asset has a dependency on the `iris_data` asset. To define this dependency, you provide the `iris_data` asset as the `deps` parameter to the `iris_setosa` asset. You can then run the SQL query to create the table of _Iris Setosa_ data.
+
+### Completed code example
+
+When finished, your code should look like the following:
+
+```python file=/integrations/bigquery/tutorial/resource/full_example.py
+import pandas as pd
+from dagster_gcp import BigQueryResource
+from google.cloud import bigquery as bq
+
+from dagster import Definitions, SourceAsset, asset
+
+iris_harvest_data = SourceAsset(key="iris_harvest_data")
+
+
+@asset
+def iris_data(bigquery: BigQueryResource) -> None:
+    iris_df = pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+    with bigquery.get_client() as client:
+        job = client.load_table_from_dataframe(
+            dataframe=iris_df,
+            destination="iris.iris_data",
+        )
+        job.result()
+
+
+@asset(deps=[iris_data])
+def iris_setosa(bigquery: BigQueryResource) -> None:
+    job_config = bq.QueryJobConfig(destination="iris.iris_setosa")
+    sql = "SELECT * FROM iris.iris_data WHERE species = 'Iris-setosa'"
+
+    with bigquery.get_client() as client:
+        job = client.query(sql, job_config=job_config)
+        job.result()
+
+
+defs = Definitions(
+    assets=[iris_data, iris_setosa, iris_harvest_data],
+    resources={
+        "bigquery": BigQueryResource(
+            project="my-gcp-project",
+            location="us-east5",
+        )
+    },
+)
+```
+
+---
+
+## Option 2: Using the BigQuery I/O manager
+
+You may want to use an I/O manager to handle storing DataFrames as tables in BigQuery and loading BigQuery tables as DataFrames in downstream assets. You may want to use an I/O manager if:
+
+- You want your data to be loaded in memory so that you can interact with it using Python.
+- You'd like to have Dagster manage how you store the data and load it as an input in downstream assets.
+
+Using an I/O manager is not required, and you can reference [When to use I/O managers](/concepts/io-management/io-managers#when-to-use-io-managers) to learn more.
+
+This section of the guide focuses on storing and loading Pandas DataFrames in BigQuery, but Dagster also supports using PySpark DataFrames with BigQuery. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the BigQuery I/O manager with PySpark DataFrames in the [reference guide](/integrations/bigquery/reference).
+
+### Step 1: Configure the BigQuery I/O manager
+
+To use the BigQuery I/O manager, you'll need to add it to your `Definitions` object. The BigQuery I/O manager requires some configuration to connect to your Bigquery instance:
+
+- A `project`
+- One method of authentication. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
+
+You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` when working with Pandas DataFrames.
+
+```python file=/integrations/bigquery/tutorial/io_manager/configuration.py startafter=start_example endbefore=end_example
 from dagster_gcp_pandas import BigQueryPandasIOManager
 
 from dagster import Definitions
@@ -67,13 +265,11 @@ defs = Definitions(
 
 With this configuration, if you materialized an asset called `iris_data`, the BigQuery I/O manager would store the data in the `IRIS.IRIS_DATA` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
 
-Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> API documentation.
 
----
-
-## Step 2: Create tables in BigQuery
+### Step 2: Create tables in BigQuery
 
 The BigQuery I/O manager can create and update tables for your Dagster defined assets, but you can also make existing BigQuery tables available to Dagster.
 
@@ -81,11 +277,11 @@ The BigQuery I/O manager can create and update tables for your Dagster defined a
 
 <TabItem name="Create tables in BigQuery from Dagster assets">
 
-### Store a Dagster asset as a table in BigQuery
+#### Store a Dagster asset as a table in BigQuery
 
-To store data in BigQuery using the BigQuery I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the BigQuery I/O manager, like in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), and Dagster will handle storing and loading your assets in BigQuery.
+To store data in BigQuery using the BigQuery I/O manager, you can simply return a Pandas DataFrame from your asset. Dagster will handle storing and loading your assets in BigQuery.
 
-```python file=/integrations/bigquery/basic_example.py
+```python file=/integrations/bigquery/tutorial/io_manager/basic_example.py
 import pandas as pd
 
 from dagster import asset
@@ -94,7 +290,7 @@ from dagster import asset
 @asset
 def iris_data() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -105,38 +301,36 @@ def iris_data() -> pd.DataFrame:
     )
 ```
 
-In this example, we first define our [asset](/concepts/assets/software-defined-assets). Here, we are fetching the Iris dataset as a Pandas DataFrame and renaming the columns. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
+In this example, you're defining an [asset](/concepts/assets/software-defined-assets) that fetches the Iris dataset as a Pandas DataFrame, renames the columns, then returns the DataFrame. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
 
 When Dagster materializes the `iris_data` asset using the configuration from [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), the BigQuery I/O manager will create the table `IRIS.IRIS_DATA` if it does not exist and replace the contents of the table with the value returned from the `iris_data` asset.
 
 </TabItem>
 
-<TabItem name="Make existing tables available in Dagster">
+<TabItem name="Making Dagster aware of existing tables">
 
-### Make an existing table available in Dagster
+#### Making Dagster aware of existing tables
 
-You may already have tables in BigQuery that you want to make available to other Dagster assets. You can create [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
+If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can create [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. When using an I/O manager, creating a source asset for an existing table also allows you to tell Dagster how to find the table so it can be fetched for downstream assets.
 
-```python file=/integrations/bigquery/source_asset.py
+```python file=/integrations/bigquery/tutorial/io_manager/source_asset.py
 from dagster import SourceAsset
 
 iris_harvest_data = SourceAsset(key="iris_harvest_data")
 ```
 
-In this example, we create a <PyObject object="SourceAsset" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, we need to tell the BigQuery I/O manager how to find the data.
+In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, you need to tell the BigQuery I/O manager how to find the data, so that the I/O manager can load the data into memory.
 
-Since we supply the project and dataset in the I/O manager configuration in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
+Because you already supplied the project and dataset in the I/O manager configuration in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), you only need to provide the table name. This is done with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
 </TabGroup>
 
----
+### Step 3: Load BigQuery tables in downstream assets
 
-## Step 3: Load BigQuery tables in downstream assets
+Once you have created an asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data. Dagster and the BigQuery I/O manager allow you to load the data stored in BigQuery tables into downstream assets.
 
-Once you have created an asset or source asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data. Dagster and the BigQuery I/O manager allow you to load the data stored in BigQuery tables into downstream assets.
-
-```python file=/integrations/bigquery/load_downstream.py startafter=start_example endbefore=end_example
+```python file=/integrations/bigquery/tutorial/io_manager/load_downstream.py startafter=start_example endbefore=end_example
 import pandas as pd
 
 from dagster import asset
@@ -145,23 +339,19 @@ from dagster import asset
 
 
 @asset
-def iris_cleaned(iris_data: pd.DataFrame):
-    return iris_data.dropna().drop_duplicates()
+def iris_setosa(iris_data: pd.DataFrame) -> pd.DataFrame:
+    return iris_data[iris_data["species"] == "Iris-setosa"]
 ```
 
-In this example, we want to provide the `iris_data` asset from the [Store a Dagster asset as a table in BigQuery](#store-a-dagster-asset-as-a-table-in-bigquery) example to the `iris_cleaned` asset.
+In this asset, you're providing the `iris_data` asset from the [Store a Dagster asset as a table in BigQuery](#store-a-dagster-asset-as-a-table-in-bigquery) example to the `iris_setosa` asset.
 
-In `iris_cleaned`, the `iris_data` parameter tells Dagster that the value for the `iris_data` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
+In this asset, you're providing the `iris_data` asset as a dependency to `iris_setosa`. By supplying `iris_data` as a parameter to `iris_setosa`, Dagster knows to use the `BigQueryPandasIOManager` to load this asset into memory as a Pandas DataFrame and pass it as an argument to `iris_setosa`. Next, a DataFrame that only contains the data for the _Iris Setosa_ species is created and returned. Then the `BigQueryPandasIOManager` will store the DataFrame as the `IRIS.IRIS_SETOSA` table in BigQuery.
 
-When materializing these assets, Dagster will use the `bigquery_pandas_io_manager` to fetch the `IRIS.IRIS_DATA` as a Pandas DataFrame and pass this DataFrame as the `iris_data` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `bigquery_pandas_io_manager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
-
----
-
-## Completed code example
+### Completed code example
 
 When finished, your code should look like the following:
 
-```python file=/integrations/bigquery/full_example.py
+```python file=/integrations/bigquery/tutorial/io_manager/full_example.py
 import pandas as pd
 from dagster_gcp_pandas import BigQueryPandasIOManager
 
@@ -173,7 +363,7 @@ iris_harvest_data = SourceAsset(key="iris_harvest_data")
 @asset
 def iris_data() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -185,12 +375,12 @@ def iris_data() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_data: pd.DataFrame):
-    return iris_data.dropna().drop_duplicates()
+def iris_setosa(iris_data: pd.DataFrame) -> pd.DataFrame:
+    return iris_data[iris_data["species"] == "Iris-setosa"]
 
 
 defs = Definitions(
-    assets=[iris_data, iris_harvest_data, iris_cleaned],
+    assets=[iris_data, iris_harvest_data, iris_setosa],
     resources={
         "io_manager": BigQueryPandasIOManager(
             project="my-gcp-project",

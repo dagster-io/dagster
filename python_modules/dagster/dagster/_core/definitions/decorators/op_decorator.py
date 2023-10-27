@@ -2,6 +2,7 @@ from functools import lru_cache, update_wrapper
 from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     List,
@@ -9,13 +10,13 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Set,
     Union,
     cast,
     overload,
 )
 
 import dagster._check as check
+from dagster._annotations import deprecated_param
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
@@ -30,7 +31,7 @@ from dagster._core.definitions.resource_annotation import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.backcompat import canonicalize_backcompat_args
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..input import In, InputDefinition
 from ..output import Out
@@ -46,7 +47,7 @@ class _Op:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
         tags: Optional[Mapping[str, Any]] = None,
         code_version: Optional[str] = None,
@@ -62,13 +63,13 @@ class _Op:
 
         self.description = check.opt_str_param(description, "description")
 
-        # these will be checked within SolidDefinition
+        # these will be checked within OpDefinition
         self.required_resource_keys = required_resource_keys
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
 
-        # config will be checked within SolidDefinition
+        # config will be checked within OpDefinition
         self.config_schema = config_schema
 
         self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
@@ -116,14 +117,12 @@ class _Op:
         decorator_resource_keys = set(self.required_resource_keys or [])
         check.param_invariant(
             len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-            (
-                "Cannot specify resource requirements in both @op decorator and as arguments to the"
-                " decorated function"
-            ),
+            "Cannot specify resource requirements in both @op decorator and as arguments to the"
+            " decorated function",
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
-        op_def = OpDefinition(
+        op_def = OpDefinition.dagster_internal_init(
             name=self.name,
             ins=self.ins,
             outs=outs,
@@ -134,6 +133,7 @@ class _Op:
             tags=self.tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,
+            version=None,  # code_version has replaced version
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -152,7 +152,7 @@ def op(
     ins: Optional[Mapping[str, In]] = ...,
     out: Optional[Union[Out, Mapping[str, Out]]] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
-    required_resource_keys: Optional[Set[str]] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
@@ -161,6 +161,9 @@ def op(
     ...
 
 
+@deprecated_param(
+    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
+)
 def op(
     compute_fn: Optional[Callable] = None,
     *,
@@ -169,7 +172,7 @@ def op(
     ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
@@ -241,8 +244,11 @@ def op(
             def multi_out() -> Tuple[str, int]:
                 return 'cool', 4
     """
-    code_version = canonicalize_backcompat_args(
-        code_version, "code_version", version, "version", "2.0"
+    code_version = normalize_renamed_param(
+        code_version,
+        "code_version",
+        version,
+        "version",
     )
 
     if compute_fn is not None:
@@ -268,13 +274,22 @@ def op(
 
 
 class DecoratedOpFunction(NamedTuple):
-    """Wrapper around the decorated solid function to provide commonly used util methods."""
+    """Wrapper around the decorated op function to provide commonly used util methods."""
 
     decorated_fn: Callable[..., Any]
+
+    @property
+    def name(self):
+        return self.decorated_fn.__name__
 
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
         return is_context_provided(get_function_params(self.decorated_fn))
+
+    def get_context_arg(self) -> Parameter:
+        if self.has_context_arg():
+            return get_function_params(self.decorated_fn)[0]
+        check.failed("Requested context arg on function that does not have one")
 
     @lru_cache(maxsize=1)
     def _get_function_params(self) -> Sequence[Parameter]:
@@ -320,8 +335,8 @@ class DecoratedOpFunction(NamedTuple):
 
 
 class NoContextDecoratedOpFunction(DecoratedOpFunction):
-    """Wrapper around a decorated solid function, when the decorator does not permit a context
-    parameter (such as lambda_solid).
+    """Wrapper around a decorated op function, when the decorator does not permit a context
+    parameter.
     """
 
     @lru_cache(maxsize=1)
@@ -335,7 +350,7 @@ def is_context_provided(params: Sequence[Parameter]) -> bool:
     return params[0].name in get_valid_name_permutations("context")
 
 
-def resolve_checked_solid_fn_inputs(
+def resolve_checked_op_fn_inputs(
     decorator_name: str,
     fn_name: str,
     compute_fn: DecoratedOpFunction,
@@ -346,10 +361,10 @@ def resolve_checked_solid_fn_inputs(
     Returns the resolved set of InputDefinitions.
 
     Args:
-        decorator_name (str): Name of the decorator that is wrapping the op/solid function.
+        decorator_name (str): Name of the decorator that is wrapping the op function.
         fn_name (str): Name of the decorated function.
-        compute_fn (DecoratedSolidFunction): The decorated function, wrapped in the
-            DecoratedSolidFunction wrapper.
+        compute_fn (DecoratedOpFunction): The decorated function, wrapped in the
+            DecoratedOpFunction wrapper.
         explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
             provided in the decorator.
         exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
@@ -419,11 +434,16 @@ def resolve_checked_solid_fn_inputs(
     undeclared_inputs = explicit_names - used_inputs
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        nothing_exemption = (
+            ", except for Ins that have the Nothing dagster_type"
+            if decorator_name not in {"@graph", "@graph_asset"}
+            else ""
+        )
         raise DagsterInvalidDefinitionError(
             f"{decorator_name} '{fn_name}' decorated function does not have argument(s)"
             f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have a"
-            " keyword argument for each of their Ins, except for Ins that have the Nothing"
-            " dagster_type. Alternatively, they can accept **kwargs."
+            f" keyword argument for each of their Ins{nothing_exemption}. Alternatively, they can"
+            " accept **kwargs."
         )
 
     inferred_props = {

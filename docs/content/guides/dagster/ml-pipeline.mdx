@@ -89,7 +89,6 @@ from dagster import multi_asset, AssetOut
 
 @multi_asset(outs={"training_data": AssetOut(), "test_data": AssetOut()})
 def training_test_data(hackernews_stories):
-    hackernews_stories = hackernews_stories
     X = hackernews_stories.title
     y = hackernews_stories.descendants
     # Split the dataset to reserve 20% of records as the test set
@@ -197,6 +196,7 @@ Depending on what the objective of your ML model is, you can use this data to se
 
 ## Where to go from here
 
+- [Managing machine learning models with Dagster](/guides/dagster/managing-ml) - This guide reviews ways to manage and maintain your machine learning (ML) models in Dagster
 - Dagster is flexible so there could be many 'right' ways to implement your machine learning pipeline and different avenues to explore
 - Dagster intergrates with [MLflow](/\_apidocs/libraries/dagster-mlflow) that can be used to keep track of your models
 - Dagster integrates with [Weights & Biases](/\_apidocs/libraries/dagster-wandb) and an [example](https://github.com/dagster-io/dagster/tree/master/examples/with_wandb) which demonstrates how to use W\&B's artifacts with Dagster.

@@ -1,29 +1,37 @@
 import os
 import textwrap
+from typing import Optional
 
 import pandas as pd
-from dagster import (
-    AssetKey,
-    MemoizableIOManager,
-    TableSchemaMetadataValue,
-    io_manager,
-)
+from dagster import AssetKey, ConfigurableIOManager, MemoizableIOManager, TableSchemaMetadataValue
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._utils.cached_method import cached_method
+from pydantic import Field
 
 
-class LocalCsvIOManager(MemoizableIOManager):
+class LocalCsvIOManager(ConfigurableIOManager, MemoizableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
-    def __init__(self, base_dir):
-        self._base_dir = base_dir
+    base_dir: Optional[str] = Field(default=None)
+
+    @property
+    @cached_method
+    def resolved_base_dir(self) -> str:
+        if self.base_dir:
+            return self.base_dir
+        resource_context = self.get_resource_context()
+        if resource_context.instance is not None:
+            return resource_context.instance.storage_directory()
+        else:
+            return os.getenv("DAGSTER_HOME", ".")
 
     def _get_fs_path(self, asset_key: AssetKey) -> str:
-        rpath = os.path.join(self._base_dir, *asset_key.path) + ".csv"
+        rpath = os.path.join(self.resolved_base_dir, *asset_key.path) + ".csv"
         return os.path.abspath(rpath)
 
     def handle_output(self, context, obj: pd.DataFrame):
         """This saves the dataframe as a CSV."""
-        fpath = self._get_fs_path(context.asset_key)
+        fpath = self._get_fs_path(asset_key=context.asset_key)
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
         with open(fpath + ".version", "w", encoding="utf8") as f:
@@ -49,7 +57,7 @@ class LocalCsvIOManager(MemoizableIOManager):
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""
-        fpath = self._get_fs_path(context.asset_key)
+        fpath = self._get_fs_path(asset_key=context.asset_key)
         date_col_names = [
             table_col.name
             for table_col in self.get_schema(context.upstream_output.dagster_type).columns
@@ -58,7 +66,7 @@ class LocalCsvIOManager(MemoizableIOManager):
         return pd.read_csv(fpath, parse_dates=date_col_names)
 
     def has_output(self, context) -> bool:
-        fpath = self._get_fs_path(context.asset_key)
+        fpath = self._get_fs_path(asset_key=context.asset_key)
         version_fpath = fpath + ".version"
         if not os.path.exists(version_fpath):
             return False
@@ -68,18 +76,10 @@ class LocalCsvIOManager(MemoizableIOManager):
         return version == context.version
 
 
-@io_manager
-def local_csv_io_manager(context):
-    return LocalCsvIOManager(context.instance.storage_directory())
-
-
 def pandas_columns_to_markdown(dataframe: pd.DataFrame) -> str:
-    return (
-        textwrap.dedent(
-            """
+    return textwrap.dedent(
+        """
         | Name | Type |
         | ---- | ---- |
     """
-        )
-        + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.iteritems()])
-    )
+    ) + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.items()])

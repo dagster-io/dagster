@@ -2,7 +2,7 @@ from dagster._core.events import DagsterEventType
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_subscription,
-    infer_pipeline_selector,
+    infer_job_selector,
 )
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
@@ -28,10 +28,32 @@ CAPTURED_LOGS_SUBSCRIPTION = """
   }
 """
 
+CAPTURED_LOGS_EVENT_QUERY = """
+  query CapturedLogsEventQuery($runId: ID!) {
+    runOrError(runId: $runId) {
+      __typename
+      ... on Run {
+        eventConnection {
+          events {
+            ... on LogsCapturedEvent {
+              message
+              timestamp
+              fileKey
+              stepKeys
+              externalStdoutUrl
+              externalStderrUrl
+            }
+          }
+        }
+      }
+    }
+  }
+"""
+
 
 class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
     def test_get_captured_logs_over_graphql(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "spew_job")
+        selector = infer_job_selector(graphql_context, "spew_job")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
@@ -52,7 +74,7 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
         assert stdout == "HELLO WORLD\n"
 
     def test_captured_logs_subscription_graphql(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "spew_job")
+        selector = infer_job_selector(graphql_context, "spew_job")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
@@ -72,3 +94,19 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
         assert len(results) == 1
         stdout = results[0].data["capturedLogs"]["stdout"]
         assert stdout == "HELLO WORLD\n"
+
+    def test_captured_logs_event_graphql(self, graphql_context):
+        selector = infer_job_selector(graphql_context, "spew_job")
+        payload = sync_execute_get_run_log_data(
+            context=graphql_context,
+            variables={"executionParams": {"selector": selector, "mode": "default"}},
+        )
+        run_id = payload["run"]["runId"]
+        result = execute_dagster_graphql(
+            graphql_context,
+            CAPTURED_LOGS_EVENT_QUERY,
+            variables={"runId": run_id},
+        )
+        assert result.data["runOrError"]["__typename"] == "Run"
+        events = result.data["runOrError"]["eventConnection"]["events"]
+        assert len(events) > 0

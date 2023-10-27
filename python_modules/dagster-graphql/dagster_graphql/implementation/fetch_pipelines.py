@@ -2,12 +2,12 @@ from typing import TYPE_CHECKING, Union
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 from dagster_graphql.schema.util import ResolveInfo
 
 from .external import get_external_job_or_raise, get_full_external_job_or_raise
-from .utils import JobSubsetSelector, UserFacingGraphQLError, capture_error
+from .utils import JobSubsetSelector, UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from ..schema.pipelines.pipeline import GraphenePipeline
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
 
 
-@capture_error
 def get_job_snapshot_or_error_from_job_selector(
     graphene_info: ResolveInfo, job_selector: JobSubsetSelector
 ) -> "GraphenePipelineSnapshot":
@@ -25,7 +24,6 @@ def get_job_snapshot_or_error_from_job_selector(
     return GraphenePipelineSnapshot(get_full_external_job_or_raise(graphene_info, job_selector))
 
 
-@capture_error
 def get_job_snapshot_or_error_from_snapshot_id(
     graphene_info: ResolveInfo, snapshot_id: str
 ) -> "GraphenePipelineSnapshot":
@@ -52,7 +50,6 @@ def _get_job_snapshot_from_instance(
     return GraphenePipelineSnapshot(historical_pipeline)
 
 
-@capture_error
 def get_job_or_error(graphene_info: ResolveInfo, selector: JobSubsetSelector) -> "GraphenePipeline":
     """Returns a PipelineOrError."""
     return get_job_from_selector(graphene_info, selector)
@@ -75,10 +72,12 @@ def get_job_reference_or_raise(
     from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
 
     check.inst_param(dagster_run, "pipeline_run", DagsterRun)
-    solid_selection = list(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None
+    op_selection = (
+        list(dagster_run.resolved_op_selection) if dagster_run.resolved_op_selection else None
+    )
 
     if dagster_run.job_snapshot_id is None:
-        return GrapheneUnknownPipeline(dagster_run.job_name, solid_selection)
+        return GrapheneUnknownPipeline(dagster_run.job_name, op_selection)
 
     return _get_job_snapshot_from_instance(
         graphene_info.context.instance, dagster_run.job_snapshot_id

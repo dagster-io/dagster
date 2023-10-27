@@ -24,8 +24,11 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.definitions.pipeline_base import InMemoryJob
-from dagster._core.definitions.resource_definition import make_values_resource
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.resource_definition import (
+    dagster_maintained_resource,
+    make_values_resource,
+)
 from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -729,7 +732,7 @@ def test_resource_init_failure_with_teardown():
     assert cleaned == ["B", "A"]
 
 
-def test_solid_failure_resource_teardown():
+def test_op_failure_resource_teardown():
     called = []
     cleaned = []
 
@@ -774,7 +777,7 @@ def test_solid_failure_resource_teardown():
     assert cleaned == ["B", "A"]
 
 
-def test_solid_failure_resource_teardown_raise():
+def test_op_failure_resource_teardown_raise():
     """Test that teardown is invoked in resources for tests that raise_on_error."""
     called = []
     cleaned = []
@@ -1108,21 +1111,21 @@ def test_resource_op_subset():
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(
-        ["foo_op"]
-    ).get_required_resource_defs().keys() == {
+    assert nested.get_subset(op_selection=["foo_op"]).get_required_resource_defs().keys() == {
         "foo",
         "bar",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(
-        ["bar_op"]
-    ).get_required_resource_defs().keys() == {"bar", "io_manager"}
+    assert nested.get_subset(op_selection=["bar_op"]).get_required_resource_defs().keys() == {
+        "bar",
+        "io_manager",
+    }
 
-    assert nested.get_job_def_for_subset_selection(
-        ["baz_op"]
-    ).get_required_resource_defs().keys() == {"baz", "io_manager"}
+    assert nested.get_subset(op_selection=["baz_op"]).get_required_resource_defs().keys() == {
+        "baz",
+        "io_manager",
+    }
 
 
 def test_config_with_no_schema():
@@ -1210,3 +1213,28 @@ def test_context_manager_resource():
 
     assert call_basic.execute_in_process(resources={"cm": cm_resource}).success
     assert event_list == ["foo", "compute", "finally"]
+
+
+def test_telemetry_custom_resource():
+    class MyResource:
+        def foo(self) -> str:
+            return "bar"
+
+    @resource
+    def my_resource():
+        return MyResource()
+
+    assert not my_resource._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_telemetry_dagster_io_manager():
+    class MyResource:
+        def foo(self) -> str:
+            return "bar"
+
+    @dagster_maintained_resource
+    @resource
+    def my_resource():
+        return MyResource()
+
+    assert my_resource._is_dagster_maintained()  # noqa: SLF001

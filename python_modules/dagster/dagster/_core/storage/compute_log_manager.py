@@ -7,7 +7,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
 MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
@@ -178,7 +178,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def on_subscribe(self, subscription: "ComputeLogSubscription") -> None:
-        """Hook for managing streaming subscriptions for log data from `dagit`.
+        """Hook for managing streaming subscriptions for log data from `dagster-webserver`.
 
         Args:
             subscription (ComputeLogSubscription): subscription object which manages when to send

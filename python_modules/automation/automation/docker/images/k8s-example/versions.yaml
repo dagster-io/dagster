@@ -1,3 +1,0 @@
-"3.7":
-  docker_args:
-    BASE_IMAGE: python:3.7-slim

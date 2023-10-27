@@ -74,3 +74,29 @@ def loadable_target_origin(attribute: Optional[str] = None) -> LoadableTargetOri
         working_directory=os.getcwd(),
         attribute=attribute,
     )
+
+
+def unloadable_target_origin(attribute: Optional[str] = None) -> LoadableTargetOrigin:
+    return LoadableTargetOrigin(
+        executable_path=sys.executable,
+        module_name="dagster_tests.daemon_tests.test_locations.unloadable_location",
+        working_directory=os.getcwd(),
+        attribute=attribute,
+    )
+
+
+def invalid_workspace_load_target(attribute=None):
+    return InProcessTestWorkspaceLoadTarget(
+        InProcessCodeLocationOrigin(
+            loadable_target_origin=unloadable_target_origin(attribute=attribute),
+            location_name="unloadable",
+        )
+    )
+
+
+@pytest.fixture(name="unloadable_location_workspace_context", scope="module")
+def unloadable_location_fixture(instance_module_scoped) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=invalid_workspace_load_target(), instance=instance_module_scoped
+    ) as workspace_context:
+        yield workspace_context

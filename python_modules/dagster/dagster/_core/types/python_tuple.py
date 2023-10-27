@@ -46,9 +46,7 @@ class _TypedPythonTuple(DagsterType):
         if not isinstance(value, tuple):
             return TypeCheck(
                 success=False,
-                description="Value should be a tuple, got a {value_type}".format(
-                    value_type=type(value)
-                ),
+                description=f"Value should be a tuple, got a {type(value)}",
             )
 
         if len(value) != len(self.dagster_types):

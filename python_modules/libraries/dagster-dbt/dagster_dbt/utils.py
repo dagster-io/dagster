@@ -38,13 +38,14 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def input_name_fn(node_info: Mapping[str, Any]) -> str:
+def input_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
     # * can be present when sources are sharded tables
-    return node_info["unique_id"].replace(".", "_").replace("*", "_star")
+    return dbt_resource_props["unique_id"].replace(".", "_").replace("*", "_star")
 
 
-def output_name_fn(node_info: Mapping[str, Any]) -> str:
-    return node_info["unique_id"].split(".")[-1]
+def output_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
+    # hyphens are valid in dbt model names, but not in output names
+    return dbt_resource_props["unique_id"].split(".")[-1].replace("-", "_")
 
 
 def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -130,7 +131,9 @@ def result_to_events(
         metadata.update(extra_metadata)
 
     # if you have a manifest available, get the full node info, otherwise just populate unique_id
-    node_info = manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
+    dbt_resource_props = (
+        manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
+    )
 
     node_resource_type = _resource_type(unique_id)
 
@@ -138,12 +141,12 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=output_name_fn(node_info),
+                output_name=output_name_fn(dbt_resource_props),
                 metadata=metadata,
             )
         else:
             yield AssetMaterialization(
-                asset_key=node_info_to_asset_key(node_info),
+                asset_key=node_info_to_asset_key(dbt_resource_props),
                 description=f"dbt node: {unique_id}",
                 metadata=metadata,
             )
@@ -153,12 +156,12 @@ def result_to_events(
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:
             # the upstream id can reference a node or a source
-            node_info = manifest_json["nodes"].get(upstream_id) or manifest_json["sources"].get(
-                upstream_id
-            )
-            if node_info is None:
+            dbt_resource_props = manifest_json["nodes"].get(upstream_id) or manifest_json[
+                "sources"
+            ].get(upstream_id)
+            if dbt_resource_props is None:
                 continue
-            upstream_asset_key = node_info_to_asset_key(node_info)
+            upstream_asset_key = node_info_to_asset_key(dbt_resource_props)
             yield AssetObservation(
                 asset_key=upstream_asset_key,
                 metadata={
@@ -201,16 +204,12 @@ def generate_materializations(
 
     Information parsed from a :py:class:`~DbtOutput` object.
 
-    Note that this will not work with output from the `dbt_rpc_resource`, because this resource does
-    not wait for a response from the RPC server before returning. Instead, use the
-    `dbt_rpc_sync_resource`, which will wait for execution to complete.
-
     Examples:
         .. code-block:: python
 
             from dagster import op, Output
             from dagster_dbt.utils import generate_materializations
-            from dagster_dbt import dbt_cli_resource, dbt_rpc_sync_resource
+            from dagster_dbt import dbt_cli_resource
 
             @op(required_resource_keys={"dbt"})
             def my_custom_dbt_run(context):
@@ -222,10 +221,6 @@ def generate_materializations(
 
             @job(resource_defs={{"dbt":dbt_cli_resource}})
             def my_dbt_cli_job():
-                my_custom_dbt_run()
-
-            @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
-            def my_dbt_rpc_job():
                 my_custom_dbt_run()
     """
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
@@ -245,22 +240,22 @@ def select_unique_ids_from_manifest(
     state_path: Optional[str] = None,
     manifest_json_path: Optional[str] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
+    manifest_parsed: Optional[Any] = None,
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest, WritableManifest
     from dbt.contracts.state import PreviousState
-    from dbt.graph import SelectionSpec
-    from dbt.graph.selector_spec import IndirectSelection
+    from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
     if state_path is not None:
         previous_state = PreviousState(
-            path=Path(state_path),
-            current_path=Path("/tmp/null")
-            if manifest_json_path is None
-            else Path(manifest_json_path),
+            path=Path(state_path),  # type: ignore  # (unused path, slated for deletion)
+            current_path=(  # type: ignore  # (unused path, slated for deletion)
+                Path("/tmp/null") if manifest_json_path is None else Path(manifest_json_path)
+            ),
         )
     else:
         previous_state = None
@@ -281,21 +276,28 @@ def select_unique_ids_from_manifest(
         manifest = Manifest(
             # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
             nodes={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["nodes"].items()  # type: ignore
             },
             sources={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["sources"].items()  # type: ignore
             },
             metrics={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["metrics"].items()  # type: ignore
             },
             exposures={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["exposures"].items()  # type: ignore
             },
         )
         child_map = manifest_json["child_map"]
+    elif manifest_parsed is not None:
+        manifest = manifest_parsed
+        child_map = manifest.child_map
     else:
-        check.failed("Must provide either a manifest_json_path or manifest_json.")
+        check.failed("Must provide either a manifest_json_path, manifest_json, or manifest_parsed.")
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string
@@ -317,3 +319,15 @@ def select_unique_ids_from_manifest(
     selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
     selected, _ = selector.select_nodes(parsed_spec)
     return selected
+
+
+def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
+    manifest: Mapping[str, Any]
+) -> Mapping[str, Mapping[str, Any]]:
+    """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest."""
+    return {
+        **manifest["nodes"],
+        **manifest["sources"],
+        **manifest["exposures"],
+        **manifest["metrics"],
+    }

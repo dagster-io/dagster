@@ -13,7 +13,6 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 import collections.abc
-import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import partial
@@ -44,6 +43,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
 
@@ -128,9 +128,11 @@ class WhitelistMap(NamedTuple):
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
-            field_serializers={k: klass.get_instance() for k, klass in field_serializers.items()}
-            if field_serializers
-            else None,
+            field_serializers=(
+                {k: klass.get_instance() for k, klass in field_serializers.items()}
+                if field_serializers
+                else None
+            ),
         )
         self.tuple_serializers[name] = serializer
         deserializer_name = storage_name or name
@@ -269,10 +271,8 @@ def whitelist_for_serdes(
     if storage_field_names or old_fields or skip_when_empty_fields:
         check.invariant(
             serializer is None or issubclass(serializer, NamedTupleSerializer),
-            (
-                "storage_field_names, old_fields, skip_when_empty_fields can only be used with a"
-                " NamedTupleSerializer"
-            ),
+            "storage_field_names, old_fields, skip_when_empty_fields can only be used with a"
+            " NamedTupleSerializer",
         )
     if __cls is not None:  # decorator invoked directly on class
         check.class_param(__cls, "__cls")
@@ -372,7 +372,7 @@ class UnpackContext:
             for inner in obj:
                 self.clear_ignored_unknown_values(inner)
         elif isinstance(obj, dict):
-            for k, v in obj.items():
+            for v in obj.values():
                 self.clear_ignored_unknown_values(v)
 
         return obj
@@ -576,6 +576,22 @@ class FieldSerializer(Serializer):
         ...
 
 
+class SetToSequenceFieldSerializer(FieldSerializer):
+    def unpack(
+        self, sequence_value: Optional[Sequence[Any]], **_kwargs
+    ) -> Optional[AbstractSet[Any]]:
+        return set(sequence_value) if sequence_value is not None else None
+
+    def pack(
+        self, set_value: Optional[AbstractSet[Any]], whitelist_map: WhitelistMap, descent_path: str
+    ) -> Optional[Sequence[Any]]:
+        return (
+            sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
+            if set_value is not None
+            else None
+        )
+
+
 ###################################################################################################
 # Serialize / Pack
 ###################################################################################################
@@ -584,7 +600,7 @@ class FieldSerializer(Serializer):
 def serialize_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    **json_kwargs: object,
+    **json_kwargs: Any,
 ) -> str:
     """Serialize an object to a JSON string.
 
@@ -665,10 +681,8 @@ def _pack_value(
         klass_name = val.__class__.__name__
         if not whitelist_map.has_tuple_serializer(klass_name):
             raise SerializationError(
-                (
-                    "Can only serialize whitelisted namedtuples, received"
-                    f" {val}.\nDescent path: {descent_path}"
-                ),
+                "Can only serialize whitelisted namedtuples, received"
+                f" {val}.\nDescent path: {descent_path}",
             )
         serializer = whitelist_map.get_tuple_serializer(klass_name)
         return serializer.pack(cast(NamedTuple, val), whitelist_map, descent_path)
@@ -676,10 +690,8 @@ def _pack_value(
         klass_name = val.__class__.__name__
         if not whitelist_map.has_enum_entry(klass_name):
             raise SerializationError(
-                (
-                    "Can only serialize whitelisted Enums, received"
-                    f" {klass_name}.\nDescent path: {descent_path}"
-                ),
+                "Can only serialize whitelisted Enums, received"
+                f" {klass_name}.\nDescent path: {descent_path}",
             )
         enum_serializer = whitelist_map.get_enum_entry(klass_name)
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
@@ -772,8 +784,7 @@ def deserialize_value(
     check.str_param(val, "val")
 
     # Never issue warnings when deserializing deprecated objects.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
+    with disable_dagster_warnings():
         context = UnpackContext()
         unpacked_value = seven.json.loads(
             val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)
@@ -944,8 +955,8 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
                 "in the named tuple that are not present as parameters to the "
                 "to the __new__ method. In order for "
                 "both serdes serialization and pickling to work, "
-                "these must match. Missing: {missing_fields}"
-            ).format(missing_fields=repr(list(klass._fields[index:])))
+                f"these must match. Missing: {list(klass._fields[index:])!r}"
+            )
 
             raise SerdesUsageError(_with_header(error_msg))
 
@@ -953,9 +964,9 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
         if value_param.name != field:
             error_msg = (
                 "Params to __new__ must match the order of field declaration in the namedtuple. "
-                'Declared field number {one_based_index} in the namedtuple is "{field_name}". '
-                'Parameter {one_based_index} in __new__ method is "{param_name}".'
-            ).format(one_based_index=index + 1, field_name=field, param_name=value_param.name)
+                f'Declared field number {index + 1} in the namedtuple is "{field}". '
+                f'Parameter {index + 1} in __new__ method is "{value_param.name}".'
+            )
             raise SerdesUsageError(_with_header(error_msg))
 
     if len(value_params) > len(klass._fields):

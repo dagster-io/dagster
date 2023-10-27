@@ -3,7 +3,7 @@ import os
 import time
 
 import pytest
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path
@@ -22,7 +22,7 @@ def log_run_events(instance, run_id):
 def test_k8s_run_monitoring_startup_fail(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
@@ -39,7 +39,7 @@ def test_k8s_run_monitoring_startup_fail(
     run_id = None
     try:
         run_id = launch_run_over_graphql(
-            dagit_url_for_k8s_run_launcher,
+            webserver_url_for_k8s_run_launcher,
             run_config=run_config,
             job_name="slow_job_k8s",
             tags={
@@ -67,7 +67,7 @@ def test_k8s_run_monitoring_startup_fail(
 def test_k8s_run_monitoring_resume(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
@@ -81,7 +81,7 @@ def test_k8s_run_monitoring_resume(
         },
     )
     _launch_run_and_wait_for_resume(
-        dagit_url_for_k8s_run_launcher,
+        webserver_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
         user_code_namespace_for_k8s_run_launcher,
@@ -89,19 +89,19 @@ def test_k8s_run_monitoring_resume(
 
 
 def _launch_run_and_wait_for_resume(
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
     run_config,
     instance,
     namespace,
-    pipeline_name="slow_job_k8s",
+    job_name="slow_job_k8s",
 ):
     run_id = None
 
     try:
         run_id = launch_run_over_graphql(
-            dagit_url_for_k8s_run_launcher,
+            webserver_url_for_k8s_run_launcher,
             run_config=run_config,
-            job_name=pipeline_name,
+            job_name=job_name,
         )
 
         start_time = time.time()

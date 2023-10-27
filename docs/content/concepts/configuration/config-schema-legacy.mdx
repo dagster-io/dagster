@@ -3,7 +3,7 @@ title: Run Configuration (Legacy) | Dagster
 description: Job run configuration allows providing parameters to jobs at the time they're executed.
 ---
 
-# Run Configuration (Legacy)
+# Run Configuration <Legacy />
 
 <Note>
   This guide covers using legacy APIs for the Dagster config system. For docs on
@@ -65,7 +65,7 @@ def resource_using_config(context):
   not recommended.
 </Note>
 
-You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs#configuring-jobs).
+You can also build config into [jobs](/concepts/ops-jobs-graphs/jobs).
 
 ---
 
@@ -74,7 +74,7 @@ You can also build config into jobs, as described in [the Jobs documentation](/c
 If you want to execute `op_using_config` or materialize `asset_using_config`, we'll need to provide values for the parameters specified in `config_schema`. How we provide these values depends on the interface we are using:
 
 - [Python](#python)
-- [Dagit](#dagit)
+- [Dagster UI](#dagster-ui)
 - [Command line](#command-line)
 
 ### Python
@@ -98,9 +98,9 @@ asset_result = materialize(
 )
 ```
 
-### Dagit
+### Dagster UI
 
-From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad-tab), we supply config as YAML using the config editor. Refer to [the config schema guide](/concepts/configuration/config-schema#dagit) for using runtime config in the Dagster UI.
+From the UI's [Launchpad](/concepts/webserver/ui#launchpad-tab), we supply config as YAML using the config editor. Refer to [the config schema guide](/concepts/configuration/config-schema#dagster-ui) for using runtime config in the Dagster UI.
 
 ### Command line
 
@@ -172,7 +172,7 @@ def get_one_from_db():
     get_one()
 ```
 
-By providing secrets through environment variables, your secrets won't be visible in your code or Dagit's launchpad. Refer to the [Using environment variables and secrets in Dagster code guide](/guides/dagster/using-environment-variables-and-secrets) for more info and examples.
+By providing secrets through environment variables, your secrets won't be visible in your code or the UI's launchpad. Refer to the [Using environment variables and secrets in Dagster code guide](/guides/dagster/using-environment-variables-and-secrets) for more info and examples.
 
 <Note>
   The{" "}

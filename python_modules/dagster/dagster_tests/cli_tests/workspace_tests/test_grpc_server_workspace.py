@@ -30,17 +30,15 @@ def test_grpc_socket_workspace(instance):
             second_server = second_server_process.create_client()
             first_socket = first_server.socket
             second_socket = second_server.socket
-            workspace_yaml = """
+            workspace_yaml = f"""
 load_from:
 - grpc_server:
     host: localhost
-    socket: {socket_one}
+    socket: {first_socket}
 - grpc_server:
-    socket: {socket_two}
+    socket: {second_socket}
     location_name: 'local_port_default_host'
-                """.format(
-                socket_one=first_socket, socket_two=second_socket
-            )
+                """
 
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
@@ -137,7 +135,7 @@ load_from:
             # fake out as if it were loaded by a yaml file in this directory
             file_relative_path(__file__, "not_a_real.yaml"),
         )
-        origin = list(origins.values())[0]
+        origin = next(iter(origins.values()))
         assert origin.use_ssl
 
         # Actually connecting to the server will fail since it's expecting SSL
@@ -160,17 +158,15 @@ def test_grpc_server_workspace(instance):
             second_server = second_server_process.create_client()
             first_port = first_server.port
             second_port = second_server.port
-            workspace_yaml = """
+            workspace_yaml = f"""
 load_from:
 - grpc_server:
     host: localhost
-    port: {port_one}
+    port: {first_port}
 - grpc_server:
-    port: {port_two}
+    port: {second_port}
     location_name: 'local_port_default_host'
-                """.format(
-                port_one=first_port, port_two=second_port
-            )
+                """
 
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),

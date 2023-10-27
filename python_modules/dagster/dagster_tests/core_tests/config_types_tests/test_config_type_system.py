@@ -674,7 +674,7 @@ def test_build_optionality():
     assert optional_test_type.fields["optional"].is_required is False
 
 
-def test_wrong_solid_name():
+def test_wrong_op_name():
     @op(name="some_op", ins={}, out={}, config_schema=Int)
     def some_op(_):
         return None
@@ -719,7 +719,7 @@ def test_wrong_resources():
         job_def.execute_in_process({"resources": {"nope": {}}})
 
 
-def test_solid_list_config():
+def test_op_list_config():
     value = [1, 2]
     called = {}
 
@@ -1038,7 +1038,7 @@ def test_multilevel_good_error_handling_ops():
     assert str(expected_suggested_config) in missing_field_pe_info.value.errors[0].message
 
 
-def test_multilevel_good_error_handling_solid_name_ops():
+def test_multilevel_good_error_handling_op_name_ops():
     @op(config_schema=Int)
     def good_error_handling(_context):
         pass

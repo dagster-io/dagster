@@ -90,16 +90,23 @@ class ConfigTypeSnap(
             kind=check.inst_param(kind, "kind", ConfigTypeKind),
             key=check.str_param(key, "key"),
             given_name=check.opt_str_param(given_name, "given_name"),
-            type_param_keys=None
-            if type_param_keys is None
-            else check.list_param(type_param_keys, "type_param_keys", of_type=str),
-            enum_values=None
-            if enum_values is None
-            else check.list_param(enum_values, "enum_values", of_type=ConfigEnumValueSnap),
-            fields=None
-            if fields is None
-            else sorted(
-                check.list_param(fields, "field", of_type=ConfigFieldSnap), key=lambda ct: ct.name
+            type_param_keys=(
+                None
+                if type_param_keys is None
+                else check.list_param(type_param_keys, "type_param_keys", of_type=str)
+            ),
+            enum_values=(
+                None
+                if enum_values is None
+                else check.list_param(enum_values, "enum_values", of_type=ConfigEnumValueSnap)
+            ),
+            fields=(
+                None
+                if fields is None
+                else sorted(
+                    check.list_param(fields, "field", of_type=ConfigFieldSnap),
+                    key=lambda ct: ct.name,
+                )
             ),
             description=check.opt_str_param(description, "description"),
             scalar_kind=check.opt_inst_param(scalar_kind, "scalar_kind", ConfigScalarKind),
@@ -118,8 +125,7 @@ class ConfigTypeSnap(
 
     @property
     def inner_type_key(self) -> str:
-        """For container types such as Array or Noneable, the contained type. For a Map, the value type.
-        """
+        """For container types such as Array or Noneable, the contained type. For a Map, the value type."""
         # valid for Noneable, Map, and Array
         check.invariant(
             self.kind == ConfigTypeKind.NONEABLE
@@ -239,9 +245,9 @@ def snap_from_field(name: str, field: Field):
         type_key=field.config_type.key,
         is_required=field.is_required,
         default_provided=field.default_provided,
-        default_value_as_json_str=field.default_value_as_json_str
-        if field.default_provided
-        else None,
+        default_value_as_json_str=(
+            field.default_value_as_json_str if field.default_provided else None
+        ),
         description=field.description,
     )
 
@@ -253,23 +259,35 @@ def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
         given_name=config_type.given_name,
         kind=config_type.kind,
         description=config_type.description,
-        type_param_keys=[ct.key for ct in config_type.type_params] if config_type.type_params
-        # jam scalar union types into type_param_keys
-        else [config_type.scalar_type.key, config_type.non_scalar_type.key]  # type: ignore
-        if config_type.kind == ConfigTypeKind.SCALAR_UNION
-        else None,
-        enum_values=[
-            ConfigEnumValueSnap(ev.config_value, ev.description) for ev in config_type.enum_values  # type: ignore
-        ]
-        if config_type.kind == ConfigTypeKind.ENUM
-        else None,
-        fields=[snap_from_field(name, field) for name, field in config_type.fields.items()]  # type: ignore
-        if ConfigTypeKind.has_fields(config_type.kind)
-        else None,
+        type_param_keys=(
+            [ct.key for ct in config_type.type_params]
+            if config_type.type_params
+            # jam scalar union types into type_param_keys
+            else (
+                [config_type.scalar_type.key, config_type.non_scalar_type.key]  # type: ignore
+                if config_type.kind == ConfigTypeKind.SCALAR_UNION
+                else None
+            )
+        ),
+        enum_values=(
+            [
+                ConfigEnumValueSnap(ev.config_value, ev.description)
+                for ev in config_type.enum_values  # type: ignore
+            ]
+            if config_type.kind == ConfigTypeKind.ENUM
+            else None
+        ),
+        fields=(
+            [snap_from_field(name, field) for name, field in config_type.fields.items()]  # type: ignore
+            if ConfigTypeKind.has_fields(config_type.kind)
+            else None
+        ),
         scalar_kind=config_type.scalar_kind if config_type.kind == ConfigTypeKind.SCALAR else None,  # type: ignore
-        field_aliases=config_type.field_aliases  # type: ignore
-        if config_type.kind == ConfigTypeKind.STRICT_SHAPE
-        else None,
+        field_aliases=(
+            config_type.field_aliases  # type: ignore
+            if config_type.kind == ConfigTypeKind.STRICT_SHAPE
+            else None
+        ),
     )
 
 

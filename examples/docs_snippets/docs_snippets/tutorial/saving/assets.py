@@ -1,7 +1,9 @@
+from typing import List
+
 import pandas as pd
 import requests
 
-from dagster import MetadataValue, Output, asset, get_dagster_logger
+from dagster import AssetExecutionContext, MetadataValue, asset, get_dagster_logger
 
 
 # start_update_asset
@@ -9,7 +11,7 @@ from dagster import MetadataValue, Output, asset, get_dagster_logger
     group_name="hackernews",
     io_manager_key="database_io_manager",  # Addition: `io_manager_key` specified
 )
-def topstories(topstory_ids):
+def topstories(context: AssetExecutionContext, topstory_ids: List) -> pd.DataFrame:
     logger = get_dagster_logger()
 
     results = []
@@ -22,15 +24,16 @@ def topstories(topstory_ids):
         if len(results) % 20 == 0:
             logger.info(f"Got {len(results)} items so far.")
 
-    df = pd.DataFrame(results).drop(["kids"], axis=1)
+    df = pd.DataFrame(results)
 
-    return Output(
-        value=df,
+    context.add_output_metadata(
         metadata={
             "num_records": len(df),
             "preview": MetadataValue.md(df.head().to_markdown()),
-        },
+        }
     )
+
+    return df
 
 
 # end_update_asset

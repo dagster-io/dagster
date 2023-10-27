@@ -202,11 +202,20 @@ airbyte_assets = with_resources(
 
 Once you have loaded your Airbyte assets into Dagster, you can create assets which depend on them. These can be other assets pulled in from external sources such as [dbt](/integrations/dbt) or assets defined in Python code.
 
-In this case, we have an Airbyte connection which is storing data in the `stargazers` table in our Snowflake warehouse. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
+<TabGroup>
+
+<TabItem name="With an I/O manager">
+
+In this case, we have an Airbyte connection that stores data in the `stargazers` table in our Snowflake warehouse. We specify the output [I/O manager](/concepts/io-management/io-managers) to tell downstream assets how to retrieve the data.
 
 ```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=8
 import json
-from dagster import asset, Definitions, define_asset_job, AssetSelection
+from dagster import (
+    AssetSelection,
+    Definitions,
+    asset,
+    define_asset_job,
+)
 from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 import pandas as pd
@@ -240,6 +249,60 @@ defs = Definitions(
     resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
 )
 ```
+
+</TabItem>
+
+<TabItem name="Without an I/O manager">
+
+In this case, we have an Airbyte connection that stores data in the `stargazers` table in our Snowflake warehouse. Since we are not using an I/O manager to fetch the data in downstream assets, we will use `deps` to define dependencies. Then within the downstream asset, we can fetch the data if necessary or launch other commands that work with data in external processes.
+
+```python startafter=start_with_deps_add_downstream_assets endbefore=end_with_deps_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=8
+import json
+from dagster import (
+    AssetSelection,
+    AssetKey,
+    Definitions,
+    asset,
+    define_asset_job,
+)
+from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
+from dagster_snowflake import SnowflakeResource
+
+airbyte_instance = AirbyteResource(
+    host="localhost",
+    port="8000",
+)
+
+airbyte_assets = load_assets_from_airbyte_instance(
+    airbyte_instance,
+)
+
+@asset(deps=[AssetKey("stargazers")])
+def stargazers_file(snowflake: SnowflakeResource):
+    with snowflake.get_connection() as conn:
+        stargazers = conn.cursor.execute(
+            "SELECT * FROM STARGAZERS"
+        ).fetch_pandas_all()
+    with open("stargazers.json", "w", encoding="utf8") as f:
+        f.write(json.dumps(stargazers.to_json(), indent=2))
+
+# only run the airbyte syncs necessary to materialize stargazers_file
+my_upstream_job = define_asset_job(
+    "my_upstream_job",
+    AssetSelection.keys("stargazers_file")
+    .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
+    .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
+)
+
+defs = Definitions(
+    jobs=[my_upstream_job],
+    assets=[airbyte_assets, stargazers_file],
+    resources={"snowflake": SnowflakeResource(...)},
+)
+```
+
+</TabItem>
+</TabGroup>
 
 ---
 

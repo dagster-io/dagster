@@ -13,11 +13,11 @@ from dagster import (
     job,
     op,
     repository,
-    root_input_manager,
 )
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.storage.input_manager import input_manager
 
 
 @op
@@ -180,16 +180,16 @@ def test_unsatisfied_input_use_config():
     assert subset_result.output_for_node("end") == 4
 
 
-def test_unsatisfied_input_use_root_input_manager():
-    @root_input_manager(input_config_schema=int)
+def test_unsatisfied_input_use_input_manager():
+    @input_manager(input_config_schema=int)
     def config_io_man(context):
         return context.config
 
-    @op(ins={"x": In(root_manager_key="my_loader")})
-    def start(_, x):
+    @op(ins={"x": In(input_manager_key="my_loader")})
+    def start(x):
         return x
 
-    @op(ins={"x": In(root_manager_key="my_loader")})
+    @op
     def end(_, x):
         return x
 
@@ -209,7 +209,7 @@ def test_unsatisfied_input_use_root_input_manager():
     # test to ensure that if start is not being executed its input config is still allowed (and ignored)
     subset_result = full_job.execute_in_process(
         run_config={
-            "ops": {"end": {"inputs": {"x": 1}}},
+            "ops": {"start": {"inputs": {"x": 4}}, "end": {"inputs": {"x": {"value": 1}}}},
         },
         op_selection=["end"],
     )

@@ -3,18 +3,18 @@ import hashlib
 import json
 import random
 import string
-from collections import namedtuple
-from typing import Any, List, Mapping, Optional, Sequence
+from enum import Enum
+from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 import kubernetes
 from dagster import (
     Array,
     BoolSource,
+    Enum as DagsterEnum,
     Field,
     Noneable,
     StringSource,
-    __version__ as dagster_version,
 )
 from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
@@ -23,10 +23,10 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
-from .utils import sanitize_k8s_label
+from .utils import get_common_labels, sanitize_k8s_label
 
 # To retry step worker, users should raise RetryRequested() so that the dagster system is aware of the
-# retry. As an example, see retry_pipeline in dagster_test.test_project.test_pipelines.repo
+# retry. As an example, see retry_job in dagster_test.test_project.test_jobs.repo
 # To override this config, user can specify UserDefinedDagsterK8sConfig.
 DEFAULT_K8S_JOB_BACKOFF_LIMIT = 0
 
@@ -51,6 +51,16 @@ MAX_K8S_NAME_LEN = 63
 K8S_RESOURCE_REQUIREMENTS_KEY = "dagster-k8s/resource_requirements"
 K8S_RESOURCE_REQUIREMENTS_SCHEMA = Shape({"limits": Permissive(), "requests": Permissive()})
 
+
+class K8sConfigMergeBehavior(Enum):
+    SHALLOW = (  # Top-level keys in each of 'container_config' / 'pod_spec_config' are replaced
+        "SHALLOW"
+    )
+    DEEP = (  # Dictionaries are deep-merged, lists are appended after removing values that are already present
+        "DEEP"
+    )
+
+
 USER_DEFINED_K8S_CONFIG_KEY = "dagster-k8s/config"
 USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
     {
@@ -60,6 +70,10 @@ USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
         "job_config": Permissive(),
         "job_metadata": Permissive(),
         "job_spec_config": Permissive(),
+        "merge_behavior": Field(
+            DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
+            is_required=False,
+        ),
     }
 )
 
@@ -70,31 +84,39 @@ DEFAULT_JOB_SPEC_CONFIG = {
 
 
 class UserDefinedDagsterK8sConfig(
-    namedtuple(
+    NamedTuple(
         "_UserDefinedDagsterK8sConfig",
-        (
-            "container_config pod_template_spec_metadata pod_spec_config job_config job_metadata"
-            " job_spec_config"
-        ),
+        [
+            ("container_config", Mapping[str, Any]),
+            ("pod_template_spec_metadata", Mapping[str, Any]),
+            ("pod_spec_config", Mapping[str, Any]),
+            ("job_config", Mapping[str, Any]),
+            ("job_metadata", Mapping[str, Any]),
+            ("job_spec_config", Mapping[str, Any]),
+            ("merge_behavior", K8sConfigMergeBehavior),
+        ],
     )
 ):
     def __new__(
         cls,
-        container_config=None,
-        pod_template_spec_metadata=None,
-        pod_spec_config=None,
-        job_config=None,
-        job_metadata=None,
-        job_spec_config=None,
+        container_config: Optional[Mapping[str, Any]] = None,
+        pod_template_spec_metadata: Optional[Mapping[str, Any]] = None,
+        pod_spec_config: Optional[Mapping[str, Any]] = None,
+        job_config: Optional[Mapping[str, Any]] = None,
+        job_metadata: Optional[Mapping[str, Any]] = None,
+        job_spec_config: Optional[Mapping[str, Any]] = None,
+        merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.SHALLOW,
     ):
-        container_config = check.opt_dict_param(container_config, "container_config", key_type=str)
-        pod_template_spec_metadata = check.opt_dict_param(
+        container_config = check.opt_mapping_param(
+            container_config, "container_config", key_type=str
+        )
+        pod_template_spec_metadata = check.opt_mapping_param(
             pod_template_spec_metadata, "pod_template_spec_metadata", key_type=str
         )
-        pod_spec_config = check.opt_dict_param(pod_spec_config, "pod_spec_config", key_type=str)
-        job_config = check.opt_dict_param(job_config, "job_config", key_type=str)
-        job_metadata = check.opt_dict_param(job_metadata, "job_metadata", key_type=str)
-        job_spec_config = check.opt_dict_param(job_spec_config, "job_spec_config", key_type=str)
+        pod_spec_config = check.opt_mapping_param(pod_spec_config, "pod_spec_config", key_type=str)
+        job_config = check.opt_mapping_param(job_config, "job_config", key_type=str)
+        job_metadata = check.opt_mapping_param(job_metadata, "job_metadata", key_type=str)
+        job_spec_config = check.opt_mapping_param(job_spec_config, "job_spec_config", key_type=str)
 
         if container_config:
             container_config = k8s_snake_case_dict(kubernetes.client.V1Container, container_config)
@@ -124,6 +146,9 @@ class UserDefinedDagsterK8sConfig(
             job_config=job_config,
             job_metadata=job_metadata,
             job_spec_config=job_spec_config,
+            merge_behavior=check.inst_param(
+                merge_behavior, "merge_behavior", K8sConfigMergeBehavior
+            ),
         )
 
     def to_dict(self):
@@ -134,6 +159,7 @@ class UserDefinedDagsterK8sConfig(
             "job_config": self.job_config,
             "job_metadata": self.job_metadata,
             "job_spec_config": self.job_spec_config,
+            "merge_behavior": self.merge_behavior.value,
         }
 
     @classmethod
@@ -145,6 +171,9 @@ class UserDefinedDagsterK8sConfig(
             job_config=config_dict.get("job_config"),
             job_metadata=config_dict.get("job_metadata"),
             job_spec_config=config_dict.get("job_spec_config"),
+            merge_behavior=K8sConfigMergeBehavior(
+                config_dict.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
+            ),
         )
 
 
@@ -184,9 +213,9 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
                 result,
             )
 
-        user_defined_k8s_config = result.value
+        user_defined_k8s_config = check.not_none(result.value)
 
-    container_config = user_defined_k8s_config.get("container_config", {})  # type: ignore
+    container_config = user_defined_k8s_config.get("container_config", {})
 
     # Backcompat for resource requirements key
     if K8S_RESOURCE_REQUIREMENTS_KEY in tags:
@@ -197,11 +226,14 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
 
     return UserDefinedDagsterK8sConfig(
         container_config=container_config,
-        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),  # type: ignore
-        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),  # type: ignore
-        job_config=user_defined_k8s_config.get("job_config"),  # type: ignore
-        job_metadata=user_defined_k8s_config.get("job_metadata"),  # type: ignore
-        job_spec_config=user_defined_k8s_config.get("job_spec_config"),  # type: ignore
+        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),
+        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
+        job_config=user_defined_k8s_config.get("job_config"),
+        job_metadata=user_defined_k8s_config.get("job_metadata"),
+        job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        merge_behavior=K8sConfigMergeBehavior(
+            user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
+        ),
     )
 
 
@@ -213,13 +245,26 @@ def get_job_name_from_run_id(run_id, resume_attempt_number=None):
 
 @whitelist_for_serdes
 class DagsterK8sJobConfig(
-    namedtuple(
+    NamedTuple(
         "_K8sJobTaskConfig",
-        (
-            "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
-            "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-            "volume_mounts volumes labels resources scheduler_name security_context"
-        ),
+        [
+            ("job_image", Optional[str]),
+            ("dagster_home", Optional[str]),
+            ("image_pull_policy", str),
+            ("image_pull_secrets", Optional[Sequence[Mapping[str, str]]]),
+            ("service_account_name", Optional[str]),
+            ("instance_config_map", Optional[str]),
+            ("postgres_password_secret", Optional[str]),
+            ("env_config_maps", Sequence[str]),
+            ("env_secrets", Sequence[str]),
+            ("env_vars", Sequence[str]),
+            ("volume_mounts", Sequence[Mapping[str, Any]]),
+            ("volumes", Sequence[Mapping[str, Any]]),
+            ("labels", Mapping[str, str]),
+            ("resources", Mapping[str, Any]),
+            ("scheduler_name", Optional[str]),
+            ("security_context", Mapping[str, Any]),
+        ],
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -231,7 +276,7 @@ class DagsterK8sJobConfig(
             facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
             ``"Always"``. See:
             https://kubernetes.io/docs/concepts/containers/images/#updating-images.
-        image_pull_secrets (Optional[List[Dict[str, str]]]): Optionally, a list of dicts, each of
+        image_pull_secrets (Optional[Sequence[Mapping[str, str]]]): Optionally, a list of dicts, each of
             which corresponds to a Kubernetes ``LocalObjectReference`` (e.g.,
             ``{'name': 'myRegistryName'}``). This allows you to specify the ```imagePullSecrets`` on
             a pod basis. Typically, these will be provided through the service account, when needed,
@@ -246,78 +291,80 @@ class DagsterK8sJobConfig(
         postgres_password_secret (Optional[str]): The name of the Kubernetes Secret where the postgres
             password can be retrieved. Will be mounted and supplied as an environment variable to
             the Job Pod.
-        env_config_maps (Optional[List[str]]): A list of custom ConfigMapEnvSource names from which to
+        env_config_maps (Optional[Sequence[str]]): A list of custom ConfigMapEnvSource names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
             https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container
-        env_secrets (Optional[List[str]]): A list of custom Secret names from which to
+        env_secrets (Optional[Sequence[str]]): A list of custom Secret names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
             https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
-        env_vars (Optional[List[str]]): A list of environment variables to inject into the Job.
+        env_vars (Optional[Sequence[str]]): A list of environment variables to inject into the Job.
             Default: ``[]``. See: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
         job_image (Optional[str]): The docker image to use. The Job container will be launched with this
             image. Should not be specified if using userDeployments.
-        volume_mounts (Optional[List[Permissive]]): A list of volume mounts to include in the job's
+        volume_mounts (Optional[Sequence[Permissive]]): A list of volume mounts to include in the job's
             container. Default: ``[]``. See:
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
         volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
-        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
+        labels (Optional[Mapping[str, str]]): Additional labels that should be included in the Job's Pod. See:
             https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-        resources (Optional[Dict[str, Any]]) Compute resource requirements for the container. See:
+        resources (Optional[Mapping[str, Any]]) Compute resource requirements for the container. See:
             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         scheduler_name (Optional[str]): Use a custom Kubernetes scheduler for launched Pods. See:
             https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
-        security_context (Optional[Dict[str,Any]]): Security settings for the container. See:
+        security_context (Optional[Mapping[str,Any]]): Security settings for the container. See:
             https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
     """
 
     def __new__(
         cls,
-        job_image=None,
-        dagster_home=None,
-        image_pull_policy=None,
-        image_pull_secrets=None,
-        service_account_name=None,
-        instance_config_map=None,
-        postgres_password_secret=None,
-        env_config_maps=None,
-        env_secrets=None,
-        env_vars=None,
-        volume_mounts=None,
-        volumes=None,
-        labels=None,
-        resources=None,
-        scheduler_name=None,
-        security_context=None,
+        job_image: Optional[str] = None,
+        dagster_home: Optional[str] = None,
+        image_pull_policy: Optional[str] = None,
+        image_pull_secrets: Optional[Sequence[Mapping[str, str]]] = None,
+        service_account_name: Optional[str] = None,
+        instance_config_map: Optional[str] = None,
+        postgres_password_secret: Optional[str] = None,
+        env_config_maps: Optional[Sequence[str]] = None,
+        env_secrets: Optional[Sequence[str]] = None,
+        env_vars: Optional[Sequence[str]] = None,
+        volume_mounts: Optional[Sequence[Mapping[str, Any]]] = None,
+        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        labels: Optional[Mapping[str, str]] = None,
+        resources: Optional[Mapping[str, Any]] = None,
+        scheduler_name: Optional[str] = None,
+        security_context: Optional[Mapping[str, Any]] = None,
     ):
-        return super(DagsterK8sJobConfig, cls).__new__(
+        return super().__new__(
             cls,
             job_image=check.opt_str_param(job_image, "job_image"),
             dagster_home=check.opt_str_param(dagster_home, "dagster_home"),
             image_pull_policy=check.opt_str_param(image_pull_policy, "image_pull_policy", "Always"),
-            image_pull_secrets=check.opt_list_param(
-                image_pull_secrets, "image_pull_secrets", of_type=dict
+            image_pull_secrets=check.opt_sequence_param(
+                image_pull_secrets, "image_pull_secrets", of_type=Mapping
             ),
             service_account_name=check.opt_str_param(service_account_name, "service_account_name"),
             instance_config_map=check.opt_str_param(instance_config_map, "instance_config_map"),
             postgres_password_secret=check.opt_str_param(
                 postgres_password_secret, "postgres_password_secret"
             ),
-            env_config_maps=check.opt_list_param(env_config_maps, "env_config_maps", of_type=str),
-            env_secrets=check.opt_list_param(env_secrets, "env_secrets", of_type=str),
-            env_vars=check.opt_list_param(env_vars, "env_vars", of_type=str),
+            env_config_maps=check.opt_sequence_param(
+                env_config_maps, "env_config_maps", of_type=str
+            ),
+            env_secrets=check.opt_sequence_param(env_secrets, "env_secrets", of_type=str),
+            env_vars=check.opt_sequence_param(env_vars, "env_vars", of_type=str),
             volume_mounts=[
                 k8s_snake_case_dict(kubernetes.client.V1VolumeMount, mount)
-                for mount in check.opt_list_param(volume_mounts, "volume_mounts")
+                for mount in check.opt_sequence_param(volume_mounts, "volume_mounts")
             ],
             volumes=[
                 k8s_snake_case_dict(kubernetes.client.V1Volume, volume)
-                for volume in check.opt_list_param(volumes, "volumes")
+                for volume in check.opt_sequence_param(volumes, "volumes")
             ],
-            labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
-            resources=check.opt_dict_param(resources, "resources", key_type=str),
+            labels=check.opt_mapping_param(labels, "labels", key_type=str, value_type=str),
+            resources=check.opt_mapping_param(resources, "resources", key_type=str),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
-            security_context=check.opt_dict_param(security_context, "security_context"),
+            security_context=check.opt_mapping_param(security_context, "security_context"),
         )
 
     @classmethod
@@ -385,7 +432,16 @@ class DagsterK8sJobConfig(
                     ),
                 ),
                 "run_k8s_config": Field(
-                    USER_DEFINED_K8S_CONFIG_SCHEMA,
+                    Shape(
+                        {
+                            "container_config": Permissive(),
+                            "pod_template_spec_metadata": Permissive(),
+                            "pod_spec_config": Permissive(),
+                            "job_config": Permissive(),
+                            "job_metadata": Permissive(),
+                            "job_spec_config": Permissive(),
+                        }
+                    ),
                     is_required=False,
                     description="Raw Kubernetes configuration for launched runs.",
                 ),
@@ -568,6 +624,10 @@ class DagsterK8sJobConfig(
                             "container_config": Permissive(),
                             "pod_spec_config": Permissive(),
                             "pod_template_spec_metadata": Permissive(),
+                            "merge_behavior": Field(
+                                DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
+                                is_required=False,
+                            ),
                         }
                     ),
                     is_required=False,
@@ -616,8 +676,7 @@ class DagsterK8sJobConfig(
         return self._replace(job_image=image)
 
     @staticmethod
-    def from_dict(config=None):
-        check.opt_dict_param(config, "config")
+    def from_dict(config: Mapping[str, Any]):
         return DagsterK8sJobConfig(**config)
 
 
@@ -677,13 +736,7 @@ def construct_dagster_k8s_job(
         % (len(pod_name), MAX_K8S_NAME_LEN),
     )
 
-    # See: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-    k8s_common_labels = {
-        "app.kubernetes.io/name": "dagster",
-        "app.kubernetes.io/instance": "dagster",
-        "app.kubernetes.io/version": sanitize_k8s_label(dagster_version),
-        "app.kubernetes.io/part-of": "dagster",
-    }
+    k8s_common_labels = get_common_labels()
 
     if component:
         k8s_common_labels["app.kubernetes.io/component"] = component
@@ -711,7 +764,7 @@ def construct_dagster_k8s_job(
             }
         )
 
-    container_config = copy.deepcopy(user_defined_k8s_config.container_config)
+    container_config = copy.deepcopy(dict(user_defined_k8s_config.container_config))
 
     if args is not None:
         container_config["args"] = args
@@ -728,7 +781,7 @@ def construct_dagster_k8s_job(
 
     container_name = container_config.pop("name", "dagster")
 
-    volume_mounts = job_config.volume_mounts + user_defined_k8s_volume_mounts
+    volume_mounts = [*job_config.volume_mounts, *user_defined_k8s_volume_mounts]
 
     resources = user_defined_resources if user_defined_resources else job_config.resources
 
@@ -741,22 +794,24 @@ def construct_dagster_k8s_job(
             "image": job_image,
             "image_pull_policy": job_config.image_pull_policy,
             "env": [*env, *job_config.env, *user_defined_env_vars],
-            "env_from": job_config.env_from_sources + user_defined_env_from,
+            "env_from": [*job_config.env_from_sources, *user_defined_env_from],
             "volume_mounts": volume_mounts,
             "resources": resources,
         },
         {"security_context": security_context} if security_context else {},
     )
 
-    pod_spec_config = copy.deepcopy(user_defined_k8s_config.pod_spec_config)
+    pod_spec_config = copy.deepcopy(dict(user_defined_k8s_config.pod_spec_config))
 
     user_defined_volumes = pod_spec_config.pop("volumes", [])
 
-    volumes = job_config.volumes + user_defined_volumes
+    volumes = [*job_config.volumes, *user_defined_volumes]
 
     # If the user has defined custom labels, remove them from the pod_template_spec_metadata
     # key and merge them with the dagster labels
-    pod_template_spec_metadata = copy.deepcopy(user_defined_k8s_config.pod_template_spec_metadata)
+    pod_template_spec_metadata = copy.deepcopy(
+        dict(user_defined_k8s_config.pod_template_spec_metadata)
+    )
     user_defined_pod_template_labels = pod_template_spec_metadata.pop("labels", {})
 
     service_account_name = pod_spec_config.pop(
@@ -773,16 +828,16 @@ def construct_dagster_k8s_job(
             {
                 "name": pod_name,
                 "labels": merge_dicts(
-                    dagster_labels, user_defined_pod_template_labels, job_config.labels
+                    dagster_labels, job_config.labels, user_defined_pod_template_labels
                 ),
             },
         ),
         "spec": merge_dicts(
+            {"restart_policy": "Never"},
             pod_spec_config,
             {
                 "image_pull_secrets": job_config.image_pull_secrets,
                 "service_account_name": service_account_name,
-                "restart_policy": "Never",
                 "containers": [container_config] + user_defined_containers,
                 "volumes": volumes,
             },
@@ -796,7 +851,7 @@ def construct_dagster_k8s_job(
         {"template": template},
     )
 
-    user_defined_job_metadata = copy.deepcopy(user_defined_k8s_config.job_metadata)
+    user_defined_job_metadata = copy.deepcopy(dict(user_defined_k8s_config.job_metadata))
     user_defined_job_labels = user_defined_job_metadata.pop("labels", {})
 
     job = k8s_model_from_dict(

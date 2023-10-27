@@ -39,11 +39,11 @@ def get_noop_pipeline():
     return noop_job
 
 
-def test_empty_pipeline_snap_snapshot(snapshot):
+def test_empty_job_snap_snapshot(snapshot):
     snapshot.assert_match(serialize_pp(JobSnapshot.from_job_def(get_noop_pipeline())))
 
 
-def test_empty_pipeline_snap_props(snapshot):
+def test_empty_job_snap_props(snapshot):
     job_snapshot = JobSnapshot.from_job_def(get_noop_pipeline())
 
     assert job_snapshot.name == "noop_job"
@@ -56,7 +56,7 @@ def test_empty_pipeline_snap_props(snapshot):
     snapshot.assert_match(create_job_snapshot_id(job_snapshot))
 
 
-def test_pipeline_snap_all_props(snapshot):
+def test_job_snap_all_props(snapshot):
     @op
     def noop_op(_):
         pass
@@ -338,7 +338,7 @@ def test_deserialize_node_def_snaps_selector():
     )
 
 
-def test_deserialize_solid_def_snaps_permissive():
+def test_deserialize_op_def_snaps_permissive():
     @op(config_schema=Field(Permissive({"foo": Field(str)})))
     def noop_op(_):
         pass

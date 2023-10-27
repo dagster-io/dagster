@@ -1,11 +1,11 @@
 import copy
-from unittest import mock
+import tempfile
 
 import yaml
 from dagster import AssetMaterialization, Output, job, op, repository
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import execute_run
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -13,8 +13,7 @@ from dagster._utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
-    infer_pipeline_selector,
-    infer_repository_selector,
+    infer_job_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -157,6 +156,16 @@ query PipelineRunsRootQuery($filter: RunsFilter!) {
 }
 """
 
+RUN_IDS_QUERY = """
+query RunIds($filter: RunsFilter, $cursor: String, $limit: Int) {
+  runIdsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
+    ... on RunIds {
+      results
+    }
+  }
+}
+"""
+
 FILTERED_RUN_COUNT_QUERY = """
 query PipelineRunsRootQuery($filter: RunsFilter!) {
   pipelineRunsOrError(filter: $filter) {
@@ -194,27 +203,6 @@ query RunGroupQuery($runId: ID!) {
 """
 
 
-ALL_RUN_GROUPS_QUERY = """
-{
-  runGroupsOrError {
-    results {
-      rootRunId
-      runs {
-        runId
-        pipelineSnapshotId
-        pipeline {
-          __typename
-          ... on PipelineReference {
-            name
-            solidSelection
-          }
-        }
-      }
-    }
-  }
-}
-"""
-
 REPOSITORY_RUNS_QUERY = """
 query RepositoryRunsQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
@@ -249,6 +237,20 @@ query AssetRunsQuery($assetKey: AssetKeyInput!) {
             }
         }
     }
+}
+"""
+
+RUN_CONCURRENCY_QUERY = """
+{
+  pipelineRunsOrError {
+    ... on PipelineRuns {
+      results {
+        runId
+        status
+        hasConcurrencyKeySlots
+      }
+    }
+  }
 }
 """
 
@@ -292,7 +294,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         # other code in this file which reads itself to load a repo
         from .utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         payload_one = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -390,21 +392,12 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         )
         assert result.data["deletePipelineRun"]["__typename"] == "RunNotFoundError"
 
-    def test_tag_key_error(self, graphql_context: WorkspaceRequestContext):
-        with mock.patch(
-            "dagster._core.storage.runs.sql_run_storage.SqlRunStorage.get_run_tag_keys",
-        ) as get_run_tag_keys_mock:
-            with instance_for_test():
-                get_run_tag_keys_mock.side_effect = Exception("wah wah")
-                all_tag_keys_result = execute_dagster_graphql(graphql_context, ALL_TAG_KEYS_QUERY)
-                all_tag_keys_result.data["runTagKeysOrError"]["__typename"] == "PythonError"  # type: ignore
-
     def test_run_config(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
         # other code in this file which reads itself to load a repo
         from .utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         sync_execute_get_run_log_data(
             context=graphql_context,
@@ -506,7 +499,7 @@ def test_runs_over_time():
         foo_run_id = repo_1.get_job("foo_job").execute_in_process(instance=instance).run_id
         evolve_a_run_id = (
             repo_1.get_job("evolving_job")
-            .get_job_def_for_subset_selection(["op_A"])
+            .get_subset(op_selection={"op_A"})
             .execute_in_process(
                 instance=instance,
             )
@@ -514,7 +507,7 @@ def test_runs_over_time():
         )
         evolve_b_run_id = (
             repo_1.get_job("evolving_job")
-            .get_job_def_for_subset_selection(["op_B"])
+            .get_subset(op_selection={"op_B"})
             .execute_in_process(
                 instance=instance,
             )
@@ -572,130 +565,6 @@ def test_runs_over_time():
                 "name": "evolving_job",
                 "solidSelection": None,
             }
-            # pipeline name changed
-            assert t2_runs[foo_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "foo_job",
-                "solidSelection": None,
-            }
-            # subset no longer valid - b renamed
-            assert t2_runs[evolve_b_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "evolving_job",
-                "solidSelection": None,
-            }
-
-
-def test_run_groups_over_time():
-    with instance_for_test() as instance:
-        repo_1 = get_repo_at_time_1()
-
-        full_evolve_run_id = (
-            repo_1.get_job("evolving_job").execute_in_process(instance=instance).run_id
-        )
-        foo_run_id = repo_1.get_job("foo_job").execute_in_process(instance=instance).run_id
-        evolve_a_run_id = (
-            repo_1.get_job("evolving_job")
-            .get_job_def_for_subset_selection(["op_A"])
-            .execute_in_process(
-                instance=instance,
-            )
-            .run_id
-        )
-        evolve_b_run_id = (
-            repo_1.get_job("evolving_job")
-            .get_job_def_for_subset_selection(["op_B"])
-            .execute_in_process(
-                instance=instance,
-            )
-            .run_id
-        )
-
-        with define_out_of_process_context(
-            __file__, "get_repo_at_time_1", instance
-        ) as context_at_time_1:
-            result = execute_dagster_graphql(context_at_time_1, ALL_RUN_GROUPS_QUERY)
-            assert result.data
-            assert "runGroupsOrError" in result.data
-            assert "results" in result.data["runGroupsOrError"]
-            assert len(result.data["runGroupsOrError"]["results"]) == 4
-
-            t1_runs = {
-                run["runId"]: run
-                for group in result.data["runGroupsOrError"]["results"]
-                for run in group["runs"]
-            }
-
-            # test full_evolve_run_id
-            assert t1_runs[full_evolve_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "evolving_job",
-                "solidSelection": None,
-            }
-
-            # test foo_run_id
-            assert t1_runs[foo_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "foo_job",
-                "solidSelection": None,
-            }
-
-            # test evolve_a_run_id
-            assert t1_runs[evolve_a_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "evolving_job",
-                "solidSelection": None,
-            }
-            assert t1_runs[evolve_a_run_id]["pipelineSnapshotId"]
-
-            # test evolve_b_run_id
-            assert t1_runs[evolve_b_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "evolving_job",
-                "solidSelection": None,
-            }
-
-        with define_out_of_process_context(
-            __file__, "get_repo_at_time_2", instance
-        ) as context_at_time_2:
-            result = execute_dagster_graphql(context_at_time_2, ALL_RUN_GROUPS_QUERY)
-            assert "runGroupsOrError" in result.data
-            assert "results" in result.data["runGroupsOrError"]
-            assert len(result.data["runGroupsOrError"]["results"]) == 4
-
-            t2_runs = {
-                run["runId"]: run
-                for group in result.data["runGroupsOrError"]["results"]
-                for run in group["runs"]
-            }
-
-            # test full_evolve_run_id
-            assert t2_runs[full_evolve_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "evolving_job",
-                "solidSelection": None,
-            }
-
-            # test evolve_a_run_id
-            assert t2_runs[evolve_a_run_id]["pipeline"] == {
-                "__typename": "PipelineSnapshot",
-                "name": "evolving_job",
-                "solidSelection": None,
-            }
-            assert t2_runs[evolve_a_run_id]["pipelineSnapshotId"]
-
-            # names same
-            assert (
-                t1_runs[full_evolve_run_id]["pipeline"]["name"]
-                == t2_runs[evolve_a_run_id]["pipeline"]["name"]
-            )
-
-            # snapshots differ
-            assert (
-                t1_runs[full_evolve_run_id]["pipelineSnapshotId"]
-                != t2_runs[evolve_a_run_id]["pipelineSnapshotId"]
-            )
-
             # pipeline name changed
             assert t2_runs[foo_run_id]["pipeline"] == {
                 "__typename": "PipelineSnapshot",
@@ -849,8 +718,12 @@ def test_filtered_runs_multiple_filters():
 def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
-        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.STARTED).run_id
-        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE).run_id
+        instance.create_run_for_job(  # noqa: B018
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
+        ).run_id
+        instance.create_run_for_job(  # noqa: B018
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
                 context,
@@ -860,6 +733,44 @@ def test_filtered_runs_count():
             assert result.data
             count = result.data["pipelineRunsOrError"]["count"]
             assert count == 1
+
+
+def test_run_ids():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        run_id_1 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
+        ).run_id
+        run_id_2 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        run_id_3 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_3, run_id_2]
+
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}, "limit": 1},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_3]
+
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"cursor": run_id_2},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_1]
 
 
 def test_run_group():
@@ -928,79 +839,6 @@ def test_run_group_not_found():
             ] == "Run group of run {run_id} could not be found.".format(run_id="foo")
 
 
-def test_run_groups():
-    with instance_for_test() as instance:
-        repo = get_repo_at_time_1()
-        foo_job = repo.get_job("foo_job")
-
-        root_run_ids = [foo_job.execute_in_process(instance=instance).run_id for i in range(3)]
-
-        for _ in range(5):
-            for root_run_id in root_run_ids:
-                foo_job.execute_in_process(
-                    tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
-                    instance=instance,
-                )
-
-        with define_out_of_process_context(
-            __file__, "get_repo_at_time_1", instance
-        ) as context_at_time_1:
-            result = execute_dagster_graphql(context_at_time_1, ALL_RUN_GROUPS_QUERY)
-
-            assert result.data
-            assert "runGroupsOrError" in result.data
-            assert "results" in result.data["runGroupsOrError"]
-            assert len(result.data["runGroupsOrError"]["results"]) == 3
-            for run_group in result.data["runGroupsOrError"]["results"]:
-                assert run_group["rootRunId"] in root_run_ids
-                assert len(run_group["runs"]) == 6
-
-
-def test_repository_batching():
-    with instance_for_test() as instance:
-        from .utils import sync_execute_get_run_log_data
-
-        def _execute_run(graphql_context, pipeline_name):
-            payload = sync_execute_get_run_log_data(
-                context=graphql_context,
-                variables={
-                    "executionParams": {
-                        "selector": infer_pipeline_selector(graphql_context, pipeline_name)
-                    }
-                },
-            )
-            return payload["run"]["runId"]
-
-        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
-            foo_run_ids = [_execute_run(context, "foo_job") for _ in range(3)]
-            evolving_run_ids = [_execute_run(context, "evolving_job") for _ in range(2)]
-            traced_counter.set(Counter())
-            result = execute_dagster_graphql(
-                context,
-                REPOSITORY_RUNS_QUERY,
-                variables={"repositorySelector": infer_repository_selector(context)},
-            )
-            assert result.data
-            assert "repositoryOrError" in result.data
-            assert "pipelines" in result.data["repositoryOrError"]
-            pipelines = result.data["repositoryOrError"]["pipelines"]
-            assert len(pipelines) == 2
-            pipeline_runs = {pipeline["name"]: pipeline["runs"] for pipeline in pipelines}
-            assert len(pipeline_runs["foo_job"]) == 3
-            assert len(pipeline_runs["evolving_job"]) == 2
-            assert set(foo_run_ids) == set(run["runId"] for run in pipeline_runs["foo_job"])
-            assert set(evolving_run_ids) == set(
-                run["runId"] for run in pipeline_runs["evolving_job"]
-            )
-            counter = traced_counter.get()
-            counts = counter.counts()
-            assert counts
-            assert len(counts) == 1
-            # We should have a single batch call to fetch run records, instead of 3 separate calls
-            # to fetch run records (which is fetched to instantiate GrapheneRun)
-            assert counts.get("DagsterInstance.get_run_records") == 1
-
-
 def test_asset_batching():
     with instance_for_test() as instance:
         repo = get_asset_repo()
@@ -1021,3 +859,42 @@ def test_asset_batching():
             counts = counter.counts()
             assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1
+
+
+def test_run_has_concurrency_slots():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+            }
+        ) as instance:
+            repo = get_asset_repo()
+            instance.event_log_storage.set_concurrency_slots("foo", 1)
+            run_id = instance.create_run_for_job(
+                repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+            ).run_id
+
+            with define_out_of_process_context(__file__, "asset_repo", instance) as context:
+                result = execute_dagster_graphql(context, RUN_CONCURRENCY_QUERY)
+                assert result.data
+                assert len(result.data["pipelineRunsOrError"]["results"]) == 1
+                assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
+                assert not result.data["pipelineRunsOrError"]["results"][0][
+                    "hasConcurrencyKeySlots"
+                ]
+
+            claim = instance.event_log_storage.claim_concurrency_slot(
+                "foo", run_id, "fake_step_key"
+            )
+            assert claim.is_claimed
+
+            with define_out_of_process_context(__file__, "asset_repo", instance) as context:
+                result = execute_dagster_graphql(context, RUN_CONCURRENCY_QUERY)
+                assert result.data
+                assert len(result.data["pipelineRunsOrError"]["results"]) == 1
+                assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
+                assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]

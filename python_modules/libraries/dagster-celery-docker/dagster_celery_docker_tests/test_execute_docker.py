@@ -4,6 +4,7 @@
 import os
 from contextlib import contextmanager
 
+import pytest
 from dagster._core.execution.api import execute_job
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
@@ -27,6 +28,7 @@ def celery_docker_postgres_instance(overrides=None):
         yield instance
 
 
+@pytest.mark.integration
 def test_execute_celery_docker_image_on_executor_config(aws_creds):
     docker_image = get_test_project_docker_image()
     docker_config = {
@@ -75,7 +77,8 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
             assert result.output_for_node("get_environment") == "here!"
 
 
-def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
+@pytest.mark.integration
+def test_execute_celery_docker_image_on_job_config(aws_creds):
     docker_image = get_test_project_docker_image()
     docker_config = {
         "network": "container:test-postgres-db-celery-docker",

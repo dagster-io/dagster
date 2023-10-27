@@ -37,6 +37,11 @@ class GqlAssetKey(TypedDict):
     path: Sequence[str]
 
 
+class GqlAssetCheckHandle(TypedDict):
+    assetKey: GqlAssetKey
+    name: str
+
+
 def main_repo_location_name() -> str:
     return "test_location"
 
@@ -102,14 +107,26 @@ def execute_dagster_graphql_and_finish_runs(
 
 @contextmanager
 def define_out_of_process_context(
-    python_file: str, fn_name: str, instance: DagsterInstance, read_only: bool = False
+    python_file: str,
+    fn_name: str,
+    instance: DagsterInstance,
+    read_only: bool = False,
+    read_only_locations: Optional[Mapping[str, bool]] = None,
 ) -> Iterator[WorkspaceRequestContext]:
     check.inst_param(instance, "instance", DagsterInstance)
 
     with define_out_of_process_workspace(
         python_file, fn_name, instance, read_only=read_only
     ) as workspace_process_context:
-        yield workspace_process_context.create_request_context()
+        yield WorkspaceRequestContext(
+            instance=instance,
+            workspace_snapshot=workspace_process_context.create_snapshot(),
+            process_context=workspace_process_context,
+            version=workspace_process_context.version,
+            source=None,
+            read_only=read_only,
+            read_only_locations=read_only_locations,
+        )
 
 
 def define_out_of_process_workspace(
@@ -157,33 +174,20 @@ def infer_repository_selector(graphql_context: WorkspaceRequestContext) -> Selec
     }
 
 
-def infer_job_or_pipeline_selector(
+def infer_job_selector(
     graphql_context: WorkspaceRequestContext,
-    pipeline_name: str,
-    solid_selection: Optional[Sequence[str]] = None,
+    job_name: str,
+    op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[GqlAssetKey]] = None,
+    asset_check_selection: Optional[Sequence[GqlAssetCheckHandle]] = None,
 ) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
-            "pipelineName": pipeline_name,
-            "solidSelection": solid_selection,
+            "pipelineName": job_name,
+            "solidSelection": op_selection,
             "assetSelection": asset_selection,
-        }
-    )
-    return selector
-
-
-def infer_pipeline_selector(
-    graphql_context: WorkspaceRequestContext,
-    pipeline_name: str,
-    solid_selection: Optional[Sequence[str]] = None,
-) -> Selector:
-    selector = infer_repository_selector(graphql_context)
-    selector.update(
-        {
-            "pipelineName": pipeline_name,
-            "solidSelection": solid_selection,
+            "assetCheckSelection": asset_check_selection,
         }
     )
     return selector

@@ -1,9 +1,15 @@
+import json
 import time
 from contextlib import contextmanager
+from typing import Any, Dict, Mapping, Optional
 
-from dagster import resource
+import dagster._check as check
+import yaml
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
+from pydantic import Field
 
 from .configs import define_dataproc_create_cluster_config
 from .types import DataprocError
@@ -12,7 +18,7 @@ TWENTY_MINUTES = 20 * 60
 DEFAULT_ITER_TIME_SEC = 5
 
 
-class DataprocResource:
+class DataprocClient:
     """Builds a client to the dataproc API."""
 
     def __init__(self, config):
@@ -35,18 +41,14 @@ class DataprocResource:
     def dataproc_clusters(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            self.dataproc.projects()
-            .regions()
-            .clusters()
+            self.dataproc.projects().regions().clusters()
         )
 
     @property
     def dataproc_jobs(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            self.dataproc.projects()
-            .regions()
-            .jobs()
+            self.dataproc.projects().regions().jobs()
         )
 
     def create_cluster(self):
@@ -68,7 +70,7 @@ class DataprocResource:
             cluster = self.get_cluster()
             return cluster["status"]["state"] in {"RUNNING", "UPDATING"}
 
-        done = DataprocResource._iter_and_sleep_until_ready(iter_fn)
+        done = DataprocClient._iter_and_sleep_until_ready(iter_fn)
         if not done:
             cluster = self.get_cluster()
             raise DataprocError(
@@ -112,7 +114,7 @@ class DataprocResource:
 
             return False
 
-        done = DataprocResource._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
+        done = DataprocClient._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
         if not done:
             job = self.get_job(job_id)
             raise DataprocError("Job run timed out: %s" % str(job["status"]))
@@ -149,9 +151,116 @@ class DataprocResource:
             self.delete_cluster()
 
 
+class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """Resource for connecting to a Dataproc cluster.
+
+    Example:
+        .. code-block::
+
+            @asset
+            def my_asset(dataproc: DataprocResource):
+                with dataproc.get_client() as client:
+                    # client is a dagster_gcp.DataprocClient
+                    ...
+    """
+
+    project_id: str = Field(
+        description=(
+            "Required. Project ID for the project which the client acts on behalf of. Will be"
+            " passed when creating a dataset/job."
+        )
+    )
+    region: str = Field(description="The GCP region.")
+    cluster_name: str = Field(
+        description=(
+            "Required. The cluster name. Cluster names within a project must be unique. Names of"
+            " deleted clusters can be reused."
+        )
+    )
+    cluster_config_yaml_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Full path to a YAML file containing cluster configuration. See"
+            " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
+            " configuration options. Only one of cluster_config_yaml_path,"
+            " cluster_config_json_path, or cluster_config_dict may be provided."
+        ),
+    )
+    cluster_config_json_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Full path to a JSON file containing cluster configuration. See"
+            " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
+            " configuration options. Only one of cluster_config_yaml_path,"
+            " cluster_config_json_path, or cluster_config_dict may be provided."
+        ),
+    )
+    cluster_config_dict: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Python dictionary containing cluster configuration. See"
+            " https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig for"
+            " configuration options. Only one of cluster_config_yaml_path,"
+            " cluster_config_json_path, or cluster_config_dict may be provided."
+        ),
+    )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def _read_yaml_config(self, path: str) -> Mapping[str, Any]:
+        with open(path, "r", encoding="utf8") as f:
+            return yaml.safe_load(f)
+
+    def _read_json_config(self, path: str) -> Mapping[str, Any]:
+        with open(path, "r", encoding="utf8") as f:
+            return json.load(f)
+
+    def _get_cluster_config(self) -> Optional[Mapping[str, Any]]:
+        methods = 0
+        methods += 1 if self.cluster_config_dict is not None else 0
+        methods += 1 if self.cluster_config_json_path is not None else 0
+        methods += 1 if self.cluster_config_yaml_path is not None else 0
+
+        # ensure that at most 1 method is provided
+        check.invariant(
+            methods <= 1,
+            "Dataproc Resource: Incorrect config: Cannot provide cluster config multiple ways."
+            " Choose one of cluster_config_dict, cluster_config_json_path, or"
+            " cluster_config_yaml_path",
+        )
+
+        cluster_config = None
+        if self.cluster_config_json_path:
+            cluster_config = self._read_json_config(self.cluster_config_json_path)
+        elif self.cluster_config_yaml_path:
+            cluster_config = self._read_yaml_config(self.cluster_config_yaml_path)
+        elif self.cluster_config_dict:
+            cluster_config = self.cluster_config_dict
+
+        return cluster_config
+
+    def get_client(self) -> DataprocClient:
+        cluster_config = self._get_cluster_config()
+
+        client_config_dict = {
+            "projectId": self.project_id,
+            "region": self.region,
+            "clusterName": self.cluster_name,
+            "cluster_config": cluster_config,
+        }
+
+        return DataprocClient(config=client_config_dict)
+
+    def get_object_to_set_on_execution_context(self) -> Any:
+        return self.get_client()
+
+
+@dagster_maintained_resource
 @resource(
     config_schema=define_dataproc_create_cluster_config(),
     description="Manage a Dataproc cluster resource",
 )
 def dataproc_resource(context):
-    return DataprocResource(context.resource_config)
+    return DataprocClient(context.resource_config)

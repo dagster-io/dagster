@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import functools
 from typing import Iterator, Optional, Sequence, Union
@@ -23,6 +24,18 @@ def _exact_match(cron_expression: str, dt: datetime.datetime) -> bool:
     """The default croniter match function only checks that the given datetime is within 60 seconds
     of a cron schedule tick. This function checks that the given datetime is exactly on a cron tick.
     """
+    if (
+        cron_expression == "0 0 * * *"
+        and dt.hour == 0
+        and dt.minute == 0
+        and dt.second == 0
+        and dt.microsecond == 0
+    ):
+        return True
+
+    if cron_expression == "0 * * * *" and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0:
+        return True
+
     cron = CroniterShim(
         cron_expression, dt + datetime.timedelta(microseconds=1), ret_type=datetime.datetime
     )
@@ -32,7 +45,9 @@ def _exact_match(cron_expression: str, dt: datetime.datetime) -> bool:
 def is_valid_cron_string(cron_string: str) -> bool:
     if not CroniterShim.is_valid(cron_string):
         return False
-    expanded, _ = CroniterShim.expand(cron_string)
+    # Croniter < 1.4 returns 2 items
+    # Croniter >= 1.4 returns 3 items
+    expanded, *_ = CroniterShim.expand(cron_string)
     # dagster only recognizes cron strings that resolve to 5 parts (e.g. not seconds resolution)
     return len(expanded) == 5
 
@@ -53,12 +68,32 @@ def cron_string_iterator(
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
+    # leap day special casing
+    if cron_string.endswith(" 29 2 *"):
+        min_hour, _ = cron_string.split(" 29 2 *")
+        day_before = f"{min_hour} 28 2 *"
+        # run the iterator for Feb 28th
+        for dt in cron_string_iterator(
+            start_timestamp=start_timestamp,
+            cron_string=day_before,
+            execution_timezone=execution_timezone,
+            start_offset=start_offset,
+        ):
+            # only return on leap years
+            if calendar.isleap(dt.year):
+                # shift 28th back to 29th
+                shifted_dt = dt + datetime.timedelta(days=1)
+                yield shifted_dt
+        return
+
     timezone_str = execution_timezone if execution_timezone else "UTC"
 
     utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
     start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
 
-    cron_parts, nth_weekday_of_month = CroniterShim.expand(cron_string)
+    # Croniter < 1.4 returns 2 items
+    # Croniter >= 1.4 returns 3 items
+    cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
 
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
@@ -176,7 +211,9 @@ def reverse_cron_string_iterator(
     # and matches the cron schedule
     next_date = date_iter.get_next(datetime.datetime)
 
-    cron_parts, _ = CroniterShim.expand(cron_string)
+    # Croniter < 1.4 returns 2 items
+    # Croniter >= 1.4 returns 3 items
+    cron_parts, *_ = CroniterShim.expand(cron_string)
 
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
@@ -263,16 +300,18 @@ def schedule_execution_time_iterator(
     )
 
     if isinstance(cron_schedule, str):
-        yield from cron_string_iterator(
-            start_timestamp, cron_schedule, execution_timezone
-        ) if ascending else reverse_cron_string_iterator(
-            start_timestamp, cron_schedule, execution_timezone
+        yield from (
+            cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
+            if ascending
+            else reverse_cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
         )
     else:
         iterators = [
-            cron_string_iterator(start_timestamp, cron_string, execution_timezone)
-            if ascending
-            else reverse_cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            (
+                cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+                if ascending
+                else reverse_cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            )
             for cron_string in cron_schedule
         ]
         next_dates = [next(it) for it in iterators]

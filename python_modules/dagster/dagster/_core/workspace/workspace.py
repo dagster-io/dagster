@@ -38,8 +38,7 @@ class IWorkspace(ABC):
 
     @abstractmethod
     def get_code_location(self, location_name: str) -> "CodeLocation":
-        """Return the CodeLocation for the given location name, or raise an error if there is an error loading it.
-        """
+        """Return the CodeLocation for the given location name, or raise an error if there is an error loading it."""
 
     @abstractmethod
     def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:

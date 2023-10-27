@@ -4,7 +4,7 @@ from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .repo import csv_hello_world_ops_config
@@ -23,7 +23,7 @@ query RunQuery($runId: ID!) {
 
 class TestReexecution(ExecutingGraphQLContextTestMatrix):
     def test_full_pipeline_reexecution_fs_storage(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        selector = infer_job_selector(graphql_context, "csv_hello_world")
         run_id = make_new_run_id()
         result_one = execute_dagster_graphql(
             graphql_context,
@@ -74,7 +74,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
 
     def test_full_pipeline_reexecution_in_memory_storage(self, graphql_context, snapshot):
         run_id = make_new_run_id()
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        selector = infer_job_selector(graphql_context, "csv_hello_world")
         result_one = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -123,7 +123,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         assert query_result["run"]["parentRunId"] == run_id
 
     def test_pipeline_reexecution_successful_launch(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "no_config_job")
+        selector = infer_job_selector(graphql_context, "no_config_job")
         run_id = make_new_run_id()
         result = execute_dagster_graphql(
             context=graphql_context,

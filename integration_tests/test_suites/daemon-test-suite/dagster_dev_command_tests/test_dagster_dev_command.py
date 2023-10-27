@@ -8,14 +8,17 @@ import requests
 import yaml
 from dagster import DagsterEventType, DagsterInstance, EventRecordsFilter
 from dagster._core.test_utils import environ, new_cwd
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import wait_for_grpc_server
 from dagster._utils import find_free_port
+from dagster_graphql import DagsterGraphQLClient
 
 
 def _wait_for_dagit_running(dagit_port):
     start_time = time.time()
     while True:
         try:
-            dagit_json = requests.get(f"http://localhost:{dagit_port}/dagit_info").json()
+            dagit_json = requests.get(f"http://localhost:{dagit_port}/server_info").json()
             if dagit_json:
                 return
         except:
@@ -43,6 +46,8 @@ def test_dagster_dev_command_workspace():
                         ),
                         "--dagit-port",
                         str(dagit_port),
+                        "--log-level",
+                        "debug",
                     ],
                     cwd=tempdir,
                 )
@@ -138,3 +143,59 @@ def test_dagster_dev_command_no_dagster_home():
                 finally:
                     dev_process.send_signal(signal.SIGINT)
                     dev_process.communicate()
+
+
+def test_dagster_dev_command_grpc_port():
+    with tempfile.TemporaryDirectory() as tempdir:
+        dagit_port = find_free_port()
+        grpc_port = find_free_port()
+
+        grpc_process = None
+        dev_process = None
+
+        try:
+            subprocess_args = [
+                "dagster",
+                "api",
+                "grpc",
+                "-f",
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "repo.py",
+                ),
+                "--working-directory",
+                os.path.dirname(__file__),
+                "-p",
+                str(grpc_port),
+            ]
+            grpc_process = subprocess.Popen(subprocess_args)
+
+            client = DagsterGrpcClient(port=grpc_port, host="localhost")
+            wait_for_grpc_server(grpc_process, client, subprocess_args)
+
+            dev_process = subprocess.Popen(
+                [
+                    "dagster",
+                    "dev",
+                    "--dagit-port",
+                    str(dagit_port),
+                    "--dagit-host",
+                    "127.0.0.1",
+                    "--grpc-port",
+                    str(grpc_port),
+                    "--grpc-host",
+                    "localhost",
+                ],
+                cwd=tempdir,
+            )
+            _wait_for_dagit_running(dagit_port)
+            client = DagsterGraphQLClient(hostname="localhost", port_number=dagit_port)
+            client.submit_job_execution("foo_job")
+        finally:
+            if grpc_process:
+                grpc_process.send_signal(signal.SIGINT)
+                grpc_process.communicate()
+
+            if dev_process:
+                dev_process.send_signal(signal.SIGINT)
+                dev_process.communicate()

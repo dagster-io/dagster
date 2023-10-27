@@ -2,14 +2,17 @@ import asyncio
 import os
 import re
 import time
+import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from signal import Signals
+from threading import Event
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterator,
     Mapping,
@@ -46,13 +49,13 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -98,7 +101,7 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
     """Creates a job of nested graphs up to "depth" layers, with a fan-out of
     num_children at each layer.
 
-    Total number of solids will be num_children ^ depth
+    Total number of ops will be num_children ^ depth
     """
 
     @op
@@ -109,8 +112,8 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
         @graph(name=name)
         def wrap():
             for i in range(num_children):
-                solid_alias = "%s_node_%d" % (name, i)
-                inner.alias(solid_alias)()
+                op_alias = "%s_node_%d" % (name, i)
+                inner.alias(op_alias)()
 
         return wrap
 
@@ -134,7 +137,7 @@ def create_run_for_test(
     job_name: str = TEST_JOB_NAME,
     run_id=None,
     run_config=None,
-    solids_to_execute=None,
+    resolved_op_selection=None,
     step_keys_to_execute=None,
     status=None,
     tags=None,
@@ -146,13 +149,14 @@ def create_run_for_test(
     external_job_origin=None,
     job_code_origin=None,
     asset_selection=None,
-    solid_selection=None,
+    asset_check_selection=None,
+    op_selection=None,
 ):
     return instance.create_run(
         job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        solids_to_execute=solids_to_execute,
+        resolved_op_selection=resolved_op_selection,
         step_keys_to_execute=step_keys_to_execute,
         status=status,
         tags=tags,
@@ -164,7 +168,8 @@ def create_run_for_test(
         external_job_origin=external_job_origin,
         job_code_origin=job_code_origin,
         asset_selection=asset_selection,
-        solid_selection=solid_selection,
+        asset_check_selection=asset_check_selection,
+        op_selection=op_selection,
     )
 
 
@@ -173,7 +178,7 @@ def register_managed_run_for_test(
     job_name=TEST_JOB_NAME,
     run_id=None,
     run_config=None,
-    solids_to_execute=None,
+    resolved_op_selection=None,
     step_keys_to_execute=None,
     tags=None,
     root_run_id=None,
@@ -186,7 +191,7 @@ def register_managed_run_for_test(
         job_name,
         run_id,
         run_config,
-        solids_to_execute,
+        resolved_op_selection,
         step_keys_to_execute,
         tags,
         root_run_id,
@@ -298,6 +303,20 @@ def today_at_midnight(timezone_name="UTC") -> "DateTime":
     check.str_param(timezone_name, "timezone_name")
     now = pendulum.now(timezone_name)
     return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
+
+
+from dagster._core.storage.runs import SqliteRunStorage
+
+
+class ExplodeOnInitRunStorage(SqliteRunStorage):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
+        raise NotImplementedError("Init was called")
+
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value
+    ) -> "SqliteRunStorage":
+        raise NotImplementedError("from_config_value was called")
 
 
 class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
@@ -451,20 +470,6 @@ def get_crash_signals() -> Sequence[Signals]:
 _mocked_system_timezone: Dict[str, Optional[str]] = {"timezone": None}
 
 
-@contextmanager
-def mock_system_timezone(override_timezone: str) -> Iterator[None]:
-    with mock_pendulum_timezone(override_timezone):
-        try:
-            _mocked_system_timezone["timezone"] = override_timezone
-            yield
-        finally:
-            _mocked_system_timezone["timezone"] = None
-
-
-def get_mocked_system_timezone() -> Optional[str]:
-    return _mocked_system_timezone["timezone"]
-
-
 # Test utility for creating a test workspace for a function
 class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
     def __init__(
@@ -502,8 +507,7 @@ def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
 ) -> Iterator[WorkspaceProcessContext]:
-    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
-    """
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     from dagster._daemon.controller import create_daemon_grpc_server_registry
 
     configure_loggers()
@@ -624,4 +628,62 @@ class SingleThreadPoolExecutor(ThreadPoolExecutor):
     """
 
     def __init__(self):
-        super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")
+        super().__init__(max_workers=1, thread_name_prefix="single_threaded_worker")
+
+
+class SynchronousThreadPoolExecutor:
+    """Utility class for testing threadpool executor logic which executes functions synchronously for
+    easier unit testing.
+    """
+
+    def __init__(self, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
+
+    def submit(self, fn, *args, **kwargs):
+        future = Future()
+        future.set_result(fn(*args, **kwargs))
+        return future
+
+    def shutdown(self, wait=True):
+        pass
+
+
+class BlockingThreadPoolExecutor(ThreadPoolExecutor):
+    """Utility class for testing thread timing by allowing for manual unblocking of the submitted threaded work."""
+
+    def __init__(self) -> None:
+        self._proceed = Event()
+        super().__init__()
+
+    def submit(self, fn, *args, **kwargs):
+        def _blocked_fn():
+            proceed = self._proceed.wait(60)
+            assert proceed
+            return fn(*args, **kwargs)
+
+        return super().submit(_blocked_fn)
+
+    def allow(self):
+        self._proceed.set()
+
+    def block(self):
+        self._proceed.clear()
+
+
+def ignore_warning(message_substr: str):
+    """Ignores warnings within the decorated function that contain the given string."""
+
+    def decorator(func: Callable):
+        def wrapper(*args, **kwargs):
+            warnings.filterwarnings("ignore", message=message_substr)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

@@ -9,7 +9,7 @@ iris_harvest_data = SourceAsset(key="iris_harvest_data")
 @asset
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -21,7 +21,7 @@ def iris_dataset() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
+def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
     return iris_dataset.dropna().drop_duplicates()
 
 

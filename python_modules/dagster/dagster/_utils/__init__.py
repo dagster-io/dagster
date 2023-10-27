@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
@@ -49,6 +50,8 @@ from typing_extensions import Literal, TypeAlias, TypeGuard
 import dagster._check as check
 import dagster._seven as seven
 
+from .internal_init import IHasInternalInit as IHasInternalInit
+
 if sys.version_info > (3,):
     from pathlib import Path
 else:
@@ -77,6 +80,21 @@ PrintFn: TypeAlias = Callable[[Any], None]
 
 SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int]
 DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
+
+
+def check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
+    if not debug_crash_flags:
+        return
+
+    kill_signal = debug_crash_flags.get(key)
+    if not kill_signal:
+        return
+
+    os.kill(os.getpid(), kill_signal)
+    time.sleep(10)
+    raise Exception("Process didn't terminate after sending crash signal")
 
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
@@ -179,7 +197,7 @@ def camelcase(string: str) -> str:
 def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
-    return list(ddict.items())[0]
+    return next(iter(ddict.items()))
 
 
 @contextlib.contextmanager
@@ -221,7 +239,7 @@ def mkdir_p(path: str) -> str:
 def hash_collection(
     collection: Union[
         Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], Tuple[Any, ...], NamedTuple
-    ]
+    ],
 ) -> int:
     """Hash a mutable collection or immutable collection containing mutable elements.
 
@@ -639,6 +657,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 def traced(func: T_Callable) -> T_Callable:
     """A decorator that keeps track of how many times a function is called."""
 
+    @functools.wraps(func)
     def inner(*args, **kwargs):
         counter = traced_counter.get()
         if counter and isinstance(counter, Counter):
@@ -664,8 +683,7 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
         if posix_signal == get_terminate_signal():
             exit_clause = (
-                exit_clause
-                + " This usually indicates that the process was"
+                exit_clause + " This usually indicates that the process was"
                 " killed by the operating system due to running out of"
                 " memory. Possible solutions include increasing the"
                 " amount of memory available to the run, reducing"
@@ -738,3 +756,15 @@ def normalize_to_repository(
 
 def xor(a, b):
     return bool(a) != bool(b)
+
+
+def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> Iterator[str]:
+    with open(path_or_fd, "r") as output_stream:
+        while True:
+            line = output_stream.readline()
+            if line:
+                yield line
+            elif should_stop():
+                break
+            else:
+                time.sleep(0.01)

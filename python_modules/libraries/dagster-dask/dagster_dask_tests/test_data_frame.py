@@ -32,7 +32,7 @@ def test_dataframe_inputs(file_type):
     read_result = wrap_op_in_graph_and_execute(
         return_df,
         run_config={
-            "solids": {
+            "ops": {
                 "return_df": {"inputs": {"input_df": {"read": {file_type: {"path": file_name}}}}}
             }
         },

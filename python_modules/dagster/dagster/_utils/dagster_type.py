@@ -2,10 +2,10 @@ from typing import Any
 
 from dagster._core.definitions.events import Failure, TypeCheck
 from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import scoped_job_context
+from dagster._core.execution.context_creation_job import scoped_job_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import resolve_dagster_type
 
@@ -33,10 +33,8 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     """
     if is_typing_type(dagster_type):
         raise DagsterInvariantViolationError(
-            (
-                "Must pass in a type from dagster module. You passed {dagster_type} "
-                "which is part of python's typing module."
-            ).format(dagster_type=dagster_type)
+            f"Must pass in a type from dagster module. You passed {dagster_type} "
+            "which is part of python's typing module."
         )
 
     dagster_type = resolve_dagster_type(dagster_type)

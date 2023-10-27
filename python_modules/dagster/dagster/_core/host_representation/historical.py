@@ -3,7 +3,7 @@ from typing import Optional
 import dagster._check as check
 from dagster._core.snap import JobSnapshot
 
-from .pipeline_index import JobIndex
+from .job_index import JobIndex
 from .represented import RepresentedJob
 
 

@@ -10,7 +10,7 @@ from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._utils import send_interrupt
 
-from .utils import (  # isort:skip
+from .utils import (  # ruff: isort:skip
     REPO_FILE,
     events_of_type,
     execute_eagerly_on_celery,
@@ -41,7 +41,7 @@ def test_execute_serial_on_celery(dagster_celery_worker):
         assert len(events_of_type(result, "STEP_SUCCESS")) == 2
 
 
-def test_execute_diamond_pipeline_on_celery(dagster_celery_worker):
+def test_execute_diamond_job_on_celery(dagster_celery_worker):
     with execute_job_on_celery("test_diamond_job") as result:
         assert result.output_for_node("emit_values", "value_one") == 1
         assert result.output_for_node("emit_values", "value_two") == 2
@@ -50,24 +50,24 @@ def test_execute_diamond_pipeline_on_celery(dagster_celery_worker):
         assert result.output_for_node("subtract") == -1
 
 
-def test_execute_parallel_pipeline_on_celery(dagster_celery_worker):
+def test_execute_parallel_job_on_celery(dagster_celery_worker):
     with execute_job_on_celery("test_parallel_job") as result:
         assert len(result.get_step_success_events()) == 11
 
 
-def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
+def test_execute_composite_job_on_celery(dagster_celery_worker):
     with execute_job_on_celery("composite_job") as result:
         assert result.success
         assert len(result.get_step_success_events()) == 16
 
 
-def test_execute_optional_outputs_pipeline_on_celery(dagster_celery_worker):
+def test_execute_optional_outputs_job_on_celery(dagster_celery_worker):
     with execute_job_on_celery("test_optional_outputs") as result:
         assert len(result.get_step_success_events()) == 2
         assert len(result.get_step_skipped_events()) == 2
 
 
-def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
+def test_execute_fails_job_on_celery(dagster_celery_worker):
     with execute_job_on_celery("test_fails") as result:
         assert len(result.get_step_failure_events()) == 1
         assert result.is_node_failed("fails")
@@ -75,9 +75,7 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
         assert result.is_node_untouched("should_never_execute")
 
 
-def test_terminate_pipeline_on_celery(
-    dagster_celery_worker, instance: DagsterInstance, tempdir: str
-):
+def test_terminate_job_on_celery(dagster_celery_worker, instance: DagsterInstance, tempdir: str):
     recon_job = ReconstructableJob.for_file(REPO_FILE, "interrupt_job")
 
     run_config = {
@@ -120,7 +118,7 @@ def test_terminate_pipeline_on_celery(
 
     assert len(revoke_steps) > 0
 
-    # The overall pipeline failed
+    # The overall job failed
     assert DagsterEventType.PIPELINE_FAILURE in result_types
 
 
@@ -140,16 +138,10 @@ def test_execute_eagerly_on_celery(instance: DagsterInstance):
             dagster_event = event.dagster_event
             if dagster_event and dagster_event.is_engine_event:
                 if dagster_event.engine_event_data.marker_start:
-                    key = "{step}.{marker}".format(
-                        step=event.step_key,
-                        marker=dagster_event.engine_event_data.marker_start,
-                    )
+                    key = f"{event.step_key}.{dagster_event.engine_event_data.marker_start}"
                     start_markers[key] = event.timestamp
                 if dagster_event.engine_event_data.marker_end:
-                    key = "{step}.{marker}".format(
-                        step=event.step_key,
-                        marker=dagster_event.engine_event_data.marker_end,
-                    )
+                    key = f"{event.step_key}.{dagster_event.engine_event_data.marker_end}"
                     end_markers[key] = event.timestamp
 
         seen = set()
@@ -172,7 +164,7 @@ def test_execute_eagerly_serial_on_celery():
         assert len(events_of_type(result, "STEP_SUCCESS")) == 2
 
 
-def test_execute_eagerly_diamond_pipeline_on_celery():
+def test_execute_eagerly_diamond_job_on_celery():
     with execute_eagerly_on_celery("test_diamond_job") as result:
         assert result.output_for_node("emit_values", "value_one") == 1
         assert result.output_for_node("emit_values", "value_two") == 2
@@ -181,37 +173,37 @@ def test_execute_eagerly_diamond_pipeline_on_celery():
         assert result.output_for_node("subtract") == -1
 
 
-def test_execute_eagerly_diamond_pipeline_subset_on_celery():
+def test_execute_eagerly_diamond_job_subset_on_celery():
     with execute_eagerly_on_celery("test_diamond_job", subset=["emit_values"]) as result:
         assert result.output_for_node("emit_values", "value_one") == 1
         assert result.output_for_node("emit_values", "value_two") == 2
         assert len(result.get_step_success_events()) == 1
 
 
-def test_execute_eagerly_parallel_pipeline_on_celery():
+def test_execute_eagerly_parallel_job_on_celery():
     with execute_eagerly_on_celery("test_parallel_job") as result:
         assert len(result.get_step_success_events()) == 11
 
 
-def test_execute_eagerly_composite_pipeline_on_celery():
+def test_execute_eagerly_composite_job_on_celery():
     with execute_eagerly_on_celery("composite_job") as result:
         assert result.success
         assert len(result.get_step_success_events()) == 16
 
 
-def test_execute_eagerly_optional_outputs_pipeline_on_celery():
+def test_execute_eagerly_optional_outputs_job_on_celery():
     with execute_eagerly_on_celery("test_optional_outputs") as result:
         assert len(result.get_step_success_events()) == 2
         assert len(result.get_step_skipped_events()) == 2
 
 
-def test_execute_eagerly_resources_limit_pipeline_on_celery():
+def test_execute_eagerly_resources_limit_job_on_celery():
     with execute_eagerly_on_celery("test_resources_limit") as result:
         assert result.is_node_success("resource_req_op")
         assert result.success
 
 
-def test_execute_eagerly_fails_pipeline_on_celery():
+def test_execute_eagerly_fails_job_on_celery():
     with execute_eagerly_on_celery("test_fails") as result:
         assert len(result.get_step_failure_events()) == 1
         assert result.is_node_failed("fails")
@@ -219,7 +211,7 @@ def test_execute_eagerly_fails_pipeline_on_celery():
         assert result.is_node_untouched("should_never_execute")
 
 
-def test_execute_eagerly_retries_pipeline_on_celery():
+def test_execute_eagerly_retries_job_on_celery():
     with execute_eagerly_on_celery("test_retries") as result:
         assert len(events_of_type(result, "STEP_START")) == 1
         assert len(events_of_type(result, "STEP_UP_FOR_RETRY")) == 1
@@ -239,7 +231,7 @@ def test_engine_error(instance: DagsterInstance, tempdir: str):
                 run_config={
                     "resources": {"io_manager": {"config": {"base_dir": storage}}},
                     "execution": {"config": {"config_source": {"task_always_eager": True}}},
-                    "solids": {"destroy": {"config": storage}},
+                    "ops": {"destroy": {"config": storage}},
                 },
                 instance=instance,
             )

@@ -3,9 +3,9 @@ import smtplib
 import ssl
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
+from dagster._annotations import deprecated_param
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.backcompat import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
@@ -76,6 +76,11 @@ def send_email_via_starttls(
         server.sendmail(email_from, email_to, message)
 
 
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def make_email_on_run_failure_sensor(
     email_from: str,
     email_password: str,
@@ -86,7 +91,7 @@ def make_email_on_run_failure_sensor(
     smtp_type: str = "SSL",
     smtp_port: Optional[int] = None,
     name: Optional[str] = None,
-    dagit_base_url: Optional[str] = None,
+    webserver_base_url: Optional[str] = None,
     monitored_jobs: Optional[
         Sequence[
             Union[
@@ -128,7 +133,7 @@ def make_email_on_run_failure_sensor(
         smtp_type (str): The protocol; either "SSL" or "STARTTLS". Defaults to SSL.
         smtp_port (Optional[int]): The SMTP port. Defaults to 465 for SSL, 587 for STARTTLS.
         name: (Optional[str]): The name of the sensor. Defaults to "email_on_job_failure".
-        dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
+        webserver_base_url: (Optional[str]): The base url of your dagster-webserver instance. Specify this to allow
             messages to include deeplinks to the failed run.
         monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, JobDefinition, RepositorySelector, JobSelector]]]):
             The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
@@ -141,7 +146,7 @@ def make_email_on_run_failure_sensor(
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
             sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
 
     Examples:
         .. code-block:: python
@@ -170,7 +175,7 @@ def make_email_on_run_failure_sensor(
                 email_to=["xxx@example.com"],
                 email_body_fn=my_message_fn,
                 email_subject_fn=lambda _: "Dagster Alert",
-                dagit_base_url="http://mycoolsite.com",
+                webserver_base_url="http://mycoolsite.com",
             )
 
 
@@ -180,8 +185,6 @@ def make_email_on_run_failure_sensor(
         run_failure_sensor,
     )
 
-    if job_selection:
-        deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
     jobs = monitored_jobs if monitored_jobs else job_selection
 
     @run_failure_sensor(
@@ -192,10 +195,10 @@ def make_email_on_run_failure_sensor(
     )
     def email_on_run_failure(context: RunFailureSensorContext):
         email_body = email_body_fn(context)
-        if dagit_base_url:
+        if webserver_base_url:
             email_body += (
-                f'<p><a href="{dagit_base_url}/instance/runs/{context.dagster_run.run_id}">View in'
-                " Dagit</a></p>"
+                f'<p><a href="{webserver_base_url}/runs/{context.dagster_run.run_id}">View in'
+                " the Dagster UI</a></p>"
             )
 
         message = EMAIL_MESSAGE.format(

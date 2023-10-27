@@ -3,7 +3,7 @@ import runpy
 from urllib.parse import urlencode
 
 import pytest
-from dagit.app import create_app_from_workspace_process_context
+from dagster_webserver.app import create_app_from_workspace_process_context
 from starlette.testclient import TestClient
 
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
@@ -99,7 +99,7 @@ def path_to_tutorial_file(path):
     )
 
 
-def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
+def load_dagster_webserver_for_workspace_cli_args(n_pipelines=1, **kwargs):
     with instance_for_test() as instance:
         with get_workspace_process_context_from_kwargs(
             instance, version="", read_only=False, kwargs=kwargs
@@ -125,13 +125,15 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
 @pytest.mark.parametrize(
     "dirname,filename,fn_name,_env_yaml,_mode,_preset,_return_code,_exception", cli_args
 )
-# dagit -f filename -n fn_name
+# dagster-webserver -f filename -n fn_name
 def test_load_pipeline(
     dirname, filename, fn_name, _env_yaml, _mode, _preset, _return_code, _exception
 ):
     with pushd(path_to_tutorial_file(dirname)):
         filepath = path_to_tutorial_file(os.path.join(dirname, filename))
-        load_dagit_for_workspace_cli_args(python_file=(filepath,), fn_name=fn_name)
+        load_dagster_webserver_for_workspace_cli_args(
+            python_file=(filepath,), fn_name=fn_name
+        )
 
 
 @pytest.mark.parametrize(

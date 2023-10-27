@@ -2,11 +2,11 @@ import re
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     Definitions,
-    OpExecutionContext,
     ResourceDefinition,
     ScheduleDefinition,
     SourceAsset,
@@ -503,11 +503,11 @@ def test_implicit_global_job_with_job_defined():
 
 def test_implicit_global_job_with_partitioned_asset():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def daily_partition_asset(context: OpExecutionContext):
+    def daily_partition_asset(context: AssetExecutionContext):
         return context.partition_key
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-02-02-10:00"))
-    def hourly_partition_asset(context: OpExecutionContext):
+    def hourly_partition_asset(context: AssetExecutionContext):
         return context.partition_key
 
     @asset

@@ -26,11 +26,15 @@
 
 ### LIBRARIES
 
+-e docs/dagster-ui-screenshot
+-e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/automation
 -e python_modules/dagster[pyright,test]
 -e python_modules/dagit
 -e python_modules/dagster-graphql
 -e python_modules/dagster-test
+-e python_modules/dagster-pipes
+-e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
 -e python_modules/libraries/dagster-airflow[test_airflow_2]
 -e python_modules/libraries/dagster-aws[test]
@@ -49,6 +53,7 @@
 -e python_modules/libraries/dagster-duckdb-pandas/
 -e python_modules/libraries/dagster-duckdb-pyspark/
 -e python_modules/libraries/dagster-duckdb-polars/
+-e python_modules/libraries/dagster-embedded-elt
 -e python_modules/libraries/dagster-fivetran/
 -e python_modules/libraries/dagster-gcp/
 -e python_modules/libraries/dagster-gcp-pandas[test]
@@ -82,6 +87,12 @@
 pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
 
+# This is a temporary pin due to version conflicts between dbt 1.6 and some higher-order
+# dependencies of other integration libs. It is not important that the pyright typechecking env support
+# dbt 1.6, so we can pin. The pin can be removed at any time in the future so long as the env builds
+# successfully.
+dbt-core<1.6
+
 ### EXAMPLES
 
 # -e examples/assets_dbt_python # it includes dagster-cloud
@@ -101,7 +112,6 @@ wordcloud  # (quickstart-*)
 # -e examples/quickstart_etl  # (analyzed but not installed)
 # -e examples/quickstart_gcp  # (analyzed but not installed)
 # -e examples/quickstart_snowflake  # (analyzed but not installed)
--e examples/tutorial_dbt_dagster
 -e examples/tutorial_notebook_assets
 -e examples/with_airflow
 -e examples/with_great_expectations

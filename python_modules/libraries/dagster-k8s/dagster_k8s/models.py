@@ -124,7 +124,7 @@ def k8s_snake_case_dict(model_class, model_dict: Mapping[str, Any]):
 
 
 # Heavily inspired by kubernetes.client.ApiClient.__deserialize_model, with more validation
-# that the keys and values match the expected format. Requires k8s atribute names to be in
+# that the keys and values match the expected format. Requires k8s attribute names to be in
 # snake_case.
 def k8s_model_from_dict(model_class, model_dict: Mapping[str, Any]):
     check.mapping_param(model_dict, "model_dict")

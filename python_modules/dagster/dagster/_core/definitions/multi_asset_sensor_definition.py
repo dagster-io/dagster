@@ -230,7 +230,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
-        from dagster._core.storage.event_log.base import EventLogRecord
 
         self._repository_def = normalize_to_repository(
             check.opt_inst_param(definitions, "definitions", Definitions),
@@ -291,19 +290,19 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             return
 
         for asset_key in self._monitored_asset_keys:
-            event_records = self.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    storage_ids=list(
-                        self._get_cursor(
-                            asset_key
-                        ).trailing_unconsumed_partitioned_event_ids.values()
-                    ),
+            unconsumed_event_ids = list(
+                self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values()
+            )
+            if unconsumed_event_ids:
+                event_records = self.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        storage_ids=unconsumed_event_ids,
+                    )
                 )
-            )
-            self._initial_unconsumed_events_by_id.update(
-                {event_record.storage_id: event_record for event_record in event_records}
-            )
+                self._initial_unconsumed_events_by_id.update(
+                    {event_record.storage_id: event_record for event_record in event_records}
+                )
 
         self._fetched_initial_unconsumed_events = True
 
@@ -369,6 +368,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             self._cursor = new_cursor
             self._unpacked_cursor = MultiAssetSensorContextCursor(new_cursor, self)
             self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
+            self._fetched_initial_unconsumed_events = False
 
     @public
     def latest_materialization_records_by_key(
@@ -387,8 +387,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             materialization event for the asset. If there is no materialization event for the asset,
             the value in the mapping will be None.
         """
-        from dagster._core.storage.event_log.base import EventLogRecord
-
         # Do not evaluate unconsumed events, only events newer than the cursor
         # if there are no new events after the cursor, the cursor points to the most
         # recent event.
@@ -639,9 +637,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             if len(partitions) == 0:
                 raise DagsterInvalidInvocationError("Must provide at least one partition in list")
 
-        materialization_count_by_partition = self.instance.get_materialization_count_by_partition(
-            [asset_key]
-        ).get(asset_key, {})
+        materialized_partitions = self.instance.get_materialized_partitions(asset_key)
         if not partitions:
             if asset_key not in self._monitored_asset_keys:
                 raise DagsterInvariantViolationError(
@@ -656,9 +652,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 )
             partitions = partitions_def.get_partition_keys(dynamic_partitions_store=self.instance)
 
-        return all(
-            [materialization_count_by_partition.get(partition, 0) != 0 for partition in partitions]
-        )
+        return all([partition in materialized_partitions for partition in partitions])
 
     def _get_asset(self, asset_key: AssetKey, fn_name: str) -> AssetsDefinition:
         from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -769,11 +763,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     @public
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, Optional[AssetsDefinition]]:
+        """Mapping[AssetKey, Optional[AssetsDefinition]]: A mapping from AssetKey to the
+        AssetsDefinition object which produces it. If a given asset is monitored by this sensor, but
+        is not produced within the same code location as this sensor, then the value will be None.
+        """
         return self._assets_by_key
 
     @public
     @property
     def asset_keys(self) -> Sequence[AssetKey]:
+        """Sequence[AssetKey]: The asset keys which are monitored by this sensor."""
         return self._monitored_asset_keys
 
 
@@ -896,12 +895,18 @@ class MultiAssetSensorCursorAdvances:
                 )
 
         return MultiAssetSensorAssetCursorComponent(
-            latest_consumed_event_partition=latest_consumed_partition_in_tick
-            if greatest_consumed_event_id_in_tick > (latest_consumed_event_id_at_tick_start or 0)
-            else initial_asset_cursor.latest_consumed_event_partition,
-            latest_consumed_event_id=greatest_consumed_event_id_in_tick
-            if greatest_consumed_event_id_in_tick > (latest_consumed_event_id_at_tick_start or 0)
-            else latest_consumed_event_id_at_tick_start,
+            latest_consumed_event_partition=(
+                latest_consumed_partition_in_tick
+                if greatest_consumed_event_id_in_tick
+                > (latest_consumed_event_id_at_tick_start or 0)
+                else initial_asset_cursor.latest_consumed_event_partition
+            ),
+            latest_consumed_event_id=(
+                greatest_consumed_event_id_in_tick
+                if greatest_consumed_event_id_in_tick
+                > (latest_consumed_event_id_at_tick_start or 0)
+                else latest_consumed_event_id_at_tick_start
+            ),
             trailing_unconsumed_partitioned_event_ids=latest_unconsumed_record_by_partition,
         )
 
@@ -1079,7 +1084,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
     """

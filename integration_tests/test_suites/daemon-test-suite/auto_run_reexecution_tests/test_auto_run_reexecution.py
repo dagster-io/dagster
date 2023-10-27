@@ -6,7 +6,7 @@ from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEnt
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.snap import snapshot_from_execution_plan
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG
 from dagster._core.test_utils import MockedRunCoordinator, create_run_for_test, instance_for_test
 from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
@@ -285,7 +285,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         instance,
         status=DagsterRunStatus.STARTED,
         tags={MAX_RETRIES_TAG: "2"},
-        solid_selection=["do_something"],
+        op_selection=["do_something"],
         step_keys_to_execute=["do_something"],
     )
 
@@ -313,7 +313,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
     )
     assert len(run_coordinator.queue()) == 1
     auto_run = run_coordinator.queue()[0]
-    assert auto_run.solid_selection == ["do_something"]
+    assert auto_run.op_selection == ["do_something"]
     assert instance.get_execution_plan_snapshot(
         auto_run.execution_plan_snapshot_id
     ).step_keys_to_execute == ["do_something"]

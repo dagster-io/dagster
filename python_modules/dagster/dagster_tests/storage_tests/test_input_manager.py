@@ -10,9 +10,6 @@ from dagster import (
     InputManager,
     IOManager,
     IOManagerDefinition,
-    Out,
-    PythonObjectDagsterType,
-    RootInputManagerDefinition,
     asset,
     graph,
     input_manager,
@@ -20,14 +17,14 @@ from dagster import (
     job,
     materialize,
     op,
-    repository,
     resource,
-    root_input_manager,
 )
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import InstanceRef
+from dagster._core.storage.input_manager import InputManagerDefinition
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 ### input manager tests
@@ -119,47 +116,6 @@ def test_input_manager_root_input():
         second_op()
 
     check_input_managers.execute_in_process()
-
-
-def test_root_input_and_input_managers():
-    class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            pass
-
-        def load_input(self, context):
-            assert False, "should not be called"
-
-    @io_manager
-    def my_io_manager():
-        return MyIOManager()
-
-    class MyInputManager(MyIOManager):
-        def load_input(self, context):
-            if context.upstream_output is None:
-                return 4
-            else:
-                return 5
-
-    @io_manager
-    def my_input_manager():
-        return MyInputManager()
-
-    @root_input_manager
-    def my_loader(_):
-        return 6
-
-    with pytest.raises(Exception):
-
-        @op(
-            ins={
-                "an_input": In(
-                    input_manager_key="my_input_manager",
-                    root_manager_key="my_root_manager",
-                )
-            }
-        )
-        def first_op(an_input):
-            assert an_input == 4
 
 
 def test_input_manager_calls_super():
@@ -491,113 +447,8 @@ def test_input_manager_with_assets_and_config():
 ##################################################
 
 
-def test_validate_inputs():
-    @root_input_manager
-    def my_loader(_):
-        return 5
-
-    @op(
-        ins={
-            "input1": In(
-                dagster_type=PythonObjectDagsterType(int),
-                root_manager_key="my_loader",
-            )
-        }
-    )
-    def my_op(_, input1):
-        return input1
-
-    @job(resource_defs={"my_loader": my_loader})
-    def my_job():
-        my_op()
-
-    my_job.execute_in_process()
-
-
-def test_root_input_manager():
-    @root_input_manager
-    def my_hardcoded_csv_loader(_context):
-        return 5
-
-    @op(ins={"input1": In(root_manager_key="my_loader")})
-    def op1(_, input1):
-        assert input1 == 5
-
-    @job(resource_defs={"my_loader": my_hardcoded_csv_loader})
-    def my_job():
-        op1()
-
-    my_job.execute_in_process()
-
-
-def test_configurable_root_input_manager():
-    @root_input_manager(config_schema={"base_dir": str}, input_config_schema={"value": int})
-    def my_configurable_csv_loader(context):
-        assert context.resource_config["base_dir"] == "abc"
-        return context.config["value"]
-
-    @op(ins={"input1": In(root_manager_key="my_loader")})
-    def op1(_, input1):
-        assert input1 == 5
-
-    @job(resource_defs={"my_loader": my_configurable_csv_loader})
-    def my_configurable_job():
-        op1()
-
-    my_configurable_job.execute_in_process(
-        run_config={
-            "ops": {"op1": {"inputs": {"input1": {"value": 5}}}},
-            "resources": {"my_loader": {"config": {"base_dir": "abc"}}},
-        },
-    )
-
-
-def test_only_used_for_root():
-    metadata = {"name": MetadataValue.int(5)}
-
-    class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            pass
-
-        def load_input(self, context):
-            output = context.upstream_output
-            assert output.metadata == metadata
-            assert output.name == "my_output"
-            assert output.step_key == "op1"
-            assert context.job_name == "my_job"
-            assert context.op_def.name == op2.name
-            return 5
-
-    @io_manager
-    def my_io_manager(_):
-        return MyIOManager()
-
-    @op(out={"my_output": Out(io_manager_key="my_io_manager", metadata=metadata)})
-    def op1(_):
-        return 1
-
-    @op(ins={"input1": In(root_manager_key="my_root_manager")})
-    def op2(_, input1):
-        assert input1 == 5
-
-    @root_input_manager
-    def root_manager(_):
-        assert False, "should not be called"
-
-    @job(
-        resource_defs={
-            "my_io_manager": my_io_manager,
-            "my_root_manager": root_manager,
-        }
-    )
-    def my_job():
-        op2(op1())
-
-    my_job.execute_in_process()
-
-
 def test_configured():
-    @root_input_manager(
+    @input_manager(
         config_schema={"base_dir": str},
         description="abc",
         input_config_schema={"format": str},
@@ -609,7 +460,7 @@ def test_configured():
 
     configured_input_manager = my_input_manager.configured({"base_dir": "/a/b/c"})
 
-    assert isinstance(configured_input_manager, RootInputManagerDefinition)
+    assert isinstance(configured_input_manager, InputManagerDefinition)
     assert configured_input_manager.description == my_input_manager.description
     assert (
         configured_input_manager.required_resource_keys == my_input_manager.required_resource_keys
@@ -618,14 +469,14 @@ def test_configured():
 
 
 def test_input_manager_with_failure():
-    @root_input_manager
+    @input_manager
     def should_fail(_):
         raise Failure(
             description="Foolure",
             metadata={"label": "text"},
         )
 
-    @op(ins={"_fail_input": In(root_manager_key="should_fail")})
+    @op(ins={"_fail_input": In(input_manager_key="should_fail")})
     def fail_on_input(_, _fail_input):
         assert False, "should not be called"
 
@@ -651,22 +502,22 @@ def test_input_manager_with_failure():
 def test_input_manager_with_retries():
     _count = {"total": 0}
 
-    @root_input_manager
+    @input_manager
     def should_succeed_after_retries(_):
         if _count["total"] < 2:
             _count["total"] += 1
             raise RetryRequested(max_retries=3)
         return "foo"
 
-    @root_input_manager
+    @input_manager
     def should_retry(_):
         raise RetryRequested(max_retries=3)
 
-    @op(ins={"op_input": In(root_manager_key="should_succeed_after_retries")})
+    @op(ins={"op_input": In(input_manager_key="should_succeed_after_retries")})
     def take_input_1(_, op_input):
         return op_input
 
-    @op(ins={"op_input": In(root_manager_key="should_retry")})
+    @op(ins={"op_input": In(input_manager_key="should_retry")})
     def take_input_2(_, op_input):
         return op_input
 
@@ -708,11 +559,11 @@ def test_input_manager_with_retries():
 
 
 def test_input_manager_resource_config():
-    @root_input_manager(config_schema={"dog": str})
+    @input_manager(config_schema={"dog": str})
     def emit_dog(context):
         assert context.resource_config["dog"] == "poodle"
 
-    @op(ins={"op_input": In(root_manager_key="emit_dog")})
+    @op(ins={"op_input": In(input_manager_key="emit_dog")})
     def source_op(_, op_input):
         return op_input
 
@@ -732,17 +583,17 @@ def test_input_manager_required_resource_keys():
     def foo_resource(_):
         return "foo"
 
-    @root_input_manager(required_resource_keys={"foo_resource"})
-    def root_input_manager_reqs_resources(context):
+    @input_manager(required_resource_keys={"foo_resource"})
+    def input_manager_reqs_resources(context):
         assert context.resources.foo_resource == "foo"
 
-    @op(ins={"_manager_input": In(root_manager_key="root_input_manager_reqs_resources")})
+    @op(ins={"_manager_input": In(input_manager_key="input_manager_reqs_resources")})
     def big_op(_, _manager_input):
         return "manager_input"
 
     @job(
         resource_defs={
-            "root_input_manager_reqs_resources": root_input_manager_reqs_resources,
+            "input_manager_reqs_resources": input_manager_reqs_resources,
             "foo_resource": foo_resource,
         }
     )
@@ -759,7 +610,7 @@ def test_resource_not_input_manager():
     def resource_not_manager(_):
         return "foo"
 
-    @op(ins={"_input": In(root_manager_key="not_manager")})
+    @op(ins={"_input": In(input_manager_key="not_manager")})
     def op_requires_manager(_, _input):
         pass
 
@@ -776,29 +627,11 @@ def test_resource_not_input_manager():
         def basic():
             op_requires_manager()
 
-        @repository
-        def _my_repo():
-            return [basic]
-
-
-def test_mode_missing_input_manager():
-    @op(ins={"a": In(root_manager_key="missing_root_manager")})
-    def my_op(_, a):
-        return a + 1
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @job
-        def _my_job():
-            my_op()
-
-        @repository
-        def _my_repo():
-            return [_my_job]
+        Definitions(jobs=[basic])
 
 
 def test_missing_input_manager():
-    @op(ins={"a": In(root_manager_key="missing_root_manager")})
+    @op(ins={"a": In(input_manager_key="missing_input_manager")})
     def my_op(_, a):
         return a + 1
 
@@ -806,12 +639,12 @@ def test_missing_input_manager():
         wrap_op_in_graph_and_execute(my_op, input_values={"a": 5})
 
 
-def test_root_manager_inside_composite():
-    @root_input_manager(input_config_schema={"test": str})
-    def my_root(context):
+def test_input_manager_inside_composite():
+    @input_manager(input_config_schema={"test": str})
+    def my_manager(context):
         return context.config["test"]
 
-    @op(ins={"data": In(dagster_type=str, root_manager_key="my_root")})
+    @op(ins={"data": In(dagster_type=str, input_manager_key="my_root")})
     def inner_op(_, data):
         return data
 
@@ -819,7 +652,7 @@ def test_root_manager_inside_composite():
     def my_graph():
         return inner_op()
 
-    @job(resource_defs={"my_root": my_root})
+    @job(resource_defs={"my_root": my_manager})
     def my_job():
         my_graph()
 

@@ -1,3 +1,4 @@
+import zlib
 from typing import ContextManager, Mapping, Optional
 
 import dagster._check as check
@@ -12,7 +13,8 @@ from dagster._core.storage.runs import (
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster._core.storage.runs.schema import KeyValueStoreTable
+from dagster._core.storage.runs.schema import KeyValueStoreTable, SnapshotsTable
+from dagster._core.storage.runs.sql_run_storage import SnapshotType
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -39,7 +41,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     """Postgres-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     To use Postgres for all of the components of your instance storage, you can add the following
@@ -104,8 +106,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 # This revision may be shared by any other dagster storage classes using the same DB
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold 1 open connection and set statement_timeout
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        # When running in dagster-webserver, hold 1 open connection and set statement_timeout
         existing_options = self._engine.url.query.get("options")
         timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:
@@ -199,7 +201,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
-        # pg speciic on_conflict_do_update
+        # pg specific on_conflict_do_update
         insert_stmt = db_dialects.postgresql.insert(KeyValueStoreTable).values(
             [{"key": k, "value": v} for k, v in pairs.items()]
         )
@@ -216,6 +218,20 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
         with self.connect() as conn:
             conn.execute(upsert_stmt)
+
+    def _add_snapshot(self, snapshot_id: str, snapshot_obj, snapshot_type: SnapshotType) -> str:
+        with self.connect() as conn:
+            snapshot_insert = (
+                db_dialects.postgresql.insert(SnapshotsTable)
+                .values(
+                    snapshot_id=snapshot_id,
+                    snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
+                    snapshot_type=snapshot_type.value,
+                )
+                .on_conflict_do_nothing()
+            )
+            conn.execute(snapshot_insert)
+            return snapshot_id
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)

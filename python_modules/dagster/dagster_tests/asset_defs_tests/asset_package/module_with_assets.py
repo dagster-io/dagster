@@ -9,5 +9,5 @@ elvis_presley = SourceAsset(key=AssetKey("elvis_presley"))
 
 
 @asset
-def chuck_berry():
+def chuck_berry(elvis_presley, miles_davis):
     pass

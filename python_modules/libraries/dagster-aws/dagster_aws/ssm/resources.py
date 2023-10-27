@@ -1,13 +1,13 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, cast
 
-import botocore
 from dagster import (
     Config,
     Field as LegacyDagsterField,
     resource,
 )
 from dagster._config.field_utils import Shape
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
@@ -20,6 +20,9 @@ from .parameters import (
     get_parameters_by_paths,
     get_parameters_by_tags,
 )
+
+if TYPE_CHECKING:
+    import botocore
 
 
 class SSMResource(ResourceWithBoto3Configuration):
@@ -56,6 +59,10 @@ class SSMResource(ResourceWithBoto3Configuration):
             )
     """
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> "botocore.client.ssm":
         return construct_ssm_client(
             max_attempts=self.max_attempts,
@@ -64,6 +71,7 @@ class SSMResource(ResourceWithBoto3Configuration):
         )
 
 
+@dagster_maintained_resource
 @resource(config_schema=SSMResource.to_config_schema())
 def ssm_resource(context) -> "botocore.client.ssm":
     """Resource that gives access to AWS Systems Manager Parameter Store.
@@ -182,6 +190,10 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
         ),
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @contextmanager
     def parameters_in_environment(
         self,
@@ -229,7 +241,10 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
         if parameter_paths_to_fetch:
             results.append(
                 get_parameters_by_paths(
-                    ssm_manager, parameter_paths_to_fetch, self.with_decryption, recursive=True  # type: ignore
+                    ssm_manager,
+                    parameter_paths_to_fetch,  # type: ignore
+                    self.with_decryption,
+                    recursive=True,
                 )
             )
         if not results:
@@ -276,6 +291,7 @@ LEGACY_PARAMETERSTORE_SCHEMA = {
 }
 
 
+@dagster_maintained_resource
 @resource(config_schema=LEGACY_PARAMETERSTORE_SCHEMA)
 @contextmanager
 def parameter_store_resource(context) -> Any:

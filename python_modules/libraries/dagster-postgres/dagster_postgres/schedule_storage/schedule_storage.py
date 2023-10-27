@@ -1,4 +1,4 @@
-from typing import ContextManager, Optional
+from typing import ContextManager, Optional, Sequence
 
 import dagster._check as check
 import pendulum
@@ -6,10 +6,14 @@ import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.config import PostgresStorageConfig, pg_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster._core.storage.schedules.schema import InstigatorsTable
+from dagster._core.storage.schedules.schema import (
+    AssetDaemonAssetEvaluationsTable,
+    InstigatorsTable,
+)
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -34,7 +38,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     """Postgres-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     To use Postgres for all of the components of your instance storage, you can add the following
@@ -95,8 +99,8 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.migrate()
         self.optimize()
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold an open connection and set statement_timeout
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        # When running in dagster-webserver, hold an open connection and set statement_timeout
         existing_options = self._engine.url.query.get("options")
         timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:
@@ -171,6 +175,43 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 },
             )
         )
+
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ):
+        if not asset_evaluations:
+            return
+
+        insert_stmt = db_dialects.postgresql.insert(AssetDaemonAssetEvaluationsTable).values(
+            [
+                {
+                    "evaluation_id": evaluation_id,
+                    "asset_key": evaluation.asset_key.to_string(),
+                    "asset_evaluation_body": serialize_value(evaluation),
+                    "num_requested": evaluation.num_requested,
+                    "num_skipped": evaluation.num_skipped,
+                    "num_discarded": evaluation.num_discarded,
+                }
+                for evaluation in asset_evaluations
+            ]
+        )
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                AssetDaemonAssetEvaluationsTable.c.asset_key,
+            ],
+            set_={
+                "asset_evaluation_body": insert_stmt.excluded.asset_evaluation_body,
+                "num_requested": insert_stmt.excluded.num_requested,
+                "num_skipped": insert_stmt.excluded.num_skipped,
+                "num_discarded": insert_stmt.excluded.num_discarded,
+            },
+        )
+
+        with self.connect() as conn:
+            conn.execute(upsert_stmt)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)

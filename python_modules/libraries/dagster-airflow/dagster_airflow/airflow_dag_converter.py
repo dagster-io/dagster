@@ -1,7 +1,7 @@
 import importlib
+from typing import TYPE_CHECKING
 
 import airflow
-from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
 from dagster import (
     DependencyDefinition,
@@ -22,6 +22,9 @@ from dagster_airflow.utils import (
     normalized_name,
     replace_airflow_logger_handlers,
 )
+
+if TYPE_CHECKING:
+    from airflow.models.baseoperator import BaseOperator
 
 
 def get_graph_definition_args(

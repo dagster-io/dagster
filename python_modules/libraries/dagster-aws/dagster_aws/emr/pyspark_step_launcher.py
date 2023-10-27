@@ -12,6 +12,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.execution.plan.external_step import (
@@ -31,6 +32,7 @@ EMR_SPARK_HOME = "/usr/lib/spark/"
 CODE_ZIP_NAME = "code.zip"
 
 
+@dagster_maintained_resource
 @resource(
     {
         "spark_config": get_spark_config(),
@@ -238,10 +240,8 @@ class EmrPySparkStepLauncher(StepLauncher):
 
         check.invariant(
             not deploy_local_job_package or not s3_job_package_path,
-            (
-                "If deploy_local_job_package is set to True, s3_job_package_path should not "
-                "also be set."
-            ),
+            "If deploy_local_job_package is set to True, s3_job_package_path should not "
+            "also be set.",
         )
 
         self.local_job_package_path = check.str_param(
@@ -288,11 +288,7 @@ class EmrPySparkStepLauncher(StepLauncher):
             def _upload_file_to_s3(local_path, s3_filename):
                 key = self._artifact_s3_key(run_id, step_key, s3_filename)
                 s3_uri = self._artifact_s3_uri(run_id, step_key, s3_filename)
-                log.debug(
-                    "Uploading file {local_path} to {s3_uri}".format(
-                        local_path=local_path, s3_uri=s3_uri
-                    )
-                )
+                log.debug(f"Uploading file {local_path} to {s3_uri}")
                 s3.upload_file(Filename=local_path, Bucket=self.staging_bucket, Key=key)
 
             # Upload main file.
@@ -324,7 +320,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         step_key = step_run_ref.step_key
         self._post_artifacts(log, step_run_ref, run_id, step_key)
 
-        emr_step_def = self._get_emr_step_def(run_id, step_key, step_context.solid.name)
+        emr_step_def = self._get_emr_step_def(run_id, step_key, step_context.op.name)
         emr_step_id = self.emr_job_runner.add_job_flow_steps(log, self.cluster_id, [emr_step_def])[
             0
         ]

@@ -9,6 +9,7 @@ import sqlalchemy as sa
 from alembic import op
 from dagster._core.storage.migration.utils import has_column, has_table
 from sqlalchemy import inspect
+from sqlalchemy.dialects import sqlite
 
 # alembic magic breaks pylint
 
@@ -29,7 +30,13 @@ def upgrade():
     if not has_table("snapshots"):
         op.create_table(
             "snapshots",
-            sa.Column("id", sa.Integer, primary_key=True, autoincrement=True, nullable=False),
+            sa.Column(
+                "id",
+                sa.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+                nullable=False,
+            ),
             sa.Column("snapshot_id", sa.String(255), unique=True, nullable=False),
             sa.Column("snapshot_body", sa.LargeBinary, nullable=False),
             sa.Column("snapshot_type", sa.String(63), nullable=False),

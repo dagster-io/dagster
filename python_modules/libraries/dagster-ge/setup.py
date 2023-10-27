@@ -18,12 +18,11 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-ge",
     version=ver,
-    author="Elementl",
+    author="Dagster Labs",
     license="Apache-2.0",
     description="Package for GE-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -35,10 +34,7 @@ setup(
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
-        "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
-        # 8.13+ explicitly does not support python 3.8
-        # Can remove when this resolves https://github.com/ipython/ipython/issues/14053
-        "ipython<=8.12; python_version<='3.8'",
+        "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, <0.17.12",
     ],
     zip_safe=False,
 )

@@ -120,7 +120,7 @@ class RepositoryData(ABC):
         """Return all schedules in the repository as a list.
 
         Returns:
-            List[ScheduleDefinition]: All pipelines in the repository.
+            List[ScheduleDefinition]: All jobs in the repository.
         """
         return []
 
@@ -143,19 +143,31 @@ class RepositoryData(ABC):
             )
         return schedules_with_name[0]
 
+    @public
     def has_schedule(self, schedule_name: str) -> bool:
+        """Check if a schedule with a given name is present in the repository."""
         return schedule_name in self.get_schedule_names()
 
     @public
     def get_all_sensors(self) -> Sequence[SensorDefinition]:
+        """Sequence[SensorDefinition]: Return all sensors in the repository as a list."""
         return []
 
     @public
     def get_sensor_names(self) -> Sequence[str]:
+        """Sequence[str]: Get the names of all sensors in the repository."""
         return [sensor.name for sensor in self.get_all_sensors()]
 
     @public
     def get_sensor(self, sensor_name: str) -> SensorDefinition:
+        """Get a sensor by name.
+
+        Args:
+            sensor_name (str): name of the sensor to retrieve.
+
+        Returns:
+            SensorDefinition: The sensor definition corresponding to the given name.
+        """
         sensors_with_name = [
             sensor for sensor in self.get_all_sensors() if sensor.name == sensor_name
         ]
@@ -167,14 +179,17 @@ class RepositoryData(ABC):
 
     @public
     def has_sensor(self, sensor_name: str) -> bool:
+        """Check if a sensor with a given name is present in the repository."""
         return sensor_name in self.get_sensor_names()
 
     @public
     def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
+        """Mapping[AssetKey, SourceAsset]: Get the source assets for the repository."""
         return {}
 
     @public
     def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        """Mapping[AssetKey, AssetsDefinition]: Get the asset definitions for the repository."""
         return {}
 
     def load_all_definitions(self):
@@ -186,8 +201,7 @@ class RepositoryData(ABC):
 
 
 class CachingRepositoryData(RepositoryData):
-    """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator.
-    """
+    """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
     _all_jobs: Optional[Sequence[JobDefinition]]
     _all_pipelines: Optional[Sequence[JobDefinition]]

@@ -1,5 +1,5 @@
-# isort: skip_file
-hackernews_assets = None
+# ruff: isort: skip_file
+all_assets = None
 hackernews_schedule = None
 
 from dagster import (
@@ -14,7 +14,8 @@ from dagster import (
 hackernews_job = define_asset_job("hackernews_job", selection=AssetSelection.all())
 
 hackernews_schedule = ScheduleDefinition(
-    job=hackernews_job, cron_schedule="0 * * * *"  # every hour
+    job=hackernews_job,
+    cron_schedule="0 * * * *",  # every hour
 )
 
 io_manager = FilesystemIOManager(
@@ -32,7 +33,7 @@ database_io_manager = DuckDBPandasIOManager(database="analytics.hackernews")
 
 # Update your Definitions
 defs = Definitions(
-    assets=hackernews_assets,
+    assets=all_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,

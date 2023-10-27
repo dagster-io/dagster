@@ -46,6 +46,9 @@ class AssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a given
     asset.
 
+    If the asset has been materialized multiple times between since the last sensor tick, the
+    evaluation function will only be invoked once, with the latest materialization.
+
     Args:
         name (str): The name of the sensor to create.
         asset_key (AssetKey): The asset_key this sensor monitors.
@@ -64,7 +67,7 @@ class AssetSensorDefinition(SensorDefinition):
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def __init__(
@@ -167,7 +170,8 @@ class AssetSensorDefinition(SensorDefinition):
 
     @public
     @property
-    def asset_key(self):
+    def asset_key(self) -> AssetKey:
+        """AssetKey: The key of the asset targeted by this sensor."""
         return self._asset_key
 
     @property

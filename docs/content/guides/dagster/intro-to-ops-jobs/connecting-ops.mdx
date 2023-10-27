@@ -66,7 +66,7 @@ We can use inputs and outputs to connect ops to each other. Here we tell Dagster
 - `get_file_sizes` doesn't depend on the output of any other op.
 - `report_total_size` depends on the output of `get_file_sizes`.
 
-Let's visualize this job in Dagit:
+Let's visualize this job in the Dagster UI:
 
 ```bash
 dagster dev -f serial_job.py
@@ -130,7 +130,7 @@ def diamond():
 
 First, we introduce the intermediate variable `file_sizes` into our job definition to represent the output of the `get_file_sizes` op. Then we make both `get_total_size` and `get_largest_size` consume this output. Their outputs are in turn both consumed by `report_file_stats`.
 
-Let's visualize this job in Dagit:
+Let's visualize this job in the UI:
 
 ```bash
 dagster dev -f complex_job.py
@@ -147,7 +147,7 @@ width={3574}
 height={1962}
 />
 
-When you execute this example from Dagit, you'll see that `get_file_sizes` executes first, followed by `get_total_size` and `get_largest_size` executing in parallel, since they don't depend on each other's outputs. Finally, `report_file_stats` executes last, only after `get_total_size` and `get_largest_size` have both executed (because `report_file_stats` depends on both of their outputs).
+When you execute this example from the UI, you'll see that `get_file_sizes` executes first, followed by `get_total_size` and `get_largest_size` executing in parallel, since they don't depend on each other's outputs. Finally, `report_file_stats` executes last, only after `get_total_size` and `get_largest_size` have both executed (because `report_file_stats` depends on both of their outputs).
 
 ---
 

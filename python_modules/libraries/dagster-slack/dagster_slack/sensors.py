@@ -17,14 +17,14 @@ from dagster import (
     FreshnessPolicySensorContext,
     freshness_policy_sensor,
 )
-from dagster._annotations import experimental
+from dagster._annotations import deprecated_param, experimental
 from dagster._core.definitions import GraphDefinition, JobDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.warnings import normalize_renamed_param
 from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ def _build_slack_blocks_and_text(
     context: T,
     text_fn: Callable[[T], str],
     blocks_fn: Optional[Callable[[T], List[Dict[Any, Any]]]],
-    dagit_base_url: Optional[str],
+    webserver_base_url: Optional[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
     main_body_text = text_fn(context)
     blocks: List[Dict[Any, Any]] = []
@@ -75,18 +75,18 @@ def _build_slack_blocks_and_text(
             ]
         )
 
-    if dagit_base_url:
+    if webserver_base_url:
         if isinstance(context, RunFailureSensorContext):
-            url = f"{dagit_base_url}/instance/runs/{context.dagster_run.run_id}"
+            url = f"{webserver_base_url}/runs/{context.dagster_run.run_id}"
         else:
-            url = f"{dagit_base_url}/assets/{'/'.join(context.asset_key.path)}"
+            url = f"{webserver_base_url}/assets/{'/'.join(context.asset_key.path)}"
         blocks.append(
             {
                 "type": "actions",
                 "elements": [
                     {
                         "type": "button",
-                        "text": {"type": "plain_text", "text": "View in Dagit"},
+                        "text": {"type": "plain_text", "text": "View in Dagster UI"},
                         "url": url,
                     }
                 ],
@@ -99,6 +99,16 @@ def _default_failure_message_text_fn(context: RunFailureSensorContext) -> str:
     return f"Error: ```{context.failure_event.message}```"
 
 
+@deprecated_param(
+    param="dagit_base_url",
+    breaking_version="2.0",
+    additional_warn_text="Use `webserver_base_url` instead.",
+)
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
@@ -133,6 +143,7 @@ def make_slack_on_run_failure_sensor(
     ] = None,
     monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    webserver_base_url: Optional[str] = None,
 ):
     """Create a sensor on job failures that will message the given Slack channel.
 
@@ -168,6 +179,8 @@ def make_slack_on_run_failure_sensor(
             monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        webserver_base_url: (Optional[str]): The base url of your webserver instance. Specify this to allow
+            messages to include deeplinks to the failed job run.
 
     Examples:
         .. code-block:: python
@@ -185,7 +198,7 @@ def make_slack_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
-                    f"Job {context.pipeline_run.job_name} failed!"
+                    f"Job {context.dagster_run.job_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 
@@ -193,15 +206,15 @@ def make_slack_on_run_failure_sensor(
                 channel="#my_channel",
                 slack_token=os.getenv("MY_SLACK_TOKEN"),
                 text_fn=my_message_fn,
-                dagit_base_url="http://mycoolsite.com",
+                webserver_base_url="http://mycoolsite.com",
             )
 
 
     """
+    webserver_base_url = normalize_renamed_param(
+        webserver_base_url, "webserver_base_url", dagit_base_url, "dagit_base_url"
+    )
     slack_client = WebClient(token=slack_token)
-
-    if job_selection:
-        deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
     jobs = monitored_jobs if monitored_jobs else job_selection
 
     @run_failure_sensor(
@@ -213,7 +226,10 @@ def make_slack_on_run_failure_sensor(
     )
     def slack_on_run_failure(context: RunFailureSensorContext):
         blocks, main_body_text = _build_slack_blocks_and_text(
-            context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
+            context=context,
+            text_fn=text_fn,
+            blocks_fn=blocks_fn,
+            webserver_base_url=webserver_base_url,
         )
 
         slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)
@@ -228,6 +244,11 @@ def _default_freshness_message_text_fn(context: FreshnessPolicySensorContext) ->
     )
 
 
+@deprecated_param(
+    param="dagit_base_url",
+    breaking_version="2.0",
+    additional_warn_text="Use `webserver_base_url` instead.",
+)
 @experimental
 def make_slack_on_freshness_policy_status_change_sensor(
     channel: str,
@@ -240,6 +261,7 @@ def make_slack_on_freshness_policy_status_change_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    webserver_base_url: Optional[str] = None,
 ):
     """Create a sensor that will message the given Slack channel whenever an asset in the provided
     AssetSelection becomes out of date. Messages are only fired when the state changes, meaning
@@ -276,6 +298,8 @@ def make_slack_on_freshness_policy_status_change_sensor(
             messages to include deeplinks to the relevant asset page.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        webserver_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
+            messages to include deeplinks to the relevant asset page.
 
     Examples:
         .. code-block:: python
@@ -298,11 +322,14 @@ def make_slack_on_freshness_policy_status_change_sensor(
                 channel="#my_channel",
                 slack_token=os.getenv("MY_SLACK_TOKEN"),
                 text_fn=my_message_fn,
-                dagit_base_url="http://mycoolsite.com",
+                webserver_base_url="http://mycoolsite.com",
             )
 
 
     """
+    webserver_base_url = normalize_renamed_param(
+        webserver_base_url, "webserver_base_url", dagit_base_url, "dagit_base_url"
+    )
     slack_client = WebClient(token=slack_token)
 
     @freshness_policy_sensor(
@@ -321,7 +348,10 @@ def make_slack_on_freshness_policy_status_change_sensor(
             and context.previous_minutes_overdue != 0
         ):
             blocks, main_body_text = _build_slack_blocks_and_text(
-                context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
+                context=context,
+                text_fn=text_fn,
+                blocks_fn=blocks_fn,
+                webserver_base_url=webserver_base_url,
             )
 
             slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)

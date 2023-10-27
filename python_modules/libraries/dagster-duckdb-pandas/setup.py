@@ -18,13 +18,12 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-duckdb-pandas",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for storing Pandas DataFrames in DuckDB.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckb-pandas",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -37,7 +36,9 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-duckdb{pin}",
-        "pandas<2",  # See: https://github.com/dagster-io/dagster/issues/13339
+        # Pinned pending duckdb removal of broken pandas import. Pin can be
+        # removed as soon as it produces a working build.
+        "pandas<2.1",
     ],
     zip_safe=False,
 )

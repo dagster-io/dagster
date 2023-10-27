@@ -72,7 +72,7 @@ def test_instance_access():
         DagsterInvariantViolationError,
         match="Attempted to initialize dagster instance, but no instance reference was provided.",
     ):
-        build_schedule_context().instance
+        build_schedule_context().instance  # noqa: B018
 
     with instance_for_test() as instance:
         assert isinstance(build_schedule_context(instance).instance, DagsterInstance)
@@ -82,7 +82,7 @@ def test_schedule_invocation_resources() -> None:
     class MyResource(ConfigurableResource):
         a_str: str
 
-    @schedule(job_name="foo_pipeline", cron_schedule="* * * * *")
+    @schedule(job_name="foo_job", cron_schedule="* * * * *")
     def basic_schedule_resource_req(my_resource: MyResource):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -125,7 +125,7 @@ def test_schedule_invocation_resources_direct() -> None:
         a_str: str
 
     # Test no arg invocation
-    @schedule(job_name="foo_pipeline", cron_schedule="* * * * *")
+    @schedule(job_name="foo_job", cron_schedule="* * * * *")
     def basic_schedule_resource_req(my_resource: MyResource):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -174,7 +174,7 @@ def test_schedule_invocation_resources_direct() -> None:
     ).run_config == {"foo": "foo"}
 
     # Test with context arg requirement
-    @schedule(job_name="foo_pipeline", cron_schedule="* * * * *")
+    @schedule(job_name="foo_job", cron_schedule="* * * * *")
     def basic_schedule_with_context_resource_req(my_resource: MyResource, context):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
@@ -186,12 +186,32 @@ def test_schedule_invocation_resources_direct() -> None:
     ).run_config == {"foo": "foo"}
 
 
+def test_recreating_schedule_with_resource_arg() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @schedule(job_name="foo_job", cron_schedule="* * * * *")
+    def basic_schedule_with_context_resource_req(my_resource: MyResource, context):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    @job
+    def junk_job():
+        pass
+
+    updated_schedule = basic_schedule_with_context_resource_req.with_updated_job(junk_job)
+
+    assert cast(
+        RunRequest,
+        updated_schedule(build_schedule_context(), my_resource=MyResource(a_str="foo")),
+    ).run_config == {"foo": "foo"}
+
+
 def test_schedule_invocation_resources_direct_many() -> None:
     class MyResource(ConfigurableResource):
         a_str: str
 
     # Test no arg invocation
-    @schedule(job_name="foo_pipeline", cron_schedule="* * * * *")
+    @schedule(job_name="foo_job", cron_schedule="* * * * *")
     def basic_schedule_resource_req(my_resource: MyResource, my_other_resource: MyResource):
         return RunRequest(
             run_key=None,

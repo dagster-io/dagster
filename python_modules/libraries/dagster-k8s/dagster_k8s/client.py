@@ -10,8 +10,8 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from kubernetes.client.models import V1JobStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from kubernetes.client.models import V1Job, V1JobStatus
 
 try:
     from kubernetes.client.models import EventsV1Event  # noqa
@@ -133,6 +133,61 @@ def k8s_api_retry(
     check.failed("Unreachable.")
 
 
+def k8s_api_retry_creation_mutation(
+    fn: Callable[..., None],
+    max_retries: int,
+    timeout: float,
+    msg_fn=lambda: "Unexpected error encountered in Kubernetes API Client.",
+) -> None:
+    """Like k8s_api_retry, but ensures idempotence by allowing a 409 error after
+    a failure, which indicates that the desired mutation actually went through.
+    Also has an empty return type since we can't guarantee on being able to
+    return anything as a result of this case.
+    """
+    check.callable_param(fn, "fn")
+    check.int_param(max_retries, "max_retries")
+    check.numeric_param(timeout, "timeout")
+
+    remaining_attempts = 1 + max_retries
+    retry_count = 0
+    while remaining_attempts > 0:
+        remaining_attempts -= 1
+
+        try:
+            fn()
+            return
+        except kubernetes.client.rest.ApiException as e:
+            retry_count = retry_count + 1
+            # Only catch whitelisted ApiExceptions
+            status = e.status
+
+            # 409 (Conflict) here indicates that hte object actually was created
+            # during a previous attempt, despite logging a failure
+            if retry_count > 1 and status == 409:
+                return
+
+            # Check if the status code is generally whitelisted
+            whitelisted = status in WHITELISTED_TRANSIENT_K8S_STATUS_CODES
+
+            # If there are remaining attempts, swallow the error
+            if whitelisted and remaining_attempts > 0:
+                time.sleep(timeout)
+            elif whitelisted and remaining_attempts == 0:
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+            else:
+                raise DagsterK8sUnrecoverableAPIError(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+    check.failed("Unreachable.")
+
+
 class KubernetesWaitingReasons:
     PodInitializing = "PodInitializing"
     ContainerCreating = "ContainerCreating"
@@ -206,8 +261,8 @@ class DagsterKubernetesClient:
                 if jobs.items:
                     check.invariant(
                         len(jobs.items) == 1,
-                        'There should only be one k8s job with name "{}", but got multiple'
-                        ' jobs:" {}'.format(job_name, jobs.items),
+                        f'There should only be one k8s job with name "{job_name}", but got multiple'
+                        f' jobs:" {jobs.items}',
                     )
                     return jobs.items[0]
                 else:
@@ -237,9 +292,7 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name} to have pods".format(
-                        job_name=job_name
-                    )
+                    f"Timed out while waiting for job {job_name} to have pods"
                 )
 
             pod_list = k8s_api_retry(_get_pods, max_retries=3, timeout=wait_time_between_attempts)
@@ -322,9 +375,7 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start_time > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name} to complete".format(
-                        job_name=job_name
-                    )
+                    f"Timed out while waiting for job {job_name} to complete"
                 )
 
             # Reads the status of the specified job. Returns a V1Job object that
@@ -340,12 +391,16 @@ class DagsterKubernetesClient:
                 break
 
             # status.failed represents the number of pods which reached phase Failed.
-            if status.failed and status.failed > 0:
+            # if there are any active runs do not raise an exception. This happens when the job
+            # is created with a backoff_limit > 0.
+            if (
+                (status.active is None or status.active == 0)
+                and status.failed
+                and status.failed > 0
+            ):
                 raise DagsterK8sError(
-                    "Encountered failed job pods for job {job_name} with status: {status}, "
-                    "in namespace {namespace}".format(
-                        job_name=job_name, status=status, namespace=namespace
-                    )
+                    f"Encountered failed job pods for job {job_name} with status: {status}, "
+                    f"in namespace {namespace}"
                 )
 
             if instance and run_id:
@@ -561,10 +616,10 @@ class DagsterKubernetesClient:
                     KubernetesWaitingReasons.CrashLoopBackOff,
                     KubernetesWaitingReasons.RunContainerError,
                 ]:
+                    debug_info = self.get_pod_debug_info(pod_name, namespace, pod=pod)
                     raise DagsterK8sError(
-                        'Failed: Reason="{reason}" Message="{message}"'.format(
-                            reason=state.waiting.reason, message=state.waiting.message
-                        )
+                        f'Failed: Reason="{state.waiting.reason}"'
+                        f' Message="{state.waiting.message}"\n{debug_info}'
                     )
                 else:
                     raise DagsterK8sError("Unknown issue: %s" % state.waiting)
@@ -609,6 +664,7 @@ class DagsterKubernetesClient:
         # us with invalid JSON as the quotes have been switched to '
         #
         # https://github.com/kubernetes-client/python/issues/811
+
         return self.core_api.read_namespaced_pod_log(
             name=pod_name,
             namespace=namespace,
@@ -675,13 +731,24 @@ class DagsterKubernetesClient:
 
         return False
 
-    def get_pod_debug_info(self, pod_name, namespace, container_name: Optional[str] = None) -> str:
-        pods = self.core_api.list_namespaced_pod(
-            namespace=namespace, field_selector="metadata.name=%s" % pod_name
-        ).items
-        pod = pods[0] if pods else None
+    def get_pod_debug_info(
+        self,
+        pod_name,
+        namespace,
+        container_name: Optional[str] = None,
+        pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod
+    ) -> str:
+        if pod is None:
+            pods = self.core_api.list_namespaced_pod(
+                namespace=namespace, field_selector="metadata.name=%s" % pod_name
+            ).items
+            pod = pods[0] if pods else None
 
         pod_status_str = self._get_pod_status_str(pod) if pod else f"Could not find pod {pod_name}"
+
+        if container_name is None and pod is not None and pod.spec and pod.spec.containers:
+            # assume the first container is relevant if explicit container name not selected
+            container_name = pod.spec.containers[0].name
 
         specific_warning = ""
 
@@ -718,7 +785,7 @@ class DagsterKubernetesClient:
                 log_str = f"Last 25 log lines:\n{pod_logs}" if pod_logs else "No logs in pod."
 
             except kubernetes.client.rest.ApiException as e:
-                log_str = f"Failure fetching pod logs: {str(e)}"
+                log_str = f"Failure fetching pod logs: {e}"
 
         if not K8S_EVENTS_API_PRESENT:
             warning_str = (
@@ -740,7 +807,7 @@ class DagsterKubernetesClient:
                     warning_str = "Warning events for pod:\n" + "\n".join(event_strs)
 
             except kubernetes.client.rest.ApiException as e:
-                warning_str = f"Failure fetching pod events: {str(e)}"
+                warning_str = f"Failure fetching pod events: {e}"
 
         return (
             f"Debug information for pod {pod_name}:"
@@ -748,4 +815,16 @@ class DagsterKubernetesClient:
             + (f"\n\n{specific_warning}" if specific_warning else "")
             + (f"\n\n{log_str}" if log_str else "")
             + f"\n\n{warning_str}"
+        )
+
+    def create_namespaced_job_with_retries(
+        self,
+        body: V1Job,
+        namespace: str,
+        wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    ) -> None:
+        k8s_api_retry_creation_mutation(
+            lambda: self.batch_api.create_namespaced_job(body=body, namespace=namespace),
+            max_retries=3,
+            timeout=wait_time_between_attempts,
         )

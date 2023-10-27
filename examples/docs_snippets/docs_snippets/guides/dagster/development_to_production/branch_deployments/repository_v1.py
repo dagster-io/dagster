@@ -22,7 +22,7 @@ resources = {
             database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
     },
-    "production": {
+    "prod": {
         "snowflake_io_manager": SnowflakePandasIOManager(
             **snowflake_config,
             database="PRODUCTION",

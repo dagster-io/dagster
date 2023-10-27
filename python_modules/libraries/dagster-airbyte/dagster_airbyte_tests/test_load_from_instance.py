@@ -4,6 +4,7 @@ import pytest
 import responses
 from dagster import (
     AssetKey,
+    EnvVar,
     FreshnessPolicy,
     InputContext,
     IOManager,
@@ -12,12 +13,14 @@ from dagster import (
     io_manager,
     materialize,
 )
+from dagster._check import ParameterCheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.execution.with_resources import with_resources
+from dagster._core.instance_for_test import environ
 from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
@@ -33,11 +36,16 @@ TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
 
 
 @pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")
-def airbyte_instance_fixture(request) -> AirbyteResource:
-    if request.param:
-        return AirbyteResource(host="some_host", port="8000")
-    else:
-        return airbyte_resource(build_init_resource_context({"host": "some_host", "port": "8000"}))
+def airbyte_instance_fixture(request):
+    with environ({"AIRBYTE_HOST": "some_host"}):
+        if request.param:
+            yield AirbyteResource(host=EnvVar("AIRBYTE_HOST"), port="8000", poll_interval=0)
+        else:
+            yield airbyte_resource(
+                build_init_resource_context(
+                    {"host": "some_host", "port": "8000", "poll_interval": 0}
+                )
+            )
 
 
 @responses.activate
@@ -77,21 +85,22 @@ def test_load_from_instance(
 
         return TestIOManager()
 
+    base_url = "http://some_host:8000/api/v1"
     responses.add(
         method=responses.POST,
-        url=airbyte_instance.api_base_url + "/workspaces/list",
+        url=base_url + "/workspaces/list",
         json=get_instance_workspaces_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=airbyte_instance.api_base_url + "/connections/list",
+        url=base_url + "/connections/list",
         json=get_instance_connections_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=airbyte_instance.api_base_url + "/operations/list",
+        url=base_url + "/operations/list",
         json=get_instance_operations_json(),
         status=200,
     )
@@ -228,19 +237,19 @@ def test_load_from_instance(
 
     responses.add(
         method=responses.POST,
-        url=airbyte_instance.api_base_url + "/connections/get",
+        url=base_url + "/connections/get",
         json=get_project_connection_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=airbyte_instance.api_base_url + "/connections/sync",
+        url=base_url + "/connections/sync",
         json={"job": {"id": 1}},
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=airbyte_instance.api_base_url + "/jobs/get",
+        url=base_url + "/jobs/get",
         json=get_project_job_json(),
         status=200,
     )
@@ -261,10 +270,25 @@ def test_load_from_instance(
 
 
 def test_load_from_instance_cloud() -> None:
-    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo")
+    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo", poll_interval=0)
 
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="load_assets_from_airbyte_instance is not yet supported for AirbyteCloudResource",
     ):
         load_assets_from_airbyte_instance(airbyte_cloud_instance)  # type: ignore
+
+
+def test_load_from_instance_with_downstream_asset_errors():
+    ab_cacheable_assets = load_assets_from_airbyte_instance(
+        AirbyteResource(host="some_host", port="8000", poll_interval=0)
+    )
+
+    with pytest.raises(
+        ParameterCheckError,
+        match='Param "asset" is not one of ',
+    ):
+
+        @asset(deps=[ab_cacheable_assets])
+        def downstream_of_ab():
+            return None

@@ -15,7 +15,8 @@ export function getItems(node, current) {
         current.url = url
           .replace(/^#cross-/, '#')
           .replace(/^#check-/, '#')
-          .replace(/-experimental-?$/, '');
+          .replace(/-experimental-?$/, '-')
+          .replace(/-legacy-?$/, '-');
       }
       if (item.type === `text`) {
         current.title = item['value'];

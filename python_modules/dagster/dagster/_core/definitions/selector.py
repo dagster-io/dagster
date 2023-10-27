@@ -1,6 +1,9 @@
-from typing import NamedTuple, Optional, Sequence
+from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence
+
+from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
@@ -8,13 +11,14 @@ from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 class JobSubsetSelector(
     NamedTuple(
-        "_PipelineSelector",
+        "_JobSubsetSelector",
         [
             ("location_name", str),
             ("repository_name", str),
             ("job_name", str),
-            ("solid_selection", Optional[Sequence[str]]),
-            ("asset_selection", Optional[Sequence[AssetKey]]),
+            ("op_selection", Optional[Sequence[str]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     )
 ):
@@ -25,19 +29,25 @@ class JobSubsetSelector(
         location_name: str,
         repository_name: str,
         job_name: str,
-        solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[Sequence[AssetKey]] = None,
+        op_selection: Optional[Sequence[str]],
+        asset_selection: Optional[Iterable[AssetKey]] = None,
+        asset_check_selection: Optional[Iterable[AssetCheckKey]] = None,
     ):
+        asset_selection = set(asset_selection) if asset_selection else None
+        asset_check_selection = (
+            set(asset_check_selection) if asset_check_selection is not None else None
+        )
         return super(JobSubsetSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
             job_name=check.str_param(job_name, "job_name"),
-            solid_selection=check.opt_nullable_sequence_param(
-                solid_selection, "solid_selection", str
-            ),
-            asset_selection=check.opt_nullable_sequence_param(
+            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
+            asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", AssetKey
+            ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", AssetCheckKey
             ),
         )
 
@@ -46,18 +56,17 @@ class JobSubsetSelector(
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
             "pipelineName": self.job_name,
-            "solidSelection": self.solid_selection,
+            "solidSelection": self.op_selection,
         }
 
-    def with_solid_selection(self, solid_selection):
+    def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> Self:
         check.invariant(
-            self.solid_selection is None,
-            "Can not invoke with_solid_selection when solid_selection={} is already set".format(
-                solid_selection
-            ),
+            self.op_selection is None,
+            f"Can not invoke with_op_selection when op_selection={self.op_selection} is"
+            " already set",
         )
         return JobSubsetSelector(
-            self.location_name, self.repository_name, self.job_name, solid_selection
+            self.location_name, self.repository_name, self.job_name, op_selection
         )
 
 
@@ -84,12 +93,10 @@ class JobSelector(
             job_name=check.str_param(
                 job_name,
                 "job_name",
-                (
-                    "Must provide job_name argument even though it is marked as optional in the "
-                    "function signature. repository_name, a truly optional parameter, is before "
-                    "that argument and actually optional. Use of keyword arguments is "
-                    "recommended to avoid confusion."
-                ),
+                "Must provide job_name argument even though it is marked as optional in the "
+                "function signature. repository_name, a truly optional parameter, is before "
+                "that argument and actually optional. Use of keyword arguments is "
+                "recommended to avoid confusion.",
             ),
         )
 
@@ -311,3 +318,94 @@ class PartitionSetSelector(
             "repositoryName": self.repository_name,
             "partitionSetName": self.partition_set_name,
         }
+
+
+class PartitionRangeSelector(
+    NamedTuple(
+        "_PartitionRangeSelector",
+        [("start", str), ("end", str)],
+    )
+):
+    """The information needed to resolve a partition range."""
+
+    def __new__(cls, start: str, end: str):
+        return super(PartitionRangeSelector, cls).__new__(
+            cls,
+            start=check.inst_param(start, "start", str),
+            end=check.inst_param(end, "end", str),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "start": self.start,
+            "end": self.end,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return PartitionRangeSelector(
+            start=graphql_data["start"],
+            end=graphql_data["end"],
+        )
+
+
+class PartitionsSelector(
+    NamedTuple(
+        "_PartitionsSelector",
+        [("partition_range", PartitionRangeSelector)],
+    )
+):
+    """The information needed to define selection partitions.
+    Using partition_range as property name to avoid shadowing Python 'range' builtin .
+    """
+
+    def __new__(cls, partition_range: PartitionRangeSelector):
+        return super(PartitionsSelector, cls).__new__(
+            cls,
+            partition_range=check.inst_param(partition_range, "range", PartitionRangeSelector),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "range": self.partition_range.to_graphql_input(),
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return PartitionsSelector(
+            partition_range=PartitionRangeSelector.from_graphql_input(graphql_data["range"])
+        )
+
+
+class PartitionsByAssetSelector(
+    NamedTuple(
+        "PartitionsByAssetSelector",
+        [
+            ("asset_key", AssetKey),
+            ("partitions", Optional[PartitionsSelector]),
+        ],
+    )
+):
+    """The information needed to define partitions selection for a given asset key."""
+
+    def __new__(cls, asset_key: AssetKey, partitions: Optional[PartitionsSelector] = None):
+        return super(PartitionsByAssetSelector, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            partitions=check.opt_inst_param(partitions, "partitions", PartitionsSelector),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "assetKey": self.asset_key.to_graphql_input(),
+            "partitions": self.partitions.to_graphql_input() if self.partitions else None,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        asset_key = graphql_data["assetKey"]
+        partitions = graphql_data.get("partitions")
+        return PartitionsByAssetSelector(
+            asset_key=AssetKey.from_graphql_input(asset_key),
+            partitions=PartitionsSelector.from_graphql_input(partitions) if partitions else None,
+        )

@@ -36,6 +36,7 @@ def test_airbyte_sync_op(forward_logs, additional_request_params, use_auth):
                 else {}
             ),
             **({"username": "foo", "password": "bar"} if use_auth else {}),
+            "poll_interval": 0,
         }
     )
 

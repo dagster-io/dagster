@@ -3,6 +3,7 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -31,6 +32,7 @@ class AssetOut(
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
         ],
     )
 ):
@@ -61,6 +63,7 @@ class AssetOut(
             asset is intended to be.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
+        backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
     """
 
     def __new__(
@@ -76,17 +79,20 @@ class AssetOut(
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
 
         return super(AssetOut, cls).__new__(
             cls,
-            key=AssetKey.from_coerceable(key) if key is not None else None,
+            key=AssetKey.from_coercible(key) if key is not None else None,
             key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
             io_manager_key=check.opt_str_param(
@@ -100,6 +106,9 @@ class AssetOut(
             ),
             auto_materialize_policy=check.opt_inst_param(
                 auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
+            ),
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
             ),
         )
 

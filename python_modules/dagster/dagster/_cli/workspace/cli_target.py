@@ -370,31 +370,35 @@ def python_target_click_options(allow_multiple_python_targets: bool) -> Sequence
     ]
 
 
-def grpc_server_target_click_options() -> Sequence[ClickOption]:
+def grpc_server_target_click_options(hidden=False) -> Sequence[ClickOption]:
     return [
         click.option(
             "--grpc-port",
             type=click.INT,
             required=False,
             help="Port to use to connect to gRPC server",
+            hidden=hidden,
         ),
         click.option(
             "--grpc-socket",
             type=click.Path(),
             required=False,
             help="Named socket to use to connect to gRPC server",
+            hidden=hidden,
         ),
         click.option(
             "--grpc-host",
             type=click.STRING,
             required=False,
             help="Host to use to connect to gRPC server, defaults to localhost",
+            hidden=hidden,
         ),
         click.option(
             "--use-ssl",
             is_flag=True,
             required=False,
             help="Use a secure channel when connecting to the gRPC server",
+            hidden=hidden,
         ),
     ]
 
@@ -693,21 +697,14 @@ def get_code_location_from_workspace(
             raise click.UsageError("No locations found in workspace")
         elif provided_location_name is None:
             raise click.UsageError(
-                (
-                    "Must provide --location as there are multiple locations "
-                    "available. Options are: {}"
-                ).format(_sorted_quoted(workspace.code_location_names))
+                "Must provide --location as there are multiple locations "
+                f"available. Options are: {_sorted_quoted(workspace.code_location_names)}"
             )
 
     if provided_location_name not in workspace.code_location_names:
         raise click.UsageError(
-            (
-                'Location "{provided_location_name}" not found in workspace. '
-                "Found {found_names} instead."
-            ).format(
-                provided_location_name=provided_location_name,
-                found_names=_sorted_quoted(workspace.code_location_names),
-            )
+            f'Location "{provided_location_name}" not found in workspace. '
+            f"Found {_sorted_quoted(workspace.code_location_names)} instead."
         )
 
     if workspace.has_code_location_error(provided_location_name):
@@ -736,22 +733,14 @@ def get_external_repository_from_code_location(
 
     if provided_repo_name is None:
         raise click.UsageError(
-            (
-                "Must provide --repository as there is more than one repository "
-                "in {location}. Options are: {repos}."
-            ).format(location=code_location.name, repos=_sorted_quoted(repo_dict.keys()))
+            "Must provide --repository as there is more than one repository "
+            f"in {code_location.name}. Options are: {_sorted_quoted(repo_dict.keys())}."
         )
 
     if not code_location.has_repository(provided_repo_name):
         raise click.UsageError(
-            (
-                'Repository "{provided_repo_name}" not found in location "{location_name}". '
-                "Found {found_names} instead."
-            ).format(
-                provided_repo_name=provided_repo_name,
-                location_name=code_location.name,
-                found_names=_sorted_quoted(repo_dict.keys()),
-            )
+            f'Repository "{provided_repo_name}" not found in location "{code_location.name}". '
+            f"Found {_sorted_quoted(repo_dict.keys())} instead."
         )
 
     return code_location.get_repository(provided_repo_name)

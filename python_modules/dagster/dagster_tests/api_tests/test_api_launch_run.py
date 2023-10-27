@@ -1,5 +1,5 @@
 from dagster._core.host_representation.handle import JobHandle
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
     instance_for_test,
@@ -24,7 +24,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
         )
 
 
-def test_launch_run_with_unloadable_pipeline_grpc():
+def test_launch_run_with_unloadable_job_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_code_location(instance) as code_location:
             job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
@@ -62,7 +62,7 @@ def test_launch_run_with_unloadable_pipeline_grpc():
                 event_records,
                 [
                     ("ENGINE_EVENT", "Started process for run"),
-                    ("ENGINE_EVENT", "Could not load pipeline definition"),
+                    ("ENGINE_EVENT", "Could not load job definition"),
                     (
                         "PIPELINE_FAILURE",
                         "This run has been marked as failed from outside the execution context",
@@ -140,9 +140,7 @@ def test_launch_unloadable_run_grpc():
 
                 assert not res.success
                 assert (
-                    "gRPC server could not load run {run_id} in order to execute it. "
-                    "Make sure that the gRPC server has access to your run storage.".format(
-                        run_id=run_id
-                    )
+                    f"gRPC server could not load run {run_id} in order to execute it. "
+                    "Make sure that the gRPC server has access to your run storage."
                     in res.serializable_error_info.message
                 )

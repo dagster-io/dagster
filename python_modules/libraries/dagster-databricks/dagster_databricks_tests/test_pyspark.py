@@ -29,7 +29,7 @@ ADLS2_CONTAINER = "dagster-databricks-tests"
 BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
     "databricks_host": os.environ.get("DATABRICKS_HOST") or "https://",
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
-    "local_pipeline_package_path": os.path.abspath(os.path.dirname(__file__)),
+    "local_job_package_path": os.path.abspath(os.path.dirname(__file__)),
     "staging_prefix": "/dagster-databricks-tests",
     "run_config": {
         "cluster": {
@@ -167,13 +167,14 @@ def test_local():
     assert result.success
 
 
-@mock.patch("databricks_cli.sdk.JobsService.submit_run")
+@mock.patch("databricks.sdk.core.Config")
+@mock.patch("databricks.sdk.JobsAPI.submit")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.read_file")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.put_file")
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
-@mock.patch("databricks_cli.sdk.JobsService.get_run")
+@mock.patch("databricks.sdk.JobsAPI.get_run")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
-@mock.patch("databricks_cli.sdk.api_client.ApiClient.perform_query")
+@mock.patch("databricks.sdk.core.ApiClient.do")
 def test_pyspark_databricks(
     mock_perform_query,
     mock_get_run_state,
@@ -182,8 +183,11 @@ def test_pyspark_databricks(
     mock_put_file,
     mock_read_file,
     mock_submit_run,
+    mock_config,
 ):
-    mock_submit_run.return_value = {"run_id": 12345}
+    mock_submit_run_response = mock.Mock()
+    mock_submit_run_response.bind.return_value = {"run_id": 12345}
+    mock_submit_run.return_value = mock_submit_run_response
     mock_read_file.return_value = "somefilecontents".encode()
 
     running_state = DatabricksRunState(DatabricksRunLifeCycleState.RUNNING, None, "")
@@ -202,7 +206,7 @@ def test_pyspark_databricks(
 
     with instance_for_test() as instance:
         config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
-        config.pop("local_pipeline_package_path")
+        config.pop("local_job_package_path")
         result = execute_job(
             job=reconstructable(define_do_nothing_test_job),
             instance=instance,
@@ -238,7 +242,7 @@ def test_pyspark_databricks(
 
     with instance_for_test() as instance:
         config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
-        config.pop("local_pipeline_package_path")
+        config.pop("local_job_package_path")
         config["run_config"]["cluster"] = {"existing": "cluster_id"}
         with pytest.raises(ValueError) as excinfo:
             execute_job(

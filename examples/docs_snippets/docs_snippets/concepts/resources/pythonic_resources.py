@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 # ruff: noqa: T201
 
 from typing import TYPE_CHECKING
@@ -303,7 +303,7 @@ class GitHubOrganization:
         self.name = name
 
     def repositories(self):
-        return ["dagster", "dagit", "dagster-graphql"]
+        return ["dagster", "dagster-webserver", "dagster-graphql"]
 
 
 class GitHub:
@@ -561,7 +561,13 @@ def new_io_manager() -> None:
 def raw_github_resource_factory() -> None:
     # start_raw_github_resource_factory
 
-    from dagster import ConfigurableResourceFactory, Resource, asset, EnvVar
+    from dagster import (
+        ConfigurableResourceFactory,
+        Resource,
+        asset,
+        Definitions,
+        EnvVar,
+    )
 
     class GitHubResource(ConfigurableResourceFactory[GitHub]):
         access_token: str
@@ -621,72 +627,74 @@ def with_state_example() -> None:
     from dagster import ConfigurableResource, asset
     import requests
 
-    class MyClient:
-        """Client class with mutable state."""
-
-        def __init__(self, username: str, password: str):
-            self.username = username
-            self.password = password
-            self._api_token = requests.get(
-                "https://my-api.com/token", auth=(username, password)
-            ).text
-
-        def query(self, body: str):
-            return requests.get(
-                "https://my-api.com/query",
-                headers={"Authorization": self._api_token},
-                data=body,
-            )
+    from pydantic import PrivateAttr
 
     class MyClientResource(ConfigurableResource):
         username: str
         password: str
 
-        def get_client(self):
-            return MyClient(self.username, self.password)
+        _api_token: str = PrivateAttr()
+
+        def setup_for_execution(self, context) -> None:
+            # Fetch and set up an API token based on the username and password
+            self._api_token = requests.get(
+                "https://my-api.com/token", auth=(self.username, self.password)
+            ).text
+
+        def get_all_users(self):
+            return requests.get(
+                "https://my-api.com/users",
+                headers={"Authorization": self._api_token},
+            )
 
     @asset
     def my_asset(client: MyClientResource):
-        return client.get_client().query("SELECT * FROM my_table")
+        return client.get_all_users()
 
     # end_with_state_example
 
 
-def new_resource_testing_with_state() -> None:
-    # start_new_resource_testing_with_state
+def with_complex_state_example() -> None:
+    # start_with_complex_state_example
 
     from dagster import ConfigurableResource, asset
-    import mock
+    from contextlib import contextmanager
+    from pydantic import PrivateAttr
 
-    class MyClient:
+    class DBConnection:
         ...
 
         def query(self, body: str):
             ...
 
+    @contextmanager
+    def get_database_connection(username: str, password: str):
+        ...
+
     class MyClientResource(ConfigurableResource):
         username: str
         password: str
 
-        def get_client(self):
-            return MyClient(self.username, self.password)
+        _db_connection: DBConnection = PrivateAttr()
+
+        @contextmanager
+        def yield_for_execution(self, context):
+            # keep connection open for the duration of the execution
+            with get_database_connection(self.username, self.password) as conn:
+                # set up the connection attribute so it can be used in the execution
+                self._db_connection = conn
+
+                # yield, allowing execution to occur
+                yield self
+
+        def query(self, body: str):
+            return self._db_connection.query(body)
 
     @asset
     def my_asset(client: MyClientResource):
-        return client.get_client().query("SELECT * FROM my_table")
+        client.query("SELECT * FROM my_table")
 
-    def test_my_asset():
-        class FakeClient:
-            def query(self, body: str):
-                assert body == "SELECT * FROM my_table"
-                return "my_result"
-
-        mocked_client_resource = mock.Mock()
-        mocked_client_resource.get_client.return_value = FakeClient()
-
-        assert my_asset(mocked_client_resource) == "my_result"
-
-    # end_new_resource_testing_with_state
+    # end_with_complex_state_example
 
 
 def new_resource_testing_with_state_ops() -> None:

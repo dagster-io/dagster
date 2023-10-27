@@ -4,7 +4,7 @@ from typing import List
 import pytest
 import yaml
 from kubernetes.client import models
-from schema.charts.dagster.subschema.dagit import Dagit, Server, Workspace
+from schema.charts.dagster.subschema.webserver import Server, Webserver, Workspace
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.utils.helm_template import HelmTemplate
@@ -87,14 +87,14 @@ def test_workspace_renders_from_helm_user_deployments(template: HelmTemplate):
         assert grpc_server["grpc_server"]["location_name"] == deployment.name
 
 
-def test_workspace_renders_from_helm_dagit(template: HelmTemplate):
+def test_workspace_renders_from_helm_webserver(template: HelmTemplate):
     servers = [
         Server(host="another-deployment-one", port=4000, name="deployment one"),
         Server(host="another-deployment-two", port=4001, name="deployment two"),
         Server(host="another-deployment-three", port=4002, name="deployment three"),
     ]
     helm_values = DagsterHelmValues.construct(
-        dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
+        dagsterWebserver=Webserver.construct(workspace=Workspace(enabled=True, servers=servers)),
         dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
@@ -122,13 +122,13 @@ def test_workspace_renders_from_helm_dagit(template: HelmTemplate):
         assert grpc_server["grpc_server"]["location_name"] == server.name
 
 
-def test_workspace_server_location_name_renders_from_helm_dagit(template: HelmTemplate):
+def test_workspace_server_location_name_renders_from_helm_webserver(template: HelmTemplate):
     servers = [
         Server(host="another-deployment-one", port=4000),
         Server(host="another-deployment-two", port=4001, name="deployment two"),
     ]
     helm_values = DagsterHelmValues.construct(
-        dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
+        dagsterWebserver=Webserver.construct(workspace=Workspace(enabled=True, servers=servers)),
         dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
@@ -161,7 +161,7 @@ def test_workspace_server_location_name_renders_from_helm_dagit(template: HelmTe
 def test_workspace_renders_empty(template: HelmTemplate):
     servers: List[Server] = []
     helm_values = DagsterHelmValues.construct(
-        dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
+        dagsterWebserver=Webserver.construct(workspace=Workspace(enabled=True, servers=servers)),
         dagsterUserDeployments=UserDeployments.construct(
             enabled=True,
             enableSubchart=True,
@@ -183,7 +183,7 @@ def test_workspace_renders_empty(template: HelmTemplate):
 
 def test_workspace_external_configmap_fail(template: HelmTemplate, capfd):
     helm_values = DagsterHelmValues.construct(
-        dagit=Dagit.construct(
+        dagsterWebserver=Webserver.construct(
             workspace=Workspace(
                 enabled=True,
                 servers=[
@@ -208,7 +208,7 @@ def test_workspace_external_configmap_fail(template: HelmTemplate, capfd):
 
 def test_workspace_external_configmap_not_present(template: HelmTemplate, capfd):
     helm_values = DagsterHelmValues.construct(
-        dagit=Dagit.construct(
+        dagsterWebserver=Webserver.construct(
             workspace=Workspace(
                 enabled=True,
                 servers=[],

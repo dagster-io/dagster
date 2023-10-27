@@ -39,13 +39,13 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def cleanup_memoized_results(
-    pipeline_def: JobDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
+    job_def: JobDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
 ) -> None:
     # Clean up any memoized outputs from the s3 bucket
     from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
     execution_plan = create_execution_plan(
-        pipeline_def,
+        job_def,
         run_config=run_config,
         instance_ref=instance.get_ref(),
     )
@@ -127,7 +127,7 @@ def get_test_project_recon_job(
     filename = filename or "repo.py"
     return ReOriginatedReconstructableJobForTest(
         ReconstructableRepository.for_file(
-            file_relative_path(__file__, f"test_pipelines/{filename}"),
+            file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",
             container_image=container_image,
             container_context=container_context,
@@ -138,14 +138,13 @@ def get_test_project_recon_job(
 class ReOriginatedReconstructableJobForTest(ReconstructableJob):
     def __new__(
         cls,
-        reconstructable_pipeline: ReconstructableJob,
+        reconstructable_job: ReconstructableJob,
     ):
         return super(ReOriginatedReconstructableJobForTest, cls).__new__(
             cls,
-            reconstructable_pipeline.repository,
-            reconstructable_pipeline.job_name,
-            reconstructable_pipeline.solid_selection_str,
-            reconstructable_pipeline.solids_to_execute,
+            reconstructable_job.repository,
+            reconstructable_job.job_name,
+            reconstructable_job.op_selection,
         )
 
     def get_python_origin(self):
@@ -159,7 +158,7 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
-                    "/dagster_test/test_project/test_pipelines/repo.py",
+                    "/dagster_test/test_project/test_jobs/repo.py",
                     "define_demo_execution_repo",
                 ),
                 container_image=self.repository.container_image,
@@ -169,14 +168,14 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         )
 
 
-class ReOriginatedExternalPipelineForTest(ExternalJob):
+class ReOriginatedExternalJobForTest(ExternalJob):
     def __init__(
         self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
-        super(ReOriginatedExternalPipelineForTest, self).__init__(
+        super(ReOriginatedExternalJobForTest, self).__init__(
             external_job.external_job_data,
             external_job.repository_handle,
         )
@@ -192,7 +191,7 @@ class ReOriginatedExternalPipelineForTest(ExternalJob):
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
-                    f"/dagster_test/test_project/test_pipelines/{self._filename}",
+                    f"/dagster_test/test_project/test_jobs/{self._filename}",
                     "define_demo_execution_repo",
                 ),
                 container_image=self._container_image,
@@ -212,7 +211,7 @@ class ReOriginatedExternalPipelineForTest(ExternalJob):
                 code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
-                        python_file=f"/dagster_test/test_project/test_pipelines/{self._filename}",
+                        python_file=f"/dagster_test/test_project/test_jobs/{self._filename}",
                         attribute="define_demo_execution_repo",
                     ),
                     container_image=self._container_image,
@@ -272,7 +271,7 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
         instance,
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
-            python_file=file_relative_path(__file__, f"test_pipelines/{filename}"),
+            python_file=file_relative_path(__file__, f"test_jobs/{filename}"),
             attribute="define_demo_execution_repo",
         ),
         container_image=container_image,
@@ -281,14 +280,14 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
 
 
 @contextmanager
-def get_test_project_external_pipeline_hierarchy(
-    instance, pipeline_name, container_image=None, filename=None
+def get_test_project_external_job_hierarchy(
+    instance, job_name, container_image=None, filename=None
 ):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         repo = location.get_repository("demo_execution_repo")
-        pipeline = repo.get_full_external_job(pipeline_name)
-        yield workspace, location, repo, pipeline
+        job = repo.get_full_external_job(job_name)
+        yield workspace, location, repo, job
 
 
 @contextmanager
@@ -299,18 +298,16 @@ def get_test_project_external_repo(instance, container_image=None, filename=None
 
 
 @contextmanager
-def get_test_project_workspace_and_external_pipeline(
-    instance, pipeline_name, container_image=None, filename=None
+def get_test_project_workspace_and_external_job(
+    instance, job_name, container_image=None, filename=None
 ):
-    with get_test_project_external_pipeline_hierarchy(
-        instance, pipeline_name, container_image, filename
-    ) as (
+    with get_test_project_external_job_hierarchy(instance, job_name, container_image, filename) as (
         workspace,
         _location,
         _repo,
-        pipeline,
+        job,
     ):
-        yield workspace, pipeline
+        yield workspace, job
 
 
 @contextmanager
@@ -351,8 +348,6 @@ def get_test_project_docker_image():
             majmin=majmin, image_version="latest"
         )
 
-    final_docker_image = "{repository}/{image_name}:{tag}".format(
-        repository=docker_repository, image_name=image_name, tag=docker_image_tag
-    )
+    final_docker_image = f"{docker_repository}/{image_name}:{docker_image_tag}"
     print("Using Docker image: %s" % final_docker_image)  # noqa: T201
     return final_docker_image

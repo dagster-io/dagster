@@ -11,18 +11,20 @@ def get_version():
     return version["__version__"]
 
 
+ver = get_version()
+# dont pin dev installs to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-msteams",
     version=get_version(),
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="A Microsoft Teams client resource for posting to Microsoft Teams",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -32,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_msteams_tests*"]),
     install_requires=[
-        "dagster",
+        f"dagster{pin}",
         "requests>=2,<3",
     ],
     zip_safe=False,

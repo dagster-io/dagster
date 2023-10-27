@@ -227,6 +227,14 @@ compute_logs:
 
 # end_marker_compute_log_storage_local
 
+# start_marker_compute_log_storage_noop
+
+compute_logs:
+  module: dagster.core.storage.noop_compute_log_manager
+  class: NoOpComputeLogManager
+
+# end_marker_compute_log_storage_noop
+
 # start_marker_compute_log_storage_blob
 # there are multiple ways to configure the AzureBlobComputeLogManager
 
@@ -328,11 +336,12 @@ local_artifact_storage:
 
 # start_run_monitoring
 
-# Opt in to the experimental Monitoring Daemon
+# Opt in to run monitoring
 run_monitoring:
   enabled: true
-  # values below are the defaults, and don't need to be specified execpt to override them
+  # values below are the defaults, and don't need to be specified except to override them
   start_timeout_seconds: 180
+  cancel_timeout_seconds: 180
   max_resume_run_attempts: 3 # experimental if above 0
   poll_interval_seconds: 120
 

@@ -17,7 +17,7 @@ from .sql_run_storage import SqlRunStorage
 class InMemoryRunStorage(SqlRunStorage):
     """In memory only run storage. Used by ephemeral DagsterInstance or for testing purposes.
 
-    WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
+    WARNING: The Dagster UI and other core functionality will not work if this is used on a real DagsterInstance
     """
 
     def __init__(self, preload: Optional[Sequence[DebugRunPayload]] = None):
@@ -29,12 +29,16 @@ class InMemoryRunStorage(SqlRunStorage):
         # hold one connection for life of instance, but vend new ones for specific calls
         self._held_conn = self._engine.connect()
 
-        RunStorageSqlMetadata.create_all(self._held_conn)
-        alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
-        stamp_alembic_rev(alembic_config, self._held_conn)
-        table_names = db.inspect(self._held_conn).get_table_names()
-        if "instance_info" not in table_names:
-            InstanceInfo.create(self._held_conn)
+        with self._held_conn.begin():
+            RunStorageSqlMetadata.create_all(self._held_conn)
+            alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
+            stamp_alembic_rev(alembic_config, self._held_conn)
+
+            table_names = db.inspect(self._held_conn).get_table_names()
+
+            if "instance_info" not in table_names:
+                InstanceInfo.create(self._held_conn)
+
         self.migrate()
         self.optimize()
 
@@ -49,10 +53,10 @@ class InMemoryRunStorage(SqlRunStorage):
     @contextmanager
     def connect(self) -> Iterator[Connection]:
         with self._engine.connect() as conn:
-            conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA foreign_keys=ON;")
-
-            yield conn
+            with conn.begin():
+                conn.execute(db.text("PRAGMA journal_mode=WAL;"))
+                conn.execute(db.text("PRAGMA foreign_keys=ON;"))
+                yield conn
 
     def upgrade(self) -> None:
         pass

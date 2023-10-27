@@ -28,7 +28,13 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+)
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
 )
@@ -38,6 +44,7 @@ from dagster._core.definitions.resource_annotation import (
 from dagster._core.definitions.resource_definition import (
     Resources,
 )
+from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -47,14 +54,13 @@ from dagster._core.errors import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import normalize_to_repository
+from dagster._utils import IHasInternalInit, normalize_to_repository
 
 from ..decorator_utils import (
     get_function_params,
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -190,6 +196,10 @@ class SensorEvaluationContext:
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
 
+    @property
+    def sensor_name(self) -> str:
+        return check.not_none(self._sensor_name, "Only valid when sensor name provided")
+
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.
 
@@ -221,6 +231,7 @@ class SensorEvaluationContext:
     @public
     @property
     def resources(self) -> Resources:
+        """Resources: A mapping from resource key to instantiated resources for this sensor."""
         from dagster._core.definitions.scoped_resources_builder import (
             IContainsGenerator,
         )
@@ -243,6 +254,18 @@ class SensorEvaluationContext:
                 my_sensor(context)
             """
 
+            # Early exit if no resources are defined. This skips unnecessary initialization
+            # entirely. This allows users to run user code servers in cases where they
+            # do not have access to the instance if they use a subset of features do
+            # that do not require instance access. In this case, if they do not use
+            # resources on sensors they do not require the instance, so we do not
+            # instantiate it
+            #
+            # Tracking at https://github.com/dagster-io/dagster/issues/14345
+            if not self._resource_defs:
+                self._resources = ScopedResourcesBuilder.build_empty()
+                return self._resources
+
             instance = self.instance if self._instance or self._instance_ref else None
 
             resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
@@ -261,6 +284,7 @@ class SensorEvaluationContext:
     @public
     @property
     def instance(self) -> DagsterInstance:
+        """DagsterInstance: The current DagsterInstance."""
         # self._instance_ref should only ever be None when this SensorEvaluationContext was
         # constructed under test.
         if not self._instance:
@@ -281,11 +305,13 @@ class SensorEvaluationContext:
     @public
     @property
     def last_completion_time(self) -> Optional[float]:
+        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation."""
         return self._last_completion_time
 
     @public
     @property
     def last_run_key(self) -> Optional[str]:
+        """Optional[str]: The run key supplied to the most recent RunRequest produced by this sensor."""
         return self._last_run_key
 
     @public
@@ -315,11 +341,13 @@ class SensorEvaluationContext:
     @public
     @property
     def repository_name(self) -> Optional[str]:
+        """Optional[str]: The name of the repository that this sensor resides in."""
         return self._repository_name
 
     @public
     @property
     def repository_def(self) -> Optional["RepositoryDefinition"]:
+        """Optional[RepositoryDefinition]: The RepositoryDefinition that this sensor resides in."""
         return self._repository_def
 
     @property
@@ -365,7 +393,7 @@ RawSensorEvaluationFunctionReturn = Union[
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
-SensorEvaluationFunction: TypeAlias = Callable[..., Iterator[Union[SkipReason, RunRequest]]]
+SensorEvaluationFunction: TypeAlias = Callable[..., Sequence[Union[SkipReason, RunRequest]]]
 
 
 def get_context_param_name(fn: Callable) -> Optional[str]:
@@ -442,7 +470,7 @@ def _check_dynamic_partitions_requests(
             check.failed(f"Unexpected dynamic partition request type: {req}")
 
 
-class SensorDefinition:
+class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
     Args:
@@ -459,7 +487,7 @@ class SensorDefinition:
         job (Optional[GraphDefinition, JobDefinition, UnresolvedAssetJob]): The job to execute when this sensor fires.
         jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
             the sensor condition is met. This can be provided instead of specifying a job.
     """
@@ -471,15 +499,17 @@ class SensorDefinition:
             job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
-        return SensorDefinition(
+        return SensorDefinition.dagster_internal_init(
             name=self.name,
-            evaluation_fn=self._evaluation_fn,
+            evaluation_fn=self._raw_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
+            job_name=None,  # if original init was passed job name, was resolved to a job
             jobs=new_jobs if len(new_jobs) > 1 else None,
             job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
+            required_resource_keys=self._raw_required_resource_keys,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -533,7 +563,7 @@ class SensorDefinition:
             targets = [
                 RepoRelativeTarget(
                     job_name=check.str_param(job_name, "job_name"),
-                    solid_selection=None,
+                    op_selection=None,
                 )
             ]
         elif job:
@@ -555,7 +585,7 @@ class SensorDefinition:
             SensorEvaluationFunction,
             Callable[
                 [SensorEvaluationContext],
-                Iterator[Union[SkipReason, RunRequest, DagsterRunReaction]],
+                List[Union[SkipReason, RunRequest, DagsterRunReaction]],
             ],
         ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
@@ -576,14 +606,39 @@ class SensorDefinition:
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
-            (
-                "Cannot specify resource requirements in both @sensor decorator and as arguments to"
-                " the decorated function"
-            ),
+            "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+            " the decorated function",
         )
-        self._required_resource_keys = (
-            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            or resource_arg_names
+        self._raw_required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys", of_type=str
+        )
+        self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
+
+    @staticmethod
+    def dagster_internal_init(
+        *,
+        name: Optional[str],
+        evaluation_fn: Optional[RawSensorEvaluationFunction],
+        job_name: Optional[str],
+        minimum_interval_seconds: Optional[int],
+        description: Optional[str],
+        job: Optional[ExecutableDefinition],
+        jobs: Optional[Sequence[ExecutableDefinition]],
+        default_status: DefaultSensorStatus,
+        asset_selection: Optional[AssetSelection],
+        required_resource_keys: Optional[Set[str]],
+    ) -> "SensorDefinition":
+        return SensorDefinition(
+            name=name,
+            evaluation_fn=evaluation_fn,
+            job_name=job_name,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+            asset_selection=asset_selection,
+            required_resource_keys=required_resource_keys,
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
@@ -602,21 +657,25 @@ class SensorDefinition:
     @public
     @property
     def required_resource_keys(self) -> Set[str]:
+        """Set[str]: The set of keys for resources that must be provided to this sensor."""
         return self._required_resource_keys
 
     @public
     @property
     def name(self) -> str:
+        """str: The name of this sensor."""
         return self._name
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A description for this sensor."""
         return self._description
 
     @public
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
+        """Optional[int]: The minimum number of seconds between sequential evaluations of this sensor."""
         return self._min_interval
 
     @property
@@ -626,6 +685,9 @@ class SensorDefinition:
     @public
     @property
     def job(self) -> Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+        """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
+        targeted by this schedule.
+        """
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].target
@@ -638,6 +700,9 @@ class SensorDefinition:
     @public
     @property
     def jobs(self) -> List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+        """List[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]: A list of jobs
+        that are targeted by this schedule.
+        """
         if self._targets and all(isinstance(target, DirectTarget) for target in self._targets):
             return [target.target for target in self._targets]  # type: ignore  # (illegible conditional)
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
@@ -658,7 +723,7 @@ class SensorDefinition:
         """
         context = check.inst_param(context, "context", SensorEvaluationContext)
 
-        result = list(self._evaluation_fn(context))
+        result = self._evaluation_fn(context)
 
         skip_message: Optional[str] = None
         run_requests: List[RunRequest] = []
@@ -667,6 +732,7 @@ class SensorDefinition:
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = []
         updated_cursor = context.cursor
+        asset_events = []
 
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
@@ -692,6 +758,7 @@ class SensorDefinition:
                         "SensorResult.cursor cannot be set if context.update_cursor() was called."
                     )
                 updated_cursor = item.cursor
+                asset_events = item.asset_events
 
             elif isinstance(item, RunRequest):
                 run_requests = [item]
@@ -725,8 +792,8 @@ class SensorDefinition:
                     )
                 elif len(dagster_run_reactions) > 0:
                     check.failed(
-                        "Expected a single SkipReason or one or more PipelineRunReaction: "
-                        "received both PipelineRunReaction and SkipReason"
+                        "Expected a single SkipReason or one or more DagsterRunReaction: "
+                        "received both DagsterRunReaction and SkipReason"
                     )
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
@@ -743,6 +810,7 @@ class SensorDefinition:
             dagster_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
+            asset_events=asset_events,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -844,6 +912,7 @@ class SensorDefinition:
     @public
     @property
     def job_name(self) -> Optional[str]:
+        """Optional[str]: The name of the job that is targeted by this sensor."""
         if len(self._targets) > 1:
             raise DagsterInvalidInvocationError(
                 f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
@@ -854,6 +923,9 @@ class SensorDefinition:
     @public
     @property
     def default_status(self) -> DefaultSensorStatus:
+        """DefaultSensorStatus: The default status for this sensor when it is first loaded in
+        a code location.
+        """
         return self._default_status
 
     @property
@@ -879,6 +951,10 @@ class SensorExecutionData(
                     Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
                 ],
             ),
+            (
+                "asset_events",
+                Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
+            ),
         ],
     )
 ):
@@ -894,6 +970,9 @@ class SensorExecutionData(
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = None,
+        asset_events: Optional[
+            Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+        ] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -904,6 +983,11 @@ class SensorExecutionData(
             dynamic_partitions_requests,
             "dynamic_partitions_requests",
             (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
+        )
+        check.opt_sequence_param(
+            asset_events,
+            "asset_events",
+            (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
         )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
@@ -916,6 +1000,7 @@ class SensorExecutionData(
             dagster_run_reactions=dagster_run_reactions,
             captured_log_key=captured_log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
+            asset_events=asset_events or [],
         )
 
 
@@ -934,22 +1019,34 @@ def wrap_sensor_evaluation(
         context_param = (
             {context_param_name_if_present: context} if context_param_name_if_present else {}
         )
-        result = fn(**context_param, **resource_args_populated)
+        raw_evaluation_result = fn(**context_param, **resource_args_populated)
 
-        if inspect.isgenerator(result) or isinstance(result, list):
-            for item in result:
-                yield item
-        elif isinstance(result, (SkipReason, RunRequest, SensorResult)):
-            yield result
-
-        elif result is not None:
-            raise Exception(
-                (
-                    "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                    "{result} of type {type_}.  Should only return SkipReason or "
+        def check_returned_scalar(scalar):
+            if isinstance(scalar, (SkipReason, RunRequest, SensorResult)):
+                return scalar
+            elif scalar is not None:
+                raise Exception(
+                    f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason or "
                     "RunRequest objects."
-                ).format(sensor_name=sensor_name, result=result, type_=type(result))
-            )
+                )
+
+        if inspect.isgenerator(raw_evaluation_result):
+            result = []
+            try:
+                while True:
+                    result.append(next(raw_evaluation_result))
+            except StopIteration as e:
+                # captures the case where the evaluation function has a yield and also returns a
+                # value
+                if e.value is not None:
+                    result.append(check_returned_scalar(e.value))
+
+            return result
+        elif isinstance(raw_evaluation_result, list):
+            return raw_evaluation_result
+        else:
+            return [check_returned_scalar(raw_evaluation_result)]
 
     return _wrapped_fn
 
@@ -962,6 +1059,7 @@ def build_sensor_context(
     sensor_name: Optional[str] = None,
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
+    instance_ref: Optional["InstanceRef"] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -1004,7 +1102,7 @@ def build_sensor_context(
     )
 
     return SensorEvaluationContext(
-        instance_ref=None,
+        instance_ref=instance_ref,
         last_completion_time=None,
         last_run_key=None,
         cursor=cursor,
@@ -1021,7 +1119,7 @@ T = TypeVar("T")
 
 def get_sensor_context_from_args_or_kwargs(
     fn: Callable,
-    args: Tuple[Any],
+    args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     context_type: Type[T],
 ) -> Optional[T]:
@@ -1124,7 +1222,8 @@ def _run_requests_with_base_asset_jobs(
         base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name, asset_selection=list(asset_keys)  # type: ignore  # (possible none)
+                job_name=base_job.name,  # type: ignore  # (possible none)
+                asset_selection=list(asset_keys),
             )
         )
 

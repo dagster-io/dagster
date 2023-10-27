@@ -16,7 +16,9 @@ from dagster import (
     define_asset_job,
     file_relative_path,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._config.field_utils import EnvVar
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
     DagsterDbtCloudJobInvariantViolationError,
     DbtCloudClientResource,
@@ -65,11 +67,11 @@ def dbt_cloud_fixture(resource_type) -> Any:
 @pytest.fixture(name="dbt_cloud_service")
 def dbt_cloud_service_fixture(resource_type) -> Any:
     if resource_type == "pythonic":
-        yield DbtCloudClientResource(
-            auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID
-        ).with_resource_context(
-            build_init_resource_context()
-        ).get_dbt_client()  # type: ignore
+        yield (
+            DbtCloudClientResource(auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID)
+            .with_replaced_resource_context(build_init_resource_context())
+            .get_dbt_client()
+        )
     else:
         yield dbt_cloud_resource(
             build_init_resource_context(
@@ -203,7 +205,9 @@ def test_load_assets_from_dbt_cloud_job(
         steps_override=[f"dbt compile {expected_dbt_materialization_command_options}"],
     )
 
-    assert_assets_match_project(dbt_cloud_assets, has_non_argument_deps=True)
+    assert_assets_match_project(
+        dbt_cloud_assets, include_seeds_and_snapshots=False, has_non_argument_deps=True
+    )
 
     mock_run_job_and_poll.reset_mock()
 
@@ -219,7 +223,7 @@ def test_load_assets_from_dbt_cloud_job(
     materialize_cereal_assets = define_asset_job(
         name="materialize_cereal_assets",
         selection=AssetSelection.assets(*dbt_cloud_assets),
-    ).resolve(assets=dbt_cloud_assets, source_assets=[])
+    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
@@ -315,7 +319,9 @@ def test_load_assets_from_cached_compile_run(
     # Assert that no compile job was run, since we looked into the cache
     mock_run_job_and_poll.assert_not_called()
 
-    assert_assets_match_project(dbt_cloud_assets, has_non_argument_deps=True)
+    assert_assets_match_project(
+        dbt_cloud_assets, include_seeds_and_snapshots=False, has_non_argument_deps=True
+    )
 
     mock_run_job_and_poll.reset_mock()
 
@@ -331,7 +337,7 @@ def test_load_assets_from_cached_compile_run(
     materialize_cereal_assets = define_asset_job(
         name="materialize_cereal_assets",
         selection=AssetSelection.assets(*dbt_cloud_assets),
-    ).resolve(assets=dbt_cloud_assets, source_assets=[])
+    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
@@ -569,7 +575,7 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     materialize_cereal_assets = define_asset_job(
         name="materialize_partitioned_cereal_assets",
         selection=AssetSelection.assets(*dbt_cloud_assets),
-    ).resolve(assets=dbt_cloud_assets, source_assets=[])
+    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(
@@ -653,18 +659,18 @@ def test_subsetting(
 
     mock_run_job_and_poll.reset_mock()
 
-    @asset(non_argument_deps={AssetKey("sort_by_calories")})
+    @asset(deps=[AssetKey("sort_by_calories")])
     def hanger1():
         return None
 
-    @asset(non_argument_deps={AssetKey(["subdir_schema", "least_caloric"])})
+    @asset(deps=[AssetKey(["subdir_schema", "least_caloric"])])
     def hanger2():
         return None
 
     materialize_cereal_assets = define_asset_job(
         name="materialize_cereal_assets",
         selection=asset_selection,
-    ).resolve(assets=list(dbt_cloud_assets) + [hanger1, hanger2], source_assets=[])
+    ).resolve(asset_graph=AssetGraph.from_assets([*dbt_cloud_assets, hanger1, hanger2]))
 
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
@@ -681,8 +687,44 @@ def test_subsetting(
         job_id=DBT_CLOUD_JOB_ID,
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[
-            f"{dbt_materialization_command} {dbt_filter_option}".strip()
-            if dbt_filter_option
-            else full_dbt_materialization_command
+            (
+                f"{dbt_materialization_command} {dbt_filter_option}".strip()
+                if dbt_filter_option
+                else full_dbt_materialization_command
+            )
         ],
     )
+
+
+@responses.activate
+def test_load_from_dbt_cloud_with_env_var(dbt_cloud_service) -> None:
+    with environ(
+        {
+            "DBT_CLOUD_API_TOKEN": DBT_CLOUD_API_TOKEN,
+            "DBT_CLOUD_ACCOUNT_ID": str(DBT_CLOUD_ACCOUNT_ID),
+        }
+    ):
+        dbt_cloud = DbtCloudClientResource(
+            auth_token=EnvVar("DBT_CLOUD_API_TOKEN"), account_id=EnvVar.int("DBT_CLOUD_ACCOUNT_ID")
+        )
+
+        _add_dbt_cloud_job_responses(
+            dbt_cloud_service=dbt_cloud_service, dbt_commands=["dbt build"]
+        )
+
+        dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+            dbt_cloud=dbt_cloud,  # type: ignore
+            job_id=DBT_CLOUD_JOB_ID,
+        )
+        dbt_cloud_cacheable_assets.compute_cacheable_data()
+
+        # Ensure the requests were made with the correct auth token, sourced from env
+        assert all(
+            [
+                call.request.headers["Authorization"] == f"Bearer {DBT_CLOUD_API_TOKEN}"
+                for call in responses.calls
+            ]
+        )
+
+        # Implicitly, we check that requests are made with the right account ID, since that is a part of the URLs
+        # we set up in _add_dbt_cloud_job_responses

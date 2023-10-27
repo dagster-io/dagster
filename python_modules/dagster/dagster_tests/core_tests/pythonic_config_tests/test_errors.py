@@ -10,8 +10,10 @@ from dagster import (
     sensor,
 )
 from dagster._config.pythonic_config import ConfigurableResource, ConfigurableResourceFactory
+from dagster._config.pythonic_config.pydantic_compat_layer import USING_PYDANTIC_2
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
+    DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
@@ -388,6 +390,7 @@ def test_trying_to_set_a_field_resource() -> None:
         my_resource.my_str = "bar"
 
 
+@pytest.mark.skipif(USING_PYDANTIC_2, reason="Does not throw error in Pydantic 2")
 def test_trying_to_set_an_undefined_field() -> None:
     class MyConfig(Config):
         my_str: str
@@ -404,6 +407,7 @@ def test_trying_to_set_an_undefined_field() -> None:
         my_config._my_random_other_field = "bar"  # noqa: SLF001
 
 
+@pytest.mark.skipif(USING_PYDANTIC_2, reason="Does not throw error in Pydantic 2")
 def test_trying_to_set_an_undefined_field_resource() -> None:
     class MyResource(ConfigurableResource):
         my_str: str
@@ -421,3 +425,30 @@ def test_trying_to_set_an_undefined_field_resource() -> None:
     ):
         my_resource = MyResource(my_str="foo")
         my_resource._my_random_other_field = "bar"  # noqa: SLF001
+
+
+def test_custom_dagster_type_as_config_type() -> None:
+    from datetime import datetime
+
+    from dagster import Config, DagsterType
+
+    DagsterDatetime = DagsterType(
+        name="DagsterDatetime",
+        description="Standard library `datetime.datetime` type as a DagsterType",
+        type_check_fn=lambda _, obj: isinstance(obj, datetime),
+    )
+
+    with pytest.raises(
+        DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
+        match="""Error defining Dagster config class 'MyOpConfig' on field 'dagster_type_field'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
+
+This config type can be a:
+    - Python primitive type
+        - int, float, bool, str, list
+    - A Python Dict or List type containing other valid types
+    - Custom data classes extending dagster.Config
+    - A Pydantic discriminated union type""",
+    ):
+
+        class MyOpConfig(Config):
+            dagster_type_field: DagsterDatetime = datetime(year=2023, month=4, day=30)  # type: ignore

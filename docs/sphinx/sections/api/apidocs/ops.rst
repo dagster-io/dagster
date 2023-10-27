@@ -51,19 +51,14 @@ Event types
 ^^^^^^^^^^^
 
 .. autoclass:: Output
-    :members:
 
 .. autoclass:: AssetMaterialization
-    :members:
 
 .. autoclass:: ExpectationResult
-    :members:
 
 .. autoclass:: TypeCheck
-    :members:
 
 .. autoclass:: Failure
-    :members:
 
 .. autoclass:: RetryRequested
 
@@ -76,10 +71,8 @@ Dagster uses metadata to communicate arbitrary user-specified metadata about str
 events.
 
 .. autoclass:: MetadataValue
-    :members:
 
 .. autoclass:: MetadataEntry
-    :members:
 
 Metadata types
 ^^^^^^^^^^^^^^
@@ -87,43 +80,30 @@ Metadata types
 All metadata types inherit from `MetadataValue`. The following types are defined:
 
 .. autoclass:: DagsterAssetMetadataValue
-    :members:
 
 .. autoclass:: DagsterRunMetadataValue
-    :members:
 
 .. autoclass:: FloatMetadataValue
-    :members:
 
 .. autoclass:: IntMetadataValue
-    :members:
 
 .. autoclass:: JsonMetadataValue
-    :members:
 
 .. autoclass:: MarkdownMetadataValue
-    :members:
 
 .. autoclass:: PathMetadataValue
-    :members:
 
 .. autoclass:: NotebookMetadataValue
-    :members:
 
 .. autoclass:: PythonArtifactMetadataValue
-    :members:
 
 .. autoclass:: TableMetadataValue
-    :members:
 
 .. autoclass:: TableSchemaMetadataValue
-    :members:
 
 .. autoclass:: TextMetadataValue
-    :members:
 
 .. autoclass:: UrlMetadataValue
-    :members:
 
 Tables
 ^^^^^^
@@ -146,8 +126,7 @@ Asset key
 ^^^^^^^^^^^^^^^^
 
 Dagster uses :py:class:`AssetKey` to build an index on :py:class:`Materialization` events.
-Assets materialized with an :py:class:`AssetKey` are highlighted in `dagit` on the `Assets`
+Assets materialized with an :py:class:`AssetKey` are highlighted in the Dagster UI on the `Assets`
 dashboard.
 
 .. autoclass:: AssetKey
-    :members:

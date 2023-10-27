@@ -9,7 +9,7 @@ from pkg_resources import Requirement, parse_requirements
 
 from dagster_buildkite.git import ChangedFiles, GitInfo
 
-changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini"]
+changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini", ".jinja"]
 
 
 class PythonPackage:
@@ -24,7 +24,7 @@ class PythonPackage:
 
         self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
         self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
-        self.name = distribution.get_name()  # type: ignore[attr-defined]
+        self.name = distribution.get_name()
 
     @property
     def install_requires(self) -> Set[Requirement]:
@@ -133,7 +133,7 @@ class PythonPackages:
             logging.info("  - " + package.name)
             cls.all[package.name] = package
 
-        packages_with_changes = set()
+        packages_with_changes: Set[PythonPackage] = set()
 
         logging.info("Finding changed packages:")
         for package in packages:

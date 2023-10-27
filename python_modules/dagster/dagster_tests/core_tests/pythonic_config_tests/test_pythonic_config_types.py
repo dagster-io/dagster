@@ -3,15 +3,17 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union
 
 import pytest
 from dagster import (
+    Definitions,
     Field as LegacyDagsterField,
     IntSource,
     Map,
     Shape,
+    asset,
     job,
     op,
 )
 from dagster._config.config_type import ConfigTypeKind, Noneable
-from dagster._config.pythonic_config import Config, PermissiveConfig
+from dagster._config.pythonic_config import Config, ConfigurableResource, PermissiveConfig
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
@@ -63,6 +65,11 @@ def test_struct_config_permissive() -> None:
 
         # Can pull out config dict to access permissive fields
         assert config.dict() == {"a_string": "foo", "an_int": 2, "a_bool": True}
+        assert config._convert_to_config_dictionary() == {  # noqa: SLF001
+            "a_string": "foo",
+            "an_int": 2,
+            "a_bool": True,
+        }
 
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
@@ -105,7 +112,7 @@ def test_struct_config_persmissive_cached_method() -> None:
             calls["plus"] += 1
             return self.x + self.y
 
-    plus_config = PlusConfig(x=1, y=2)
+    plus_config = PlusConfig(x=1, y=2, z=10)  # type: ignore
 
     assert plus_config.plus() == 3
     assert calls["plus"] == 1
@@ -255,8 +262,8 @@ def test_complex_config_schema() -> None:
     )
     assert executed["yes"]
 
-    a_struct_config_op(AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
-    a_struct_config_op(config=AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))
+    a_struct_config_op(AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))  # type: ignore
+    a_struct_config_op(config=AnOpConfig(a_complex_thing={5: [{"foo": 1, "bar": 2, "baz": None}]}))  # type: ignore
     a_struct_config_op({"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
     a_struct_config_op(config={"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}})
 
@@ -418,7 +425,7 @@ def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
     assert executed["yes"]
 
 
-def test_descriminated_unions() -> None:
+def test_discriminated_unions() -> None:
     class Cat(Config):
         pet_type: Literal["cat"]
         meows: int
@@ -552,6 +559,109 @@ def test_nested_discriminated_unions() -> None:
             }
         }
     )
+    assert executed["yes"]
+
+
+def test_discriminated_unions_direct_instantiation() -> None:
+    class Cat(Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float
+
+    class Lizard(Config):
+        pet_type: Literal["reptile", "lizard"] = "reptile"
+        scales: bool
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator="pet_type")
+        n: int
+
+    config = OpConfigWithUnion(pet=Cat(meows=3), n=5)
+    assert isinstance(config.pet, Cat)
+    assert config.pet.meows == 3
+
+
+def test_nested_discriminated_config_instantiation() -> None:
+    class Poodle(Config):
+        breed_type: Literal["poodle"] = "poodle"
+        fluffy: bool
+
+    class Dachshund(Config):
+        breed_type: Literal["dachshund"] = "dachshund"
+        long: bool
+
+    class Cat(Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float
+        breed: Union[Poodle, Dachshund] = Field(..., discriminator="breed_type")
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+        n: int
+
+    config = OpConfigWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
+    assert isinstance(config.pet, Dog)
+    assert config.pet.barks == 5.5
+    assert config.pet.pet_type == "dog"
+    assert isinstance(config.pet.breed, Poodle)
+    assert config.pet.breed.fluffy
+    assert config.pet.breed.breed_type == "poodle"
+
+
+def test_nested_discriminated_resource_instantiation() -> None:
+    class Poodle(Config):
+        breed_type: Literal["poodle"] = "poodle"
+        fluffy: bool
+
+    class Dachshund(Config):
+        breed_type: Literal["dachshund"] = "dachshund"
+        long: bool
+
+    class Cat(Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float
+        breed: Union[Poodle, Dachshund] = Field(..., discriminator="breed_type")
+
+    class ResourceWithUnion(ConfigurableResource):
+        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+        n: int
+
+    resource_with_union = ResourceWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
+    assert isinstance(resource_with_union.pet, Dog)
+    assert resource_with_union.pet.barks == 5.5
+    assert resource_with_union.pet.pet_type == "dog"
+    assert isinstance(resource_with_union.pet.breed, Poodle)
+    assert resource_with_union.pet.breed.fluffy
+    assert resource_with_union.pet.breed.breed_type == "poodle"
+
+    executed = {}
+
+    @asset
+    def my_asset_uses_resource(resource_with_union: ResourceWithUnion):
+        assert isinstance(resource_with_union.pet, Dog)
+        assert resource_with_union.pet.barks == 5.5
+        assert resource_with_union.pet.pet_type == "dog"
+        assert isinstance(resource_with_union.pet.breed, Poodle)
+        assert resource_with_union.pet.breed.fluffy
+        assert resource_with_union.pet.breed.breed_type == "poodle"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[my_asset_uses_resource],
+        resources={"resource_with_union": resource_with_union},
+    )
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
 
@@ -804,4 +914,4 @@ def test_to_config_dict_combined_with_cached_method() -> None:
 
     obj = ConfigWithCachedMethod(a_string="bar")
     obj.a_string_cached()
-    assert obj._as_config_dict() == {"a_string": "bar"}  # noqa: SLF001
+    assert obj._convert_to_config_dictionary() == {"a_string": "bar"}  # noqa: SLF001

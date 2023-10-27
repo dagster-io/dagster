@@ -1,0 +1,96 @@
+---
+title: "Utilizing SCIM provisioning in Dagster Cloud | Dagster Docs"
+
+display_name: "SCIM"
+feature_name: "scim"
+pricing_plan: "enterprise"
+---
+
+# Utilizing SCIM provisioning in Dagster Cloud
+
+The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. With SCIM, you can:
+
+<ScimSupportedFeatures />
+
+---
+
+## Understanding SCIM provisioning
+
+SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled, you can automatically sync user information from your IdP to Dagster Cloud and back again, ensuring user data is always up-to-date.
+
+For a detailed look at SCIM provisioning, [check out this blog post](https://www.strongdm.com/blog/scim-provisioning).
+
+### Managing users
+
+When SCIM is enabled in Dagster Cloud, a few things about user management will change:
+
+- **New users must be added in the IdP.** The ability to add new users will be disabled in Dagster Cloud while SCIM is enabled.
+- **Only 'unsynced' users can be removed in Dagster Cloud.** 'Synced' users will have an icon indicating they're externally managed by the IdP, while unsynced users will not. For example, the first two users in the following image are synced, while the last isn't:
+
+  <Image
+  alt="Highlighted unsynced user in the Dagster Cloud UI"
+  src="/images/dagster-cloud/sso/scim-unsynced-user.png"
+  width={732}
+  height={376}
+  />
+
+  You might see unsynced users in Dagster Cloud when:
+
+  - **Users exist in Dagster Cloud, but not in the IdP.** In this case, create matching users in the IdP and then provision them. This will link the IdP users to the Dagster Cloud users.
+  - **Users are assigned to the Dagster Cloud IdP app before provisioning is enabled.** In this case, you'll need to provision the users in the IdP to link them to the Dagster Cloud users.
+
+If you choose to disable SCIM provisioning in Dagster Cloud, users and teams will remain as-is at the time SCIM is disabled.
+
+### Managing teams
+
+In addition to the above user management changes, there are a few things to keep in mind when managing user groups, otherwise known as Dagster Cloud [teams](/dagster-cloud/account/managing-users/managing-teams).
+
+User groups in your IdP can be mapped to Dagster Cloud teams, allowing you to centralize the management of user groups and memberships. When SCIM is enabled:
+
+- **Teams can still be managed in Dagster Cloud.** You can choose to map and sync these teams to the IdP or administer them solely in Dagster Cloud. Synced groups should be managed only in the IdP, or changes made in Dagster Cloud may be overwritten when a sync is triggered from the IdP.
+- **If a group exists only in the IdP** and is synced to Dagster Cloud, you'll be prompted to either create a new Dagster Cloud team with the same name or create a link between the IdP group and an existing team in Dagster Cloud.
+- **If a group exists only in Dagster Cloud**, the group will display in the IdP as an 'external' group with no members. In this case, you can either create a new group in the IdP and link it to an existing Dagster Cloud team, or choose to manage the team only in Dagster Cloud.
+
+---
+
+## Enabling SCIM provisioning
+
+### Prerequisites
+
+To use SCIM provisioning, you'll need:
+
+- A Dagster Cloud Enterprise plan
+- [An IdP for which Dagster Cloud supports SSO and SCIM provisioning](#supported-identity-providers)
+- Permissions in your IdP that allow you to configure SSO and SCIM provisioning
+
+### Supported Identity Providers
+
+Dagster Cloud currently supports SCIM provisioning for the following Identity Providers (IdP):
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication/okta/scim-provisioning"
+    title="Okta"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="https://learn.microsoft.com/en-us/azure/active-directory/saas-apps/dagster-cloud-provisioning-tutorial"
+    title="Microsoft Azure AD"
+  ></ArticleListItem>
+</ArticleList>
+
+Use the setup guide for your IdP to get started.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users/managing-user-roles-permissions"
+    title="Managing user roles and permissions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users/managing-teams"
+    title="Managing teams"
+  ></ArticleListItem>
+</ArticleList>

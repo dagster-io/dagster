@@ -1,4 +1,4 @@
-from typing import ContextManager, Optional
+from typing import ContextManager, Optional, cast
 
 import dagster._check as check
 import sqlalchemy as db
@@ -30,6 +30,7 @@ from sqlalchemy.engine import Connection
 from ..utils import (
     create_mysql_connection,
     mysql_alembic_config,
+    mysql_isolation_level,
     mysql_url_from_config,
     parse_mysql_version,
     retry_mysql_connection_fn,
@@ -43,7 +44,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """MySQL-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql-legacy.yaml
@@ -67,7 +68,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
             self.mysql_url,
-            isolation_level="AUTOCOMMIT",
+            isolation_level=mysql_isolation_level(),
             poolclass=db_pool.NullPool,
         )
         self._secondary_index_cache = {}
@@ -87,16 +88,15 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            with conn.begin():
-                SqlEventLogStorageMetadata.create_all(conn)
-                stamp_alembic_rev(mysql_alembic_config(__file__), conn)
+            SqlEventLogStorageMetadata.create_all(conn)
+            stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold an open connection
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        # When running in dagster-webserver, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
             self.mysql_url,
-            isolation_level="AUTOCOMMIT",
+            isolation_level=mysql_isolation_level(),
             pool_size=1,
             pool_recycle=pool_recycle,
         )
@@ -124,7 +124,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @staticmethod
     def wipe_storage(mysql_url: str) -> None:
-        engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool)
+        engine = create_engine(
+            mysql_url, isolation_level=mysql_isolation_level(), poolclass=db_pool.NullPool
+        )
         try:
             SqlEventLogStorageMetadata.drop_all(engine)
         finally:
@@ -137,14 +139,12 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def get_server_version(self) -> Optional[str]:
         with self.index_connection() as conn:
-            result_proxy = conn.execute("select version()")
-            row = result_proxy.fetchone()
-            result_proxy.close()
+            row = conn.execute(db.text("select version()")).fetchone()
 
         if not row:
             return None
 
-        return row[0]
+        return cast(str, row[0])
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
@@ -185,7 +185,8 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return self._connect()
 
     def has_table(self, table_name: str) -> bool:
-        return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
+        with self._connect() as conn:
+            return table_name in db.inspect(conn).get_table_names()
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:

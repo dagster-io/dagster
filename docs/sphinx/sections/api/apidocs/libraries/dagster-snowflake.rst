@@ -23,20 +23,25 @@ I/O Manager
 .. autoconfigurable:: SnowflakeIOManager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: build_snowflake_io_manager
-  :annotation: IOManagerDefinition
-
-
 Resource
 ========
 
-.. autoconfigurable:: snowflake_resource
+.. autoconfigurable:: SnowflakeResource
   :annotation: ResourceDefinition
 
 .. autoclass:: SnowflakeConnection
   :members:
-  :undoc-members:
 
 Ops
 ===
 .. autofunction:: snowflake_op_for_query
+
+
+Legacy
+=======
+
+.. autoconfigurable:: build_snowflake_io_manager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: snowflake_resource
+  :annotation: ResourceDefinition

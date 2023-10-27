@@ -1,22 +1,31 @@
 {{- if (and .Values.migrate .Values.migrate.enabled) }}
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "dagster.dagit.migrate" . | quote }}
+  name: {{ include "dagster.webserver.migrate" . | quote }}
+  annotations:
+    {{- range $key, $value := $_.Values.dagsterWebserver.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
 spec:
   template:
     metadata:
-      name: {{ include "dagster.dagit.migrate" . | quote }}
+      name: {{ include "dagster.webserver.migrate" . | quote }}
+      annotations:
+        {{- range $key, $value := $_.Values.dagsterWebserver.annotations }}
+        {{ $key }}: {{ $value | squote }}
+        {{- end }}
     spec:
       imagePullSecrets: {{ .Values.imagePullSecrets | toYaml | nindent 8 }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}
-      securityContext: {{ .Values.dagit.podSecurityContext | toYaml | nindent 8 }}
+      securityContext: {{ $_.Values.dagsterWebserver.podSecurityContext | toYaml | nindent 8 }}
       restartPolicy: Never
       containers:
         - name: dagster-instance-migrate
-          securityContext: {{ .Values.dagit.securityContext | toYaml | nindent 12 }}
-          imagePullPolicy: {{ .Values.dagit.image.pullPolicy }}
-          image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagit.image) | quote }}
+          securityContext: {{ $_.Values.dagsterWebserver.securityContext | toYaml | nindent 12 }}
+          imagePullPolicy: {{ $_.Values.dagsterWebserver.image.pullPolicy }}
+          image: {{ include "dagster.dagsterImage.name" (list $ $_.Values.dagsterWebserver.image) | quote }}
           command: ["dagster"]
           args: ["instance", "migrate"]
           env:
@@ -27,11 +36,11 @@ spec:
                   key: postgresql-password
           envFrom:
             - configMapRef:
-                name: {{ template "dagster.fullname" . }}-dagit-env
-            {{- range $envConfigMap := .Values.dagit.envConfigMaps }}
+                name: {{ template "dagster.fullname" . }}-webserver-env
+            {{- range $envConfigMap := $_.Values.dagsterWebserver.envConfigMaps }}
             - configMapRef: {{- $envConfigMap | toYaml | nindent 16 }}
             {{- end }}
-            {{- range $envSecret := .Values.dagit.envSecrets }}
+            {{- range $envSecret := $_.Values.dagsterWebserver.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
             {{- if eq $.Values.runLauncher.type "CeleryK8sRunLauncher" }}
@@ -42,12 +51,12 @@ spec:
             - name: dagster-instance
               mountPath: "{{ .Values.global.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
-          resources: {{ .Values.dagit.resources | toYaml | nindent 12 }}
+          resources: {{ $_.Values.dagsterWebserver.resources | toYaml | nindent 12 }}
       volumes:
         - name: dagster-instance
           configMap:
             name: {{ template "dagster.fullname" . }}-instance
-      nodeSelector: {{ .Values.dagit.nodeSelector | toYaml | nindent 8 }}
-      affinity: {{ .Values.dagit.affinity | toYaml | nindent 8 }}
-      tolerations: {{ .Values.dagit.tolerations | toYaml | nindent 8 }}
+      nodeSelector: {{ $_.Values.dagsterWebserver.nodeSelector | toYaml | nindent 8 }}
+      affinity: {{ $_.Values.dagsterWebserver.affinity | toYaml | nindent 8 }}
+      tolerations: {{ $_.Values.dagsterWebserver.tolerations | toYaml | nindent 8 }}
 {{- end }}

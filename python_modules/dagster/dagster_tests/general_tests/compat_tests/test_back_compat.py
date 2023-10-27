@@ -1,5 +1,4 @@
 # ruff: noqa: SLF001
-
 import datetime
 import json
 import os
@@ -27,16 +26,19 @@ from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.host_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
@@ -151,7 +153,7 @@ def get_sqlite3_indexes(db_path, table_name):
     return [r[1] for r in cursor.fetchall()]
 
 
-def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
+def test_snapshot_0_7_6_pre_add_job_snapshot():
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
     src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
     with copy_directory(src_dir) as test_dir:
@@ -543,7 +545,7 @@ def test_op_handle_node_handle():
     assert result.name == test_handle.name
 
 
-def test_pipeline_run_dagster_run():
+def test_job_run_dagster_run():
     # serialize in current code
     test_run = DagsterRun(job_name="test")
     test_str = serialize_value(test_run)
@@ -555,12 +557,10 @@ def test_pipeline_run_dagster_run():
     class PipelineRun(
         namedtuple(
             "_PipelineRun",
-            (
-                "pipeline_name run_id run_config mode solid_selection solids_to_execute "
-                "step_keys_to_execute status tags root_run_id parent_run_id "
-                "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-                "pipeline_code_origin"
-            ),
+            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "step_keys_to_execute status tags root_run_id parent_run_id "
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin",
         )
     ):
         pass
@@ -575,7 +575,7 @@ def test_pipeline_run_dagster_run():
     assert result.pipeline_name == test_run.job_name
 
 
-def test_pipeline_run_status_dagster_run_status():
+def test_job_run_status_dagster_run_status():
     # serialize in current code
     test_status = DagsterRunStatus("QUEUED")
     test_str = serialize_value(test_status)
@@ -843,25 +843,25 @@ def test_jobs_selector_id_migration():
             assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
             legacy_count = len(instance.all_instigator_state())
             migrated_instigator_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(InstigatorsTable)
+                db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
             migrated_job_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
             legacy_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(JobTickTable)
+                db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -871,7 +871,7 @@ def test_jobs_selector_id_migration():
             instance.reindex()
 
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -947,10 +947,10 @@ def test_add_bulk_actions_columns():
             # check data migration
             backfill_count = len(instance.get_backfills())
             migrated_row_count = instance._run_storage.fetchone(
-                db.select([db.func.count()])
+                db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.isnot(None))
-            )[0]
+            )["count"]
             assert migrated_row_count > 0
             assert backfill_count == migrated_row_count
 
@@ -975,10 +975,10 @@ def test_add_bulk_actions_columns():
                 )
             )
             unmigrated_row_count = instance._run_storage.fetchone(
-                db.select([db.func.count()])
+                db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.is_(None))
-            )[0]
+            )["count"]
             assert unmigrated_row_count == 0
 
             # test downgrade
@@ -1098,7 +1098,7 @@ def test_add_dynamic_partitions_table():
 
 
 def _get_table_row_count(run_storage, table, with_non_null_id=False):
-    query = db.select([db.func.count()]).select_from(table)
+    query = db_select([db.func.count()]).select_from(table)
     if with_non_null_id:
         query = query.where(table.c.id.isnot(None))
     with run_storage.connect() as conn:
@@ -1250,3 +1250,13 @@ def test_metadata_serialization():
         },
     ]
     assert deserialize_value(serialized_mat, AssetMaterialization) == mat
+
+
+# When receiving pre-1.4 static partitions definitions from user code, it is possible they contain
+# duplicates. We need to de-dup them at the serdes/"External" layer before reconstructing the
+# partitions definition in the host process to avoid an error.
+def test_static_partitions_definition_dup_keys_backcompat():
+    received_from_user = ExternalStaticPartitionsDefinitionData(partition_keys=["a", "b", "a"])
+    assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
+        partition_keys=["a", "b"]
+    )

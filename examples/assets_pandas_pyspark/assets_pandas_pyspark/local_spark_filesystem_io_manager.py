@@ -70,7 +70,7 @@ class LocalFileSystemIOManager(ConfigurableIOManager):
             return pd.concat(map(pd.read_csv, paths))
         elif context.dagster_type.typing_type == SparkDF:
             return (
-                SparkSession.builder.getOrCreate()
+                SparkSession.builder.getOrCreate()  # type: ignore
                 .read.format("csv")
                 .options(header="true")
                 .load(self._get_fs_path(context.asset_key))

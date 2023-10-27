@@ -9,6 +9,8 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from dagster._annotations import deprecated
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
@@ -57,6 +59,10 @@ class PickledObjectGCSIOManager(UPathIOManager):
     def _uri_for_path(self, path: UPath) -> str:
         return f"gs://{self.bucket}/{path}"
 
+    def make_directory(self, path: UPath) -> None:
+        # It is not necessary to create directories in GCP
+        return None
+
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         bytes_obj = self.bucket_obj.blob(str(path)).download_as_bytes()
         return pickle.loads(bytes_obj)
@@ -75,21 +81,21 @@ class PickledObjectGCSIOManager(UPathIOManager):
         )
 
 
-class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
+class GCSPickleIOManager(ConfigurableIOManager):
     """Persistent IO manager using GCS for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
     as each execution node has network connectivity and credentials for GCS and the backing bucket.
 
     Assigns each op output to a unique filepath containing run ID, step key, and output name.
-    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    Assigns each asset to a single filesystem path, at ``<base_dir>/<asset_key>``. If the asset key
     has multiple components, the final component is used as the name of the file, and the preceding
     components as parent directories under the base_dir.
 
     Subsequent materializations of an asset will overwrite previous materializations of that asset.
-    With a base directory of "/my/base/path", an asset with key
-    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
-    with path "/my/base/path/one/two/".
+    With a base directory of ``/my/base/path``, an asset with key
+    ``AssetKey(["one", "two", "three"])`` would be stored in a file called ``three`` in a directory
+    with path ``/my/base/path/one/two/``.
 
     Example usage:
 
@@ -98,7 +104,7 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import asset, Definitions
-        from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+        from dagster_gcp.gcs import GCSPickleIOManager, GCSResource
 
         @asset
         def asset1():
@@ -112,7 +118,7 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                "io_manager": GCSPickleIOManager(
                     gcs_bucket="my-cool-bucket",
                     gcs_prefix="my-cool-prefix"
                 ),
@@ -126,15 +132,15 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import job
-        from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+        from dagster_gcp.gcs import GCSPickleIOManager, GCSResource
 
         @job(
             resource_defs={
-                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                "io_manager": GCSPickleIOManager(
+                    gcs=GCSResource(project="my-cool-project")
                     gcs_bucket="my-cool-bucket",
                     gcs_prefix="my-cool-prefix"
                 ),
-                "gcs": GCSResource(project="my-cool-project")
             }
         )
         def my_job():
@@ -144,6 +150,10 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     gcs: ResourceDependency[GCSResource]
     gcs_bucket: str = Field(description="GCS bucket to store files")
     gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @property
     @cached_method
@@ -159,8 +169,19 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
         self._internal_io_manager.handle_output(context, obj)
 
 
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use GCSPickleIOManager instead.",
+)
+class ConfigurablePickledObjectGCSIOManager(GCSPickleIOManager):
+    """Renamed to GCSPickleIOManager. See GCSPickleIOManager for documentation."""
+
+    pass
+
+
+@dagster_maintained_io_manager
 @io_manager(
-    config_schema=ConfigurablePickledObjectGCSIOManager.to_config_schema(),
+    config_schema=GCSPickleIOManager.to_config_schema(),
     required_resource_keys={"gcs"},
 )
 def gcs_pickle_io_manager(init_context):
@@ -170,14 +191,14 @@ def gcs_pickle_io_manager(init_context):
     as each execution node has network connectivity and credentials for GCS and the backing bucket.
 
     Assigns each op output to a unique filepath containing run ID, step key, and output name.
-    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    Assigns each asset to a single filesystem path, at ``<base_dir>/<asset_key>``. If the asset key
     has multiple components, the final component is used as the name of the file, and the preceding
     components as parent directories under the base_dir.
 
     Subsequent materializations of an asset will overwrite previous materializations of that asset.
-    With a base directory of "/my/base/path", an asset with key
-    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
-    with path "/my/base/path/one/two/".
+    With a base directory of ``/my/base/path``, an asset with key
+    ``AssetKey(["one", "two", "three"])`` would be stored in a file called ``three`` in a directory
+    with path ``/my/base/path/one/two/``.
 
     Example usage:
 

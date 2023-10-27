@@ -30,8 +30,8 @@ dependencies:
     repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
     condition: redis.internal
 maintainers:
-  - name: Elementl
-    email: support@elementl.com
-    url: https://elementl.com
-icon: https://elementl.com/icons/social/dagster.jpg
+  - name: Dagster Labs
+    email: support@dagsterlabs.com
+    url: https://dagster.io/about
+icon: https://dagster.io/images/brand/logos/dagster-primary-mark.png
 appVersion: dev

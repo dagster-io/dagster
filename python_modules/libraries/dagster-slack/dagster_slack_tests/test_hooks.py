@@ -10,7 +10,7 @@ class SomeUserException(Exception):
 
 
 @patch("slack_sdk.WebClient.api_call")
-def test_failure_hook_on_solid_instance(mock_api_call):
+def test_failure_hook_on_op_instance(mock_api_call):
     @op
     def pass_op(_):
         pass
@@ -25,7 +25,7 @@ def test_failure_hook_on_solid_instance(mock_api_call):
         pass_op.alias("solid_with_hook").with_hooks(hook_defs={slack_on_failure("#foo")})()
         fail_op.alias("fail_op_without_hook")()
         fail_op.with_hooks(
-            hook_defs={slack_on_failure(channel="#foo", dagit_base_url="localhost:3000")}
+            hook_defs={slack_on_failure(channel="#foo", webserver_base_url="localhost:3000")}
         )()
 
     result = job_def.execute_in_process(
@@ -66,7 +66,7 @@ def test_failure_hook_decorator(mock_api_call):
 
 
 @patch("slack_sdk.WebClient.api_call")
-def test_success_hook_on_solid_instance(mock_api_call):
+def test_success_hook_on_op_instance(mock_api_call):
     def my_message_fn(_):
         return "Some custom text"
 

@@ -4,7 +4,7 @@
 import os
 import time
 
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
@@ -71,7 +71,7 @@ def get_failing_celery_job_engine_config(dagster_docker_image, job_namespace):
 
 @mark_monitoring
 def test_run_monitoring_fails_on_interrupt(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -86,7 +86,7 @@ def test_run_monitoring_fails_on_interrupt(
     job_name = "demo_job_celery_k8s"
 
     try:
-        run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=job_name)
+        run_id = launch_run_over_graphql(webserver_url, run_config=run_config, job_name=job_name)
         start_time = time.time()
         while time.time() - start_time < 60:
             run = dagster_instance.get_run_by_id(run_id)
@@ -106,7 +106,7 @@ def test_run_monitoring_fails_on_interrupt(
 
 @mark_monitoring
 def test_run_monitoring_startup_fail(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -123,7 +123,7 @@ def test_run_monitoring_startup_fail(
     job_name = "demo_job_celery_k8s"
 
     try:
-        run_id = launch_run_over_graphql(dagit_url, run_config=run_config, job_name=job_name)
+        run_id = launch_run_over_graphql(webserver_url, run_config=run_config, job_name=job_name)
         start_time = time.time()
         while time.time() - start_time < 60:
             run = dagster_instance.get_run_by_id(run_id)

@@ -8,11 +8,11 @@ from dagster import (
     graph,
     job,
     op,
-    root_input_manager,
 )
+from dagster._core.storage.input_manager import input_manager
 
 
-def test_basic_solid_with_config():
+def test_basic_op_with_config():
     did_get = {}
 
     @op(
@@ -59,7 +59,7 @@ def test_config_arg_mismatch():
         )
 
 
-def test_solid_not_found():
+def test_op_not_found():
     @op(name="find_me_op", ins={}, out={})
     def find_me_op(_):
         raise Exception("should not reach")
@@ -228,11 +228,11 @@ def test_extra_config_unsatisfied_input():
 
 
 def test_extra_config_unsatisfied_input_io_man():
-    @root_input_manager(input_config_schema=int)
+    @input_manager(input_config_schema=int)
     def config_io_man(context):
         return context.config
 
-    @op(ins={"x": In(root_manager_key="my_loader")})
+    @op(ins={"x": In(input_manager_key="my_loader")})
     def start(_, x):
         return x
 

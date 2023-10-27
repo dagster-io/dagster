@@ -24,19 +24,22 @@ from dagster import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_plan
-from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
-from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
+from dagster_azure.adls2.fake_adls2_resource import FakeADLS2Resource, fake_adls2_resource
+from dagster_azure.adls2.io_manager import (
+    ADLS2PickleIOManager,
+    PickledObjectADLS2IOManager,
+    adls2_pickle_io_manager,
+)
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 from upath import UPath
@@ -106,20 +109,20 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryJob(job), resolved_run_config)
+    execution_plan = create_execution_plan(job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
             job=InMemoryJob(job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -176,20 +179,20 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryJob(job), resolved_run_config)
+    execution_plan = create_execution_plan(job, run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
             job=InMemoryJob(job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -217,7 +220,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
             job=InMemoryJob(job),
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             run_config=run_config,
             instance=instance,
         )
@@ -337,7 +340,7 @@ def test_nothing():
     def asset1() -> None:
         ...
 
-    @asset(non_argument_deps={"asset1"})
+    @asset(deps=[asset1])
     def asset2() -> None:
         ...
 
@@ -358,3 +361,31 @@ def test_nothing():
 
     for event in handled_output_events:
         assert len(event.event_specific_data.metadata) == 0
+
+
+def test_nothing_pythonic() -> None:
+    @asset
+    def asset1() -> None:
+        ...
+
+    @asset(deps=[asset1])
+    def asset2() -> None:
+        ...
+
+    result = materialize(
+        with_resources(
+            [asset1, asset2],
+            resource_defs={
+                "io_manager": ADLS2PickleIOManager(
+                    adls2=FakeADLS2Resource(account_name="my_account"),
+                    adls2_file_system="fake_file_system",
+                )
+            },
+        )
+    )
+
+    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
+    assert len(handled_output_events) == 2
+
+    for event in handled_output_events:
+        assert len(event.event_specific_data.metadata) == 0  # type: ignore[attr-defined]

@@ -25,8 +25,7 @@ def _build_asset_dependencies(
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
     upstream_dependencies_by_asset_key: Mapping[AssetKey, AbstractSet[AssetKey]],
 ) -> Tuple[AbstractSet[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
-    """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph.
-    """
+    """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph."""
     output_mappings = set()
     keys_by_output_name = {}
     internal_asset_deps: dict[str, Set[AssetKey]] = {}
@@ -164,14 +163,16 @@ def load_assets_from_airflow_dag(
 
     asset_def = AssetsDefinition.from_graph(
         graph_def=new_graph,
-        partitions_def=TimeWindowPartitionsDefinition(
-            cron_schedule=str(cron_schedule),
-            timezone=dag.timezone.name,
-            start=start_date.strftime("%Y-%m-%dT%H:%M:%S"),
-            fmt="%Y-%m-%dT%H:%M:%S",
-        )
-        if cron_schedule is not None
-        else None,
+        partitions_def=(
+            TimeWindowPartitionsDefinition(
+                cron_schedule=str(cron_schedule),
+                timezone=dag.timezone.name,
+                start=start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                fmt="%Y-%m-%dT%H:%M:%S",
+            )
+            if cron_schedule is not None
+            else None
+        ),
         group_name=dag.dag_id,
         keys_by_output_name=keys_by_output_name,
         internal_asset_deps=internal_asset_deps,

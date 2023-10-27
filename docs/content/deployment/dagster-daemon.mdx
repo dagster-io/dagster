@@ -17,7 +17,7 @@ Several Dagster features, like [schedules](/concepts/partitions-schedules-sensor
 ### Running locally
 
 <TabGroup>
-  <TabItem name="Running the daemon and Dagit">
+  <TabItem name="Running the daemon and webserver">
 
 The easiest way to run the Dagster daemon locally is to run the `dagster dev` command:
 
@@ -25,7 +25,7 @@ The easiest way to run the Dagster daemon locally is to run the `dagster dev` co
 dagster dev
 ```
 
-This command launches both [Dagit](/concepts/dagit/dagit) and the Dagster daemon, allowing you to start a full local deployment of Dagster from the command line. Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more information about `dagster dev`.
+This command launches both the [Dagster webserver/UI](/concepts/webserver/ui) and the Dagster daemon, allowing you to start a full local deployment of Dagster from the command line. Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more information about `dagster dev`.
 
   </TabItem>
   <TabItem name="Running only the daemon">
@@ -133,9 +133,9 @@ If the daemon is configured to use a [workspace file](/concepts/code-locations/w
 
 ---
 
-## Checking daemon status in Dagit
+## Checking daemon status in the Dagster UI
 
-To check the status of the `dagster-daemon` process within Dagit:
+To check the status of the `dagster-daemon` process in the UI:
 
 1. In the top navigation, click **Deployment**.
 2. Click the **Daemons** tab.

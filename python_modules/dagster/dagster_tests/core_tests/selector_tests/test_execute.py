@@ -11,10 +11,9 @@ from .test_subset_selector import foo_job, get_asset_selection_job
 
 def test_subset_for_execution():
     recon_job = reconstructable(foo_job)
-    sub_job = recon_job.subset_for_execution(["*add_nums"])
+    sub_job = recon_job.get_subset(op_selection=["*add_nums"])
 
-    assert sub_job.solid_selection == ["*add_nums"]
-    assert sub_job.solids_to_execute is None
+    assert sub_job.op_selection == {"*add_nums"}
 
     with instance_for_test() as instance:
         result = execute_job(sub_job, instance)
@@ -28,8 +27,8 @@ def test_subset_for_execution():
 
 def test_asset_subset_for_execution():
     recon_job = reconstructable(get_asset_selection_job)
-    sub_job = recon_job.subset_for_execution(
-        solid_selection=None, asset_selection=frozenset({AssetKey("my_asset")})
+    sub_job = recon_job.get_subset(
+        op_selection=None, asset_selection=frozenset({AssetKey("my_asset")})
     )
     assert sub_job.asset_selection == {AssetKey("my_asset")}
 
@@ -134,11 +133,7 @@ def test_execute_job_with_op_selection_invalid():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvalidSubsetError,
-            match=re.escape(
-                "No qualified ops to execute found for op_selection={input}".format(
-                    input=invalid_input
-                )
-            ),
+            match=re.escape(f"No qualified ops to execute found for op_selection={invalid_input}"),
         ):
             execute_job(reconstructable(foo_job), op_selection=invalid_input, instance=instance)
 

@@ -10,7 +10,6 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
-from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from .partition_mapping import PartitionMapping
 
@@ -53,12 +52,10 @@ class AssetIn(
         key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
         dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
     ):
-        key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "1.0.0")
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
 
@@ -68,14 +65,16 @@ class AssetIn(
 
         return super(AssetIn, cls).__new__(
             cls,
-            key=AssetKey.from_coerceable(key) if key is not None else None,
+            key=AssetKey.from_coercible(key) if key is not None else None,
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
             key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
             partition_mapping=check.opt_inst_param(
                 partition_mapping, "partition_mapping", PartitionMapping
             ),
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
         )

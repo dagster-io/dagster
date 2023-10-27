@@ -6,73 +6,80 @@ description: Dagster can orchestrate dbt alongside other technologies.
 # dbt + Dagster
 
 <Note>
-  Using dbt Cloud? Check out the{" "}
-  <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
+  <b>Using Dagster Cloud?</b> Automatically load your dbt models as Dagster
+  assets by{" "}
+  <a
+    target="_blank"
+    href="https://dagster.cloud/signup?next=/prod/getting-started%3Ftab%3Dimport_dbt_core_project%26serverless%3D1"
+  >
+    importing an existing dbt project in Dagster Cloud
+  </a>
 </Note>
 
-Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's [software-defined asset](/concepts/assets/software-defined-assets) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on. You could, for example:
+Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
 
-- Run your dbt models after ingesting data into your data warehouse
-- Selectively materialize dbt models and their dependencies
+Dagster's [Software-defined Asset](/concepts/assets/software-defined-assets) approach allows Dagster to understand dbt at the level of individual dbt models. This means that you can:
 
-Dagster has built-in support for loading dbt models, seeds, and snapshots as software-defined assets, enabling you to:
+- Use Dagster's UI or APIs to run subsets of your dbt models, seeds, and snapshots.
+- Track failures, logs, and run history for individual dbt models, seeds, and snapshots.
+- Define dependencies between individual dbt models and other data assets. For example, put dbt models after the Fivetran-ingested table that they read from, or put a machine learning after the dbt models that it's trained from.
 
-- Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
-- Version your dbt models by their defining SQL code, allowing Dagster to indicate when a model has changed
-- View detailed historical metadata and logs for each asset
-- Define Python computations that depend directly on tables updated using dbt
-- Track data lineage through dbt and your other tools
+An asset graph like this:
+
+<!-- ![Dagster graph with dbt, Fivetran, and TensorFlow](/images/integrations/dbt/dagster-dbt-fivetran-tensorflow.png) -->
+
+<Image
+alt="Dagster graph with dbt, Fivetran, and TensorFlow"
+src="/images/integrations/dbt/dagster-dbt-fivetran-tensorflow.png"
+width={1834}
+height={1220}
+/>
+
+Can be produced from code like this:
+
+```python file=/integrations/dbt/potemkin_dag_for_cover_image.py startafter=start endbefore=end
+from pathlib import Path
+
+from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
+from dagster_fivetran import build_fivetran_assets
+
+from dagster import AssetExecutionContext, asset
+
+fivetran_assets = build_fivetran_assets(
+    connector_id="postgres",
+    destination_tables=["users", "orders"],
+)
+
+
+@dbt_assets(manifest=Path("manifest.json"))
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+
+
+@asset(
+    compute_kind="tensorflow",
+    deps=[get_asset_key_for_model([dbt_project_assets], "daily_order_summary")],
+)
+def predicted_orders():
+    ...
+```
 
 ---
 
-## Using dbt with Dagster
+## Getting started
+
+There are a few ways to get started with Dagster and dbt:
+
+- Take the [tutorial](/integrations/dbt/using-dbt-with-dagster). We'll walk you through setting up dbt and Dagster together on your computer, using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a data warehouse, such as [DuckDB](https://duckdb.org/). By the end, you'll have a working dbt and Dagster project and a handful of materialized Dagster assets, including a chart powered by data from your dbt models.
+- Play around with a [working dbt + Dagster project](https://github.com/dagster-io/dagster/tree/master/examples/assets_dbt_python).
+- Browse the [dagster-dbt integration reference](/integrations/dbt/reference) for short lessons on Dagster + dbt topics.
+- Review the [API docs](/\_apidocs/libraries/dagster-dbt) for the dagster-dbt library.
+- Automatically load your dbt models as Dagster assets by [importing an existing dbt project into Dagster Cloud](https://dagster.cloud/signup?next=/prod/getting-started%3Ftab%3Dimport_dbt_core_project%26serverless%3D1).
+
+---
+
+## Understanding how dbt models relate to Dagster Software-defined assets
 
 <DbtModelAssetExplanation />
 
-To learn how to load dbt models into Dagster as assets, check out the tutorial below or the quick version in the [dagster-dbt reference](/integrations/dbt/reference#loading-dbt-models-from-a-dbt-project).
-
----
-
-## dbt and Dagster software-defined assets tutorial
-
-In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a data warehouse, such as [DuckDB](https://duckdb.org/).
-
-By the end of the tutorial, you'll have a working dbt and Dagster integration and a handful of materialized Dagster assets, including a plotly chart powered by data computed from your dbt models.
-
-<ArticleList>
-  <ArticleListItem
-    title="Overview and prerequisites"
-    href="/integrations/dbt/using-dbt-with-dagster"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Part one: Set up a dbt project"
-    href="/integrations/dbt/using-dbt-with-dagster/part-one"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Part two: Load dbt models as Dagster assets"
-    href="/integrations/dbt/using-dbt-with-dagster/part-two"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Part three: Create and materialize upstream Dagster assets"
-    href="/integrations/dbt/using-dbt-with-dagster/part-three"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Part four: Create and materialize a downstream asset"
-    href="/integrations/dbt/using-dbt-with-dagster/part-four"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
-## References
-
-<ArticleList>
-  <ArticleListItem
-    title="dagster-dbt integration reference"
-    href="/integrations/dbt/reference"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="dagster-dbt API reference"
-    href="/\_apidocs/libraries/dagster-dbt"
-  ></ArticleListItem>
-</ArticleList>
+To learn how to load dbt models into Dagster as assets, check out the [tutorial](/integrations/dbt/using-dbt-with-dagster) or the quick version in the [dagster-dbt reference](/integrations/dbt/reference#loading-dbt-models-from-a-dbt-project).

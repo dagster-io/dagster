@@ -98,10 +98,8 @@ def merge_yamls(
             merged = deep_merge_dicts(merged, yaml_dict)
         else:
             check.failed(
-                (
-                    "Expected YAML from file {yaml_file} to parse to dictionary, "
-                    'instead got: "{yaml_dict}"'
-                ).format(yaml_file=yaml_file, yaml_dict=yaml_dict)
+                f"Expected YAML from file {yaml_file} to parse to dictionary, "
+                f'instead got: "{yaml_dict}"'
             )
     return merged
 
@@ -146,7 +144,11 @@ def load_run_config_yaml(yaml_str: str) -> Mapping[str, object]:
     return yaml.load(yaml_str, Loader=DagsterRunConfigYamlLoader)
 
 
-def dump_run_config_yaml(run_config: Mapping[str, Any]) -> str:
+def dump_run_config_yaml(run_config: Mapping[str, Any], sort_keys: bool = True) -> str:
     return yaml.dump(
-        run_config, Dumper=DagsterRunConfigYamlDumper, default_flow_style=False, allow_unicode=True
+        run_config,
+        Dumper=DagsterRunConfigYamlDumper,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=sort_keys,
     )

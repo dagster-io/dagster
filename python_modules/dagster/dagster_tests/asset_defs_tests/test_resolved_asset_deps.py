@@ -39,7 +39,7 @@ def test_input_has_asset_key():
     def asset1():
         ...
 
-    @asset(non_argument_deps={AssetKey(["b", "asset1"])})
+    @asset(deps=[AssetKey(["b", "asset1"])])
     def asset2():
         ...
 
@@ -47,15 +47,13 @@ def test_input_has_asset_key():
 
 
 def test_upstream_same_name_as_asset():
-    @asset(non_argument_deps={AssetKey("asset1")}, key_prefix="b")
+    @asset(deps=[AssetKey("asset1")], key_prefix="b")
     def asset1():
         ...
 
     assert len(resolve_assets_def_deps([asset1], [])) == 0
 
-    @multi_asset(
-        outs={"asset1": AssetOut(key_prefix="b")}, non_argument_deps={AssetKey(["a", "asset1"])}
-    )
+    @multi_asset(outs={"asset1": AssetOut(key_prefix="b")}, deps=[AssetKey(["a", "asset1"])])
     def multi_asset1():
         ...
 

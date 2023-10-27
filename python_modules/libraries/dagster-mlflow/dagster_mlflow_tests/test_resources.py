@@ -60,7 +60,7 @@ def context(request):
 
 @pytest.fixture
 def dagster_run():
-    return MagicMock(pipeline_name="test")
+    return MagicMock(job_name="test")
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ def basic_context(mlflow_run_config, dagster_run):
         resource_config=mlflow_run_config["resources"]["mlflow"]["config"],
         log=logging.getLogger(),
         run_id=str(uuid.uuid4()),
-        pipeline_run=dagster_run,
+        job_run=dagster_run,
     )
 
 
@@ -262,9 +262,7 @@ def test_setup(mock_atexit, context):
         MlFlow, "_get_current_run_id", return_value="run_id_mock"
     ) as mock_get_current_run_id, patch.object(
         MlFlow, "_set_active_run"
-    ) as mock_set_active_run, patch.object(
-        MlFlow, "_set_all_tags"
-    ) as mock_set_all_tags:
+    ) as mock_set_active_run, patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags:
         # When _setup is called
         mlf._setup()  # noqa: SLF001
         # Then
@@ -371,10 +369,10 @@ def test_execute_op_with_mlflow_resource():
         run_id_holder["op2_run_id"] = mlflow.active_run().info.run_id
 
     @job(resource_defs={"mlflow": mlflow_tracking})
-    def mlf_pipeline():
+    def mlf_job():
         op2(op1())
 
-    result = mlf_pipeline.execute_in_process(
+    result = mlf_job.execute_in_process(
         run_config={
             "resources": {
                 "mlflow": {

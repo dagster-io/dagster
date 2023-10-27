@@ -1,3 +1,4 @@
+import hashlib
 import os
 import warnings
 
@@ -28,6 +29,7 @@ from dagster import (
     io_manager,
     materialize_to_memory,
     multi_asset,
+    observable_source_asset,
     op,
     resource,
     with_resources,
@@ -48,31 +50,19 @@ from dagster._core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._core.storage.event_log.base import EventRecordsFilter
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test
 from dagster._utils import safe_tempfile_path
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.warnings import (
+    disable_dagster_warnings,
+)
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            # Expect experimental warnings to be thrown for direct
-            # resource_defs and io_manager_def arguments.
-            if (
-                "resource_defs" in w.message.args[0]
-                or "io_manager_def" in w.message.args[0]
-                or "build_assets_job" in w.message.args[0]
-                or "source_asset" in w.message.args[0]
-                or "SQLAlchemy" in w.message.args[0]  # deprecation API usage warnings
-            ):
-                continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def _all_asset_keys(result):
@@ -93,10 +83,10 @@ def _asset_keys_for_node(result, node_name):
     return ret
 
 
-def test_single_asset_pipeline():
+def test_single_asset_job():
     @asset
     def asset1(context):
-        assert context.asset_key_for_output() == AssetKey(["asset1"])
+        assert context.asset_key == AssetKey(["asset1"])
         return 1
 
     job = build_assets_job("a", [asset1])
@@ -104,7 +94,7 @@ def test_single_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_two_asset_pipeline():
+def test_two_asset_job():
     @asset
     def asset1():
         return 1
@@ -122,7 +112,7 @@ def test_two_asset_pipeline():
     assert job.execute_in_process().success
 
 
-def test_single_asset_pipeline_with_config():
+def test_single_asset_job_with_config():
     @asset(config_schema={"foo": Field(StringSource)})
     def asset1(context):
         return context.op_config["foo"]
@@ -357,7 +347,7 @@ def test_source_op_asset():
     assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
-def test_non_argument_deps():
+def test_deps():
     with safe_tempfile_path() as path:
 
         @asset
@@ -365,7 +355,7 @@ def test_non_argument_deps():
             with open(path, "w", encoding="utf8") as ff:
                 ff.write("yup")
 
-        @asset(non_argument_deps={AssetKey("foo")})
+        @asset(deps=[AssetKey("foo")])
         def bar():
             # assert that the foo asset already executed
             assert os.path.exists(path)
@@ -377,19 +367,19 @@ def test_non_argument_deps():
         assert _asset_keys_for_node(result, "bar") == {AssetKey("bar")}
 
 
-def test_non_argument_deps_as_str():
+def test_deps_as_str():
     @asset
     def foo():
         pass
 
-    @asset(non_argument_deps={"foo"})
+    @asset(deps=["foo"])
     def bar():
         pass
 
     assert AssetKey("foo") in bar.asset_deps[AssetKey("bar")]
 
 
-def test_multiple_non_argument_deps():
+def test_multiple_deps():
     @asset
     def foo():
         pass
@@ -402,7 +392,7 @@ def test_multiple_non_argument_deps():
     def baz():
         return 1
 
-    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["key_prefix", "bar"])})
+    @asset(deps=[AssetKey("foo"), AssetKey(["key_prefix", "bar"])])
     def qux(baz):
         return baz
 
@@ -1391,9 +1381,7 @@ def reconstruct_asset_job():
 
 
 def test_asset_selection_reconstructable():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-        warnings.simplefilter("ignore", category=DeprecationWarning)
+    with disable_dagster_warnings():
         with instance_for_test() as instance:
             run = instance.create_run_for_job(
                 job_def=my_job, asset_selection=frozenset([AssetKey("f")])
@@ -1403,7 +1391,7 @@ def test_asset_selection_reconstructable():
                 "reconstruct_asset_job",
                 reconstructable_args=tuple(),
                 reconstructable_kwargs={},
-            ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
+            ).get_subset(asset_selection=frozenset([AssetKey("f")]))
 
             events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
             assert len([event for event in events if event.is_job_success]) == 1
@@ -1692,6 +1680,7 @@ def test_graph_output_is_input_within_graph():
     assert result.output_for_node("complicated_graph", "asset_3") == 4
 
 
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1779,6 +1768,8 @@ def test_source_asset_io_manager_key_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_requires_resource_defs():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1816,6 +1807,7 @@ def test_source_asset_requires_resource_defs():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_other_asset_provides_req():
     # Demonstrate that assets cannot resolve each other's dependencies with
     # resources on each definition.
@@ -1834,6 +1826,7 @@ def test_other_asset_provides_req():
         build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_transitive_deps_not_provided():
     @resource(required_resource_keys={"foo"})
     def unused_resource():
@@ -1850,6 +1843,7 @@ def test_transitive_deps_not_provided():
         build_assets_job(name="test", assets=[the_asset])
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_transitive_resource_deps_provided():
     @resource(required_resource_keys={"foo"})
     def used_resource(context):
@@ -1865,6 +1859,7 @@ def test_transitive_resource_deps_provided():
     assert the_job.execute_in_process().success
 
 
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
@@ -1899,9 +1894,7 @@ def test_resolve_dependency_in_group():
         del asset1
         assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+    with disable_dagster_warnings():
         assert materialize_to_memory([asset1, asset2]).success
 
 
@@ -1921,9 +1914,7 @@ def test_resolve_dependency_fail_across_groups():
             " sources"
         ),
     ):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             materialize_to_memory([asset1, asset2])
 
 
@@ -1950,9 +1941,7 @@ def test_resolve_dependency_multi_asset_different_groups():
             " sources"
         ),
     ):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             materialize_to_memory([upstream, assets])
 
 
@@ -1988,6 +1977,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         source_assets=[],
         executor_def=None,
         resource_defs={},
+        asset_checks=[],
     )
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {
@@ -2001,6 +1991,46 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         frozenset(["daily_asset", "daily_asset2", "unpartitioned_asset"]),
         frozenset(["hourly_asset", "unpartitioned_asset"]),
         frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
+    }
+
+
+@ignore_warning("Function `observable_source_asset` is experimental")
+def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
+    class B:
+        ...
+
+    partitions_a = StaticPartitionsDefinition(["a1"])
+
+    @observable_source_asset(partitions_def=partitions_a)
+    def asset_a():
+        ...
+
+    partitions_b = StaticPartitionsDefinition(["b1"])
+
+    @observable_source_asset(partitions_def=partitions_b)
+    def asset_b():
+        ...
+
+    @asset(partitions_def=partitions_b)
+    def asset_x(asset_b: B):
+        ...
+
+    jobs = get_base_asset_jobs(
+        assets=[
+            asset_x,
+        ],
+        source_assets=[
+            asset_a,
+            asset_b,
+        ],
+        executor_def=None,
+        resource_defs={},
+        asset_checks=[],
+    )
+    assert len(jobs) == 2
+    assert {job_def.name for job_def in jobs} == {
+        "__ASSET_JOB_0",
+        "__ASSET_JOB_1",
     }
 
 
@@ -2205,7 +2235,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = context.selected_output_names if allow_subset else "abc"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -2239,7 +2270,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
-        outputs_to_return = context.selected_output_names if allow_subset else "def"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -2456,7 +2488,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     all_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        all_assets = prefix_assets(all_assets, prefix)
+        all_assets, _ = prefix_assets(all_assets, prefix, [], None)
 
     defs = Definitions(
         # for these, if we have multi assets, we'll always allow them to be subset
@@ -2509,7 +2541,22 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
         if asset_name in expected_assets.split(","):
             # dealing with multi asset
             if output != asset_name:
-                assert result.output_for_node(output.split(".")[0], asset_name)
+                node_def_name = output.split(".")[0]
+                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
+                if (
+                    selected_keys_for_node != keys_for_node
+                    # too much of a pain to explicitly encode the cases where we need to create a
+                    # new node definition
+                    and not result.job_def.has_node_named(node_def_name)
+                ):
+                    node_def_name += (
+                        "_subset_"
+                        + hashlib.md5(
+                            (str(list(sorted(selected_keys_for_node)))).encode()
+                        ).hexdigest()[-5:]
+                    )
+                assert result.output_for_node(node_def_name, asset_name)
             # dealing with regular asset
             else:
                 assert result.output_for_node(output, "result") == value

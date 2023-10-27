@@ -18,7 +18,11 @@ Related Guides:
 .. autoconfigurable:: SnowflakePandasIOManager
   :annotation: IOManagerDefinition
 
+.. autoclass:: SnowflakePandasTypeHandler
+
+
+Legacy
+======
+
 .. autoconfigurable:: snowflake_pandas_io_manager
   :annotation: IOManagerDefinition
-
-.. autoclass:: SnowflakePandasTypeHandler

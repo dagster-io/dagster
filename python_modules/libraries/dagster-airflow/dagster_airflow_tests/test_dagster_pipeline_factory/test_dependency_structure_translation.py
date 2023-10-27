@@ -1,6 +1,6 @@
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
-from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.dummy_operator import DummyOperator  # type: ignore
 from airflow.utils.dates import days_ago
 
 if airflow_version >= "2.0.0":

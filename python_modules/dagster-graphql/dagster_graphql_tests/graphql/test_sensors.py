@@ -187,7 +187,7 @@ query getUnloadableSensors {
 """
 
 GET_SENSOR_TICK_RANGE_QUERY = """
-query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: Int) {
+query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: Int, $beforeTimestamp: Float, $afterTimestamp: Float) {
   sensorOrError(sensorSelector: $sensorSelector) {
     __typename
     ... on PythonError {
@@ -198,9 +198,10 @@ query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: 
       id
       sensorState {
         id
-        ticks(dayRange: $dayRange, dayOffset: $dayOffset) {
+        ticks(dayRange: $dayRange, dayOffset: $dayOffset, beforeTimestamp: $beforeTimestamp, afterTimestamp: $afterTimestamp) {
           id
           timestamp
+          endTimestamp
         }
       }
     }
@@ -397,6 +398,33 @@ query TickLogsQuery($sensorSelector: SensorSelector!) {
 }
 """
 
+GET_TICK_DYNAMIC_PARTITIONS_REQUEST_RESULTS_QUERY = """
+query TickDynamicPartitionsRequestResultsQuery($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensor {
+      id
+      sensorState {
+        id
+        ticks {
+          id
+          dynamicPartitionsRequestResults {
+            partitionsDefName
+            partitionKeys
+            skippedPartitionKeys
+            type
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 
 class TestSensors(NonLaunchableGraphQLContextTestMatrix):
     @pytest.mark.parametrize(
@@ -466,13 +494,17 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["dynamicPartitionsRequests"][0]["partitionKeys"] == [
             "new_key",
             "new_key2",
+            "existent_key",
         ]
         assert evaluation_result["dynamicPartitionsRequests"][0]["partitionsDefName"] == "foo"
         assert (
             evaluation_result["dynamicPartitionsRequests"][0]["type"]
             == GrapheneDynamicPartitionsRequestType.ADD_PARTITIONS
         )
-        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionKeys"] == ["old_key"]
+        assert evaluation_result["dynamicPartitionsRequests"][1]["partitionKeys"] == [
+            "old_key",
+            "nonexistent_key",
+        ]
         assert evaluation_result["dynamicPartitionsRequests"][1]["partitionsDefName"] == "foo"
         assert (
             evaluation_result["dynamicPartitionsRequests"][1]["type"]
@@ -921,6 +953,24 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["timestamp"] == three.timestamp()
+    assert (
+        result.data["sensorOrError"]["sensorState"]["ticks"][0]["endTimestamp"] >= three.timestamp()
+    )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SENSOR_TICK_RANGE_QUERY,
+        variables={
+            "sensorSelector": sensor_selector,
+            "beforeTimestamp": three.timestamp() + 1,
+            "afterTimestamp": three.timestamp() - 1,
+        },
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["timestamp"] == three.timestamp()
+    assert (
+        result.data["sensorOrError"]["sensorState"]["ticks"][0]["endTimestamp"] >= three.timestamp()
+    )
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -929,6 +979,9 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["timestamp"] == two.timestamp()
+    assert (
+        result.data["sensorOrError"]["sensorState"]["ticks"][0]["endTimestamp"] >= two.timestamp()
+    )
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -944,7 +997,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
 
 def test_repository_batching(graphql_context: WorkspaceRequestContext):
     instance = graphql_context.instance
-    if not instance.supports_batch_tick_queries or not instance.supports_bucket_queries:
+    if not instance.supports_batch_tick_queries:
         pytest.skip("storage cannot batch fetch")
 
     traced_counter.set(Counter())
@@ -962,14 +1015,12 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     assert counts
     assert len(counts) == 3
 
-    # We should have a single batch call to fetch run records (to fetch sensor runs) and a single
-    # batch call to fetch instigator state, instead of separate calls for each sensor (~5 distinct
-    # sensors in the repo)
-    # 1) `get_run_records` is fetched to instantiate GrapheneRun
+    # We should have a single batch call to fetch instigator state, instead of separate calls for
+    # each sensor (~5 distinct sensors in the repo)
+    # 1) `get_batch_ticks` is called to fetch all the ticks for the sensors
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
-    assert counts.get("DagsterInstance.get_run_records") == 1
-    assert counts.get("DagsterInstance.all_instigator_state") == 1
     assert counts.get("DagsterInstance.get_batch_ticks") == 1
+    assert counts.get("DagsterInstance.all_instigator_state") == 1
 
 
 def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
@@ -1149,3 +1200,44 @@ def test_sensor_tick_logs(graphql_context: WorkspaceRequestContext):
     log_messages = tick["logEvents"]["events"]
     assert len(log_messages) == 1
     assert log_messages[0]["message"] == "hello hello"
+
+
+def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceRequestContext):
+    instance = graphql_context.instance
+    external_repository = graphql_context.get_code_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+
+    sensor_name = "dynamic_partition_requesting_sensor"
+    external_sensor = external_repository.get_external_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    instance.add_dynamic_partitions("foo", ["existent_key", "old_key"])
+
+    # turn the sensor on
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+        )
+    )
+
+    _create_tick(graphql_context)
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICK_DYNAMIC_PARTITIONS_REQUEST_RESULTS_QUERY,
+        variables={"sensorSelector": sensor_selector},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    tick = result.data["sensorOrError"]["sensorState"]["ticks"][0]
+    results = tick["dynamicPartitionsRequestResults"]
+    assert len(results) == 2
+    assert results[0]["partitionsDefName"] == "foo"
+    assert results[0]["type"] == "ADD_PARTITIONS"
+    assert results[0]["partitionKeys"] == ["new_key", "new_key2"]
+    assert results[0]["skippedPartitionKeys"] == ["existent_key"]
+
+    assert results[1]["partitionsDefName"] == "foo"
+    assert results[1]["type"] == "DELETE_PARTITIONS"
+    assert results[1]["partitionKeys"] == ["old_key"]
+    assert results[1]["skippedPartitionKeys"] == ["nonexistent_key"]

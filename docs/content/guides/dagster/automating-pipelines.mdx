@@ -11,6 +11,8 @@ This guide assumes you have some familiarity with several Dagster concepts, incl
 
 Dagster offers a few different ways of automating data pipelines, and choosing the right Dagster tool depends on your specific needs. In this guide we'll walk through a few different cases, and which Dagster tool you should use in each case.
 
+---
+
 ## Things to think through
 
 When thinking about automating your data pipelines, it’s helpful to think through how and when your data needs to be refreshed. A few helpful things to think through:
@@ -144,8 +146,8 @@ def asset1():
     ...
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
-def asset2(asset1):
+@asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[asset1])
+def asset2():
     ...
 ```
 
@@ -159,9 +161,9 @@ Let’s say you have a database with all your credit card transactions. When a r
 
 In this case, you want your data pipeline to include all the latest data, but it doesn’t make sense to continuously process data from two years or two days ago when you know it hasn’t changed. What you want is to process yesterday’s data and not waste compute on the rest of the data.
 
-Dagster [partitions](/concepts/partitions-schedules-sensors/partitions#defining-partitioned-assets) do just that. A partition is a slice of your data; in this case, each partition represents a day of transactions. You can partition or ‘split’ your data based on whatever makes the most sense, by one or [multiple dimensions](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#multi-dimensionally-partitioned-assets).
+Dagster [partitions](/concepts/partitions-schedules-sensors/partitioning-assets#defining-partitioned-assets) do just that. A partition is a slice of your data; in this case, each partition represents a day of transactions. You can partition or ‘split’ your data based on whatever makes the most sense, by one or [multiple dimensions](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitioning-assets#multi-dimensionally-partitioned-assets).
 
-Partitions can be used with both schedules and sensors. You can use schedules to kick off a partitioned job to [update slices of data](/concepts/partitions-schedules-sensors/partitions#creating-schedules-from-partitioned-jobs). You can also trigger runs once a specific partition has been updated using auto-materialize policies based on [partitioned materializations](/concepts/partitions-schedules-sensors/asset-sensors#triggering-runs-upon-partitioned-materializations).
+Partitions can be used with both schedules and sensors. You can use schedules to kick off a partitioned job to [update slices of data](/concepts/partitions-schedules-sensors/partitioning-assets#partitioned-asset-jobs). You can also trigger runs once a specific partition has been updated using auto-materialize policies based on [partitioned materializations](/concepts/partitions-schedules-sensors/asset-sensors#triggering-runs-upon-partitioned-materializations).
 
 ---
 

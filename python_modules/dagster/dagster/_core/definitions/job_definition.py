@@ -15,7 +15,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Type,
     Union,
     cast,
 )
@@ -23,24 +22,21 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
-from dagster._core.definitions.composition import MappedInputPlaceholder
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import (
-    DynamicCollectDependencyDefinition,
-    IDependencyDefinition,
-    MultiDependencyDefinition,
     Node,
     NodeHandle,
     NodeInputHandle,
     NodeInvocation,
-    NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
@@ -58,24 +54,23 @@ from dagster._core.errors import (
 from dagster._core.selector.subset_selector import (
     AssetSelectionData,
     OpSelectionData,
-    SelectionTreeBranch,
-    SelectionTreeLeaf,
-    parse_op_selection,
 )
-from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
+from dagster._core.storage.io_manager import (
+    IOManagerDefinition,
+    dagster_maintained_io_manager,
+    io_manager,
+)
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
-from dagster._utils.backcompat import deprecation_warning, experimental_class_warning
+from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
 from .dependency import (
-    DependencyDefinition,
     DependencyMapping,
     DependencyStructure,
-    GraphNode,
     OpNode,
 )
 from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
@@ -94,8 +89,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
-    from dagster._core.host_representation.pipeline_index import JobIndex
-    from dagster._core.instance import DagsterInstance
+    from dagster._core.host_representation.job_index import JobIndex
+    from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._core.snap import JobSnapshot
 
     from .run_config_schema import RunConfigSchema
@@ -103,7 +98,8 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
-class JobDefinition:
+@experimental_param(param="version_strategy")
+class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
     _name: str
@@ -118,7 +114,6 @@ class JobDefinition:
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
-    _cached_external_pipeline: Any
     _version_strategy: VersionStrategy
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
@@ -150,7 +145,7 @@ class JobDefinition:
 
         self._graph_def = graph_def
         self._current_level_node_defs = self._graph_def.node_defs
-        # Recursively explore all nodes in the this pipeline
+        # Recursively explore all nodes in the this job
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
         self._asset_layer = check.opt_inst_param(
             asset_layer, "asset_layer", AssetLayer
@@ -177,7 +172,7 @@ class JobDefinition:
             partitions_def, "partitions_def", PartitionsDefinition
         )
         # tags and description can exist on graph as well, but since
-        # same graph may be in multiple pipelines/jobs, keep separate layer
+        # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
         self._metadata = normalize_metadata(
@@ -190,8 +185,6 @@ class JobDefinition:
         self.version_strategy = check.opt_inst_param(
             version_strategy, "version_strategy", VersionStrategy
         )
-        if self.version_strategy is not None:
-            experimental_class_warning("VersionStrategy")
 
         _subset_selection_data = check.opt_inst_param(
             _subset_selection_data, "_subset_selection_data", (OpSelectionData, AssetSelectionData)
@@ -219,6 +212,7 @@ class JobDefinition:
         self._partitioned_config = None
         self._run_config = None
         self._run_config_schema = None
+        self._original_config_argument = config
 
         if partitions_def:
             self._partitioned_config = PartitionedConfig.from_flexible_config(
@@ -260,6 +254,48 @@ class JobDefinition:
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
 
+    def dagster_internal_init(
+        *,
+        graph_def: GraphDefinition,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]],
+        executor_def: Optional[ExecutorDefinition],
+        logger_defs: Optional[Mapping[str, LoggerDefinition]],
+        name: Optional[str],
+        config: Optional[
+            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+        ],
+        description: Optional[str],
+        partitions_def: Optional[PartitionsDefinition],
+        tags: Optional[Mapping[str, Any]],
+        metadata: Optional[Mapping[str, RawMetadataValue]],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
+        op_retry_policy: Optional[RetryPolicy],
+        version_strategy: Optional[VersionStrategy],
+        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
+        asset_layer: Optional[AssetLayer],
+        input_values: Optional[Mapping[str, object]],
+        _was_explicitly_provided_resources: Optional[bool],
+    ) -> "JobDefinition":
+        return JobDefinition(
+            graph_def=graph_def,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            logger_defs=logger_defs,
+            name=name,
+            config=config,
+            description=description,
+            partitions_def=partitions_def,
+            tags=tags,
+            metadata=metadata,
+            hook_defs=hook_defs,
+            op_retry_policy=op_retry_policy,
+            version_strategy=version_strategy,
+            _subset_selection_data=_subset_selection_data,
+            asset_layer=asset_layer,
+            input_values=input_values,
+            _was_explicitly_provided_resources=_was_explicitly_provided_resources,
+        )
+
     @property
     def name(self) -> str:
         return self._name
@@ -291,31 +327,52 @@ class JobDefinition:
     @public
     @property
     def executor_def(self) -> ExecutorDefinition:
+        """Returns the default :py:class:`ExecutorDefinition` for the job.
+
+        If the user has not specified an executor definition, then this will default to the :py:func:`multi_or_in_process_executor`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        """
         return self._executor_def or DEFAULT_EXECUTOR_DEF
 
     @public
     @property
     def has_specified_executor(self) -> bool:
+        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._executor_def is not None
 
     @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        """Returns the set of ResourceDefinition objects specified on the job.
+
+        This may not be the complete set of resources required by the job, since those can also be provided on the :py:class:`Definitions` object the job may be provided to.
+        """
         return self._resource_defs
 
     @public
     @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:
+        """The partitioned config for the job, if it has one.
+
+        A partitioned config defines a way to map partition keys to run config for the job.
+        """
         return self._partitioned_config
 
     @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
+        """The config mapping for the job, if it has one.
+
+        A config mapping defines a way to map a top-level config schema to run config for the job.
+        """
         return self._config_mapping
 
     @public
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
+        """Returns the set of LoggerDefinition objects specified on the job.
+
+        If the user has not specified a mapping of :py:class:`LoggerDefinition` objects, then this will default to the :py:func:`colored_console_logger` under the key `console`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        """
         from dagster._loggers import default_loggers
 
         return self._loggers or default_loggers()
@@ -323,6 +380,7 @@ class JobDefinition:
     @public
     @property
     def has_specified_loggers(self) -> bool:
+        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._loggers is not None
 
     @property
@@ -342,6 +400,10 @@ class JobDefinition:
     @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
+        """Returns the :py:class:`PartitionsDefinition` for the job, if it has one.
+
+        A partitions definition defines the set of partition keys the job operates on.
+        """
         return None if not self.partitioned_config else self.partitioned_config.partitions_def
 
     @property
@@ -493,7 +555,7 @@ class JobDefinition:
             node = definition.node_named(name)
             hook_defs = hook_defs.union(node.hook_defs)
 
-        # hooks applied to a pipeline definition will run on every node
+        # hooks applied to a job definition will run on every node
         hook_defs = hook_defs.union(self.hook_defs)
 
         return frozenset(hook_defs)
@@ -580,10 +642,8 @@ class JobDefinition:
 
         check.invariant(
             not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            "op_selection and asset_selection cannot both be provided as args to"
+            " execute_in_process",
         )
 
         partition_key = check.opt_str_param(partition_key, "partition_key")
@@ -595,7 +655,7 @@ class JobDefinition:
         input_values = merge_dicts(self.input_values, input_values)
 
         bound_resource_defs = dict(self.resource_defs)
-        ephemeral_job = JobDefinition(
+        ephemeral_job = JobDefinition.dagster_internal_init(
             name=self._name,
             graph_def=self._graph_def,
             resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
@@ -608,10 +668,16 @@ class JobDefinition:
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
+            description=self.description,
+            partitions_def=self.partitions_def,
+            metadata=self.metadata,
+            _subset_selection_data=None,  # this is added below
+            _was_explicitly_provided_resources=True,
         )
 
-        ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
-            op_selection, frozenset(asset_selection) if asset_selection else None
+        ephemeral_job = ephemeral_job.get_subset(
+            op_selection=op_selection,
+            asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
 
         merged_tags = merge_dicts(self.tags, tags or {})
@@ -661,33 +727,37 @@ class JobDefinition:
         )
 
     @property
-    def is_subset_job(self) -> bool:
+    def is_subset(self) -> bool:
         return bool(self._subset_selection_data)
 
-    def get_job_def_for_subset_selection(
+    def get_subset(
         self,
-        op_selection: Optional[Sequence[str]] = None,
+        *,
+        op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> Self:
         check.invariant(
-            not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            not (op_selection and (asset_selection or asset_check_selection)),
+            "op_selection cannot be provided with asset_selection or asset_check_selection to"
+            " execute_in_process",
         )
         if op_selection:
             return self._get_job_def_for_op_selection(op_selection)
-        if asset_selection:
-            return self._get_job_def_for_asset_selection(asset_selection)
+        if asset_selection or asset_check_selection:
+            return self._get_job_def_for_asset_selection(
+                asset_selection=asset_selection, asset_check_selection=asset_check_selection
+            )
         else:
             return self
 
     def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> Self:
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
         nonexistent_assets = [
             asset
@@ -705,8 +775,28 @@ class JobDefinition:
                 "Assets provided in asset_selection argument "
                 f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
             )
+
+        # Test that selected asset checks exist
+        all_check_keys = self.asset_layer.node_output_handles_by_asset_check_key.keys()
+
+        nonexistent_asset_checks = [
+            asset_check
+            for asset_check in asset_check_selection or set()
+            if asset_check not in all_check_keys
+        ]
+        nonexistent_asset_check_strings = [
+            str(asset_check) for asset_check in nonexistent_asset_checks
+        ]
+        if nonexistent_asset_checks:
+            raise DagsterInvalidSubsetError(
+                "Asset checks provided in asset_check_selection argument"
+                f" {', '.join(nonexistent_asset_check_strings)} do not exist in parent asset group"
+                " or job."
+            )
+
         asset_selection_data = AssetSelectionData(
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             parent_job_def=self,
         )
 
@@ -724,19 +814,19 @@ class JobDefinition:
             description=self.description,
             tags=self.tags,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             asset_selection_data=asset_selection_data,
             config=self.config_mapping or self.partitioned_config,
+            asset_checks=self.asset_layer.asset_checks_defs,
         )
         return new_job
 
-    def _get_job_def_for_op_selection(self, op_selection: Sequence[str]) -> Self:
-        resolved_op_selection_dict = parse_op_selection(self, op_selection)
-
+    def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> Self:
         try:
-            sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+            sub_graph = get_graph_subset(self.graph, op_selection)
 
             # if explicit config was passed the config_mapping that resolves the defaults implicitly is
-            # very unlikely to work. The job will still present the default config in dagit.
+            # very unlikely to work. The job will still present the default config in the Dagster UI.
             config = (
                 None
                 if self.run_config is not None
@@ -747,11 +837,9 @@ class JobDefinition:
                 config=config,
                 graph_def=sub_graph,
                 _subset_selection_data=OpSelectionData(
-                    op_selection=op_selection,
-                    resolved_op_selection=set(
-                        resolved_op_selection_dict.keys()
-                    ),  # equivalent to solids_to_execute. currently only gets top level nodes.
-                    parent_job_def=self,  # used by pipeline snapshot lineage
+                    op_selection=list(op_selection),
+                    resolved_op_selection=OpSelection(op_selection).resolve(self.graph),
+                    parent_job_def=self,  # used by job snapshot lineage
                 ),
                 # TODO: subset this structure.
                 # https://github.com/dagster-io/dagster/issues/7541
@@ -761,12 +849,17 @@ class JobDefinition:
             # This handles the case when you construct a subset such that an unsatisfied
             # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
             # we re-raise a DagsterInvalidSubsetError.
+            node_paths = OpSelection(op_selection).resolve(self.graph)
             raise DagsterInvalidSubsetError(
-                f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
+                f"The attempted subset {str_format_set(node_paths)} for graph "
                 f"{self.graph.name} results in an invalid graph."
             ) from exc
 
     @public
+    @deprecated(
+        breaking_version="2.0.0",
+        additional_warn_text="Directly instantiate `RunRequest(partition_key=...)` instead.",
+    )
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -775,6 +868,7 @@ class JobDefinition:
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> RunRequest:
         """Creates a RunRequest object for a run that processes the given partition.
 
@@ -789,18 +883,17 @@ class JobDefinition:
             run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
                 a :py:class:`PartitionedConfig`, this value will override replace the config
                 provided by it.
-            current_time (Optional[datetime): Used to determine which time-partitions exist.
+            current_time (Optional[datetime]): Used to determine which time-partitions exist.
                 Defaults to now.
+            dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore
+                object that is responsible for fetching dynamic partitions. Required when the
+                partitions definition is a DynamicPartitionsDefinition with a name defined. Users
+                can pass the DagsterInstance fetched via `context.instance` to this argument.
+
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        deprecation_warning(
-            "JobDefinition.run_request_for_partition",
-            "2.0.0",
-            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
-        )
-
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -816,7 +909,11 @@ class JobDefinition:
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(partition_key, current_time=current_time)
+        self.partitions_def.validate_partition_key(
+            partition_key,
+            current_time=current_time,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
 
         run_config = (
             run_config
@@ -882,7 +979,7 @@ class JobDefinition:
             resource_defs=dict(self.resource_defs),
             executor_def=self._executor_def,
             logger_defs=self._loggers,
-            config=self._config_mapping or self._partitioned_config or self._run_config,
+            config=self._original_config_argument,
             name=self._name,
             description=self.description,
             tags=self.tags,
@@ -893,9 +990,11 @@ class JobDefinition:
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
+            partitions_def=self.partitions_def,
+            _was_explicitly_provided_resources=None,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
-        job_def = JobDefinition(**resolved_kwargs)
+        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
         update_wrapper(job_def, self, updated=())
         return job_def
 
@@ -919,6 +1018,24 @@ class JobDefinition:
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
         return self._copy(logger_defs=logger_defs)
 
+    @property
+    def op_selection(self) -> Optional[AbstractSet[str]]:
+        return set(self.op_selection_data.op_selection) if self.op_selection_data else None
+
+    @property
+    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+        return self.asset_selection_data.asset_selection if self.asset_selection_data else None
+
+    @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return (
+            self.asset_selection_data.asset_check_selection if self.asset_selection_data else None
+        )
+
+    @property
+    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
+        return self.op_selection_data.resolved_op_selection if self.op_selection_data else None
+
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDefinition):
     """Used to create the user facing experience of the default io_manager
@@ -937,112 +1054,7 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDe
     return resources
 
 
-def _dep_key_of(node: Node) -> NodeInvocation:
-    return NodeInvocation(
-        name=node.definition.name,
-        alias=node.name,
-        tags=node.tags,
-        hook_defs=node.hook_defs,
-        retry_policy=node.retry_policy,
-    )
-
-
-def get_subselected_graph_definition(
-    graph: GraphDefinition,
-    resolved_op_selection_dict: SelectionTreeBranch,
-    parent_handle: Optional[NodeHandle] = None,
-) -> SubselectedGraphDefinition:
-    deps: Dict[
-        NodeInvocation,
-        Dict[str, IDependencyDefinition],
-    ] = {}
-
-    selected_nodes: List[Tuple[str, NodeDefinition]] = []
-
-    for node in graph.nodes_in_topological_order:
-        node_handle = NodeHandle(node.name, parent=parent_handle)
-        # skip if the node isn't selected
-        if node.name not in resolved_op_selection_dict:
-            continue
-
-        # rebuild graph if any nodes inside the graph are selected
-        definition: Union[SubselectedGraphDefinition, NodeDefinition]
-        selection_node = resolved_op_selection_dict[node.name]
-        if isinstance(node, GraphNode) and not isinstance(selection_node, SelectionTreeLeaf):
-            definition = get_subselected_graph_definition(
-                node.definition,
-                selection_node,
-                parent_handle=node_handle,
-            )
-        # use definition if the node as a whole is selected. this includes selecting the entire graph
-        else:
-            definition = node.definition
-        selected_nodes.append((node.name, definition))
-
-        # build dependencies for the node. we do it for both cases because nested graphs can have
-        # inputs and outputs too
-        deps[_dep_key_of(node)] = {}
-        for node_input in node.inputs():
-            if graph.dependency_structure.has_direct_dep(node_input):
-                node_output = graph.dependency_structure.get_direct_dep(node_input)
-                if node_output.node.name in resolved_op_selection_dict:
-                    deps[_dep_key_of(node)][node_input.input_def.name] = DependencyDefinition(
-                        node=node_output.node.name, output=node_output.output_def.name
-                    )
-            elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
-                node_output = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
-                if node_output.node.name in resolved_op_selection_dict:
-                    deps[_dep_key_of(node)][
-                        node_input.input_def.name
-                    ] = DynamicCollectDependencyDefinition(
-                        node_name=node_output.node.name,
-                        output_name=node_output.output_def.name,
-                    )
-            elif graph.dependency_structure.has_fan_in_deps(node_input):
-                outputs = graph.dependency_structure.get_fan_in_deps(node_input)
-                multi_dependencies = [
-                    DependencyDefinition(
-                        node=output_handle.node.name, output=output_handle.output_def.name
-                    )
-                    for output_handle in outputs
-                    if (
-                        isinstance(output_handle, NodeOutput)
-                        and output_handle.node.name in resolved_op_selection_dict
-                    )
-                ]
-                deps[_dep_key_of(node)][node_input.input_def.name] = MultiDependencyDefinition(
-                    cast(
-                        List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]],
-                        multi_dependencies,
-                    )
-                )
-            # else input is unconnected
-
-    # filter out unselected input/output mapping
-    new_input_mappings = list(
-        filter(
-            lambda input_mapping: input_mapping.maps_to.node_name
-            in [name for name, _ in selected_nodes],
-            graph._input_mappings,  # noqa: SLF001
-        )
-    )
-    new_output_mappings = list(
-        filter(
-            lambda output_mapping: output_mapping.maps_from.node_name
-            in [name for name, _ in selected_nodes],
-            graph._output_mappings,  # noqa: SLF001
-        )
-    )
-
-    return SubselectedGraphDefinition(
-        parent_graph_def=graph,
-        dependencies=deps,
-        node_defs=[definition for _, definition in selected_nodes],
-        input_mappings=new_input_mappings,
-        output_mappings=new_output_mappings,
-    )
-
-
+@dagster_maintained_io_manager
 @io_manager(
     description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
@@ -1060,10 +1072,8 @@ def default_job_io_manager(init_context: "InitResourceContext"):
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager
@@ -1083,6 +1093,7 @@ def default_job_io_manager(init_context: "InitResourceContext"):
     return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())
 
 
+@dagster_maintained_io_manager
 @io_manager(
     description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
     config_schema={"base_dir": Field(StringSource, is_required=False)},
@@ -1101,10 +1112,8 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager
@@ -1233,15 +1242,22 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
                 stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
 
     return AssetLayer(
+        assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_info_by_node_output_handle={},
         asset_deps={},
         dependency_node_handles_by_asset_key={},
-        assets_defs=[],
-        source_asset_defs=source_assets_list,
+        assets_defs_by_key={},
+        source_assets_by_key={
+            source_asset.key: source_asset for source_asset in source_assets_list
+        },
         io_manager_keys_by_asset_key=io_manager_keys_by_asset_key,
-        node_output_handles_to_dep_asset_keys={},
+        dep_asset_keys_by_node_output_handle={},
         partition_mappings_by_asset_dep={},
+        asset_checks_defs_by_node_handle={},
+        node_output_handles_by_asset_check_key={},
+        check_names_by_asset_key_by_node_handle={},
+        check_key_by_node_output_handle={},
     )
 
 
@@ -1273,11 +1289,11 @@ def _create_run_config_schema(
     )
     from .run_config_schema import RunConfigSchema
 
-    # When executing with a subset pipeline, include the missing nodes
-    # from the original pipeline as ignored to allow execution with
+    # When executing with a subset job, include the missing nodes
+    # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset_job:
+    if job_def.is_subset:
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:

@@ -13,10 +13,8 @@ ops.
 
 
 .. autoclass:: IOManager
-    :members:
 
 .. autoclass:: IOManagerDefinition
-    :members:
 
 .. autodecorator:: io_manager
 
@@ -24,10 +22,8 @@ Input and Output Contexts
 -------------------------
 
 .. autoclass:: InputContext
-    :members:
 
 .. autoclass:: OutputContext
-    :members:
 
 
 .. autofunction:: build_input_context
@@ -41,14 +37,12 @@ Input and Output Contexts
 Built-in IO Managers
 ------------------------
 
-.. autodata:: mem_io_manager
-  :annotation: IOManagerDefinition
-
 .. autodata:: FilesystemIOManager
   :annotation: IOManagerDefinition
 
-.. autodata:: fs_io_manager
+.. autodata:: InMemoryIOManager
   :annotation: IOManagerDefinition
+
 
 The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers.
 
@@ -63,18 +57,15 @@ Input managers load inputs from either upstream outputs or from provided default
 .. autodecorator:: input_manager
 
 .. autoclass:: InputManager
-    :members:
 
-Root Input Managers (Experimental)
-----------------------------------
+.. autoclass:: InputManagerDefinition
 
-Root input managers are user-provided objects that specify how to load inputs that aren't connected
-to upstream outputs.
 
-.. autodecorator:: root_input_manager
+Legacy
+------
 
-.. autoclass:: RootInputManager
-    :members:
+.. autodata:: fs_io_manager
+  :annotation: IOManagerDefinition
 
-.. autoclass:: RootInputManagerDefinition
-    :members:
+.. autodata:: mem_io_manager
+  :annotation: IOManagerDefinition

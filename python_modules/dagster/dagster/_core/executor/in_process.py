@@ -4,14 +4,28 @@ from typing import Iterator, Optional
 import dagster._check as check
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import ExecuteRunWithPlanIterable
-from dagster._core.execution.context.system import PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context.system import PlanExecutionContext, PlanOrchestrationContext
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._utils.timing import format_duration, time_execution_scope
 
 from .base import Executor
+
+
+def inprocess_execution_iterator(
+    job_context: PlanExecutionContext,
+    execution_plan: ExecutionPlan,
+    instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+) -> Iterator[DagsterEvent]:
+    with InstanceConcurrencyContext(
+        job_context.instance, job_context.run_id
+    ) as instance_concurrency_context:
+        yield from inner_plan_execution_iterator(
+            job_context, execution_plan, instance_concurrency_context
+        )
 
 
 class InProcessExecutor(Executor):
@@ -41,7 +55,7 @@ class InProcessExecutor(Executor):
             yield from iter(
                 ExecuteRunWithPlanIterable(
                     execution_plan=plan_context.execution_plan,
-                    iterator=inner_plan_execution_iterator,
+                    iterator=inprocess_execution_iterator,
                     execution_context_manager=PlanExecutionContextManager(
                         job=plan_context.job,
                         retry_mode=plan_context.retry_mode,

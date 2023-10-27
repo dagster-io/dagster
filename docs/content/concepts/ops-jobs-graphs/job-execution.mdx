@@ -5,7 +5,13 @@ description: Dagster provides several methods to execute jobs.
 
 # Execution
 
-Dagster provides several methods to execute jobs. This guide explains different ways to do one-off execution of jobs: the [Dagster UI](#dagster-ui), the [command line](#command-line), or [Python APIs](#python-apis).
+<Note>
+  This guide is applicable to both{" "}
+  <a href="/concepts/ops-jobs-graphs/op-jobs">op</a> and{" "}
+  <a href="/concepts/assets/asset-jobs">asset</a> jobs.
+</Note>
+
+Dagster provides several methods to execute [op](/concepts/ops-jobs-graphs/op-jobs) and [asset jobs](/concepts/assets/asset-jobs). This guide explains different ways to do one-off execution of jobs using the [Dagster UI](#dagster-ui), [command line](#command-line), or [Python APIs](#python-apis).
 
 You can also launch jobs in other ways:
 
@@ -59,7 +65,7 @@ height={2414}
 
 By default, Dagster will run the job using the <PyObject module="dagster" object="multiprocess_executor" /> - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
 
-The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [Dagster UI documentation](/concepts/dagit/dagit#launchpad-tab) for more info.
+The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [Dagster UI documentation](/concepts/webserver/ui#launchpad-tab) for more info.
 
 </TabItem>
 <TabItem name="Command line">
@@ -131,7 +137,7 @@ Let's take a look at some examples:
 
 Use this selection syntax in the `op_selection` argument to the <PyObject object="JobDefinition" method="execute_in_process" />:
 
-```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_solid_selection_marker endbefore=end_solid_selection_marker
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_op_selection_marker endbefore=end_op_selection_marker
 my_job.execute_in_process(op_selection=["*add_two"])
 ```
 

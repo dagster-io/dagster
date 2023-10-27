@@ -4,7 +4,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-def test_solid_input_arguments():
+def test_op_input_arguments():
     # Solid with no parameters
     @op
     def _no_param():

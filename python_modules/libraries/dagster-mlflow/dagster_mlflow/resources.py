@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from mlflow.entities.run_status import RunStatus
 
 CONFIG_SCHEMA = {
@@ -178,7 +179,7 @@ class MlFlow(metaclass=MlflowMeta):
 
     def cleanup_on_error(self):
         """Method ends mlflow run with correct exit status for failed runs. Note that
-        this method does not work when a job running in dagit fails, it seems
+        this method does not work when a job running in the webserver fails, it seems
         that in this case a different process runs the job and when it fails
         the stack trace is therefore not available. For this case we can use the
         cleanup_on_failure hook defined below.
@@ -218,6 +219,7 @@ class MlFlow(metaclass=MlflowMeta):
             yield {k: params[k] for k in islice(it, size)}
 
 
+@dagster_maintained_resource
 @resource(config_schema=CONFIG_SCHEMA)
 def mlflow_tracking(context):
     """This resource initializes an MLflow run that's used for all steps within a Dagster run.
@@ -227,8 +229,8 @@ def mlflow_tracking(context):
 
     Usage:
 
-    1. Add the mlflow resource to any solids in which you want to invoke mlflow tracking APIs.
-    2. Add the `end_mlflow_on_run_finished` hook to your pipeline to end the MLflow run
+    1. Add the mlflow resource to any ops in which you want to invoke mlflow tracking APIs.
+    2. Add the `end_mlflow_on_run_finished` hook to your job to end the MLflow run
        when the Dagster run is finished.
 
     Examples:
@@ -237,7 +239,7 @@ def mlflow_tracking(context):
             from dagster_mlflow import end_mlflow_on_run_finished, mlflow_tracking
 
             @op(required_resource_keys={"mlflow"})
-            def mlflow_solid(context):
+            def mlflow_op(context):
                 mlflow.log_params(some_params)
                 mlflow.tracking.MlflowClient().create_registered_model(some_model_name)
 

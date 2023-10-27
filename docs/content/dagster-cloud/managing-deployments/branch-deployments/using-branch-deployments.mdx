@@ -1,13 +1,13 @@
 ---
-title: Using Branch Deployments with the dagster-cloud CLI | Dagster Cloud
+title: Using Branch Deployments (CI) with the dagster-cloud CLI | Dagster Cloud
 description: Develop and test in the cloud.
 ---
 
-# Using Branch Deployments with the dagster-cloud CLI
+# Using Branch Deployments (CI) with the dagster-cloud CLI
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) with a general continuous integration (CI) or git platform, using the [`dagster-cloud` CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli).
+In this guide, we'll walk you through setting up Continuous Integration (CI) [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) with a general continuous integration (CI) or git platform, using the [`dagster-cloud` CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli).
 
 Using this approach to branch deployments may be a good fit if:
 
@@ -23,7 +23,7 @@ Using this approach to branch deployments may be a good fit if:
 
 Utilizing Branch Deployments requires setting up two components: the Branch Deployment agent and CI platform. You'll need:
 
-- **Editor** or **Admin** permissions in Dagster Cloud
+- **Organization Admin** permissions in Dagster Cloud
 - To install the [`dagster-cloud` CLI](/dagster-cloud/managing-deployments/dagster-cloud-cli)
 - The ability to run a new agent in your infrastructure
 - The ability to configure your CI platform
@@ -112,7 +112,9 @@ After the above has occurred:
        --api-token $DAGSTER_CLOUD_API_TOKEN \
        --location-file $LOCATION_FILE \
        --location-name $LOCATION_NAME \
-       --image "${LOCATION_REGISTRY_URL}:${IMAGE_TAG}"
+       --image "${LOCATION_REGISTRY_URL}:${IMAGE_TAG}" \
+       --commit-hash "${COMMIT_SHA}" \
+       --git-url "${GIT_URL}"
    ```
 
    Refer to the [Code location guide](/dagster-cloud/managing-deployments/code-locations) for more info on how a location's details are specified.
@@ -127,7 +129,7 @@ Click the **deployment switcher** to view your workspace's branch deployments:
 
 <Image
 alt="Highlighted branch deployments in the Dagster Cloud's deployment switcher"
-src="/images/dagster-cloud/developing-testing/branch-deployments/dagit-deployment-switcher.png"
+src="/images/dagster-cloud/developing-testing/branch-deployments/dagster-ui-deployment-switcher.png"
 width={563}
 height={311}
 />

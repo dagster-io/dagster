@@ -25,7 +25,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
-from dagster_aws.s3.io_manager import ConfigurablePickledObjectS3IOManager, s3_pickle_io_manager
+from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
 
@@ -51,7 +51,7 @@ def s3_and_io_manager_fixture(
     else:
         return (
             S3TestResource(),
-            lambda s3: ConfigurablePickledObjectS3IOManager.configure_at_launch(s3_resource=s3),
+            lambda s3: S3PickleIOManager.configure_at_launch(s3_resource=s3),
         )
 
 
@@ -232,7 +232,7 @@ def test_nothing(mock_s3_bucket):
     def asset1() -> None:
         ...
 
-    @asset(non_argument_deps={"asset1"})
+    @asset(deps=[asset1])
     def asset2() -> None:
         ...
 

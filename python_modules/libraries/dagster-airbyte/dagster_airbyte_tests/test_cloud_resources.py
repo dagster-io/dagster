@@ -10,7 +10,7 @@ from dagster_airbyte import AirbyteCloudResource, AirbyteOutput, AirbyteState
 
 @responses.activate
 def test_trigger_connection() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs",
@@ -36,7 +36,7 @@ def test_trigger_connection_fail() -> None:
     [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
 )
 def test_sync_and_poll(state) -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs",
@@ -80,7 +80,7 @@ def test_sync_and_poll(state) -> None:
 
 @responses.activate
 def test_start_sync_bad_out_fail() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
 
     responses.add(
         method=responses.POST,

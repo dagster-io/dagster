@@ -205,7 +205,7 @@ def test_subset_job_with_config():
     result = no_config.execute_in_process(run_config={"ops": {"emit": {"inputs": {"x": 1}}}})
     assert result.success
 
-    subset_no_config = no_config.get_job_def_for_subset_selection(op_selection=["echo"])
+    subset_no_config = no_config.get_subset(op_selection=["echo"])
 
     result = subset_no_config.execute_in_process(run_config={"ops": {"echo": {"inputs": {"x": 1}}}})
     assert result.success
@@ -217,7 +217,7 @@ def test_subset_job_with_config():
     result = with_config.execute_in_process()
     assert result.success
 
-    subset_with_config = with_config.get_job_def_for_subset_selection(op_selection=["echo"])
+    subset_with_config = with_config.get_subset(op_selection=["echo"])
 
     result = subset_with_config.execute_in_process(
         run_config={"ops": {"echo": {"inputs": {"x": 1}}}}

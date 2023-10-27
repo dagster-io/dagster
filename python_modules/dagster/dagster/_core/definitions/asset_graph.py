@@ -1,5 +1,6 @@
 import functools
 from collections import deque
+from datetime import datetime
 from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
@@ -18,25 +19,56 @@ from typing import (
     cast,
 )
 
+import pendulum
 import toposort
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
+from dagster._core.selector.subset_selector import (
+    DependencyGraph,
+    fetch_sources,
+    generate_asset_dep_graph,
+)
 from dagster._utils.cached_method import cached_method
 
+from .asset_check_spec import AssetCheckKey
+from .asset_checks import AssetChecksDefinition
 from .assets import AssetsDefinition
+from .backfill_policy import BackfillPolicy
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
-from .partition_mapping import PartitionMapping, infer_partition_mapping
+from .partition_key_range import PartitionKeyRange
+from .partition_mapping import (
+    PartitionMapping,
+    UpstreamPartitionsResult,
+    infer_partition_mapping,
+)
 from .source_asset import SourceAsset
-from .time_window_partitions import TimeWindowPartitionsDefinition
+from .time_window_partitions import (
+    get_time_partition_key,
+    get_time_partitions_def,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+
+AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
+
+
+class ParentsPartitionsResult(NamedTuple):
+    """Represents the result of mapping an asset partition to its upstream parent partitions.
+
+    parent_partitions (AbstractSet[AssetKeyPartitionKey]): The existent parent partitions that are
+        upstream of the asset partition. Filters out nonexistent partitions.
+    required_but_nonexistent_parents_partitions (AbstractSet[AssetKeyPartitionKey]): The required
+        upstream asset partitions that were mapped to but do not exist.
+    """
+
+    parent_partitions: AbstractSet[AssetKeyPartitionKey]
+    required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
 class AssetGraph:
@@ -49,9 +81,13 @@ class AssetGraph:
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
-        required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+        backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
+        auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
+        required_assets_and_checks_by_key: Mapping[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ],
     ):
         self._asset_dep_graph = asset_dep_graph
         self._source_asset_keys = source_asset_keys
@@ -60,9 +96,15 @@ class AssetGraph:
         self._group_names_by_key = group_names_by_key
         self._freshness_policies_by_key = freshness_policies_by_key
         self._auto_materialize_policies_by_key = auto_materialize_policies_by_key
-        self._required_multi_asset_sets_by_key = required_multi_asset_sets_by_key
+        self._backfill_policies_by_key = backfill_policies_by_key
         self._code_versions_by_key = code_versions_by_key
         self._is_observable_by_key = is_observable_by_key
+        self._auto_observe_interval_minutes_by_key = auto_observe_interval_minutes_by_key
+        # source assets keys can sometimes appear in the upstream dict
+        self._materializable_asset_keys = (
+            self._asset_dep_graph["upstream"].keys() - self.source_asset_keys
+        )
+        self._required_assets_and_checks_by_key = required_assets_and_checks_by_key
 
     @property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -81,7 +123,19 @@ class AssetGraph:
         """Non-source asset keys that have no non-source parents."""
         from .asset_selection import AssetSelection
 
-        return AssetSelection.keys(*self.non_source_asset_keys).roots().resolve(self)
+        return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
+
+    @property
+    def root_materializable_or_observable_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Materializable or observable source asset keys that have no parents which are
+        materializable or observable.
+        """
+        observable_keys = {
+            key for key, is_observable in self._is_observable_by_key.items() if is_observable
+        }
+        return fetch_sources(
+            self._asset_dep_graph, observable_keys | self.materializable_asset_keys
+        )
 
     @property
     def freshness_policies_by_key(self) -> Mapping[AssetKey, Optional[FreshnessPolicy]]:
@@ -93,9 +147,17 @@ class AssetGraph:
     ) -> Mapping[AssetKey, Optional[AutoMaterializePolicy]]:
         return self._auto_materialize_policies_by_key
 
+    @property
+    def backfill_policies_by_key(self) -> Mapping[AssetKey, Optional[BackfillPolicy]]:
+        return self._backfill_policies_by_key
+
+    def get_auto_observe_interval_minutes(self, asset_key: AssetKey) -> Optional[float]:
+        return self._auto_observe_interval_minutes_by_key.get(asset_key)
+
     @staticmethod
     def from_assets(
-        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]
+        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     ) -> "InternalAssetGraph":
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
@@ -106,9 +168,13 @@ class AssetGraph:
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
-        required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        backfill_policies_by_key: Dict[AssetKey, Optional[BackfillPolicy]] = {}
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
+        auto_observe_interval_minutes_by_key: Dict[AssetKey, Optional[float]] = {}
+        required_assets_and_checks_by_key: Dict[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -116,6 +182,9 @@ class AssetGraph:
                 partitions_defs_by_key[asset.key] = asset.partitions_def
                 group_names_by_key[asset.key] = asset.group_name
                 is_observable_by_key[asset.key] = asset.is_observable
+                auto_observe_interval_minutes_by_key[
+                    asset.key
+                ] = asset.auto_observe_interval_minutes
             else:  # AssetsDefinition
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
@@ -125,10 +194,14 @@ class AssetGraph:
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
-                if len(asset.keys) > 1 and not asset.can_subset:
-                    for key in asset.keys:
-                        required_multi_asset_sets_by_key[key] = asset.keys
+                backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
                 code_versions_by_key.update(asset.code_versions_by_key)
+
+                if not asset.can_subset:
+                    all_required_keys = {*asset.check_keys, *asset.keys}
+                    if len(all_required_keys) > 1:
+                        for key in all_required_keys:
+                            required_assets_and_checks_by_key[key] = all_required_keys
 
         return InternalAssetGraph(
             asset_dep_graph=generate_asset_dep_graph(assets_defs, source_assets),
@@ -138,23 +211,41 @@ class AssetGraph:
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
-            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            backfill_policies_by_key=backfill_policies_by_key,
             assets=assets_defs,
+            asset_checks=asset_checks or [],
             source_assets=source_assets,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
+            auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
+            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
         )
 
     @property
-    def all_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._asset_dep_graph["upstream"].keys()
+    def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._materializable_asset_keys
 
     @property
-    def non_source_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._asset_dep_graph["upstream"].keys() - self._source_asset_keys
+    def all_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._materializable_asset_keys | self.source_asset_keys
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)
+
+    def get_asset_partitions_in_range(
+        self,
+        asset_key: AssetKey,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: DynamicPartitionsStore,
+    ) -> Sequence[AssetKeyPartitionKey]:
+        partition_def = self.get_partitions_def(asset_key)
+        partition_keys_in_range = check.not_none(partition_def).get_partition_keys_in_range(
+            partition_key_range, dynamic_partitions_store
+        )
+        return [
+            AssetKeyPartitionKey(asset_key, partition_key)
+            for partition_key in partition_keys_in_range
+        ]
 
     def get_partition_mapping(
         self, asset_key: AssetKey, in_asset_key: AssetKey
@@ -192,12 +283,23 @@ class AssetGraph:
         return self._asset_dep_graph["downstream"][asset_key]
 
     def get_parents(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns all assets that the given asset depends on."""
-        return self._asset_dep_graph["upstream"][asset_key]
+        """Returns all first-order dependencies of an asset."""
+        return self._asset_dep_graph["upstream"].get(asset_key) or set()
+
+    def get_ancestors(
+        self, asset_key: AssetKey, include_self: bool = False
+    ) -> AbstractSet[AssetKey]:
+        """Returns all nth-order dependencies of an asset."""
+        ancestors = {asset_key} if include_self else set()
+        parents = self.get_parents(asset_key) - {asset_key}  # remove self-dependencies
+        return ancestors.union(
+            *[self.get_ancestors(parent, include_self=True) for parent in parents]
+        )
 
     def get_children_partitions(
         self,
         dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
@@ -208,7 +310,11 @@ class AssetGraph:
         for child_asset_key in self.get_children(asset_key):
             if self.is_partitioned(child_asset_key):
                 for child_partition_key in self.get_child_partition_keys_of_parent(
-                    dynamic_partitions_store, partition_key, asset_key, child_asset_key
+                    dynamic_partitions_store,
+                    partition_key,
+                    asset_key,
+                    child_asset_key,
+                    current_time,
                 ):
                     result.add(AssetKeyPartitionKey(child_asset_key, child_partition_key))
             else:
@@ -221,6 +327,7 @@ class AssetGraph:
         parent_partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
+        current_time: datetime,
     ) -> Sequence[str]:
         """Converts a partition key from one asset to the corresponding partition keys in a downstream
         asset. Uses the existing partition mapping between the child asset and the parent asset.
@@ -259,6 +366,7 @@ class AssetGraph:
             parent_partitions_def.empty_subset().with_partition_keys([parent_partition_key]),
             downstream_partitions_def=child_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
         )
 
         return list(child_partitions_subset.get_partition_keys())
@@ -266,33 +374,52 @@ class AssetGraph:
     def get_parents_partitions(
         self,
         dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> ParentsPartitionsResult:
         """Returns every partition in every of the given asset's parents that the given partition of
         that asset depends on.
         """
-        result: Set[AssetKeyPartitionKey] = set()
+        valid_parent_partitions: Set[AssetKeyPartitionKey] = set()
+        required_but_nonexistent_parent_partitions: Set[AssetKeyPartitionKey] = set()
         for parent_asset_key in self.get_parents(asset_key):
             if self.is_partitioned(parent_asset_key):
-                for parent_partition_key in self.get_parent_partition_keys_for_child(
+                mapped_partitions_result = self.get_parent_partition_keys_for_child(
                     partition_key,
                     parent_asset_key,
                     asset_key,
                     dynamic_partitions_store=dynamic_partitions_store,
-                ):
-                    result.add(AssetKeyPartitionKey(parent_asset_key, parent_partition_key))
+                    current_time=current_time,
+                )
+
+                valid_parent_partitions.update(
+                    {
+                        AssetKeyPartitionKey(parent_asset_key, valid_partition)
+                        for valid_partition in mapped_partitions_result.partitions_subset.get_partition_keys()
+                    }
+                )
+                required_but_nonexistent_parent_partitions.update(
+                    {
+                        AssetKeyPartitionKey(parent_asset_key, invalid_partition)
+                        for invalid_partition in mapped_partitions_result.required_but_nonexistent_partition_keys
+                    }
+                )
             else:
-                result.add(AssetKeyPartitionKey(parent_asset_key))
-        return result
+                valid_parent_partitions.add(AssetKeyPartitionKey(parent_asset_key))
+
+        return ParentsPartitionsResult(
+            valid_parent_partitions, required_but_nonexistent_parent_partitions
+        )
 
     def get_parent_partition_keys_for_child(
         self,
         partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[str]:
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
+    ) -> UpstreamPartitionsResult:
         """Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
         asset.
@@ -319,19 +446,24 @@ class AssetGraph:
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
-        parent_partition_key_subset = partition_mapping.get_upstream_partitions_for_partitions(
-            cast(PartitionsDefinition, child_partitions_def)
-            .empty_subset()
-            .with_partition_keys([partition_key])
-            if partition_key
-            else None,
+
+        return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+            (
+                cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
+                    [partition_key]
+                )
+                if partition_key
+                else None
+            ),
             upstream_partitions_def=parent_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
         )
-        return list(parent_partition_key_subset.get_partition_keys())
 
     def is_source(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys
+        return (
+            asset_key in self.source_asset_keys or asset_key not in self.materializable_asset_keys
+        )
 
     def has_non_source_parents(self, asset_key: AssetKey) -> bool:
         """Determines if an asset has any parents which are not source assets."""
@@ -369,15 +501,17 @@ class AssetGraph:
                     visited.add(parent_key)
 
     def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """For a given asset_key, return the set of asset keys that must be materialized at the same time.
-        """
-        if self._required_multi_asset_sets_by_key is None:
-            raise DagsterInvariantViolationError(
-                "Required neighbor information not set when creating this AssetGraph"
-            )
-        if asset_key in self._required_multi_asset_sets_by_key:
-            return self._required_multi_asset_sets_by_key[asset_key]
-        return set()
+        """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
+        return {
+            key
+            for key in self._required_assets_and_checks_by_key.get(asset_key, set())
+            if isinstance(key, AssetKey)
+        }
+
+    def get_required_asset_and_check_keys(
+        self, key: AssetKeyOrCheckKey
+    ) -> AbstractSet[AssetKeyOrCheckKey]:
+        return self._required_assets_and_checks_by_key.get(key, set())
 
     def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
         return self._code_versions_by_key.get(asset_key)
@@ -390,6 +524,9 @@ class AssetGraph:
 
     def get_auto_materialize_policy(self, asset_key: AssetKey) -> Optional[AutoMaterializePolicy]:
         return self.auto_materialize_policies_by_key.get(asset_key)
+
+    def get_backfill_policy(self, asset_key: AssetKey) -> Optional[BackfillPolicy]:
+        return self.backfill_policies_by_key.get(asset_key)
 
     @cached_method
     def get_downstream_freshness_policies(
@@ -416,6 +553,7 @@ class AssetGraph:
         dynamic_partitions_store: DynamicPartitionsStore,
         condition_fn: Callable[[AssetKey, Optional[PartitionsSubset]], bool],
         initial_subset: "AssetGraphSubset",
+        current_time: datetime,
     ) -> "AssetGraphSubset":
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
@@ -435,9 +573,11 @@ class AssetGraph:
         queue = deque([initial_asset_key])
 
         queued_subsets_by_asset_key: Dict[AssetKey, Optional[PartitionsSubset]] = {
-            initial_asset_key: initial_subset.get_partitions_subset(initial_asset_key)
-            if self.get_partitions_def(initial_asset_key)
-            else None,
+            initial_asset_key: (
+                initial_subset.get_partitions_subset(initial_asset_key)
+                if self.get_partitions_def(initial_asset_key)
+                else None
+            ),
         }
         result = AssetGraphSubset(self)
 
@@ -449,9 +589,9 @@ class AssetGraph:
                 result |= AssetGraphSubset(
                     self,
                     non_partitioned_asset_keys={asset_key} if partitions_subset is None else set(),
-                    partitions_subsets_by_asset_key={asset_key: partitions_subset}
-                    if partitions_subset is not None
-                    else {},
+                    partitions_subsets_by_asset_key=(
+                        {asset_key: partitions_subset} if partitions_subset is not None else {}
+                    ),
                 )
 
                 for child in self.get_children(asset_key):
@@ -461,7 +601,10 @@ class AssetGraph:
                     if child_partitions_def:
                         if partitions_subset is None:
                             child_partitions_subset = (
-                                child_partitions_def.subset_with_all_partitions()
+                                child_partitions_def.subset_with_all_partitions(
+                                    current_time=current_time,
+                                    dynamic_partitions_store=dynamic_partitions_store,
+                                )
                             )
                             queued_subsets_by_asset_key[child] = child_partitions_subset
                         else:
@@ -470,6 +613,7 @@ class AssetGraph:
                                     partitions_subset,
                                     downstream_partitions_def=child_partitions_def,
                                     dynamic_partitions_store=dynamic_partitions_store,
+                                    current_time=current_time,
                                 )
                             )
                             prior_child_partitions_subset = queued_subsets_by_asset_key.get(child)
@@ -494,6 +638,7 @@ class AssetGraph:
             [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], bool
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
+        evaluation_time: datetime,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns asset partitions within the graph that satisfy supplied criteria.
 
@@ -509,7 +654,7 @@ class AssetGraph:
         all_nodes = set(initial_asset_partitions)
 
         # invariant: we never consider an asset partition before considering its ancestors
-        queue = ToposortedPriorityQueue(self, all_nodes)
+        queue = ToposortedPriorityQueue(self, all_nodes, include_required_multi_assets=True)
 
         result: Set[AssetKeyPartitionKey] = set()
 
@@ -521,7 +666,10 @@ class AssetGraph:
 
                 for candidate in candidates_unit:
                     for child in self.get_children_partitions(
-                        dynamic_partitions_store, candidate.asset_key, candidate.partition_key
+                        dynamic_partitions_store,
+                        evaluation_time,
+                        candidate.asset_key,
+                        candidate.partition_key,
                     ):
                         if child not in all_nodes:
                             queue.enqueue(child)
@@ -551,11 +699,16 @@ class InternalAssetGraph(AssetGraph):
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
-        required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+        backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
+        asset_checks: Sequence[AssetChecksDefinition],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
+        auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
+        required_assets_and_checks_by_key: Mapping[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -565,12 +718,26 @@ class InternalAssetGraph(AssetGraph):
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
-            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            backfill_policies_by_key=backfill_policies_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
+            auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
+            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
         )
         self._assets = assets
         self._source_assets = source_assets
+        self._asset_checks = asset_checks
+
+        asset_check_keys = set()
+        for asset_check in asset_checks:
+            asset_check_keys.update([spec.key for spec in asset_check.specs])
+        for asset in assets:
+            asset_check_keys.update([spec.key for spec in asset.check_specs])
+        self._asset_check_keys = asset_check_keys
+
+    @property
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return self._asset_check_keys
 
     @property
     def assets(self) -> Sequence[AssetsDefinition]:
@@ -580,6 +747,40 @@ class InternalAssetGraph(AssetGraph):
     def source_assets(self) -> Sequence[SourceAsset]:
         return self._source_assets
 
+    @property
+    def asset_checks(self) -> Sequence[AssetChecksDefinition]:
+        return self._asset_checks
+
+
+def sort_key_for_asset_partition(
+    asset_graph: AssetGraph, asset_partition: AssetKeyPartitionKey
+) -> int:
+    """Returns an integer sort key such that asset partitions are sorted in the order in which they
+    should be materialized. For assets without a time window partition dimension, this is always 0.
+    Assets with a time window partition dimension will be sorted from newest to oldest, unless they
+    have a self-dependency, in which case they are sorted from oldest to newest.
+    """
+    partitions_def = asset_graph.get_partitions_def(asset_partition.asset_key)
+    time_partitions_def = get_time_partitions_def(partitions_def)
+    if time_partitions_def is None:
+        return 0
+
+    # A sort key such that time window partitions are sorted from oldest to newest
+    time_partition_key = get_time_partition_key(partitions_def, asset_partition.partition_key)
+    partition_timestamp = pendulum.instance(
+        datetime.strptime(time_partition_key, time_partitions_def.fmt),
+        tz=time_partitions_def.timezone,
+    ).timestamp()
+
+    if asset_graph.has_self_dependency(asset_partition.asset_key):
+        # sort self dependencies from oldest to newest, as older partitions must exist before
+        # new ones can execute
+        return partition_timestamp
+    else:
+        # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
+        # than older ones
+        return -1 * partition_timestamp
+
 
 class ToposortedPriorityQueue:
     """Queue that returns parents before their children."""
@@ -588,7 +789,7 @@ class ToposortedPriorityQueue:
     class QueueItem(NamedTuple):
         level: int
         partition_sort_key: Optional[float]
-        multi_asset_partition: Iterable[AssetKeyPartitionKey]
+        asset_partitions: Iterable[AssetKeyPartitionKey]
 
         def __eq__(self, other: object) -> bool:
             if isinstance(other, ToposortedPriorityQueue.QueueItem):
@@ -608,8 +809,15 @@ class ToposortedPriorityQueue:
                 )
             raise TypeError()
 
-    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
+    def __init__(
+        self,
+        asset_graph: AssetGraph,
+        items: Iterable[AssetKeyPartitionKey],
+        include_required_multi_assets: bool,
+    ):
         self._asset_graph = asset_graph
+        self._include_required_multi_assets = include_required_multi_assets
+
         toposorted_asset_keys = asset_graph.toposort_asset_keys()
         self._toposort_level_by_asset_key = {
             asset_key: i
@@ -623,39 +831,30 @@ class ToposortedPriorityQueue:
         heappush(self._heap, self._queue_item(asset_partition))
 
     def dequeue(self) -> Iterable[AssetKeyPartitionKey]:
-        return heappop(self._heap).multi_asset_partition
+        # For multi-assets, will include all required multi-asset keys if include_required_multi_assets is set to
+        # True, or a list of size 1 with just the passed in asset key if it was not
+        return heappop(self._heap).asset_partitions
 
     def _queue_item(
         self, asset_partition: AssetKeyPartitionKey
     ) -> "ToposortedPriorityQueue.QueueItem":
         asset_key = asset_partition.asset_key
 
-        required_multi_asset_keys = self._asset_graph.get_required_multi_asset_keys(asset_key) | {
-            asset_key
-        }
+        if self._include_required_multi_assets:
+            required_multi_asset_keys = self._asset_graph.get_required_multi_asset_keys(
+                asset_key
+            ) | {asset_key}
+        else:
+            required_multi_asset_keys = {asset_key}
+
         level = max(
             self._toposort_level_by_asset_key[required_asset_key]
             for required_asset_key in required_multi_asset_keys
         )
-        if self._asset_graph.has_self_dependency(asset_key):
-            partitions_def = self._asset_graph.get_partitions_def(asset_key)
-            if partitions_def is not None and isinstance(
-                partitions_def, TimeWindowPartitionsDefinition
-            ):
-                partition_sort_key = partitions_def.time_window_for_partition_key(
-                    cast(str, asset_partition.partition_key)
-                ).start.timestamp()
-            else:
-                check.failed(
-                    "Assets with self-dependencies must have time-window partitions, but"
-                    f" {asset_key} does not."
-                )
-        else:
-            partition_sort_key = None
 
         return ToposortedPriorityQueue.QueueItem(
             level,
-            partition_sort_key,
+            sort_key_for_asset_partition(self._asset_graph, asset_partition),
             [
                 AssetKeyPartitionKey(ak, asset_partition.partition_key)
                 for ak in required_multi_asset_keys

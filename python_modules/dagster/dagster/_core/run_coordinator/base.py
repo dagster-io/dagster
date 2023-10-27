@@ -1,18 +1,22 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.workspace.context import IWorkspace, WorkspaceRequestContext
+from dagster._core.storage.dagster_run import DagsterRun
+
+if TYPE_CHECKING:
+    from dagster._core.workspace.context import IWorkspace
 
 
 class SubmitRunContext(NamedTuple):
     """Context available within a run coordinator's submit_run method."""
 
     dagster_run: DagsterRun
-    workspace: IWorkspace
+    workspace: "IWorkspace"
 
     def get_request_header(self, key: str) -> Optional[str]:
+        from dagster._core.workspace.context import WorkspaceRequestContext
+
         # if there is a source
         if isinstance(self.workspace, WorkspaceRequestContext) and self.workspace.source:
             headers = getattr(self.workspace.source, "headers", None)

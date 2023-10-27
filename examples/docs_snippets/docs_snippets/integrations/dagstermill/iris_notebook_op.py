@@ -1,4 +1,4 @@
-# isort: split
+# ruff: isort: split
 # start
 
 from dagstermill import ConfigurableLocalOutputNotebookIOManager, define_dagstermill_op

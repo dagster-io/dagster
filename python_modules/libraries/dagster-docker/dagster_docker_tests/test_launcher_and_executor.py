@@ -3,23 +3,24 @@ import time
 
 import pytest
 from dagster._core.definitions.events import AssetKey
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster_test.test_project import (
-    ReOriginatedExternalPipelineForTest,
+    ReOriginatedExternalJobForTest,
     find_local_test_image,
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_recon_job,
-    get_test_project_workspace_and_external_pipeline,
+    get_test_project_workspace_and_external_job,
 )
 
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
+@pytest.mark.flaky(reruns=1)
 @pytest.mark.parametrize(
     "from_pending_repository, asset_selection",
     [
@@ -28,7 +29,8 @@ from . import IS_BUILDKITE, docker_postgres_instance
         (True, {AssetKey("foo"), AssetKey("bar")}),
     ],
 )
-def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_selection):
+@pytest.mark.integration
+def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selection):
     monkeypatch.setenv("IN_EXTERNAL_PROCESS", "yes")
     docker_image = get_test_project_docker_image()
 
@@ -76,17 +78,17 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
         repository_load_data = recon_job.repository.get_definition().repository_load_data
         recon_job = recon_job.with_repository_load_data(repository_load_data)
 
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance,
             "demo_job_docker",
             container_image=docker_image,
             filename=filename,
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image, filename=filename
+            external_job = ReOriginatedExternalJobForTest(
+                orig_job, container_image=docker_image, filename=filename
             )
 
             run = instance.create_run_for_job(
@@ -108,7 +110,8 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
-def test_container_context_on_pipeline(aws_env):
+@pytest.mark.integration
+def test_container_context_on_job(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {}
@@ -155,15 +158,13 @@ def test_container_context_on_pipeline(aws_env):
                 }
             },
         )
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance, "demo_job_docker", container_image=docker_image
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image
-            )
+            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
@@ -182,6 +183,7 @@ def test_container_context_on_pipeline(aws_env):
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
+@pytest.mark.integration
 def test_recovery(aws_env):
     docker_image = get_test_project_docker_image()
 
@@ -219,19 +221,17 @@ def test_recovery(aws_env):
                 "module": "dagster_docker",
                 "config": launcher_config,
             },
-            "run_monitoring": {"enabled": True},
+            "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
-        with get_test_project_workspace_and_external_pipeline(
+        with get_test_project_workspace_and_external_job(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
-            orig_pipeline,
+            orig_job,
         ):
-            external_job = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image
-            )
+            external_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),

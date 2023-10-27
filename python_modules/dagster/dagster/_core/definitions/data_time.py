@@ -1,3 +1,17 @@
+"""The "data time" of an asset materialization is the timestamp on its earliest ancestor
+materialization.
+
+An asset materialization is parent of another asset materialization if both:
+- The child asset depends on the parent asset.
+- The parent materialization is the latest materialization of the parent asset that occurred before
+    the child materialization.
+
+The idea of data time is: if an asset is downstream of another asset, then the freshness of the data
+in the downstream asset depends on the freshness of the data in the upstream asset. No matter how
+recently you've materialized the downstream asset, it can't be fresher than the upstream
+materialization it was derived from.
+"""
+
 import datetime
 from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
 
@@ -11,15 +25,16 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     get_input_event_pointer_tag,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.freshness_policy import FreshnessMinutes
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
-from dagster._core.storage.pipeline_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._utils import make_hashable
+from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
+from dagster._utils import datetime_as_float, make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -28,13 +43,16 @@ class CachingDataTimeResolver:
     _instance_queryer: CachingInstanceQueryer
     _asset_graph: AssetGraph
 
-    def __init__(self, instance_queryer: CachingInstanceQueryer, asset_graph: AssetGraph):
+    def __init__(self, instance_queryer: CachingInstanceQueryer):
         self._instance_queryer = instance_queryer
-        self._asset_graph = asset_graph
 
     @property
     def instance_queryer(self) -> CachingInstanceQueryer:
         return self._instance_queryer
+
+    @property
+    def asset_graph(self) -> AssetGraph:
+        return self.instance_queryer.asset_graph
 
     ####################
     # PARTITIONED DATA TIME
@@ -97,17 +115,14 @@ class CachingDataTimeResolver:
             return first_filled_time_window.end
 
         # get a per-partition count of the new materializations
-        new_partition_counts = self._instance_queryer.get_materialized_partition_counts(
-            asset_key, after_cursor=cursor
+        partitions = self._instance_queryer.get_materialized_partitions(asset_key)
+        prev_partitions = self._instance_queryer.get_materialized_partitions(
+            asset_key, before_cursor=cursor + 1
         )
-
-        total_partition_counts = self._instance_queryer.get_materialized_partition_counts(asset_key)
-
-        # these are the partitions that did not exist before this record was created
         net_new_partitions = {
             partition_key
-            for partition_key, new_count in new_partition_counts.items()
-            if new_count == total_partition_counts.get(partition_key)
+            for partition_key in (partitions - prev_partitions)
+            if partitions_def.is_valid_partition_key(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions
@@ -142,7 +157,7 @@ class CachingDataTimeResolver:
             partitions_def=partitions_def,
         )
 
-        root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(self._asset_graph)
+        root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(self.asset_graph)
         return {key: partition_data_time for key in root_keys}
 
     ####################
@@ -154,10 +169,10 @@ class CachingDataTimeResolver:
     ) -> Mapping[AssetKey, "EventLogRecord"]:
         upstream_records: Dict[AssetKey, EventLogRecord] = {}
 
-        for parent_key in self._asset_graph.get_parents(asset_key):
+        for parent_key in self.asset_graph.get_parents(asset_key):
             if (
-                parent_key in self._asset_graph.source_asset_keys
-                and not self._asset_graph.is_observable(parent_key)
+                parent_key in self.asset_graph.source_asset_keys
+                and not self.asset_graph.is_observable(parent_key)
             ):
                 continue
 
@@ -173,15 +188,11 @@ class CachingDataTimeResolver:
                 before_cursor = None
 
             if before_cursor is not None:
-                if parent_key in self._asset_graph.source_asset_keys:
-                    parent_record = self.instance_queryer.get_observation_record(
-                        asset_key=parent_key, before_cursor=before_cursor
+                parent_record = (
+                    self._instance_queryer.get_latest_materialization_or_observation_record(
+                        AssetKeyPartitionKey(parent_key), before_cursor=before_cursor
                     )
-                else:
-                    parent_record = self._instance_queryer.get_latest_materialization_record(
-                        parent_key, before_cursor=before_cursor
-                    )
-
+                )
                 if parent_record is not None:
                     upstream_records[parent_key] = parent_record
 
@@ -203,7 +214,7 @@ class CachingDataTimeResolver:
             asset_key, record_id, record_tags_dict
         )
         if not upstream_records_by_key:
-            if not self._asset_graph.has_non_source_parents(asset_key):
+            if not self.asset_graph.has_non_source_parents(asset_key):
                 return {
                     asset_key: datetime.datetime.fromtimestamp(
                         record_timestamp, tz=datetime.timezone.utc
@@ -212,7 +223,7 @@ class CachingDataTimeResolver:
             else:
                 return {}
 
-        data_time_by_key = {}
+        data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         for parent_key, parent_record in upstream_records_by_key.items():
             # recurse to find the data times of this parent
             for upstream_key, data_time in self._calculate_data_time_by_key(
@@ -223,9 +234,11 @@ class CachingDataTimeResolver:
                     (
                         parent_record.asset_materialization.tags
                         if parent_record.asset_materialization
-                        else parent_record.event_log_entry.asset_observation.tags
-                        if parent_record.event_log_entry.asset_observation
-                        else None
+                        else (
+                            parent_record.event_log_entry.asset_observation.tags
+                            if parent_record.event_log_entry.asset_observation
+                            else None
+                        )
                     )
                     or {}
                 ),
@@ -235,8 +248,9 @@ class CachingDataTimeResolver:
                 if data_time is None:
                     data_time_by_key[upstream_key] = None
                 else:
-                    data_time_by_key[upstream_key] = min(
-                        data_time_by_key.get(upstream_key, data_time), data_time
+                    cur_data_time = data_time_by_key.get(upstream_key, data_time)
+                    data_time_by_key[upstream_key] = (
+                        min(cur_data_time, data_time) if cur_data_time is not None else None
                     )
 
         return data_time_by_key
@@ -289,17 +303,17 @@ class CachingDataTimeResolver:
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if record_id is None:
-            return {key: None for key in self._asset_graph.get_non_source_roots(asset_key)}
+            return {key: None for key in self.asset_graph.get_non_source_roots(asset_key)}
         record_timestamp = check.not_none(record_timestamp)
 
-        partitions_def = self._asset_graph.get_partitions_def(asset_key)
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
             return self._calculate_data_time_by_key_time_partitioned(
                 asset_key=asset_key,
                 cursor=record_id,
                 partitions_def=partitions_def,
             )
-        elif self._asset_graph.is_observable(asset_key):
+        elif self.asset_graph.is_observable(asset_key):
             return self._calculate_data_time_by_key_observable_source(
                 asset_key=asset_key,
                 record_id=record_id,
@@ -354,11 +368,13 @@ class CachingDataTimeResolver:
 
         # if you're here, then this asset is planned, but not materialized. in the worst case, this
         # asset's data time will be equal to the current time once it finishes materializing
-        if not self._asset_graph.has_non_source_parents(asset_key):
+        if not self.asset_graph.has_non_source_parents(asset_key):
             return current_time
 
         data_time = current_time
-        for parent_key in self._asset_graph.get_parents(asset_key):
+        for parent_key in self.asset_graph.get_parents(asset_key):
+            if parent_key not in self.asset_graph.materializable_asset_keys:
+                continue
             parent_data_time = self._get_in_progress_data_time_in_run(
                 run_id=run_id, asset_key=parent_key, current_time=current_time
             )
@@ -428,7 +444,7 @@ class CachingDataTimeResolver:
             return current_data_time
 
         run_failure_time = datetime.datetime.utcfromtimestamp(
-            latest_run_record.end_time or latest_run_record.create_timestamp.timestamp()
+            latest_run_record.end_time or datetime_as_float(latest_run_record.create_timestamp)
         ).replace(tzinfo=datetime.timezone.utc)
         return self._get_in_progress_data_time_in_run(
             run_id=run_id, asset_key=asset_key, current_time=run_failure_time
@@ -443,32 +459,35 @@ class CachingDataTimeResolver:
         record: EventLogRecord,
         current_time: Optional[datetime.datetime] = None,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-        """Method to enable calculating the timestamps of materializations of upstream assets
-        which were relevant to a given AssetMaterialization. These timestamps can be calculated relative
-        to any upstream asset keys.
+        """Method to enable calculating the timestamps of materializations or observations of
+        upstream assets which were relevant to a given AssetMaterialization. These timestamps can
+        be calculated relative to any upstream asset keys.
 
         The heart of this functionality is a recursive method which takes a given asset materialization
         and finds the most recent materialization of each of its parents which happened *before* that
         given materialization event.
         """
-        if record.asset_key is None or record.asset_materialization is None:
+        event = record.asset_materialization or record.asset_observation
+        if record.asset_key is None or event is None:
             raise DagsterInvariantViolationError(
-                "Can only calculate data times for records with a materialization event and an"
-                " asset_key."
+                "Can only calculate data times for records with a materialization / observation "
+                "event and an asset_key."
             )
 
         return self._calculate_data_time_by_key(
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
-            record_tags=make_hashable(record.asset_materialization.tags or {}),
+            record_tags=make_hashable(event.tags or {}),
             current_time=current_time or pendulum.now("UTC"),
         )
 
     def get_current_data_time(
         self, asset_key: AssetKey, current_time: datetime.datetime
     ) -> Optional[datetime.datetime]:
-        latest_record = self.instance_queryer.get_latest_materialization_record(asset_key)
+        latest_record = self.instance_queryer.get_latest_materialization_or_observation_record(
+            AssetKeyPartitionKey(asset_key)
+        )
         if latest_record is None:
             return None
 
@@ -479,12 +498,12 @@ class CachingDataTimeResolver:
 
         return min(cast(AbstractSet[datetime.datetime], data_times), default=None)
 
-    def get_current_minutes_late(
+    def get_minutes_overdue(
         self,
         asset_key: AssetKey,
         evaluation_time: datetime.datetime,
-    ) -> Optional[float]:
-        freshness_policy = self._asset_graph.freshness_policies_by_key.get(asset_key)
+    ) -> Optional[FreshnessMinutes]:
+        freshness_policy = self.asset_graph.freshness_policies_by_key.get(asset_key)
         if freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"

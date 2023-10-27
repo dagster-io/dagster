@@ -7,7 +7,7 @@ description: Executing your first job - with a single op.
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_op_job/" />
 
-The core abstractions of the Dagster engine are [ops](/concepts/ops-jobs-graphs/ops) and [jobs](/concepts/ops-jobs-graphs/jobs). [Ops](/concepts/ops-jobs-graphs/ops) are individual units of computation that we wire together to form [jobs](/concepts/ops-jobs-graphs/jobs).
+In this guide, we'll touch on Dagster [ops](/concepts/ops-jobs-graphs/ops) and [jobs](/concepts/ops-jobs-graphs/jobs). [Ops](/concepts/ops-jobs-graphs/ops) are individual units of computation that we wire together to form [jobs](/concepts/ops-jobs-graphs/op-jobs).
 
 In this part, you'll:
 
@@ -62,11 +62,11 @@ displayText="@job" />, we use function calls to indicate the dependency structur
 Assuming you’ve saved this job as `hello.py`, you can execute it via any of three different mechanisms:
 
 <TabGroup>
-    <TabItem name="Dagit">
+    <TabItem name="Dagster UI">
 
-### Dagit
+### Dagster UI
 
-To visualize your job (which only has one op) in Dagit, just run the following. Make sure you're in the directory in which you've saved the job file:
+To visualize your job (which only has one op) in the UI, just run the following. Make sure you're in the directory in which you've saved the job file:
 
 ```bash
 dagster dev -f hello.py
@@ -75,7 +75,7 @@ dagster dev -f hello.py
 You'll see output like:
 
 ```bash
-Serving dagit on http://127.0.0.1:3000 in process 70635
+Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
 ```
 
 You should be able to navigate to <http://127.0.0.1:3000> in your web browser and view your job. It isn't very interesting yet, because it only has one op.
@@ -102,7 +102,7 @@ height={1962}
 
 The large upper left pane is empty here, but, in jobs with parameters, this is where you'll be able to edit job configuration on the fly.
 
-Click the **Launch Run** button on the bottom right to execute this job directly from Dagit. A new window should open, and you'll see a much more structured view of the stream of Dagster events start to appear in the left-hand pane.
+Click the **Launch Run** button on the bottom right to execute this job directly from the UI. A new window should open, and you'll see a much more structured view of the stream of Dagster events start to appear in the left-hand pane.
 
 If you have pop-up blocking enabled, you may need to tell your browser to allow pop-ups from 127.0.0.1—or, just navigate to the **Runs** tab to see this, and every run of your job.
 

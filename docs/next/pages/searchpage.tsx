@@ -4,10 +4,10 @@ import {Highlight, InstantSearch, Hits, SearchBox, Pagination} from 'react-insta
 import {findResultsState} from 'react-instantsearch-dom/server';
 
 const searchClient = algoliasearch(
-  process.env.NEXT_PUBLIC_ALGOLIA_APP_ID,
-  process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY,
+  process.env.NEXT_PUBLIC_ALGOLIA_APP_ID_TEST,
+  process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY_TEST,
 );
-const indexName = process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME;
+const indexName = process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME_TEST;
 
 function getPagePath(hit) {
   function parsedLevel(name) {

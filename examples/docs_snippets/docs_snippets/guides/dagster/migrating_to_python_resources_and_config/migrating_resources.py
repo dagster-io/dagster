@@ -1,15 +1,14 @@
 from typing import Iterator
 
-from dagster import Definitions
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster import Definitions, define_asset_job
 
 
 def initial_code_base() -> Definitions:
     # begin_initial_codebase
     from dagster import (
+        AssetExecutionContext,
         Definitions,
         InitResourceContext,
-        OpExecutionContext,
         asset,
         resource,
     )
@@ -26,11 +25,11 @@ def initial_code_base() -> Definitions:
         return FancyDbResource(context.resource_config["conn_string"])
 
     @asset(required_resource_keys={"fancy_db"})
-    def asset_one(context: OpExecutionContext) -> None:
+    def asset_one(context: AssetExecutionContext) -> None:
         assert context.resources.fancy_db
 
     @asset(required_resource_keys={"fancy_db"})
-    def asset_two(context: OpExecutionContext) -> None:
+    def asset_two(context: AssetExecutionContext) -> None:
         assert context.resources.fancy_db
 
     defs = Definitions(
@@ -77,7 +76,7 @@ def convert_resource() -> Definitions:
 
 def new_style_resource_on_context() -> Definitions:
     # begin_new_style_resource_on_context
-    from dagster import ConfigurableResource, Definitions, OpExecutionContext, asset
+    from dagster import AssetExecutionContext, ConfigurableResource, Definitions, asset
 
     class FancyDbResource(ConfigurableResource):
         conn_string: str
@@ -86,7 +85,7 @@ def new_style_resource_on_context() -> Definitions:
             ...
 
     @asset(required_resource_keys={"fancy_db"})
-    def asset_one(context: OpExecutionContext) -> None:
+    def asset_one(context: AssetExecutionContext) -> None:
         # this still works because the resource is still available on the context
         assert context.resources.fancy_db
 
@@ -110,10 +109,10 @@ def new_style_resource_on_param() -> Definitions:
             ...
 
     # begin_new_style_resource_on_param
-    from dagster import OpExecutionContext, asset
+    from dagster import AssetExecutionContext, asset
 
     @asset
-    def asset_one(context: OpExecutionContext, fancy_db: FancyDbResource) -> None:
+    def asset_one(context: AssetExecutionContext, fancy_db: FancyDbResource) -> None:
         assert fancy_db
 
     # end_new_style_resource_on_param

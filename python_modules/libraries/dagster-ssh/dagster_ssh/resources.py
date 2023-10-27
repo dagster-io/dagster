@@ -11,6 +11,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils import mkdir_p
 from dagster._utils.merger import merge_dicts
 from paramiko.config import SSH_PORT
@@ -58,9 +59,6 @@ class SSHResource:
         self.keepalive_interval = check.opt_int_param(keepalive_interval, "keepalive_interval")
         self.compress = check.opt_bool_param(compress, "compress")
         self.no_host_key_check = check.opt_bool_param(no_host_key_check, "no_host_key_check")
-        self.allow_host_key_change = check.opt_bool_param(
-            allow_host_key_change, "allow_host_key_change"
-        )
         self.log = logger
 
         self.host_proxy = None
@@ -72,8 +70,7 @@ class SSHResource:
         if not self.username:
             logger.debug(
                 "username to ssh to host: %s is not specified. Using system's default provided by"
-                " getpass.getuser()"
-                % self.remote_host
+                " getpass.getuser()" % self.remote_host
             )
             self.username = getpass.getuser()
 
@@ -95,12 +92,7 @@ class SSHResource:
         :rtype: paramiko.client.SSHClient
         """
         client = paramiko.SSHClient()
-        if not self.allow_host_key_change:
-            self.log.warning(
-                "Remote Identification Change is not verified. This won't protect against "
-                "Man-In-The-Middle attacks"
-            )
-            client.load_system_host_keys()
+        client.load_system_host_keys()
         if self.no_host_key_check:
             self.log.warning(
                 "No Host Key Verification. This won't protect against Man-In-The-Middle attacks"
@@ -188,9 +180,7 @@ class SSHResource:
             # Create intermediate directories if they don't exist
             mkdir_p(local_folder)
 
-            self.log.info(
-                "Starting to transfer from {0} to {1}".format(remote_filepath, local_filepath)
-            )
+            self.log.info(f"Starting to transfer from {remote_filepath} to {local_filepath}")
 
             sftp_client.get(remote_filepath, local_filepath)
 
@@ -202,9 +192,7 @@ class SSHResource:
         check.str_param(local_filepath, "local_filepath")
         conn = self.get_connection()
         with conn.open_sftp() as sftp_client:
-            self.log.info(
-                "Starting to transfer file from {0} to {1}".format(local_filepath, remote_filepath)
-            )
+            self.log.info(f"Starting to transfer file from {local_filepath} to {remote_filepath}")
 
             sftp_client.put(local_filepath, remote_filepath, confirm=confirm)
 
@@ -212,6 +200,7 @@ class SSHResource:
         return local_filepath
 
 
+@dagster_maintained_resource
 @resource(
     config_schema={
         "remote_host": Field(
@@ -255,7 +244,9 @@ class SSHResource:
         ),
         "compress": Field(BoolSource, is_required=False, default_value=True),
         "no_host_key_check": Field(BoolSource, is_required=False, default_value=True),
-        "allow_host_key_change": Field(BoolSource, is_required=False, default_value=False),
+        "allow_host_key_change": Field(
+            BoolSource, description="[Deprecated]", is_required=False, default_value=False
+        ),
     }
 )
 def ssh_resource(init_context):

@@ -43,9 +43,9 @@ defs = Definitions(
 
 Dagster's <PyObject object="AssetSelection"/> module lets you choose which assets to attach to a job. In the example above, <PyObject object="AssetSelection" method="all"/> selects all assets.
 
-Once you have a job, you can execute it on a schedule, by clicking a button in the UI, the CLI, or via Dagster's GraphQL endpoints. Confirm that your job was defined by:
+Once you have a job, you can execute it on a schedule, by clicking a button in the Dagster UI, the CLI, or via Dagster's GraphQL endpoints. Confirm that your job was defined by:
 
-1. Going to the Dagster UI
+1. Going to the UI
 2. Reloading your project through the **Reload Definitions** button in the asset graph or on the **Deployments** page
 3. Navigating to **Overview > Jobs**
 4. Clicking on the job
@@ -100,7 +100,7 @@ defs = Definitions(
 )
 ```
 
-Go to the Dagster UI, click **Overview > Schedules tab**, and observe your new schedule with the attached job.
+Go to the UI, click **Overview > Schedules tab**, and observe your new schedule with the attached job.
 
 <Image
 alt="a schedule in the Dagster UI"
@@ -120,7 +120,7 @@ height={968}
 
 <Note>
   Schedules are just one way to start jobs. Jobs can also be run by using the
-  CLI, a Python function, or the Dagit UI. Refer to the{" "}
+  CLI, a Python function, or the UI. Refer to the{" "}
   <a href="/concepts/ops-jobs-graphs/job-execution#executing-a-job">
     Jobs documentation
   </a>{" "}

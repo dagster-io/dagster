@@ -40,7 +40,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.output import get_output_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
@@ -576,7 +576,7 @@ def test_io_manager_resources_on_context():
         return InternalIOManager()
 
     @op(
-        ins={"_manager_input": In(root_manager_key="io_manager_reqs_resources")},
+        ins={"_manager_input": In(input_manager_key="io_manager_reqs_resources")},
         out=Out(dagster_type=str, io_manager_key="io_manager_reqs_resources"),
     )
     def big_op(_manager_input):
@@ -683,9 +683,9 @@ def test_error_boundary_with_gen():
         basic_op()
 
     result = single_op_job.execute_in_process(raise_on_error=False)
-    step_failure = [
+    step_failure = next(
         event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
-    ][0]
+    )
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
@@ -710,9 +710,9 @@ def test_handle_output_exception_raised():
         basic_op()
 
     result = single_op_job.execute_in_process(raise_on_error=False)
-    step_failure = [
+    step_failure = next(
         event for event in result.all_node_events if event.event_type_value == "STEP_FAILURE"
-    ][0]
+    )
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
@@ -740,12 +740,12 @@ def test_asset_key():
 
     class MyIOManager(IOManager):
         def load_input(self, context):
-            assert context.asset_key == before.asset_key
-            assert context.upstream_output.asset_key == before.asset_key
+            assert context.asset_key == before.key
+            assert context.upstream_output.asset_key == before.key
             return 1
 
         def handle_output(self, context, obj):
-            assert context.asset_key in {before.asset_key, after.asset_key}
+            assert context.asset_key in {before.key, after.key}
 
     result = materialize([before, after], resources={"io_manager": MyIOManager()})
     assert result.success
@@ -916,9 +916,9 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
     materialization = result.asset_materializations_for_node("asset1")[0]
     assert set(materialization.metadata.keys()) == {"foo", "bar"}
 
-    handled_output_event = [
+    handled_output_event = next(
         event for event in result.all_node_events if event.event_type_value == "HANDLED_OUTPUT"
-    ][0]
+    )
     assert set(handled_output_event.event_specific_data.metadata.keys()) == {
         "foo",
         "bar",
@@ -1086,3 +1086,34 @@ def test_instance_set_on_asset_loader():
         defs.load_asset_value("another_asset", instance=instance)
 
         assert executed["yes"]
+
+
+def test_telemetry_custom_io_manager():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    assert not my_io_manager._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_telemetry_dagster_io_manager():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @dagster_maintained_io_manager
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    assert my_io_manager._is_dagster_maintained()  # noqa: SLF001

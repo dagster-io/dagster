@@ -44,17 +44,12 @@ class AirflowDatabase:
             )
         except ValueError:
             raise DagsterInvariantViolationError(
-                'Could not parse execution_date "{execution_date_str}". Please use datetime'
-                " format compatible with  dateutil.parser.parse.".format(
-                    execution_date_str=execution_date_str,
-                )
+                f'Could not parse execution_date "{execution_date_str}". Please use datetime'
+                " format compatible with  dateutil.parser.parse."
             )
         except OverflowError:
             raise DagsterInvariantViolationError(
-                'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
-                .format(
-                    execution_date_str=execution_date_str,
-                )
+                f'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
             )
         return execution_date
 
@@ -75,11 +70,8 @@ class AirflowDatabase:
             execution_date = self._parse_execution_date_for_asset(dag, run_tags)
         else:
             raise DagsterInvariantViolationError(
-                'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in tags "{tags}". Please '
-                'add "{AIRFLOW_EXECUTION_DATE_STR}" to tags before executing'.format(
-                    AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
-                    tags=run_tags,
-                )
+                f'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in tags "{run_tags}". Please '
+                f'add "{AIRFLOW_EXECUTION_DATE_STR}" to tags before executing'
             )
         dagrun = dag.get_dagrun(execution_date=execution_date)
         if not dagrun:
@@ -93,7 +85,7 @@ class AirflowDatabase:
             else:
                 dagrun = dag.create_dagrun(
                     run_id=f"dagster_airflow_run_{execution_date}",
-                    state=State.RUNNING,
+                    state=State.RUNNING,  # type: ignore
                     execution_date=execution_date,
                     conf=self.dag_run_config,
                 )

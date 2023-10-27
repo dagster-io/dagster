@@ -1,10 +1,68 @@
 .. currentmodule:: dagster
 
+Partitions Definitions
+======================
+
+.. autoclass:: PartitionsDefinition
+
+.. autoclass:: HourlyPartitionsDefinition
+
+.. autoclass:: DailyPartitionsDefinition
+
+.. autoclass:: WeeklyPartitionsDefinition
+
+.. autoclass:: MonthlyPartitionsDefinition
+
+.. autoclass:: TimeWindowPartitionsDefinition
+
+.. autoclass:: TimeWindow
+
+.. autoclass:: StaticPartitionsDefinition
+
+.. autoclass:: MultiPartitionsDefinition
+
+.. autoclass:: MultiPartitionKey
+
+.. autoclass:: DynamicPartitionsDefinition
+
+.. autoclass:: PartitionKeyRange
+
+Partitioned Schedules
+=====================
+
+.. autofunction:: build_schedule_from_partitioned_job
+    :noindex:
+
+Partition Mapping
+================================
+
+.. autoclass:: PartitionMapping
+
+.. autoclass:: TimeWindowPartitionMapping
+
+.. autoclass:: IdentityPartitionMapping
+
+.. autoclass:: AllPartitionMapping
+
+.. autoclass:: LastPartitionMapping
+
+.. autoclass:: StaticPartitionMapping
+
+.. autoclass:: SpecificPartitionsPartitionMapping
+
+.. autoclass:: MultiToSingleDimensionPartitionMapping
+
+.. autoclass:: MultiPartitionMapping
+
+Backfill Policy (Experimental)
+==============================
+
+.. autoclass:: BackfillPolicy
+
 Partitioned Config
 ==================
 
 .. autoclass:: PartitionedConfig
-    :members:
 
 .. autofunction:: static_partitioned_config
 
@@ -17,67 +75,3 @@ Partitioned Config
 .. autofunction:: weekly_partitioned_config
 
 .. autofunction:: monthly_partitioned_config
-
-
-Partitions Definitions
-======================
-
-.. autoclass:: PartitionsDefinition
-    :members:
-
-.. autoclass:: HourlyPartitionsDefinition
-    :members:
-
-.. autoclass:: DailyPartitionsDefinition
-    :members:
-
-.. autoclass:: WeeklyPartitionsDefinition
-    :members:
-
-.. autoclass:: MonthlyPartitionsDefinition
-    :members:
-
-.. autoclass:: TimeWindowPartitionsDefinition
-    :members:
-
-.. autoclass:: TimeWindow
-    :members:
-
-.. autoclass:: StaticPartitionsDefinition
-    :members:
-
-.. autoclass:: MultiPartitionsDefinition
-    :members:
-
-.. autoclass:: MultiPartitionKey
-    :members:
-
-.. autoclass:: DynamicPartitionsDefinition
-    :members:
-
-Partitioned Schedules
-=====================
-
-.. autofunction:: build_schedule_from_partitioned_job
-    :noindex:
-
-Partition Mapping
-================================
-
-.. autoclass:: PartitionMapping
-    :members:
-
-.. autoclass:: TimeWindowPartitionMapping
-    :members:
-
-.. autoclass:: IdentityPartitionMapping
-    :members:
-
-.. autoclass:: AllPartitionMapping
-    :members:
-
-.. autoclass:: LastPartitionMapping
-    :members:
-
-.. autoclass:: StaticPartitionMapping
-    :members:

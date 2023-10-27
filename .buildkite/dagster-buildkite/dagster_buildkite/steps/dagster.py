@@ -25,10 +25,9 @@ branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 def build_repo_wide_steps() -> List[BuildkiteStep]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
-    # the target. `black`, `check-manifest`, and `ruff` are run for the whole repo at once.
+    # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
     return [
         *build_check_changelog_steps(),
-        *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
@@ -46,30 +45,25 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     steps += build_helm_steps()
     steps += build_sql_schema_check_steps()
     steps += build_graphql_python_client_backcompat_steps()
-    steps += build_integration_steps()
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        steps += build_integration_steps()
 
     # Build images containing the dagster-test sample project. This is a dependency of certain
     # dagster core and extension lib tests. Run this after we build our library package steps
     # because need to know whether it's a dependency of any of them.
-    steps += build_test_project_steps()
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        steps += build_test_project_steps()
 
     return steps
-
-
-def build_repo_wide_black_steps() -> List[CommandStep]:
-    return [
-        CommandStepBuilder(":python-black: black")
-        .run("pip install -e python_modules/dagster[black]", "make check_black")
-        .with_skip(skip_if_no_python_changes())
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
-    ]
 
 
 def build_repo_wide_ruff_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":zap: ruff")
-        .run("pip install -e python_modules/dagster[ruff]", "make check_ruff")
+        .run(
+            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes",
+            "make check_ruff",
+        )
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_python_changes())
         .build(),
@@ -95,7 +89,7 @@ def build_repo_wide_pyright_steps() -> List[CommandStep]:
         CommandStepBuilder(":pyright: pyright")
         .run(
             "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-            "pip install -e python_modules/dagster[pyright]",
+            "pip install -e python_modules/dagster[pyright] -e python_modules/dagster-pipes",
             "make pyright",
         )
         .on_test_image(AvailablePythonVersion.get_default())
@@ -109,6 +103,7 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStep]:
         "python_modules/dagit",
         "python_modules/dagster",
         "python_modules/dagster-graphql",
+        "python_modules/dagster-webserver",
         *(
             os.path.relpath(p, GIT_REPO_ROOT)
             for p in glob(f"{GIT_REPO_ROOT}/python_modules/libraries/*")
@@ -117,7 +112,11 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStep]:
 
     commands = [
         "pip install check-manifest",
-        *(f"check-manifest {library}" for library in published_packages),
+        *(
+            f"check-manifest {library}"
+            for library in published_packages
+            if not library.endswith("CONTRIBUTING.md")  # ignore md file in dir
+        ),
     ]
 
     return [
@@ -133,7 +132,10 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":mysql: mysql-schema")
         .on_test_image(AvailablePythonVersion.get_default())
-        .run("pip install -e python_modules/dagster", "python scripts/check_schemas.py")
+        .run(
+            "pip install -e python_modules/dagster -e python_modules/dagster-pipes",
+            "python scripts/check_schemas.py",
+        )
         .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
         .build()
     ]
@@ -144,10 +146,8 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
         CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
-            (
-                "pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e"
-                " python_modules/automation"
-            ),
+            "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes -e"
+            " python_modules/dagster-graphql -e python_modules/automation",
             "dagster-graphql-client query check",
         )
         .with_skip(

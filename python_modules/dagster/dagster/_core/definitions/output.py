@@ -9,7 +9,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, deprecated_param
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataUserInput,
@@ -126,7 +126,7 @@ class OutputDefinition:
     ) -> "OutputMapping":
         """Create an output mapping from an output of a child node.
 
-        In a CompositeSolidDefinition, you can use this helper function to construct
+        In a GraphDefinition, you can use this helper function to construct
         an :py:class:`OutputMapping` from the output of a child node.
 
         Args:
@@ -256,6 +256,14 @@ class OutputPointer(NamedTuple("_OutputPointer", [("node_name", str), ("output_n
         )
 
 
+@deprecated_param(
+    param="dagster_type",
+    breaking_version="2.0",
+    additional_warn_text="Any defined `dagster_type` should come from the underlying op `Output`.",
+    # Disabling warning here since we're passing this internally and I'm not sure whether it is
+    # actually used or discarded.
+    emit_runtime_warning=False,
+)
 class OutputMapping(NamedTuple):
     """Defines an output mapping for a graph.
 
@@ -265,7 +273,7 @@ class OutputMapping(NamedTuple):
         mapped_node_output_name (str): Name of the output in the node (op/graph) that is being mapped from.
         graph_output_description (Optional[str]): A description of the output in the graph being mapped from.
         from_dynamic_mapping (bool): Set to true if the node being mapped to is a mapped dynamic node.
-        dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's output being mapped to. Users should not use this argument when instantiating the class.
+        dagster_type (Optional[DagsterType]): The dagster type of the graph's output being mapped to.
 
     Examples:
         .. code-block:: python
@@ -367,9 +375,11 @@ class Out(
     ):
         return super(Out, cls).__new__(
             cls,
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
             description=description,
             is_required=check.bool_param(is_required, "is_required"),
             io_manager_key=check.opt_str_param(

@@ -18,7 +18,7 @@ from dagster import (
 from dagster._core.definitions import op
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import (
     environ,
@@ -48,7 +48,7 @@ def noop_job():
 
 @op
 def crashy_op(_):
-    os._exit(1)  # noqa: SLF001
+    os._exit(1)
 
 
 @job
@@ -209,7 +209,7 @@ def test_successful_run_from_pending(
         job_name="my_cool_asset_job",
         run_id="xyzabc",
         run_config=None,
-        solids_to_execute=None,
+        resolved_op_selection=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -221,7 +221,8 @@ def test_successful_run_from_pending(
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
-        solid_selection=None,
+        op_selection=None,
+        asset_check_selection=None,
     )
 
     run_id = created_run.run_id
@@ -298,8 +299,7 @@ def test_invalid_instance_run():
                         with pytest.raises(
                             DagsterLaunchFailedError,
                             match=re.escape(
-                                "gRPC server could not load run {run_id} in order to execute it"
-                                .format(run_id=run.run_id)
+                                f"gRPC server could not load run {run.run_id} in order to execute it"
                             ),
                         ):
                             instance.launch_run(run_id=run.run_id, workspace=workspace)
@@ -543,8 +543,7 @@ def test_cleanup_after_force_terminate(
         if any(
             [
                 "Computational resources were cleaned up after the run was forcibly marked as"
-                " canceled."
-                in str(event)
+                " canceled." in str(event)
                 for event in logs
             ]
         ):
@@ -608,7 +607,7 @@ def test_single_op_selection_execution(
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
-        solid_selection=["return_one"],
+        op_selection=["return_one"],
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
@@ -647,7 +646,7 @@ def test_multi_op_selection_execution(
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
-        solid_selection=["return_one", "multiply_by_2"],
+        op_selection=["return_one", "multiply_by_2"],
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
     )

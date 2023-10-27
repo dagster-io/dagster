@@ -14,6 +14,14 @@ run_queue:
       value: "redshift"        # applies when the `database` tag has a value of `redshift`
       limit: 4
     - key: "dagster/backfill"  # applies when the `dagster/backfill` tag is present, regardless of value
-      limit: 10 
+      limit: 10
 
 # end_tag_example
+
+# start_free_slots
+
+run_monitoring:
+  enabled: true
+  free_slots_after_run_end_seconds: 300 # free any hanging concurrency slots after 5 minutes from the end of a run
+
+# end_free_slots

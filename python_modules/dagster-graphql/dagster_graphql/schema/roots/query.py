@@ -14,11 +14,22 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
-from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
+from dagster._core.scheduler.instigation import (
+    InstigatorStatus,
+    InstigatorType,
+)
+from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
+    fetch_auto_materialize_asset_evaluations,
+    fetch_auto_materialize_asset_evaluations_for_evaluation_id,
+)
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+from dagster_graphql.schema.auto_materialize_asset_evaluations import (
+    GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
+)
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 
 from ...implementation.external import (
@@ -27,6 +38,7 @@ from ...implementation.external import (
     fetch_repository,
     fetch_workspace,
 )
+from ...implementation.fetch_asset_checks import fetch_asset_checks
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -54,7 +66,6 @@ from ...implementation.fetch_runs import (
     get_logs_for_run,
     get_run_by_id,
     get_run_group,
-    get_run_groups,
     get_run_tag_keys,
     get_run_tags,
     validate_pipeline_config,
@@ -66,13 +77,19 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
+from ...implementation.fetch_ticks import get_instigation_ticks
 from ...implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
-from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
+from ...implementation.utils import (
+    capture_error,
+    graph_selector_from_graphql,
+    pipeline_selector_from_graphql,
+)
+from ..asset_checks import GrapheneAssetChecksOrError
 from ..asset_graph import (
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
@@ -108,6 +125,8 @@ from ..instigation import (
     GrapheneInstigationStateOrError,
     GrapheneInstigationStatesOrError,
     GrapheneInstigationStatus,
+    GrapheneInstigationTick,
+    GrapheneInstigationTickStatus,
     GrapheneInstigationType,
 )
 from ..logs.compute_logs import (
@@ -125,7 +144,8 @@ from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
-    GrapheneRunGroupsOrError,
+    GrapheneRunIds,
+    GrapheneRunIdsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
     GrapheneRunTagKeysOrError,
@@ -141,11 +161,11 @@ from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
 
-class GrapheneDagitQuery(graphene.ObjectType):
+class GrapheneQuery(graphene.ObjectType):
     """The root for all queries to retrieve data from the Dagster instance."""
 
     class Meta:
-        name = "DagitQuery"
+        name = "Query"
 
     version = graphene.Field(
         graphene.NonNull(graphene.String),
@@ -316,19 +336,18 @@ class GrapheneDagitQuery(graphene.ObjectType):
         limit=graphene.Int(),
         description="Retrieve all the distinct key-value tags from all runs.",
     )
+    runIdsOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunIdsOrError),
+        filter=graphene.Argument(GrapheneRunsFilter),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        description="Retrieve run IDs after applying a filter, cursor, and limit.",
+    )
 
     runGroupOrError = graphene.Field(
         graphene.NonNull(GrapheneRunGroupOrError),
         runId=graphene.NonNull(graphene.ID),
         description="Retrieve a group of runs with the matching root run id.",
-    )
-
-    runGroupsOrError = graphene.Field(
-        graphene.NonNull(GrapheneRunGroupsOrError),
-        filter=graphene.Argument(GrapheneRunsFilter),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
-        description="Retrieve groups of runs after applying a filter, cursor, and limit.",
     )
 
     isPipelineConfigValid = graphene.Field(
@@ -400,7 +419,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             " Note: Assets should "
         )
         + "not be defined in more than one repository - this query is used to present warnings and"
-        " errors in Dagit.",
+        " errors in the Dagster UI.",
     )
 
     partitionBackfillOrError = graphene.Field(
@@ -420,6 +439,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
     permissions = graphene.Field(
         non_null_list(GraphenePermission),
         description="Retrieve the set of permissions for the Dagster deployment.",
+    )
+
+    canBulkTerminate = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        description="Returns whether the user has permission to terminate runs in the deployment",
     )
 
     assetsLatestInfo = graphene.Field(
@@ -459,6 +483,42 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Provides fields for testing behavior",
     )
 
+    autoMaterializeAssetEvaluationsOrError = graphene.Field(
+        GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        limit=graphene.Argument(graphene.NonNull(graphene.Int)),
+        cursor=graphene.Argument(graphene.String),
+        description="Retrieve the auto materialization evaluation records for an asset.",
+    )
+
+    autoMaterializeEvaluationsForEvaluationId = graphene.Field(
+        GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        description=(
+            "Retrieve the auto materialization evaluation records for a given evaluation ID."
+        ),
+    )
+
+    autoMaterializeTicks = graphene.Field(
+        non_null_list(GrapheneInstigationTick),
+        dayRange=graphene.Int(),
+        dayOffset=graphene.Int(),
+        limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
+        beforeTimestamp=graphene.Float(),
+        afterTimestamp=graphene.Float(),
+        description="Fetch the history of auto-materialization ticks",
+    )
+
+    assetChecksOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetChecksOrError),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        checkName=graphene.Argument(graphene.String()),
+        description="Retrieve the asset checks for a given asset key.",
+    )
+
+    @capture_error
     def resolve_repositoriesOrError(
         self,
         graphene_info: ResolveInfo,
@@ -475,6 +535,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             )
         return fetch_repositories(graphene_info)
 
+    @capture_error
     def resolve_repositoryOrError(
         self, graphene_info: ResolveInfo, repositorySelector: GrapheneRepositorySelector
     ):
@@ -482,12 +543,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
             graphene_info, RepositorySelector.from_graphql_input(repositorySelector)
         )
 
+    @capture_error
     def resolve_workspaceOrError(self, graphene_info: ResolveInfo):
         return fetch_workspace(graphene_info.context)
 
+    @capture_error
     def resolve_locationStatusesOrError(self, graphene_info: ResolveInfo):
         return fetch_location_statuses(graphene_info.context)
 
+    @capture_error
     def resolve_pipelineSnapshotOrError(
         self,
         graphene_info: ResolveInfo,
@@ -509,6 +573,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 "Must set one of snapshotId or activePipelineSelector",
             )
 
+    @capture_error
     def resolve_graphOrError(
         self, graphene_info: ResolveInfo, selector: Optional[GrapheneGraphSelector] = None
     ):
@@ -519,9 +584,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_version(self, graphene_info: ResolveInfo):
         return graphene_info.context.version
 
+    @capture_error
     def resolve_scheduler(self, graphene_info: ResolveInfo):
         return get_scheduler_or_error(graphene_info)
 
+    @capture_error
     def resolve_scheduleOrError(
         self, graphene_info: ResolveInfo, schedule_selector: GrapheneScheduleSelector
     ):
@@ -529,6 +596,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             graphene_info, ScheduleSelector.from_graphql_input(schedule_selector)
         )
 
+    @capture_error
     def resolve_schedulesOrError(
         self,
         graphene_info: ResolveInfo,
@@ -548,6 +616,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             instigator_statuses,
         )
 
+    @capture_error
     def resolve_topLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, resourceSelector):
         return get_resource_or_error(
             graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
@@ -559,17 +628,20 @@ class GrapheneDagitQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
+    @capture_error
     def resolve_utilizedEnvVarsOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_utilized_env_vars_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
+    @capture_error
     def resolve_sensorOrError(
         self, graphene_info: ResolveInfo, sensorSelector: GrapheneRepositorySelector
     ):
         return get_sensor_or_error(graphene_info, SensorSelector.from_graphql_input(sensorSelector))
 
+    @capture_error
     def resolve_sensorsOrError(
         self,
         graphene_info,
@@ -588,6 +660,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             instigator_statuses,
         )
 
+    @capture_error
     def resolve_instigationStateOrError(
         self, graphene_info: ResolveInfo, instigationSelector: GrapheneInstigationSelector
     ):
@@ -595,12 +668,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
             graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
 
+    @capture_error
     def resolve_unloadableInstigationStatesOrError(
-        self, graphene_info: ResolveInfo, instigationType: Optional[GrapheneInstigationType] = None
+        self,
+        graphene_info: ResolveInfo,
+        instigationType: Optional[GrapheneInstigationType] = None,  # type: ignore (idk)
     ):
         instigation_type = InstigatorType(instigationType) if instigationType else None
         return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
+    @capture_error
     def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
         return get_job_or_error(
             graphene_info,
@@ -640,22 +717,25 @@ class GrapheneDagitQuery(graphene.ObjectType):
             limit=limit,
         )
 
-    def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
-        return get_run_by_id(graphene_info, runId)
-
-    def resolve_runGroupsOrError(
+    def resolve_runIdsOrError(
         self,
-        graphene_info: ResolveInfo,
+        _graphene_info: ResolveInfo,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
         selector = filter.to_selector() if filter is not None else None
 
-        return GrapheneRunGroupsOrError(
-            results=get_run_groups(graphene_info, selector, cursor, limit)
+        return GrapheneRunIds(
+            filters=selector,
+            cursor=cursor,
+            limit=limit,
         )
 
+    def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
+        return get_run_by_id(graphene_info, runId)
+
+    @capture_error
     def resolve_partitionSetsOrError(
         self, graphene_info: ResolveInfo, repositorySelector: RepositorySelector, pipelineName: str
     ):
@@ -665,6 +745,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             pipelineName,
         )
 
+    @capture_error
     def resolve_partitionSetOrError(
         self,
         graphene_info: ResolveInfo,
@@ -678,9 +759,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
             partitionSetName,  # type: ignore
         )
 
+    @capture_error
     def resolve_runTagKeysOrError(self, graphene_info: ResolveInfo):
         return get_run_tag_keys(graphene_info)
 
+    @capture_error
     def resolve_runTagsOrError(
         self,
         graphene_info: ResolveInfo,
@@ -690,9 +773,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
     ):
         return get_run_tags(graphene_info, tagKeys, valuePrefix, limit)
 
+    @capture_error
     def resolve_runGroupOrError(self, graphene_info: ResolveInfo, runId):
         return get_run_group(graphene_info, runId)
 
+    @capture_error
     def resolve_isPipelineConfigValid(
         self,
         graphene_info: ResolveInfo,
@@ -706,6 +791,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             parse_run_config_input(runConfigData or {}, raise_on_error=False),
         )
 
+    @capture_error
     def resolve_executionPlanOrError(
         self,
         graphene_info: ResolveInfo,
@@ -719,6 +805,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore  # (possible str)
         )
 
+    @capture_error
     def resolve_runConfigSchemaOrError(
         self,
         graphene_info: ResolveInfo,
@@ -824,7 +911,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             asset_graph=load_asset_graph,
         )
 
-        return [
+        nodes = [
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
@@ -836,11 +923,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
             )
             for node in results
         ]
+        return sorted(nodes, key=lambda node: node.id)
 
     def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         asset_key_input = cast(Mapping[str, Sequence[str]], assetKey)
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(asset_key_input))
 
+    @capture_error
     def resolve_assetsOrError(
         self,
         graphene_info: ResolveInfo,
@@ -868,9 +957,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
         return get_asset_node_definition_collisions(graphene_info, asset_keys)
 
+    @capture_error
     def resolve_partitionBackfillOrError(self, graphene_info: ResolveInfo, backfillId: str):
         return get_backfill(graphene_info, backfillId)
 
+    @capture_error
     def resolve_partitionBackfillsOrError(
         self,
         graphene_info: ResolveInfo,
@@ -889,6 +980,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
+    def resolve_canBulkTerminate(self, graphene_info: ResolveInfo) -> bool:
+        return graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
+
     def resolve_assetsLatestInfo(
         self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]
     ):
@@ -906,6 +1000,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         return get_assets_latest_info(graphene_info, step_keys_by_asset)
 
+    @capture_error
     def resolve_logsForRun(
         self,
         graphene_info: ResolveInfo,
@@ -940,3 +1035,62 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_test(self, _):
         return GrapheneTestFields()
+
+    def resolve_autoMaterializeAssetEvaluationsOrError(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        limit: int,
+        cursor: Optional[str] = None,
+    ):
+        return fetch_auto_materialize_asset_evaluations(
+            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+        )
+
+    def resolve_autoMaterializeEvaluationsForEvaluationId(
+        self,
+        graphene_info: ResolveInfo,
+        evaluationId: int,
+    ):
+        return fetch_auto_materialize_asset_evaluations_for_evaluation_id(
+            graphene_info=graphene_info, evaluation_id=evaluationId
+        )
+
+    def resolve_autoMaterializeTicks(
+        self,
+        graphene_info,
+        dayRange=None,
+        dayOffset=None,
+        limit=None,
+        cursor=None,
+        statuses=None,
+        beforeTimestamp=None,
+        afterTimestamp=None,
+    ):
+        from dagster._daemon.asset_daemon import (
+            FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+            FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        )
+
+        return get_instigation_ticks(
+            graphene_info=graphene_info,
+            instigator_type=InstigatorType.AUTO_MATERIALIZE,
+            instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            batch_loader=None,
+            dayRange=dayRange,
+            dayOffset=dayOffset,
+            limit=limit,
+            cursor=cursor,
+            status_strings=statuses,
+            before=beforeTimestamp,
+            after=afterTimestamp,
+        )
+
+    def resolve_assetChecksOrError(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        checkName: Optional[str] = None,
+    ):
+        return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey), checkName)

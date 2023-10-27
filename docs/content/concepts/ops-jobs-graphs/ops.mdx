@@ -21,11 +21,11 @@ The computational core of a [software-defined asset](/concepts/assets/software-d
 
 Ops support a variety of useful features for data orchestration, such as:
 
-- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/concepts/ops-jobs-graphs/graphs) - can be bound via [jobs](/concepts/ops-jobs-graphs/jobs) to an appropriate [executor](/deployment/executors) for single-process execution or distribution across a cluster.
+- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/concepts/ops-jobs-graphs/graphs) - can be bound via [jobs](/concepts/ops-jobs-graphs/op-jobs) to an appropriate [executor](/deployment/executors) for single-process execution or distribution across a cluster.
 
 - **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](/concepts/resources) as an abstraction layer for this purpose.
 
-  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/concepts/ops-jobs-graphs/jobs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
+  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/concepts/ops-jobs-graphs/op-jobs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
 
 - **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/concepts/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/concepts/io-management/io-managers) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
 
@@ -33,7 +33,7 @@ Ops support a variety of useful features for data orchestration, such as:
 
 - **Event streams**: Ops emit a stream of [events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default - such as indicating the start of an op's execution - but op authors are additionally given access to an event API.
 
-  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized by Dagster's browser UI [Dagit](/concepts/dagit/dagit). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
+  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized in [the Dagster UI](/concepts/webserver/ui). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
 
 - **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
 
@@ -73,7 +73,7 @@ Both definitions have a few important properties:
 
 #### Inputs
 
-Inputs are passed as arguments to an op's `compute_fn`. The value of an input can be passed from the output of another op, or stubbed (hardcoded) using config.
+Inputs are passed as arguments to an op's `compute_fn`. The value of an input can be passed from the output of another op, or [stubbed (hardcoded) using config](/concepts/io-management/unconnected-inputs#loading-a-built-in-dagster-type-from-config).
 
 The most common way to define inputs is just to add arguments to the decorated function:
 
@@ -198,7 +198,7 @@ def context_op(context: OpExecutionContext):
 
 ## Using an op
 
-Ops are used within a [job](/concepts/ops-jobs-graphs/jobs) or [graph](/concepts/ops-jobs-graphs/graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
+Ops are used within a [job](/concepts/ops-jobs-graphs/op-jobs) or [graph](/concepts/ops-jobs-graphs/graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
 
 ## Patterns
 

@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._utils.merger import merge_dicts
 
@@ -14,8 +13,11 @@ from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.events import AssetKey
 
     from ..execution.execute_in_process_result import ExecuteInProcessResult
+
+EPHEMERAL_JOB_NAME = "__ephemeral_asset_job__"
 
 
 def materialize(
@@ -36,7 +38,7 @@ def materialize(
         assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
             The assets to materialize.
 
-            Unless you're using `non_argument_deps`, you must also include all assets that are
+            Unless you're using `deps` or `non_argument_deps`, you must also include all assets that are
             upstream of the assets that you want to materialize. This is because those upstream
             asset definitions have information that is needed to load their contents while
             materializing the downstream assets.
@@ -93,15 +95,13 @@ def materialize(
         if isinstance(asset, AssetsDefinition):
             all_executable_keys = all_executable_keys.union(set(asset.keys))
 
-    JOB_NAME = "__ephemeral_asset_job__"
-
     defs = Definitions(
-        jobs=[define_asset_job(name=JOB_NAME, selection=selection)],
+        jobs=[define_asset_job(name=EPHEMERAL_JOB_NAME, selection=selection)],
         assets=assets,
         resources=resources,
     )
     return check.not_none(
-        defs.get_job_def(JOB_NAME),
+        defs.get_job_def(EPHEMERAL_JOB_NAME),
         "This should always return a job",
     ).execute_in_process(
         run_config=run_config,

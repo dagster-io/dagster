@@ -26,7 +26,7 @@ from dagster_celery_k8s.launcher import (
 )
 from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
-from dagster_test.test_project import get_test_project_workspace_and_external_pipeline
+from dagster_test.test_project import get_test_project_workspace_and_external_job
 
 
 def test_empty_celery_config():
@@ -110,7 +110,7 @@ def test_get_validated_celery_k8s_executor_config():
                     "job_namespace": {"env": "TEST_PIPELINE_RUN_NAMESPACE"},
                     "broker": {"env": "TEST_CELERY_BROKER"},
                     "backend": {"env": "TEST_CELERY_BACKEND"},
-                    "include": ["dagster", "dagit"],
+                    "include": ["dagster", "dagster-webserver"],
                     "config_source": {
                         "task_annotations": """{'*': {'on_failure': my_on_failure}}"""
                     },
@@ -139,7 +139,7 @@ def test_get_validated_celery_k8s_executor_config():
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
             "job_namespace": "my-namespace",
-            "include": ["dagster", "dagit"],
+            "include": ["dagster", "dagster-webserver"],
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
@@ -219,7 +219,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
                         "job_namespace": {"env": "TEST_PIPELINE_RUN_NAMESPACE"},
                         "broker": {"env": "TEST_CELERY_BROKER"},
                         "backend": {"env": "TEST_CELERY_BACKEND"},
-                        "include": ["dagster", "dagit"],
+                        "include": ["dagster", "dagster-webserver"],
                         "config_source": {
                             "task_annotations": """{'*': {'on_failure': my_on_failure}}"""
                         },
@@ -249,7 +249,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "job_namespace": "my-namespace",
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
-            "include": ["dagster", "dagit"],
+            "include": ["dagster", "dagster-webserver"],
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
@@ -326,9 +326,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
 
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_job)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
 
     with instance_for_test() as instance:
@@ -340,9 +340,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -354,8 +354,8 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 job_name=job_name,
                 run_config=run_config,
                 tags=tags,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
-                job_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
@@ -377,6 +377,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
             labels = kwargs["body"].spec.template.metadata.labels
             assert labels["foo_label_key"] == "bar_label_value"
+            assert labels["dagster/code-location"] == "in_process"
+            assert labels["dagster/job"] == "fake_job"
+            assert labels["dagster/run-id"] == run.run_id
 
             args = container.args
             assert (
@@ -401,9 +404,9 @@ def test_raise_on_error(kubeconfig_file):
         k8s_client_batch_api=mock_k8s_client_batch_api,
         fail_pod_on_run_failure=True,
     )
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_job)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     loadable_target_origin = LoadableTargetOrigin(
         python_file=__file__,
     )
@@ -416,9 +419,9 @@ def test_raise_on_error(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -429,8 +432,8 @@ def test_raise_on_error(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 run_config=run_config,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
-                job_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
@@ -469,9 +472,10 @@ def test_k8s_executor_config_override(kubeconfig_file):
     job_name = "demo_job"
 
     with instance_for_test() as instance:
-        with get_test_project_workspace_and_external_pipeline(
-            instance, job_name, "my_image:tag"
-        ) as (workspace, external_pipeline):
+        with get_test_project_workspace_and_external_job(instance, job_name, "my_image:tag") as (
+            workspace,
+            external_job,
+        ):
             # Launch the run in a fake Dagster instance.
             celery_k8s_run_launcher.register_instance(instance)
 
@@ -480,8 +484,8 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 run_config={"execution": {"celery-k8s": {}}},
-                external_job_origin=external_pipeline.get_external_origin(),
-                job_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
@@ -495,8 +499,8 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 run_config={
                     "execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}
                 },
-                external_job_origin=external_pipeline.get_external_origin(),
-                job_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 

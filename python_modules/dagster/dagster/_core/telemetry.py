@@ -39,7 +39,8 @@ from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
-from dagster._core.definitions.pipeline_base import IJob
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
@@ -54,7 +55,11 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
+    from dagster._core.host_representation.external import (
+        ExternalJob,
+        ExternalRepository,
+        ExternalResource,
+    )
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
@@ -63,7 +68,8 @@ ENABLED_STR = "enabled"
 DAGSTER_HOME_FALLBACK = "~/.dagster"
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = "update_repo_stats"
-START_DAGIT_WEBSERVER = "start_dagit_webserver"
+# 'dagit' name is deprecated but we keep the same telemetry action name to avoid data disruption
+START_DAGSTER_WEBSERVER = "start_dagit_webserver"
 DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"
 SENSOR_RUN_CREATED = "sensor_run_created"
@@ -341,9 +347,7 @@ def _check_telemetry_instance_param(
             args[instance_index],  # type: ignore
             "instance",
             DagsterInstance,
-            "'instance' argument at position {position} must be a DagsterInstance".format(
-                position=instance_index
-            ),
+            f"'instance' argument at position {instance_index} must be a DagsterInstance",
         )
 
 
@@ -465,6 +469,9 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_sensors_in_repo = len(external_repo.get_external_sensors())
     external_asset_nodes = external_repo.get_external_asset_nodes()
     num_assets_in_repo = len(external_asset_nodes)
+    external_resources = external_repo.get_external_resources()
+
+    num_checks = len(external_repo.external_repository_data.external_asset_checks or [])
 
     num_partitioned_assets_in_repo = 0
     num_multi_partitioned_assets_in_repo = 0
@@ -472,10 +479,13 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_assets_with_freshness_policies_in_repo = 0
     num_assets_with_eager_auto_materialize_policies_in_repo = 0
     num_assets_with_lazy_auto_materialize_policies_in_repo = 0
+    num_assets_with_single_run_backfill_policies_in_repo = 0
+    num_assets_with_multi_run_backfill_policies_in_repo = 0
     num_source_assets_in_repo = 0
     num_observable_source_assets_in_repo = 0
     num_dbt_assets_in_repo = 0
     num_assets_with_code_versions_in_repo = 0
+
     for asset in external_asset_nodes:
         if asset.partitions_def_data:
             num_partitioned_assets_in_repo += 1
@@ -494,6 +504,12 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
                 num_assets_with_eager_auto_materialize_policies_in_repo += 1
             else:
                 num_assets_with_lazy_auto_materialize_policies_in_repo += 1
+
+        if asset.backfill_policy is not None:
+            if asset.backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN:
+                num_assets_with_single_run_backfill_policies_in_repo += 1
+            else:
+                num_assets_with_multi_run_backfill_policies_in_repo += 1
 
         if asset.is_source:
             num_source_assets_in_repo += 1
@@ -514,6 +530,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     )
 
     return {
+        **get_resource_stats(external_resources=list(external_resources)),
         "num_pipelines_in_repo": str(num_pipelines_in_repo),
         "num_schedules_in_repo": str(num_schedules_in_repo),
         "num_sensors_in_repo": str(num_sensors_in_repo),
@@ -531,10 +548,38 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_assets_with_lazy_auto_materialize_policies_in_repo": str(
             num_assets_with_lazy_auto_materialize_policies_in_repo
         ),
+        "num_assets_with_single_run_backfill_policies_in_repo": str(
+            num_assets_with_single_run_backfill_policies_in_repo
+        ),
+        "num_assets_with_multi_run_backfill_policies_in_repo": str(
+            num_assets_with_multi_run_backfill_policies_in_repo
+        ),
         "num_observable_source_assets_in_repo": str(num_observable_source_assets_in_repo),
         "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
         "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
         "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
+        "num_asset_checks": str(num_checks),
+    }
+
+
+def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, Any]:
+    used_dagster_resources = []
+    used_custom_resources = False
+
+    for resource in external_resources:
+        resource_type = resource.resource_type
+        split_resource_type = resource_type.split(".")
+        module_name = split_resource_type[0]
+        class_name = split_resource_type[-1]
+
+        if resource.is_dagster_maintained:
+            used_dagster_resources.append({"module_name": module_name, "class_name": class_name})
+        else:
+            used_custom_resources = True
+
+    return {
+        "dagster_resources": used_dagster_resources,
+        "has_custom_resources": str(used_custom_resources),
     }
 
 
@@ -737,15 +782,11 @@ TELEMETRY_TEXT = """
 
     telemetry:
       enabled: false
-""" % {
-    "telemetry": click.style("Telemetry:", fg="blue", bold=True)
-}
+""" % {"telemetry": click.style("Telemetry:", fg="blue", bold=True)}
 
 SLACK_PROMPT = """
   %(welcome)s
 
   If you have any questions or would like to engage with the Dagster team, please join us on Slack
   (https://bit.ly/39dvSsF).
-""" % {
-    "welcome": click.style("Welcome to Dagster!", bold=True)
-}
+""" % {"welcome": click.style("Welcome to Dagster!", bold=True)}

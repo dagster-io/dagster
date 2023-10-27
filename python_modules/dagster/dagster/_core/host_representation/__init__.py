@@ -1,4 +1,4 @@
-"""This subpackage contains all classes that host processes (e.g. dagit)
+"""This subpackage contains all classes that host processes (e.g. dagster-webserver)
 use to manipulate and represent definitions that are resident
 in user processes and containers.  e.g. ExternalPipeline.
 
@@ -52,11 +52,11 @@ from .origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 
-# isort: split
+# ruff: isort: split
 from .code_location import (
     CodeLocation as CodeLocation,
     GrpcServerCodeLocation as GrpcServerCodeLocation,
     InProcessCodeLocation as InProcessCodeLocation,
 )
-from .pipeline_index import JobIndex as JobIndex
+from .job_index import JobIndex as JobIndex
 from .represented import RepresentedJob as RepresentedJob

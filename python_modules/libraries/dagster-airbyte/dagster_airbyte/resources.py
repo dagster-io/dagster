@@ -16,6 +16,7 @@ from dagster import (
     resource,
 )
 from dagster._config.pythonic_config import infer_schema_from_config_class
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
@@ -68,6 +69,14 @@ class BaseAirbyteResource(ConfigurableResource):
             " that do not impact your Airbyte deployment."
         ),
     )
+    poll_interval: float = Field(
+        default=DEFAULT_POLL_INTERVAL_SECONDS,
+        description="Time (in seconds) to wait between checking a sync's status.",
+    )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @property
     @cached_method
@@ -156,7 +165,7 @@ class BaseAirbyteResource(ConfigurableResource):
     def sync_and_poll(
         self,
         connection_id: str,
-        poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
+        poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
     ) -> AirbyteOutput:
         """Initializes a sync operation for the given connector, and polls until it completes.
@@ -190,7 +199,7 @@ class BaseAirbyteResource(ConfigurableResource):
                         f"Timeout: Airbyte job {job_id} is not ready after the timeout"
                         f" {poll_timeout} seconds"
                     )
-                time.sleep(poll_interval)
+                time.sleep(poll_interval or self.poll_interval)
                 job_details = self.get_job_status(connection_id, job_id)
                 attempts = cast(List, job_details.get("attempts", []))
                 cur_attempt = len(attempts)
@@ -433,9 +442,11 @@ class AirbyteResource(BaseAirbyteResource):
                             headers=headers,
                             json=data,
                             timeout=self.request_timeout,
-                            auth=(self.username, self.password)
-                            if self.username and self.password
-                            else None,
+                            auth=(
+                                (self.username, self.password)
+                                if self.username and self.password
+                                else None
+                            ),
                         ),
                         self.request_additional_params,
                     ),
@@ -514,8 +525,10 @@ class AirbyteResource(BaseAirbyteResource):
 
     def does_dest_support_normalization(
         self, destination_definition_id: str, workspace_id: str
-    ) -> Dict[str, Any]:
-        return cast(
+    ) -> bool:
+        # Airbyte API changed source of truth for normalization in PR
+        # https://github.com/airbytehq/airbyte/pull/21005
+        norm_dest_def_spec: bool = cast(
             Dict[str, Any],
             check.not_none(
                 self.make_request_cached(
@@ -527,6 +540,24 @@ class AirbyteResource(BaseAirbyteResource):
                 )
             ),
         ).get("supportsNormalization", False)
+
+        norm_dest_def: bool = (
+            cast(
+                Dict[str, Any],
+                check.not_none(
+                    self.make_request_cached(
+                        endpoint="/destination_definitions/get",
+                        data={
+                            "destinationDefinitionId": destination_definition_id,
+                        },
+                    )
+                ),
+            )
+            .get("normalizationConfig", {})
+            .get("supported", False)
+        )
+
+        return any([norm_dest_def_spec, norm_dest_def])
 
     def get_job_status(self, connection_id: str, job_id: int) -> Mapping[str, object]:
         if self.forward_logs:
@@ -562,7 +593,7 @@ class AirbyteResource(BaseAirbyteResource):
     def sync_and_poll(
         self,
         connection_id: str,
-        poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
+        poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
     ) -> AirbyteOutput:
         """Initializes a sync operation for the given connector, and polls until it completes.
@@ -596,7 +627,7 @@ class AirbyteResource(BaseAirbyteResource):
                         f"Timeout: Airbyte job {job_id} is not ready after the timeout"
                         f" {poll_timeout} seconds"
                     )
-                time.sleep(poll_interval)
+                time.sleep(poll_interval or self.poll_interval)
                 job_details = self.get_job_status(connection_id, job_id)
                 attempts = cast(List, job_details.get("attempts", []))
                 cur_attempt = len(attempts)
@@ -640,6 +671,7 @@ class AirbyteResource(BaseAirbyteResource):
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
+@dagster_maintained_resource
 @resource(config_schema=AirbyteResource.to_config_schema())
 def airbyte_resource(context) -> AirbyteResource:
     """This resource allows users to programatically interface with the Airbyte REST API to launch
@@ -677,6 +709,7 @@ def airbyte_resource(context) -> AirbyteResource:
     return AirbyteResource.from_resource_context(context)
 
 
+@dagster_maintained_resource
 @resource(config_schema=infer_schema_from_config_class(AirbyteCloudResource))
 def airbyte_cloud_resource(context) -> AirbyteCloudResource:
     """This resource allows users to programatically interface with the Airbyte Cloud REST API to launch

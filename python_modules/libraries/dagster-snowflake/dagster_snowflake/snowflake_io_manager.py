@@ -14,6 +14,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
@@ -55,7 +56,7 @@ def build_snowflake_io_manager(
             defs = Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": snowflake_pandas_io_manager.configured({
+                    "io_manager": snowflake_io_manager.configured({
                         "database": "my_database",
                         "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                         ...
@@ -64,9 +65,11 @@ def build_snowflake_io_manager(
             )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-        the IO Manager. For assets, the schema will be determined from the asset key.
-        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-        via config or on the asset/op, "public" will be used for the schema.
+        the IO Manager. For assets, the schema will be determined from the asset key,
+        as shown in the above example. The final prefix before the asset name will be used as the schema. For example,
+        if the asset ``my_table`` had the key prefix ``["snowflake", "my_schema"]``, the schema ``my_schema`` will be
+        used. For ops, the schema can be specified by including a ``schema`` entry in output metadata. If ``schema`` is not provided
+        via config or on the asset/op, ``public`` will be used for the schema.
 
         .. code-block:: python
 
@@ -77,7 +80,7 @@ def build_snowflake_io_manager(
                 # the returned value will be stored at my_schema.my_table
                 ...
 
-        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata ``columns`` to the
         In or AssetIn.
 
         .. code-block:: python
@@ -91,6 +94,7 @@ def build_snowflake_io_manager(
 
     """
 
+    @dagster_maintained_io_manager
     @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
         return DbIOManager(
@@ -135,9 +139,11 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-        the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
-        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-        via config or on the asset/op, "public" will be used for the schema.
+        the IO Manager. For assets, the schema will be determined from the asset key,
+        as shown in the above example. The final prefix before the asset name will be used as the schema. For example,
+        if the asset ``my_table`` had the key prefix ``["snowflake", "my_schema"]``, the schema ``my_schema`` will be
+        used. For ops, the schema can be specified by including a ``schema`` entry in output metadata. If ``schema`` is not provided
+        via config or on the asset/op, ``public`` will be used for the schema.
 
         .. code-block:: python
 
@@ -148,7 +154,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
                 # the returned value will be stored at my_schema.my_table
                 ...
 
-        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata ``columns`` to the
         In or AssetIn.
 
         .. code-block:: python
@@ -164,7 +170,10 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
 
     database: str = Field(description="Name of the database to use.")
     account: str = Field(
-        description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+        description=(
+            "Your Snowflake account name. For more details, see the `Snowflake documentation."
+            " <https://docs.snowflake.com/developer-guide/python-connector/python-connector-api>`__"
+        ),
     )
     user: str = Field(description="User login name.")
     schema_: Optional[str] = Field(
@@ -176,22 +185,26 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
     private_key: Optional[str] = Field(
         default=None,
         description=(
-            "Raw private key to use. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+            "Raw private key to use. See the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details. To"
+            " avoid issues with newlines in the keys, you can base64 encode the key. You can"
+            " retrieve the base64 encoded key with this shell command: cat rsa_key.p8 | base64"
         ),
     )
     private_key_path: Optional[str] = Field(
         default=None,
         description=(
-            "Path to the private key. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+            "Path to the private key. See the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
         ),
     )
     private_key_password: Optional[str] = Field(
         default=None,
         description=(
-            "The password of the private key. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+            "The password of the private key. See the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
+            " Required for both private_key and private_key_path if the private key is encrypted."
+            " For unencrypted keys, this config can be omitted or set to None."
         ),
     )
     store_timestamps_as_strings: bool = Field(
@@ -202,6 +215,10 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " time data when loading the DataFrame. If False, time data without a timezone will be"
             " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
+    )
+    authenticator: Optional[str] = Field(
+        default=None,
+        description="Optional parameter to specify the authentication mechanism to use.",
     )
 
     @staticmethod
@@ -320,9 +337,11 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
     return " AND\n".join(
-        _time_window_where_clause(partition_dimension)
-        if isinstance(partition_dimension.partitions, TimeWindow)
-        else _static_where_clause(partition_dimension)
+        (
+            _time_window_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partitions, TimeWindow)
+            else _static_where_clause(partition_dimension)
+        )
         for partition_dimension in partition_dimensions
     )
 

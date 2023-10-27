@@ -1,7 +1,7 @@
 from dagster import Field, Int, String, job, op
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 
@@ -46,9 +46,9 @@ def composite_job_with_config_mapping():
 
 def test_execution_plan_for_graph():
     run_config = {
-        "solids": {
+        "ops": {
             "graph_with_nested_config_graph": {
-                "solids": {
+                "ops": {
                     "node_a": {"config": {"foo": "baz"}},
                     "node_b": {"config": {"bar": 3}},
                 }
@@ -85,7 +85,7 @@ def test_execution_plan_for_graph():
 
 def test_execution_plan_for_graph_with_config_mapping():
     run_config = {
-        "solids": {
+        "ops": {
             "graph_with_nested_config_graph_and_config_mapping": {
                 "config": {"foo": "baz", "bar": 3}
             }

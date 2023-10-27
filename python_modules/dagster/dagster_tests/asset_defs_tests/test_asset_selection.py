@@ -7,7 +7,12 @@ from dagster import (
     AssetIn,
     AssetOut,
     DailyPartitionsDefinition,
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+    MultiPartitionsDefinition,
     SourceAsset,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     multi_asset,
 )
@@ -16,10 +21,10 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from typing_extensions import TypeAlias
 
-earth = SourceAsset("earth", group_name="planets")
+earth = SourceAsset(["celestial", "earth"], group_name="planets")
 
 
-@asset(group_name="ladies")
+@asset(ins={"earth": AssetIn(key=AssetKey(["celestial", "earth"]))}, group_name="ladies")
 def alice(earth):
     return "alice"
 
@@ -79,18 +84,24 @@ def aliens() -> Tuple[str, str, str]:
     return "zorg", "zapp", "zort"
 
 
+@asset(key_prefix="animals")
+def zebra():
+    return "zebra"
+
+
 _AssetList: TypeAlias = Iterable[Union[AssetsDefinition, SourceAsset]]
 
 
 @pytest.fixture
 def all_assets() -> _AssetList:
-    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens]
+    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens, zebra]
 
 
 def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
     return reduce(
         operator.or_,
         [item.keys if isinstance(item, AssetsDefinition) else {item.key} for item in assets_defs],
+        set(),
     )
 
 
@@ -115,9 +126,13 @@ def test_asset_selection_downstream(all_assets: _AssetList):
 
 
 def test_asset_selection_groups(all_assets: _AssetList):
+    # does not include source assets by default
     sel = AssetSelection.groups("ladies", "planets")
-    # should not include source assets
     assert sel.resolve(all_assets) == _asset_keys_of({alice, candace, fiona})
+
+    # includes source assets if flag set
+    sel = AssetSelection.groups("planets", include_sources=True)
+    assert sel.resolve(all_assets) == {earth.key}
 
 
 def test_asset_selection_keys(all_assets: _AssetList):
@@ -126,6 +141,22 @@ def test_asset_selection_keys(all_assets: _AssetList):
 
     sel = AssetSelection.keys("alice", "bob")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
+
+
+def test_asset_selection_key_prefixes(all_assets: _AssetList):
+    sel = AssetSelection.key_prefixes("animals")
+    assert sel.resolve(all_assets) == _asset_keys_of({zebra})
+
+    sel = AssetSelection.key_prefixes("plants")
+    assert sel.resolve(all_assets) == _asset_keys_of(set())
+
+    # does not include source assets by default
+    sel = AssetSelection.key_prefixes("celestial")
+    assert sel.resolve(all_assets) == set()
+
+    # includes source assets if flag set
+    sel = AssetSelection.key_prefixes("celestial", include_sources=True)
+    assert sel.resolve(all_assets) == {earth.key}
 
 
 def test_select_source_asset_keys():
@@ -173,7 +204,7 @@ def test_asset_selection_sinks(all_assets: _AssetList):
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
 
     sel = AssetSelection.all().sinks()
-    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george, robots, aliens})
+    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george, robots, aliens, zebra})
 
     sel = AssetSelection.groups("ladies").sinks()
     # fiona is a sink because it has no downstream dependencies within the "ladies" group
@@ -231,6 +262,14 @@ def test_upstream_include_self(all_assets: _AssetList):
     assert selection.resolve(all_assets) == _asset_keys_of({danny})
 
 
+def test_asset_selection_source_assets(all_assets: _AssetList):
+    selection = AssetSelection.keys("alice").upstream_source_assets()
+    assert selection.resolve(all_assets) == {earth.key}
+
+    selection = AssetSelection.keys("george").upstream_source_assets()
+    assert selection.resolve(all_assets) == {earth.key}
+
+
 def test_roots():
     @asset
     def a():
@@ -267,14 +306,35 @@ def test_sources():
         assert AssetSelection.keys("a", "b", "c").sources().resolve([a, b, c]) == {a.key}
 
 
-def test_self_dep():
+@pytest.mark.parametrize(
+    "partitions_def,partition_mapping",
+    [
+        (
+            DailyPartitionsDefinition(start_date="2020-01-01"),
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            MultiPartitionMapping(
+                {
+                    "time": DimensionPartitionMapping(
+                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                    ),
+                    "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                }
+            ),
+        ),
+    ],
+)
+def test_self_dep(partitions_def, partition_mapping):
     @asset(
-        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-        ins={
-            "a": AssetIn(
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
-            )
-        },
+        partitions_def=partitions_def,
+        ins={"a": AssetIn(partition_mapping=partition_mapping)},
     )
     def a(a):
         ...
@@ -299,3 +359,18 @@ def test_from_coercible_multi_asset():
         AssetSelection.from_coercible([my_multi_asset]).resolve([my_multi_asset, other_asset])
         == my_multi_asset.keys
     )
+
+
+def test_from_coercible_tuple():
+    @asset
+    def foo():
+        ...
+
+    @asset
+    def bar():
+        ...
+
+    assert AssetSelection.from_coercible((foo, bar)).resolve([foo, bar]) == {
+        AssetKey("foo"),
+        AssetKey("bar"),
+    }

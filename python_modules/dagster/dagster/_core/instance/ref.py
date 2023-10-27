@@ -411,7 +411,8 @@ class InstanceRef(
                 event_storage_data,
                 schedule_storage_data,
             ] = configurable_storage_data(
-                config_value.get("storage"), defaults  # type: ignore  # (possible none)
+                config_value.get("storage"),  # type: ignore  # (possible none)
+                defaults,
             )
 
         scheduler_data = configurable_class_data_or_default(
@@ -440,7 +441,8 @@ class InstanceRef(
         )
 
         secrets_loader_data = configurable_secrets_loader_data(
-            config_value.get("secrets"), defaults["secrets"]  # type: ignore  # (possible none)
+            config_value.get("secrets"),  # type: ignore  # (possible none)
+            defaults["secrets"],
         )
 
         settings_keys = {
@@ -556,8 +558,7 @@ class InstanceRef(
         )
 
     @property
-    def secrets_loader(self) -> "SecretsLoader":
-        from dagster._core.secrets.env_file import EnvFileLoader
+    def secrets_loader(self) -> Optional["SecretsLoader"]:
         from dagster._core.secrets.loader import SecretsLoader
 
         # Defining a default here rather than in stored config to avoid
@@ -566,11 +567,7 @@ class InstanceRef(
         return (
             self.secrets_loader_data.rehydrate(as_type=SecretsLoader)
             if self.secrets_loader_data
-            else ConfigurableClassData(
-                "dagster._core.secrets.env_file",
-                "EnvFileLoader",
-                yaml.dump({}),
-            ).rehydrate(as_type=EnvFileLoader)
+            else None
         )
 
     @property

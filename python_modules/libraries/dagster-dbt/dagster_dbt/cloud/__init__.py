@@ -3,7 +3,6 @@ from .ops import dbt_cloud_run_op as dbt_cloud_run_op
 from .resources import (
     DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudResource as DbtCloudResource,
-    DbtCloudResourceV2 as DbtCloudResourceV2,
     dbt_cloud_resource as dbt_cloud_resource,
 )
 from .types import DbtCloudOutput as DbtCloudOutput

@@ -1,6 +1,8 @@
 import graphene
 import pendulum
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.events import DagsterEventType
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._utils import check
 
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
@@ -12,6 +14,14 @@ class GrapheneAssetKeyInput(graphene.InputObjectType):
 
     class Meta:
         name = "AssetKeyInput"
+
+
+class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    name = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetCheckHandleInput"
 
 
 class GrapheneExecutionTag(graphene.InputObjectType):
@@ -76,6 +86,7 @@ class GraphenePipelineSelector(graphene.InputObjectType):
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandleInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a
@@ -112,6 +123,7 @@ class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandleInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a job or pipeline"""
@@ -137,9 +149,36 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
         name = "PartitionSetSelector"
 
 
+class GraphenePartitionRangeSelector(graphene.InputObjectType):
+    start = graphene.NonNull(graphene.String)
+    end = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = """This type represents a partition range selection with start and end."""
+        name = "PartitionRangeSelector"
+
+
+class GraphenePartitionsSelector(graphene.InputObjectType):
+    range = graphene.NonNull(GraphenePartitionRangeSelector)
+
+    class Meta:
+        description = """This type represents a partitions selection."""
+        name = "PartitionsSelector"
+
+
+class GraphenePartitionsByAssetSelector(graphene.InputObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    partitions = graphene.InputField(GraphenePartitionsSelector)
+
+    class Meta:
+        description = """This type represents a partitions selection for an asset."""
+        name = "PartitionsByAssetSelector"
+
+
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.InputField(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
+    partitionsByAssets = graphene.List(GraphenePartitionsByAssetSelector)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.InputField(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
     fromFailure = graphene.Boolean()
@@ -149,6 +188,34 @@ class GrapheneLaunchBackfillParams(graphene.InputObjectType):
 
     class Meta:
         name = "LaunchBackfillParams"
+
+
+class GrapheneRunlessAssetEventType(graphene.Enum):
+    """The event type of an asset event."""
+
+    ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_OBSERVATION = "ASSET_OBSERVATION"
+
+    class Meta:
+        name = "AssetEventType"
+
+    def to_dagster_event_type(self) -> DagsterEventType:
+        if self == GrapheneRunlessAssetEventType.ASSET_MATERIALIZATION:
+            return DagsterEventType.ASSET_MATERIALIZATION
+        elif self == GrapheneRunlessAssetEventType.ASSET_OBSERVATION:
+            return DagsterEventType.ASSET_OBSERVATION
+        else:
+            check.assert_never(self)
+
+
+class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
+    eventType = graphene.NonNull(GrapheneRunlessAssetEventType)
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    partitionKeys = graphene.InputField(graphene.List(graphene.String))
+    description = graphene.String()
+
+    class Meta:
+        name = "ReportRunlessAssetEventsParams"
 
 
 class GrapheneSensorSelector(graphene.InputObjectType):
@@ -301,6 +368,7 @@ types = [
     GrapheneMarshalledOutput,
     GrapheneLaunchBackfillParams,
     GraphenePartitionSetSelector,
+    GraphenePartitionsByAssetSelector,
     GrapheneRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
@@ -310,4 +378,5 @@ types = [
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
     GrapheneInputTag,
+    GrapheneReportRunlessAssetEventsParams,
 ]

@@ -16,5 +16,5 @@ cd my-dagster-project
 pip install -e ".[dev]"
 
 # Load it in the web UI
-dagit
+dagster-webserver
 ```

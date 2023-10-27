@@ -14,7 +14,7 @@ class UserError(Exception):
         super(UserError, self).__init__("The user has errored")
 
 
-def test_user_error_boundary_solid_compute():
+def test_user_error_boundary_op_compute():
     @op
     def throws_user_error(_):
         raise UserError()

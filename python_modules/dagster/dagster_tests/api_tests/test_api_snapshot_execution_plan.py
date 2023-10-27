@@ -79,7 +79,7 @@ def test_execution_plan_with_subset_snapshot_api_grpc(instance: DagsterInstance)
             job_handle.get_external_origin(),
             run_config={"ops": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
             job_snapshot_id="12345",
-            solid_selection=["do_input"],
+            op_selection=["do_input"],
         )
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)

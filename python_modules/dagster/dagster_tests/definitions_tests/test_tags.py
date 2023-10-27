@@ -1,7 +1,7 @@
 from dagster import job, op
 
 
-def test_solid_tags():
+def test_op_tags():
     @op(tags={"foo": "bar"})
     def tags_op(_):
         pass
@@ -29,7 +29,7 @@ def test_job_tags():
     assert no_tags_job.tags == {}
 
 
-def test_solid_subset_tags():
+def test_op_subset_tags():
     @op
     def noop_op(_):
         pass
@@ -38,12 +38,10 @@ def test_solid_subset_tags():
     def tags_job():
         noop_op()
 
-    assert tags_job.get_job_def_for_subset_selection(op_selection=["noop_op"]).tags == {
-        "foo": "bar"
-    }
+    assert tags_job.get_subset(op_selection=["noop_op"]).tags == {"foo": "bar"}
 
     @job
     def no_tags_job():
         noop_op()
 
-    assert no_tags_job.get_job_def_for_subset_selection(op_selection=["noop_op"]).tags == {}
+    assert no_tags_job.get_subset(op_selection=["noop_op"]).tags == {}

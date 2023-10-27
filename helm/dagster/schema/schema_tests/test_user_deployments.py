@@ -9,6 +9,7 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
+    ReadinessProbeWithEnabled,
     UserDeployment,
     UserDeploymentIncludeConfigInLaunchedRuns,
     UserDeployments,
@@ -421,9 +422,8 @@ def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     assert (container.startup_probe is not None) == enabled
 
 
-def test_readiness_probes(template: HelmTemplate):
+def test_readiness_probe_enabled_by_default(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
-    deployment.readinessProbe = kubernetes.ReadinessProbe.construct(timeout_seconds=3)
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
     )
@@ -438,6 +438,60 @@ def test_readiness_probes(template: HelmTemplate):
     assert container.startup_probe is None
     assert container.startup_probe is None
     assert container.readiness_probe is not None
+    assert container.readiness_probe._exec.command == [  # noqa: SLF001
+        "dagster",
+        "api",
+        "grpc-health-check",
+        "-p",
+        "3030",
+    ]
+    assert container.readiness_probe.timeout_seconds == 10
+
+
+def test_readiness_probe_can_be_disabled(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(enabled=False)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.startup_probe is None
+    assert container.readiness_probe is None
+
+
+def test_readiness_probe_can_be_customized(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(timeoutSeconds=42)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.startup_probe is None
+    assert container.readiness_probe is not None
+    assert container.readiness_probe._exec.command == [  # noqa: SLF001
+        "dagster",
+        "api",
+        "grpc-health-check",
+        "-p",
+        "3030",
+    ]
+    assert container.readiness_probe.timeout_seconds == 42
 
 
 def test_readiness_probes_subchart(subchart_template: HelmTemplate):
@@ -1015,6 +1069,45 @@ def test_env(template: HelmTemplate, user_deployment_configmap_template):
     assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 4
     assert dagster_user_deployment.spec.template.spec.containers[0].env[3].name == "test_env"
     assert dagster_user_deployment.spec.template.spec.containers[0].env[3].value == "test_value"
+
+
+def test_code_server_cli(template: HelmTemplate, user_deployment_configmap_template):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 3
+
+    assert dagster_user_deployment.spec.template.spec.containers[0].args == [
+        "dagster",
+        "code-server",
+        "start",
+        "-h",
+        "0.0.0.0",
+        "-p",
+        "3030",
+        "-m",
+        "foo",
+    ]
+
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
+    assert json.loads(container_context.value) == {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+        }
+    }
 
 
 def test_env_container_context(template: HelmTemplate, user_deployment_configmap_template):

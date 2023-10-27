@@ -13,7 +13,7 @@ from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ
+from dagster._core.test_utils import environ, instance_for_test
 from dagster_aws.s3 import S3ComputeLogManager
 from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
@@ -102,17 +102,15 @@ def test_compute_log_manager(mock_s3_bucket):
 def test_compute_log_manager_from_config(mock_s3_bucket):
     s3_prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
   config:
-    bucket: "{s3_bucket}"
+    bucket: "{mock_s3_bucket.name}"
     local_dir: "/tmp/cool"
     prefix: "{s3_prefix}"
-""".format(
-        s3_bucket=mock_s3_bucket.name, s3_prefix=s3_prefix
-    )
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
@@ -232,3 +230,37 @@ class TestS3ComputeLogManager(TestCapturedLogManager):
             yield S3ComputeLogManager(
                 bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir
             )
+
+
+def test_external_compute_log_manager(mock_s3_bucket):
+    @op
+    def my_op():
+        print("hello out")  # noqa: T201
+        print("hello error", file=sys.stderr)  # noqa: T201
+
+    @job
+    def my_job():
+        my_op()
+
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster_aws.s3.compute_log_manager",
+                "class": "S3ComputeLogManager",
+                "config": {
+                    "bucket": mock_s3_bucket.name,
+                    "show_url_only": True,
+                },
+            },
+        },
+    ) as instance:
+        result = my_job.execute_in_process(instance=instance)
+        assert result.success
+        assert result.run_id
+        captured_log_entries = instance.all_logs(
+            result.run_id, of_type=DagsterEventType.LOGS_CAPTURED
+        )
+        assert len(captured_log_entries) == 1
+        entry = captured_log_entries[0]
+        assert entry.dagster_event.logs_captured_data.external_stdout_url
+        assert entry.dagster_event.logs_captured_data.external_stderr_url

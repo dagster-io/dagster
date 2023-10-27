@@ -19,13 +19,13 @@ If any of the following are applicable, you should select [Hybrid deployment](/d
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process.
 - Your dataset is too large to fit in memory. For example, training a large machine learning (ML) model in-process on a terabyte of data.
 - You need to distribute computation across many nodes for a single run. Dagster Cloud runs currently execute on a single node with 4 CPUs.
-- You don't want to add Elementl as a data processor.
+- You don't want to add Dagster Labs as a data processor.
 
 ---
 
 ## Limitations
 
-Serverless is currently in early access and is subject to the following limitations:
+Serverless is subject to the following limitations:
 
 - Maximum of 100 GB of bandwidth per day
 - Maximum of 4500 step-minutes per day
@@ -33,7 +33,7 @@ Serverless is currently in early access and is subject to the following limitati
 - Sensors receive 0.25 vCPU cores and 1 GB of RAM
 - All Serverless jobs run in the United States
 
-Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@elementl.com).
+Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@dagsterlabs.com).
 
 ---
 
@@ -100,6 +100,8 @@ dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --package-name assets_modern_data_stack
 ```
 
+**Note:** Windows users should use the `deploy` command instead of `deploy-python-executable`.
+
 ### Adding secrets
 
 Often you'll need to securely access secrets from your jobs. Dagster Cloud supports several methods for adding secrets - refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info.
@@ -147,7 +149,7 @@ if __name__ == "__main__":
 
 ### Using a different Python version
 
-The default version of Python for Serverless deployments is Python 3.8. Versions 3.7, 3.9, 3.10, and 3.11 are also supported. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
+The default version of Python for Serverless deployments is Python 3.8. Versions 3.9, 3.10, and 3.11 are also supported. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
 
 - **With GitHub**: Change the `python_version` parameter for the `build_deploy_python_executable` job in your `.github/workflows` files. For example:
 
@@ -294,6 +296,32 @@ Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to 
 - Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
 - User code is securely sandboxed using modern container sandboxing techniques.
 - All production access is governed by industry-standard best practices which are regularly audited.
+
+---
+
+## Whitelisting Dagster's IP addresses
+
+Serverless code will make requests from one of the following IP addresses. You may need to whitelist them for services your code interacts with.
+
+```plain
+34.216.9.66
+35.162.181.243
+35.83.14.215
+44.230.239.14
+44.240.64.133
+52.34.41.163
+52.36.97.173
+52.37.188.218
+52.38.102.213
+52.39.253.102
+52.40.171.60
+52.89.191.177
+54.201.195.80
+54.68.25.27
+54.71.18.84
+```
+
+**Note**: Additional IP addresses may be added over time. This list was last updated on **June 26, 2023.**
 
 ---
 

@@ -1,3 +1,5 @@
+import calendar
+
 import pytest
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils.schedules import cron_string_iterator
@@ -17,6 +19,25 @@ def test_cron_iterator_always_advances():
     next_datetime = next(cron_iter)
 
     assert next_datetime.timestamp() > start_timestamp
+
+
+def test_cron_iterator_leap_day():
+    tz = "Europe/Berlin"
+
+    start_timestamp = create_pendulum_time(2023, 3, 27, 1, 0, 0, tz=tz).timestamp()
+
+    cron_iter = cron_string_iterator(
+        start_timestamp + 1,
+        "2 4 29 2 *",
+        tz,
+    )
+
+    for _ in range(100):
+        next_datetime = next(cron_iter)
+        assert next_datetime.day == 29
+        assert calendar.isleap(next_datetime.year)
+        assert next_datetime.hour == 4
+        assert next_datetime.minute == 2
 
 
 @pytest.mark.parametrize(
@@ -87,4 +108,4 @@ def test_dst_spring_forward_transition_advances(execution_timezone, cron_string,
 
             assert (
                 next_time.timestamp() == times[j].timestamp()
-            ), f"Expected {times[i]} to advance to {times[j]}, got {str(next_time)}"
+            ), f"Expected {times[i]} to advance to {times[j]}, got {next_time}"

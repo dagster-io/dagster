@@ -100,11 +100,9 @@ If you don't need access to the context parameter, you can omit it from the deco
 
 #### Time partitioned jobs and assets
 
-When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
+When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job. For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
 
-For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
-
-The Partitioned Jobs concepts page includes an [example of how to define a date-partitioned job](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job). Having defined that job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
+Having defined a date-partitioned job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
 from dagster import build_schedule_from_partitioned_job, job
@@ -120,7 +118,7 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 )
 ```
 
-The Partitioned Jobs concepts page also includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitions#partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
+The [Partitioning assets](/concepts/partitions-schedules-sensors/partitioning-assets) documentation includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitioning-assets#defining-partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
 from dagster import (
@@ -152,7 +150,7 @@ You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_mont
 
 #### Static partitioned jobs
 
-You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
+You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitioning-ops#defining-jobs-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
 
 For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
 
@@ -244,7 +242,7 @@ Dagster's [resources](/concepts/resources) system can be used with schedules to 
 
 To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
 
-Here, a resource is provided which helps a schedule generate a date string:
+Here, a resource is provided that helps a schedule generate a date string:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
 from dagster import (
@@ -296,10 +294,10 @@ For more information on resources, refer to the [Resources documentation](/conce
 
 Schedules must be started for them to run. Schedules can be started and stopped:
 
-- In Dagit using the **Schedules** tab:
+- In the Dagster UI using the **Schedules** tab:
 
   <Image
-  alt="Schedules tab in Dagit"
+  alt="Schedules tab in the Dagster UI"
   src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
   width={1164}
   height={280}
@@ -320,7 +318,7 @@ Schedules must be started for them to run. Schedules can be started and stopped:
   )
   ```
 
-If you manually start or stop a schedule in Dagit, that overrides any default status set in code.
+If you manually start or stop a schedule in the UI, that overrides any default status set in code.
 
 Once the schedule is started, the schedule will begin executing immediately if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment. Refer to the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section if your schedule has been started but isn't submitting runs.
 
@@ -329,11 +327,11 @@ Once the schedule is started, the schedule will begin executing immediately if y
 ## Testing schedules
 
 <TabGroup>
-<TabItem name="Via Dagit">
+<TabItem name="Via the Dagster UI">
 
-### Via Dagit
+### Via the Dagster UI
 
-In Dagit, you can manually trigger a test evaluation of a schedule using a mock evaluation time and view the results.
+In the UI, you can manually trigger a test evaluation of a schedule using a mock evaluation time and view the results.
 
 On the overview page for a particular schedule, there is a `Test schedule` button. Clicking this button will perform a test evaluation of your schedule for a provided mock evaluation time, and show you the results of that evaluation.
 
@@ -394,7 +392,7 @@ If your `@schedule`-decorated function doesn't have a context parameter, you don
 
 #### Testing schedules with resources
 
-For schedules which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
+For schedules that utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the schedule function.
 
 Below is a test for the `process_data_schedule` that we defined in the [Using resources in schedules](#using-resources-in-schedules) section, which uses the `date_formatter` resource.
 
@@ -430,7 +428,7 @@ Try these steps if you're trying to run a schedule and are running into problems
 
 ### Verify the schedule is included as a definition
 
-First, verify that the schedule has been included in a <PyObject object="Definitions" /> object. This ensures that the schedule is detectable and loadable by Dagster tools like Dagit and the CLI:
+First, verify that the schedule has been included in a <PyObject object="Definitions" /> object. This ensures that the schedule is detectable and loadable by Dagster tools like the UI and CLI:
 
 ```python
 defs = Definitions(
@@ -444,13 +442,13 @@ Refer to the [Code locations documentation](/concepts/code-locations) for more i
 
 ### Verify that the schedule has been started
 
-Next, using Dagit, verify the schedule has been started:
+Next, using the UI, verify the schedule has been started:
 
 1. Open the left sidenav and locate the job attached to the schedule. Schedules that have been started will have a **green clock icon** next to them:
 
    <Image
-   alt="Started schedule icon next to schedule in left sidenav in Dagit"
-   src="/images/concepts/partitions-schedules-sensors/schedule-started-icon-dagit.png"
+   alt="Started schedule icon next to schedule in left sidenav in the Dagster UI"
+   src="/images/concepts/partitions-schedules-sensors/schedule-started-icon-ui.png"
    width={1031}
    height={391}
    />
@@ -458,30 +456,30 @@ Next, using Dagit, verify the schedule has been started:
    If the schedule appears in the list but doesn't have the green clock icon, click the schedule. On the page that displays, use the **toggle at the top of the page** to mark it as running:
 
    <Image
-   alt="Start/stop toggle for schedules in Code Locations tab in Dagit"
+   alt="Start/stop toggle for schedules in Code Locations tab in the Dagster UI"
    src="/images/concepts/partitions-schedules-sensors/schedule-page-toggle.png"
    width={1043}
    height={302}
    />
 
-2. Next, verify that Dagit has loaded the latest version of your schedule code:
+2. Next, verify that the UI has loaded the latest version of your schedule code:
 
    1. Click **Deployment** in the top navigation.
 
-   2. In the **Code locations** tab, click **Reload** (local Dagit) or **Redeploy** (Dagster Cloud).
+   2. In the **Code locations** tab, click **Reload** (local webserver) or **Redeploy** (Dagster Cloud).
 
-   If Dagit is unable to load the code location - for example, due to a syntax error - an error message with additional info will display in the left sidenav.
+   If the webserver is unable to load the code location - for example, due to a syntax error - an error message with additional info will display in the left UI sidenav.
 
    If the code location is loaded successfully but the schedule doesn't appear in the list of schedules, verify that the schedule is included in a <PyObject object="Definitions" /> object.
 
 ### Verify schedule interval configuration
 
-Clicking the schedule in the left sidenav in Dagit opens the **Schedule details** page for the schedule.
+Clicking the schedule in the left sidenav in the UI opens the **Schedule details** page for the schedule.
 
 If the schedule is running, a **Next tick** will display near the top of the page. This indicates when the schedule is next expected to run:
 
 <Image
-alt="Next tick attribute highlighted on Schedule details page in Dagit"
+alt="Next tick attribute highlighted on Schedule details page in the Dagster UI"
 src="/images/concepts/partitions-schedules-sensors/schedule-details-next-tick.png"
 width={1043}
 height={302}
@@ -497,7 +495,7 @@ If the schedule interval is correctly configured but runs aren't being created, 
 
 1. First, check that the daemon is running:
 
-   1. In Dagit, click **Deployment** in the top navigation.
+   1. In the UI, click **Deployment** in the top navigation.
    2. Click the **Daemons** tab.
    3. Locate the **Scheduler** row.
 
@@ -507,13 +505,13 @@ If the schedule interval is correctly configured but runs aren't being created, 
 
 2. Next, check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
 
-   If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as Dagit. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/concepts/code-locations/workspace-files) for more info.
+   If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/concepts/code-locations/workspace-files) for more info.
 
    If the logs don't indicate the cause of the issue, move on to step three.
 
 3. Lastly, double-check your schedule code:
 
-   1. In Dagit, open the schedule's **Schedule details** page by clicking the schedule in the left sidenav.
+   1. In the UI, open the schedule's **Schedule details** page by clicking the schedule in the left sidenav.
    2. On this page, locate the latest tick for the schedule.
 
    If there was an error trying to submit runs for the schedule, a red **Failure** badge should display in the **Status** column. Click the badge to display an error and stack trace describing the execution failure.

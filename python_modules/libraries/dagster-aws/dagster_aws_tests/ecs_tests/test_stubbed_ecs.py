@@ -18,7 +18,7 @@ def test_describe_task_definition(ecs):
     )
     dagster2 = ecs.register_task_definition(
         family="dagster",
-        containerDefinitions=[{"image": "hello_world:latest"}],
+        containerDefinitions=[{"image": "hello_world:latest"}, {"image": "busybox"}],
         memory="512",
         cpu="256",
     )
@@ -75,9 +75,9 @@ def test_list_account_settings(ecs):
     settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
     assert settings
 
-    task_arn_format_setting = [
+    task_arn_format_setting = next(
         setting for setting in settings if setting["name"] == "taskLongArnFormat"
-    ][0]
+    )
     assert task_arn_format_setting["value"] == "enabled"
 
 
@@ -181,9 +181,9 @@ def test_put_account_setting(ecs):
     settings = ecs.list_account_settings(effectiveSettings=True)["settings"]
     assert settings
 
-    task_arn_format_setting = [
+    task_arn_format_setting = next(
         setting for setting in settings if setting["name"] == "taskLongArnFormat"
-    ][0]
+    )
     assert task_arn_format_setting["value"] == "disabled"
 
 
@@ -322,7 +322,8 @@ def test_run_task(ecs, ec2, subnet):
     response = ecs.run_task(taskDefinition="bridge", cluster="dagster")
     assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
     response = ecs.run_task(
-        taskDefinition="bridge", cluster=ecs._cluster_arn("dagster")  # noqa: SLF001
+        taskDefinition="bridge",
+        cluster=ecs._cluster_arn("dagster"),  # noqa: SLF001
     )
     assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
 

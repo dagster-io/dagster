@@ -1,3 +1,4 @@
+import re
 from typing import Sequence
 
 import pytest
@@ -32,8 +33,12 @@ def test_invalid_partition_key():
         StaticPartitionsDefinition(["foo", "foo...bar"])
 
 
-def test_count_unique_static_partitions():
-    return StaticPartitionsDefinition(["foo", "foo"]).get_num_partitions() == 1
+def test_duplicate_partition_key():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape("Duplicate instances of partition keys: ['foo']"),
+    ):
+        StaticPartitionsDefinition(["foo", "bar", "foo"])
 
 
 def test_partitions_def_to_string():
@@ -144,6 +149,15 @@ def test_static_partitions_subset():
     assert len(with_some_partitions) == 2
     assert len(deserialized) == 2
     assert "bar" in with_some_partitions
+
+
+def test_static_partitions_subset_identical_serialization():
+    # serialized subsets should be equal if the original subsets are equal
+    partitions = StaticPartitionsDefinition([str(i) for i in range(1000)])
+    subset = [str(i) for i in range(500)]
+    serialized1 = partitions.subset_with_partition_keys(subset).serialize()
+    serialized2 = partitions.subset_with_partition_keys(reversed(subset)).serialize()
+    assert serialized1 == serialized2
 
 
 def test_static_partitions_invalid_chars():

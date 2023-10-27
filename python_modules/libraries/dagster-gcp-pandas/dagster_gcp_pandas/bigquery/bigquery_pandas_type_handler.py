@@ -61,8 +61,8 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(
                         columns=[
-                            TableColumn(name=name, type=str(dtype))
-                            for name, dtype in obj.dtypes.iteritems()
+                            TableColumn(name=name, type=str(dtype))  # type: ignore  # (bad stubs)
+                            for name, dtype in obj.dtypes.items()
                         ]
                     )
                 ),
@@ -224,6 +224,10 @@ class BigQueryPandasIOManager(BigQueryIOManager):
         the base64 encoded key with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
 
     """
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:

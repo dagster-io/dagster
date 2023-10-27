@@ -17,7 +17,7 @@ description: A software-defined asset is a description of how to compute the con
   videos to get a quick look at Software-defined assets.
 </Note>
 
-An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
+An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a description, in code, of an asset that should exist and how to produce and update that asset.
 
 Software-defined assets enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
 
@@ -29,7 +29,7 @@ A software-defined asset includes the following:
 
   **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
-**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
 ---
 
@@ -70,12 +70,33 @@ By default, the name of the decorated function, `my_asset`, is used as the asset
 Software-defined assets can depend on other software-defined assets. In this section, we'll show you how to define:
 
 - [Basic asset dependencies](#defining-basic-dependencies)
-- [Explicit asset dependencies](#defining-explicit-dependencies)
+- [Basic managed-loading dependencies](#defining-basic-managed-loading-dependencies)
+- [Explicit managed-loading asset dependencies](#defining-explicit-managed-loading-dependencies)
 - [External asset dependencies](#defining-external-asset-dependencies)
 
 #### Defining basic dependencies
 
-The easiest way to define an asset dependency is to include an upstream asset name as an argument to the decorated function.
+You can define a dependency between two assets by passing the upstream asset to the `deps` parameter in the downstream asset's `@asset` decorator.
+
+In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table. Then the asset `shopping_list` creates a new table (`shopping_list`) by selecting records from `sugary_cereals`:
+
+```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
+from dagster import asset
+
+
+@asset
+def sugary_cereals() -> None:
+    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
+
+
+@asset(deps=[sugary_cereals])
+def shopping_list() -> None:
+    execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
+```
+
+#### Defining basic managed-loading dependencies
+
+When using basic dependencies, as above, it's expected that if you need direct access to the contents of the asset, the code you include inside your `@asset`-decorated function will load the data from the upstream asset. Dagster alternatively allows you to delegate loading data to an [I/O manager](/concepts/io-management/io-managers). To do this, you express the dependency by using the upstream asset name as the name of one of the arguments on the decorated function.
 
 In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
 
@@ -90,7 +111,9 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
 
-#### Defining explicit dependencies
+In this example, Dagster will load the data returned from `upstream_asset` and pass it as the `upstream_asset` parameter to `downstream_asset`.
+
+#### Defining explicit managed-loading dependencies
 
 If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
 
@@ -140,8 +163,16 @@ from dagster import AssetKey, SourceAsset, asset
 my_source_asset = SourceAsset(key=AssetKey("a_source_asset"))
 
 
+@asset(deps=[my_source_asset])
+def my_derived_asset():
+    return execute_query("SELECT * from a_source_asset").as_list() + [4]
+```
+
+You can also define a dependency on a `SourceAsset` that will load the data of the asset:
+
+```python file=/concepts/assets/source_asset.py startafter=start_argument_dependency endbefore=end_argument_dependency
 @asset
-def my_derived_asset(a_source_asset):
+def my_other_derived_asset(a_source_asset):
     return a_source_asset + [4]
 ```
 
@@ -184,34 +215,9 @@ defs = Definitions(
 
 Using source assets has a few advantages over having the code inside of an asset's op load the data:
 
-- **Dagit can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into Dagit, Dagit can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/code-locations/workspace-files).
+- **The UI can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into the underlying webserver, the UI can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/code-locations/workspace-files).
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
 - **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
-
-#### Non-argument dependencies
-
-Alternatively, you can define dependencies where data from an upstream asset doesn’t need to be loaded by Dagster to compute a downstream asset's output. When used, `non_argument_deps` defines the dependency between assets but doesn’t pass data through Dagster.
-
-Consider the following example:
-
-1. `upstream_asset` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table
-2. `downstream_asset` then creates a new table (`shopping_list`) by selecting records from `sugary_cereals`
-
-```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
-from dagster import asset
-
-
-@asset
-def upstream_asset() -> None:
-    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
-
-
-@asset(non_argument_deps={"upstream_asset"})
-def downstream_asset() -> None:
-    execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
-```
-
-In this example, Dagster doesn’t need to load data from `upstream_asset` to successfully compute the `downstream_asset`. While `downstream_asset` does depend on `upstream_asset`, the key difference with `non_argument_deps` is that data isn’t being passed between the functions. Specifically, the data from the `sugary_cereals` table isn't being passed as an argument to `downstream_asset`.
 
 ### Graph-backed assets and multi-assets
 
@@ -251,14 +257,17 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 
 ### Asset context
 
-When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the asset which provides access to system information like loggers and the current run id. Since a software-defined asset contains an op, this is an <PyObject object="OpExecutionContext"/>.
+When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject object="AssetExecutionContext"/> object to the body of the asset which provides access to system information like loggers and the current run id.
 
 For example, to access the logger and log a info message:
 
 ```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
+from dagster import AssetExecutionContext, asset
+
+
 @asset
-def context_asset(context):
-    context.log.info("My run ID is {context.run_id}")
+def context_asset(context: AssetExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
     ...
 ```
 
@@ -317,24 +326,24 @@ Just as with regular assets, these versions are attached to the `AssetMaterializ
 
 ---
 
-## Viewing and materializing assets in Dagit
+## Viewing and materializing assets in the UI
 
 Once you've defined a set of assets, you can:
 
-- [Load them into Dagit](#loading-assets-into-dagit)
-- [View them in Dagit](#viewing-assets-in-dagit)
-- [Materialize an ad-hoc set of them in Dagit](#materializing-assets-in-dagit)
+- [Load them into the webserver](#loading-assets-into-the-webserver)
+- [View them in the UI](#viewing-assets-in-the-ui)
+- [Materialize an ad-hoc set of them in the UI](#materializing-assets-in-the-ui)
 - [Build a job](#building-jobs-that-materialize-assets), which materializes a fixed selection of the assets, and can be put on a schedule or sensor
 
-### Loading assets into Dagit
+### Loading assets into the webserver
 
-To view and materialize assets in Dagit, you can point it at a module that contains asset definitions or lists of asset definitions as module-level attributes:
+To view and materialize assets in the UI, you can point the underlying webserver at a module that contains asset definitions or lists of asset definitions as module-level attributes:
 
 ```shell
 dagster dev -m module_with_assets
 ```
 
-If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
+If you want the UI to show both assets and [jobs](/concepts/assets/asset-jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
 
 ```python
 defs = Definitions(
@@ -345,7 +354,7 @@ defs = Definitions(
 
 A <PyObject object="Definitions" /> object defines a code location, which is a collection of assets, jobs, resources, and schedules. Refer to the [Code locations documentation](/concepts/code-locations) for more info.
 
-### Viewing assets in Dagit
+### Viewing assets in the UI
 
 - [Viewing all assets](#asset-catalog)
 - [Details for an asset](#asset-details)
@@ -358,13 +367,13 @@ A <PyObject object="Definitions" /> object defines a code location, which is a c
 
 To view a list of all your assets, click **Assets** in the top navigation. This opens the **Asset catalog**:
 
-<!-- ![Asset catalog page in Dagit](/images/concepts/dagit/all-assets.png) -->
+<!-- ![Asset catalog page in the UI](/images/concepts/webserver/asset-catalog.png) -->
 
 <Image
-alt="Asset catalog page in Dagit"
-src="/images/concepts/dagit/all-assets.png"
-width={3574}
-height={1962}
+alt="Asset catalog page in the UI"
+src="/images/concepts/webserver/asset-catalog.png"
+width={3572}
+height={1944}
 />
 
 </TabItem>
@@ -374,13 +383,13 @@ height={1962}
 
 View the **Asset details** page for an asset by clicking on its name:
 
-<!-- ![Asset details page in Dagit](/images/concepts/dagit/asset.png) -->
+<!-- ![Asset details page in the UI](/images/concepts/webserver/asset-details.png) -->
 
 <Image
-alt="Asset details page in Dagit"
-src="/images/concepts/dagit/asset.png"
-width={3574}
-height={1962}
+alt="Asset details page in the UI"
+src="/images/concepts/webserver/asset-details.png"
+width={3062}
+height={1628}
 />
 
 </TabItem>
@@ -393,21 +402,21 @@ To view a graph of all assets and their dependencies, you can:
 - Click **View global asset lineage** in the [**Asset catalog**](#asset-catalog)
 - Click the **Lineage tab** in the [**Asset details** page](#asset-details)
 
-<!-- ![Asset lineage graph](/images/concepts/assets/software-defined-assets/graph.png) -->
+<!-- ![Asset lineage graph](/images/concepts/webserver/global-asset-lineage.png) -->
 
 <Image
 alt="Asset lineage graph"
-src="/images/concepts/assets/software-defined-assets/graph.png"
+src="/images/concepts/webserver/global-asset-lineage.png"
 width={3574}
-height={1962}
+height={1944}
 />
 
 </TabItem>
 </TabGroup>
 
-### Materializing assets in Dagit
+### Materializing assets in the UI
 
-In Dagit, you can launch runs that materialize assets by:
+In the UI, you can launch runs that materialize assets by:
 
 - Navigating to the [**Asset details** page](#asset-details) for the asset and clicking the **Materialize** button in the upper right corner.
 - Navigating to the graph view of the [**Asset catalog** page](#asset-catalog) and clicking the **Materialize** button in the upper right corner. You can also click on individual assets to collect a subset to materialize.
@@ -416,16 +425,16 @@ In Dagit, you can launch runs that materialize assets by:
 
 ## Building jobs that materialize assets
 
-Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs#from-software-defined-assets) for more info and examples.
+Jobs that target assets can materialize a fixed selection of assets each time they run and be placed on schedules and sensors. Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more info and examples.
 
 ---
 
 ## Grouping assets
 
-To help keep your assets tidy, you can organize them into groups. Grouping assets by project, concept, and so on simplifies [keeping track of them in Dagit](#viewing-asset-groups-in-dagit). Each asset is assigned to a single group, which by default is called "default".
+To help keep your assets tidy, you can organize them into groups. Grouping assets by project, concept, and so on simplifies [keeping track of them in the UI](#viewing-asset-groups-in-the-ui). Each asset is assigned to a single group, which by default is called "default".
 
 - [Assigning assets to groups](#assigning-assets-to-groups)
-- [Viewing asset groups in Dagit](#viewing-asset-groups-in-dagit)
+- [Viewing asset groups in the UI](#viewing-asset-groups-in-the-ui)
 
 ### Assigning assets to groups
 
@@ -434,7 +443,7 @@ In Dagster, there are two ways to assign assets to groups:
 - [By specifying a group name on an individual asset](#on-individual-assets)
 - [By using the `group_name` argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
 
-By default, assets that aren't assigned to a group will be placed in a group named `default`. Use Dagit to [view these assets](#viewing-asset-groups-in-dagit).
+By default, assets that aren't assigned to a group will be placed in a group named `default`. Use the UI to [view these assets](#viewing-asset-groups-in-the-ui).
 
 #### On individual assets
 
@@ -461,9 +470,9 @@ cereal_assets = load_assets_from_package_module(
 
 If any of the assets in the module already has a `group_name` explicitly set on it, you'll encounter a `Group name already exists on assets` error.
 
-### Viewing asset groups in Dagit
+### Viewing asset groups in the UI
 
-To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in code locations, you may need to open a code location to view its asset groups.
+To view your asset groups in the UI, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in code locations, you may need to open a code location to view its asset groups.
 
 Click the asset group to open a dependency graph for all assets in the group. For example, in the following image, the dependency graph for the `activity_analytics` asset group is currently displayed:
 
@@ -498,7 +507,7 @@ def test_my_simple_asset():
     assert result == [1, 2, 3]
 ```
 
-If you have an asset with upstream dependencies:
+If you have an asset with managed-loading upstream dependencies:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_more_complex_asset endbefore=end_more_complex_asset
 @asset
@@ -606,7 +615,7 @@ def downstream_asset(upstream_asset):
 
 ### Recording materialization metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in Dagit. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in the UI. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
 
 ```python file=/concepts/assets/asset_materialization_metadata.py
 from pandas import DataFrame
@@ -638,7 +647,7 @@ Sometimes it's useful to record the same metadata for all assets that are stored
 
 ### Attaching definition metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in Dagit. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataValue) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in the UI. This is useful for metadata that describes how the asset should be handled, rather than metadata that describes the contents that were produced by a particular run.
 
 To attach metadata, supply a `metadata` dictionary to the asset:
 

@@ -15,7 +15,7 @@ from dagster._cli.api import ExecuteStepArgs
 from dagster._core.events import EngineEventData
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.merger import merge_dicts
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
@@ -197,6 +197,7 @@ def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
+        print_serialized_events=True,
     )
 
     task = create_docker_task(app)

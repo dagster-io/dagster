@@ -33,7 +33,9 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.run_status_sensor_definition import (
+    RunFailureSensorContext,
     RunStatusSensorContext,
+    run_failure_sensor,
     run_status_sensor,
 )
 from dagster._core.definitions.sensor_definition import RunRequest
@@ -41,7 +43,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
@@ -66,6 +68,16 @@ def the_job() -> None:
     the_op()
 
 
+@op(out={})
+def the_failure_op(context: OpExecutionContext):
+    raise Exception()
+
+
+@job
+def the_failure_job() -> None:
+    the_failure_op()
+
+
 class MyResource(ConfigurableResource):
     a_str: str
 
@@ -80,6 +92,21 @@ def sensor_from_fn_arg(context: SensorEvaluationContext, my_resource: MyResource
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
+@op(out={})
+def the_op_but_with_a_resource_dep(my_resource: MyResource):
+    assert my_resource.a_str == "foo"
+
+
+@job
+def the_job_but_with_a_resource_dep() -> None:
+    the_op_but_with_a_resource_dep()
+
+
+@sensor(job_name="the_job_but_with_a_resource_dep")
+def sensor_with_job_with_resource_dep(context: SensorEvaluationContext, my_resource: MyResource):
+    return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
 is_in_cm = False
 
 
@@ -87,7 +114,7 @@ is_in_cm = False
 @contextmanager
 def my_cm_resource(_) -> Iterator[str]:
     global is_in_cm  # noqa: PLW0603
-    is_in_cm = True  # noqa: PLW0603
+    is_in_cm = True
     yield "foo"
     is_in_cm = False
 
@@ -243,11 +270,29 @@ def sensor_run_status_with_cm(
     return RunRequest(my_cm_resource, run_config={}, tags={})
 
 
+@run_failure_sensor(monitor_all_repositories=True, request_job=the_job)
+def sensor_run_failure(my_resource: MyResource, not_called_context: RunFailureSensorContext):
+    assert not_called_context.failure_event
+    assert not_called_context.resources.my_resource.a_str == my_resource.a_str
+    return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
+@run_failure_sensor(monitor_all_repositories=True, request_job=the_job)
+def sensor_run_failure_with_cm(
+    my_cm_resource: ResourceParam[str], not_called_context: RunFailureSensorContext
+):
+    assert not_called_context.failure_event
+    assert not_called_context.resources.my_cm_resource == my_cm_resource
+    assert is_in_cm
+    return RunRequest(my_cm_resource, run_config={}, tags={})
+
+
 the_repo = Definitions(
-    jobs=[the_job],
+    jobs=[the_job, the_failure_job, the_job_but_with_a_resource_dep],
     sensors=[
         sensor_from_context,
         sensor_from_fn_arg,
+        sensor_with_job_with_resource_dep,
         sensor_with_cm,
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
@@ -263,6 +308,8 @@ the_repo = Definitions(
         sensor_freshness_policy_with_cm,
         sensor_run_status,
         sensor_run_status_with_cm,
+        sensor_run_failure,
+        sensor_run_failure_with_cm,
     ],
     resources={
         "my_resource": MyResource(a_str="foo"),
@@ -328,6 +375,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
     [
         "sensor_from_context",
         "sensor_from_fn_arg",
+        "sensor_with_job_with_resource_dep",
         "sensor_with_cm",
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",
@@ -527,6 +575,88 @@ def test_resources_run_status_sensor(
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     the_job.execute_in_process(instance=instance)
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context_struct_resources, None)
+        wait_for_all_runs_to_start(instance)
+
+    with pendulum.test(freeze_datetime):
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2
+
+        assert instance.get_runs_count() == 2
+        run = instance.get_runs()[0]
+        assert ticks[0].run_keys == ["foo"]
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            expected_run_ids=[run.run_id],
+        )
+
+        validate_tick(
+            ticks[1],
+            external_sensor,
+            original_time,
+            TickStatus.SKIPPED,
+            expected_run_ids=[],
+        )
+    assert not is_in_cm
+
+
+@pytest.mark.parametrize(
+    "sensor_name",
+    [
+        "sensor_run_failure",
+        "sensor_run_failure_with_cm",
+    ],
+)
+def test_resources_run_failure_sensor(
+    caplog,
+    instance: DagsterInstance,
+    workspace_context_struct_resources,
+    external_repo_struct_resources,
+    sensor_name,
+) -> None:
+    assert not is_in_cm
+
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
+    original_time = freeze_datetime
+
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        instance.add_instigator_state(
+            InstigatorState(
+                external_sensor.get_external_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 0
+
+    # We have to do two ticks because the first tick will be skipped due to the run status
+    # sensor initializing its cursor
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context_struct_resources, None)
+        wait_for_all_runs_to_start(instance)
+    the_failure_job.execute_in_process(instance=instance, raise_on_error=False)
     freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)

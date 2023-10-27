@@ -1,4 +1,3 @@
-import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
 
 import dagster._check as check
@@ -14,6 +13,8 @@ from .definition_config_schema import (
 )
 
 if TYPE_CHECKING:
+    import logging
+
     from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 
@@ -29,7 +30,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
     Args:
         logger_fn (Callable[[InitLoggerContext], logging.Logger]): User-provided function to
             instantiate the logger. This logger will be automatically invoked whenever the methods
-            on ``context.log`` are called from within job/pipeline compute logic.
+            on ``context.log`` are called from within job compute logic.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`. If not set, Dagster will accept any config provided.
         description (Optional[str]): A human-readable description of this logger.
@@ -88,16 +89,21 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
     @public
     @property
     def logger_fn(self) -> "InitLoggerFunction":
+        """Callable[[InitLoggerContext], logging.Logger]: The function that will be invoked to
+        instantiate the logger.
+        """
         return self._logger_fn
 
     @public
     @property
     def config_schema(self) -> Any:
+        """Any: The schema for the logger's config. Configuration data available in `init_context.logger_config`."""
         return self._config_schema
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A human-readable description of the logger."""
         return self._description
 
     def copy_for_configured(

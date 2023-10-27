@@ -90,11 +90,13 @@ def _recurse_in_to_scalar_union(
 ) -> EvaluateValueResult[Any]:
     if isinstance(config_value, (dict, list)):
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.non_scalar_type),  # type: ignore
+            config_value,
         )
     else:
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.scalar_type),  # type: ignore
+            config_value,
         )
 
 
@@ -117,9 +119,12 @@ def _recurse_in_to_selector(
 
     field_evr = _recursively_process_config(
         context.for_field(field_def, field_name),
-        {}
-        if incoming_field_value is None and ConfigTypeKind.has_fields(field_def.config_type.kind)
-        else incoming_field_value,
+        (
+            {}
+            if incoming_field_value is None
+            and ConfigTypeKind.has_fields(field_def.config_type.kind)
+            else incoming_field_value
+        ),
     )
     if field_evr.success:
         return EvaluateValueResult.for_value({field_name: field_evr.value})

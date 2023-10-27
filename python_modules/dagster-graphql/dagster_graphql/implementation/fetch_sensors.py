@@ -18,19 +18,14 @@ from .utils import (
     UserFacingGraphQLError,
     assert_permission,
     assert_permission_for_location,
-    capture_error,
 )
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
 
-    from ..schema.instigation import (
-        GrapheneInstigationStates,
-    )
     from ..schema.sensors import GrapheneSensor, GrapheneSensors, GrapheneStopSensorMutationResult
 
 
-@capture_error
 def get_sensors_or_error(
     graphene_info: ResolveInfo,
     repository_selector: RepositorySelector,
@@ -70,7 +65,6 @@ def get_sensors_or_error(
     )
 
 
-@capture_error
 def get_sensor_or_error(graphene_info: ResolveInfo, selector: SensorSelector) -> "GrapheneSensor":
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
@@ -90,7 +84,6 @@ def get_sensor_or_error(graphene_info: ResolveInfo, selector: SensorSelector) ->
     return GrapheneSensor(external_sensor, sensor_state)
 
 
-@capture_error
 def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) -> "GrapheneSensor":
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
@@ -110,7 +103,6 @@ def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
     return GrapheneSensor(external_sensor, sensor_state)
 
 
-@capture_error
 def stop_sensor(
     graphene_info: ResolveInfo, instigator_origin_id: str, instigator_selector_id: str
 ) -> "GrapheneStopSensorMutationResult":
@@ -145,40 +137,6 @@ def stop_sensor(
         external_sensor,
     )
     return GrapheneStopSensorMutationResult(state)
-
-
-@capture_error
-def get_unloadable_sensor_states_or_error(
-    graphene_info: ResolveInfo,
-) -> "GrapheneInstigationStates":
-    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
-
-    sensor_states = graphene_info.context.instance.all_instigator_state(
-        instigator_type=InstigatorType.SENSOR
-    )
-    external_sensors = [
-        sensor
-        for repository_location in graphene_info.context.code_locations
-        for repository in repository_location.get_repositories().values()
-        for sensor in repository.get_external_sensors()
-    ]
-
-    sensor_origin_ids = {
-        external_sensor.get_external_origin_id() for external_sensor in external_sensors
-    }
-
-    unloadable_states = [
-        sensor_state
-        for sensor_state in sensor_states
-        if sensor_state.instigator_origin_id not in sensor_origin_ids
-    ]
-
-    return GrapheneInstigationStates(
-        results=[
-            GrapheneInstigationState(instigator_state=sensor_state)
-            for sensor_state in unloadable_states
-        ]
-    )
 
 
 def get_sensors_for_pipeline(
@@ -250,7 +208,6 @@ def get_sensor_next_tick(
     return GrapheneDryRunInstigationTick(external_sensor.sensor_selector, next_timestamp)
 
 
-@capture_error
 def set_sensor_cursor(
     graphene_info: ResolveInfo, selector: SensorSelector, cursor: Optional[str]
 ) -> "GrapheneSensor":

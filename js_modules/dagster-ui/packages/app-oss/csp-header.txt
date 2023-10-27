@@ -1,0 +1,1 @@
+base-uri 'none'; object-src 'none'; script-src 'nonce-NONCE-PLACEHOLDER' 'unsafe-inline' https: http: 'strict-dynamic'; style-src 'unsafe-inline' 'self' 'unsafe-eval';

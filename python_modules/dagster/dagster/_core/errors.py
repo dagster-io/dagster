@@ -15,8 +15,6 @@ The wrapped exceptions include additional context for the original exceptions, i
 Dagster runtime.
 """
 
-from __future__ import annotations
-
 import sys
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
@@ -103,7 +101,7 @@ Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
 {PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
     ).format(
-        config_class=f" {repr(config_class)}" if config_class else "",
+        config_class=f" {config_class!r}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
         PYTHONIC_CONFIG_ERROR_VERBIAGE=pythonic_config_error_verbiage,
@@ -111,8 +109,7 @@ Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
 
 class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
-    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value.
-    """
+    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value."""
 
     def __init__(
         self,
@@ -132,6 +129,25 @@ class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
                 invalid_type=invalid_type,
                 is_resource=is_resource,
             ),
+            **kwargs,
+        )
+
+
+class DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(DagsterError):
+    """Indicates that you have attempted to construct a Pythonic config or resource class with a DagsterType
+    annotated field.
+    """
+
+    def __init__(
+        self,
+        config_class_name: str,
+        field_name: Optional[str],
+        **kwargs,
+    ):
+        self.field_name = field_name
+        super(DagsterInvalidDagsterTypeInPythonicConfigDefinitionError, self).__init__(
+            f"""Error defining Dagster config class '{config_class_name}' on field '{field_name}'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}""",
             **kwargs,
         )
 
@@ -181,8 +197,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
             (
                 "Error defining config. Original value passed: {original_root}. "
                 "{stack_str}{current_value} "
-                "cannot be resolved.{reason_str}"
-                + CONFIG_ERROR_VERBIAGE
+                "cannot be resolved.{reason_str}" + CONFIG_ERROR_VERBIAGE
             ).format(
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
@@ -238,9 +253,9 @@ def raise_execution_interrupts() -> Iterator[None]:
 
 @contextmanager
 def user_code_error_boundary(
-    error_cls: Type[DagsterUserCodeExecutionError],
+    error_cls: Type["DagsterUserCodeExecutionError"],
     msg_fn: Callable[[], str],
-    log_manager: Optional[DagsterLogManager] = None,
+    log_manager: Optional["DagsterLogManager"] = None,
     **kwargs: object,
 ) -> Iterator[None]:
     """Wraps the execution of user-space code in an error boundary. This places a uniform
@@ -378,9 +393,9 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
     def __init__(self, resource_name, *args, **kwargs):
         self.resource_name = check.str_param(resource_name, "resource_name")
         msg = (
-            "Unknown resource `{resource_name}`. Specify `{resource_name}` as a required resource "
+            f"Unknown resource `{resource_name}`. Specify `{resource_name}` as a required resource "
             "on the compute / config function that accessed it."
-        ).format(resource_name=resource_name)
+        )
         super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
 
 
@@ -407,9 +422,7 @@ class DagsterInvalidConfigError(DagsterError):
 
         for i_error, error in enumerate(self.errors):
             error_messages.append(error.message)
-            error_msg += "\n    Error {i_error}: {error_message}".format(
-                i_error=i_error + 1, error_message=error.message
-            )
+            error_msg += f"\n    Error {i_error + 1}: {error.message}"
 
         self.message = error_msg
         self.error_messages = error_messages
@@ -467,8 +480,7 @@ class DagsterUserCodeProcessError(DagsterError):
 
 
 class DagsterMaxRetriesExceededError(DagsterError):
-    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised.
-    """
+    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised."""
 
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo
@@ -567,6 +579,10 @@ class DagsterTypeCheckDidNotPass(DagsterError):
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 
 
+class DagsterAssetCheckFailedError(DagsterError):
+    """Indicates than an asset check failed."""
+
+
 class DagsterEventLogInvalidForRun(DagsterError):
     """Raised when the event logs for a historical run are malformed or invalid."""
 
@@ -642,7 +658,12 @@ class DagsterUnknownPartitionError(DagsterError):
 
 
 class DagsterUndefinedDataVersionError(DagsterError):
-    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined."""
+
+
+class DagsterAssetBackfillDataLoadError(DagsterError):
+    """Indicates that an asset backfill is now unloadable. May happen when (1) a code location containing
+    targeted assets is unloadable or (2) and asset or an asset's partitions definition has been removed.
     """
 
 
@@ -650,3 +671,7 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """Indicates that a stored value can't be deserialized because the definition needed to interpret
     it has changed.
     """
+
+
+class DagsterPipesExecutionError(DagsterError):
+    """Indicates that an error occurred during the execution of an external process."""

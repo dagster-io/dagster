@@ -22,10 +22,10 @@ We designed this new API with this in mind, allowing for old code and new code t
 Let's take some existing code we have, using the old configuration system:
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_config.py  startafter=begin_old_config endbefore=end_old_config dedent=4
-from dagster import Definitions, OpExecutionContext, asset
+from dagster import AssetExecutionContext, Definitions, asset
 
 @asset(config_schema={"conn_string": str, "port": int})
-def an_asset(context: OpExecutionContext, upstream_asset):
+def an_asset(context: AssetExecutionContext, upstream_asset):
     assert context.op_config["conn_string"]
     assert context.op_config["port"]
 
@@ -80,9 +80,9 @@ For the rest of this guide, we will be working from this example:
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_initial_codebase endbefore=end_initial_codebase dedent=4
 from dagster import (
+    AssetExecutionContext,
     Definitions,
     InitResourceContext,
-    OpExecutionContext,
     asset,
     resource,
 )
@@ -99,11 +99,11 @@ def fancy_db_resource(context: InitResourceContext) -> FancyDbResource:
     return FancyDbResource(context.resource_config["conn_string"])
 
 @asset(required_resource_keys={"fancy_db"})
-def asset_one(context: OpExecutionContext) -> None:
+def asset_one(context: AssetExecutionContext) -> None:
     assert context.resources.fancy_db
 
 @asset(required_resource_keys={"fancy_db"})
-def asset_two(context: OpExecutionContext) -> None:
+def asset_two(context: AssetExecutionContext) -> None:
     assert context.resources.fancy_db
 
 defs = Definitions(
@@ -156,7 +156,7 @@ In this example, we've written a Pythonic resource while passing the old-style r
 Next, we'll change <PyObject object="Definitions" /> to include the Pythonic resource. Note that we don't need to migrate our asset code at the same time, as Pythonic resources are available via the asset's context:
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_new_style_resource_on_context endbefore=end_new_style_resource_on_context dedent=4
-from dagster import ConfigurableResource, Definitions, OpExecutionContext, asset
+from dagster import AssetExecutionContext, ConfigurableResource, Definitions, asset
 
 class FancyDbResource(ConfigurableResource):
     conn_string: str
@@ -165,7 +165,7 @@ class FancyDbResource(ConfigurableResource):
         ...
 
 @asset(required_resource_keys={"fancy_db"})
-def asset_one(context: OpExecutionContext) -> None:
+def asset_one(context: AssetExecutionContext) -> None:
     # this still works because the resource is still available on the context
     assert context.resources.fancy_db
 
@@ -180,10 +180,10 @@ defs = Definitions(
 Lastly, we'll update the asset to take the resource as a parameter:
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_new_style_resource_on_param endbefore=end_new_style_resource_on_param dedent=4
-from dagster import OpExecutionContext, asset
+from dagster import AssetExecutionContext, asset
 
 @asset
-def asset_one(context: OpExecutionContext, fancy_db: FancyDbResource) -> None:
+def asset_one(context: AssetExecutionContext, fancy_db: FancyDbResource) -> None:
     assert fancy_db
 ```
 
@@ -337,6 +337,6 @@ def existing_asset(context) -> None:
   ></ArticleListItem>
   <ArticleListItem
     title="Resources"
-    href="/concepts/configuration/resources"
+    href="/concepts/resources"
   ></ArticleListItem>
 </ArticleList>

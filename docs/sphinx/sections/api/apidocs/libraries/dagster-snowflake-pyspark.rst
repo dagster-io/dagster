@@ -19,7 +19,10 @@ Related Guides:
 .. autoconfigurable:: SnowflakePySparkIOManager
   :annotation: IOManagerDefinition
 
+.. autoclass:: SnowflakePySparkTypeHandler
+
+Legacy
+======
+
 .. autoconfigurable:: snowflake_pyspark_io_manager
   :annotation: IOManagerDefinition
-
-.. autoclass:: SnowflakePySparkTypeHandler

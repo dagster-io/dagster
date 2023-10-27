@@ -18,7 +18,7 @@ SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowfla
 
 @asset
 def iris_dataset() -> DataFrame:
-    spark = SparkSession.builder.config(
+    spark = SparkSession.builder.config(  # type: ignore
         key="spark.jars.packages",
         value=SNOWFLAKE_JARS,
     ).getOrCreate()
@@ -33,10 +33,10 @@ def iris_dataset() -> DataFrame:
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = ("https://docs.dagster.io/assets/iris.csv",)
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(

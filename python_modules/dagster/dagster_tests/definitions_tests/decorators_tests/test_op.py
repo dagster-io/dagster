@@ -1,6 +1,7 @@
+import re
 import time
 from functools import partial
-from typing import Dict, Generator, List, Tuple
+from typing import Any, Dict, Generator, List, Tuple
 
 import pytest
 from dagster import (
@@ -15,7 +16,6 @@ from dagster import (
     ExpectationResult,
     In,
     Nothing,
-    OpDefinition,
     Out,
     Output,
     build_op_context,
@@ -24,9 +24,363 @@ from dagster import (
     mem_io_manager,
     op,
 )
+from dagster._config.field import Field
+from dagster._core.definitions.dependency import DependencyDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Int, String
+from dagster._core.utility_ops import create_stub_op
+
+
+def execute_in_graph(an_op, raise_on_error=True, run_config=None):
+    @graph
+    def my_graph():
+        an_op()
+
+    result = my_graph.execute_in_process(raise_on_error=raise_on_error, run_config=run_config)
+    return result
+
+
+def test_no_parens_op():
+    called = {}
+
+    @op
+    def hello_world():
+        called["yup"] = True
+
+    execute_in_graph(hello_world)
+
+    assert called["yup"]
+
+
+def test_empty_op():
+    called = {}
+
+    @op()
+    def hello_world():
+        called["yup"] = True
+
+    execute_in_graph(hello_world)
+
+    assert called["yup"]
+
+
+def test_op():
+    @op(out=Out())
+    def hello_world(_context):
+        return {"foo": "bar"}
+
+    result = execute_in_graph(hello_world)
+
+    assert result.success
+    assert result.output_for_node("hello_world")["foo"] == "bar"
+
+
+def test_op_one_output():
+    @op
+    def hello_world():
+        return {"foo": "bar"}
+
+    result = execute_in_graph(hello_world)
+
+    assert result.success
+    assert result.output_for_node("hello_world")["foo"] == "bar"
+
+
+def test_op_yield():
+    @op(out=Out())
+    def hello_world(_context):
+        yield Output(value={"foo": "bar"})
+
+    result = execute_in_graph(hello_world)
+
+    assert result.success
+    assert result.output_for_node("hello_world")["foo"] == "bar"
+
+
+def test_op_result_return():
+    @op(out=Out())
+    def hello_world(_context):
+        return Output(value={"foo": "bar"})
+
+    result = execute_in_graph(hello_world)
+
+    assert result.success
+    assert result.output_for_node("hello_world")["foo"] == "bar"
+
+
+def test_op_with_explicit_empty_outputs():
+    @op(out={})
+    def hello_world(_context):
+        return "foo"
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_in_graph(hello_world)
+
+
+def test_op_with_implicit_single_output():
+    @op()
+    def hello_world(_context):
+        return "foo"
+
+    result = execute_in_graph(hello_world)
+
+    assert result.success
+    assert result.output_for_node("hello_world") == "foo"
+
+
+def test_op_return_list_instead_of_multiple_results():
+    @op(out={"foo": Out(), "bar": Out()})
+    def hello_world(_context):
+        return ["foo", "bar"]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        execute_in_graph(hello_world)
+
+
+def test_op_with_name():
+    @op(name="foobar", out=Out())
+    def hello_world(_context):
+        return {"foo": "bar"}
+
+    result = execute_in_graph(hello_world)
+
+    assert result.success
+    assert result.output_for_node("foobar")["foo"] == "bar"
+
+
+def test_op_with_input():
+    @op(ins={"foo_to_foo": In()})
+    def hello_world(foo_to_foo):
+        return foo_to_foo
+
+    the_job = JobDefinition(
+        graph_def=GraphDefinition(
+            node_defs=[create_stub_op("test_value", {"foo": "bar"}), hello_world],
+            name="test",
+            dependencies={"hello_world": {"foo_to_foo": DependencyDefinition("test_value")}},
+        )
+    )
+
+    result = the_job.execute_in_process()
+
+    assert result.success
+    assert result.output_for_node("hello_world") == {"foo": "bar"}
+
+
+def test_op_definition_errors():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape("positional vararg parameter '*args'"),
+    ):
+
+        @op(ins={"foo": In()}, out=Out())
+        def vargs(context, foo, *args):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @op(ins={"foo": In()}, out=Out())
+        def wrong_name(context, bar):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @op(
+            ins={"foo": In(), "bar": In()},
+            out=Out(),
+        )
+        def wrong_name_2(context, foo):
+            pass
+
+    @op(
+        ins={"foo": In(), "bar": In()},
+        out=Out(),
+    )
+    def valid_kwargs(context, **kwargs):
+        pass
+
+    @op(
+        ins={"foo": In(), "bar": In()},
+        out=Out(),
+    )
+    def valid(context, foo, bar):
+        pass
+
+    @op
+    def valid_because_inference(context, foo, bar):
+        pass
+
+
+def test_wrong_argument_to_job():
+    def non_solid_func():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="You have passed a lambda or function non_solid_func",
+    ):
+        GraphDefinition(node_defs=[non_solid_func], name="test")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="You have passed a lambda or function <lambda>",
+    ):
+        GraphDefinition(node_defs=[lambda x: x], name="test")
+
+
+def test_descriptions():
+    @op(description="foo")
+    def op_desc(_context):
+        pass
+
+    assert op_desc.description == "foo"
+
+
+def test_any_config_field():
+    called = {}
+    conf_value = 234
+
+    @op(config_schema=Field(Any))
+    def hello_world(context):
+        assert context.op_config == conf_value
+        called["yup"] = True
+
+    execute_in_graph(hello_world, run_config={"ops": {"hello_world": {"config": conf_value}}})
+
+    assert called["yup"]
+
+
+def test_op_required_resources_no_arg():
+    @op(required_resource_keys={"foo"})
+    def _noop():
+        return
+
+
+def test_op_config_no_arg():
+    @op(config_schema={"foo": str})
+    def _noop2():
+        return
+
+
+def test_op_docstring():
+    @op
+    def foo_op(_):
+        """FOO_DOCSTRING."""
+        return
+
+    @op
+    def bar_op():
+        """BAR_DOCSTRING."""
+        return
+
+    @op(name="baz")
+    def baz_op(_):
+        """BAZ_DOCSTRING."""
+        return
+
+    @op(name="quux")
+    def quux_op():
+        """QUUX_DOCSTRING."""
+        return
+
+    @graph
+    def comp_graph():
+        """COMP_DOCSTRING."""
+        foo_op()
+
+    @job
+    def the_job():
+        """THE_DOCSTRING."""
+        quux_op()
+
+    @op
+    def the_op():
+        """OP_DOCSTRING."""
+
+    @graph
+    def the_graph():
+        """GRAPH_DOCSTRING."""
+        the_op()
+
+    assert foo_op.__doc__ == "FOO_DOCSTRING."
+    assert foo_op.description == "FOO_DOCSTRING."
+    assert foo_op.__name__ == "foo_op"
+    assert bar_op.__doc__ == "BAR_DOCSTRING."
+    assert bar_op.description == "BAR_DOCSTRING."
+    assert bar_op.__name__ == "bar_op"
+    assert baz_op.__doc__ == "BAZ_DOCSTRING."
+    assert baz_op.description == "BAZ_DOCSTRING."
+    assert baz_op.__name__ == "baz_op"
+    assert quux_op.__doc__ == "QUUX_DOCSTRING."
+    assert quux_op.description == "QUUX_DOCSTRING."
+    assert quux_op.__name__ == "quux_op"
+    assert comp_graph.__doc__ == "COMP_DOCSTRING."
+    assert comp_graph.description == "COMP_DOCSTRING."
+    assert comp_graph.__name__ == "comp_graph"
+    assert the_job.__doc__ == "THE_DOCSTRING."
+    assert the_job.description == "THE_DOCSTRING."
+    assert the_job.__name__ == "the_job"
+    assert the_op.__doc__ == "OP_DOCSTRING."
+    assert the_op.description == "OP_DOCSTRING."
+    assert the_op.__name__ == "the_op"
+    assert the_graph.__doc__ == "GRAPH_DOCSTRING."
+    assert the_graph.description == "GRAPH_DOCSTRING."
+    assert the_graph.__name__ == "the_graph"
+
+
+def test_op_yields_single_bare_value():
+    @op
+    def return_iterator(_):
+        yield 1
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="yielded a value of type <class 'int'>",
+    ):
+        execute_in_graph(return_iterator)
+
+
+def test_op_yields_multiple_bare_values():
+    @op
+    def return_iterator(_):
+        yield 1
+        yield 2
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="yielded a value of type <class 'int'>",
+    ):
+        execute_in_graph(return_iterator)
+
+
+def test_op_returns_iterator():
+    def iterator():
+        for i in range(3):
+            yield i
+
+    @op
+    def return_iterator(_):
+        return iterator()
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match="yielded a value of type <class 'int'>"
+    ):
+        execute_in_graph(return_iterator)
+
+
+def test_input_default():
+    @op
+    def foo(bar="ok"):
+        return bar
+
+    result = execute_in_graph(foo)
+    assert result.output_for_node("foo") == "ok"
 
 
 def execute_op_in_graph(an_op, instance=None, resources=None):
@@ -52,15 +406,6 @@ def test_no_outs():
         pass
 
     assert len(the_op.outs) == 0
-
-
-def test_op():
-    @op
-    def my_op():
-        pass
-
-    assert isinstance(my_op, OpDefinition)
-    execute_op_in_graph(my_op)
 
 
 def test_ins():
@@ -433,7 +778,7 @@ def test_type_annotations_with_generator():
     def my_op_yields_output() -> Generator[Output, None, None]:
         yield Output(5)
 
-    assert list(my_op_yields_output())[0].value == 5
+    assert next(iter(my_op_yields_output())).value == 5
     result = execute_op_in_graph(my_op_yields_output)
     assert result.output_for_node("my_op_yields_output") == 5
 
@@ -561,14 +906,16 @@ def test_metadata_logging():
 def test_metadata_logging_multiple_entries():
     @op
     def basic(context):
-        context.add_output_metadata({"foo": "bar"})
-        context.add_output_metadata({"baz": "bat"})
+        context.add_output_metadata({"foo": "first_value"})
+        context.add_output_metadata({"foo": "second_value"})  # overwrites first
+        context.add_output_metadata({"boo": "bot"})
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="In op 'basic', attempted to log metadata for output 'result' more than once.",
-    ):
-        execute_op_in_graph(basic)
+    result = execute_op_in_graph(basic)
+    assert result.success
+    events = result.events_for_node("basic")
+    assert len(events[1].event_specific_data.metadata) == 2
+    assert events[1].event_specific_data.metadata["foo"].text == "second_value"
+    assert events[1].event_specific_data.metadata["boo"].text == "bot"
 
 
 def test_log_event_multi_output():

@@ -28,7 +28,7 @@ def test_launcher_from_config(kubeconfig_file):
     }
 
     default_config = {
-        "service_account_name": "dagit-admin",
+        "service_account_name": "webserver-admin",
         "instance_config_map": "dagster-instance",
         "postgres_password_secret": "dagster-postgresql-secret",
         "dagster_home": "/opt/dagster/dagster_home",
@@ -71,7 +71,7 @@ def test_launcher_with_container_context(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -99,12 +99,12 @@ def test_launcher_with_container_context(kubeconfig_file):
         }
     }
 
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     repo_def = recon_repo.get_definition()
 
-    python_origin = recon_pipeline.get_python_origin()
+    python_origin = recon_job.get_python_origin()
     python_origin = python_origin._replace(
         repository_origin=python_origin.repository_origin._replace(
             container_context=container_context_config,
@@ -119,9 +119,9 @@ def test_launcher_with_container_context(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -130,7 +130,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.register_instance(instance)
@@ -178,7 +178,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -213,12 +213,12 @@ def test_launcher_with_k8s_config(kubeconfig_file):
     user_defined_k8s_config_json = json.dumps(run_tags_k8s_config.to_dict())
     run_tags = {"dagster-k8s/config": user_defined_k8s_config_json}
 
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     repo_def = recon_repo.get_definition()
 
-    python_origin = recon_pipeline.get_python_origin()
+    python_origin = recon_job.get_python_origin()
     python_origin = python_origin._replace(
         repository_origin=python_origin.repository_origin._replace(
             container_context=container_context_config,
@@ -233,9 +233,9 @@ def test_launcher_with_k8s_config(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -244,7 +244,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
                 job_code_origin=python_origin,
                 tags=run_tags,
             )
@@ -272,6 +272,12 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         # config from run tags applied
         assert container.working_dir == "my_working_dir"
 
+        # appropriate labels applied
+        labels = kwargs["body"].spec.template.metadata.labels
+        assert labels["dagster/code-location"] == "in_process"
+        assert labels["dagster/job"] == "fake_job"
+        assert labels["dagster/run-id"] == run.run_id
+
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     labels = {"foo_label_key": "bar_label_value"}
@@ -279,7 +285,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -307,9 +313,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
 
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     repo_def = recon_repo.get_definition()
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
 
@@ -320,9 +326,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -332,8 +338,8 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 tags=tags,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
-                job_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -378,7 +384,7 @@ def test_raise_on_error(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -388,9 +394,9 @@ def test_raise_on_error(kubeconfig_file):
         k8s_client_batch_api=mock_k8s_client_batch_api,
         fail_pod_on_run_failure=True,
     )
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     repo_def = recon_repo.get_definition()
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
 
@@ -401,9 +407,9 @@ def test_raise_on_error(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -412,8 +418,8 @@ def test_raise_on_error(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
-                job_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -440,7 +446,7 @@ def test_no_postgres(kubeconfig_file):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         dagster_home="/opt/dagster/dagster_home",
         job_image="fake_job_image",
@@ -449,9 +455,9 @@ def test_no_postgres(kubeconfig_file):
         k8s_client_batch_api=mock_k8s_client_batch_api,
     )
 
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     repo_def = recon_repo.get_definition()
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
 
@@ -462,9 +468,9 @@ def test_no_postgres(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -473,8 +479,8 @@ def test_no_postgres(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
-                job_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -493,7 +499,7 @@ def test_no_postgres(kubeconfig_file):
 
 
 @job
-def fake_pipeline():
+def fake_job():
     pass
 
 
@@ -504,7 +510,7 @@ def test_check_run_health(kubeconfig_file):
     mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
 
     k8s_run_launcher = K8sRunLauncher(
-        service_account_name="dagit-admin",
+        service_account_name="webserver-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
@@ -515,9 +521,9 @@ def test_check_run_health(kubeconfig_file):
         labels=labels,
     )
 
-    # Create fake external pipeline.
-    recon_pipeline = reconstructable(fake_pipeline)
-    recon_repo = recon_pipeline.repository
+    # Create fake external job.
+    recon_job = reconstructable(fake_job)
+    recon_repo = recon_job.repository
     repo_def = recon_repo.get_definition()
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
 
@@ -528,9 +534,9 @@ def test_check_run_health(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_job_from_recon_job(
-                recon_pipeline,
-                solid_selection=None,
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
                 repository_handle=repo_handle,
             )
 
@@ -540,15 +546,15 @@ def test_check_run_health(kubeconfig_file):
             started_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
-                job_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.STARTED,
             )
             finished_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_pipeline.get_external_origin(),
-                job_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.FAILURE,
             )
             k8s_run_launcher.register_instance(instance)

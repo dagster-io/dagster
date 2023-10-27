@@ -1,5 +1,5 @@
 # Dagster
-FROM python:3.7-slim as dagster
+FROM python:3.10-slim as dagster
 
 RUN apt-get update && apt-get upgrade -yqq
 RUN apt-get install git -y
@@ -17,10 +17,10 @@ RUN git clone https://github.com/dagster-io/dagster.git
 COPY requirements-dagster.txt $DAGSTER_HOME
 RUN pip install -r requirements-dagster.txt
 
-# Dagit
-FROM dagster as dagit
-COPY requirements-dagit.txt $DAGSTER_HOME
-RUN pip install -r requirements-dagit.txt
+# Webserver
+FROM dagster as webserver
+COPY requirements-webserver.txt $DAGSTER_HOME
+RUN pip install -r requirements-webserver.txt
 
 # User Code gRPC Server
 # You can either include all of your repositories in this

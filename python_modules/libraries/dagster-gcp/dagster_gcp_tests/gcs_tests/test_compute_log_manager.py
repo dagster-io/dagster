@@ -28,6 +28,7 @@ EXPECTED_LOGS = [
 ]
 
 
+@pytest.mark.integration
 def test_compute_log_manager(gcs_bucket):
     @job
     def simple():
@@ -118,6 +119,7 @@ def test_compute_log_manager(gcs_bucket):
                 assert expected in stderr.data
 
 
+@pytest.mark.integration
 def test_compute_log_manager_with_envvar(gcs_bucket):
     @job
     def simple():
@@ -206,20 +208,19 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                     assert expected in stderr.data
 
 
+@pytest.mark.integration
 def test_compute_log_manager_from_config(gcs_bucket):
     gcs_prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_gcp.gcs.compute_log_manager
   class: GCSComputeLogManager
   config:
-    bucket: "{bucket}"
+    bucket: "{gcs_bucket}"
     local_dir: "/tmp/cool"
-    prefix: "{prefix}"
-""".format(
-        bucket=gcs_bucket, prefix=gcs_prefix
-    )
+    prefix: "{gcs_prefix}"
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
@@ -230,6 +231,7 @@ compute_logs:
     assert isinstance(instance.compute_log_manager, GCSComputeLogManager)
 
 
+@pytest.mark.integration
 def test_prefix_filter(gcs_bucket):
     gcs_prefix = "foo/bar/"  # note the trailing slash
 
@@ -250,6 +252,7 @@ def test_prefix_filter(gcs_bucket):
         assert logs == "hello hello"
 
 
+@pytest.mark.integration
 def test_storage_download_url_fallback(gcs_bucket):
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = GCSComputeLogManager(bucket=gcs_bucket, local_dir=temp_dir)
@@ -277,6 +280,7 @@ def test_storage_download_url_fallback(gcs_bucket):
             assert url.startswith("/logs")  # falls back to local storage url
 
 
+@pytest.mark.integration
 class TestGCSComputeLogManager(TestCapturedLogManager):
     __test__ = True
 

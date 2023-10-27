@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, NamedTuple, Optional, Type, TypeVar, Union, cast
 
 from typing_extensions import Self
 
@@ -9,6 +9,7 @@ from dagster import (
 )
 from dagster._config import EvaluateValueResult
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.decorator_utils import get_function_params
 
 from .definition_config_schema import (
     CoercableToConfigSchema,
@@ -45,7 +46,7 @@ class ConfigurableDefinition(ABC):
 
         Expects incoming config to be validated and have fully-resolved values (StringSource values
         resolved, Enum types hydrated, etc.) via process_config() during ResolvedRunConfig
-        construction and CompositeSolid config mapping.
+        construction and Graph config mapping.
 
         Args:
             config (Any): A validated and resolved configuration dictionary matching this object's
@@ -78,7 +79,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -123,7 +124,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -165,31 +166,83 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
     check.param_invariant(
         not isinstance(configurable, PendingNodeInvocation),
         "configurable",
-        (
-            "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which"
-            " is produced by aliasing or tagging a solid definition. To configure a solid, you must"
-            " call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix"
-            " this error, make sure to call `configured` on the definition object *before* using"
-            " the `tag` or `alias` methods. For usage examples, see"
-            " https://docs.dagster.io/concepts/configuration/configured"
-        ),
+        "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which"
+        " is produced by aliasing or tagging a node definition. To configure a node, you must"
+        " call `configured` on either an OpDefinition and GraphDefinition. To fix"
+        " this error, make sure to call `configured` on the definition object *before* using"
+        " the `tag` or `alias` methods. For usage examples, see"
+        " https://docs.dagster.io/concepts/configuration/configured",
     )
     check.inst_param(
         configurable,
         "configurable",
         ConfigurableDefinition,
-        (
-            "Only the following types can be used with the `configured` method: ResourceDefinition,"
-            " ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, and LoggerDefinition."
-            " For usage examples of `configured`, see"
-            " https://docs.dagster.io/concepts/configuration/configured"
-        ),
+        "Only the following types can be used with the `configured` method: ResourceDefinition,"
+        " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
+        " For usage examples of `configured`, see"
+        " https://docs.dagster.io/concepts/configuration/configured",
     )
 
 
 T_Configurable = TypeVar(
     "T_Configurable", bound=Union["AnonymousConfigurableDefinition", "NamedConfigurableDefinition"]
 )
+
+
+class FunctionAndConfigSchema(NamedTuple):
+    function: Callable[[Any], Any]
+    config_schema: Optional[UserConfigSchema]
+
+
+def _wrap_user_fn_if_pythonic_config(
+    user_fn: Any, config_schema: Optional[UserConfigSchema]
+) -> FunctionAndConfigSchema:
+    """Helper function which allows users to provide a Pythonic config object to a @configurable
+    function. Detects if the function has a single parameter annotated with a Config class.
+    If so, wraps the function to convert the config dictionary into the appropriate Config object.
+    """
+    from dagster._config.pythonic_config import (
+        Config,
+        infer_schema_from_config_annotation,
+        safe_is_subclass,
+    )
+
+    if not isinstance(user_fn, Callable):
+        return FunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
+
+    config_fn_params = get_function_params(user_fn)
+    check.invariant(
+        len(config_fn_params) == 1, "@configured function should have exactly one parameter"
+    )
+
+    param = config_fn_params[0]
+
+    # If the parameter is a subclass of Config, we can infer the config schema from the
+    # type annotation. We'll also wrap the config mapping function to convert the config
+    # dictionary into the appropriate Config object.
+    if not safe_is_subclass(param.annotation, Config):
+        return FunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
+
+    check.invariant(
+        config_schema is None,
+        "Cannot provide config_schema to @configured function with Config-annotated param",
+    )
+
+    config_schema_from_class = infer_schema_from_config_annotation(param.annotation, param.default)
+    config_cls = cast(Type[Config], param.annotation)
+
+    param_name = param.name
+
+    def wrapped_fn(config_as_dict) -> Any:
+        config_input = config_cls(**config_as_dict)
+        output = user_fn(**{param_name: config_input})
+
+        if isinstance(output, Config):
+            return output._convert_to_config_dictionary()  # noqa: SLF001
+        else:
+            return output
+
+    return FunctionAndConfigSchema(function=wrapped_fn, config_schema=config_schema_from_class)
 
 
 def configured(
@@ -207,7 +260,7 @@ def configured(
     * :py:class:`ResourceDefinition`
     * :py:class:`OpDefinition`
 
-    Using ``configured`` may result in config values being displayed in Dagit,
+    Using ``configured`` may result in config values being displayed in the Dagster UI,
     so it is not recommended to use this API with sensitive values, such as
     secrets.
 
@@ -218,7 +271,8 @@ def configured(
     Args:
         configurable (ConfigurableDefinition): An object that can be configured.
         config_schema (ConfigSchema): The config schema that the inputs to the decorated function
-            must satisfy.
+            must satisfy. Alternatively, annotate the config parameter to the decorated function
+            with a subclass of :py:class:`Config` and omit this argument.
         **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the returned
             object.
 
@@ -229,15 +283,32 @@ def configured(
 
     .. code-block:: python
 
-        dev_s3 = configured(s3_resource, name="dev_s3")({'bucket': 'dev'})
+        class GreetingConfig(Config):
+            message: str
 
-        @configured(s3_resource)
+        @op
+        def greeting_op(config: GreetingConfig):
+            print(config.message)
+
+        class HelloConfig(Config):
+            name: str
+
+        @configured(greeting_op)
+        def hello_op(config: HelloConfig):
+            return GreetingConfig(message=f"Hello, {config.name}!")
+
+    .. code-block:: python
+
+        dev_s3 = configured(S3Resource, name="dev_s3")({'bucket': 'dev'})
+
+        @configured(S3Resource)
         def dev_s3(_):
             return {'bucket': 'dev'}
 
-        @configured(s3_resource, {'bucket_prefix', str})
+        @configured(S3Resource, {'bucket_prefix', str})
         def dev_s3(config):
             return {'bucket': config['bucket_prefix'] + 'dev'}
+
     """
     _check_configurable_param(configurable)
 
@@ -250,10 +321,14 @@ def configured(
                 else None
             )
             name: str = check.not_none(kwargs.get("name") or fn_name)
+
+            updated_fn, new_config_schema = _wrap_user_fn_if_pythonic_config(
+                config_or_config_fn, config_schema
+            )
             return configurable.configured(
-                config_or_config_fn=config_or_config_fn,
+                config_or_config_fn=updated_fn,
                 name=name,
-                config_schema=config_schema,
+                config_schema=new_config_schema,
                 **{k: v for k, v in kwargs.items() if k != "name"},
             )
 
@@ -261,8 +336,11 @@ def configured(
     elif isinstance(configurable, AnonymousConfigurableDefinition):
 
         def _configured(config_or_config_fn: object) -> T_Configurable:
+            updated_fn, new_config_schema = _wrap_user_fn_if_pythonic_config(
+                config_or_config_fn, config_schema
+            )
             return configurable.configured(
-                config_schema=config_schema, config_or_config_fn=config_or_config_fn, **kwargs
+                config_schema=new_config_schema, config_or_config_fn=updated_fn, **kwargs
             )
 
         return _configured

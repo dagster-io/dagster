@@ -48,7 +48,7 @@ def a_number():
     return 1
 ```
 
-Next, start Dagit, the Dagster UI:
+Next, start the Dagster UI:
 
 ```shell
 dagster dev
@@ -294,7 +294,7 @@ def input_number():
         return DataVersion(sha256_digest_from_str(ff.read()))
 
 
-@asset(code_version="v6", non_argument_deps={"input_number"})
+@asset(code_version="v6", deps=[input_number])
 def versioned_number():
     with open(FILE_PATH) as ff:
         value = int(ff.read())
@@ -328,7 +328,7 @@ height={1748}
 
 Take note of the `data_version` listed here that you computed.
 
-We also see that `versioned_number` and `multiplied_number` have labels indicating that they have new usptream dependencies (because we added the observable source asset to the graph). Click **Materialize all** to bring them up to date.
+We also see that `versioned_number` and `multiplied_number` have labels indicating that they have new upstream dependencies (because we added the observable source asset to the graph). Click **Materialize all** to bring them up to date.
 
 Finally, let's manually alter the file to simulate the activity of an external process. Change the content of `input_number.txt`:
 

@@ -13,4 +13,4 @@ RUN pip install \
     dagster-aws \
     dagster-gcp \
     dagster-graphql \
-    dagit
+    dagster-webserver

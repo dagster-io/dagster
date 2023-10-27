@@ -1,12 +1,12 @@
 from contextlib import contextmanager
-from typing import Dict, Generator, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, Generator, List, Optional, cast
 
-import botocore
 from dagster import (
     Field as LegacyDagsterField,
     resource,
 )
 from dagster._config.field_utils import Shape
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
@@ -14,6 +14,9 @@ from pydantic import Field
 from dagster_aws.utils import ResourceWithBoto3Configuration
 
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
+
+if TYPE_CHECKING:
+    import botocore
 
 
 class SecretsManagerResource(ResourceWithBoto3Configuration):
@@ -49,6 +52,10 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
             )
     """
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> "botocore.client.SecretsManager":
         return construct_secretsmanager_client(
             max_attempts=self.max_attempts,
@@ -57,6 +64,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
         )
 
 
+@dagster_maintained_resource
 @resource(SecretsManagerResource.to_config_schema())
 def secretsmanager_resource(context) -> "botocore.client.SecretsManager":
     """Resource that gives access to AWS SecretsManager.
@@ -159,6 +167,10 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
         description="AWS Secrets Manager secrets with this tag will be fetched and made available.",
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @contextmanager
     def secrets_in_environment(
         self,
@@ -228,6 +240,7 @@ LEGACY_SECRETSMANAGER_SECRETS_SCHEMA = {
 }
 
 
+@dagster_maintained_resource
 @resource(config_schema=LEGACY_SECRETSMANAGER_SECRETS_SCHEMA)
 @contextmanager
 def secretsmanager_secrets_resource(context):

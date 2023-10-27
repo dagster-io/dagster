@@ -124,4 +124,4 @@ def docker_compose(
 
 @pytest.mark.xfail
 def test_deploy(docker_compose, retrying_requests):
-    assert retrying_requests.get(f'http://{docker_compose["dagit"]}:3000/dagit_info').ok
+    assert retrying_requests.get(f'http://{docker_compose["webserver"]}:3000/server_info').ok

@@ -1,0 +1,12 @@
+config: # this should be ignored
+  send_anonymous_usage_stats: false
+  use_colors: true
+
+jaffle_shop:
+
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: 'jaffle_shop.duckdb'
+      threads: 24

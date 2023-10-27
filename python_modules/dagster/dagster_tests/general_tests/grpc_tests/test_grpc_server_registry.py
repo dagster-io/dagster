@@ -62,10 +62,11 @@ def test_error_repo_in_registry(instance):
         ),
     )
     with GrpcServerRegistry(
-        instance=instance,
+        instance_ref=instance.get_ref(),
         reload_interval=5,
         heartbeat_ttl=10,
         startup_timeout=5,
+        wait_for_processes_on_shutdown=True,
     ) as registry:
         # Repository with a loading error does not raise an exception
         endpoint = registry.get_grpc_endpoint(error_origin)
@@ -105,10 +106,11 @@ def test_server_registry(instance):
     )
 
     with GrpcServerRegistry(
-        instance=instance,
+        instance_ref=instance.get_ref(),
         reload_interval=5,
         heartbeat_ttl=10,
         startup_timeout=5,
+        wait_for_processes_on_shutdown=True,
     ) as registry:
         endpoint_one = registry.get_grpc_endpoint(origin)
         endpoint_two = registry.get_grpc_endpoint(origin)
@@ -172,10 +174,11 @@ def test_registry_multithreading(instance):
     )
 
     with GrpcServerRegistry(
-        instance=instance,
+        instance_ref=instance.get_ref(),
         reload_interval=300,
         heartbeat_ttl=600,
         startup_timeout=30,
+        wait_for_processes_on_shutdown=True,
     ) as registry:
         endpoint = registry.get_grpc_endpoint(origin)
 
@@ -205,7 +208,11 @@ class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(self, instance):
         self.mocked_loadable_target_origin = None
         super(TestMockProcessGrpcServerRegistry, self).__init__(
-            instance=instance, reload_interval=300, heartbeat_ttl=600, startup_timeout=30
+            instance_ref=instance.get_ref(),
+            reload_interval=300,
+            heartbeat_ttl=600,
+            startup_timeout=30,
+            wait_for_processes_on_shutdown=True,
         )
 
     def supports_origin(self, code_location_origin):

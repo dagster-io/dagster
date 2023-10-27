@@ -30,7 +30,7 @@ set_containing_1 = DagsterType(
     type_check_fn=lambda _context, obj: isinstance(obj, set) and 1 in obj,
 )
 
-check_dagster_type(set_containing_1, {1, 2}).success  # => True
+assert check_dagster_type(set_containing_1, {1, 2}).success  # => True
 ```
 
 Sometimes, we may even need to define an entire suite of related types. Factory functions are an efficient solution to this problem. Here is a factory function that generalizes the set-membership-check pattern for arbitrary values:
@@ -45,7 +45,7 @@ def set_has_element_type_factory(x):
 
 
 set_containing_2 = set_has_element_type_factory(2)
-check_dagster_type(set_containing_2, {1, 2}).success  # => True
+assert check_dagster_type(set_containing_2, {1, 2}).success  # => True
 ```
 
 Factories are particularly powerful when interfacing with external data validation libraries. Below, we'll see how a small factory function allows us to integrate the [Pandera](https://github.com/pandera-dev/pandera) dataframe validation library into our Dagster jobs. Pandera provides an API for defining dataframe schemas. Schemas encode data type, boundaries, nullability, and other constraints at both the dataframe and individual column level. They can be used to validate dataframes from [Pandas](https://pandas.pydata.org/), [Dask](https://dask.org/), or several other popular Python libraries.
@@ -198,7 +198,7 @@ Let's unpack the above code. Our factory function is `pandera_schema_to_dagster_
 
 Inside `type_check_fn`, we let `pandera` do the heavy lifting. After confirming `value` is in fact a `DataFrame`, we call `schema.validate` and tack the message of any resulting `SchemaErrors` instance onto our returned `TypeCheck` instance. `TypeCheck` is an optional rich return type for Dagster type check functions (it is also possible to return a boolean indicating a simple pass/fail). A `TypeCheck` is appropriate here because we want to capture specific information about any validation failures.
 
-Notice also that we provide a `metadata` dictionary to the `TypeCheck` constructor when validation fails. This can hold arbitrary information that is visible in [Dagit](/concepts/dagit/dagit) and can be useful in debugging. Here we've only provided a count `num_violations` of the schema violations (`SchemaErrors.failure_cases` is a dataframe tabulating each violation), but we could easily include richer information to annotate more complex validations.
+Notice also that we provide a `metadata` dictionary to the `TypeCheck` constructor when validation fails. This can hold arbitrary information that is visible in [the Dagster UI](/concepts/webserver/ui) and can be useful in debugging. Here we've only provided a count `num_violations` of the schema violations (`SchemaErrors.failure_cases` is a dataframe tabulating each violation), but we could easily include richer information to annotate more complex validations.
 
 ## Annotate our job with Dagster types
 

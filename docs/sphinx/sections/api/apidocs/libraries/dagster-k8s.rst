@@ -4,7 +4,7 @@ Kubernetes (dagster-k8s)
 See also the `Kubernetes deployment guide <https://docs.dagster.io/deploying/kubernetes/>`_.
 
 This library contains utilities for running Dagster with Kubernetes. This includes a Python API
-allowing Dagit to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
+allowing the webserver to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
 for a Dagster deployment on a Kubernetes cluster.
 
 APIs
@@ -27,7 +27,7 @@ Ops
 Python API
 ^^^^^^^^^^
 
-The ``K8sRunLauncher`` allows Dagit instances to be configured to launch new runs by starting
+The ``K8sRunLauncher`` allows webserver instances to be configured to launch new runs by starting
 per-run Kubernetes Jobs. To configure the ``K8sRunLauncher``\ , your ``dagster.yaml`` should
 include a section like:
 
@@ -58,16 +58,16 @@ For local dev (e.g., on kind or minikube):
 .. code-block:: shell
 
    helm install \
-       --set dagit.image.repository="dagster.io/buildkite-test-image" \
-       --set dagit.image.tag="py37-latest" \
+       --set dagsterWebserver.image.repository="dagster.io/buildkite-test-image" \
+       --set dagsterWebserver.image.tag="py310-latest" \
        --set job_runner.image.repository="dagster.io/buildkite-test-image" \
-       --set job_runner.image.tag="py37-latest" \
+       --set job_runner.image.tag="py310-latest" \
        --set imagePullPolicy="IfNotPresent" \
        dagster \
        helm/dagster/
 
-Upon installation, the Helm chart will provide instructions for port forwarding Dagit and Flower (if
-configured).
+Upon installation, the Helm chart will provide instructions for port forwarding
+the Dagster webserver and Flower (if configured).
 
 Running tests
 ^^^^^^^^^^^^^
@@ -150,7 +150,7 @@ the repo:
 .. code-block:: shell
 
    ./python_modules/dagster-test/dagster_test/test_project/build.sh 3.7.6 \
-       dagster.io.priv/buildkite-test-image:py37-latest
+       dagster.io.priv/buildkite-test-image:py310-latest
 
 In the above invocation, the Python majmin version should be appropriate for your desired tests.
 
@@ -160,7 +160,7 @@ feedback from the loading process.
 .. code-block:: shell
 
    kind create cluster --name kind-test
-   kind load docker-image --name kind-test dagster.io/dagster-docker-buildkite:py37-latest
+   kind load docker-image --name kind-test dagster.io/dagster-docker-buildkite:py310-latest
 
 If you are deploying the Helm chart with an in-cluster Postgres (rather than an external database),
 and/or with dagster-celery workers (and a RabbitMQ), you'll also want to have images present for
@@ -261,3 +261,10 @@ Then, to connect to your database from outside the cluster execute the following
 
    kubectl port-forward --namespace default svc/dagredis-master 6379:6379
    redis-cli -h 127.0.0.1 -p 6379
+
+Pipes
+=====
+
+.. autoclass:: PipesK8sClient
+
+.. autoclass:: PipesK8sPodLogsMessageReader

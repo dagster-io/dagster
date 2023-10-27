@@ -137,7 +137,7 @@ class DockerStepHandler(StepHandler):
 
     def _get_docker_container_context(self, step_handler_context: StepHandlerContext):
         # This doesn't vary per step: would be good to have a hook where it can be set once
-        # for the whole StepHandler but we need access to the PipelineRun for that
+        # for the whole StepHandler but we need access to the DagsterRun for that
 
         from .docker_run_launcher import DockerRunLauncher
 
@@ -275,7 +275,7 @@ class DockerStepHandler(StepHandler):
             return CheckStepHealthResult.healthy()
 
         return CheckStepHealthResult.unhealthy(
-            reason=f"Container status is {container.status}. Return code is {str(ret_code)}."
+            reason=f"Container status is {container.status}. Return code is {ret_code}."
         )
 
     def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:

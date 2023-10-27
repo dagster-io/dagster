@@ -15,7 +15,11 @@ Related Guides:
 .. autoconfigurable:: BigQueryPandasIOManager
   :annotation: IOManagerDefinition
 
+.. autoclass:: BigQueryPandasTypeHandler
+
+
+Legacy
+=======
+
 .. autoconfigurable:: bigquery_pandas_io_manager
   :annotation: IOManagerDefinition
-
-.. autoclass:: BigQueryPandasTypeHandler

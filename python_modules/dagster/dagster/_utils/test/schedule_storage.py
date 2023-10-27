@@ -4,6 +4,14 @@ import time
 import pendulum
 import pytest
 
+from dagster import StaticPartitionsDefinition
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeAssetEvaluation,
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+)
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -50,6 +58,9 @@ class TestScheduleStorage:
         return True
 
     def can_purge(self):
+        return True
+
+    def can_store_auto_materialize_asset_evaluations(self):
         return True
 
     @staticmethod
@@ -286,8 +297,14 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
-        assert updated_tick.status == TickStatus.SUCCESS
+        assert not tick.end_timestamp
+
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum.test(freeze_datetime):
+            updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
+            assert updated_tick.status == TickStatus.SUCCESS
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -305,9 +322,14 @@ class TestScheduleStorage:
 
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
+        assert not tick.end_timestamp
 
-        updated_tick = tick.with_status(TickStatus.SKIPPED)
-        assert updated_tick.status == TickStatus.SKIPPED
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum.test(freeze_datetime):
+            updated_tick = tick.with_status(TickStatus.SKIPPED)
+            assert updated_tick.status == TickStatus.SKIPPED
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -326,11 +348,15 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(
-            TickStatus.FAILURE,
-            error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
-        )
-        assert updated_tick.status == TickStatus.FAILURE
+        freeze_datetime = pendulum.now("UTC")
+
+        with pendulum.test(freeze_datetime):
+            updated_tick = tick.with_status(
+                TickStatus.FAILURE,
+                error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
+            )
+            assert updated_tick.status == TickStatus.FAILURE
+            assert updated_tick.end_timestamp == freeze_datetime.timestamp()
 
         storage.update_tick(updated_tick)
 
@@ -669,3 +695,219 @@ class TestScheduleStorage:
         assert len(ticks_by_origin["sensor_one"]) == 1
         assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
+
+    def test_auto_materialize_asset_evaluations(self, storage):
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        for _ in range(2):  # test idempotency
+            storage.add_auto_materialize_asset_evaluations(
+                evaluation_id=10,
+                asset_evaluations=[
+                    AutoMaterializeAssetEvaluation(
+                        asset_key=AssetKey("asset_one"),
+                        partition_subsets_by_condition=[],
+                        num_requested=0,
+                        num_skipped=0,
+                        num_discarded=0,
+                    ),
+                    AutoMaterializeAssetEvaluation(
+                        asset_key=AssetKey("asset_two"),
+                        partition_subsets_by_condition=[
+                            (
+                                AutoMaterializeRuleEvaluation(
+                                    rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                    evaluation_data=None,
+                                ),
+                                None,
+                            )
+                        ],
+                        num_requested=1,
+                        num_skipped=0,
+                        num_discarded=0,
+                    ),
+                ],
+            )
+
+            res = storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset_one"), limit=100
+            )
+            assert len(res) == 1
+            assert res[0].evaluation.asset_key == AssetKey("asset_one")
+            assert res[0].evaluation_id == 10
+            assert res[0].evaluation.num_requested == 0
+
+            res = storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey("asset_two"), limit=100
+            )
+            assert len(res) == 1
+            assert res[0].evaluation.asset_key == AssetKey("asset_two")
+            assert res[0].evaluation_id == 10
+            assert res[0].evaluation.num_requested == 1
+
+            res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
+
+            assert len(res) == 2
+            assert res[0].evaluation.asset_key == AssetKey("asset_one")
+            assert res[0].evaluation_id == 10
+            assert res[0].evaluation.num_requested == 0
+
+            assert res[1].evaluation.asset_key == AssetKey("asset_two")
+            assert res[1].evaluation_id == 10
+            assert res[1].evaluation.num_requested == 1
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_one"),
+                    partition_subsets_by_condition=[],
+                    num_requested=0,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 2
+        assert res[0].evaluation_id == 11
+        assert res[1].evaluation_id == 10
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=1
+        )
+        assert len(res) == 1
+        assert res[0].evaluation_id == 11
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=1, cursor=11
+        )
+        assert len(res) == 1
+        assert res[0].evaluation_id == 10
+
+        # add a mix of keys - one that already is using the unique index and one that is not
+
+        eval_one = AutoMaterializeAssetEvaluation(
+            asset_key=AssetKey("asset_one"),
+            partition_subsets_by_condition=[],
+            num_requested=1,
+            num_skipped=2,
+            num_discarded=3,
+        )
+
+        eval_asset_three = AutoMaterializeAssetEvaluation(
+            asset_key=AssetKey("asset_three"),
+            partition_subsets_by_condition=[],
+            num_requested=1,
+            num_skipped=2,
+            num_discarded=3,
+        )
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                eval_one,
+                eval_asset_three,
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 2
+        assert res[0].evaluation_id == 11
+        assert res[0].evaluation == eval_one
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_three"), limit=100
+        )
+
+        assert len(res) == 1
+        assert res[0].evaluation_id == 11
+        assert res[0].evaluation == eval_asset_three
+
+    def test_auto_materialize_asset_evaluations_with_partitions(self, storage):
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+        subset = partitions_def.empty_subset().with_partition_keys(["a"])
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_two"),
+                    partition_subsets_by_condition=[
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
+                            SerializedPartitionsSubset.from_subset(subset, partitions_def, None),
+                        )
+                    ],
+                    num_requested=1,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_two"), limit=100
+        )
+        assert len(res) == 1
+        assert res[0].evaluation.asset_key == AssetKey("asset_two")
+        assert res[0].evaluation_id == 10
+        assert res[0].evaluation.num_requested == 1
+
+        assert res[0].evaluation.partition_subsets_by_condition[0][
+            0
+        ] == AutoMaterializeRuleEvaluation(
+            rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+            evaluation_data=None,
+        )
+        assert (
+            res[0].evaluation.partition_subsets_by_condition[0][1].can_deserialize(partitions_def)
+        )
+        assert (
+            partitions_def.deserialize_subset(
+                res[0].evaluation.partition_subsets_by_condition[0][1].serialized_subset
+            )
+            == subset
+        )
+
+    def test_purge_asset_evaluations(self, storage):
+        if not self.can_purge():
+            pytest.skip("Storage cannot purge")
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_one"),
+                    partition_subsets_by_condition=[],
+                    num_requested=0,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        storage.purge_asset_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 1
+
+        storage.purge_asset_evaluations(before=pendulum.now().add(minutes=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 0

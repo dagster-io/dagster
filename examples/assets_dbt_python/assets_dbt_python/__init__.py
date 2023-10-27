@@ -2,29 +2,18 @@ import os
 
 from dagster import (
     Definitions,
+    FilesystemIOManager,
     ScheduleDefinition,
     define_asset_job,
-    fs_io_manager,
     load_assets_from_package_module,
 )
-from dagster._utils import file_relative_path
-from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
+from dagster_duckdb_pandas import DuckDBPandasIOManager
 
-from assets_dbt_python.assets import forecasting, raw_data
-
-DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
-DBT_PROFILES_DIR = file_relative_path(__file__, "../dbt_project/config")
-
-# all assets live in the default dbt_schema
-dbt_assets = load_assets_from_dbt_project(
+from .assets import forecasting, raw_data
+from .assets.dbt import (
     DBT_PROJECT_DIR,
-    DBT_PROFILES_DIR,
-    # prefix the output assets based on the database they live in plus the name of the schema
-    key_prefix=["duckdb", "dbt_schema"],
-    # prefix the source assets based on just the database
-    # (dagster populates the source schema information automatically)
-    source_key_prefix=["duckdb"],
+    dbt_project_assets,
+    dbt_resource,
 )
 
 raw_data_assets = load_assets_from_package_module(
@@ -45,19 +34,15 @@ forecast_job = define_asset_job("refresh_forecast_model_job", selection="*order_
 
 resources = {
     # this io_manager allows us to load dbt models as pandas dataframes
-    "io_manager": duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(DBT_PROJECT_DIR, "example.duckdb")}
-    ),
+    "io_manager": DuckDBPandasIOManager(database=os.path.join(DBT_PROJECT_DIR, "example.duckdb")),
     # this io_manager is responsible for storing/loading our pickled machine learning model
-    "model_io_manager": fs_io_manager,
+    "model_io_manager": FilesystemIOManager(),
     # this resource is used to execute dbt cli commands
-    "dbt": dbt_cli_resource.configured(
-        {"project_dir": DBT_PROJECT_DIR, "profiles_dir": DBT_PROFILES_DIR}
-    ),
+    "dbt": dbt_resource,
 }
 
 defs = Definitions(
-    assets=[*dbt_assets, *raw_data_assets, *forecasting_assets],
+    assets=[dbt_project_assets, *raw_data_assets, *forecasting_assets],
     resources=resources,
     schedules=[
         ScheduleDefinition(job=everything_job, cron_schedule="@weekly"),

@@ -58,11 +58,11 @@ Dagster requires three long-running services, which are outlined in the table be
   <tbody>
     <tr>
       <td>
-        <a href="/concepts/dagit/dagit">Dagit</a>
+        <a href="/concepts/webserver/ui">Dagster webserver/UI</a>
       </td>
       <td>
-        Dagit serves the user interface and responds to GraphQL queries. It can
-        have one or more replicas.
+        `dagster-webserver` serves the user interface and responds to GraphQL
+        queries. It can have one or more replicas.
       </td>
       <td>Supported</td>
     </tr>
@@ -159,8 +159,8 @@ Based on the component's scope, configuration occurs at either the **Dagster ins
         <br></br>
         <br></br>
         Configuration for run-level components is specified using the job run's run
-        config, and defined in either Python code or in the <a href="/concepts/dagit/dagit#launchpad">
-          Dagit launchpad
+        config, and defined in either Python code or in the <a href="/concepts/webserver/ui#launchpad">
+          UI launchpad
         </a>.
       </td>
     </tr>
@@ -182,7 +182,7 @@ Based on the component's scope, configuration occurs at either the **Dagster ins
 
 ## Job execution flow
 
-Job execution flows through several parts of the Dagster system. The following table describes runs launched by Dagit, specifically the components that handle execution and the order in which they are executed.
+Job execution flows through several parts of the Dagster system. The following table describes runs launched by the UI, specifically the components that handle execution and the order in which they are executed.
 
 <table
   className="table"
@@ -223,9 +223,9 @@ Job execution flows through several parts of the Dagster system. The following t
         <a href="/deployment/run-coordinator">Run coordinator</a>
       </td>
       <td>
-        The run coordinator is a class invoked by the Dagit process when runs
-        are launched from the Dagit UI. This class can be configured to pass
-        runs to the daemon via a queue.
+        The run coordinator is a class invoked by the webserver process when
+        runs are launched from the Dagster UI. This class can be configured to
+        pass runs to the daemon via a queue.
       </td>
       <td>Instance</td>
     </tr>
@@ -266,6 +266,6 @@ Job execution flows through several parts of the Dagster system. The following t
   </tbody>
 </table>
 
-Additionally, note that runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster daemon](/deployment/dagster-daemon) instead of Dagit.
+Additionally, note that runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster daemon](/deployment/dagster-daemon) instead of the webserver.
 
-In a deployment without the [Dagster daemon](/deployment/dagster-daemon), Dagit directly calls the **run launcher** and skips the **run coordinator**.
+In a deployment without the [Dagster daemon](/deployment/dagster-daemon), the webserver directly calls the **run launcher** and skips the **run coordinator**.

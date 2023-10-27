@@ -16,7 +16,7 @@ description: I/O Managers determine how to store asset/op outputs and load asset
   </a> guide.
 </Note>
 
-I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
+I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that helps you reduce boilerplate code and easily change where your data is stored.
 
 <center>
   <Image
@@ -44,6 +44,38 @@ Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="m
 The I/O manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Software-defined assets and ops can focus on business logic, while I/O managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 For non-asset jobs with inputs that aren't connected to upstream outputs, see the [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview.
+
+### When to use I/O managers
+
+I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. They can be useful in situations where:
+
+- You store many of your assets in the same location and follow a consistent set of rules to determine the storage path.
+- You want to swap out I/O manager implementations to change how your assets are stored in local, staging, and production environments.
+- Your asset functions load the upstream dependencies into memory in order to do the function computation.
+
+If you find yourself writing the same code at the start and end of each asset or op to load and store data, you may want to consider factoring that code into an I/O manager.
+
+However, I/O managers are not required, nor are they the best option, in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
+
+```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
+@asset(deps=[orders])
+def returns():
+    conn = get_snowflake_connection()
+    conn.execute(
+        "CREATE TABLE returns AS SELECT * from orders WHERE status = 'RETURNED'"
+    )
+```
+
+Other reasons you may not want to use I/O managers:
+
+- You want to run a SQL query that creates or updates a table in a database (the above example).
+- Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
+- You have unique and custom storage requirements for each asset.
+- Your assets won't fit in memory (for example, a database table with billions of rows).
+- You have an existing pipeline that manages its own I/O and want to run it with Dagster with minimal code changes.
+- You simply prefer to have the reading and writing code explicitly defined in each asset.
+
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, or you find yourself getting confused when implementing I/O managers, it's likely that you are in a situation where I/O managers are **not** a good fit. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
 
 ### Outputs and downstream inputs
 
@@ -74,9 +106,9 @@ Consider the following diagram. In this example, a job has two I/O managers, eac
 
 ### Built-in I/O managers
 
-The default I/O manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default I/O manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
+The default I/O manager, <PyObject module="dagster" object="FilesystemIOManager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default I/O manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
-Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem.
+Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem. For a full list of Dagster-provided I/O managers, refer to the [built-in I/O managers list](#built-in-io-managers-list).
 
 ### I/O managers are resources
 
@@ -84,18 +116,18 @@ I/O managers are provided through the [resources](/concepts/resources) system wh
 
 ---
 
-## Using I/O managers with software-defined assets
+## Using I/O managers with Software-defined Assets
 
 ### Applying I/O managers to assets
 
-By default, materializing an asset named `my_asset` will pickle it to a local file named `my_asset`. The directory that file lives underneath is determined by the rules in <PyObject object="fs_io_manager" />.
+By default, materializing an asset named `my_asset` will pickle it to a local file named `my_asset`. The directory that file lives underneath is determined by the rules in <PyObject object="FilesytemIOManager" />.
 
 [I/O managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store such as s3. You can use one of Dagster's [built-in I/O managers](#built-in-io-managers), or you can write your own.
 
 To apply an I/O manager to a set of assets, you can use <PyObject object="Definitions" />:
 
 ```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import Definitions, asset
 
@@ -113,14 +145,14 @@ def downstream_asset(upstream_asset):
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "io_manager": ConfigurablePickledObjectS3IOManager(
+        "io_manager": S3PickleIOManager(
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
     },
 )
 ```
 
-This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="ConfigurablePickledObjectS3IOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
+This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-that-depend-on-other-resources) documentation.
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
@@ -129,7 +161,7 @@ When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and
 Different assets can have different I/O managers:
 
 ```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import Definitions, FilesystemIOManager, asset
 
@@ -147,7 +179,7 @@ def downstream_asset(upstream_asset):
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "s3_io_manager": ConfigurablePickledObjectS3IOManager(
+        "s3_io_manager": S3PickleIOManager(
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
         "fs_io_manager": FilesystemIOManager(),
@@ -178,7 +210,7 @@ The same assets can be bound to different resources and I/O managers in differen
 ```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
 import os
 
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import Definitions, FilesystemIOManager, asset
 
@@ -195,9 +227,7 @@ def downstream_asset(upstream_asset):
 
 resources_by_env = {
     "prod": {
-        "io_manager": ConfigurablePickledObjectS3IOManager(
-            s3_resource=S3Resource(), s3_bucket="my-bucket"
-        )
+        "io_manager": S3PickleIOManager(s3_resource=S3Resource(), s3_bucket="my-bucket")
     },
     "local": {"io_manager": FilesystemIOManager()},
 }
@@ -218,12 +248,12 @@ In this example,`first_asset` and `second_asset` will be stored using the defaul
 
 ```python file=/concepts/assets/asset_input_managers.py startafter=start_different_input_managers endbefore=end_different_input_managers
 @asset
-def first_asset():
+def first_asset() -> List[int]:
     return [1, 2, 3]
 
 
 @asset
-def second_asset():
+def second_asset() -> List[int]:
     return [4, 5, 6]
 
 
@@ -233,7 +263,7 @@ def second_asset():
         "second_asset": AssetIn(input_manager_key="pandas_series"),
     }
 )
-def third_asset(first_asset, second_asset):
+def third_asset(first_asset: pd.Series, second_asset: pd.Series) -> pd.Series:
     return pd.concat([first_asset, second_asset, pd.Series([7, 8])])
 
 
@@ -251,7 +281,7 @@ defs = Definitions(
 
 By default, all the inputs and outputs in a job use the same I/O manager. This I/O manager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key. `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
 
-Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
+Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="FilesystemIOManager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
 
 ```python file=/concepts/io_management/default_io_manager.py
 from dagster import FilesystemIOManager, job, op
@@ -276,10 +306,10 @@ def my_job():
 
 Not all the outputs in a job should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
 
-To select the I/O manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting I/O managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
+To select the I/O manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting I/O managers in your job. In this example, the output of `op_1` will go to `FilesystemIOManager` and the output of `op_2` will go to `S3PickleIOManager`.
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import FilesystemIOManager, Out, job, op
 
@@ -297,9 +327,7 @@ def op_2(a):
 @job(
     resource_defs={
         "fs": FilesystemIOManager(),
-        "s3_io": ConfigurablePickledObjectS3IOManager(
-            s3_resource=S3Resource(), s3_bucket="test-bucket"
-        ),
+        "s3_io": S3PickleIOManager(s3_resource=S3Resource(), s3_bucket="test-bucket"),
     }
 )
 def my_job():
@@ -389,9 +417,46 @@ class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
         return ExternalIOManager(self.api_token)
 ```
 
+### Defining Pythonic I/O managers
+
+<Note>
+  <strong>Heads up!</strong> This section applies to Dagster 1.3 and later.
+  Refer to the <a href="/concepts/resources">Resources</a> documentation for
+  more info on Pythonic resources.
+</Note>
+
+Pythonic I/O managers are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to [Pythonic resources](/concepts/resources) specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4
+from dagster import (
+    Definitions,
+    AssetKey,
+    OutputContext,
+    InputContext,
+    ConfigurableIOManager,
+)
+
+class MyIOManager(ConfigurableIOManager):
+    root_path: str
+
+    def _get_path(self, asset_key: AssetKey) -> str:
+        return self.root_path + "/".join(asset_key.path)
+
+    def handle_output(self, context: OutputContext, obj):
+        write_csv(self._get_path(context.asset_key), obj)
+
+    def load_input(self, context: InputContext):
+        return read_csv(self._get_path(context.asset_key))
+
+defs = Definitions(
+    assets=...,
+    resources={"io_manager": MyIOManager(root_path="/tmp/")},
+)
+```
+
 ### Handling partitioned assets
 
-I/O managers can be written to handle [partitioned](/concepts/partitions-schedules-sensors/partitions) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will load one or more partitions. When the I/O manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
+I/O managers can be written to handle [partitioned](/concepts/partitions-schedules-sensors/partitions) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will load one or more partitions. When the I/O manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of rows in a table that fall within a particular window.
 
 The default I/O manager has support for loading a partitioned upstream asset for a downstream asset with matching partitions out of the box (see the section below for loading multiple partitions). The <PyObject module="dagster" object="UPathIOManager" /> can be used to handle partitions in custom filesystem-based I/O managers.
 
@@ -427,9 +492,9 @@ from typing import Dict
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    OpExecutionContext,
     asset,
     materialize,
 )
@@ -441,7 +506,7 @@ daily_partitions = DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
 
 
 @asset(partitions_def=hourly_partitions)
-def upstream_asset(context: OpExecutionContext) -> pd.DataFrame:
+def upstream_asset(context: AssetExecutionContext) -> pd.DataFrame:
     return pd.DataFrame({"date": [context.partition_key]})
 
 
@@ -477,7 +542,7 @@ Since the method for loading an input is directly affected by the way the corres
 ```python file=/concepts/io_management/input_managers.py startafter=start_plain_input_manager endbefore=end_plain_input_manager
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
-    def load_input(self, context):
+    def load_input(self, context) -> np.ndarray:
         file_path = "path/to/dataframe"
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -517,8 +582,8 @@ class BetterPandasIOManager(ConfigurableIOManager):
 
 
 # write a subclass that uses _get_path for your custom loading logic
-class MyBetterNumpyLoader(PandasIOManager):
-    def load_input(self, context):
+class MyBetterNumpyLoader(BetterPandasIOManager):
+    def load_input(self, context) -> np.ndarray:
         file_path = self._get_path(context.upstream_output)
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -532,7 +597,7 @@ def better_analyze_as_numpy(np_array_input: np.ndarray):
 @job(
     resource_defs={
         "numpy_manager": MyBetterNumpyLoader(),
-        "io_manager": PandasIOManager(),
+        "io_manager": BetterPandasIOManager(),
     }
 )
 def my_better_job():
@@ -579,7 +644,7 @@ Dagster provides a feature-rich base class for filesystem-based I/O managers: <P
 
 The default I/O manager inherits from the `UPathIOManager` and therefore has these features too.
 
-The `UPathIOManager` already implements the `load_input` and `handle_output` methods. Instead, <PyObject module="dagster" object="UPathIOManager" method="dump_to_path" /> and <PyObject module="dagster" object="UPathIOManager" method="load_from_path" /> for a given `universal_pathlib.UPath` have to be implemented. Here are some examples:
+The `UPathIOManager` already implements the `load_input` and `handle_output` methods. Instead, if you want to write a custom `UPathIOManager` the <PyObject module="dagster" object="UPathIOManager" method="dump_to_path" /> and <PyObject module="dagster" object="UPathIOManager" method="load_from_path" /> for a given `universal_pathlib.UPath` should to be implemented. Here are some examples:
 
 ```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_marker endbefore=end_class_marker
 import pandas as pd
@@ -606,7 +671,7 @@ class PandasParquetIOManager(UPathIOManager):
 
 The extension attribute defines the suffix all the file paths generated by the IOManager will end with.
 
-The i/o managers defined above will work with partitioned assets on any filesystem:
+The I/O managers defined above will work with partitioned assets on any filesystem:
 
 ```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_def_marker endbefore=end_marker
 from typing import Optional
@@ -688,26 +753,26 @@ class PandasAssetIOManager(ConfigurableIOManager):
             f"{context.asset_key.path[-1]}.csv",
         )
 
-    def load_input(self, context):
+    def load_input(self, context) -> pd.DataFrame:
         file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context):
+    def load_input(self, context) -> np.ndarray:
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 
 
 @asset(io_manager_key="pandas_manager")
-def upstream_asset():
+def upstream_asset() -> pd.DataFrame:
     return pd.DataFrame([1, 2, 3])
 
 
 @asset(
     ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
 )
-def downstream_asset(upstream):
+def downstream_asset(upstream: np.ndarray) -> tuple:
     return upstream.shape
 
 
@@ -785,10 +850,27 @@ Any entries yielded this way will be attached to the `Handled Output` event for 
 
 Additionally, if the handled output is part of a software-defined asset, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
 
+## Built-in I/O managers list
+
+| Name                                                                                       | Description                                                                   | Additional Documentation                                                                                               |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="FilesystemIOManager" />                                 | Default I/O manager. Stores outputs as pickle files on the local file system. |                                                                                                                        |
+| <PyObject module="dagster" object="InMemoryIOManager" />                                   | Stores outputs in memory. Primarily useful for unit testing.                  |                                                                                                                        |
+| <PyObject module="dagster_aws.s3" object="S3PickleIOManager" />                            | Stores outputs as pickle files in Amazon Web Services S3.                     |                                                                                                                        |
+| <PyObject module="dagster_azure.adls2" object="ConfigurablePickledObjectADLS2IOManager" /> | Stores outputs as pickle files in Azure ADLS2.                                |                                                                                                                        |
+| <PyObject module="dagster_gcp" object="GCSPickleIOManager" />                              | Stores outputs as pickle files in Google Cloud Platform GCS.                  |                                                                                                                        |
+| <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />                  | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            | [Tutorial](/integrations/bigquery/using-bigquery-with-dagster), [Reference Guide](/integrations/bigquery/reference)    |
+| <PyObject module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />                | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           | [Tutorial](/integrations/bigquery/using-bigquery-with-dagster), [Reference Guide](/integrations/bigquery/reference)    |
+| <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />           | Stores Pandas DataFrame outputs in Snowflake.                                 | [Tutorial](/integrations/snowflake/using-snowflake-with-dagster), [Reference Guide](/integrations/snowflake/reference) |
+| <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />         | Stores PySpark DataFrame outputs in Snowflake.                                | [Tutorial](/integrations/snowflake/using-snowflake-with-dagster), [Reference Guide](/integrations/snowflake/reference) |
+| <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |                                                                                                                        |
+| <PyObject module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |                                                                                                                        |
+| <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                                                                                                        |
+
 ## See it in action
 
 For more examples of I/O managers, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 
-- [Parquet IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
+- [Parquet I/O Manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
 
 Our [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_pandas_type_metadata) also covers writing custom I/O managers.

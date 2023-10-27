@@ -94,6 +94,7 @@ test_airflow_example_dags_inputs = [
             "example_complex",
             # can flake due to 502 Server Error: Bad Gateway for url: https://www.httpbin.org/
             "example_http_operator",
+            "example_dynamic_task_mapping_with_no_taskflow_operators",
         ],
     ),
 ]

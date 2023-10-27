@@ -92,7 +92,7 @@ def test_single_op_job_success():
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.job_name == "single_op_job"
-    assert start_event.dagster_event.solid_name == "op_one"
+    assert start_event.dagster_event.node_name == "op_one"
 
     # persisted logging tags contain pipeline_name but not pipeline_tags
     assert start_event.dagster_event.logging_tags["job_name"] == "single_op_job"
@@ -104,7 +104,7 @@ def test_single_op_job_success():
 
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)
     assert success_event.job_name == "single_op_job"
-    assert success_event.dagster_event.solid_name == "op_one"
+    assert success_event.dagster_event.node_name == "op_one"
 
     assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)
     assert success_event.dagster_event.step_success_data.duration_ms > 0.0
@@ -135,13 +135,13 @@ def test_single_op_job_failure():
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.job_name == "single_op_job"
 
-    assert start_event.dagster_event.solid_name == "op_one"
+    assert start_event.dagster_event.node_name == "op_one"
     assert start_event.level == logging.DEBUG
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
     assert failure_event.job_name == "single_op_job"
 
-    assert failure_event.dagster_event.solid_name == "op_one"
+    assert failure_event.dagster_event.node_name == "op_one"
     assert failure_event.level == logging.ERROR
 
 

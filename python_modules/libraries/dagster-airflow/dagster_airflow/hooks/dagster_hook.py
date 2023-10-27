@@ -7,9 +7,9 @@ from typing import Any, Mapping, Optional, cast
 # airflow 1.x and 2.x.
 import requests
 from airflow.exceptions import AirflowException
-from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.base_hook import BaseHook  # type: ignore
 from airflow.models import Connection
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
@@ -62,7 +62,7 @@ class DagsterHook(BaseHook):
         if is_airflow_2_loaded_in_environment():
             super().__init__()
         else:
-            super().__init__(source=None)  # type: ignore  # (airflow 1 compat)
+            super().__init__(source=None)
         self.url = url
         self.user_token = user_token
         self.organization_id = organization_id
@@ -176,7 +176,7 @@ fragment PythonErrorFragment on PythonError {
         else:
             raise AirflowException(
                 "Error launching run:"
-                f' {response_json["data"]["launchPipelineExecution"]["message"]}'
+                f" {response_json['data']['launchPipelineExecution']['message']}"
             )
 
     def wait_for_run(
@@ -265,10 +265,6 @@ mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
       }
       __typename
     }
-    ... on UnauthorizedError {
-      message
-      __typename
-    }
     ...PythonErrorFragment
   }
 }
@@ -297,5 +293,5 @@ fragment PythonErrorFragment on PythonError {
         ):
             raise AirflowException(
                 "Error terminating run:"
-                f' {response_json["data"]["terminatePipelineExecution"]["message"]}'
+                f" {response_json['data']['terminatePipelineExecution']['message']}"
             )

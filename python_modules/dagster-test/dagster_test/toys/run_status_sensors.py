@@ -46,8 +46,7 @@ def status_job():
 
 @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
 def yield_run_request_succeeds_sensor(context):
-    """We recommend returning RunRequests, but it's possible to yield, so this is here to test it.
-    """
+    """We recommend returning RunRequests, but it's possible to yield, so this is here to test it."""
     if context.dagster_run.job_name != status_job.name:
         yield RunRequest(
             run_key=None,

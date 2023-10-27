@@ -9,7 +9,7 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
-1. Install Python 3.7 or above.
+1. Install Python 3.8 or above.
 
 2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
 
@@ -44,7 +44,7 @@ We love to see our community members get involved! If you are planning to contri
    git clone git@github.com:dagster-io/dagster.git
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of rebuild_dagit) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of `rebuild_ui`) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
 
    ```bash
    make dev_install
@@ -62,31 +62,30 @@ We love to see our community members get involved! If you are planning to contri
 
 Some notes on developing in Dagster:
 
-- **Black/Ruff/Pyright**: We use [black](https://github.com/python/black) to enforce a consistent code style, [ruff](https://github.com/charliermarsh/ruff) for linting and import sorting, and [pyright](https://github.com/microsoft/pyright) for static type-checking. We test these in our CI/CD pipeline.
-  - Run `make black` from the repo root to automatically format your files.
-  - Run `make ruff` from the repo root to sort imports and autofix some lint errors. It will also print out errors that need to be manually fixed.
+- **Ruff/Pyright**: We use [ruff](https://github.com/charliermarsh/ruff) for formatting, linting and import sorting, and [pyright](https://github.com/microsoft/pyright) for static type-checking. We test these in our CI/CD pipeline.
+  - Run `make ruff` from the repo root to format, sort imports, and autofix some lint errors. It will also print out errors that need to be manually fixed.
   - Run `make pyright` from the repo root to analyze the whole repo for type-correctness. Note that the first time you run this, it will take several minutes because a new virtualenv will be constructed.
 - **Line Width**: We use a line width of 100.
-- **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
+- **IDE**: We recommend setting up your IDE to format and check with ruff on save, but you can always run `make ruff` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
 
-## Developing Dagit
+## Developing the Dagster webserver/UI
 
-For development, run the Dagit GraphQL server on a different port than the webapp, with any pipeline. For example:
+For development, run an instance of the webserver providing GraphQL service on a different port than the webapp, with any pipeline. For example:
 
 ```bash
 cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/
-dagit -p 3333 -f complex_pipeline.py
+dagster-webserver -p 3333 -f complex_pipeline.py
 ```
 
 Keep this running. Then, in another terminal, run the local development (autoreloading, etc.) version of the webapp:
 
 ```bash
-cd dagster/js_modules/dagit
+cd dagster/js_modules/dagster-ui
 make dev_webapp
 ```
 
-During development, you might find these commands useful. Run them from `dagster/js_modules/dagit`:
+During development, you might find these commands useful. Run them from `dagster/js_modules/dagster-ui`:
 
 - `yarn ts`: Typescript typechecking
 - `yarn lint`: Linting with autofix
@@ -135,9 +134,7 @@ You can find more information about developing documentation in `docs/README.md`
 
 ## Picking a Github Issue
 
-We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
-
-Then, you can work on the issue labeled as [`good second issue`](https://github.com/dagster-io/dagster/labels/good%20second%20issue) which is more like a medium task.
+We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aopen+is%3Aissue+label%3A%22type%3A+good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
 When you are ready for more of a challenge, you can tackle issues with the [most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc). We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest.
 

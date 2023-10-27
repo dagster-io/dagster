@@ -1,7 +1,7 @@
 import os
 import uuid
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Any, Iterator, Mapping
 from unittest.mock import patch
 
 import pytest
@@ -52,7 +52,7 @@ resource_config = {
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
-SHARED_BUILDKITE_SNOWFLAKE_CONF = {
+SHARED_BUILDKITE_SNOWFLAKE_CONF: Mapping[str, Any] = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": "BUILDKITE",
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
@@ -152,6 +152,7 @@ def test_build_snowflake_pyspark_io_manager():
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_io_manager_with_snowflake_pyspark(spark, io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -175,10 +176,10 @@ def test_io_manager_with_snowflake_pyspark(spark, io_manager):
             assert df.count() == 2
 
         @job(resource_defs={"io_manager": io_manager})
-        def io_manager_test_pipeline():
+        def io_manager_test_job():
             read_pyspark_df(emit_pyspark_df())
 
-        res = io_manager_test_pipeline.execute_in_process()
+        res = io_manager_test_job.execute_in_process()
         assert res.success
 
 
@@ -186,6 +187,7 @@ def test_io_manager_with_snowflake_pyspark(spark, io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_time_window_partitioned_asset(spark, io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -294,6 +296,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_static_partitioned_asset(spark, io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -395,6 +398,7 @@ def test_static_partitioned_asset(spark, io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_multi_partitioned_asset(spark, io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -525,6 +529,7 @@ def test_multi_partitioned_asset(spark, io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_dynamic_partitions(spark, io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
@@ -638,6 +643,7 @@ def test_dynamic_partitions(spark, io_manager):
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
+@pytest.mark.integration
 def test_self_dependent_asset(spark, io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,

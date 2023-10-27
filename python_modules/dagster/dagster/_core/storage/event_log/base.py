@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -14,22 +15,25 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import (
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatsSnapshot
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._seven import json
 from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -126,6 +130,12 @@ class AssetEntry(
             return None
         return self.last_materialization_record.event_log_entry
 
+    @property
+    def last_materialization_storage_id(self) -> Optional[int]:
+        if self.last_materialization_record is None:
+            return None
+        return self.last_materialization_record.storage_id
+
 
 class AssetRecord(NamedTuple):
     """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
@@ -144,7 +154,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     :py:class:`~dagster._core.storage.event_log.SqlEventLogStorage`.
 
     Users should not directly instantiate concrete subclasses of this class; they are instantiated
-    by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the
+    by internal machinery when ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the
     ``dagster.yaml`` file in ``$DAGSTER_HOME``. Configuration of concrete subclasses of this class
     should be done by setting values in that file.
     """
@@ -155,6 +165,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> Sequence["EventLogEntry"]:
         """Get all of the logs corresponding to a run.
 
@@ -167,7 +178,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
         if isinstance(cursor, int):
             cursor = EventLogCursor.from_offset(cursor + 1).to_string()
-        records = self.get_records_for_run(run_id, cursor, of_type, limit).records
+        records = self.get_records_for_run(
+            run_id, cursor, of_type, limit, ascending=ascending
+        ).records
         return [record.event_log_entry for record in records]
 
     @abstractmethod
@@ -177,6 +190,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         cursor: Optional[str] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
+        ascending: bool = True,
     ) -> EventLogConnection:
         """Get all of the event log records corresponding to a run.
 
@@ -251,9 +265,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def dispose(self) -> None:
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived dagit process.
-        """
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     @abstractmethod
     def get_event_records(
@@ -277,8 +290,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     def get_maximum_record_id(self) -> Optional[int]:
-        """Get the current greatest record id in the event log. Only supported for non sharded sql storage.
-        """
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage."""
         raise NotImplementedError()
 
     @abstractmethod
@@ -333,7 +345,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_latest_materialization_events(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         pass
 
@@ -359,12 +371,17 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
-    def get_asset_run_ids(self, asset_key: AssetKey) -> Sequence[str]:
-        pass
-
-    @abstractmethod
     def wipe_asset(self, asset_key: AssetKey) -> None:
         """Remove asset index history from event log for given asset_key."""
+
+    @abstractmethod
+    def get_materialized_partitions(
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Set[str]:
+        pass
 
     @abstractmethod
     def get_materialization_count_by_partition(
@@ -373,8 +390,26 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
+    def get_latest_storage_id_by_partition(
+        self, asset_key: AssetKey, event_type: DagsterEventType
+    ) -> Mapping[str, int]:
+        pass
+
+    @abstractmethod
+    def get_latest_tags_by_partition(
+        self,
+        asset_key: AssetKey,
+        event_type: DagsterEventType,
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
+        pass
+
+    @abstractmethod
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: AssetKey
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         pass
 
@@ -407,3 +442,73 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def is_run_sharded(self) -> bool:
         """Indicates that the EventLogStoarge is sharded."""
         return False
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        """Indicates that the EventLogStorage supports global concurrency limits."""
+        return False
+
+    @abstractmethod
+    def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
+        """Allocate concurrency slots for the given concurrency key."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_keys(self) -> Set[str]:
+        """Get the set of concurrency limited keys."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
+        """Get concurrency info for key."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+    ) -> ConcurrencyClaimStatus:
+        """Claim concurrency slots for step."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def check_concurrency_claim(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencyClaimStatus:
+        """Claim concurrency slots for step."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_run_ids(self) -> Set[str]:
+        """Get a list of run_ids that are occupying or waiting for a concurrency key slot."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_concurrency_slots_for_run(self, run_id: str) -> None:
+        """Frees concurrency slots for a given run."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
+        """Frees concurrency slots for a given run/step."""
+        raise NotImplementedError()
+
+    @property
+    def supports_asset_checks(self):
+        return True
+
+    @abstractmethod
+    def get_asset_check_execution_history(
+        self,
+        check_key: AssetCheckKey,
+        limit: int,
+        cursor: Optional[int] = None,
+    ) -> Sequence[AssetCheckExecutionRecord]:
+        """Get executions for one asset check, sorted by recency."""
+        pass
+
+    @abstractmethod
+    def get_latest_asset_check_execution_by_key(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
+        """Get the latest executions for a list of asset checks."""
+        pass

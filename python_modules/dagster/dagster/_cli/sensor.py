@@ -25,6 +25,8 @@ from dagster._core.scheduler.instigation import (
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
+from .utils import get_instance_for_cli
+
 
 @click.group(name="sensor")
 def sensor_cli():
@@ -61,9 +63,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for sensor_origin_id in added_sensors:
         print_fn(
             click.style(
-                "  + {name} (add) [{id}]".format(
-                    name=external_sensors_dict[sensor_origin_id].name, id=sensor_origin_id
-                ),
+                f"  + {external_sensors_dict[sensor_origin_id].name} (add) [{sensor_origin_id}]",
                 fg="green",
             )
         )
@@ -71,9 +71,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for sensor_origin_id in removed_sensors:
         print_fn(
             click.style(
-                "  + {name} (delete) [{id}]".format(
-                    name=external_sensors_dict[sensor_origin_id].name, id=sensor_origin_id
-                ),
+                f"  + {external_sensors_dict[sensor_origin_id].name} (delete) [{sensor_origin_id}]",
                 fg="red",
             )
         )
@@ -127,7 +125,7 @@ def sensor_list_command(running, stopped, name, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -186,7 +184,7 @@ def sensor_start_command(sensor_name, start_all, **kwargs):
 
 
 def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -197,11 +195,7 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
                 try:
                     for external_sensor in external_repo.get_external_sensors():
                         instance.start_sensor(external_sensor)
-                    print_fn(
-                        "Started all sensors for repository {repository_name}".format(
-                            repository_name=repository_name
-                        )
-                    )
+                    print_fn(f"Started all sensors for repository {repository_name}")
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
             else:
@@ -223,7 +217,7 @@ def sensor_stop_command(sensor_name, **kwargs):
 
 
 def execute_stop_command(sensor_name, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -269,7 +263,7 @@ def sensor_preview_command(sensor_name, since, last_run_key, cursor, **kwargs):
 def execute_preview_command(
     sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
 ):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_code_location_from_kwargs(
             instance,
             version=dagster_version,
@@ -303,18 +297,13 @@ def execute_preview_command(
                 if not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
-                            "Sensor returned false for {sensor_name}, skipping: {skip_message}"
-                            .format(
+                            "Sensor returned false for {sensor_name}, skipping: {skip_message}".format(
                                 sensor_name=external_sensor.name,
                                 skip_message=sensor_runtime_data.skip_message,
                             )
                         )
                     else:
-                        print_fn(
-                            "Sensor returned false for {sensor_name}, skipping".format(
-                                sensor_name=external_sensor.name
-                            )
-                        )
+                        print_fn(f"Sensor returned false for {external_sensor.name}, skipping")
                 else:
                     print_fn(
                         "Sensor returning run requests for {num} run(s):\n\n{run_requests}".format(
@@ -347,7 +336,7 @@ def sensor_cursor_command(sensor_name, **kwargs):
 
 
 def execute_cursor_command(sensor_name, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_code_location_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as code_location:

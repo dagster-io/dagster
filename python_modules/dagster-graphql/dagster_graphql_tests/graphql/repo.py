@@ -12,6 +12,10 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
+    AssetCheckKey,
+    AssetCheckResult,
+    AssetCheckSpec,
+    AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -57,6 +61,7 @@ from dagster import (
     WeeklyPartitionsDefinition,
     _check as check,
     asset,
+    asset_check,
     asset_sensor,
     dagster_type_loader,
     daily_partitioned_config,
@@ -75,11 +80,14 @@ from dagster import (
     schedule,
     static_partitioned_config,
     usable_as_dagster_type,
+    with_resources,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -88,8 +96,8 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.log_manager import coerce_valid_log_level
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
@@ -100,7 +108,7 @@ from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
-    infer_pipeline_selector,
+    infer_job_selector,
     main_repo_location_name,
     main_repo_name,
 )
@@ -135,6 +143,20 @@ def define_test_out_of_process_context(
 
 def create_main_recon_repo():
     return ReconstructableRepository.for_file(__file__, main_repo_name())
+
+
+@contextmanager
+def get_workspace_process_context(instance: DagsterInstance) -> Iterator[WorkspaceProcessContext]:
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "repo.py"),
+            attribute=main_repo_name(),
+            working_directory=None,
+            location_name=main_repo_location_name(),
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context
 
 
 @contextmanager
@@ -213,7 +235,7 @@ def noop_op(_):
     pass
 
 
-# Won't pass cloud-dagit test suite without `in_process_executor`.
+# Won't pass cloud-webserver test suite without `in_process_executor`.
 @job(executor_def=in_process_executor)
 def noop_job():
     noop_op()
@@ -940,17 +962,17 @@ def basic_job():
 def get_retry_multi_execution_params(
     graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
 ) -> Mapping[str, Any]:
-    selector = infer_pipeline_selector(graphql_context, "retry_multi_output_job")
+    selector = infer_job_selector(graphql_context, "retry_multi_output_job")
     return {
         "mode": "default",
         "selector": selector,
         "runConfigData": {
-            "solids": {"can_fail": {"config": {"fail": should_fail}}},
+            "ops": {"can_fail": {"config": {"fail": should_fail}}},
         },
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
-            "tags": ([{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else []),
+            "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else [],
         },
     }
 
@@ -1048,7 +1070,7 @@ def define_schedules():
         name="invalid_config_schedule",
         cron_schedule="0 0 * * *",
         job_name="job_with_enum_config",
-        run_config={"solids": {"takes_an_enum": {"config": "invalid"}}},
+        run_config={"ops": {"takes_an_enum": {"config": "invalid"}}},
     )
 
     @schedule(
@@ -1129,8 +1151,12 @@ def define_sensors():
         yield SensorResult(
             run_requests=[RunRequest(partition_key="new_key")],
             dynamic_partitions_requests=[
-                DynamicPartitionsDefinition(name="foo").build_add_request(["new_key", "new_key2"]),
-                DynamicPartitionsDefinition(name="foo").build_delete_request(["old_key"]),
+                DynamicPartitionsDefinition(name="foo").build_add_request(
+                    ["new_key", "new_key2", "existent_key"]
+                ),
+                DynamicPartitionsDefinition(name="foo").build_delete_request(
+                    ["old_key", "nonexistent_key"]
+                ),
             ],
         )
 
@@ -1354,6 +1380,17 @@ def asset_two(asset_one):
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
 
 
+@asset
+def executable_asset() -> None:
+    pass
+
+
+unexecutable_asset = next(iter(external_assets_from_specs([AssetSpec("unexecutable_asset")])))
+
+executable_test_job = build_assets_job(
+    name="executable_test_job", assets=[executable_asset, unexecutable_asset]
+)
+
 static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
 
 
@@ -1378,17 +1415,6 @@ def downstream_static_partitioned_asset(
 ):
     assert middle_static_partitioned_asset_1
     assert middle_static_partitioned_asset_2
-
-
-static_partitioned_assets_job = build_assets_job(
-    "static_partitioned_assets_job",
-    assets=[
-        upstream_static_partitioned_asset,
-        middle_static_partitioned_asset_1,
-        middle_static_partitioned_asset_2,
-        downstream_static_partitioned_asset,
-    ],
-)
 
 
 @asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
@@ -1580,12 +1606,12 @@ def asset_1():
     yield Output(3)
 
 
-@asset(non_argument_deps={AssetKey("asset_1")})
+@asset(deps=[AssetKey("asset_1")])
 def asset_2():
     raise Exception("foo")
 
 
-@asset(non_argument_deps={AssetKey("asset_2")})
+@asset(deps=[AssetKey("asset_2")])
 def asset_3():
     yield Output(7)
 
@@ -1596,31 +1622,31 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context: OpExecutionContext):
+def foo(context: AssetExecutionContext):
     assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context: OpExecutionContext):
+def bar(context: AssetExecutionContext):
     assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context: OpExecutionContext, foo, bar):
+def foo_bar(context: AssetExecutionContext, foo, bar):
     assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context: OpExecutionContext, foo_bar):
+def baz(context: AssetExecutionContext, foo_bar):
     assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context: OpExecutionContext):
+def unconnected(context: AssetExecutionContext):
     assert context.job_def.asset_selection_data is not None
 
 
@@ -1667,7 +1693,7 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
-@asset(non_argument_deps={AssetKey("diamond_source")})
+@asset(deps=[AssetKey("diamond_source")])
 def fresh_diamond_top():
     return 1
 
@@ -1814,7 +1840,6 @@ def define_jobs():
         hanging_job,
         two_ins_job,
         two_assets_job,
-        static_partitioned_assets_job,
         dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
@@ -1822,11 +1847,13 @@ def define_jobs():
         hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
+        asset_check_job,
         foo_job,
         hanging_graph_asset_job,
         named_groups_job,
         memoization_job,
         req_config_job,
+        executable_test_job,
     ]
 
 
@@ -1878,18 +1905,98 @@ def define_asset_jobs():
         upstream_daily_partitioned_asset,
         downstream_weekly_partitioned_asset,
         unpartitioned_upstream_of_partitioned,
+        upstream_static_partitioned_asset,
+        middle_static_partitioned_asset_1,
+        middle_static_partitioned_asset_2,
+        downstream_static_partitioned_asset,
+        define_asset_job(
+            "static_partitioned_assets_job",
+            AssetSelection.assets(upstream_static_partitioned_asset).downstream(),
+        ),
+        with_resources(
+            [hanging_partition_asset],
+            {
+                "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+                "hanging_asset_resource": hanging_asset_resource,
+            },
+        ),
+        subsettable_checked_multi_asset,
+        checked_multi_asset_job,
+        check_in_op_asset,
+        asset_check_job,
     ]
 
 
-@repository
+@asset_check(asset=asset_1, description="asset_1 check")
+def my_check(asset_1):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "bar",
+            "baz": "quux",
+        },
+    )
+
+
+@asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
+def check_in_op_asset():
+    yield Output(1)
+    yield AssetCheckResult(passed=True)
+
+
+asset_check_job = build_assets_job(
+    "asset_check_job", [asset_1, check_in_op_asset], asset_checks=[my_check]
+)
+
+
+@multi_asset(
+    outs={
+        "one": AssetOut(key="one", is_required=False),
+        "two": AssetOut(key="two", is_required=False),
+    },
+    check_specs=[
+        AssetCheckSpec("my_check", asset="one"),
+        AssetCheckSpec("my_other_check", asset="one"),
+    ],
+    can_subset=True,
+)
+def subsettable_checked_multi_asset(context: OpExecutionContext):
+    if AssetKey("one") in context.selected_asset_keys:
+        yield Output(1, output_name="one")
+    if AssetKey("two") in context.selected_asset_keys:
+        yield Output(1, output_name="two")
+    if AssetCheckKey(AssetKey("one"), "my_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_check", passed=True)
+    if AssetCheckKey(AssetKey("one"), "my_other_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_other_check", passed=True)
+
+
+checked_multi_asset_job = define_asset_job(
+    "checked_multi_asset_job", AssetSelection.assets(subsettable_checked_multi_asset)
+)
+
+
+def define_asset_checks():
+    return [
+        my_check,
+    ]
+
+
+@repository(default_executor_def=in_process_executor)
 def test_repo():
-    return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
+    return [
+        *define_jobs(),
+        *define_schedules(),
+        *define_sensors(),
+        *define_asset_jobs(),
+        *define_asset_checks(),
+    ]
 
 
 defs = Definitions()
 
 
-@repository
+@repository(default_executor_def=in_process_executor)
 def test_dict_repo():
     return {
         "jobs": {job.name: job for job in define_jobs()},

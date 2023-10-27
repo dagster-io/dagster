@@ -302,6 +302,57 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         for partitionStatus in partitionStatuses:
             assert partitionStatus["runStatus"] == "SUCCESS"
 
+    def test_get_status_failure_cancelation_states(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3", "4"],
+                    "forceSynchronousSubmission": True,
+                }
+            },
+        )
+
+        assert not result.errors
+
+        runs = graphql_context.instance.get_runs()
+        graphql_context.instance.report_run_failed(runs[1])
+        graphql_context.instance.report_run_canceled(runs[2])
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            query=GET_PARTITION_SET_STATUS_QUERY,
+            variables={
+                "partitionSetName": "integers_partition_set",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
+            "results"
+        ]
+        failure = 0
+        canceled = 0
+        success = 0
+        for partitionStatus in partitionStatuses:
+            if partitionStatus["runStatus"] == "FAILURE":
+                failure += 1
+            if partitionStatus["runStatus"] == "CANCELED":
+                canceled += 1
+            if partitionStatus["runStatus"] == "SUCCESS":
+                success += 1
+
+        # Note: Canceled run is not reflected in partition status
+        assert failure == 1
+        assert success == 1
+        assert canceled == 0
+
     def test_get_status_time_window_partitioned_job(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql_and_finish_runs(

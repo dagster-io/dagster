@@ -90,10 +90,14 @@ data:
     run_monitoring:
       enabled: {{ $runMonitoring.enabled }}
       start_timeout_seconds:  {{ $runMonitoring.startTimeoutSeconds }}
+      {{- if not (kindIs "invalid" $runMonitoring.cancelTimeoutSeconds) }}
+      cancel_timeout_seconds:  {{ $runMonitoring.cancelTimeoutSeconds }}
+      {{- end }}
       {{- if not (kindIs "invalid" $runMonitoring.maxResumeRunAttempts) }}
       max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
       {{- end }}
       poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
+      free_slots_after_run_end_seconds: {{ $runMonitoring.freeSlotsAfterRunEndSeconds }}
     {{- end }}
 
     {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runRetries.enabled) }}
@@ -112,6 +116,9 @@ data:
       {{- if $sensors.numWorkers }}
       num_workers: {{ $sensors.numWorkers }}
       {{- end }}
+      {{- if $sensors.numSubmitWorkers }}
+      num_submit_workers: {{ $sensors.numSubmitWorkers }}
+      {{- end }}
     {{- end }}
 
     {{- $schedules := .Values.dagsterDaemon.schedules }}
@@ -120,6 +127,9 @@ data:
       use_threads: {{ $schedules.useThreads }}
       {{- if $schedules.numWorkers }}
       num_workers: {{ $schedules.numWorkers }}
+      {{- end }}
+      {{- if $schedules.numSubmitWorkers }}
+      num_submit_workers: {{ $schedules.numSubmitWorkers }}
       {{- end }}
     {{- end }}
 
@@ -136,4 +146,12 @@ data:
       schedule:
         purge_after_days: {{ .Values.retention.schedule.purgeAfterDays | toYaml | nindent 12 }}
       {{- end }}
+      {{- if .Values.retention.autoMaterialize }}
+      auto_materialize:
+        purge_after_days: {{ .Values.retention.autoMaterialize.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
+    {{- end }}
+
+    {{- if .Values.additionalInstanceConfig }}
+    {{- .Values.additionalInstanceConfig | toYaml | nindent 4}}
     {{- end }}

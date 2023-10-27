@@ -9,7 +9,7 @@ from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats
@@ -30,7 +30,6 @@ class _ArgNotPresentSentinel:
 
 
 class GrapheneInputDefinition(graphene.ObjectType):
-    solid_definition = graphene.NonNull(lambda: GrapheneSolidDefinition)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(GrapheneDagsterType)
@@ -45,8 +44,8 @@ class GrapheneInputDefinition(graphene.ObjectType):
         )
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(input_def_name, "input_def_name")
-        solid_def_snap = self._represented_job.get_node_def_snap(solid_def_name)
-        self._input_def_snap = solid_def_snap.get_input_snap(input_def_name)
+        node_def_snap = self._represented_job.get_node_def_snap(solid_def_name)
+        self._input_def_snap = node_def_snap.get_input_snap(input_def_name)
         super().__init__(
             name=self._input_def_snap.name,
             description=self._input_def_snap.description,
@@ -57,17 +56,11 @@ class GrapheneInputDefinition(graphene.ObjectType):
             self._represented_job.job_snapshot, self._input_def_snap.dagster_type_key
         )
 
-    def resolve_solid_definition(
-        self, _graphene_info: ResolveInfo
-    ) -> Union["GrapheneSolidDefinition", "GrapheneCompositeSolidDefinition"]:
-        return build_solid_definition(self._represented_job, self._solid_def_snap.name)
-
     def resolve_metadata_entries(self, _graphene_info):
         return list(iterate_metadata_entries(self._input_def_snap.metadata))
 
 
 class GrapheneOutputDefinition(graphene.ObjectType):
-    solid_definition = graphene.NonNull(lambda: GrapheneSolidDefinition)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     is_dynamic = graphene.Boolean()
@@ -90,8 +83,8 @@ class GrapheneOutputDefinition(graphene.ObjectType):
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(output_def_name, "output_def_name")
 
-        self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        self._output_def_snap = self._solid_def_snap.get_output_snap(output_def_name)
+        node_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
+        self._output_def_snap = node_def_snap.get_output_snap(output_def_name)
 
         super().__init__(
             name=self._output_def_snap.name,
@@ -104,11 +97,6 @@ class GrapheneOutputDefinition(graphene.ObjectType):
             self._represented_pipeline.job_snapshot,
             self._output_def_snap.dagster_type_key,
         )
-
-    def resolve_solid_definition(
-        self, _graphene_info
-    ) -> Union["GrapheneSolidDefinition", "GrapheneCompositeSolidDefinition"]:
-        return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
         return list(iterate_metadata_entries(self._output_def_snap.metadata))

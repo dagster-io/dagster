@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
 
@@ -12,7 +10,7 @@ from dagster._core.host_representation.external import ExternalExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .utils import UserFacingGraphQLError, capture_error
+from .utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GrapheneRepositoryNotFoundError
@@ -107,8 +105,7 @@ def get_external_execution_plan_or_raise(
     )
 
 
-@capture_error
-def fetch_repositories(graphene_info: "ResolveInfo") -> GrapheneRepositoryConnection:
+def fetch_repositories(graphene_info: "ResolveInfo") -> "GrapheneRepositoryConnection":
     from ..schema.external import GrapheneRepository, GrapheneRepositoryConnection
 
     return GrapheneRepositoryConnection(
@@ -124,10 +121,9 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> GrapheneRepositoryConnec
     )
 
 
-@capture_error
 def fetch_repository(
     graphene_info: "ResolveInfo", repository_selector: RepositorySelector
-) -> Union[GrapheneRepository, GrapheneRepositoryNotFoundError]:
+) -> Union["GrapheneRepository", "GrapheneRepositoryNotFoundError"]:
     from ..schema.errors import GrapheneRepositoryNotFoundError
     from ..schema.external import GrapheneRepository
 
@@ -147,8 +143,7 @@ def fetch_repository(
     )
 
 
-@capture_error
-def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> GrapheneWorkspace:
+def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> "GrapheneWorkspace":
     from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
@@ -163,10 +158,9 @@ def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> Graph
     return GrapheneWorkspace(locationEntries=nodes)
 
 
-@capture_error
 def fetch_location_statuses(
     workspace_request_context: WorkspaceRequestContext,
-) -> GrapheneWorkspaceLocationStatusEntries:
+) -> "GrapheneWorkspaceLocationStatusEntries":
     from ..schema.external import (
         GrapheneRepositoryLocationLoadStatus,
         GrapheneWorkspaceLocationStatusEntries,

@@ -46,6 +46,33 @@ locations:
           memory: 16384
         execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
         task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
+        mount_points:
+          - sourceVolume: myEfsVolume
+            containerPath: "/mount/efs"
+            readOnly: True
+        volumes:
+          - name: myEfsVolume
+            efsVolumeConfiguration:
+              fileSystemId: fs-1234
+              rootDirectory: /path/to/my/data
+        server_sidecar_containers:
+          - name: DatadogAgent
+            image: public.ecr.aws/datadog/agent:latest
+            environment:
+              - name: ECS_FARGATE
+                value: true
+        run_sidecar_containers:
+          - name: DatadogAgent
+            image: public.ecr.aws/datadog/agent:latest
+            environment:
+              - name: ECS_FARGATE
+                value: true
+        server_ecs_tags:
+          - key: MyEcsTagKey
+            value: MyEcsTagValue
+        run_ecs_tags:
+          - key: MyEcsTagKeyWithoutValue
+        repository_credentials: MyRepositoryCredentialsSecretArn
 ```
 
 ### Environment variables and secrets
@@ -99,7 +126,9 @@ instance_class:
 
 dagster_cloud_api:
   agent_token: <Agent Token String>
-  deployment: <Deployment Name>
+  deployments:
+    - <Deployment Name>
+    - <Optional Additional Deployment Name>
   branch_deployments: <true|false>
 
 user_code_launcher:
@@ -121,9 +150,29 @@ user_code_launcher:
     server_resources:
       cpu: <CPU value>
       memory: <Memory value>
+    server_sidecar_containers:
+      - name: SidecarName
+        image: SidecarImage
+        <Additional container fields>
     run_resources:
       cpu: <CPU value>
       memory: <Memory value>
+    run_sidecar_containers:
+      - name: SidecarName
+        image: SidecarImage
+        <Additional container fields>
+    mount_points:
+      - <List of mountPoints to pass into register_task_definition>
+    volumes:
+      - <List of volumes to pass into register_task_definition>
+    server_ecs_tags:
+      - key: MyEcsTagKey
+        value: MyEcsTagValue
+    run_ecs_tags:
+      - key: MyEcsTagKeyWithoutValue
+    repository_credentials: MyRepositoryCredentialsSecretArn
+    isolated_agents:
+      enabled: <true|false>
 ```
 
 ### dagster_cloud_api properties
@@ -132,8 +181,8 @@ user_code_launcher:
   <ReferenceTableItem propertyName="dagster_cloud_api.agent_token">
     An agent token for the agent to use for authentication.
   </ReferenceTableItem>
-  <ReferenceTableItem propertyName="dagster_cloud_api.deployment">
-    The name of a full deployment for the agent to serve.
+  <ReferenceTableItem propertyName="dagster_cloud_api.deployments">
+    The names of full deployments for the agent to serve.
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="dagster_cloud_api.branch_deployments">
     Whether the agent should serve all branch deployments.
@@ -200,9 +249,23 @@ user_code_launcher:
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.server_process_startup_timeout">
-  The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load and results in timeouts in the <strong>Deployment</strong> tab, you can increase this setting above the default. <strong>Note</strong> This setting isn't applicable to the time it takes for a job to execute.
+  The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load after your ECS task starts up and results in timeouts in the <strong>Deployment</strong> tab, you can increase this setting above the default. <strong>Note</strong> This setting isn't applicable to the time it takes for a job to execute.
   <ul>
   <li><strong>Default</strong> - 180 (seconds)</li>
+  </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.ecs_timeout">
+  How long (in seconds) to wait for ECS to spin up a new service and task for a code server. If your ECS tasks take an unusually long time to start and result in timeouts, you can increase this setting above the default.
+  <ul>
+  <li><strong>Default</strong> - 300 (seconds)</li>
+  </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.ecs_grace_period">
+  How long (in seconds) to continue polling if an ECS API endpoint fails during creation of a new code server (because the ECS API is eventually consistent).
+  <ul>
+  <li><strong>Default</strong> - 30 (seconds)</li>
   </ul>
   </ReferenceTableItem>
   <ReferenceTableItem
@@ -210,7 +273,36 @@ user_code_launcher:
   The resources that the agent should allocate to the ECS service for each code location that it creates. If set, must be a dictionary with a <code>cpu</code> and/or <code>memory</code> key. <strong>Note</strong>: <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html">Fargate tasks only support certain combinations of CPU and memory</a>.
   </ReferenceTableItem>
   <ReferenceTableItem
+  propertyName="config.server_sidecar_containers">
+  Additional sidecar containers to include along with the Dagster container. If set, must be a list of dictionaries with valid ECS container definitions.
+  </ReferenceTableItem>
+  <ReferenceTableItem
   propertyName="config.run_resources">
   The resources that the agent should allocate to the ECS task that it creates for each run. If set, must be a dictionary with a <code>cpu</code> and/or <code>memory</code> key. <strong>Note</strong>: <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html">Fargate tasks only support certain combinations of CPU and memory</a>.
   </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.run_sidecar_containers">
+  Additional sidecar containers to include along with the Dagster container. If set, must be a list of dictionaries with valid ECS container definitions.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.mount_points">
+  Mount points to include in the Dagster container. If set, should be a list of dictionaries matching the <code>mountPoints</code> field when specifying a container definition to boto3.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.volumes">
+  Additional volumes to include in the task definition. If set, should be a list of dictionaries matching the volumes argument to <code>register_task_definition</code> in boto3.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.server_ecs_tags">
+  Additional ECS tags to include in the service for each code location. If set, must be a list of dictionaries, each with a <code>key</code> key and optional <code>value</code> key.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.run_ecs_tags">
+  Additional ECS tags to include in the task for each run. If set, must be a list of dictionaries, each with a <code>key</code> key and optional <code>value</code> key.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.repository_credentials">
+  Optional arn of the secret to authenticate into your private container registry. This does not apply if you are leveraging ECR for your images, see https://docs.aws.amazon.com/AmazonECS/latest/userguide/private-auth.html.
+  </ReferenceTableItem>
+
 </ReferenceTable>

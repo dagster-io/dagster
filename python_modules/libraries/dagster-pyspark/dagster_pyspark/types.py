@@ -670,7 +670,7 @@ WriteCompressionParquetOptions = Enum(
 )
 def dataframe_loader(_context, config):
     spark_read = _context.resources.pyspark.spark_session.read
-    file_type, file_options = list(config.items())[0]
+    file_type, file_options = next(iter(config.items()))
     path = file_options.get("path")
 
     if file_type == "csv":

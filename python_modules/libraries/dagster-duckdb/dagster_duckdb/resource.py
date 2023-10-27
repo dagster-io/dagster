@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import Any, Dict
 
 import duckdb
 from dagster import ConfigurableResource
@@ -33,13 +34,28 @@ class DuckDBResource(ConfigurableResource):
             " database "
         )
     )
+    connection_config: Dict[str, Any] = Field(
+        description=(
+            "DuckDB connection configuration options. See"
+            " https://duckdb.org/docs/sql/configuration.html"
+        ),
+        default={},
+    )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @contextmanager
     def get_connection(self):
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
-            kwargs={"database": self.database, "read_only": False},
+            kwargs={
+                "database": self.database,
+                "read_only": False,
+                "config": self.connection_config,
+            },
             max_retries=10,
         )
 

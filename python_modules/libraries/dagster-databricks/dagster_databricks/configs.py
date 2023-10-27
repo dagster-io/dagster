@@ -9,10 +9,24 @@ See:
 - https://docs.databricks.com/dev-tools/api/latest/clusters.html
 - https://docs.databricks.com/dev-tools/api/latest/libraries.html
 """
-from dagster import Array, Bool, Enum, EnumValue, Field, Int, Permissive, Selector, Shape, String
+from typing import Dict, Union
+
+from dagster import (
+    Array,
+    Bool,
+    Enum,
+    EnumValue,
+    Field,
+    Int,
+    Noneable,
+    Permissive,
+    Selector,
+    Shape,
+    String,
+)
 
 
-def _define_autoscale():
+def _define_autoscale() -> Field:
     return Field(
         Shape(
             fields={
@@ -36,7 +50,7 @@ def _define_autoscale():
     )
 
 
-def _define_size():
+def _define_size() -> Selector:
     num_workers = Field(
         Int,
         description=(
@@ -49,7 +63,7 @@ def _define_size():
     return Selector({"autoscale": _define_autoscale(), "num_workers": num_workers})
 
 
-def _define_custom_tags():
+def _define_custom_tags() -> Field:
     key = Field(
         String,
         description=(
@@ -81,12 +95,12 @@ def _define_custom_tags():
     )
 
 
-def _define_dbfs_storage_info():
+def _define_dbfs_storage_info() -> Field:
     destination = Field(String, description="DBFS destination, e.g. dbfs:/my/path")
     return Field(Shape(fields={"destination": destination}), description="DBFS storage information")
 
 
-def _define_s3_storage_info():
+def _define_s3_storage_info() -> Field:
     destination = Field(
         String,
         description=(
@@ -160,7 +174,7 @@ def _define_s3_storage_info():
     )
 
 
-def _define_aws_attributes_conf():
+def _define_aws_attributes_conf() -> Field:
     return Field(
         Permissive(
             fields={
@@ -258,7 +272,7 @@ def _define_aws_attributes_conf():
     )
 
 
-def _define_cluster_log_conf():
+def _define_cluster_log_conf() -> Field:
     return Field(
         Selector({"dbfs": _define_dbfs_storage_info(), "s3": _define_s3_storage_info()}),
         description=(
@@ -272,11 +286,52 @@ def _define_cluster_log_conf():
     )
 
 
+def _define_workspace_storage_info() -> Field:
+    return Field(
+        Shape(
+            fields={
+                "destination": Field(
+                    String,
+                    description=(
+                        "The path to the directory in the workspace where the notebook is located."
+                    ),
+                    is_required=True,
+                )
+            }
+        ),
+        description="Workspace storage information",
+    )
+
+
+def _define_volumes_storage_info() -> Field:
+    return Field(
+        Shape(
+            fields={
+                "destination": Field(
+                    String,
+                    description=(
+                        "The path to the directory in the workspace where the notebook is located."
+                    ),
+                    is_required=True,
+                )
+            }
+        ),
+        description="Workspace storage information",
+    )
+
+
 def _define_init_script():
-    return Selector({"dbfs": _define_dbfs_storage_info(), "s3": _define_s3_storage_info()})
+    return Selector(
+        {
+            "dbfs": _define_dbfs_storage_info(),
+            "s3": _define_s3_storage_info(),
+            "workspace": _define_workspace_storage_info(),
+            "volumes": _define_volumes_storage_info(),
+        }
+    )
 
 
-def _define_node_types():
+def _define_node_types() -> Field:
     node_type_id = Field(
         String,
         description=(
@@ -304,7 +359,7 @@ def _define_node_types():
     )
 
 
-def _define_nodes():
+def _define_nodes() -> Field:
     instance_pool_id = Field(
         String,
         description=(
@@ -324,7 +379,7 @@ def _define_nodes():
     )
 
 
-def _define_new_cluster():
+def _define_new_cluster() -> Field:
     spark_version = Field(
         String,
         description=(
@@ -396,6 +451,11 @@ def _define_new_cluster():
         ),
         is_required=False,
     )
+    policy_id = Field(
+        String,
+        description="The ID of the cluster policy used to create the cluster if applicable",
+        is_required=False,
+    )
 
     return Field(
         Shape(
@@ -411,12 +471,13 @@ def _define_new_cluster():
                 "init_scripts": init_scripts,
                 "spark_env_vars": spark_env_vars,
                 "enable_elastic_disk": enable_elastic_disk,
+                "policy_id": policy_id,
             }
         )
     )
 
 
-def _define_cluster():
+def _define_cluster() -> Selector:
     existing_cluster_id = Field(
         String,
         description=(
@@ -431,7 +492,7 @@ def _define_cluster():
     return Selector({"new": _define_new_cluster(), "existing": existing_cluster_id})
 
 
-def _define_pypi_library():
+def _define_pypi_library() -> Field:
     package = Field(
         String,
         description=(
@@ -457,7 +518,7 @@ def _define_pypi_library():
     )
 
 
-def _define_maven_library():
+def _define_maven_library() -> Field:
     coordinates = Field(
         String,
         description=(
@@ -490,7 +551,7 @@ def _define_maven_library():
     )
 
 
-def _define_cran_library():
+def _define_cran_library() -> Field:
     package = Field(
         String,
         description="The name of the CRAN package to install. This field is required.",
@@ -510,7 +571,7 @@ def _define_cran_library():
     )
 
 
-def _define_libraries():
+def _define_libraries() -> Field:
     jar = Field(
         String,
         description=(
@@ -564,7 +625,7 @@ def _define_libraries():
     )
 
 
-def _define_submit_run_fields():
+def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
     run_name = Field(
         String,
         description="An optional name for the run. The default value is Untitled",
@@ -610,7 +671,7 @@ def _define_submit_run_fields():
     }
 
 
-def _define_notebook_task():
+def _define_notebook_task() -> Field:
     notebook_path = Field(
         String,
         description=(
@@ -632,7 +693,7 @@ def _define_notebook_task():
     return Field(Shape(fields={"notebook_path": notebook_path, "base_parameters": base_parameters}))
 
 
-def _define_spark_jar_task():
+def _define_spark_jar_task() -> Field:
     main_class_name = Field(
         String,
         description=(
@@ -652,7 +713,7 @@ def _define_spark_jar_task():
     return Field(Shape(fields={"main_class_name": main_class_name, "parameters": parameters}))
 
 
-def _define_spark_python_task():
+def _define_spark_python_task() -> Field:
     python_file = Field(
         String,
         description=(
@@ -670,7 +731,7 @@ def _define_spark_python_task():
     return Field(Shape(fields={"python_file": python_file, "parameters": parameters}))
 
 
-def _define_spark_submit_task():
+def _define_spark_submit_task() -> Field:
     parameters = Field(
         [String],
         description="Command-line parameters passed to spark submit.",
@@ -692,7 +753,7 @@ def _define_spark_submit_task():
     )
 
 
-def _define_task():
+def _define_task() -> Field:
     return Field(
         Selector(
             {
@@ -707,20 +768,20 @@ def _define_task():
     )
 
 
-def define_databricks_submit_custom_run_config():
+def define_databricks_submit_custom_run_config() -> Field:
     fields = _define_submit_run_fields()
     fields["task"] = _define_task()
     return Field(Shape(fields=fields), description="Databricks job run configuration")
 
 
-def define_databricks_submit_run_config():
+def define_databricks_submit_run_config() -> Field:
     return Field(
         Shape(fields=_define_submit_run_fields()),
         description="Databricks job run configuration",
     )
 
 
-def _define_secret_scope():
+def _define_secret_scope() -> Field:
     return Field(
         String,
         description="The Databricks secret scope containing the storage secrets.",
@@ -728,7 +789,7 @@ def _define_secret_scope():
     )
 
 
-def _define_s3_storage_credentials():
+def _define_s3_storage_credentials() -> Field:
     access_key_key = Field(
         String,
         description="The key of a Databricks secret containing the S3 access key ID.",
@@ -751,7 +812,7 @@ def _define_s3_storage_credentials():
     )
 
 
-def _define_adls2_storage_credentials():
+def _define_adls2_storage_credentials() -> Field:
     storage_account_name = Field(
         String,
         description="The name of the storage account used to access data.",
@@ -774,7 +835,7 @@ def _define_adls2_storage_credentials():
     )
 
 
-def define_databricks_storage_config():
+def define_databricks_storage_config() -> Field:
     return Field(
         Selector(
             {
@@ -791,7 +852,7 @@ def define_databricks_storage_config():
     )
 
 
-def define_databricks_env_variables():
+def define_databricks_env_variables() -> Field:
     return Field(
         Permissive(),
         description=(
@@ -801,7 +862,7 @@ def define_databricks_env_variables():
     )
 
 
-def define_databricks_secrets_config():
+def define_databricks_secrets_config() -> Field:
     name = Field(
         String,
         description="The environment variable name, e.g. `DATABRICKS_TOKEN`.",
@@ -822,14 +883,14 @@ def define_databricks_secrets_config():
     )
 
 
-def _define_accessor():
+def _define_accessor() -> Selector:
     return Selector(
         {"group_name": str, "user_name": str},
         description="Group or User that shall access the target.",
     )
 
 
-def _define_databricks_job_permission():
+def _define_databricks_job_permission() -> Field:
     job_permission_levels = [
         "NO_PERMISSIONS",
         "CAN_VIEW",
@@ -850,7 +911,7 @@ def _define_databricks_job_permission():
     )
 
 
-def _define_databricks_cluster_permission():
+def _define_databricks_cluster_permission() -> Field:
     cluster_permission_levels = ["NO_PERMISSIONS", "CAN_ATTACH_TO", "CAN_RESTART", "CAN_MANAGE"]
     return Field(
         {
@@ -865,10 +926,30 @@ def _define_databricks_cluster_permission():
     )
 
 
-def define_databricks_permissions():
+def define_databricks_permissions() -> Field:
     return Field(
         {
             "job_permissions": _define_databricks_job_permission(),
             "cluster_permissions": _define_databricks_cluster_permission(),
         }
+    )
+
+
+def define_oauth_credentials():
+    return Field(
+        Noneable(
+            Shape(
+                fields={
+                    "client_id": Field(str, is_required=True, description="Oauth client ID"),
+                    "client_secret": Field(
+                        str, is_required=True, description="Oauth client secret"
+                    ),
+                }
+            ),
+        ),
+        description=(
+            "Oauth credentials for interacting with the Databricks REST API via a service"
+            " principal. See https://docs.databricks.com/en/dev-tools/auth.html#oauth-2-0"
+        ),
+        default_value=None,
     )

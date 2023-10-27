@@ -1,3 +1,4 @@
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
 
 {{- if and (not $userDeployments.enabled) $userDeployments.enableSubchart }}
@@ -6,9 +7,9 @@
 
 {{- if $userDeployments.enabled }}
 
-{{- $dagitWorkspace := .Values.dagit.workspace }}
-{{- $workspaceUseFixedServers := and $dagitWorkspace.enabled $dagitWorkspace.servers }}
-{{- $workspaceUseExternalConfigmap := and $dagitWorkspace.enabled $dagitWorkspace.externalConfigmap }}
+{{- $webserverWorkspace := $_.Values.dagsterWebserver.workspace }}
+{{- $workspaceUseFixedServers := and $webserverWorkspace.enabled $webserverWorkspace.servers }}
+{{- $workspaceUseExternalConfigmap := and $webserverWorkspace.enabled $webserverWorkspace.externalConfigmap }}
 
 {{- if and $workspaceUseFixedServers $workspaceUseExternalConfigmap }}
 {{ fail "workspace.servers and workspace.externalConfigmap cannot both be set." }}
@@ -18,7 +19,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "dagit.workspace.configmapName" . }}
+  name: {{ include "dagster.workspace.configmapName" . }}
   labels:
     app: {{ template "dagster.name" . }}
     chart: {{ template "dagster.chart" . }}
@@ -26,14 +27,17 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   workspace.yaml: |
-    {{- $deployments := ternary $dagitWorkspace.servers $userDeployments.deployments $dagitWorkspace.enabled }}
+    {{- $deployments := ternary $webserverWorkspace.servers $userDeployments.deployments $webserverWorkspace.enabled }}
     {{- if $deployments }}
     load_from:
       {{- range $deployment := $deployments }}
-      {{- $deploymentHost := ternary $deployment.host $deployment.name $dagitWorkspace.enabled }}
+      {{- $deploymentHost := ternary $deployment.host $deployment.name $webserverWorkspace.enabled }}
       - grpc_server:
           host: {{ $deploymentHost }}
           port: {{ $deployment.port }}
+          {{- if $deployment.ssl }}
+          ssl: {{ $deployment.ssl }}
+          {{- end}}
           {{- if $deployment.name }}
           location_name: {{ $deployment.name }}
           {{else}}

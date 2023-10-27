@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "dagster_university"
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+
+extend-ignore = [
+
+  # (Unused import): We stub some files with just imports to help people get started
+  "F401",    
+  # (Import block is un-sorted or un-formatted): It's more important that we introduce the imports in the order they're used rather than alphabetically.
+  "I001",
+]

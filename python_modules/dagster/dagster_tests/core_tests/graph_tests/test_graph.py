@@ -443,7 +443,7 @@ def test_desc():
 
 
 def test_config_naming_collisions():
-    @op(config_schema={"solids": Permissive(), "ops": Permissive()})
+    @op(config_schema={"ops": Permissive()})
     def my_op(context):
         return context.op_config
 
@@ -452,8 +452,7 @@ def test_config_naming_collisions():
         return my_op()
 
     config = {
-        "solids": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
-        "ops": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
+        "ops": {"ops": {"foo": {"config": {"foobar": "bar"}}}},
     }
     result = my_graph.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
@@ -466,27 +465,6 @@ def test_config_naming_collisions():
     result = ops.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
     assert result.output_value() == config
-
-
-def test_to_job_default_config_field_aliasing():
-    @op
-    def add_one(x):
-        return x + 1
-
-    @graph
-    def my_graph():
-        return add_one()
-
-    my_job = my_graph.to_job(config={"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-
-    result = my_job.execute_in_process()
-    assert result.success
-
-    result = my_job.execute_in_process({"solids": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
-
-    result = my_job.execute_in_process({"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
 
 
 def test_to_job_incomplete_default_config():
@@ -514,13 +492,6 @@ def test_to_job_incomplete_default_config():
             },
             invalid_default_error,
         ),  # Providing extraneous config for an op that doesn't exist.
-        (
-            {
-                "ops": {"my_op": {"config": {"foo": "bar"}}},
-                "solids": {"my_op": {"config": {"foo": "bar"}}},
-            },
-            default_config_error,
-        ),  # Providing the same config with multiple aliases.
     ]
     # Ensure that errors nested into the config tree are caught
     for invalid_config, error_msg in invalid_configs:
@@ -692,7 +663,7 @@ def test_job_subset():
 
     the_job = basic.to_job()
 
-    assert isinstance(the_job.get_job_def_for_subset_selection(["my_op"]), JobDefinition)
+    assert isinstance(the_job.get_subset(op_selection=["my_op"]), JobDefinition)
 
 
 def test_tags():

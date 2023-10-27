@@ -5,7 +5,7 @@ description: Dagster enables you to build testable and maintainable data applica
 
 # Testing
 
-Dagster enables you to build testable and maintainable data applications. It provides ways to allow you unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
+Dagster enables you to build testable and maintainable data applications. It provides ways to allow you to unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
 
 In data applications, testing computations and jobs is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
 
@@ -20,11 +20,12 @@ This page demonstrates how Dagster addresses these challenges:
 
 ## Relevant APIs
 
-| Name                                                               | Description                                                                                                          |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
-| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
-| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                     |
+| Name                                                               | Description                                                                                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.                           |
+| <PyObject object="build_op_context"  />                            | A method to construct an <PyObject object="OpExecutionContext" />, typically to provide to the invocation of an op for testing.       |
+| <PyObject object="build_asset_context"  />                         | A method to construct an <PyObject object="AssetExecutionContext" />, typically to provide to the invocation of an asset for testing. |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                                      |
 
 ---
 
@@ -35,7 +36,7 @@ Consider the following:
 - Principal: Errors that can be caught by unit tests should be caught by unit tests.
 - Corollary: Do not attempt to unit test for errors that unit tests cannot catch.
 
-Using unit tests without keeping these principles in mind is why the data community frequently treats unit tests with skepticism. It is too often interpreted as simulating an external system such as Spark or data warehouse in a granular manner. Those are very complex systems that are impossible to emulate faithfully. Do not try to do so.
+Using unit tests without keeping these principles in mind is why the data community frequently treats unit tests with skepticism. It is too often interpreted as simulating an external system such as Spark or a data warehouse in a granular manner. Those are very complex systems that are impossible to emulate faithfully. Do not try to do so.
 
 Unit tests are not acceptance tests. They should not be the judge of whether a computation is correct. However, unit testing -- when properly scoped -- is still valuable in data applications. There are massive classes of errors that we can address without interacting with external services and catch earlier in the process: refactoring errors, syntax errors in interpreted languages, configuration errors, graph structure errors, and so on. Errors caught in a fast feedback loop of unit testing can be addressed orders of magnitude faster than those caught during an expensive batch computation in staging or production.
 
@@ -483,7 +484,7 @@ def test_event_stream():
         DagsterEventType.STEP_SUCCESS,
     ]
 
-    # ops communicate what they did via the event stream, viewable in tools (e.g. dagit)
+    # ops communicate what they did via the event stream, viewable in tools (e.g. the Dagster UI)
     (
         _start,
         expectation_event,

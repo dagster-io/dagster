@@ -1,26 +1,63 @@
+from typing import Any, Dict, Union
+
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
-from dagster import Field, Permissive, Selector, StringSource, resource
+from dagster import (
+    Config,
+    ConfigurableResource,
+    Field as DagsterField,
+    Permissive,
+    Selector,
+    StringSource,
+    resource,
+)
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
+from pydantic import Field
+from typing_extensions import Literal
 
-from dagster_azure.blob.utils import create_blob_client
+from dagster_azure.blob.utils import BlobServiceClient, create_blob_client
 
 from .file_manager import ADLS2FileManager
-from .utils import create_adls2_client
+from .utils import DataLakeServiceClient, create_adls2_client
 
-DEFAULT_AZURE_CREDENTIAL_CONFIG = Field(
+
+class ADLS2SASToken(Config):
+    credential_type: Literal["sas"] = "sas"
+    token: str
+
+
+class ADLS2Key(Config):
+    credential_type: Literal["key"] = "key"
+    key: str
+
+
+class ADLS2DefaultAzureCredential(Config):
+    credential_type: Literal["default_azure_credential"] = "default_azure_credential"
+    kwargs: Dict[str, Any]
+
+
+class ADLS2BaseResource(ConfigurableResource):
+    storage_account: str = Field(description="The storage account name.")
+    credential: Union[ADLS2SASToken, ADLS2Key, ADLS2DefaultAzureCredential] = Field(
+        discriminator="credential_type", description="The credentials with which to authenticate."
+    )
+
+
+DEFAULT_AZURE_CREDENTIAL_CONFIG = DagsterField(
     Permissive(
         description="Uses DefaultAzureCredential to authenticate and passed as keyword arguments",
     )
 )
 
 ADLS2_CLIENT_CONFIG = {
-    "storage_account": Field(StringSource, description="The storage account name."),
-    "credential": Field(
+    "storage_account": DagsterField(StringSource, description="The storage account name."),
+    "credential": DagsterField(
         Selector(
             {
-                "sas": Field(StringSource, description="SAS token for the account."),
-                "key": Field(StringSource, description="Shared Access Key for the account."),
+                "sas": DagsterField(StringSource, description="SAS token for the account."),
+                "key": DagsterField(StringSource, description="Shared Access Key for the account."),
                 "DefaultAzureCredential": DEFAULT_AZURE_CREDENTIAL_CONFIG,
             }
         ),
@@ -29,6 +66,46 @@ ADLS2_CLIENT_CONFIG = {
 }
 
 
+class ADLS2Resource(ADLS2BaseResource):
+    """Resource containing clients to access Azure Data Lake Storage Gen2.
+
+    Contains a client for both the Data Lake and Blob APIs, to work around the limitations
+    of each.
+    """
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    @property
+    @cached_method
+    def _raw_credential(self) -> Any:
+        if isinstance(self.credential, ADLS2Key):
+            return self.credential.key
+        elif isinstance(self.credential, ADLS2SASToken):
+            return self.credential.token
+        else:
+            return DefaultAzureCredential(**self.credential.kwargs)
+
+    @property
+    @cached_method
+    def adls2_client(self) -> DataLakeServiceClient:
+        return create_adls2_client(self.storage_account, self._raw_credential)
+
+    @property
+    @cached_method
+    def blob_client(self) -> BlobServiceClient:
+        return create_blob_client(self.storage_account, self._raw_credential)
+
+    @property
+    def lease_client_constructor(self) -> Any:
+        return DataLakeLeaseClient
+
+
+# Due to a limitation of the discriminated union type, we can't directly mirror these old
+# config fields in the new resource config. Instead, we'll just use the old config fields
+# to construct the new config and then use that to construct the resource.
+@dagster_maintained_resource
 @resource(ADLS2_CLIENT_CONFIG)
 def adls2_resource(context):
     """Resource that gives ops access to Azure Data Lake Storage Gen2.
@@ -82,12 +159,15 @@ def adls2_resource(context):
     return _adls2_resource_from_config(context.resource_config)
 
 
+@dagster_maintained_resource
 @resource(
     merge_dicts(
         ADLS2_CLIENT_CONFIG,
         {
-            "adls2_file_system": Field(StringSource, description="ADLS Gen2 file system name"),
-            "adls2_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+            "adls2_file_system": DagsterField(
+                StringSource, description="ADLS Gen2 file system name"
+            ),
+            "adls2_prefix": DagsterField(StringSource, is_required=False, default_value="dagster"),
         },
     )
 )
@@ -105,32 +185,7 @@ def adls2_file_manager(context):
     )
 
 
-class ADLS2Resource:
-    """Resource containing clients to access Azure Data Lake Storage Gen2.
-
-    Contains a client for both the Data Lake and Blob APIs, to work around the limitations
-    of each.
-    """
-
-    def __init__(self, storage_account, credential):
-        self._adls2_client = create_adls2_client(storage_account, credential)
-        self._blob_client = create_blob_client(storage_account, credential)
-        self._lease_client_constructor = DataLakeLeaseClient
-
-    @property
-    def adls2_client(self):
-        return self._adls2_client
-
-    @property
-    def blob_client(self):
-        return self._blob_client
-
-    @property
-    def lease_client_constructor(self):
-        return self._lease_client_constructor
-
-
-def _adls2_resource_from_config(config):
+def _adls2_resource_from_config(config) -> ADLS2Resource:
     """Args:
         config: A configuration containing the fields in ADLS2_CLIENT_CONFIG.
 
@@ -138,8 +193,12 @@ def _adls2_resource_from_config(config):
     """
     storage_account = config["storage_account"]
     if "DefaultAzureCredential" in config["credential"]:
-        credential = DefaultAzureCredential(**config["credential"]["DefaultAzureCredential"])
+        credential = ADLS2DefaultAzureCredential(
+            kwargs=config["credential"]["DefaultAzureCredential"]
+        )
+    elif "sas" in config["credential"]:
+        credential = ADLS2SASToken(token=config["credential"]["sas"])
     else:
-        credential = config["credential"].copy().popitem()[1]
+        credential = ADLS2Key(key=config["credential"]["key"])
 
-    return ADLS2Resource(storage_account, credential)
+    return ADLS2Resource(storage_account=storage_account, credential=credential)

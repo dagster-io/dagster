@@ -2,7 +2,7 @@ from dagster import job
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepHandlerContext
@@ -57,6 +57,7 @@ def test_step_handler_context():
             run_id=run.run_id,
             step_keys_to_execute=run.step_keys_to_execute,
             instance_ref=None,
+            print_serialized_events=False,
         )
         ctx = StepHandlerContext(
             instance=instance,

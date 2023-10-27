@@ -94,7 +94,7 @@ def test_multi_file_extend_and_override_workspace(instance):
 
 
 def _get_multi_location_workspace_yaml(executable):
-    return """
+    return f"""
 load_from:
     - python_file:
         executable_path: {executable}
@@ -128,9 +128,7 @@ load_from:
         attribute: named_hello_world_repository
         location_name: named_loaded_from_file_attribute
 
-    """.format(
-        executable=executable
-    )
+    """
 
 
 @pytest.mark.parametrize(

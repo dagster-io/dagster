@@ -46,16 +46,21 @@ def get_all_loading_combos():
         for location_args in possible_location_args:
             for repo_args in possible_repo_args:
                 for job_args in possible_job_args:
-                    yield [
-                        "-w",
-                        PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE,
-                    ] + location_args + repo_args + job_args
+                    yield (
+                        [
+                            "-w",
+                            PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE,
+                        ]
+                        + location_args
+                        + repo_args
+                        + job_args
+                    )
 
     return tuple(_iterate_combos())
 
 
 @pytest.mark.parametrize("cli_args", get_all_loading_combos())
-def test_valid_loading_combos_single_pipeline_code_location(cli_args):
+def test_valid_loading_combos_single_job_code_location(cli_args):
     external_job = successfully_load_pipeline_via_cli(cli_args)
     assert isinstance(external_job, ExternalJob)
     assert external_job.name == "hello_world_job"
@@ -76,7 +81,7 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
 MULTI_JOB_WORKSPACE = file_relative_path(__file__, "multi_job/multi_job.yaml")
 
 
-def test_successfully_find_pipeline():
+def test_successfully_find_job():
     assert (
         successfully_load_pipeline_via_cli(["-w", MULTI_JOB_WORKSPACE, "-j", "job_one"]).name
         == "job_one"
@@ -88,7 +93,7 @@ def test_successfully_find_pipeline():
     )
 
 
-def test_must_provide_name_to_multi_pipeline():
+def test_must_provide_name_to_multi_job():
     result, _ = load_pipeline_via_cli_runner(["-w", MULTI_JOB_WORKSPACE])
 
     assert result.exit_code == 2

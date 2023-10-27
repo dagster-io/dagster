@@ -1,38 +1,38 @@
 ---
-title: Graphs | Dagster
-description: Graphs are sets of interconnected ops or sub-graphs and form the core of jobs.
+title: Op Graphs | Dagster
+description: Op graphs are sets of interconnected ops or sub-graphs and form the core of jobs.
 ---
 
-# Graphs
+# Op Graphs
 
 A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
 
 Graphs can be used in three different ways:
 
 - [**To back assets**](/concepts/assets/graph-backed-assets) - Basic software-defined assets are computed using a single op, but if computing one of your assets requires multiple discrete steps, you can compute it using a graph instead.
-- [**Directly inside a job**](/concepts/ops-jobs-graphs/jobs) - Each non-asset job contains a graph.
+- [**Directly inside a job**](/concepts/ops-jobs-graphs/op-jobs) - Each op job contains a graph.
 - [**Inside other graphs**](/concepts/ops-jobs-graphs/nesting-graphs) - You can build complex graphs out of simpler graphs.
 
 ---
 
 ## Relevant APIs
 
-| Name                                                   | Description                                                                                                                                                                                                                   |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject module="dagster" object="graph" decorator /> | The decorator used to define a graph, which can form the basis for multiple jobs.                                                                                                                                             |
-| <PyObject module="dagster" object="GraphDefinition" /> | A graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
-|                                                        |                                                                                                                                                                                                                               |
+| Name                                                   | Description                                                                                                                                                                                                                       |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="graph" decorator /> | The decorator used to define an op graph, which can form the basis for multiple jobs.                                                                                                                                             |
+| <PyObject module="dagster" object="GraphDefinition" /> | An op graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject object="job" decorator /> decorator. |
+|                                                        |                                                                                                                                                                                                                                   |
 
 ---
 
-## Creating graphs
+## Creating op graphs
 
 - [Using the @graph decorator](#using-the-graph-decorator)
-- [Graph patterns](#graph-patterns)
+- [Graph patterns](#op-graph-patterns)
 
 ### Using the @graph decorator
 
-To create a graph, use the <PyObject module="dagster" object="graph" decorator /> decorator.
+To create an op graph, use the <PyObject module="dagster" object="graph" decorator /> decorator.
 
 In the following example, we return one output from the root op (`return_one`) and pass data along through single inputs and outputs:
 
@@ -55,20 +55,20 @@ def linear():
     add_one(add_one(add_one(return_one())))
 ```
 
-### Graph patterns
+### Op graph patterns
 
-Need some inspiration? Using the patterns below, you can build graphs:
+Need some inspiration? Using the patterns below, you can build op graphs:
 
 - [That re-use ops](#that-re-use-ops)
 - [With multiple inputs](#with-multiple-inputs)
 - [With conditional branching](#with-conditional-branching)
 - [With a fixed fan-in](#with-a-fixed-fan-in)
-- [That contain other graphs](#that-contain-other-graphs)
+- [That contain other op graphs](#that-contain-other-op-graphs)
 - [That use dynamic outputs](#using-dynamic-outputs)
 
 #### That re-use ops
 
-You can use the same op definition multiple times in the same graph. Note that this approach can also apply to [jobs](/concepts/ops-jobs-graphs/jobs).
+You can use the same op definition multiple times in the same graph. Note that this approach can also apply to [op jobs](/concepts/ops-jobs-graphs/op-jobs).
 
 ```python file=/concepts/ops_jobs_graphs/graphs/graphs.py startafter=start_multiple_usage_graph endbefore=end_multiple_usage_graph
 @graph
@@ -210,13 +210,13 @@ def fan_in():
 
 In this example, we have 10 ops that all output the number `1`. The `sum_fan_in` op takes all of these outputs as a list and sums them.
 
-#### That contain other graphs
+#### That contain other op graphs
 
-Graphs can contain other graphs, or sub-graphs. Refer to the [Nesting graphs documentation](/concepts/ops-jobs-graphs/nesting-graphs) for more info and examples.
+Op graphs can contain other op graphs. Refer to the [Nesting op graphs documentation](/concepts/ops-jobs-graphs/nesting-graphs) for more info and examples.
 
 #### Using dynamic outputs
 
-Using dynamic outputs, you can duplicate portions of a graph at runtime. Refer to the [Dynamic graphs documentation](/concepts/ops-jobs-graphs/dynamic-graphs) for more info and examples.
+Using dynamic outputs, you can duplicate portions of an op graph at runtime. Refer to the [Dynamic graphs documentation](/concepts/ops-jobs-graphs/dynamic-graphs) for more info and examples.
 
 ---
 
@@ -314,7 +314,7 @@ one_plus_one_from_constructor = GraphDefinition(
 
 #### Using YAML (GraphDSL)
 
-Sometimes you may want to construct the dependencies of a graph definition from a YAML file or similar. This is useful when migrating to Dagster from other workflow systems.
+Sometimes you may want to construct the dependencies of an op graph definition from a YAML file or similar. This is useful when migrating to Dagster from other workflow systems.
 
 For example, you can have a YAML like this:
 
@@ -399,16 +399,16 @@ def define_dep_dsl_graph() -> GraphDefinition:
 ## Using graphs
 
 - [Inside assets](#inside-assets)
-- [Directly inside jobs](#directly-inside-jobs)
+- [Directly inside op jobs](#directly-inside-op-jobs)
 
 ### Inside assets
 
-Graphs can be used to create [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing graph that produces and consumes assets.
+Op graphs can be used to create [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing op graph that produces and consumes assets.
 
 Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [graph-backed assets documentation](/concepts/assets/graph-backed-assets) for more info and examples.
 
-### Directly inside jobs
+### Directly inside op jobs
 
-Ready to start using your graphs in Dagster jobs? Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs) for detailed info and examples.
+Ready to start using your op graphs in Dagster op jobs? Refer to the [Op jobs documentation](/concepts/ops-jobs-graphs/op-jobs) for detailed info and examples.
 
 ---

@@ -98,7 +98,7 @@ def test_mixed_source_asset_observation_job():
     def foo(_context) -> DataVersion:
         return DataVersion("alpha")
 
-    @asset(non_argument_deps={"foo"})
+    @asset(deps=["foo"])
     def bar(context):
         return 1
 

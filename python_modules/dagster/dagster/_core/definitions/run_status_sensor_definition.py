@@ -1,8 +1,10 @@
+import functools
 import logging
 from contextlib import ExitStack
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterator,
     Mapping,
@@ -19,7 +21,7 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
@@ -31,7 +33,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import (
     serialize_value,
     whitelist_for_serdes,
@@ -40,7 +42,6 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .graph_definition import GraphDefinition
@@ -111,15 +112,7 @@ class RunStatusSensorCursor(
 
 
 class RunStatusSensorContext:
-    """The ``context`` object available to a decorated function of ``run_status_sensor``.
-
-    Attributes:
-        sensor_name (str): the name of the sensor.
-        dagster_run (DagsterRun): the run of the job.
-        dagster_event (DagsterEvent): the event associated with the job run status.
-        instance (DagsterInstance): the current instance.
-        log (logging.Logger): the logger for the given sensor evaluation
-    """
+    """The ``context`` object available to a decorated function of ``run_status_sensor``."""
 
     def __init__(
         self,
@@ -133,6 +126,8 @@ class RunStatusSensorContext:
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
         logger: Optional[logging.Logger] = None,
         partition_key: Optional[str] = None,
+        _resources: Optional[Resources] = None,
+        _cm_scope_entered: bool = False,
     ) -> None:
         self._exit_stack = ExitStack()
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
@@ -144,8 +139,8 @@ class RunStatusSensorContext:
 
         # Wait to set resources unless they're accessed
         self._resource_defs = resource_defs
-        self._resources = None
-        self._cm_scope_entered = False
+        self._resources = _resources
+        self._cm_scope_entered = _cm_scope_entered
 
     def for_run_failure(self) -> "RunFailureSensorContext":
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
@@ -156,6 +151,9 @@ class RunStatusSensorContext:
             instance=self._instance,
             logger=self._logger,
             partition_key=self._partition_key,
+            resource_defs=self._resource_defs,
+            _resources=self._resources,
+            _cm_scope_entered=self._cm_scope_entered,
         )
 
     @property
@@ -204,26 +202,31 @@ class RunStatusSensorContext:
     @public
     @property
     def sensor_name(self) -> str:
+        """The name of the sensor."""
         return self._sensor_name
 
     @public
     @property
     def dagster_run(self) -> DagsterRun:
+        """The run of the job."""
         return self._dagster_run
 
     @public
     @property
     def dagster_event(self) -> DagsterEvent:
+        """The event associated with the job run status."""
         return self._dagster_event
 
     @public
     @property
     def instance(self) -> DagsterInstance:
+        """The current instance."""
         return self._instance
 
     @public
     @property
     def log(self) -> logging.Logger:
+        """The logger for the current sensor evaluation."""
         if not self._logger:
             self._logger = InstigationLogger()
 
@@ -232,6 +235,7 @@ class RunStatusSensorContext:
     @public
     @property
     def partition_key(self) -> Optional[str]:
+        """Optional[str]: The partition key of the relevant run."""
         return self._partition_key
 
     def __enter__(self) -> "RunStatusSensorContext":
@@ -373,10 +377,18 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]:
+) -> Callable[
+    [RunFailureSensorEvaluationFn],
+    SensorDefinition,
+]:
     ...
 
 
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def run_failure_sensor(
     name: Optional[Union[RunFailureSensorEvaluationFn, str]] = None,
     minimum_interval_seconds: Optional[int] = None,
@@ -409,7 +421,13 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
+) -> Union[
+    SensorDefinition,
+    Callable[
+        [RunFailureSensorEvaluationFn],
+        SensorDefinition,
+    ],
+]:
     """Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
 
@@ -433,7 +451,7 @@ def run_failure_sensor(
             monitored by this failure sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): The job a RunRequest should
             execute if yielded from the sensor.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]): (experimental)
@@ -449,8 +467,6 @@ def run_failure_sensor(
         else:
             sensor_name = name
 
-        if job_selection:
-            deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         @run_status_sensor(
@@ -464,8 +480,17 @@ def run_failure_sensor(
             request_job=request_job,
             request_jobs=request_jobs,
         )
-        def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())  # fmt: skip
+        @functools.wraps(fn)
+        def _run_failure_sensor(*args, **kwargs) -> Any:
+            args_modified = [
+                arg.for_run_failure() if isinstance(arg, RunStatusSensorContext) else arg
+                for arg in args
+            ]
+            kwargs_modified = {
+                k: v.for_run_failure() if isinstance(v, RunStatusSensorContext) else v
+                for k, v in kwargs.items()
+            }
+            return fn(*args_modified, **kwargs_modified)
 
         return _run_failure_sensor
 
@@ -496,7 +521,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
             execute if yielded from the sensor.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
@@ -824,6 +849,11 @@ class RunStatusSensorDefinition(SensorDefinition):
         return SensorType.RUN_STATUS
 
 
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def run_status_sensor(
     run_status: DagsterRunStatus,
     name: Optional[str] = None,
@@ -857,7 +887,10 @@ def run_status_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
+) -> Callable[
+    [RunStatusSensorEvaluationFunction],
+    RunStatusSensorDefinition,
+]:
     """Creates a sensor that reacts to a given status of job execution, where the decorated
     function will be run when a job is at the given status.
 
@@ -882,7 +915,7 @@ def run_status_sensor(
             monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]): (experimental)
@@ -895,8 +928,6 @@ def run_status_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        if job_selection:
-            deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         if jobs and monitor_all_repositories:

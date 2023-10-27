@@ -103,7 +103,7 @@ def test_repository_data_can_reload_without_restarting(
     assert not repo.has_external_job("foo_1")
 
     external_job = repo.get_full_external_job("foo_2")
-    assert external_job.has_solid_invocation("do_something_2")
+    assert external_job.has_node_invocation("do_something_2")
 
     # Reloading the location changes the pipeline without needing
     # to restart the server process
@@ -115,4 +115,4 @@ def test_repository_data_can_reload_without_restarting(
     assert not repo.has_external_job("foo_3")
 
     external_job = repo.get_full_external_job("foo_4")
-    assert external_job.has_solid_invocation("do_something_4")
+    assert external_job.has_node_invocation("do_something_4")

@@ -21,6 +21,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from queue import Empty, Queue
 from threading import Thread
+from typing import Any, Callable, List, Optional
 
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -37,7 +38,7 @@ if "DATABRICKS_TOKEN" not in os.environ:
 DONE = object()
 
 
-def event_writing_loop(events_queue: Queue, put_events_fn):
+def event_writing_loop(events_queue: Queue, put_events_fn: Callable[[List[Any]], None]) -> None:
     """Periodically check whether the instance has posted any new events to the queue.  If they have,
     write ALL events (not just the new events) to DBFS.
     """
@@ -65,16 +66,18 @@ def event_writing_loop(events_queue: Queue, put_events_fn):
 
 
 def main(
-    step_run_ref_filepath,
-    setup_filepath,
-    dagster_job_zip,
-):
+    step_run_ref_filepath: str,
+    setup_filepath: str,
+    dagster_job_zip: str,
+) -> None:
     events_queue = None
     with tempfile.TemporaryDirectory() as tmp, StringIO() as stderr, StringIO() as stdout, redirect_stderr(
         stderr
-    ), redirect_stdout(
-        stdout
-    ):
+    ), redirect_stdout(stdout):
+        step_run_dir = os.path.dirname(step_run_ref_filepath)
+        stdout_filepath = os.path.join(step_run_dir, "stdout")
+        stderr_filepath = os.path.join(step_run_dir, "stderr")
+        event_writing_thread: Optional[Thread] = None
         try:
             # Extract any zip files to a temporary directory and add that temporary directory
             # to the site path so the contained files can be imported.
@@ -90,13 +93,12 @@ def main(
                 databricks_config = pickle.load(handle)
 
             # sc and dbutils are globally defined in the Databricks runtime.
-            databricks_config.setup(dbutils, sc)  # noqa: F821
+            databricks_config.setup(dbutils, sc)  # noqa: F821  # type: ignore
 
             with open(step_run_ref_filepath, "rb") as handle:
                 step_run_ref = pickle.load(handle)
             print("Running dagster job")  # noqa: T201
 
-            step_run_dir = os.path.dirname(step_run_ref_filepath)
             if step_run_ref.known_state is not None:
                 attempt_count = step_run_ref.known_state.get_retry_state().get_attempt_count(
                     step_run_ref.step_key
@@ -107,8 +109,6 @@ def main(
                 step_run_dir,
                 f"{attempt_count}_{PICKLED_EVENTS_FILE_NAME}",
             )
-            stdout_filepath = os.path.join(step_run_dir, "stdout")
-            stderr_filepath = os.path.join(step_run_dir, "stderr")
 
             # create empty files
             with open(events_filepath, "wb"), open(stdout_filepath, "wb"), open(
@@ -150,7 +150,8 @@ def main(
                 handle.write(stdout_str.encode())
             if events_queue is not None:
                 events_queue.put(DONE)
-                event_writing_thread.join()
+                if event_writing_thread:
+                    event_writing_thread.join()
 
 
 if __name__ == "__main__":

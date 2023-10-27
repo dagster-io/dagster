@@ -1,12 +1,12 @@
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 import requests.exceptions
 from dagster import DagsterRunStatus
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
+from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.definitions.utils import validate_tags
-from dagster._utils.backcompat import experimental_class_warning
 from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
@@ -46,13 +46,17 @@ class DagsterGraphQLClient:
 
     Args:
         hostname (str): Hostname for the Dagster GraphQL API, like `localhost` or
-            `dagit.dagster.YOUR_ORG_HERE`.
-        port_number (Optional[int], optional): Optional port number to connect to on the host.
+            `dagster.YOUR_ORG_HERE`.
+        port_number (Optional[int]): Port number to connect to on the host.
             Defaults to None.
         transport (Optional[Transport], optional): A custom transport to use to connect to the
             GraphQL API with (e.g. for custom auth). Defaults to None.
         use_https (bool, optional): Whether to use https in the URL connection string for the
             GraphQL API. Defaults to False.
+        timeout (int): Number of seconds before requests should time out. Defaults to 60.
+        headers (Optional[Dict[str, str]]): Additional headers to include in the request. To use
+            this client in Dagster Cloud, set the "Dagster-Cloud-Api-Token" header to a user token
+            generated in the Dagster Cloud UI.
 
     Raises:
         :py:class:`~requests.exceptions.ConnectionError`: if the client cannot connect to the host.
@@ -64,9 +68,9 @@ class DagsterGraphQLClient:
         port_number: Optional[int] = None,
         transport: Optional[Transport] = None,
         use_https: bool = False,
+        timeout: int = 300,
+        headers: Optional[Dict[str, str]] = None,
     ):
-        experimental_class_warning(self.__class__.__name__)
-
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
         self._use_https = check.bool_param(use_https, "use_https")
@@ -81,7 +85,9 @@ class DagsterGraphQLClient:
             transport,
             "transport",
             Transport,
-            default=RequestsHTTPTransport(url=self._url, use_json=True),
+            default=RequestsHTTPTransport(
+                url=self._url, use_json=True, timeout=timeout, headers=headers
+            ),
         )
         try:
             self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
@@ -117,11 +123,11 @@ class DagsterGraphQLClient:
         pipeline_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
+        run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
         mode: str = "default",
         preset: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        solid_selection: Optional[Sequence[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         is_using_job_op_graph_apis: Optional[bool] = False,
     ):
         check.opt_str_param(repository_location_name, "repository_location_name")
@@ -129,15 +135,13 @@ class DagsterGraphQLClient:
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(mode, "mode")
         check.opt_str_param(preset, "preset")
-        run_config = check.opt_mapping_param(run_config, "run_config")
+        run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
 
         # The following invariant will never fail when a job is executed
         check.invariant(
             (mode is not None and run_config is not None) or preset is not None,
-            (
-                "Either a mode and run_config or a preset must be specified in order to "
-                f"submit the pipeline {pipeline_name} for execution"
-            ),
+            "Either a mode and run_config or a preset must be specified in order to "
+            f"submit the pipeline {pipeline_name} for execution",
         )
         tags = validate_tags(tags)
 
@@ -148,10 +152,8 @@ class DagsterGraphQLClient:
             if len(job_info_lst) == 0:
                 raise DagsterGraphQLClientError(
                     f"{pipeline_or_job}NotFoundError",
-                    (
-                        f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
-                        f" `{pipeline_name}` exist"
-                    ),
+                    f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
+                    f" `{pipeline_name}` exist",
                 )
             elif len(job_info_lst) == 1:
                 job_info = job_info_lst[0]
@@ -170,7 +172,7 @@ class DagsterGraphQLClient:
                     "repositoryLocationName": repository_location_name,
                     "repositoryName": repository_name,
                     "pipelineName": pipeline_name,
-                    "solidSelection": solid_selection,
+                    "solidSelection": op_selection,
                 }
             }
         }
@@ -181,9 +183,9 @@ class DagsterGraphQLClient:
                 **variables["executionParams"],
                 "runConfigData": run_config,
                 "mode": mode,
-                "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
-                if tags
-                else {},
+                "executionMetadata": (
+                    {"tags": [{"key": k, "value": v} for k, v in tags.items()]} if tags else {}
+                ),
             }
 
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
@@ -212,76 +214,15 @@ class DagsterGraphQLClient:
             # a PipelineNotFoundError, a RunConflict, or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
-    def submit_pipeline_execution(
-        self,
-        pipeline_name: str,
-        repository_location_name: Optional[str] = None,
-        repository_name: Optional[str] = None,
-        run_config: Optional[Any] = None,
-        mode: str = "default",
-        preset: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        solid_selection: Optional[Sequence[str]] = None,
-    ) -> str:
-        """Submits a Pipeline with attached configuration for execution.
-
-        Args:
-            pipeline_name (str): The pipeline's name
-            repository_location_name (Optional[str], optional): The name of the repository location where
-                the pipeline is located. If omitted, the client will try to infer the repository location
-                from the available options on the Dagster deployment. Defaults to None.
-            repository_name (Optional[str], optional): The name of the repository where the pipeline is located.
-                If omitted, the client will try to infer the repository from the available options
-                on the Dagster deployment. Defaults to None.
-            run_config (Optional[Any], optional): This is the run config to execute the pipeline with.
-                Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
-                an arbitrary object for run config. However, it must conform to the constraints of the config
-                schema for this pipeline. If it does not, the client will throw a DagsterGraphQLClientError with a message of
-                RunConfigValidationInvalid. Defaults to None.
-            mode (Optional[str], optional): The mode to run the pipeline with. If you have not
-                defined any custom modes for your pipeline, the default mode is "default". Defaults to None.
-            preset (Optional[str], optional): The name of a pre-defined preset to use instead of a
-                run config. Defaults to None.
-            tags (Optional[Dict[str, Any]], optional): A set of tags to add to the pipeline execution.
-
-        Raises:
-            DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the pipeline has an invalid step
-            DagsterGraphQLClientError("InvalidOutputError", body=error_object): some solid has an invalid output within the pipeline.
-                The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
-            DagsterGraphQLClientError("ConflictingExecutionParamsError", invalid_step_key): a preset and a run_config & mode are present
-                that conflict with one another
-            DagsterGraphQLClientError("PresetNotFoundError", message): if the provided preset name is not found
-            DagsterGraphQLClientError("RunConflict", message): a `DagsterRunConflict` occured during execution.
-                This indicates that a conflicting pipeline run already exists in run storage.
-            DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
-                for the pipeline
-            DagsterGraphQLClientError("PipelineNotFoundError", message): the requested pipeline does not exist
-            DagsterGraphQLClientError("PythonError", message): an internal framework error occurred
-
-        Returns:
-            str: run id of the submitted pipeline run
-        """
-        return self._core_submit_execution(
-            pipeline_name,
-            repository_location_name,
-            repository_name,
-            run_config,
-            mode,
-            preset,
-            tags,
-            solid_selection,
-            is_using_job_op_graph_apis=False,
-        )
-
     @public
     def submit_job_execution(
         self,
         job_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
         tags: Optional[Dict[str, Any]] = None,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
     ) -> str:
         """Submits a job with attached configuration for execution.
 
@@ -293,7 +234,7 @@ class DagsterGraphQLClient:
             repository_name (Optional[str]): The name of the repository where the job is located.
                 If omitted, the client will try to infer the repository from the available options
                 on the Dagster deployment. Defaults to None.
-            run_config (Optional[Dict[str, Any]]): This is the run config to execute the job with.
+            run_config (Optional[Union[RunConfig, Mapping[str, Any]]]): This is the run config to execute the job with.
                 Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
                 an arbitrary object for run config. However, it must conform to the constraints of the config
                 schema for this job. If it does not, the client will throw a DagsterGraphQLClientError with a message of
@@ -322,7 +263,7 @@ class DagsterGraphQLClient:
             mode="default",
             preset=None,
             tags=tags,
-            solid_selection=op_selection,
+            op_selection=op_selection,
             is_using_job_op_graph_apis=True,
         )
 
@@ -358,7 +299,7 @@ class DagsterGraphQLClient:
     ) -> ReloadRepositoryLocationInfo:
         """Reloads a Dagster Repository Location, which reloads all repositories in that repository location.
 
-        This is useful in a variety of contexts, including refreshing Dagit without restarting
+        This is useful in a variety of contexts, including refreshing the Dagster UI without restarting
         the server.
 
         Args:
@@ -394,6 +335,7 @@ class DagsterGraphQLClient:
                 message=query_result["message"],
             )
 
+    @deprecated(breaking_version="2.0")
     @public
     def shutdown_repository_location(
         self, repository_location_name: str

@@ -1,8 +1,8 @@
 import graphene
 
-from .roots.mutation import GrapheneDagitMutation
-from .roots.query import GrapheneDagitQuery
-from .roots.subscription import GrapheneDagitSubscription
+from .roots.mutation import GrapheneMutation
+from .roots.query import GrapheneQuery
+from .roots.subscription import GrapheneSubscription
 
 
 def types():
@@ -70,8 +70,8 @@ def types():
 
 def create_schema() -> graphene.Schema:
     return graphene.Schema(
-        query=GrapheneDagitQuery,
-        mutation=GrapheneDagitMutation,
-        subscription=GrapheneDagitSubscription,
+        query=GrapheneQuery,
+        mutation=GrapheneMutation,
+        subscription=GrapheneSubscription,
         types=types(),
     )

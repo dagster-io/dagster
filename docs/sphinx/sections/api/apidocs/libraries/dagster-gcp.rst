@@ -11,16 +11,23 @@ Related Guides:
 * `Using Dagster with BigQuery </integrations/bigquery>`_
 * `BigQuery I/O manager reference </integrations/bigquery/reference>`_
 
-.. autoclass:: BigQueryError
 
-.. autoconfigurable:: bigquery_resource
+BigQuery Resource
+^^^^^^^^^^^^^^^^^^
+
+.. autoconfigurable:: BigQueryResource
   :annotation: ResourceDefinition
+
+
+BigQuery I/O Manager
+^^^^^^^^^^^^^^^^^^^^^
 
 .. autoconfigurable:: BigQueryIOManager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: build_bigquery_io_manager
-  :annotation: IOManagerDefinition
+
+BigQuery Ops
+^^^^^^^^^^^^^^^
 
 .. autofunction:: bq_create_dataset
 
@@ -34,32 +41,76 @@ Related Guides:
 
 .. autofunction:: import_gcs_paths_to_bq
 
+Other
+^^^^^^^
 
-Dataproc
---------
-
-.. autoconfigurable:: dataproc_op
-
-.. autoconfigurable:: dataproc_resource
-  :annotation: ResourceDefinition
-
+.. autoclass:: BigQueryError
 
 GCS
 ---
 
-.. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
+GCS Resource
+^^^^^^^^^^^^^
 
-.. autoconfigurable:: gcs_resource
+.. autoconfigurable:: GCSResource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
+
+GCS I/O Manager
+^^^^^^^^^^^^^^^^^^
+
+.. autoconfigurable:: GCSPickleIOManager
   :annotation: IOManagerDefinition
 
+
 File Manager (Experimental)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: GCSFileHandle
   :members:
 
+.. autoconfigurable:: GCSFileManagerResource
+  :annotation: ResourceDefinition
+
+GCS Compute Log Manager
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
+
+Dataproc
+--------
+
+Dataproc Resource
+^^^^^^^^^^^^^^^^^^
+
+.. autoconfigurable:: DataprocResource
+  :annotation: ResourceDefinition
+
+Dataproc Ops
+^^^^^^^^^^^^^^
+
+.. autoconfigurable:: dataproc_op
+
+
+Legacy
+------
+
+.. autoconfigurable:: ConfigurablePickledObjectGCSIOManager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: bigquery_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: build_bigquery_io_manager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: gcs_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: gcs_pickle_io_manager
+  :annotation: IOManagerDefinition
+
 .. autodata:: gcs_file_manager
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dataproc_resource
   :annotation: ResourceDefinition

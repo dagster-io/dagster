@@ -8,7 +8,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.host_mode import execute_run_host_mode
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multiprocess import MultiprocessExecutor
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 
 
@@ -50,16 +50,14 @@ class ExplodingTestPipeline(ReconstructableJob):
         cls,
         repository,
         pipeline_name,
-        solid_selection_str=None,
-        solids_to_execute=None,
+        op_selection=None,
         asset_selection=None,
     ):
         return super(ExplodingTestPipeline, cls).__new__(
             cls,
             repository,
             pipeline_name,
-            solid_selection_str,
-            solids_to_execute,
+            op_selection,
             asset_selection,
         )
 

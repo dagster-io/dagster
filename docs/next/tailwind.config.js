@@ -114,7 +114,6 @@ module.exports = {
             },
             h1: {
               color: theme('colors.gable-green'),
-              fontSize: theme('fontSize.4xl'),
               marginTop: 40,
               fontFamily: theme('fontFamily.sans').join(','),
               fontWeight: theme('fontWeight.medium'),

@@ -30,7 +30,11 @@ def get_config_value_from_yaml(yaml_path: Optional[str]) -> Mapping[str, Any]:
     parsed_yaml = load_yaml_from_path(yaml_path) or {}
     assert isinstance(parsed_yaml, dict)
     # Would be better not to hardcode this path
-    return parsed_yaml.get("execution", {}).get("celery", {}) or {}
+    return (
+        parsed_yaml.get("execution", {}).get("config", {})
+        or parsed_yaml.get("execution", {}).get("celery", {})  # legacy config
+        or {}
+    )
 
 
 def get_app(config_yaml: Optional[str] = None) -> CeleryExecutor:
@@ -83,7 +87,7 @@ def get_config_dir(config_yaml=None):
             )
         if "config_source" in validated_config and validated_config["config_source"]:
             for key, value in validated_config["config_source"].items():
-                fd.write(f"{key} = {repr(value)}\n")
+                fd.write(f"{key} = {value!r}\n")
 
     # n.b. right now we don't attempt to clean up this cache, but it might make sense to delete
     # any files older than some time if there are more than some number of files present, etc.
@@ -184,10 +188,10 @@ def worker_start_command(
 
     env = os.environ.copy()
     if pythonpath is not None:
-        env["PYTHONPATH"] = "{existing_pythonpath}:{pythonpath}:".format(
-            existing_pythonpath=env.get("PYTHONPATH", ""), pythonpath=pythonpath
-        )
-
+        existing_pythonpath = env.get("PYTHONPATH", "")
+        if existing_pythonpath and not existing_pythonpath.endswith(os.pathsep):
+            existing_pythonpath += os.pathsep
+        env["PYTHONPATH"] = f"{existing_pythonpath}{pythonpath}{os.pathsep}"
     if background:
         launch_background_worker(subprocess_args, env=env)
     else:

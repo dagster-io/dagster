@@ -538,12 +538,12 @@ def test_extra_configured_resources():
     assert extra.execute_in_process().success
 
 
-def test_root_input_manager():
+def test_input_manager():
     @op
     def start(_):
         return 4
 
-    @op(ins={"x": In(root_manager_key="root_in")})
+    @op(ins={"x": In(input_manager_key="root_in")})
     def end(_, x):
         return x
 
@@ -552,25 +552,25 @@ def test_root_input_manager():
         end(start())
 
     with pytest.raises(DagsterInvalidSubsetError):
-        _invalid = _valid.get_job_def_for_subset_selection(["wraps_b_error"])
+        _invalid = _valid.get_subset(op_selection=["wraps_b_error"])
 
 
-def test_root_input_manager_missing_fails():
-    @op(ins={"root_input": In(root_manager_key="missing_root_input_manager")})
-    def requires_missing_root_input_manager(root_input: int):
+def test_input_manager_missing_fails():
+    @op(ins={"root_input": In(input_manager_key="missing_input_manager")})
+    def requires_missing_input_manager(root_input: int):
         return root_input
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "input manager with key 'missing_root_input_manager' required by input 'root_input' of"
-            " op 'requires_missing_root_input_manager' was not provided"
+            "input manager with key 'missing_input_manager' required by input 'root_input' of"
+            " op 'requires_missing_input_manager' was not provided"
         ),
     ):
 
         @job
         def _invalid():
-            requires_missing_root_input_manager()
+            requires_missing_input_manager()
 
         @repository
         def _repo():

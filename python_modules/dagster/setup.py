@@ -25,22 +25,33 @@ def get_version() -> str:
     return version["__version__"]
 
 
+# grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
+GRPC_VERSION_FLOOR = "1.44.0"
+
+ver = get_version()
+# dont pin dev installs to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" else f"=={ver}"
+
 setup(
     name="dagster",
     version=get_version(),
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="The data orchestration platform built for productivity.",
+    description=(
+        "Dagster is an orchestration platform for the development, production, and observation of"
+        " data assets."
+    ),
     long_description=get_description(),
     long_description_content_type="text/markdown",
     project_urls={
         "Homepage": "https://dagster.io",
         "GitHub": "https://github.com/dagster-io/dagster",
+        "Documentation": "https://docs.dagster.io",
         "Changelog": "https://github.com/dagster-io/dagster/releases",
         "Issue Tracker": "https://github.com/dagster-io/dagster/issues",
         "Twitter": "https://twitter.com/dagster",
-        "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
+        "YouTube": "https://www.youtube.com/@dagsterio",
         "Slack": "https://dagster.io/slack",
         "Blog": "https://dagster.io/blog",
         "Newsletter": "https://dagster.io/newsletter-signup",
@@ -51,7 +62,6 @@ setup(
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -67,19 +77,14 @@ setup(
         # cli
         "click>=5.0",
         "coloredlogs>=6.1, <=14.0",
-        "contextvars; python_version < '3.7'",
         "Jinja2",
         "PyYAML>=5.1",
         # core (not explicitly expressed atm)
         # pin around issues in specific versions of alembic that broke our migrations
-        "alembic>=1.2.1,!=1.6.3,!=1.7.0",
+        "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         "croniter>=0.3.34",
-        # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-        # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
-        # (except on python 3.11, where newer versions are required just to install the grpcio package)
-        "grpcio>=1.44.0,<1.48.0; python_version<'3.11'",
-        "grpcio>=1.44.0; python_version>='3.11'",
-        "grpcio-health-checking>=1.44.0",
+        f"grpcio>={GRPC_VERSION_FLOOR}",
+        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
         "pendulum",
         "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
@@ -92,7 +97,7 @@ setup(
         "tomli",
         "tqdm",
         "typing_extensions>=4.4.0",
-        "sqlalchemy>=1.0,<2.0.0",
+        "sqlalchemy>=1.0",
         "toposort>=1.0",
         "watchdog>=0.8.3",
         'psutil >= 1.0; platform_system=="Windows"',
@@ -100,14 +105,16 @@ setup(
         'pywin32 != 226; platform_system=="Windows"',
         "docstring-parser",
         "universal_pathlib",
-        "pydantic",
+        # https://github.com/pydantic/pydantic/issues/5821
+        "pydantic >1.10.0,!= 1.10.7",
+        f"dagster-pipes{pin}",
     ],
     extras_require={
         "docker": ["docker"],
         "test": [
             "buildkite-test-collector ; python_version>='3.8'",
             "docker",
-            "grpcio-tools>=1.44.0",  # related to above grpcio pins
+            f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mock==3.0.5",
             "objgraph",
             "pytest-cov==2.10.1",
@@ -115,21 +122,19 @@ setup(
             "pytest-mock==3.3.1",
             "pytest-rerunfailures==10.0",
             "pytest-runner==5.2",
-            "pytest-xdist==2.1.0",
-            "pytest==7.0.1",  # last version supporting python 3.6
-            "responses",
-            "snapshottest==0.6.0",
+            "pytest-xdist==3.3.1",
+            "pytest>=7.0.1",
+            "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
+            "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
             "yamllint",
-        ],
-        "black": [
-            "black[jupyter]==22.12.0",
+            "morefs[asynclocal]; python_version>='3.8'",
         ],
         "mypy": [
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.298",
+            "pyright==1.1.332",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -147,13 +152,13 @@ setup(
             "types-requests",  # version will be resolved against requests
             "types-simplejson",  # version will be resolved against simplejson
             "types-six",  # needed but not specified by grpcio
-            "types-sqlalchemy",  # version will be resolved against sqlalchemy
+            "types-sqlalchemy==1.4.53.34",  # later versions introduce odd errors
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.255",
+            "ruff==0.1.1",
         ],
     },
     entry_points={

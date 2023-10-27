@@ -22,7 +22,7 @@ description: "A code location is a collection of Dagster definitions loadable an
   />
 </center>
 
-A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, Dagit, and Dagster Cloud. A code location comprises:
+A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster Cloud. A code location comprises:
 
 - A reference to a Python module that has an instance of <PyObject object="Definitions" /> in a top-level variable
 - A Python environment that can successfully load that module
@@ -33,9 +33,9 @@ A single deployment can have one or multiple code locations.
 
 Code locations are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
 
-- When there is an update to user code, Dagit can pick up the change without a restart.
-- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of Dagit.
-- The Dagit process can run in a separate Python environment from user code so job dependencies don't need to be installed into the Dagit environment.
+- When there is an update to user code, the Dagster webserver/UI can pick up the change without a restart.
+- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of the webserver/UI.
+- The Dagster webserver process can run in a separate Python environment from user code so job dependencies don't need to be installed into the webserver environment.
 - Each code location can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately.
 
 ---
@@ -59,7 +59,7 @@ defs = Definitions(
     assets=[dbt_customers_asset, dbt_orders_asset],
     schedules=[bi_weekly_schedule],
     sensors=[new_data_sensor],
-    resources=dbt_resource
+    resources=[dbt_resource],
 )
 ```
 
@@ -75,11 +75,11 @@ Definitions can be included in a Python file like `my_file.py` or a Python modul
 
 ### Local development
 
-Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info about local development, including how to configure your local instance.
-
 <!-- Lives in /next/components/mdx/includes/dagster/DagsterDevTabs.mdx -->
 
 <DagsterDevTabs />
+
+Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info about local development, including how to configure your local instance.
 
 ### Cloud deployment
 
@@ -118,7 +118,7 @@ locations:
 
 ### Open source deployment
 
-The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. Refer to the [Open source deployment guides](/deployment/guides) for more info.
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. Refer to the [Workspace files page](/concepts/code-locations/workspace-files) for more info.
 
 ---
 

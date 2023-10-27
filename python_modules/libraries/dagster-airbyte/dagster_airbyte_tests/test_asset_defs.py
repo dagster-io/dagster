@@ -5,6 +5,7 @@ from dagster import (
     FreshnessPolicy,
     TableColumn,
     TableSchema,
+    asset,
     build_init_resource_context,
 )
 from dagster._core.definitions.metadata import MetadataValue
@@ -18,12 +19,13 @@ from .utils import get_sample_connection_json, get_sample_job_json
 
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
-def test_assets(schema_prefix):
+def test_assets(schema_prefix, monkeypatch):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
                 "host": "some_host",
                 "port": "8000",
+                "poll_interval": 0,
             }
         )
     )
@@ -66,6 +68,7 @@ def test_assets(schema_prefix):
                 {
                     "host": "some_host",
                     "port": "8000",
+                    "poll_interval": 0,
                 }
             )
         },
@@ -106,6 +109,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
             config={
                 "host": "some_host",
                 "port": "8000",
+                "poll_interval": 0,
             }
         )
     )
@@ -119,7 +123,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         destination_tables=destination_tables,
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
-        upstream_assets={AssetKey(source_asset)} if source_asset else None,
+        deps=[AssetKey(source_asset)] if source_asset else None,
         freshness_policy=freshness_policy,
     )
 
@@ -159,6 +163,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
                 {
                     "host": "some_host",
                     "port": "8000",
+                    "poll_interval": 0,
                 }
             )
         },
@@ -194,7 +199,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
 
 
 def test_assets_cloud() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
     ab_url = ab_resource.api_base_url
 
     ab_assets = build_airbyte_assets(
@@ -202,6 +207,7 @@ def test_assets_cloud() -> None:
         destination_tables=["foo", "bar"],
         normalization_tables={"bar": {"bar_baz", "bar_qux"}},
         asset_key_prefix=["some", "prefix"],
+        group_name="foo",
     )
 
     ab_job = build_assets_job(
@@ -243,3 +249,43 @@ def test_assets_cloud() -> None:
             AssetKey(["some", "prefix", "bar_baz"]),
             AssetKey(["some", "prefix", "bar_qux"]),
         }
+        assert ab_assets[0].group_names_by_key == {
+            AssetKey(["some", "prefix", "foo"]): "foo",
+            AssetKey(["some", "prefix", "bar"]): "foo",
+            AssetKey(["some", "prefix", "bar_baz"]): "foo",
+            AssetKey(["some", "prefix", "bar_qux"]): "foo",
+        }
+
+
+def test_built_airbyte_asset_with_downstream_asset_via_definition():
+    destination_tables = ["foo", "bar"]
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        asset_key_prefix=["some", "prefix"],
+    )
+
+    @asset(deps=ab_assets)
+    def downstream_of_ab():
+        return None
+
+    assert len(downstream_of_ab.input_names) == 2
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
+
+
+def test_built_airbyte_asset_with_downstream_asset():
+    destination_tables = ["foo", "bar"]
+    ab_assets = build_airbyte_assets(  # noqa: F841
+        "12345",
+        destination_tables=destination_tables,
+        asset_key_prefix=["some", "prefix"],
+    )
+
+    @asset(deps=[AssetKey(["some", "prefix", "foo"]), AssetKey(["some", "prefix", "bar"])])
+    def downstream_of_ab():
+        return None
+
+    assert len(downstream_of_ab.input_names) == 2
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing

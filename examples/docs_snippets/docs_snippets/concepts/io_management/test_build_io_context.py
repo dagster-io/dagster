@@ -42,15 +42,13 @@ def test_build_input_context_with_cm_resource():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            (
-                "At least one provided resource is a generator, but attempting to"
-                " access resources outside of context manager scope. You can use the"
-                " following syntax to open a context manager: `with"
-                " build_input_context(...) as context:`"
-            ),
+            "At least one provided resource is a generator, but attempting to"
+            " access resources outside of context manager scope. You can use the"
+            " following syntax to open a context manager: `with"
+            " build_input_context(...) as context:`",
         ),
     ):
-        context.resources
+        context.resources  # noqa: B018
 
     del context
 
@@ -83,15 +81,13 @@ def test_build_output_context_with_cm_resource():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            (
-                "At least one provided resource is a generator, but attempting to"
-                " access resources outside of context manager scope. You can use the"
-                " following syntax to open a context manager: `with"
-                " build_output_context(...) as context:`"
-            ),
+            "At least one provided resource is a generator, but attempting to"
+            " access resources outside of context manager scope. You can use the"
+            " following syntax to open a context manager: `with"
+            " build_output_context(...) as context:`",
         ),
     ):
-        context.resources
+        context.resources  # noqa: B018
 
     del context
 

@@ -2,7 +2,7 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-from dagster import job, op, repository
+from dagster import IntMetadataValue, TextMetadataValue, job, op, repository
 from dagster._api.snapshot_repository import (
     sync_get_streaming_external_repositories_data_grpc,
 )
@@ -35,6 +35,10 @@ def test_streaming_external_repositories_api_grpc(instance):
 
         assert isinstance(external_repository_data, ExternalRepositoryData)
         assert external_repository_data.name == "bar_repo"
+        assert external_repository_data.metadata == {
+            "string": TextMetadataValue("foo"),
+            "integer": IntMetadataValue(123),
+        }
 
 
 def test_streaming_external_repositories_error(instance):

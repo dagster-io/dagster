@@ -3,10 +3,9 @@ from setuptools import find_packages, setup
 setup(
     name="project_fully_featured",
     version="1!0+dev",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -27,8 +26,7 @@ setup(
         "dbt-snowflake",
         "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
         "mock",
-        # DataFrames were not written to Snowflake, causing errors
-        "pandas<1.4.0",
+        "pandas",
         "pyarrow>=4.0.0",
         "pyspark",
         "requests",
@@ -40,5 +38,5 @@ setup(
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
         "snowflake-sqlalchemy",
     ],
-    extras_require={"dev": ["dagit", "pytest"], "tests": ["mypy", "pylint", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"], "tests": ["mypy", "pylint", "pytest"]},
 )

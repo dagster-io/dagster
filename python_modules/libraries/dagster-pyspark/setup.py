@@ -18,15 +18,14 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-pyspark",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for PySpark Dagster framework components.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-framework/pyspark"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -37,9 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster_spark{pin}",
-        # Pyspark 2.x is incompatible with Python 3.8+
-        'pyspark>=3.0.0; python_version >= "3.8"',
-        'pyspark>=2.0.2; python_version < "3.8"',
+        "pyspark>=3",
     ],
     zip_safe=False,
 )

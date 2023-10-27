@@ -5,7 +5,7 @@ from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._utils.merger import merge_dicts
@@ -81,16 +81,27 @@ def create_valid_pipeline_run(
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_job_snapshot=external_pipeline.parent_job_snapshot,
         job_name=execution_params.selector.job_name,
-        run_id=execution_params.execution_metadata.run_id
-        if execution_params.execution_metadata.run_id
-        else make_new_run_id(),
-        asset_selection=frozenset(execution_params.selector.asset_selection)
-        if execution_params.selector.asset_selection
-        else None,
-        solid_selection=execution_params.selector.solid_selection,
-        solids_to_execute=frozenset(execution_params.selector.solid_selection)
-        if execution_params.selector.solid_selection
-        else None,
+        run_id=(
+            execution_params.execution_metadata.run_id
+            if execution_params.execution_metadata.run_id
+            else make_new_run_id()
+        ),
+        asset_selection=(
+            frozenset(execution_params.selector.asset_selection)
+            if execution_params.selector.asset_selection
+            else None
+        ),
+        asset_check_selection=(
+            frozenset(execution_params.selector.asset_check_selection)
+            if execution_params.selector.asset_check_selection is not None
+            else None
+        ),
+        op_selection=execution_params.selector.op_selection,
+        resolved_op_selection=(
+            frozenset(execution_params.selector.op_selection)
+            if execution_params.selector.op_selection
+            else None
+        ),
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,

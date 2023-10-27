@@ -1,11 +1,11 @@
-- id: repo-dagit.png
+- id: repo-ui.png
   workspace: examples/docs_snippets/docs_snippets/concepts/repositories_workspaces/repository_definition.py
   width: 1536
   height: 1152
   steps:
     - open left sidebar
 
-- id: config-dagit.png
+- id: config-ui.png
   workspace: examples/docs_snippets/docs_snippets/concepts/configuration/configurable_op_asset_resource.py
   route: /workspace/repo@configurable_op_asset_resource.py/jobs/job_using_config/playground
   steps:

@@ -1,6 +1,6 @@
 version: "3.7"
 
-# Build these services with ./build.sh to access the dagster/dagit code from master
+# Build these services with ./build.sh to access the dagster/webserver code from master
 
 services:
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
@@ -15,11 +15,11 @@ services:
     networks:
       - docker_example_network
 
-  # This service runs the gRPC server that loads and executes your user code, in both dagit
+  # This service runs the gRPC server that loads and executes your user code, in both dagster-webserver
   # and dagster-daemon. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
   # run launcher to use this same image when launching runs in a new container as well.
   # Multiple containers like this can be deployed separately - each just needs to run on
-  # its own port, and have its own entry in the workspace.yaml file that's loaded by dagit.
+  # its own port, and have its own entry in the workspace.yaml file that's loaded by the webserver.
   docker_example_user_code:
     build:
       context: .
@@ -35,22 +35,22 @@ services:
     networks:
       - docker_example_network
 
-  # This service runs dagit, which loads the user code from the user code container.
-  # Since our instance uses the QueuedRunCoordinator, any runs submitted from dagit will be put on
+  # This service runs the dagster-webserver, which loads the user code from the user code container.
+  # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
   # a queue and later dequeued and launched by dagster-daemon.
-  docker_example_dagit:
+  docker_example_webserver:
     build:
       context: .
       dockerfile: ./Dockerfile_dagster
     entrypoint:
-      - dagit
+      - dagster-webserver
       - -h
       - "0.0.0.0"
       - -p
       - "3000"
       - -w
       - workspace.yaml
-    container_name: docker_example_dagit
+    container_name: docker_example_webserver
     expose:
       - "3000"
     ports:
@@ -59,7 +59,7 @@ services:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_DB: "postgres_db"
-    volumes: # Make docker client accessible so we can terminate containers from dagit
+    volumes: # Make docker client accessible so we can terminate containers from the webserver
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage
     networks:

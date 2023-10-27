@@ -24,14 +24,16 @@ def fail_op(_):
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
-def test_failure_hook_on_solid_instance(mock_teams_post_message):
+def test_failure_hook_on_op_instance(mock_teams_post_message):
     @job(resource_defs={"msteams": msteams_resource})
     def job_def():
         pass_op.with_hooks(hook_defs={teams_on_failure()})()
         pass_op.alias("fail_op_with_hook").with_hooks(hook_defs={teams_on_failure()})()
         fail_op.alias("fail_op_without_hook")()
         fail_op.with_hooks(
-            hook_defs={teams_on_failure(message_fn=my_message_fn, dagit_base_url="localhost:3000")}
+            hook_defs={
+                teams_on_failure(message_fn=my_message_fn, webserver_base_url="localhost:3000")
+            }
         )()
 
     result = job_def.execute_in_process(
@@ -43,14 +45,16 @@ def test_failure_hook_on_solid_instance(mock_teams_post_message):
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
-def test_success_hook_on_solid_instance(mock_teams_post_message):
+def test_success_hook_on_op_instance(mock_teams_post_message):
     @job(resource_defs={"msteams": msteams_resource})
     def job_def():
         pass_op.with_hooks(hook_defs={teams_on_success()})()
         pass_op.alias("success_solid_with_hook").with_hooks(hook_defs={teams_on_success()})()
         fail_op.alias("success_solid_without_hook")()
         fail_op.with_hooks(
-            hook_defs={teams_on_success(message_fn=my_message_fn, dagit_base_url="localhost:3000")}
+            hook_defs={
+                teams_on_success(message_fn=my_message_fn, webserver_base_url="localhost:3000")
+            }
         )()
 
     result = job_def.execute_in_process(
@@ -63,7 +67,7 @@ def test_success_hook_on_solid_instance(mock_teams_post_message):
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
 def test_failure_hook_decorator(mock_teams_post_message):
-    @teams_on_failure(dagit_base_url="http://localhost:3000/")
+    @teams_on_failure(webserver_base_url="http://localhost:3000/")
     @job(resource_defs={"msteams": msteams_resource})
     def job_def():
         pass_op()
@@ -80,7 +84,7 @@ def test_failure_hook_decorator(mock_teams_post_message):
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
 def test_success_hook_decorator(mock_teams_post_message):
-    @teams_on_success(message_fn=my_message_fn, dagit_base_url="http://localhost:3000/")
+    @teams_on_success(message_fn=my_message_fn, webserver_base_url="http://localhost:3000/")
     @job(resource_defs={"msteams": msteams_resource})
     def job_def():
         pass_op()

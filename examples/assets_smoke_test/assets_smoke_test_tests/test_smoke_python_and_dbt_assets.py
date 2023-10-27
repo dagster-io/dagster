@@ -1,15 +1,15 @@
 import os
 
 import snowflake.connector
+from dagster import load_assets_from_modules, materialize
+from dagster_dbt import DbtCliResource
+from dagster_snowflake_pandas import SnowflakePandasIOManager
+
 from assets_smoke_test import python_and_dbt_assets
 from assets_smoke_test.python_and_dbt_assets import (
-    DBT_PROFILES_DIR,
     DBT_PROJECT_DIR,
     raw_country_populations,
 )
-from dagster import load_assets_from_modules, materialize
-from dagster_dbt import dbt_cli_resource
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 
 def smoke_all_test():
@@ -20,11 +20,9 @@ def smoke_all_test():
         "database": os.environ["SNOWFLAKE_DATABASE"],
     }
 
-    io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
+    io_manager = SnowflakePandasIOManager(**snowflake_config)
 
-    dbt_resource = dbt_cli_resource.configured(
-        {"target": "smoke_test", "project_dir": DBT_PROJECT_DIR, "profiles_dir": DBT_PROFILES_DIR}
-    )
+    dbt_resource = DbtCliResource(project_dir=DBT_PROJECT_DIR, target="smoke_test")
 
     source_assets = [raw_country_populations]
 

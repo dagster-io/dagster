@@ -35,10 +35,8 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
         # https://github.com/dagster-io/dagster/issues/2440
         check.invariant(
             execution_plan.artifacts_persisted,
-            (
-                "Cannot use in-memory storage with Celery, use filesystem (on top of NFS or "
-                "similar system that allows files to be available to all nodes), S3, or GCS"
-            ),
+            "Cannot use in-memory storage with Celery, use filesystem (on top of NFS or "
+            "similar system that allows files to be available to all nodes), S3, or GCS",
         )
 
     app = make_app(executor.app_args())
@@ -65,10 +63,8 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
             if active_execution.check_for_interrupts():
                 yield DagsterEvent.engine_event(
                     job_context,
-                    (
-                        "Celery executor: received termination signal - revoking active tasks from"
-                        " workers"
-                    ),
+                    "Celery executor: received termination signal - revoking active tasks from"
+                    " workers",
                     EngineEventData.interrupted(list(step_results.keys())),
                 )
                 stopping = True
@@ -87,9 +83,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
                         step = active_execution.get_step_by_key(step_key)
                         yield DagsterEvent.engine_event(
                             job_context.for_step(step),
-                            'celery task for running step "{step_key}" was revoked.'.format(
-                                step_key=step_key,
-                            ),
+                            f'celery task for running step "{step_key}" was revoked.',
                             EngineEventData(marker_end=DELEGATE_MARKER),
                         )
                     except Exception:
@@ -129,9 +123,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
                     queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
                     yield DagsterEvent.engine_event(
                         job_context.for_step(step),
-                        'Submitting celery task for step "{step_key}" to queue "{queue}".'.format(
-                            step_key=step.key, queue=queue
-                        ),
+                        f'Submitting celery task for step "{step.key}" to queue "{queue}".',
                         EngineEventData(marker_start=DELEGATE_MARKER),
                     )
 

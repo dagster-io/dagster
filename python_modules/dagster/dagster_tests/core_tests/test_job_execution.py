@@ -38,7 +38,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
     instance_for_test,
 )
-from dagster._core.utility_solids import (
+from dagster._core.utility_ops import (
     create_op_with_deps,
     create_root_op,
     create_stub_op,
@@ -52,7 +52,7 @@ from dagster._core.workspace.load import location_origin_from_python_file
 
 def _default_passthrough_compute_fn(*args, **kwargs):
     check.invariant(not args, "There should be no positional args")
-    return list(kwargs.values())[0]
+    return next(iter(kwargs.values()))
 
 
 def create_dep_input_fn(name):
@@ -65,7 +65,7 @@ def make_compute_fn():
         seen = set()
         for row in inputs.values():
             for item in row:
-                key = list(item.keys())[0]
+                key = next(iter(item.keys()))
                 if key not in seen:
                     seen.add(key)
                     passed_rows.append(item)
@@ -193,7 +193,7 @@ def test_external_diamond_toposort():
         ).create_single_location(instance) as repo_location:
             external_repo = next(iter(repo_location.get_repositories().values()))
             external_job = next(iter(external_repo.get_all_external_jobs()))
-            assert external_job.solid_names_in_topological_order == [
+            assert external_job.node_names_in_topological_order == [
                 "A_source",
                 "A",
                 "B",
@@ -424,7 +424,7 @@ def test_job_subset_of_subset():
     assert result.output_for_node("return_one_b") == 1
     assert result.output_for_node("add_one_b") == 2
 
-    subset_job = job_def.get_job_def_for_subset_selection(["add_one_a", "return_one_a"])
+    subset_job = job_def.get_subset(op_selection=["add_one_a", "return_one_a"])
     subset_result = subset_job.execute_in_process()
     assert subset_result.success
     with pytest.raises(DagsterInvariantViolationError):
@@ -465,15 +465,15 @@ def test_job_subset_with_multi_dependency():
     assert result.success
     assert result.output_for_node("noop") == 3
 
-    subset_result = job_def.get_job_def_for_subset_selection(["noop"]).execute_in_process()
+    subset_result = job_def.get_subset(op_selection=["noop"]).execute_in_process()
 
     assert subset_result.success
     with pytest.raises(DagsterInvariantViolationError):
         subset_result.output_for_node("return_one")
     assert subset_result.output_for_node("noop") == 3
 
-    subset_result = job_def.get_job_def_for_subset_selection(
-        ["return_one", "return_two", "noop"]
+    subset_result = job_def.get_subset(
+        op_selection=["return_one", "return_two", "noop"]
     ).execute_in_process()
 
     assert subset_result.success
@@ -546,13 +546,11 @@ def define_three_part_job():
 
 
 def define_created_disjoint_three_part_job():
-    return define_three_part_job().get_job_def_for_subset_selection(["add_one", "add_three"])
+    return define_three_part_job().get_subset(op_selection=["add_one", "add_three"])
 
 
 def test_job_disjoint_subset():
-    disjoint_job = define_three_part_job().get_job_def_for_subset_selection(
-        ["add_one", "add_three"]
-    )
+    disjoint_job = define_three_part_job().get_subset(op_selection=["add_one", "add_three"])
     assert len(disjoint_job.nodes) == 2
 
 
@@ -941,9 +939,9 @@ def test_selector_with_subset_for_execution():
         def_one()
         def_two()
 
-    assert pipe.get_job_def_for_subset_selection(
-        ["def_two"]
-    ).op_selection_data.resolved_op_selection == {"def_two"}
+    assert pipe.get_subset(op_selection=["def_two"]).op_selection_data.resolved_op_selection == {
+        "def_two"
+    }
 
 
 def test_default_run_id():

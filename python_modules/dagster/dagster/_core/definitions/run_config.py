@@ -24,7 +24,7 @@ from dagster._config import (
     Selector,
     Shape,
 )
-from dagster._config.pythonic_config import Config, config_dictionary_from_values
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -34,8 +34,8 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.output import OutputDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.input_manager import IInputManagerDefinition
 from dagster._core.storage.output_manager import IOutputManagerDefinition
-from dagster._core.storage.root_input_manager import IInputManagerDefinition
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster._utils import check
 
@@ -195,11 +195,9 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
 
     fields["ops"] = nodes_field
-    field_aliases = {"ops": "solids"}
 
     return Shape(
         fields=remove_none_entries(fields),
-        field_aliases=field_aliases,
     )
 
 
@@ -229,6 +227,7 @@ def get_inputs_field(
         elif (
             # if you have asset definitions, input will be loaded from the source asset
             asset_layer.has_assets_defs
+            or asset_layer.has_asset_check_defs
             and asset_layer.asset_key_for_input(handle, name)
             and not has_upstream
         ):
@@ -237,8 +236,6 @@ def get_inputs_field(
             input_field = None
         elif name in input_source_assets and not has_upstream:
             input_field = None
-        elif inp.root_manager_key and not has_upstream:
-            input_field = get_input_manager_input_field(node, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(node, name, inp)
         else:
@@ -276,27 +273,7 @@ def get_input_manager_input_field(
     input_def: InputDefinition,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
-    if input_def.root_manager_key:
-        if input_def.root_manager_key not in resource_defs:
-            raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {node.describe_node()} requires root_manager_key"
-                f" '{input_def.root_manager_key}', but no resource has been provided. Please"
-                " include a resource definition for that key in the provided resource_defs."
-            )
-
-        root_manager = resource_defs[input_def.root_manager_key]
-        if not isinstance(root_manager, IInputManagerDefinition):
-            raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {node.describe_node()} requires root_manager_key "
-                f"'{input_def.root_manager_key}', but the resource definition provided is not an "
-                "IInputManagerDefinition"
-            )
-
-        input_config_schema = root_manager.input_config_schema
-        if input_config_schema:
-            return input_config_schema.as_field()
-        return None
-    elif input_def.input_manager_key:
+    if input_def.input_manager_key:
         if input_def.input_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
                 f"Input '{input_def.name}' for {node.describe_node()} requires input_manager_key"
@@ -324,9 +301,7 @@ def get_type_loader_input_field(node: Node, input_name: str, input_def: InputDef
     loader = check.not_none(input_def.dagster_type.loader)
     return Field(
         loader.schema_type,
-        is_required=(
-            not node.definition.input_has_default(input_name) and not input_def.root_manager_key
-        ),
+        is_required=(not node.definition.input_has_default(input_name)),
     )
 
 
@@ -372,12 +347,11 @@ def get_output_manager_output_field(
 
 
 def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> Optional[Field]:
-    field_aliases = {"ops": "solids"}
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
             return Field(
-                Shape(trimmed_fields, field_aliases=field_aliases),
+                Shape(trimmed_fields),
                 is_required=False,
                 description=(
                     "This op is not present in the current op selection, "
@@ -385,7 +359,7 @@ def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> O
                 ),
             )
         else:
-            return Field(Shape(trimmed_fields, field_aliases=field_aliases))
+            return Field(Shape(trimmed_fields))
     else:
         return None
 
@@ -554,7 +528,7 @@ def define_node_shape(
         if node_field:
             fields[node.name] = node_field
 
-    return Shape(fields, field_aliases={"ops": "solids"})
+    return Shape(fields)
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
@@ -600,10 +574,8 @@ def construct_config_type_dictionary(
         if name and name in type_dict_by_name:
             if type(config_type) is not type(type_dict_by_name[name]):
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "Type names must be unique. You have constructed two different "
-                        'instances of types with the same name "{name}".'
-                    ).format(name=name)
+                    "Type names must be unique. You have constructed two different "
+                    f'instances of types with the same name "{name}".'
                 )
         elif name:
             type_dict_by_name[name] = config_type
@@ -618,13 +590,11 @@ def _convert_config_classes_inner(configs: Any) -> Any:
         return configs
 
     return {
-        k: {
-            "config": config_dictionary_from_values(
-                v._as_config_dict(), v.to_config_schema().as_field()  # noqa: SLF001
-            )
-        }
-        if isinstance(v, Config)
-        else _convert_config_classes_inner(v)
+        k: (
+            {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
+            if isinstance(v, Config)
+            else _convert_config_classes_inner(v)
+        )
         for k, v in configs.items()
     }
 
@@ -634,7 +604,7 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class RunConfig:
-    """Container for all the configuration that can be passed to a pipeline run. Accepts Pythonic definitions
+    """Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
     for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.
 
     Example usage:

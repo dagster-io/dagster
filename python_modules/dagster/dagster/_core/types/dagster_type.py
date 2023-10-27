@@ -159,15 +159,22 @@ class DagsterType(RequiresResources):
 
     @public
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:
+        """Type check the value against the type.
+
+        Args:
+            context (TypeCheckContext): The context of the type check.
+            value (Any): The value to check.
+
+        Returns:
+            TypeCheck: The result of the type check.
+        """
         retval = self._type_check_fn(context, value)
 
         if not isinstance(retval, (bool, TypeCheck)):
             raise DagsterInvariantViolationError(
-                (
-                    "You have returned {retval} of type {retval_type} from the type "
-                    'check function of type "{type_key}". Return value must be instance '
-                    "of TypeCheck or a bool."
-                ).format(retval=repr(retval), retval_type=type(retval), type_key=self.key)
+                f"You have returned {retval!r} of type {type(retval)} from the type "
+                f'check function of type "{self.key}". Return value must be instance '
+                "of TypeCheck or a bool."
             )
 
         return TypeCheck(success=retval) if isinstance(retval, bool) else retval
@@ -193,6 +200,7 @@ class DagsterType(RequiresResources):
     @public
     @property
     def required_resource_keys(self) -> TypingAbstractSet[str]:
+        """AbstractSet[str]: Set of resource keys required by the type check function."""
         return self._required_resource_keys
 
     @public
@@ -204,8 +212,7 @@ class DagsterType(RequiresResources):
     @public
     @property
     def unique_name(self) -> t.Optional[str]:
-        """The unique name of this type. Can be None if the type is not unique, such as container types.
-        """
+        """The unique name of this type. Can be None if the type is not unique, such as container types."""
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(
             self._name is not None,
@@ -216,21 +223,25 @@ class DagsterType(RequiresResources):
     @public
     @property
     def has_unique_name(self) -> bool:
+        """bool: Whether the type has a unique name."""
         return self._name is not None
 
     @public
     @property
     def typing_type(self) -> t.Any:
+        """Any: The python typing type for this type."""
         return self._typing_type
 
     @public
     @property
     def loader(self) -> t.Optional[DagsterTypeLoader]:
+        """Optional[DagsterTypeLoader]: Loader for this type, if any."""
         return self._loader
 
     @public
     @property
     def description(self) -> t.Optional[str]:
+        """Optional[str]: Description of the type, or None if not provided."""
         return self._description
 
     @property
@@ -286,17 +297,13 @@ def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
         }
         if args[0] not in possible_names:
             DagsterInvalidDefinitionError(
-                'type_check function on type "{name}" must have first '
-                'argument named "context" (or _, _context, context_).'.format(
-                    name=name,
-                )
+                f'type_check function on type "{name}" must have first '
+                'argument named "context" (or _, _context, context_).'
             )
         return True
 
     raise DagsterInvalidDefinitionError(
-        'type_check_fn argument on type "{name}" must take 2 arguments, received {count}.'.format(
-            name=name, count=len(args)
-        )
+        f'type_check_fn argument on type "{name}" must take 2 arguments, received {len(args)}.'
     )
 
 
@@ -833,6 +840,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._utils.typing_api import is_typing_type
 
+    from ..definitions.result import MaterializeResult
     from .primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
@@ -864,6 +872,11 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         dynamic_out_annotation = get_args(dagster_type)[0]
         type_args = get_args(dynamic_out_annotation)
         dagster_type = type_args[0] if len(type_args) == 1 else Any
+    elif dagster_type == MaterializeResult:
+        # convert MaterializeResult type annotation to Nothing until returning
+        # scalar values via MaterializeResult is supported
+        # https://github.com/dagster-io/dagster/issues/16887
+        dagster_type = Nothing
 
     # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):

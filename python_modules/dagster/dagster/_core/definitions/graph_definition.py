@@ -83,12 +83,10 @@ def _check_node_defs_arg(
                 """You have passed a lambda or function {func} into {name} that is
                 not a node. You have likely forgetten to annotate this function with
                 the @op or @graph decorators.'
-                """.format(
-                    name=graph_name, func=node_def.__name__
-                )
+                """.format(name=graph_name, func=node_def.__name__)
             )
         else:
-            raise DagsterInvalidDefinitionError(f"Invalid item in node list: {repr(node_def)}")
+            raise DagsterInvalidDefinitionError(f"Invalid item in node list: {node_def!r}")
 
     return node_defs
 
@@ -122,9 +120,9 @@ def create_adjacency_lists(
 
 
 class GraphDefinition(NodeDefinition):
-    """Defines a Dagster graph.
+    """Defines a Dagster op graph.
 
-    A graph is made up of
+    An op graph is made up of
 
     - Nodes, which can either be an op (the functional unit of computation), or another graph.
     - Dependencies, which determine how the values produced by nodes as outputs flow from
@@ -137,7 +135,7 @@ class GraphDefinition(NodeDefinition):
     Args:
         name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`
             or :py:class:`JobDefinition` containing the graph.
-        description (Optional[str]): A human-readable description of the pipeline.
+        description (Optional[str]): A human-readable description of the job.
         node_defs (Optional[Sequence[NodeDefinition]]): The set of ops / graphs used in this graph.
         dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other
@@ -204,7 +202,7 @@ class GraphDefinition(NodeDefinition):
         config: Optional[ConfigMapping] = None,
         tags: Optional[Mapping[str, str]] = None,
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
-        **kwargs: object,
+        **kwargs: Any,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
 
@@ -367,16 +365,28 @@ class GraphDefinition(NodeDefinition):
     @public
     @property
     def input_mappings(self) -> Sequence[InputMapping]:
+        """Input mappings for the graph.
+
+        An input mapping is a mapping from an input of the graph to an input of a child node.
+        """
         return self._input_mappings
 
     @public
     @property
     def output_mappings(self) -> Sequence[OutputMapping]:
+        """Output mappings for the graph.
+
+        An output mapping is a mapping from an output of the graph to an output of a child node.
+        """
         return self._output_mappings
 
     @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
+        """The config mapping for the graph, if present.
+
+        By specifying a config mapping function, you can override the configuration for the child nodes contained within a graph.
+        """
         return self._config_mapping
 
     @property
@@ -525,8 +535,8 @@ class GraphDefinition(NodeDefinition):
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only graphs utilizing config mapping can be pre-configured. The graph "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
+                f'"{self.name}" does not have a config mapping, and thus has nothing to be '
+                "configured."
             )
         config_mapping = cast(ConfigMapping, self.config_mapping)
         return self.copy(
@@ -580,7 +590,7 @@ class GraphDefinition(NodeDefinition):
 
                 If a dictionary is provided, then it must conform to the standard config schema, and
                 it will be used as the job's run config for the job whenever the job is executed.
-                The values provided will be viewable and editable in the Dagit playground, so be
+                The values provided will be viewable and editable in the Dagster UI, so be
                 careful with secrets.
 
                 If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
@@ -590,14 +600,14 @@ class GraphDefinition(NodeDefinition):
                 If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
                 values that can parameterize the job, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
-                Dagit playground, so be careful with secrets.
+                Dagster UI, so be careful with secrets.
             tags (Optional[Mapping[str, Any]]):
                 Arbitrary information that will be attached to the execution of the Job.
                 Values that are not strings will be json encoded and must meet the criteria that
                 `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
                 values provided at invocation time.
             metadata (Optional[Mapping[str, RawMetadataValue]]):
-                Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+                Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI.
                 Keys must be strings, and values must be python primitive types or one of the provided
                 MetadataValue types
             logger_defs (Optional[Mapping[str, LoggerDefinition]]):
@@ -628,7 +638,7 @@ class GraphDefinition(NodeDefinition):
 
         wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
-        return JobDefinition(
+        return JobDefinition.dagster_internal_init(
             name=name,
             description=description or self.description,
             graph_def=self,
@@ -645,7 +655,8 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
-        ).get_job_def_for_subset_selection(op_selection)
+            _was_explicitly_provided_resources=None,  # None means this is determined by whether resource_defs contains any explicitly provided resources
+        ).get_subset(op_selection=op_selection)
 
     def coerce_to_job(self) -> "JobDefinition":
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -713,7 +724,7 @@ class GraphDefinition(NodeDefinition):
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
             input_values=input_values,
-        ).get_job_def_for_subset_selection(op_selection)
+        ).get_subset(op_selection=op_selection)
 
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
@@ -745,27 +756,73 @@ class GraphDefinition(NodeDefinition):
     @public
     @property
     def name(self) -> str:
+        """The name of the graph."""
         return super(GraphDefinition, self).name
 
     @public
     @property
     def tags(self) -> Mapping[str, str]:
+        """The tags associated with the graph."""
         return super(GraphDefinition, self).tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
+        """Aliases the graph with a new name.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.alias("my_graph_alias")
+        """
         return super(GraphDefinition, self).alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+        """Attaches the provided tags to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.tag({"my_tag": "my_value"})
+        """
         return super(GraphDefinition, self).tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        """Attaches the provided hooks to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.with_hooks({my_hook})
+        """
         return super(GraphDefinition, self).with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        """Attaches the provided retry policy to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.with_retry_policy(RetryPolicy(max_retries=5))
+        """
         return super(GraphDefinition, self).with_retry_policy(retry_policy)
 
     def resolve_input_to_destinations(
@@ -965,20 +1022,13 @@ def _validate_out_mappings(
             target_node = node_dict.get(mapping.maps_from.node_name)
             if target_node is None:
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output mapping references node "
-                    "'{node_name}' which it does not contain.".format(
-                        name=name, node_name=mapping.maps_from.node_name, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' output mapping references node "
+                    f"'{mapping.maps_from.node_name}' which it does not contain."
                 )
             if not target_node.has_output(mapping.maps_from.output_name):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} {name} output mapping from {described_node} "
-                    "which contains no output named '{mapping.maps_from.output_name}'".format(
-                        described_node=target_node.describe_node(),
-                        name=name,
-                        mapping=mapping,
-                        class_name=class_name,
-                    )
+                    f"In {class_name} {name} output mapping from {target_node.describe_node()} "
+                    f"which contains no output named '{mapping.maps_from.output_name}'"
                 )
 
             target_output = target_node.output_def_named(mapping.maps_from.output_name)
@@ -992,29 +1042,22 @@ def _validate_out_mappings(
                 and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
-                    " {mapping.dagster_type.display_name} maps from"
-                    " {mapping.maps_from.node_name}.{mapping.maps_from.output_name} of different"
-                    " type {target_output.dagster_type.display_name}. OutputMapping source and"
-                    " destination must have the same type.".format(
-                        class_name=class_name,
-                        mapping=mapping,
-                        name=name,
-                        target_output=target_output,
-                    )
+                    f"In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
+                    f" {mapping.dagster_type.display_name} maps from"
+                    f" {mapping.maps_from.node_name}.{mapping.maps_from.output_name} of different"
+                    f" type {target_output.dagster_type.display_name}. OutputMapping source and"
+                    " destination must have the same type."
                 )
 
         elif isinstance(mapping, OutputDefinition):
             raise DagsterInvalidDefinitionError(
-                "You passed an OutputDefinition named '{output_name}' directly "
+                f"You passed an OutputDefinition named '{mapping.name}' directly "
                 "in to output_mappings. Return an OutputMapping by calling "
-                "mapping_from on the OutputDefinition.".format(output_name=mapping.name)
+                "mapping_from on the OutputDefinition."
             )
         else:
             raise DagsterInvalidDefinitionError(
-                "Received unexpected type '{type}' in output_mappings. "
-                "Provide an OutputMapping using OutputDefinition(...).mapping_from(...)".format(
-                    type=type(mapping)
-                )
+                f"Received unexpected type '{type(mapping)}' in output_mappings. "
+                "Provide an OutputMapping using OutputDefinition(...).mapping_from(...)"
             )
     return output_mappings, output_defs

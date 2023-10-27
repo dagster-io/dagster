@@ -13,7 +13,7 @@ from dagstermill.examples.repository import custom_io_mgr_key_asset
 
 
 def get_path(materialization_event):
-    for key, value in materialization_event.event_specific_data.materialization.metadata.items():
+    for value in materialization_event.event_specific_data.materialization.metadata.values():
         if isinstance(value, (NotebookMetadataValue, PathMetadataValue)):
             return value.path
 
@@ -118,7 +118,7 @@ def test_custom_io_manager_key():
 @pytest.mark.notebook_test
 def test_error_notebook_saved_asset():
     result = None
-    recon_pipeline = ReconstructableJob.for_module(
+    recon_job = ReconstructableJob.for_module(
         "dagstermill.examples.repository", "error_notebook_asset_job"
     )
 
@@ -126,7 +126,7 @@ def test_error_notebook_saved_asset():
         outer_result = None
         try:
             with execute_job(
-                recon_pipeline,
+                recon_job,
                 run_config={},
                 instance=instance,
                 raise_on_error=False,

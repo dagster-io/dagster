@@ -9,7 +9,7 @@ from dagster_aws.emr.emr_step_main import DONE, event_writing_loop
 def make_event(event_id):
     return DagsterEvent(
         event_type_value="ENGINE_EVENT",
-        job_name="some_pipeline",
+        job_name="some_job",
         event_specific_data=EngineEventData(),
         message=str(event_id),
     )

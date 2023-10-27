@@ -91,6 +91,11 @@ ManagedTestSuite: Any = make_graphql_context_test_suite(
         GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),
     ]
 )
+CodeServerCliTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[
+        GraphQLContextVariant.sqlite_with_default_run_launcher_code_server_cli_env(),
+    ]
+)
 
 
 class TestReloadWorkspaceReadOnly(ReadonlyGraphQLContextTestMatrix):
@@ -456,3 +461,30 @@ class TestReloadRepositoriesManagedGrpc(ManagedTestSuite):
             result.data["reloadRepositoryLocation"]["locationOrLoadError"]["isReloadSupported"]
             is True
         )
+
+
+class TestReloadLocationCodeServerCliGrpc(CodeServerCliTestSuite):
+    def test_code_server_cli_reload_location(self, graphql_context):
+        # server_id before
+
+        old_server_id = graphql_context.get_code_location("test").server_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": "test"},
+        )
+
+        assert result
+        assert result.data
+        assert result.data["reloadRepositoryLocation"]
+        assert (
+            result.data["reloadRepositoryLocation"]["locationOrLoadError"]["__typename"]
+            == "RepositoryLocation"
+        )
+        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
+
+        new_location = graphql_context.process_context.create_snapshot()["test"].code_location
+
+        assert new_location.server_id != old_server_id  # Reload actually happened

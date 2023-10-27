@@ -42,7 +42,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     """SQLite-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     This is the default run storage when none is specified in the ``dagster.yaml``.

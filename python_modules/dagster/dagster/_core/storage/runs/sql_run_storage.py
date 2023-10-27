@@ -11,7 +11,6 @@ from typing import (
     ContextManager,
     Dict,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -43,7 +42,13 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sql import SqlAlchemyQuery
+from dagster._core.storage.sqlalchemy_compat import (
+    db_fetch_mappings,
+    db_scalar_subquery,
+    db_select,
+    db_subquery,
+)
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -59,7 +64,7 @@ from dagster._seven import JSONDecodeError
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
 from dagster._utils.merger import merge_dicts
 
-from ..pipeline_run import (
+from ..dagster_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
@@ -68,7 +73,7 @@ from ..pipeline_run import (
     RunsFilter,
     TagBucket,
 )
-from .base import RunGroupInfo, RunStorage
+from .base import RunStorage
 from .migration import (
     OPTIONAL_DATA_MIGRATIONS,
     REQUIRED_DATA_MIGRATIONS,
@@ -107,28 +112,21 @@ class SqlRunStorage(RunStorage):
 
     def fetchall(self, query: SqlAlchemyQuery) -> Sequence[Any]:
         with self.connect() as conn:
-            result_proxy = conn.execute(query)
-            res = result_proxy.fetchall()
-            result_proxy.close()
-
-        return res
+            return db_fetch_mappings(conn, query)
 
     def fetchone(self, query: SqlAlchemyQuery) -> Optional[Any]:
         with self.connect() as conn:
-            result_proxy = conn.execute(query)
-            row = result_proxy.fetchone()
-            result_proxy.close()
-
-        return row
+            if db.__version__.startswith("2."):
+                return conn.execute(query).mappings().first()
+            else:
+                return conn.execute(query).fetchone()
 
     def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
         check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
         if dagster_run.job_snapshot_id and not self.has_job_snapshot(dagster_run.job_snapshot_id):
             raise DagsterSnapshotDoesNotExist(
-                "Snapshot {ss_id} does not exist in run storage".format(
-                    ss_id=dagster_run.job_snapshot_id
-                )
+                f"Snapshot {dagster_run.job_snapshot_id} does not exist in run storage"
             )
 
         has_tags = dagster_run.tags and len(dagster_run.tags) > 0
@@ -206,7 +204,7 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-    def _row_to_run(self, row: SqlAlchemyRow) -> DagsterRun:
+    def _row_to_run(self, row: Dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
@@ -214,7 +212,7 @@ class SqlRunStorage(RunStorage):
         # overriden with an old value.
         return run.with_status(status)
 
-    def _rows_to_runs(self, rows: Iterable[SqlAlchemyRow]) -> Sequence[DagsterRun]:
+    def _rows_to_runs(self, rows: Iterable[Dict]) -> Sequence[DagsterRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
@@ -227,8 +225,8 @@ class SqlRunStorage(RunStorage):
     ) -> SqlAlchemyQuery:
         """Helper function to deal with cursor/limit pagination args."""
         if cursor:
-            cursor_query = db.select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
-            query = query.where(RunsTable.c.id < cursor_query)
+            cursor_query = db_select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
+            query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
 
         if limit:
             query = query.limit(limit)
@@ -272,22 +270,6 @@ class SqlRunStorage(RunStorage):
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
 
-        if filters.tags and self.supports_intersect:
-            intersections = [
-                db.select([RunTagsTable.c.run_id]).where(
-                    db.and_(
-                        RunTagsTable.c.key == key,
-                        (
-                            RunTagsTable.c.value == value
-                            if isinstance(value, str)
-                            else RunTagsTable.c.value.in_(value)
-                        ),
-                    )
-                )
-                for key, value in filters.tags.items()
-            ]
-
-            query = query.where(RunsTable.c.run_id.in_(db.intersect(*intersections)))
         return query
 
     def _runs_query(
@@ -310,119 +292,16 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        if bucket_by:
-            if limit or cursor:
-                check.failed("cannot specify bucket_by and limit/cursor at the same time")
-            return self._bucketed_runs_query(bucket_by, filters, columns, order_by, ascending)
-
-        if filters.tags and not self.supports_intersect:
+        if filters.tags:
             table = self._apply_tags_table_joins(RunsTable, filters.tags)
         else:
             table = RunsTable
 
-        base_query = db.select([getattr(RunsTable.c, column) for column in columns]).select_from(
+        base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
             table
         )
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
-
-    def _bucket_rank_column(
-        self, bucket_by: Union[JobBucket, TagBucket], order_by: Optional[str], ascending: bool
-    ):
-        check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
-        check.invariant(
-            self.supports_bucket_queries, "Bucket queries are not supported by this storage layer"
-        )
-        sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
-        direction = db.asc if ascending else db.desc
-        bucket_column = (
-            RunsTable.c.pipeline_name if isinstance(bucket_by, JobBucket) else RunTagsTable.c.value
-        )
-        return (
-            db.func.rank()
-            .over(order_by=direction(sorting_column), partition_by=bucket_column)
-            .label("rank")
-        )
-
-    def _bucketed_runs_query(
-        self,
-        bucket_by: Union[JobBucket, TagBucket],
-        filters: RunsFilter,
-        columns: Sequence[str],
-        order_by: Optional[str] = None,
-        ascending: bool = False,
-    ) -> SqlAlchemyQuery:
-        bucket_rank = self._bucket_rank_column(bucket_by, order_by, ascending)
-        query_columns = [getattr(RunsTable.c, column) for column in columns] + [bucket_rank]
-
-        if isinstance(bucket_by, JobBucket):
-            if filters.tags and not self.supports_intersect:
-                table = self._apply_tags_table_joins(RunsTable, filters.tags)
-            else:
-                table = RunsTable
-            base_query = db.select(query_columns).select_from(table)
-            base_query = base_query.where(RunsTable.c.pipeline_name.in_(bucket_by.job_names))
-            base_query = self._add_filters_to_query(base_query, filters)
-
-        elif not filters.tags:
-            # bucketing by tag, no tag filters
-            if self.supports_intersect:
-                table = RunsTable.join(
-                    RunTagsTable,
-                    db.and_(
-                        RunsTable.c.run_id == RunTagsTable.c.run_id,
-                        RunTagsTable.c.key == bucket_by.tag_key,
-                        RunTagsTable.c.value.in_(bucket_by.tag_values),
-                    ),
-                )
-            else:
-                table = self._apply_tags_table_joins(
-                    RunsTable,
-                    {bucket_by.tag_key: bucket_by.tag_values},
-                )
-
-            base_query = db.select(query_columns).select_from(table)
-            base_query = self._add_filters_to_query(base_query, filters)
-        else:
-            # there are tag filters as well as tag buckets, so we have to apply the tag filters in
-            # a separate join
-            if self.supports_intersect:
-                filtered_query = db.select([RunsTable.c.run_id])
-            else:
-                filtered_query = db.select([RunsTable.c.run_id]).select_from(
-                    self._apply_tags_table_joins(RunsTable, filters.tags)
-                )
-
-            filtered_query = self._add_filters_to_query(filtered_query, filters)
-            filtered_query = filtered_query.alias("filtered_query")
-            if self.supports_intersect:
-                table = RunsTable.join(
-                    RunTagsTable,
-                    db.and_(
-                        RunsTable.c.run_id == RunTagsTable.c.run_id,
-                        RunTagsTable.c.key == bucket_by.tag_key,
-                        RunTagsTable.c.value.in_(bucket_by.tag_values),
-                    ),
-                )
-            else:
-                table = self._apply_tags_table_joins(
-                    RunsTable, {bucket_by.tag_key: bucket_by.tag_values}
-                )
-
-            base_query = db.select(query_columns).select_from(
-                table.join(filtered_query, RunsTable.c.run_id == filtered_query.c.run_id)
-            )
-
-        subquery = base_query.alias("subquery")
-
-        # select all the columns, but skip the bucket_rank column, which is only used for applying
-        # the limit / order
-        subquery_columns = [getattr(subquery.c, column) for column in columns]
-        query = db.select(subquery_columns).order_by(subquery.c.rank.asc())
-        if bucket_by.bucket_limit:
-            query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
-
-        return query
 
     def _apply_tags_table_joins(
         self,
@@ -430,8 +309,14 @@ class SqlRunStorage(RunStorage):
         tags: Mapping[str, Union[str, Sequence[str]]],
     ) -> db.Table:
         multi_join = len(tags) > 1
+        i = 0
         for key, value in tags.items():
-            tags_table = RunTagsTable.alias() if multi_join else RunTagsTable
+            i += 1
+            tags_table = (
+                db_subquery(db_select([RunTagsTable]), f"run_tags_subquery_{i}")
+                if multi_join
+                else RunTagsTable
+            )
             table = table.join(
                 tags_table,
                 db.and_(
@@ -457,22 +342,27 @@ class SqlRunStorage(RunStorage):
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
-    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
-        subquery = self._runs_query(filters=filters).alias("subquery")
-
-        # We use an alias here because Postgres requires subqueries to be
-        # aliased.
-        subquery = subquery.alias("subquery")
-
-        query = db.select([db.func.count()]).select_from(subquery)
+    def get_run_ids(
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[str]:
+        query = self._runs_query(filters=filters, cursor=cursor, limit=limit, columns=["run_id"])
         rows = self.fetchall(query)
-        count = rows[0][0]
+        return [row["run_id"] for row in rows]
+
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
+        subquery = db_subquery(self._runs_query(filters=filters))
+        query = db_select([db.func.count().label("count")]).select_from(subquery)
+        row = self.fetchone(query)
+        count = row["count"] if row else 0
         return count
 
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         check.str_param(run_id, "run_id")
 
-        query = db.select([RunsTable.c.run_body, RunsTable.c.status]).where(
+        query = db_select([RunsTable.c.run_body, RunsTable.c.status]).where(
             RunsTable.c.run_id == run_id
         )
         rows = self.fetchall(query)
@@ -512,9 +402,9 @@ class SqlRunStorage(RunStorage):
                 dagster_run=self._row_to_run(row),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
-                start_time=check.opt_inst(row["start_time"], float)
-                if "start_time" in row
-                else None,
+                start_time=(
+                    check.opt_inst(row["start_time"], float) if "start_time" in row else None
+                ),
                 end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
             )
             for row in rows
@@ -528,8 +418,8 @@ class SqlRunStorage(RunStorage):
     ) -> Sequence[Tuple[str, Set[str]]]:
         result = defaultdict(set)
         query = (
-            db.select([RunTagsTable.c.key, RunTagsTable.c.value])
-            .distinct(RunTagsTable.c.key, RunTagsTable.c.value)
+            db_select([RunTagsTable.c.key, RunTagsTable.c.value])
+            .distinct()
             .order_by(RunTagsTable.c.key, RunTagsTable.c.value)
         )
         if tag_keys:
@@ -540,17 +430,13 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         rows = self.fetchall(query)
         for r in rows:
-            result[r[0]].add(r[1])
+            result[r["key"]].add(r["value"])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
 
     def get_run_tag_keys(self) -> Sequence[str]:
-        query = (
-            db.select([RunTagsTable.c.key])
-            .distinct(RunTagsTable.c.key)
-            .order_by(RunTagsTable.c.key)
-        )
+        query = db_select([RunTagsTable.c.key]).distinct().order_by(RunTagsTable.c.key)
         rows = self.fetchall(query)
-        return sorted([r[0] for r in rows])
+        return sorted([r["key"] for r in rows])
 
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         check.str_param(run_id, "run_id")
@@ -611,185 +497,35 @@ class SqlRunStorage(RunStorage):
         root_run = self._get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
-                (
-                    f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
-                    " instance."
-                ),
+                f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
+                " instance.",
                 invalid_run_id=root_run_id,
             )
 
         # root_run_id to run_id 1:1 mapping
         # https://github.com/dagster-io/dagster/issues/2495
         # Note: we currently use tags to persist the run group info
-        root_to_run = (
-            db.select(
+        root_to_run = db_subquery(
+            db_select(
                 [RunTagsTable.c.value.label("root_run_id"), RunTagsTable.c.run_id.label("run_id")]
-            )
-            .where(
+            ).where(
                 db.and_(RunTagsTable.c.key == ROOT_RUN_ID_TAG, RunTagsTable.c.value == root_run_id)
-            )
-            .alias("root_to_run")
+            ),
+            "root_to_run",
         )
         # get run group
-        run_group_query = (
-            db.select([RunsTable.c.run_body, RunsTable.c.status])
-            .select_from(
-                root_to_run.join(
-                    RunsTable,
-                    root_to_run.c.run_id == RunsTable.c.run_id,
-                    isouter=True,
-                )
+        run_group_query = db_select([RunsTable.c.run_body, RunsTable.c.status]).select_from(
+            root_to_run.join(
+                RunsTable,
+                root_to_run.c.run_id == RunsTable.c.run_id,
+                isouter=True,
             )
-            .alias("run_group")
         )
 
-        with self.connect() as conn:
-            res = conn.execute(run_group_query)
-            run_group = self._rows_to_runs(res)
+        res = self.fetchall(run_group_query)
+        run_group = self._rows_to_runs(res)
 
         return (root_run_id, [root_run, *run_group])
-
-    def get_run_groups(
-        self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> Mapping[str, RunGroupInfo]:
-        # The runs that would be returned by calling RunStorage.get_runs with the same arguments
-        runs = self._runs_query(
-            filters=filters, cursor=cursor, limit=limit, columns=["run_body", "status", "run_id"]
-        ).alias("runs")
-
-        # Gets us the run_id and associated root_run_id for every run in storage that is a
-        # descendant run of some root
-        #
-        # pseudosql:
-        #   with all_descendant_runs as (
-        #     select *
-        #     from run_tags
-        #     where key = @ROOT_RUN_ID_TAG
-        #   )
-
-        all_descendant_runs = (
-            db.select([RunTagsTable])
-            .where(RunTagsTable.c.key == ROOT_RUN_ID_TAG)
-            .alias("all_descendant_runs")
-        )
-
-        # Augment the runs in our query, for those runs that are the descendant of some root run,
-        # with the root_run_id
-        #
-        # pseudosql:
-        #
-        #   with runs_augmented as (
-        #     select
-        #       runs.run_id as run_id,
-        #       all_descendant_runs.value as root_run_id
-        #     from runs
-        #     left outer join all_descendant_runs
-        #       on all_descendant_runs.run_id = runs.run_id
-        #   )
-
-        runs_augmented = (
-            db.select(
-                [
-                    runs.c.run_id.label("run_id"),
-                    all_descendant_runs.c.value.label("root_run_id"),
-                ]
-            )
-            .select_from(
-                runs.join(
-                    all_descendant_runs,
-                    all_descendant_runs.c.run_id == RunsTable.c.run_id,
-                    isouter=True,
-                )
-            )
-            .alias("runs_augmented")
-        )
-
-        # Get all the runs our query will return. This includes runs as well as their root runs.
-        #
-        # pseudosql:
-        #
-        #    with runs_and_root_runs as (
-        #      select runs.run_id as run_id
-        #      from runs, runs_augmented
-        #      where
-        #        runs.run_id = runs_augmented.run_id or
-        #        runs.run_id = runs_augmented.root_run_id
-        #    )
-
-        runs_and_root_runs = (
-            db.select([RunsTable.c.run_id.label("run_id")])
-            .select_from(runs_augmented)
-            .where(
-                db.or_(
-                    RunsTable.c.run_id == runs_augmented.c.run_id,
-                    RunsTable.c.run_id == runs_augmented.c.root_run_id,
-                )
-            )
-            .distinct(RunsTable.c.run_id)
-        ).alias("runs_and_root_runs")
-
-        # We count the descendants of all of the runs in our query that are roots so that
-        # we can accurately display when a root run has more descendants than are returned by this
-        # query and afford a drill-down. This might be an unnecessary complication, but the
-        # alternative isn't obvious -- we could go and fetch *all* the runs in any group that we're
-        # going to return in this query, and then append those.
-        #
-        # pseudosql:
-        #
-        #    select runs.run_body, count(all_descendant_runs.id) as child_counts
-        #    from runs
-        #    join runs_and_root_runs on runs.run_id = runs_and_root_runs.run_id
-        #    left outer join all_descendant_runs
-        #      on all_descendant_runs.value = runs_and_root_runs.run_id
-        #    group by runs.run_body
-        #    order by child_counts desc
-
-        runs_and_root_runs_with_descendant_counts = (
-            db.select(
-                [
-                    RunsTable.c.run_body,
-                    RunsTable.c.status,
-                    db.func.count(all_descendant_runs.c.id).label("child_counts"),
-                ]
-            )
-            .select_from(
-                RunsTable.join(
-                    runs_and_root_runs, RunsTable.c.run_id == runs_and_root_runs.c.run_id
-                ).join(
-                    all_descendant_runs,
-                    all_descendant_runs.c.value == runs_and_root_runs.c.run_id,
-                    isouter=True,
-                )
-            )
-            .group_by(RunsTable.c.run_body, RunsTable.c.status)
-            .order_by(db.desc(db.column("child_counts")))
-        )
-
-        with self.connect() as conn:
-            res = conn.execute(runs_and_root_runs_with_descendant_counts).fetchall()
-
-        # Postprocess: descendant runs get aggregated with their roots
-        root_run_id_to_group: Dict[str, List[DagsterRun]] = defaultdict(list)
-        root_run_id_to_count: Dict[str, int] = defaultdict(int)
-        for row in res:
-            dagster_run = self._row_to_run(row)
-            root_run_id = dagster_run.get_root_run_id()
-            if root_run_id is not None:
-                root_run_id_to_group[root_run_id].append(dagster_run)
-            else:
-                root_run_id_to_group[dagster_run.run_id].append(dagster_run)
-                root_run_id_to_count[dagster_run.run_id] = row["child_counts"] + 1
-
-        return {
-            root_run_id: {
-                "runs": list(run_group),
-                "count": root_run_id_to_count[root_run_id],
-            }
-            for root_run_id, run_group in root_run_id_to_group.items()
-        }
 
     def has_run(self, run_id: str) -> bool:
         check.str_param(run_id, "run_id")
@@ -856,11 +592,16 @@ class SqlRunStorage(RunStorage):
                 snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
                 snapshot_type=snapshot_type.value,
             )
-            conn.execute(snapshot_insert)
+            try:
+                conn.execute(snapshot_insert)
+            except db_exc.IntegrityError:
+                # on_conflict_do_nothing equivalent
+                pass
+
             return snapshot_id
 
     def get_run_storage_id(self) -> str:
-        query = db.select([InstanceInfo.c.run_storage_id])
+        query = db_select([InstanceInfo.c.run_storage_id])
         row = self.fetchone(query)
         if not row:
             run_storage_id = str(uuid.uuid4())
@@ -868,10 +609,10 @@ class SqlRunStorage(RunStorage):
                 conn.execute(InstanceInfo.insert().values(run_storage_id=run_storage_id))
             return run_storage_id
         else:
-            return row[0]
+            return row["run_storage_id"]
 
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
-        query = db.select([SnapshotsTable.c.snapshot_id]).where(
+        query = db_select([SnapshotsTable.c.snapshot_id]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
 
@@ -880,13 +621,17 @@ class SqlRunStorage(RunStorage):
         return bool(row)
 
     def _get_snapshot(self, snapshot_id: str) -> Optional[JobSnapshot]:
-        query = db.select([SnapshotsTable.c.snapshot_body]).where(
+        query = db_select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
 
         row = self.fetchone(query)
 
-        return defensively_unpack_execution_plan_snapshot_query(logging, row) if row else None  # type: ignore
+        return (
+            defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]])  # type: ignore
+            if row
+            else None
+        )
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
@@ -983,13 +728,12 @@ class SqlRunStorage(RunStorage):
 
     def has_built_index(self, migration_name: str) -> bool:
         query = (
-            db.select([1])
+            db_select([1])
             .where(SecondaryIndexMigrationTable.c.name == migration_name)
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
-        with self.connect() as conn:
-            results = conn.execute(query).fetchall()
+        results = self.fetchall(query)
 
         return len(results) > 0
 
@@ -1048,12 +792,11 @@ class SqlRunStorage(RunStorage):
                 )
 
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
-        with self.connect() as conn:
-            rows = conn.execute(db.select([DaemonHeartbeatsTable.c.body]))
-            heartbeats = []
-            for row in rows:
-                heartbeats.append(deserialize_value(row.body, DaemonHeartbeat))
-            return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
+        rows = self.fetchall(db_select([DaemonHeartbeatsTable.c.body]))
+        heartbeats = []
+        for row in rows:
+            heartbeats.append(deserialize_value(row["body"], DaemonHeartbeat))
+        return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self) -> None:
         """Clears the run storage."""
@@ -1077,11 +820,11 @@ class SqlRunStorage(RunStorage):
         limit: Optional[int] = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
-        query = db.select([BulkActionsTable.c.body])
+        query = db_select([BulkActionsTable.c.body])
         if status:
             query = query.where(BulkActionsTable.c.status == status.value)
         if cursor:
-            cursor_query = db.select([BulkActionsTable.c.id]).where(
+            cursor_query = db_select([BulkActionsTable.c.id]).where(
                 BulkActionsTable.c.key == cursor
             )
             query = query.where(BulkActionsTable.c.id < cursor_query)
@@ -1089,13 +832,13 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return [deserialize_value(row[0], PartitionBackfill) for row in rows]
+        return [deserialize_value(row["body"], PartitionBackfill) for row in rows]
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")
-        query = db.select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
+        query = db_select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
         row = self.fetchone(query)
-        return deserialize_value(row[0], PartitionBackfill) if row else None
+        return deserialize_value(row["body"], PartitionBackfill) if row else None
 
     def add_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
@@ -1133,13 +876,12 @@ class SqlRunStorage(RunStorage):
     def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
 
-        with self.connect() as conn:
-            rows = conn.execute(
-                db.select([KeyValueStoreTable.c.key, KeyValueStoreTable.c.value]).where(
-                    KeyValueStoreTable.c.key.in_(keys)
-                ),
-            )
-            return {row.key: row.value for row in rows}
+        rows = self.fetchall(
+            db_select([KeyValueStoreTable.c.key, KeyValueStoreTable.c.value]).where(
+                KeyValueStoreTable.c.key.in_(keys)
+            ),
+        )
+        return {row["key"]: row["value"] for row in rows}
 
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
@@ -1178,11 +920,10 @@ GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 
 def defensively_unpack_execution_plan_snapshot_query(
-    logger: logging.Logger, row: SqlAlchemyRow
+    logger: logging.Logger, row: Sequence[Any]
 ) -> Optional[Union[ExecutionPlanSnapshot, JobSnapshot]]:
-    # no checking here because sqlalchemy returns a special
-    # row proxy and don't want to instance check on an internal
-    # implementation detail
+    # minimal checking here because sqlalchemy returns a different type based on what version of
+    # SqlAlchemy you are using
 
     def _warn(msg: str) -> None:
         logger.warning(f"get-pipeline-snapshot: {msg}")

@@ -13,7 +13,7 @@ description: Dagster can orchestrate dbt Cloud alongside other technologies.
   !
 </Note>
 
-Dagster allows you to run dbt Cloud alongside other technologies like Spark, Python, etc., and has built-in support for loading dbt Cloud models, seeds, and snapshots as [software-defined assets](/concepts/assets/software-defined-assets).
+Dagster allows you to run dbt Cloud alongside other technologies like Spark, Python, etc., and has built-in support for loading dbt Cloud models, seeds, and snapshots as [Software-defined Assets](/concepts/assets/software-defined-assets).
 
 ---
 
@@ -29,13 +29,11 @@ You'll also want to have a dbt Cloud instance with an existing project that is d
 
 To manage the dbt Cloud job from Dagster, you'll need three values:
 
-1. An `auth_token` for connecting with the dbt Cloud API, stored in an environment variable `DBT_CLOUD_API_TOKEN`,
+1. An `auth_token` for connecting with the dbt Cloud API, stored in an environment variable `DBT_CLOUD_API_TOKEN`. The `auth_token` can also be found by generating a [Service account token](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) in the dbt Cloud console.
 2. The `account_id` of your dbt Cloud account, stored in an environment variable `DBT_CLOUD_ACCOUNT_ID`, and
 3. The `job_id` of the dbt Cloud job you want to manage in Dagster
 
-The `auth_token` can also be found by generating a [Service account token](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) in the dbt Cloud console.
-
-The `account_id` and `job_id` can be obtained by inspecting the URL of the dbt Cloud job in the dbt Cloud console. For example, in this screenshot, the `account_id` is `111111` and the `job_id` is `33333`.
+The `account_id` and `job_id` can be obtained by inspecting the URL of the dbt Cloud job in the dbt Cloud console. For example, in this screenshot, the `account_id` is `111111` and the `job_id` is `33333`:
 
 <Image
 alt="Screenshot of the dbt Cloud console on the job page."
@@ -56,15 +54,21 @@ from dagster import EnvVar
 
 dbt_cloud_instance = DbtCloudClientResource(
     auth_token=EnvVar("DBT_CLOUD_API_TOKEN"),
-    account_id=EnvVar("DBT_CLOUD_ACCOUNT_ID"),
+    account_id=EnvVar.int("DBT_CLOUD_ACCOUNT_ID"),
 )
 ```
 
+In this example, <PyObject object="EnvVar" /> is used to pass in dbt Cloud credentials.
+
+---
+
 ## Step 2: Loading dbt Cloud models as assets
 
-In this step, you'll load the dbt Cloud models managed by a dbt Cloud job into Dagster as assets. For context, a dbt Cloud job defines set of commands to run for a dbt Cloud project. The dbt Cloud models managed by a dbt Cloud job are the models that are run by the job after filtering options are respected.
+In this step, you'll load the dbt Cloud models managed by a dbt Cloud job into Dagster as [Software-defined Assets](/concepts/assets/software-defined-assets).
 
-Using our dbt Cloud resource, we can retrieve information about the models that the dbt Cloud job is managing.
+For context, a dbt Cloud job defines set of commands to run for a dbt Cloud project. The dbt Cloud models managed by a dbt Cloud job are the models that are run by the job after filtering options are respected.
+
+Using the dbt Cloud resource, you can retrieve information about the models that the dbt Cloud job is managing:
 
 ```python startafter=start_load_assets_from_dbt_cloud_job endbefore=end_load_assets_from_dbt_cloud_job file=/integrations/dbt/dbt_cloud.py dedent=4
 from dagster_dbt import load_assets_from_dbt_cloud_job
@@ -77,10 +81,10 @@ dbt_cloud_assets = load_assets_from_dbt_cloud_job(
 ```
 
 <Note>
-  We support dbt Cloud jobs with multiple commands, but we require one of the
-  commands be a materialization command. A materialization command is one of
-  either `dbt run` or `dbt build`, along with any optional command line
-  arguments.
+  <strong>Note:</strong> Dagster supports dbt Cloud jobs with multiple commands,
+  but one of the commands must be a materialization command. A materialization
+  command is one of either <code>dbt run</code> or <code>dbt build</code>, along
+  with any optional command line arguments.
 </Note>
 
 The <PyObject module="dagster_dbt" object="load_assets_from_dbt_cloud_job" /> function loads the dbt Cloud models into Dagster as assets, creating one Dagster asset for each model.
@@ -89,13 +93,15 @@ When invoked, the function:
 
 1. Invokes your dbt Cloud job with command overrides to compile your dbt project,
 2. Parses the metadata provided by dbt Cloud, and
-3. Generates a set of software-defined assets reflecting the models in the project managed by the dbt Cloud job. Materializing these assets will run the dbt Cloud job that is represented by the loaded assets.
+3. Generates a set of Software-defined Assets reflecting the models in the project managed by the dbt Cloud job. Materializing these assets will run the dbt Cloud job that is represented by the loaded assets.
+
+---
 
 ## Step 3: Schedule dbt Cloud job runs
 
 Now that your dbt Cloud assets are loaded, you can define a Dagster job that materializes some or all of these assets, triggering the underlying dbt Cloud job.
 
-You can explicitly define when your assets should be materialized. For example, you can schedule assets based on their upstream or downstream dependencies, external events using a sensor, or a cron schedule.
+You can explicitly define when assets should be materialized. For example, you can schedule assets based on their upstream or downstream dependencies, external events using a sensor, or a cron schedule.
 
 ```python startafter=start_schedule_dbt_cloud_assets endbefore=end_schedule_dbt_cloud_assets file=/integrations/dbt/dbt_cloud.py dedent=4
 from dagster import (
@@ -108,11 +114,6 @@ from dagster import (
 # Materialize all assets
 run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
-# Materialize only the staging assets
-run_staging_job = define_asset_job(
-    "run_staging_job", AssetSelection.groups("staging")
-)
-
 defs = Definitions(
     # Use the dbt_cloud_assets defined in Step 2
     assets=[dbt_cloud_assets],
@@ -121,46 +122,52 @@ defs = Definitions(
             job=run_everything_job,
             cron_schedule="@daily",
         ),
-        ScheduleDefinition(
-            job=run_staging_job,
-            cron_schedule="@hourly",
-        ),
     ],
 )
 ```
 
+---
+
 ## Step 4: Cache the dbt Cloud job compilation
 
-<Note>This step is optional.</Note>
-
-- [Step 4.1: Add `DBT_DAGSTER_COMPILE_RUN_ID` environment variable to dbt Cloud](#step-41-add-dbt_dagster_compile_run_id-environment-variable-to-dbt-cloud)
-- [Step 4.2: Override `DBT_DAGSTER_COMPILE_RUN_ID` on dbt Cloud jobs managed by Dagster](#step-42-override-dbt_dagster_compile_run_id-on-dbt-cloud-jobs-managed-by-dagster)
-- [Step 4.3: Test out the cache locally](#step-43-test-out-the-cache-locally)
-- [Step 4.4: Set up a GitHub action to automate the cache](#step-44-set-up-a-github-action-to-automate-the-cache)
+<Note>
+  <strong>If developing locally,</strong> this step is optional.
+  <br />
+  <br /> <strong>In production</strong>, however, caching is recommended as the
+  latency of <a href="#step-2-loading-dbt-cloud-models-as-assets">Step 2</a>{" "}
+  (loading dbt models as Dagster assets) will scale with the size of the dbt
+  project in dbt Cloud.
+</Note>
 
 You'll need the following secrets in your GitHub repository and local environment:
 
 - `DBT_CLOUD_API_TOKEN` - The API token for your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
-- `DBT_CLOUD_ACCOUNT_ID` - The id of your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
-- `DBT_CLOUD_PROJECT_ID` - The id of your dbt Cloud project, that corresponds to the dbt project managed in git.
+- `DBT_CLOUD_ACCOUNT_ID` - The ID of your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
+- `DBT_CLOUD_PROJECT_ID` - The ID of your dbt Cloud project, that corresponds to the dbt project managed in git.
 
-### Step 4.1 Add `DBT_DAGSTER_COMPILE_RUN_ID` environment variable to dbt Cloud
+### Step 4.1 Add DBT_DAGSTER_COMPILE_RUN_ID environment variable to dbt Cloud
 
 In order to cache the compilation of your dbt project, you'll need to add an environment variable to your dbt Cloud project. Navigate to dbt Cloud's Environment Variables, and set the `DBT_DAGSTER_COMPILE_RUN_ID` variable with default values of `-1` at the project and environment level.
 
-### Step 4.2 Override `DBT_DAGSTER_COMPILE_RUN_ID` on dbt Cloud jobs managed by Dagster
+### Step 4.2 Override DBT_DAGSTER_COMPILE_RUN_ID on dbt Cloud jobs managed by Dagster
 
 Next, in the dbt Cloud jobs that you are managing with Dagster, you'll need to override the `DBT_DAGSTER_COMPILE_RUN_ID` environment variable. The presence of this override at the _job level_ will cause the dbt Cloud job to use the cached compilation of your dbt project. Set the job level override to also be `-1`.
 
-### Step 4.3 Test out the cache locally
+### Step 4.3 Test the cache locally
 
-Run `dagster-dbt-cloud cache-compile-references` to populate the cache for your dbt Cloud jobs. This command will compile your dbt project and cache the compilation. The compilation will be cached for each dbt Cloud job that you are managing with Dagster. After running this command, the `DBT_DAGSTER_COMPILE_RUN_ID` environment variable for your job will now be updated to the run id of the cached compilation.
+To populate the cache for your dbt Cloud jobs, run:
+
+```shell
+dagster-dbt-cloud cache-compile-references
+```
+
+This command will compile your dbt project and cache the compilation. The compilation will be cached for each dbt Cloud job that you are managing with Dagster. After running this command, the `DBT_DAGSTER_COMPILE_RUN_ID` environment variable for your job will now be updated to the run ID of the cached compilation.
 
 When running `dagster dev` locally, your dbt Cloud assets will now be loaded from the cached compilation, rather than compiling when the Dagster definitions are loaded.
 
 ### Step 4.4: Set up a GitHub action to automate the cache
 
-A reference to this cached compilation can be automated by using a GitHub action on your dbt Cloud project. For example, add a GitHub action that will cache the compilation of your dbt project. This action can be triggered on a push to your main branch.
+A reference to this cached compilation can be automated by using a GitHub action on your dbt Cloud project. For example, add a GitHub action that will cache the compilation of your dbt project. This action can be triggered on a push to your main branch:
 
 ```yaml
 name: Compile dbt Cloud project
@@ -188,11 +195,13 @@ jobs:
           DBT_CLOUD_PROJECT_ID: ${{ secrets.DBT_CLOUD_PROJECT_ID }}
 ```
 
+---
+
 ## What's next?
 
 By now, you should have a working dbt Cloud and Dagster integration and a handful of materialized Dagster assets.
 
 What's next? From here, you can:
 
-- Learn more about [software-defined assets](/concepts/assets/software-defined-assets)
+- Learn more about [Software-defined Assets](/concepts/assets/software-defined-assets)
 - Check out the [`dagster-dbt` API docs](/\_apidocs/libraries/dagster-dbt)

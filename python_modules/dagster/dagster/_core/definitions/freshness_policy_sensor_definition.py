@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
+from typing import Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
 
 import pendulum
 
@@ -35,9 +35,6 @@ from .sensor_definition import (
     get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 @whitelist_for_serdes
@@ -129,9 +126,9 @@ class FreshnessPolicySensorContext(
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             freshness_policy=check.inst_param(freshness_policy, "FreshnessPolicy", FreshnessPolicy),
             minutes_overdue=float(minutes_overdue) if minutes_overdue is not None else None,
-            previous_minutes_overdue=float(previous_minutes_overdue)
-            if previous_minutes_overdue is not None
-            else None,
+            previous_minutes_overdue=(
+                float(previous_minutes_overdue) if previous_minutes_overdue is not None else None
+            ),
             instance=check.inst_param(instance, "instance", DagsterInstance),
             resources=resources or ScopedResourcesBuilder.build_empty(),
         )
@@ -196,7 +193,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def __init__(
@@ -247,10 +244,10 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             evaluation_time = pendulum.now("UTC")
             asset_graph = context.repository_def.asset_graph
-            instance_queryer = CachingInstanceQueryer(context.instance)
-            data_time_resolver = CachingDataTimeResolver(
-                instance_queryer=instance_queryer, asset_graph=asset_graph
+            instance_queryer = CachingInstanceQueryer(
+                context.instance, asset_graph, evaluation_time
             )
+            data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
             monitored_keys = asset_selection.resolve(asset_graph)
 
             # get the previous status from the cursor
@@ -265,10 +262,11 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     continue
 
                 # get the current minutes_overdue value for this asset
-                minutes_late_by_key[asset_key] = data_time_resolver.get_current_minutes_late(
+                result = data_time_resolver.get_minutes_overdue(
                     evaluation_time=evaluation_time,
                     asset_key=asset_key,
                 )
+                minutes_late_by_key[asset_key] = result.overdue_minutes if result else None
 
                 resource_args_populated = validate_and_get_resource_dict(
                     context.resources, name, resource_arg_names
@@ -348,7 +346,10 @@ def freshness_policy_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[Callable[..., None]], FreshnessPolicySensorDefinition,]:
+) -> Callable[
+    [Callable[..., None]],
+    FreshnessPolicySensorDefinition,
+]:
     """Define a sensor that reacts to the status of a given set of asset freshness policies, where the
     decorated function will be evaluated on every tick for each asset in the selection that has a
     FreshnessPolicy defined.
@@ -366,7 +367,7 @@ def freshness_policy_sensor(
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def inner(fn: Callable[..., None]) -> FreshnessPolicySensorDefinition:

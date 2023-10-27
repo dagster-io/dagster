@@ -1,6 +1,6 @@
 import numpy
 import onnxruntime as rt
-from dagster import AssetIn, AssetOut, OpExecutionContext, asset, multi_asset
+from dagster import AssetExecutionContext, AssetIn, AssetOut, asset, multi_asset
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from sklearn.datasets import load_iris
@@ -36,7 +36,7 @@ def create_model_serialized_with_joblib():
         }
     },
 )
-def use_model_serialized_with_joblib(context: OpExecutionContext, my_joblib_serialized_model):
+def use_model_serialized_with_joblib(context: AssetExecutionContext, my_joblib_serialized_model):
     inference_result = my_joblib_serialized_model(1, 2)
     context.log.info(inference_result)  # Prints: 3
     return inference_result

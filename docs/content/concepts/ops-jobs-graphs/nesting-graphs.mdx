@@ -5,7 +5,7 @@ description: To organize the ops inside a job, you can nest sets of ops into sub
 
 # Nesting Graphs
 
-To organize the [ops](/concepts/ops-jobs-graphs/ops) inside a [job](/concepts/ops-jobs-graphs/jobs), you can nest sets of ops into sub-graphs.
+To organize the [ops](/concepts/ops-jobs-graphs/ops) inside a [job](/concepts/ops-jobs-graphs/op-jobs), you can nest sets of ops into sub-graphs.
 
 ## Relevant APIs
 
@@ -69,7 +69,7 @@ def all_together_nested():
     log_number(celsius_to_fahrenheit(return_fifty()))
 ```
 
-When executed, the above example will do the exact same thing as the non-nested version, but the nesting allows better organization of code and simplifies the presentation of the main graph in Dagit.
+When executed, the above example will do the exact same thing as the non-nested version, but the nesting allows better organization of code and simplifies the presentation of the main graph in the Dagster UI.
 
 ## Sub-Graph Inputs and Outputs
 
@@ -78,7 +78,7 @@ As shown in the example above, sub-graphs can have inputs and outputs - `celsius
 - The `number` input of the `celsius_to_fahrenheit` graph is passed as an argument to the `multiply_by_one_point_eight` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and provides the output of another op or sub-graph for the `number` arg, the output of that op or sub-graph will be passed to `multiply_by_one_point_eight`, and `multiply_by_one_point_eight` will not execute until the upstream op that produces the output has completed.
 - The implementation of the `celsius_to_fahrenheit` graph returns the result of the `add_thirty_two` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and passes its output to the input of another node, the output of `add_thirty_two` will be provided to that node, and any ops that ultimately receive that input will not execute until `add_thirty_two` has completed.
 
-If you want to add a description to an input (that will display in Dagit), you can provide a <PyObject object="GraphIn" /> when constructing the graph.
+If you want to add a description to an input (that will display in the UI), you can provide a <PyObject object="GraphIn" /> when constructing the graph.
 
 ### Sub-Graph Configuration
 

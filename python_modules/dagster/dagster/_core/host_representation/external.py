@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime
 from threading import RLock
 from typing import (
@@ -18,6 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -45,7 +44,6 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
-from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
@@ -54,6 +52,7 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 from .external_data import (
     DEFAULT_MODE_NAME,
     EnvVarConsumer,
+    ExternalAssetCheck,
     ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
@@ -70,16 +69,17 @@ from .external_data import (
     ResourceJobUsageEntry,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
-from .pipeline_index import JobIndex
+from .job_index import JobIndex
 from .represented import RepresentedJob
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
+    from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 
 
 class ExternalRepository:
     """ExternalRepository is a object that represents a loaded repository definition that
-    is resident in another process or container. Host processes such as dagit use
+    is resident in another process or container. Host processes such as dagster-webserver use
     objects such as these to interact with user-defined artifacts.
     """
 
@@ -132,7 +132,7 @@ class ExternalRepository:
 
     @property
     @cached_method
-    def _external_schedules(self) -> Dict[str, ExternalSchedule]:
+    def _external_schedules(self) -> Dict[str, "ExternalSchedule"]:
         return {
             external_schedule_data.name: ExternalSchedule(external_schedule_data, self._handle)
             for external_schedule_data in self.external_repository_data.external_schedule_datas
@@ -141,15 +141,15 @@ class ExternalRepository:
     def has_external_schedule(self, schedule_name: str) -> bool:
         return schedule_name in self._external_schedules
 
-    def get_external_schedule(self, schedule_name: str) -> ExternalSchedule:
+    def get_external_schedule(self, schedule_name: str) -> "ExternalSchedule":
         return self._external_schedules[schedule_name]
 
-    def get_external_schedules(self) -> Sequence[ExternalSchedule]:
+    def get_external_schedules(self) -> Sequence["ExternalSchedule"]:
         return list(self._external_schedules.values())
 
     @property
     @cached_method
-    def _external_resources(self) -> Dict[str, ExternalResource]:
+    def _external_resources(self) -> Dict[str, "ExternalResource"]:
         return {
             external_resource_data.name: ExternalResource(external_resource_data, self._handle)
             for external_resource_data in (
@@ -160,10 +160,10 @@ class ExternalRepository:
     def has_external_resource(self, resource_name: str) -> bool:
         return resource_name in self._external_resources
 
-    def get_external_resource(self, resource_name: str) -> ExternalResource:
+    def get_external_resource(self, resource_name: str) -> "ExternalResource":
         return self._external_resources[resource_name]
 
-    def get_external_resources(self) -> Iterable[ExternalResource]:
+    def get_external_resources(self) -> Iterable["ExternalResource"]:
         return self._external_resources.values()
 
     @property
@@ -175,7 +175,7 @@ class ExternalRepository:
 
     @property
     @cached_method
-    def _external_sensors(self) -> Dict[str, ExternalSensor]:
+    def _external_sensors(self) -> Dict[str, "ExternalSensor"]:
         return {
             external_sensor_data.name: ExternalSensor(external_sensor_data, self._handle)
             for external_sensor_data in self.external_repository_data.external_sensor_datas
@@ -184,15 +184,15 @@ class ExternalRepository:
     def has_external_sensor(self, sensor_name: str) -> bool:
         return sensor_name in self._external_sensors
 
-    def get_external_sensor(self, sensor_name: str) -> ExternalSensor:
+    def get_external_sensor(self, sensor_name: str) -> "ExternalSensor":
         return self._external_sensors[sensor_name]
 
-    def get_external_sensors(self) -> Sequence[ExternalSensor]:
+    def get_external_sensors(self) -> Sequence["ExternalSensor"]:
         return list(self._external_sensors.values())
 
     @property
     @cached_method
-    def _external_partition_sets(self) -> Dict[str, ExternalPartitionSet]:
+    def _external_partition_sets(self) -> Dict[str, "ExternalPartitionSet"]:
         return {
             external_partition_set_data.name: ExternalPartitionSet(
                 external_partition_set_data, self._handle
@@ -203,16 +203,16 @@ class ExternalRepository:
     def has_external_partition_set(self, partition_set_name: str) -> bool:
         return partition_set_name in self._external_partition_sets
 
-    def get_external_partition_set(self, partition_set_name: str) -> ExternalPartitionSet:
+    def get_external_partition_set(self, partition_set_name: str) -> "ExternalPartitionSet":
         return self._external_partition_sets[partition_set_name]
 
-    def get_external_partition_sets(self) -> Sequence[ExternalPartitionSet]:
+    def get_external_partition_sets(self) -> Sequence["ExternalPartitionSet"]:
         return list(self._external_partition_sets.values())
 
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
 
-    def get_full_external_job(self, job_name: str) -> ExternalJob:
+    def get_full_external_job(self, job_name: str) -> "ExternalJob":
         check.str_param(job_name, "job_name")
         check.invariant(
             self.has_external_job(job_name), f'No external job named "{job_name}" found'
@@ -240,7 +240,7 @@ class ExternalRepository:
 
             return self._cached_jobs[job_name]
 
-    def get_all_external_jobs(self) -> Sequence[ExternalJob]:
+    def get_all_external_jobs(self) -> Sequence["ExternalJob"]:
         return [self.get_full_external_job(pn) for pn in self._job_map]
 
     @property
@@ -282,13 +282,16 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
+    def get_external_asset_checks(self) -> Sequence[ExternalAssetCheck]:
+        return self.external_repository_data.external_asset_checks or []
+
     def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata
 
 
 class ExternalJob(RepresentedJob):
     """ExternalJob is a object that represents a loaded job definition that
-    is resident in another process or container. Host processes such as dagit use
+    is resident in another process or container. Host processes such as dagster-webserver use
     objects such as these to interact with user-defined artifacts.
     """
 
@@ -346,7 +349,7 @@ class ExternalJob(RepresentedJob):
         return self._job_index.job_snapshot.description
 
     @property
-    def solid_names_in_topological_order(self):
+    def node_names_in_topological_order(self):
         return self._job_index.job_snapshot.node_names_in_topological_order
 
     @property
@@ -364,17 +367,17 @@ class ExternalJob(RepresentedJob):
         return self._repository_handle
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.node_selection
+            self._job_index.job_snapshot.lineage_snapshot.op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
-    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
+    def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return (
-            self._job_index.job_snapshot.lineage_snapshot.nodes_to_execute
+            self._job_index.job_snapshot.lineage_snapshot.resolved_op_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
@@ -388,16 +391,24 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return (
+            self._job_index.job_snapshot.lineage_snapshot.asset_check_selection
+            if self._job_index.job_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
     def active_presets(self) -> Sequence[ExternalPresetData]:
         return list(self._active_preset_dict.values())
 
     @property
-    def solid_names(self) -> Sequence[str]:
+    def node_names(self) -> Sequence[str]:
         return self._job_index.job_snapshot.node_names
 
-    def has_solid_invocation(self, solid_name: str):
-        check.str_param(solid_name, "solid_name")
-        return self._job_index.has_solid_invocation(solid_name)
+    def has_node_invocation(self, node_name: str):
+        check.str_param(node_name, "node_name")
+        return self._job_index.has_node_invocation(node_name)
 
     def has_preset(self, preset_name: str) -> bool:
         check.str_param(preset_name, "preset_name")
@@ -530,8 +541,7 @@ class ExternalExecutionPlan:
 
 
 class ExternalResource:
-    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
-    """
+    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API."""
 
     def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
         self._external_resource_data = check.inst_param(
@@ -585,6 +595,18 @@ class ExternalResource:
     def job_ops_using(self) -> List[ResourceJobUsageEntry]:
         return self._external_resource_data.job_ops_using
 
+    @property
+    def schedules_using(self) -> List[str]:
+        return self._external_resource_data.schedules_using
+
+    @property
+    def sensors_using(self) -> List[str]:
+        return self._external_resource_data.sensors_using
+
+    @property
+    def is_dagster_maintained(self) -> bool:
+        return self._external_resource_data.dagster_maintained
+
 
 class ExternalSchedule:
     def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):
@@ -608,8 +630,8 @@ class ExternalSchedule:
         return self._external_schedule_data.execution_timezone
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._external_schedule_data.solid_selection
+    def op_selection(self) -> Optional[Sequence[str]]:
+        return self._external_schedule_data.op_selection
 
     @property
     def job_name(self) -> str:
@@ -671,7 +693,7 @@ class ExternalSchedule:
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
-    ) -> InstigatorState:
+    ) -> "InstigatorState":
         from dagster._core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -739,13 +761,13 @@ class ExternalSensor:
         return target.mode if target else None
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
+    def op_selection(self) -> Optional[Sequence[str]]:
         target = self._get_single_target()
-        return target.solid_selection if target else None
+        return target.op_selection if target else None
 
     def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:
-            return list(self._external_sensor_data.target_dict.values())[0]
+            return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 
@@ -803,7 +825,7 @@ class ExternalSensor:
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
-    ) -> InstigatorState:
+    ) -> "InstigatorState":
         from dagster._core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -864,8 +886,8 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.name
 
     @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._external_partition_set_data.solid_selection
+    def op_selection(self) -> Optional[Sequence[str]]:
+        return self._external_partition_set_data.op_selection
 
     @property
     def mode(self) -> Optional[str]:

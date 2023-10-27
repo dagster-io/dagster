@@ -16,12 +16,12 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental_param, public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._utils.backcompat import experimental_arg_warning
+from dagster._utils import IHasInternalInit
 
 from ..decorator_utils import (
     get_function_params,
@@ -58,7 +58,8 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
-class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
+@experimental_param(param="version")
+class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHasInternalInit):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -103,8 +104,27 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
             required_resource_keys, "required_resource_keys"
         )
         self._version = check.opt_str_param(version, "version")
-        if version:
-            experimental_arg_warning("version", "ResourceDefinition.__init__")
+
+        # this attribute will be updated by the @dagster_maintained_resource and @dagster_maintained_io_manager decorators
+        self._dagster_maintained = False
+        self._hardcoded_resource_type = None
+
+    @staticmethod
+    def dagster_internal_init(
+        *,
+        resource_fn: ResourceFunction,
+        config_schema: CoercableToConfigSchema,
+        description: Optional[str],
+        required_resource_keys: Optional[AbstractSet[str]],
+        version: Optional[str],
+    ) -> "ResourceDefinition":
+        return ResourceDefinition(
+            resource_fn=resource_fn,
+            config_schema=config_schema,
+            description=description,
+            required_resource_keys=required_resource_keys,
+            version=version,
+        )
 
     @property
     def resource_fn(self) -> ResourceFunction:
@@ -117,17 +137,26 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     @public
     @property
     def description(self) -> Optional[str]:
+        """A human-readable description of the resource."""
         return self._description
 
     @public
     @property
     def version(self) -> Optional[str]:
+        """A string which can be used to identify a particular code version of a resource definition."""
         return self._version
 
     @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
+        """A set of the resource keys that this resource depends on. These keys will be made available
+        to the resource's init context during execution, and the resource will not be instantiated
+        until all required resources are available.
+        """
         return self._required_resource_keys
+
+    def _is_dagster_maintained(self) -> bool:
+        return self._dagster_maintained
 
     @public
     @staticmethod
@@ -154,7 +183,15 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         Returns:
             [ResourceDefinition]: A hardcoded resource.
         """
-        return ResourceDefinition(resource_fn=lambda _init_context: value, description=description)
+        resource_def = ResourceDefinition(
+            resource_fn=lambda _init_context: value, description=description
+        )
+        # Make sure telemetry info gets passed in to hardcoded resources
+        if hasattr(value, "_is_dagster_maintained"):
+            resource_def._dagster_maintained = value._is_dagster_maintained()  # noqa: SLF001
+            resource_def._hardcoded_resource_type = type(value)  # noqa: SLF001
+
+        return resource_def
 
     @public
     @staticmethod
@@ -177,6 +214,16 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     @public
     @staticmethod
     def string_resource(description: Optional[str] = None) -> "ResourceDefinition":
+        """Creates a ``ResourceDefinition`` which takes in a single string as configuration
+        and returns this configured string to any ops or assets which depend on it.
+
+        Args:
+            description ([Optional[str]]): The description of the string resource. Defaults to None.
+
+        Returns:
+            [ResourceDefinition]: A resource that takes in a single string as configuration and
+                returns that string.
+        """
         return ResourceDefinition(
             resource_fn=lambda init_context: init_context.resource_config,
             config_schema=str,
@@ -188,13 +235,17 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
     ) -> "ResourceDefinition":
-        return ResourceDefinition(
+        resource_def = ResourceDefinition.dagster_internal_init(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
             required_resource_keys=self.required_resource_keys,
             version=self.version,
         )
+
+        resource_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
+
+        return resource_def
 
     def __call__(self, *args, **kwargs):
         from dagster._core.execution.context.init import UnboundInitResourceContext
@@ -247,6 +298,13 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
             yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
 
 
+def dagster_maintained_resource(
+    resource_def: ResourceDefinition,
+) -> ResourceDefinition:
+    resource_def._dagster_maintained = True  # noqa: SLF001
+    return resource_def
+
+
 class _ResourceDecoratorCallable:
     def __init__(
         self,
@@ -286,7 +344,7 @@ class _ResourceDecoratorCallable:
                 f" {', '.join(positional_arg_name_list(required_extras))}"
             )
 
-        resource_def = ResourceDefinition(
+        resource_def = ResourceDefinition.dagster_internal_init(
             resource_fn=resource_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(resource_fn),

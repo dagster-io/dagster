@@ -6,8 +6,8 @@ import pytest
 from dagster import DependencyDefinition, In, Int, Out, op
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -15,8 +15,12 @@ from dagster._core.errors import (
     DagsterRunNotFoundError,
 )
 from dagster._core.events import get_step_output_event
-from dagster._core.execution.api import ReexecutionOptions, execute_job, execute_plan
-from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.api import (
+    ReexecutionOptions,
+    create_execution_plan,
+    execute_job,
+    execute_plan,
+)
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.mem_io_manager import mem_io_manager
@@ -94,9 +98,9 @@ def test_execution_plan_reexecution():
         )
         _check_known_state(known_state)
 
-        execution_plan = ExecutionPlan.build(
+        execution_plan = create_execution_plan(
             reconstructable(job_fn),
-            resolved_run_config,
+            run_config,
             known_state=known_state,
         )
 
@@ -166,9 +170,9 @@ def test_execution_plan_reexecution_with_in_memory():
         )
         _check_known_state(known_state)
 
-        execution_plan = ExecutionPlan.build(
+        execution_plan = create_execution_plan(
             reconstructable(define_addy_job_mem_io),
-            resolved_run_config,
+            run_config,
             known_state=known_state,
         )
 
@@ -190,7 +194,7 @@ def test_execution_plan_reexecution_with_in_memory():
             )
 
 
-def test_pipeline_step_key_subset_execution():
+def test_job_step_key_subset_execution():
     job_fn = define_addy_job_fs_io
     run_config = {"ops": {"add_one": {"inputs": {"num": {"value": 3}}}}}
 

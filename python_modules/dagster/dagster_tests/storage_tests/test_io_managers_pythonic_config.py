@@ -1,9 +1,11 @@
 import os
 import tempfile
-from typing import Type
+from typing import Any, Type
 
 from dagster import (
     Config,
+    ConfigurableIOManagerFactory,
+    DataVersion,
     Definitions,
     FilesystemIOManager,
     In,
@@ -13,10 +15,12 @@ from dagster import (
     asset,
     io_manager,
     job,
+    observable_source_asset,
     op,
 )
 from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResource
 from dagster._config.type_printer import print_config_type_to_string
+from dagster._core.storage.io_manager import IOManager
 
 
 def type_string_from_config_schema(config_schema):
@@ -427,3 +431,122 @@ def test_config_param_load_input_handle_output_config() -> None:
     assert did_run["second_op"]
     assert storage["first_op"] == "prefoopost"
     assert storage["second_op"] == "prebarprefoopostpost"
+
+
+def test_io_manager_def() -> None:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+
+        @asset(io_manager_def=FilesystemIOManager(base_dir=tmpdir_path))
+        def hello_world_asset():
+            return "hello, world!"
+
+        defs = Definitions(
+            assets=[hello_world_asset],
+        )
+
+        assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
+
+
+def test_observable_source_asset_io_manager_def() -> None:
+    class FileStringIOManager(ConfigurableIOManager):
+        base_path: str
+
+        def load_input(self, context: "InputContext") -> object:
+            with open(
+                os.path.join(self.base_path, "/".join(context.asset_key.path)),
+                mode="r",
+                encoding="utf-8",
+            ) as ff:
+                return str(ff.read())
+
+        def handle_output(self, context: "OutputContext", obj: Any) -> None:
+            with open(
+                os.path.join(self.base_path, "/".join(context.asset_key.path)),
+                mode="w",
+                encoding="utf-8",
+            ) as ff:
+                ff.write(str(obj))
+
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        with open(os.path.join(tmpdir_path, "my_observable_asset"), "w") as f:
+            f.write("foo")
+
+        # we never actually observe this asset, we just attach the io manager to it
+        # to verify that any downstream assets that depend on it will use the right io manager
+        @observable_source_asset(io_manager_def=FileStringIOManager(base_path=tmpdir_path))
+        def my_observable_asset() -> DataVersion:
+            return DataVersion("alpha")
+
+        @asset
+        def my_downstream_asset(my_observable_asset: str) -> str:
+            return my_observable_asset + "bar"
+
+        defs = Definitions(
+            assets=[my_observable_asset, my_downstream_asset],
+        )
+
+        result = defs.get_implicit_global_asset_job_def().execute_in_process()
+        assert result.success
+        assert result.output_for_node("my_downstream_asset") == "foobar"
+
+
+def test_telemetry_custom_io_manager():
+    class MyIOManager(ConfigurableIOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    assert not MyIOManager._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_telemetry_dagster_io_manager():
+    class MyIOManager(ConfigurableIOManager):
+        @classmethod
+        def _is_dagster_maintained(cls) -> bool:
+            return True
+
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    assert MyIOManager()._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_telemetry_custom_io_manager_factory():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    class AnIOManagerFactory(ConfigurableIOManagerFactory):
+        def create_io_manager(self, _) -> IOManager:
+            return MyIOManager()
+
+    assert not AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_telemetry_dagster_io_manager_factory():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    class AnIOManagerFactory(ConfigurableIOManagerFactory):
+        @classmethod
+        def _is_dagster_maintained(cls) -> bool:
+            return True
+
+        def create_io_manager(self, _) -> IOManager:
+            return MyIOManager()
+
+    assert AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001

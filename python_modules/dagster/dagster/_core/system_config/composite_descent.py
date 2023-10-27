@@ -77,7 +77,7 @@ def composite_descent(
     """This function is responsible for constructing the dictionary of OpConfig (indexed by handle)
     that will be passed into the ResolvedRunConfig. Critically this is the codepath that manages
     config mapping, where the runtime calls into user-defined config mapping functions to produce
-    config for child solids of composites.
+    config for child nodes of graphs.
 
     Args:
         job_def (JobDefinition): JobDefinition
@@ -90,7 +90,7 @@ def composite_descent(
             composite tree - i.e. not just leaf ops, but composite ops as well
     """
     check.inst_param(job_def, "job_def", JobDefinition)
-    check.dict_param(ops_config, "solids_config")
+    check.dict_param(ops_config, "ops_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
 
     # If top-level graph has config mapping, apply that config mapping before descending.
@@ -146,7 +146,8 @@ def _composite_descent(
                 )
 
             complete_config_object = merge_dicts(
-                current_op_config, config_mapped_node_config.value  # type: ignore  # (unknown EVR type)
+                current_op_config,
+                config_mapped_node_config.value,  # type: ignore  # (unknown EVR type)
             )
             yield OpConfigEntry(current_handle, OpConfig.from_dict(complete_config_object))
             continue
@@ -162,8 +163,8 @@ def _composite_descent(
                 ),
             )
 
-            # If there is a config mapping, invoke it and get the descendent solids
-            # config that way. Else just grabs the solids entry of the current config
+            # If there is a config mapping, invoke it and get the descendent nodes
+            # config that way. Else just grabs the ops entry of the current config
             mapped_nodes_config = (
                 _apply_config_mapping(
                     node,
@@ -242,12 +243,12 @@ def _apply_config_mapping(
     asset_layer: AssetLayer,
 ) -> Mapping[str, RawNodeConfig]:
     # the spec of the config mapping function is that it takes the dictionary at:
-    # solid_name:
+    # op_name:
     #    config: {dict_passed_to_user}
 
-    # and it returns the dictionary rooted at solids
-    # solid_name:
-    #    solids: {return_value_of_config_fn}
+    # and it returns the dictionary rooted at ops
+    # op_name:
+    #    ops: {return_value_of_config_fn}
 
     # We must call the config mapping function and then validate it against
     # the child schema.
@@ -267,7 +268,7 @@ def _apply_config_mapping(
         DagsterConfigMappingFunctionError, _get_error_lambda(current_stack)
     ):
         config_mapping = check.not_none(graph_def.config_mapping)
-        mapped_solids_config = config_mapping.resolve_from_validated_config(
+        mapped_ops_config = config_mapping.resolve_from_validated_config(
             config_mapped_node_config.value.get("config", {})  # type: ignore  # (unknown EVR type)
         )
 
@@ -276,7 +277,7 @@ def _apply_config_mapping(
 
     # diff original graph and the subselected graph to find nodes to ignore so the system knows to
     # skip the validation then when config mapping generates values where the nodes are not selected
-    ignored_solids = (
+    ignored_nodes = (
         graph_def.get_top_level_omitted_nodes()
         if isinstance(graph_def, SubselectedGraphDefinition)
         else None
@@ -284,7 +285,7 @@ def _apply_config_mapping(
 
     type_to_evaluate_against = define_node_shape(
         nodes=graph_def.nodes,
-        ignored_nodes=ignored_solids,
+        ignored_nodes=ignored_nodes,
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,
@@ -294,10 +295,10 @@ def _apply_config_mapping(
 
     # process against that new type
 
-    evr = process_config(type_to_evaluate_against, mapped_solids_config)
+    evr = process_config(type_to_evaluate_against, mapped_ops_config)
 
     if not evr.success:
-        raise_composite_descent_config_error(current_stack, mapped_solids_config, evr)
+        raise_composite_descent_config_error(current_stack, mapped_ops_config, evr)
 
     return evr.value  # type: ignore  # (unknown evr type)
 
@@ -315,8 +316,9 @@ def _get_error_lambda(current_stack: DescentStack) -> Callable[[], str]:
 
 
 def _get_top_level_error_lambda(job_def: JobDefinition) -> Callable[[], str]:
-    return (
-        lambda: f"The config mapping function on top-level graph {job_def.graph.name} in job {job_def.name} has thrown an unexpected error during its execution."
+    return lambda: (
+        f"The config mapping function on top-level graph {job_def.graph.name} in job"
+        f" {job_def.name} has thrown an unexpected error during its execution."
     )
 
 
@@ -337,18 +339,18 @@ def raise_composite_descent_config_error(
     check.inst_param(descent_stack, "descent_stack", DescentStack)
     check.inst_param(evr, "evr", EvaluateValueResult)
 
-    solid = descent_stack.current_node
+    node = descent_stack.current_node
     message = "In job {job_name} at stack {stack}: \n".format(
         job_name=descent_stack.job_def.name,
         stack=":".join(descent_stack.handle.path),
     )
     message += (
-        f'Op "{solid.name}" with definition "{solid.definition.name}" has a '
+        f'Op "{node.name}" with definition "{node.definition.name}" has a '
         "configuration error. "
         "It has produced config a via its config_fn that fails to "
-        "pass validation in the solids that it contains. "
+        "pass validation in the ops that it contains. "
         "This indicates an error in the config mapping function itself. It must "
-        "produce correct config for its constiuent solids in all cases. The correct "
+        "produce correct config for its constituent ops in all cases. The correct "
         "resolution is to fix the mapping function. Details on the error (and the paths "
         'on this error are relative to config mapping function "root", not the entire document): '
     )

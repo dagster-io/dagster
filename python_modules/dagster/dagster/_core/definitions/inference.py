@@ -1,6 +1,14 @@
 from inspect import Parameter, Signature, isgeneratorfunction, signature
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+)
 
+from dagster._core.decorator_utils import get_type_hints
 from dagster._seven import is_module_available
 
 from .utils import NoValueSentinel
@@ -55,11 +63,12 @@ def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
 
 
 def infer_output_props(fn: Callable) -> InferredOutputProps:
-    sig = signature(fn)
-
-    annotation = Parameter.empty
-    if not isgeneratorfunction(fn):
-        annotation = sig.return_annotation
+    type_hints = get_type_hints(fn)
+    annotation = (
+        type_hints["return"]
+        if not isgeneratorfunction(fn) and "return" in type_hints
+        else Parameter.empty
+    )
 
     return InferredOutputProps(
         annotation=annotation,
@@ -74,6 +83,7 @@ def has_explicit_return_type(fn: Callable) -> bool:
 
 def _infer_inputs_from_params(
     params: Sequence[Parameter],
+    type_hints: Mapping[str, object],
     descriptions: Optional[Mapping[str, Optional[str]]] = None,
 ) -> Sequence[InferredInputProps]:
     _descriptions: Mapping[str, Optional[str]] = descriptions or {}
@@ -82,14 +92,14 @@ def _infer_inputs_from_params(
         if param.default is not Parameter.empty:
             input_def = InferredInputProps(
                 param.name,
-                param.annotation,
+                type_hints.get(param.name, param.annotation),
                 default_value=param.default,
                 description=_descriptions.get(param.name),
             )
         else:
             input_def = InferredInputProps(
                 param.name,
-                param.annotation,
+                type_hints.get(param.name, param.annotation),
                 description=_descriptions.get(param.name),
             )
 
@@ -101,7 +111,8 @@ def _infer_inputs_from_params(
 def infer_input_props(fn: Callable, context_arg_provided: bool) -> Sequence[InferredInputProps]:
     sig = signature(fn)
     params = list(sig.parameters.values())
+    type_hints = get_type_hints(fn)
     descriptions = _infer_input_description_from_docstring(fn)
     params_to_infer = params[1:] if context_arg_provided else params
-    defs = _infer_inputs_from_params(params_to_infer, descriptions=descriptions)
+    defs = _infer_inputs_from_params(params_to_infer, type_hints, descriptions=descriptions)
     return defs

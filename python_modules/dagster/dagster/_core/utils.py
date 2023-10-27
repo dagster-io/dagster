@@ -4,7 +4,19 @@ import string
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import AbstractSet, Any, Iterable, Mapping, Sequence, Tuple, TypeVar, Union, cast
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
+from typing import (
+    AbstractSet,
+    Any,
+    Iterable,
+    Mapping,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import toposort as toposort_
 from typing_extensions import Final
@@ -110,3 +122,11 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         if env_var_value is None:
             raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
         return (env_var_str, cast(str, env_var_value))
+
+
+class InheritContextThreadPoolExecutor(ThreadPoolExecutor):
+    """A ThreadPoolExecutor that copies over contextvars at submit time."""
+
+    def submit(self, fn, *args, **kwargs):
+        ctx = copy_context()
+        return super().submit(ctx.run, fn, *args, **kwargs)

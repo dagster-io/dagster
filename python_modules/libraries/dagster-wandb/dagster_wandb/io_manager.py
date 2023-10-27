@@ -5,6 +5,7 @@ import platform
 import shutil
 import sys
 import time
+import uuid
 from contextlib import contextmanager
 from typing import List, Optional
 
@@ -19,49 +20,29 @@ from dagster import (
     String,
     io_manager,
 )
-from wandb.sdk.data_types.base_types.wb_value import WBValue
-from wandb.sdk.wandb_artifacts import Artifact
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
+from wandb import Artifact
+from wandb.data_types import WBValue
 
 from .resources import WANDB_CLOUD_HOST
+from .utils.errors import (
+    WandbArtifactsIOManagerError,
+    raise_on_empty_configuration,
+    raise_on_unknown_partition_keys,
+    raise_on_unknown_read_configuration_keys,
+    raise_on_unknown_write_configuration_keys,
+)
+from .utils.pickling import (
+    ACCEPTED_SERIALIZATION_MODULES,
+    pickle_artifact_content,
+    unpickle_artifact_content,
+)
 from .version import __version__
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
     from typing_extensions import TypedDict
-
-try:
-    import dill
-
-    has_dill = True
-except ImportError:
-    has_dill = False
-
-try:
-    import cloudpickle
-
-    has_cloudpickle = True
-except ImportError:
-    has_cloudpickle = False
-
-try:
-    import joblib
-
-    has_joblib = True
-except ImportError:
-    has_joblib = False
-
-
-PICKLE_FILENAME = "output.pickle"
-DILL_FILENAME = "output.dill"
-CLOUDPICKLE_FILENAME = "output.cloudpickle"
-JOBLIB_FILENAME = "output.joblib"
-ACCEPTED_SERIALIZATION_MODULES = [
-    "dill",
-    "cloudpickle",
-    "joblib",
-    "pickle",
-]
 
 
 class Config(TypedDict):
@@ -74,14 +55,6 @@ class Config(TypedDict):
     wandb_run_tags: Optional[List[str]]
     base_dir: str
     cache_duration_in_minutes: Optional[int]
-
-
-class WandbArtifactsIOManagerError(Exception):
-    """Represents an execution error of the W&B Artifacts IO Manager."""
-
-    def __init__(self, message="A W&B Artifacts IO Manager error occurred."):
-        self.message = message
-        super().__init__(self.message)
 
 
 class ArtifactsIOManager(IOManager):
@@ -128,13 +101,14 @@ class ArtifactsIOManager(IOManager):
 
     def _get_artifacts_path(self, name, version):
         local_storage_path = self._get_local_storage_path()
-        path = os.path.join(local_storage_path, "artifacts", f"{name}:{version}")
+        path = os.path.join(local_storage_path, "artifacts", f"{name}.{version}")
         os.makedirs(path, exist_ok=True)
         return path
 
     def _get_wandb_logs_path(self):
         local_storage_path = self._get_local_storage_path()
-        path = os.path.join(local_storage_path, "runs", self.dagster_run_id)
+        # Adding a random uuid to avoid collisions in multi-process context
+        path = os.path.join(local_storage_path, "runs", self.dagster_run_id, str(uuid.uuid4()))
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -177,20 +151,36 @@ class ArtifactsIOManager(IOManager):
             self._clean_local_storage_path()
 
     def _upload_artifact(self, context: OutputContext, obj):
+        if not context.has_partition_key and context.has_asset_partitions:
+            raise WandbArtifactsIOManagerError(
+                "Sorry, but the Weights & Biases (W&B) IO Manager can't handle processing several"
+                " partitions at the same time within a single run. Please process each partition"
+                " separately. If you think this might be an error, don't hesitate to reach out to"
+                " Weights & Biases Support."
+            )
+
         with self.wandb_run() as run:
-            parameters = context.metadata.get("wandb_artifact_configuration", {})  # type: ignore
+            parameters = {}
+            if context.metadata is not None:
+                parameters = context.metadata.get("wandb_artifact_configuration", {})
+
+            raise_on_unknown_write_configuration_keys(parameters)
 
             serialization_module = parameters.get("serialization_module", {})
             serialization_module_name = serialization_module.get("name", "pickle")
 
             if serialization_module_name not in ACCEPTED_SERIALIZATION_MODULES:
                 raise WandbArtifactsIOManagerError(
-                    f"The provided value '{serialization_module_name}' is not a supported"
-                    f" serialization module. Supported: {ACCEPTED_SERIALIZATION_MODULES}."
+                    f"Oops! It looks like the value you provided, '{serialization_module_name}',"
+                    " isn't recognized as a valid serialization module. Here are the ones we do"
+                    f" support: {ACCEPTED_SERIALIZATION_MODULES}."
                 )
+
             serialization_module_parameters = serialization_module.get("parameters", {})
             serialization_module_parameters_with_protocol = {
-                "protocol": pickle.HIGHEST_PROTOCOL,  # we use the highest available protocol if we don't pass one
+                "protocol": (
+                    pickle.HIGHEST_PROTOCOL  # we use the highest available protocol if we don't pass one
+                ),
                 **serialization_module_parameters,
             }
 
@@ -206,30 +196,45 @@ class ArtifactsIOManager(IOManager):
             if isinstance(obj, Artifact):
                 if parameters.get("name") is not None:
                     raise WandbArtifactsIOManagerError(
-                        "A 'name' property was provided in the 'wandb_artifact_configuration'"
-                        " metadata dictionary. A 'name' property can only be provided for output"
-                        " that is not already an Artifact object."
+                        "You've provided a 'name' property in the 'wandb_artifact_configuration'"
+                        " settings. However, this 'name' property should only be used when the"
+                        " output isn't already an Artifact object."
                     )
 
                 if parameters.get("type") is not None:
                     raise WandbArtifactsIOManagerError(
-                        "A 'type' property was provided in the 'wandb_artifact_configuration'"
-                        " metadata dictionary. A 'type' property can only be provided for output"
-                        " that is not already an Artifact object."
+                        "You've provided a 'type' property in the 'wandb_artifact_configuration'"
+                        " settings. However, this 'type' property should only be used when the"
+                        " output isn't already an Artifact object."
                     )
 
-                if context.has_partition_key:
+                if obj.name is None:
                     raise WandbArtifactsIOManagerError(
-                        "A partitioned job was detected for an output of type Artifact. This is not"
-                        " currently supported. We would love to hear about your use case. Please"
-                        " contact W&B Support."
+                        "The Weights & Biases (W&B) Artifact you provided is missing a name."
+                        " Please, assign a name to your Artifact."
                     )
+
+                if context.has_asset_key and obj.name != context.get_asset_identifier()[0]:
+                    asset_identifier = context.get_asset_identifier()[0]
+                    context.log.warning(
+                        f"Please note, the name '{obj.name}' of your Artifact is overwritten by the"
+                        f" name derived from the AssetKey '{asset_identifier}'. For consistency and"
+                        " to avoid confusion, we advise sharing a constant for both your asset's"
+                        " name and the artifact's name."
+                    )
+                    obj._name = asset_identifier  # noqa: SLF001
+
+                if context.has_partition_key:
+                    artifact_name = f"{obj.name}.{context.partition_key}"
+                    # The Artifact provided is produced in a partitioned execution we add the
+                    # partition as a suffix to the Artifact name
+                    obj._name = artifact_name  # noqa: SLF001
 
                 if len(serialization_module) != 0:  # not an empty dict
                     context.log.warning(
-                        "A 'serialization_module' dictionary was provided in the"
-                        " 'wandb_artifact_configuration' metadata dictionary. It has no effect on"
-                        " an output that is already an Artifact object."
+                        "You've included a 'serialization_module' in the"
+                        " 'wandb_artifact_configuration' settings. However, this doesn't have any"
+                        " impact when the output is already an Artifact object."
                     )
 
                 # The obj is already an Artifact we augment its metadata
@@ -239,10 +244,10 @@ class ArtifactsIOManager(IOManager):
 
                 if artifact.description is not None and artifact_description is not None:
                     raise WandbArtifactsIOManagerError(
-                        "A 'description' value was provided in the 'wandb_artifact_configuration'"
-                        " metadata dictionary for an existing Artifact with a non-null description."
-                        " Please, either set the description through 'wandb_artifact_argument' or"
-                        " when constructing your Artifact."
+                        "You've given a 'description' in the 'wandb_artifact_configuration'"
+                        " settings for an existing Artifact that already has a description. Please,"
+                        " either set the description using 'wandb_artifact_argument' or when"
+                        " creating your Artifact."
                     )
                 if artifact_description is not None:
                     artifact.description = artifact_description
@@ -250,25 +255,31 @@ class ArtifactsIOManager(IOManager):
                 if context.has_asset_key:
                     if parameters.get("name") is not None:
                         raise WandbArtifactsIOManagerError(
-                            "A 'name' property was provided in the 'wandb_artifact_configuration'"
-                            " metadata dictionary. A 'name' property is only required when no"
-                            " 'AssetKey' is found. Artifacts created from an @asset use the asset"
-                            " name as the Artifact name. Artifacts created from an @op with a"
-                            " specified 'asset_key' for the output will use that value. Please"
-                            " remove the 'name' property."
+                            "You've included a 'name' property in the"
+                            " 'wandb_artifact_configuration' settings. But, a 'name' is only needed"
+                            " when there's no 'AssetKey'. When an Artifact is created from an"
+                            " @asset, it uses the asset name. When it's created from an @op with an"
+                            " 'asset_key' for the output, that value is used. Please remove the"
+                            " 'name' property."
                         )
                     artifact_name = context.get_asset_identifier()[0]  # name of asset
                 else:
-                    if parameters.get("name") is None:
+                    name_parameter = parameters.get("name")
+                    if name_parameter is None:
                         raise WandbArtifactsIOManagerError(
-                            "Missing 'name' property in the 'wandb_artifact_configuration' metadata"
-                            " dictionary. A 'name' property is required for Artifacts created from"
-                            " an @op. Alternatively you can use an @asset."
+                            "The 'name' property is missing in the 'wandb_artifact_configuration'"
+                            " settings. For Artifacts created from an @op, a 'name' property is"
+                            " needed. You could also use an @asset as an alternative."
                         )
-                    artifact_name = parameters.get("name")
+                    assert name_parameter is not None
+                    artifact_name = name_parameter
 
                 if context.has_partition_key:
                     artifact_name = f"{artifact_name}.{context.partition_key}"
+
+                # We replace the | character with - because it is not allowed in artifact names
+                # The | character is used in multi-dimensional partition keys
+                artifact_name = str(artifact_name).replace("|", "-")
 
                 # Creates an artifact to hold the obj
                 artifact = self.wandb.Artifact(
@@ -280,142 +291,22 @@ class ArtifactsIOManager(IOManager):
                 if isinstance(obj, WBValue):
                     if len(serialization_module) != 0:  # not an empty dict
                         context.log.warning(
-                            "A 'serialization_module' dictionary was provided in the"
-                            " 'wandb_artifact_configuration' metadata dictionary. It has no effect"
-                            " on when the output is a W&B object."
+                            "You've included a 'serialization_module' in the"
+                            " 'wandb_artifact_configuration' settings. However, this doesn't have"
+                            " any impact when the output is already an W&B object like e.g Table or"
+                            " Image."
                         )
                     # Adds the WBValue object using the class name as the name for the file
                     artifact.add(obj, obj.__class__.__name__)
                 elif obj is not None:
                     # The output is not a native wandb Object, we serialize it
-                    if serialization_module_name == "dill":
-                        if not has_dill:
-                            raise WandbArtifactsIOManagerError(
-                                "No module named 'dill' found. Please, make sure that the module is"
-                                " installed."
-                            )
-                        artifact.metadata = {
-                            **artifact.metadata,
-                            **{
-                                "source_serialization_module": "dill",
-                                "source_dill_version_used": dill.__version__,
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
-                            },
-                        }
-                        with artifact.new_file(DILL_FILENAME, "wb") as file:
-                            try:
-                                dill.dump(
-                                    obj,
-                                    file,
-                                    **serialization_module_parameters_with_protocol,
-                                )
-                                context.log.info(
-                                    "Output serialized using dill with"
-                                    f" parameters={serialization_module_parameters_with_protocol}"
-                                )
-                            except Exception as exception:
-                                raise WandbArtifactsIOManagerError(
-                                    "An error occurred in the dill serialization process. Please,"
-                                    " verify that the passed arguments are correct and your data is"
-                                    " compatible with the module."
-                                ) from exception
-                    elif serialization_module_name == "cloudpickle":
-                        if not has_cloudpickle:
-                            raise WandbArtifactsIOManagerError(
-                                "No module named 'cloudpickle' found. Please, make sure that the"
-                                " module is installed."
-                            )
-                        artifact.metadata = {
-                            **artifact.metadata,
-                            **{
-                                "source_serialization_module": "cloudpickle",
-                                "source_cloudpickle_version_used": cloudpickle.__version__,
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
-                            },
-                        }
-                        with artifact.new_file(CLOUDPICKLE_FILENAME, "wb") as file:
-                            try:
-                                cloudpickle.dump(
-                                    obj,
-                                    file,
-                                    **serialization_module_parameters_with_protocol,
-                                )
-                                context.log.info(
-                                    "Output serialized using cloudpickle with"
-                                    f" parameters={serialization_module_parameters_with_protocol}"
-                                )
-                            except Exception as exception:
-                                raise WandbArtifactsIOManagerError(
-                                    "An error occurred in the cloudpickle serialization process."
-                                    " Please, verify that the passed arguments are correct and your"
-                                    " data is compatible with the module."
-                                ) from exception
-                    elif serialization_module_name == "joblib":
-                        if not has_joblib:
-                            raise WandbArtifactsIOManagerError(
-                                "No module named 'joblib' found. Please, make sure that the module"
-                                " is installed."
-                            )
-                        artifact.metadata = {
-                            **artifact.metadata,
-                            **{
-                                "source_serialization_module": "joblib",
-                                "source_joblib_version_used": joblib.__version__,
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
-                            },
-                        }
-                        with artifact.new_file(JOBLIB_FILENAME, "wb") as file:
-                            try:
-                                joblib.dump(
-                                    obj,
-                                    file,
-                                    **serialization_module_parameters_with_protocol,
-                                )
-                                context.log.info(
-                                    "Output serialized using joblib with"
-                                    f" parameters={serialization_module_parameters_with_protocol}"
-                                )
-                            except Exception as exception:
-                                raise WandbArtifactsIOManagerError(
-                                    "An error occurred in the joblib serialization process. Please,"
-                                    " verify that the passed arguments are correct and your data is"
-                                    " compatible with the module."
-                                ) from exception
-                    else:
-                        artifact.metadata = {
-                            **artifact.metadata,
-                            **{
-                                "source_serialization_module": "pickle",
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
-                            },
-                        }
-                        with artifact.new_file(PICKLE_FILENAME, "wb") as file:
-                            try:
-                                pickle.dump(
-                                    obj,
-                                    file,
-                                    **serialization_module_parameters_with_protocol,
-                                )
-                                context.log.info(
-                                    "Output serialized using pickle with"
-                                    f" parameters={serialization_module_parameters_with_protocol}"
-                                )
-                            except Exception as exception:
-                                raise WandbArtifactsIOManagerError(
-                                    "An error occurred in the pickle serialization process."
-                                    " Please, verify that the passed arguments are correct and"
-                                    " your data is compatible with pickle. Otherwise consider"
-                                    " using another module. Supported serialization:"
-                                    f" {ACCEPTED_SERIALIZATION_MODULES}."
-                                ) from exception
+                    pickle_artifact_content(
+                        context,
+                        serialization_module_name,
+                        serialization_module_parameters_with_protocol,
+                        artifact,
+                        obj,
+                    )
 
             # Add any files: https://docs.wandb.ai/ref/python/artifact#add_file
             add_files = parameters.get("add_files")
@@ -446,20 +337,20 @@ class ArtifactsIOManager(IOManager):
             artifact.wait()
 
             # Adds useful metadata to the output or Asset
-
             artifacts_base_url = (
                 "https://wandb.ai"
                 if self.wandb_host == WANDB_CLOUD_HOST
                 else self.wandb_host.rstrip("/")
             )
+            assert artifact.id is not None
             output_metadata = {
                 "dagster_run_id": MetadataValue.dagster_run(self.dagster_run_id),
-                "wandb_artifact_id": MetadataValue.text(artifact.id),  # type: ignore
+                "wandb_artifact_id": MetadataValue.text(artifact.id),
                 "wandb_artifact_type": MetadataValue.text(artifact.type),
                 "wandb_artifact_version": MetadataValue.text(artifact.version),
                 "wandb_artifact_size": MetadataValue.int(artifact.size),
                 "wandb_artifact_url": MetadataValue.url(
-                    f"{artifacts_base_url}/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.id}/{artifact.version}"
+                    f"{artifacts_base_url}/{run.entity}/{run.project}/artifacts/{artifact.type}/{'/'.join(artifact.name.rsplit(':', 1))}"
                 ),
                 "wandb_entity": MetadataValue.text(run.entity),
                 "wandb_project": MetadataValue.text(run.project),
@@ -472,45 +363,178 @@ class ArtifactsIOManager(IOManager):
 
     def _download_artifact(self, context: InputContext):
         with self.wandb_run() as run:
-            parameters = context.metadata.get("wandb_artifact_configuration", {})  # type: ignore
+            parameters = {}
+            if context.metadata is not None:
+                parameters = context.metadata.get("wandb_artifact_configuration", {})
+
+            raise_on_unknown_read_configuration_keys(parameters)
+
+            partitions_configuration = parameters.get("partitions", {})
+
+            if not context.has_asset_partitions and len(partitions_configuration) > 0:
+                raise WandbArtifactsIOManagerError(
+                    "You've included a 'partitions' value in the 'wandb_artifact_configuration'"
+                    " settings but it's not within a partitioned execution. Please only use"
+                    " 'partitions' within a partitioned context."
+                )
+
+            if context.has_asset_partitions:
+                # Note: this is currently impossible to unit test with current Dagster APIs but was
+                # tested thoroughly manually
+                name = parameters.get("get")
+                path = parameters.get("get_path")
+                if name is not None or path is not None:
+                    raise WandbArtifactsIOManagerError(
+                        "You've given a value for 'get' and/or 'get_path' in the"
+                        " 'wandb_artifact_configuration' settings during a partitioned execution."
+                        " Please use the 'partitions' property to set 'get' or 'get_path' for each"
+                        " individual partition. To set a default value for all partitions, use '*'."
+                    )
+
+                artifact_name = parameters.get("name")
+                if artifact_name is None:
+                    artifact_name = context.asset_key[0][0]  # name of asset
+
+                partitions = [
+                    (key, f"{artifact_name}.{ str(key).replace('|', '-')}")
+                    for key in context.asset_partition_keys
+                ]
+
+                output = {}
+
+                for key, artifact_name in partitions:
+                    context.log.info(f"Handling partition with key '{key}'")
+                    partition_configuration = partitions_configuration.get(
+                        key, partitions_configuration.get("*")
+                    )
+
+                    raise_on_empty_configuration(key, partition_configuration)
+                    raise_on_unknown_partition_keys(key, partition_configuration)
+
+                    partition_version = None
+                    partition_alias = None
+                    if partition_configuration and partition_configuration is not None:
+                        partition_version = partition_configuration.get("version")
+                        partition_alias = partition_configuration.get("alias")
+                        if partition_version is not None and partition_alias is not None:
+                            raise WandbArtifactsIOManagerError(
+                                "You've provided both 'version' and 'alias' for the partition with"
+                                " key '{key}'. You should only use one of these properties at a"
+                                " time. If you choose not to use any, the latest version will be"
+                                " used by default. If this partition is configured with the '*'"
+                                " key, please correct the wildcard configuration."
+                            )
+                    partition_identifier = partition_version or partition_alias or "latest"
+
+                    artifact_uri = (
+                        f"{run.entity}/{run.project}/{artifact_name}:{partition_identifier}"
+                    )
+                    try:
+                        api = self.wandb.Api()
+                        api.artifact(artifact_uri)
+                    except Exception as exception:
+                        raise WandbArtifactsIOManagerError(
+                            "The artifact you're attempting to download might not exist, or you"
+                            " might have forgotten to include the 'name' property in the"
+                            " 'wandb_artifact_configuration' settings."
+                        ) from exception
+
+                    artifact = run.use_artifact(artifact_uri)
+
+                    artifacts_path = self._get_artifacts_path(artifact_name, artifact.version)
+                    if partition_configuration and partition_configuration is not None:
+                        partition_name = partition_configuration.get("get")
+                        partition_path = partition_configuration.get("get_path")
+                        if partition_name is not None and partition_path is not None:
+                            raise WandbArtifactsIOManagerError(
+                                "You've provided both 'get' and 'get_path' in the"
+                                " 'wandb_artifact_configuration' settings for the partition with"
+                                " key '{key}'. Only one of these properties should be used. If you"
+                                " choose not to use any, the whole Artifact will be returned. If"
+                                " this partition is configured with the '*' key, please correct the"
+                                " wildcard configuration."
+                            )
+
+                        if partition_name is not None:
+                            wandb_object = artifact.get(partition_name)
+                            if wandb_object is not None:
+                                output[key] = wandb_object
+                                continue
+
+                        if partition_path is not None:
+                            path = artifact.get_path(partition_path)
+                            download_path = path.download(root=artifacts_path)
+                            if download_path is not None:
+                                output[key] = download_path
+                                continue
+
+                    artifact_dir = artifact.download(root=artifacts_path, recursive=True)
+                    unpickled_content = unpickle_artifact_content(artifact_dir)
+                    if unpickled_content is not None:
+                        output[key] = unpickled_content
+                        continue
+
+                    artifact.verify(root=artifacts_path)
+                    output[key] = artifact
+
+                if len(output) == 1:
+                    # If there's only one partition, return the value directly
+                    return next(iter(output.values()))
+
+                return output
+
+            elif context.has_asset_key:
+                # Input is an asset
+                if parameters.get("name") is not None:
+                    raise WandbArtifactsIOManagerError(
+                        "A conflict has been detected in the provided configuration settings. The"
+                        " 'name' parameter appears to be specified twice - once in the"
+                        " 'wandb_artifact_configuration' metadata dictionary, and again as an"
+                        " AssetKey. Kindly avoid setting the name directly, since the AssetKey will"
+                        " be used for this purpose."
+                    )
+                artifact_name = context.get_asset_identifier()[0]  # name of asset
+            else:
+                artifact_name = parameters.get("name")
+                if artifact_name is None:
+                    raise WandbArtifactsIOManagerError(
+                        "The 'name' property is missing in the 'wandb_artifact_configuration'"
+                        " settings. For Artifacts used in an @op, a 'name' property is required."
+                        " You could use an @asset as an alternative."
+                    )
+
+            if context.has_partition_key:
+                artifact_name = f"{artifact_name}.{context.partition_key}"
 
             artifact_alias = parameters.get("alias")
             artifact_version = parameters.get("version")
 
             if artifact_alias is not None and artifact_version is not None:
                 raise WandbArtifactsIOManagerError(
-                    "A value for 'version' and 'alias' have been provided. Only one property can be"
-                    " used at the same time."
+                    "You've provided both 'version' and 'alias' in the"
+                    " 'wandb_artifact_configuration' settings. Only one should be used at a time."
+                    " If you decide not to use any, the latest version will be applied"
+                    " automatically."
                 )
 
             artifact_identifier = artifact_alias or artifact_version or "latest"
+            artifact_uri = f"{run.entity}/{run.project}/{artifact_name}:{artifact_identifier}"
 
-            if context.has_asset_key:
-                artifact_name = context.get_asset_identifier()[0]  # name of asset
-            else:
-                artifact_name = parameters.get("name")
-                if artifact_name is None:
-                    raise WandbArtifactsIOManagerError(
-                        "Missing 'name' property in the 'wandb_artifact_configuration' metadata"
-                        " dictionary. A 'name' property is required for Artifacts used in an @op."
-                        " Alternatively you can use an @asset."
-                    )
-
-            if context.has_partition_key:
-                artifact_name = f"{artifact_name}.{context.partition_key}"
-
-            artifact = run.use_artifact(
-                f"{run.entity}/{run.project}/{artifact_name}:{artifact_identifier}"
-            )
+            # This try/except block is a workaround for a bug in the W&B SDK, this should be removed
+            # once the bug is fixed.
+            try:
+                artifact = run.use_artifact(artifact_uri)
+            except Exception:
+                api = self.wandb.Api()
+                artifact = api.artifact(artifact_uri)
 
             name = parameters.get("get")
             path = parameters.get("get_path")
             if name is not None and path is not None:
                 raise WandbArtifactsIOManagerError(
-                    "A value for 'get' and 'get_path' has been provided in the"
-                    " 'wandb_artifact_configuration' metadata dictionary. Only one property can be"
-                    " used. Alternatively you can use neither and the entire Artifact will be"
-                    " dowloaded."
+                    "You've provided both 'get' and 'get_path' in the"
+                    " 'wandb_artifact_configuration' settings. Only one should be used at a time."
+                    " If you decide not to use any, the entire Artifact will be returned."
                 )
 
             if name is not None:
@@ -523,37 +547,9 @@ class ArtifactsIOManager(IOManager):
 
             artifact_dir = artifact.download(root=artifacts_path, recursive=True)
 
-            if os.path.exists(f"{artifact_dir}/{DILL_FILENAME}"):
-                if not has_dill:
-                    raise WandbArtifactsIOManagerError(
-                        "An object pickled with 'dill' was found in the Artifact. But the module"
-                        " was not found. Please, make sure it's installed."
-                    )
-                with open(f"{artifact_dir}/{DILL_FILENAME}", "rb") as file:
-                    input_value = dill.load(file)
-                    return input_value
-            elif os.path.exists(f"{artifact_dir}/{CLOUDPICKLE_FILENAME}"):
-                if not has_cloudpickle:
-                    raise WandbArtifactsIOManagerError(
-                        "An object pickled with 'cloudpickle' was found in the Artifact. But the"
-                        " module was not found. Please, make sure it's installed."
-                    )
-                with open(f"{artifact_dir}/{CLOUDPICKLE_FILENAME}", "rb") as file:
-                    input_value = cloudpickle.load(file)
-                    return input_value
-            elif os.path.exists(f"{artifact_dir}/{JOBLIB_FILENAME}"):
-                if not has_joblib:
-                    raise WandbArtifactsIOManagerError(
-                        "An object pickled with 'joblib' was found in the Artifact. But the module"
-                        " was not found. Please, make sure it's installed."
-                    )
-                with open(f"{artifact_dir}/{JOBLIB_FILENAME}", "rb") as file:
-                    input_value = joblib.load(file)
-                    return input_value
-            elif os.path.exists(f"{artifact_dir}/{PICKLE_FILENAME}"):
-                with open(f"{artifact_dir}/{PICKLE_FILENAME}", "rb") as file:
-                    input_value = pickle.load(file)
-                    return input_value
+            unpickled_content = unpickle_artifact_content(artifact_dir)
+            if unpickled_content is not None:
+                return unpickled_content
 
             artifact.verify(root=artifacts_path)
             return artifact
@@ -561,7 +557,8 @@ class ArtifactsIOManager(IOManager):
     def handle_output(self, context: OutputContext, obj) -> None:
         if obj is None:
             context.log.warning(
-                "The output value passed to W&B IO Manager is empty. Ignore if expected."
+                "The output value given to the Weights & Biases (W&B) IO Manager is empty. If this"
+                " was intended, you can disregard this warning."
             )
         else:
             try:
@@ -580,6 +577,7 @@ class ArtifactsIOManager(IOManager):
             raise WandbArtifactsIOManagerError() from exception
 
 
+@dagster_maintained_io_manager
 @io_manager(
     required_resource_keys={"wandb_resource", "wandb_config"},
     description="IO manager to read and write W&B Artifacts",
@@ -701,17 +699,15 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
     wandb_run_name = None
     wandb_run_id = None
     wandb_run_tags = None
+    base_dir = (
+        context.instance.storage_directory() if context.instance else os.environ["DAGSTER_HOME"]
+    )
     cache_duration_in_minutes = None
     if context.resource_config is not None:
         wandb_run_name = context.resource_config.get("run_name")
         wandb_run_id = context.resource_config.get("run_id")
         wandb_run_tags = context.resource_config.get("run_tags")
-        base_dir = context.resource_config.get(
-            "base_dir",
-            context.instance.storage_directory()
-            if context.instance
-            else os.environ["DAGSTER_HOME"],
-        )
+        base_dir = context.resource_config.get("base_dir", base_dir)
         cache_duration_in_minutes = context.resource_config.get("cache_duration_in_minutes")
 
     if "PYTEST_CURRENT_TEST" in os.environ:
@@ -719,15 +715,17 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
     else:
         dagster_run_id = context.run_id
 
+    assert dagster_run_id is not None
+
     config: Config = {
-        "dagster_run_id": dagster_run_id or "",
+        "dagster_run_id": dagster_run_id,
         "wandb_host": wandb_host,
         "wandb_entity": wandb_entity,
         "wandb_project": wandb_project,
         "wandb_run_name": wandb_run_name,
         "wandb_run_id": wandb_run_id,
         "wandb_run_tags": wandb_run_tags,
-        "base_dir": base_dir,  # type: ignore
+        "base_dir": base_dir,
         "cache_duration_in_minutes": cache_duration_in_minutes,
     }
     return ArtifactsIOManager(wandb_client, config)

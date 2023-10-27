@@ -15,6 +15,7 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
@@ -180,12 +181,10 @@ def dynamic_with_optional_output_job():
         for i in range(10):
             if (
                 # re-execution run skipped odd numbers
-                context.run.parent_run_id
-                and i % 2 == 0
+                context.run.parent_run_id and i % 2 == 0
             ) or (
                 # root run skipped even numbers
-                not context.run.parent_run_id
-                and i % 2 == 1
+                not context.run.parent_run_id and i % 2 == 1
             ):
                 yield DynamicOutput(value=i, mapping_key=str(i))
 
@@ -572,14 +571,15 @@ def asset_job():
         ),
         executor_def=in_process_executor,
     ).resolve(
-        assets=[
-            branching_asset,
-            echo_branching,
-            absent_asset,
-            mapped_fail_asset,
-            echo_mapped,
-        ],
-        source_assets=[],
+        asset_graph=AssetGraph.from_assets(
+            [
+                branching_asset,
+                echo_branching,
+                absent_asset,
+                mapped_fail_asset,
+                echo_mapped,
+            ]
+        )
     )
 
 

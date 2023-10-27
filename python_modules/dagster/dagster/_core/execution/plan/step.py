@@ -159,7 +159,7 @@ class ExecutionStep(
                 {
                     "step_key": handle.to_key(),
                     "job_name": job_name,
-                    "solid_name": handle.node_handle.name,
+                    "op_name": handle.node_handle.name,
                 },
                 check.opt_mapping_param(logging_tags, "logging_tags"),
             ),
@@ -172,7 +172,7 @@ class ExecutionStep(
         return self.handle.node_handle
 
     @property
-    def solid_name(self) -> str:
+    def op_name(self) -> str:
         return self.node_handle.name
 
     @property
@@ -229,8 +229,7 @@ class UnresolvedMappedExecutionStep(
     ),
     IExecutionStep,
 ):
-    """A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys.
-    """
+    """A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys."""
 
     def __new__(
         cls,
@@ -309,7 +308,7 @@ class UnresolvedMappedExecutionStep(
         # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
         keys = self.resolved_by_step_keys
         check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_output_name(self) -> str:
@@ -323,7 +322,7 @@ class UnresolvedMappedExecutionStep(
             len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
         )
 
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_step_keys(self) -> FrozenSet[str]:
@@ -388,8 +387,7 @@ class UnresolvedCollectExecutionStep(
     ),
     IExecutionStep,
 ):
-    """A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves.
-    """
+    """A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves."""
 
     def __new__(
         cls,

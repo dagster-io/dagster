@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, Type, cast
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -12,6 +12,8 @@ from dagster import (
     NodeInvocation,
     _check as check,
 )
+from dagster._config import Field, StringSource
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions import (
     GraphDefinition,
     InputMapping,
@@ -21,12 +23,12 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.dependency import Node
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext
-from dagster._core.execution.context_creation_pipeline import (
+from dagster._core.execution.context_creation_job import (
     create_context_creation_data,
     create_execution_data,
     create_executor,
@@ -36,9 +38,13 @@ from dagster._core.execution.context_creation_pipeline import (
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.utility_solids import create_stub_op
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.sqlite_storage import SqliteStorageConfig
+from dagster._core.utility_ops import create_stub_op
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
+from dagster._utils.concurrency import ConcurrencyClaimStatus
 
 # re-export
 from ..temp_file import (
@@ -107,18 +113,14 @@ def build_job_with_input_stubs(
     for node_name, input_dict in inputs.items():
         if not job_def.has_node_named(node_name):
             raise DagsterInvariantViolationError(
-                (
-                    "You are injecting an input value for node {node_name} "
-                    "into pipeline {job_name} but that node was not found"
-                ).format(node_name=node_name, job_name=job_def.name)
+                f"You are injecting an input value for node {node_name} "
+                f"into pipeline {job_def.name} but that node was not found"
             )
 
         node = job_def.get_node_named(node_name)
         for input_name, input_value in input_dict.items():
             stub_node_def = create_stub_op(
-                "__stub_{node_name}_{input_name}".format(
-                    node_name=node_name, input_name=input_name
-                ),
+                f"__stub_{node_name}_{input_name}",
                 input_value,
             )
             stub_node_defs.append(stub_node_def)
@@ -276,3 +278,66 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
 
     def wipe(self, instance: DagsterInstance) -> None:
         pass
+
+
+class TestStorageConfig(SqliteStorageConfig):
+    # interval to sleep between claim checks
+    sleep_interval: int
+
+
+class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, ConfigurableClass):
+    """Sqlite is sorta supported for concurrency, as long as the rate of concurrent writes is tolerably
+    low.  Officially, we should not support, but in the spirit of getting code coverage in the core
+    dagster package, let's mark it as that.
+    """
+
+    __test__ = False
+
+    def __init__(
+        self,
+        base_dir: str,
+        sleep_interval: Optional[float] = None,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
+        self._sleep_interval = sleep_interval
+        self._check_calls = defaultdict(int)
+        super().__init__(base_dir, inst_data)
+
+    @classmethod
+    def config_type(cls) -> UserConfigSchema:
+        return {"base_dir": StringSource, "sleep_interval": Field(float, is_required=False)}
+
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value: TestStorageConfig
+    ) -> "ConcurrencyEnabledSqliteTestEventLogStorage":
+        return ConcurrencyEnabledSqliteTestEventLogStorage(inst_data=inst_data, **config_value)
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return True
+
+    def get_check_calls(self, step_key: str) -> int:
+        return self._check_calls[step_key]
+
+    def check_concurrency_claim(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencyClaimStatus:
+        self._check_calls[step_key] += 1
+        claim_status = super().check_concurrency_claim(concurrency_key, run_id, step_key)
+        if not self._sleep_interval:
+            return claim_status
+        return claim_status.with_sleep_interval(float(self._sleep_interval))
+
+
+def get_all_direct_subclasses_of_marker(marker_interface_cls: Type) -> List[Type]:
+    import dagster as dagster
+
+    return [
+        symbol
+        for symbol in dagster.__dict__.values()
+        if isinstance(symbol, type)
+        and issubclass(symbol, marker_interface_cls)
+        and marker_interface_cls
+        in symbol.__bases__  # ensure that the class is a direct subclass of marker_interface_cls (not a subclass of a subclass)
+    ]

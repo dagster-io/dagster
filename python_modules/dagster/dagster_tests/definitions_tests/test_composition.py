@@ -12,6 +12,7 @@ from dagster import (
     OpDefinition,
     Out,
     Output,
+    asset,
     graph,
     job,
     op,
@@ -169,7 +170,7 @@ def test_aliased_with_name_name_fails():
             add_one.alias("add_one")(num=two)  # explicit alias disables autoalias
 
 
-def test_composite_with_duplicate_solids():
+def test_composite_with_duplicate_ops():
     solid_1, solid_2 = get_duplicate_ops()
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -182,7 +183,7 @@ def test_composite_with_duplicate_solids():
             solid_2()
 
 
-def test_job_with_duplicate_solids():
+def test_job_with_duplicate_ops():
     solid_1, solid_2 = get_duplicate_ops()
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -408,7 +409,7 @@ def test_deep_graph():
         )
 
     result = GraphDefinition(node_defs=[test], name="test").execute_in_process(
-        run_config={"ops": {"test": {"solids": {"download_num": {"config": 123}}}}}
+        run_config={"ops": {"test": {"ops": {"download_num": {"config": 123}}}}}
     )
     assert result.output_for_node("test.canonicalize_num") == 123
     assert result.output_for_node("test.load_num") == 126
@@ -454,7 +455,7 @@ def test_recursion_with_exceptions():
     assert called["throws"] is True
 
 
-def test_job_has_solid_def():
+def test_job_has_op_def():
     @graph
     def inner():
         return add_one(return_one())
@@ -773,7 +774,7 @@ def test_composition_metadata():
     assert res.output_for_node("metadata_graph.metadata_op") == "quux"
 
 
-def test_uninvoked_solid_fails():
+def test_uninvoked_op_fails():
     with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @job
@@ -783,7 +784,7 @@ def test_uninvoked_solid_fails():
         uninvoked_solid_job.execute_in_process()
 
 
-def test_uninvoked_aliased_solid_fails():
+def test_uninvoked_aliased_op_fails():
     with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @job
@@ -793,7 +794,7 @@ def test_uninvoked_aliased_solid_fails():
         uninvoked_aliased_solid_job.execute_in_process()
 
 
-def test_alias_on_invoked_solid_fails():
+def test_alias_on_invoked_op_fails():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=r".*Consider checking the location of parentheses.",
@@ -816,7 +817,7 @@ def test_tags():
         emit.tag({"invoke": "2"})()
 
     plan = create_execution_plan(tag)
-    step = list(plan.step_dict.values())[0]
+    step = next(iter(plan.step_dict.values()))
     assert step.tags == {"def": "1", "invoke": "2"}
 
 
@@ -842,8 +843,8 @@ def test_tag_subset():
         empty()
         emit.tag({"invoke": "2"})()
 
-    plan = create_execution_plan(tag.get_job_def_for_subset_selection(["emit"]))
-    step = list(plan.step_dict.values())[0]
+    plan = create_execution_plan(tag.get_subset(op_selection=["emit"]))
+    step = next(iter(plan.step_dict.values()))
     assert step.tags == {"def": "1", "invoke": "2"}
 
 
@@ -894,7 +895,7 @@ def test_fan_in_scalars_fails():
             fan_in_op([1, 2, 3])
 
 
-def test_with_hooks_on_invoked_solid_fails():
+def test_with_hooks_on_invoked_op_fails():
     @op
     def yield_1_op(_):
         return 1
@@ -964,3 +965,17 @@ def test_aliasing_invoked_dynamic_output_fails():
         @job
         def _alias_invoked_dynamic_output_job():
             dynamic_output_op().alias("dynamic_output")
+
+
+def test_compose_asset():
+    @asset
+    def foo():
+        pass
+
+    @graph
+    def compose():
+        foo()
+
+    result = compose.execute_in_process()
+    assert result.success
+    assert result.events_for_node("foo")

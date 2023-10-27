@@ -1,4 +1,4 @@
-from typing import ContextManager, Mapping, Optional
+from typing import ContextManager, Mapping, Optional, cast
 
 import dagster._check as check
 import sqlalchemy as db
@@ -28,6 +28,7 @@ from sqlalchemy.engine import Connection
 from ..utils import (
     create_mysql_connection,
     mysql_alembic_config,
+    mysql_isolation_level,
     mysql_url_from_config,
     parse_mysql_version,
     retry_mysql_connection_fn,
@@ -42,7 +43,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     """MySQL-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
 
@@ -63,7 +64,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
             self.mysql_url,
-            isolation_level="AUTOCOMMIT",
+            isolation_level=mysql_isolation_level(),
             poolclass=db_pool.NullPool,
         )
 
@@ -86,16 +87,15 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
     def _init_db(self) -> None:
         with self.connect() as conn:
-            with conn.begin():
-                RunStorageSqlMetadata.create_all(conn)
-                stamp_alembic_rev(mysql_alembic_config(__file__), conn)
+            RunStorageSqlMetadata.create_all(conn)
+            stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold 1 open connection
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        # When running in dagster-webserver, hold 1 open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
             self.mysql_url,
-            isolation_level="AUTOCOMMIT",
+            isolation_level=mysql_isolation_level(),
             pool_size=1,
             pool_recycle=pool_recycle,
         )
@@ -109,11 +109,13 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         return mysql_config()
 
     def get_server_version(self) -> Optional[str]:
-        row = self.fetchone("select version()")
+        with self.connect() as conn:
+            row = conn.execute(db.text("select version()")).fetchone()
+
         if not row:
             return None
 
-        return row[0]
+        return cast(str, row[0])
 
     @classmethod
     def from_config_value(
@@ -123,7 +125,9 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
     @staticmethod
     def wipe_storage(mysql_url: str) -> None:
-        engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool)
+        engine = create_engine(
+            mysql_url, isolation_level=mysql_isolation_level(), poolclass=db_pool.NullPool
+        )
         try:
             RunStorageSqlMetadata.drop_all(engine)
         finally:
@@ -153,18 +157,6 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         super(MySQLRunStorage, self).mark_index_built(migration_name)
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
-
-    @property
-    def supports_bucket_queries(self) -> bool:
-        if not super().supports_bucket_queries:
-            return False
-
-        if not self._mysql_version:
-            return False
-
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
-            MINIMUM_MYSQL_BUCKET_VERSION
-        )
 
     @property
     def supports_intersect(self) -> bool:

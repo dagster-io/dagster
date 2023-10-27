@@ -1,8 +1,9 @@
 import os
 import sys
-from typing import Sequence
+from typing import NamedTuple, Optional, Sequence
 
 import click
+import requests
 
 from dagster._generate import (
     download_example_from_github,
@@ -11,12 +12,17 @@ from dagster._generate import (
     generate_repository,
 )
 from dagster._generate.download import AVAILABLE_EXAMPLES
+from dagster.version import __version__ as dagster_version
 
 
 @click.group(name="project")
 def project_cli():
     """Commands for bootstrapping new Dagster projects and code locations."""
 
+
+# Keywords to flag in package names. When a project name contains one of these keywords, we check
+# if a conflicting PyPI package exists.
+FLAGGED_PACKAGE_KEYWORDS = ["dagster", "dbt"]
 
 scaffold_repository_command_help_text = (
     "(DEPRECATED; Use `dagster project scaffold-code-location` instead) "
@@ -45,6 +51,30 @@ from_example_command_help_text = (
 list_examples_command_help_text = "List the examples that available to bootstrap with."
 
 
+class PackageConflictCheckResult(NamedTuple):
+    request_error_msg: Optional[str]
+    conflict_exists: bool = False
+
+
+def check_if_pypi_package_conflict_exists(project_name: str) -> PackageConflictCheckResult:
+    """Checks if the project name contains any flagged keywords. If so, raises a warning if a PyPI
+    package with the same name exists. This is to prevent import errors from occurring due to a
+    project name that conflicts with an imported package.
+
+    Raises an error regardless of hyphen or underscore (i.e. dagster_dbt vs dagster-dbt). Both
+    are invalid and cause import errors.
+    """
+    if any(keyword in project_name for keyword in FLAGGED_PACKAGE_KEYWORDS):
+        try:
+            res = requests.get(f"https://pypi.org/pypi/{project_name}")
+            if res.status_code == 200:
+                return PackageConflictCheckResult(request_error_msg=None, conflict_exists=True)
+        except Exception as e:
+            return PackageConflictCheckResult(request_error_msg=str(e))
+
+    return PackageConflictCheckResult(request_error_msg=None, conflict_exists=False)
+
+
 @project_cli.command(
     name="scaffold-repository",
     short_help=scaffold_repository_command_help_text,
@@ -67,10 +97,8 @@ def scaffold_repository_command(name: str):
 
     click.echo(
         click.style(
-            (
-                "WARNING: This command is deprecated. Use `dagster project scaffold-code-location`"
-                " instead."
-            ),
+            "WARNING: This command is deprecated. Use `dagster project scaffold-code-location`"
+            " instead.",
             fg="yellow",
         )
     )
@@ -102,6 +130,35 @@ def scaffold_code_location_command(name: str):
     click.echo(_styled_success_statement(name, dir_abspath))
 
 
+def _check_and_error_on_package_conflicts(project_name: str) -> None:
+    package_check_result = check_if_pypi_package_conflict_exists(project_name)
+    if package_check_result.request_error_msg:
+        click.echo(
+            click.style(
+                "An error occurred while checking for package conflicts:"
+                f" {package_check_result.request_error_msg}. \n\nConflicting package names will"
+                " cause import errors in your project if the existing PyPI package is included"
+                " as a dependency in your scaffolded project. If desired, this check can be"
+                " skipped by adding the `--ignore-package-conflict` flag.",
+                fg="red",
+            )
+        )
+        sys.exit(1)
+
+    if package_check_result.conflict_exists:
+        click.echo(
+            click.style(
+                f"The project '{project_name}' conflicts with an existing PyPI package."
+                " Conflicting package names will cause import errors in your project if the"
+                " existing PyPI package is included as a dependency in your scaffolded"
+                " project. Please choose another name, or add the `--ignore-package-conflict`"
+                " flag to bypass this check.",
+                fg="yellow",
+            )
+        )
+        sys.exit(1)
+
+
 @project_cli.command(
     name="scaffold",
     short_help=scaffold_command_help_text,
@@ -113,7 +170,13 @@ def scaffold_code_location_command(name: str):
     type=click.STRING,
     help="Name of the new Dagster project",
 )
-def scaffold_command(name: str):
+@click.option(
+    "--ignore-package-conflict",
+    is_flag=True,
+    default=False,
+    help="Controls whether the project name can conflict with an existing PyPI package.",
+)
+def scaffold_command(name: str, ignore_package_conflict: bool):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
@@ -121,6 +184,9 @@ def scaffold_command(name: str):
             + "\nPlease delete the contents of this path or choose another location."
         )
         sys.exit(1)
+
+    if not ignore_package_conflict:
+        _check_and_error_on_package_conflicts(name)
 
     generate_project(dir_abspath)
     click.echo(_styled_success_statement(name, dir_abspath))
@@ -133,7 +199,6 @@ def scaffold_command(name: str):
 )
 @click.option(
     "--name",
-    required=True,
     type=click.STRING,
     help="Name of the new Dagster project",
 )
@@ -147,16 +212,26 @@ def scaffold_command(name: str):
         "You can also find the available examples via `dagster project list-examples`."
     ),
 )
-def from_example_command(name: str, example: str):
-    dir_abspath = os.path.abspath(name)
+@click.option(
+    "--version",
+    type=click.STRING,
+    help="Which version of the example to download, defaults to same version as installed dagster.",
+    default=dagster_version,
+    show_default=True,
+)
+def from_example_command(name: Optional[str], example: str, version: str):
+    name = name or example
+    dir_abspath = os.path.abspath(name) + "/"
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
             click.style(f"The directory {dir_abspath} already exists. ", fg="red")
             + "\nPlease delete the contents of this path or choose another location."
         )
         sys.exit(1)
+    else:
+        os.mkdir(dir_abspath)
 
-    download_example_from_github(dir_abspath, example)
+    download_example_from_github(dir_abspath, example, version)
 
     click.echo(_styled_success_statement(name, dir_abspath))
 

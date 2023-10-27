@@ -1,9 +1,12 @@
 import abc
 from typing import Mapping, Optional, Sequence, Set
 
+from dagster import AssetKey
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
+    AutoMaterializeAssetEvaluationRecord,
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
@@ -134,6 +137,48 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             tick_statuses (Optional[List[TickStatus]]): The tick statuses to wipe
         """
 
+    @property
+    def supports_auto_materialize_asset_evaluations(self) -> bool:
+        return True
+
+    @abc.abstractmethod
+    def add_auto_materialize_asset_evaluations(
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ) -> None:
+        """Add asset policy evaluations to storage."""
+
+    @abc.abstractmethod
+    def get_auto_materialize_asset_evaluations(
+        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        """Get the policy evaluations for a given asset.
+
+        Args:
+            asset_key (AssetKey): The asset key to query
+            limit (Optional[int]): The maximum number of evaluations to return
+            cursor (Optional[int]): The cursor to paginate from
+        """
+
+    @abc.abstractmethod
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        """Get all policy evaluations for a given evaluation ID.
+
+        Args:
+            evaluation_id (int): The evaluation ID to query.
+        """
+
+    @abc.abstractmethod
+    def purge_asset_evaluations(self, before: float) -> None:
+        """Wipe evaluations before a certain timestamp.
+
+        Args:
+            before (datetime): All evaluations before this datetime will get purged
+        """
+
     @abc.abstractmethod
     def upgrade(self) -> None:
         """Perform any needed migrations."""
@@ -144,9 +189,8 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived dagit process.
-        """
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None

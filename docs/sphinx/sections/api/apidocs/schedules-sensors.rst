@@ -75,8 +75,6 @@ Sensors
 
 .. autofunction:: build_multi_asset_sensor_context
 
-.. autofunction:: build_asset_reconciliation_sensor
-
 .. autoclass:: RunStatusSensorDefinition
 
 .. autoclass:: RunStatusSensorContext

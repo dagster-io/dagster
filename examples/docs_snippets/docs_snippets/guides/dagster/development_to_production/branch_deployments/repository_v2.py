@@ -31,7 +31,7 @@ resources = {
             }
         ),
     },
-    "production": {
+    "prod": {
         "snowflake_io_manager": SnowflakePandasIOManager(
             **snowflake_config,
             database="PRODUCTION",
@@ -58,9 +58,11 @@ branch_deployment_jobs = [
 defs = Definitions(
     assets=[items, comments, stories],
     resources=resources[get_current_env()],
-    jobs=branch_deployment_jobs
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-    else [],
+    jobs=(
+        branch_deployment_jobs
+        if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+        else []
+    ),
 )
 
 # end_repository

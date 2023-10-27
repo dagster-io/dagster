@@ -10,7 +10,7 @@ def scaffold_job_config(
     skip_non_required: bool = True,
     mode: Optional[str] = None,
 ):
-    check.inst_param(job_def, "pipeline_def", JobDefinition)
+    check.inst_param(job_def, "job_def", JobDefinition)
     check.bool_param(skip_non_required, "skip_non_required")
 
     env_config_type = job_def.run_config_schema.config_type
@@ -57,5 +57,7 @@ def scaffold_type(config_type: ConfigType, skip_non_required: bool = True):
         return {}
     elif config_type.kind == ConfigTypeKind.ENUM:
         return "|".join(sorted(map(lambda v: v.config_value, config_type.enum_values)))  # type: ignore
+    elif config_type.kind == ConfigTypeKind.NONEABLE:
+        return None
     else:
         check.failed(f"Do not know how to scaffold {config_type.given_name}")

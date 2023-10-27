@@ -1,6 +1,6 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .solids import create_shell_command_op, create_shell_script_op, shell_op
+from .ops import create_shell_command_op, create_shell_script_op, shell_op
 from .utils import (
     execute as execute_shell_command,
     execute_script_file as execute_shell_script,

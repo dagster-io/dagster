@@ -246,9 +246,7 @@ class InProgressCompositionContext:
             self._pending_invocations.pop(node_name, None)
             if self._collisions.get(node_name):
                 self._collisions[node_name] += 1
-                node_name = "{node_name}_{n}".format(
-                    node_name=node_name, n=self._collisions[node_name]
-                )
+                node_name = f"{node_name}_{self._collisions[node_name]}"
             else:
                 self._collisions[node_name] = 1
         else:
@@ -257,8 +255,9 @@ class InProgressCompositionContext:
 
         if self._invocations.get(node_name):
             raise DagsterInvalidDefinitionError(
-                "{source} {name} invoked the same node ({node_name}) twice without aliasing."
-                .format(source=self.source, name=self.name, node_name=node_name)
+                "{source} {name} invoked the same node ({node_name}) twice without aliasing.".format(
+                    source=self.source, name=self.name, node_name=node_name
+                )
             )
 
         self._invocations[node_name] = InvokedNode(
@@ -314,9 +313,7 @@ class CompleteCompositionContext(NamedTuple):
             def_name = invocation.node_def.name
             if def_name in node_def_dict and node_def_dict[def_name] is not invocation.node_def:
                 raise DagsterInvalidDefinitionError(
-                    'Detected conflicting node definitions with the same name "{name}"'.format(
-                        name=def_name
-                    )
+                    f'Detected conflicting node definitions with the same name "{def_name}"'
                 )
             node_def_dict[def_name] = invocation.node_def
 
@@ -430,45 +427,16 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs) -> Any:
-        from ..execution.context.invocation import UnboundOpExecutionContext
-        from .decorators.op_decorator import DecoratedOpFunction
-        from .op_invocation import op_invocation_result
+        from .op_invocation import direct_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
         # If PendingNodeInvocation is not within composition context, and underlying NodeDefinition
         # is an OpDefinition, then permit it to be invoked and executed like an OpDefinition.
         if not is_in_composition() and isinstance(self.node_def, OpDefinition):
-            node_label = self.node_def.node_type_str
-            # Pyright does not currently infer the typevar-bound type of self based on the above
-            # `isinstance` check. We need the correct type for passing to `op_invocation_result`.
-            _self = cast(PendingNodeInvocation[OpDefinition], self)
-            if not isinstance(self.node_def.compute_fn, DecoratedOpFunction):
-                raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the"
-                    f" `@{node_label}` decorator. Only {node_label}s constructed using the"
-                    f" `@{node_label}` decorator can be directly invoked."
-                )
-            if self.node_def.compute_fn.has_context_arg():
-                if len(args) == 0:
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has context"
-                        " argument, but no context was provided when invoking."
-                    )
-                elif args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has context"
-                        " argument, but no context was provided when invoking."
-                    )
-                context = args[0]
-                return op_invocation_result(_self, context, *args[1:], **kwargs)
-            else:
-                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has no context"
-                        " argument, but context was provided when invoking."
-                    )
-                return op_invocation_result(_self, None, *args, **kwargs)
+            return direct_invocation_result(
+                cast(PendingNodeInvocation[OpDefinition], self), *args, **kwargs
+            )
 
         assert_in_composition(node_name, self.node_def)
         input_bindings: Dict[str, InputSource] = {}
@@ -725,7 +693,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attemped to call `to_job` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -763,7 +731,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attemped to call `execute_in_process` on a non-graph.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -1022,16 +990,16 @@ def do_composition(
         provided_output_defs(List[OutputDefinition]): List of output definitions
             explicitly provided to the decorator by the user.
         config_mapping (Any): Config mapping provided to decorator by user. In
-            pipeline/composite_solid case, this would have been constructed from a user-provided
+            job/graph case, this would have been constructed from a user-provided
             config_schema and config_fn.
         ignore_output_from_composite_fn(Bool): Because of backwards compatibility
-            issues, pipelines ignore the return value out of the mapping if
+            issues, jobs ignore the return value out of the mapping if
             the user has not explicitly provided the output definitions.
             This should be removed in 0.11.0.
     """
     from .decorators.op_decorator import (
         NoContextDecoratedOpFunction,
-        resolve_checked_solid_fn_inputs,
+        resolve_checked_op_fn_inputs,
     )
 
     actual_output_defs: Sequence[OutputDefinition]
@@ -1047,7 +1015,7 @@ def do_composition(
 
     compute_fn = NoContextDecoratedOpFunction(fn)
 
-    actual_input_defs = resolve_checked_solid_fn_inputs(
+    actual_input_defs = resolve_checked_op_fn_inputs(
         decorator_name=decorator_name,
         fn_name=graph_name,
         compute_fn=compute_fn,
@@ -1074,7 +1042,7 @@ def do_composition(
     check.invariant(
         context.name == graph_name,
         "Composition context stack desync: received context for "
-        '"{context.name}" expected "{graph_name}"'.format(context=context, graph_name=graph_name),
+        f'"{context.name}" expected "{graph_name}"',
     )
 
     # line up mappings in definition order
@@ -1086,12 +1054,8 @@ def do_composition(
 
         if len(mappings) == 0:
             raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{graph_name}' has unmapped input '{input_name}'. "
-                "Remove it or pass it to the appropriate op/graph invocation.".format(
-                    decorator_name=decorator_name,
-                    graph_name=graph_name,
-                    input_name=defn.name,
-                )
+                f"{decorator_name} '{graph_name}' has unmapped input '{defn.name}'. "
+                "Remove it or pass it to the appropriate op/graph invocation."
             )
 
         input_mappings += mappings
@@ -1109,10 +1073,8 @@ def do_composition(
                 continue
 
             raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{graph_name}' has unmapped output '{output_name}'. "
-                "Remove it or return a value from the appropriate op/graph invocation.".format(
-                    decorator_name=decorator_name, graph_name=graph_name, output_name=defn.name
-                )
+                f"{decorator_name} '{graph_name}' has unmapped output '{defn.name}'. "
+                "Remove it or return a value from the appropriate op/graph invocation."
             )
         output_mappings.append(mapping)
 

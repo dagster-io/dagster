@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 from typing import List
 from dagster import job, op

@@ -61,7 +61,7 @@ def _get_release_files_dir(release_tag: str) -> str:
     return f"data/releases/{release_tag}/"
 
 
-@asset(partitions_def=releases_partitions_def, non_argument_deps={"release_zips"})
+@asset(partitions_def=releases_partitions_def, deps=[release_zips])
 def release_files(context) -> None:
     """Directory with a subdirectory for each release."""
     release_files_dir = _get_release_files_dir(context.partition_key)
@@ -72,7 +72,7 @@ def release_files(context) -> None:
 
 @asset(
     partitions_def=releases_partitions_def,
-    non_argument_deps={"release_files"},
+    deps=[release_files],
     io_manager_key="warehouse",
     metadata={"partition_expr": "release_tag"},
 )

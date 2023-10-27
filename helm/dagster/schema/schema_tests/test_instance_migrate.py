@@ -3,7 +3,11 @@ import subprocess
 import pytest
 from kubernetes.client import models
 from schema.charts.dagster.subschema.migrate import Migrate
+from schema.charts.dagster.subschema.webserver import (
+    Webserver,
+)
 from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
 
@@ -44,3 +48,23 @@ def test_job_instance_migrate_image(template: HelmTemplate, chart_version: str):
     _, tag = image.split(":")
 
     assert tag == chart_version
+
+
+def test_job_instance_migrate_keeps_annotations(template: HelmTemplate):
+    annotations = {"annotation_1": "an_annotation_1", "annotation_2": "an_annotation_2"}
+
+    helm_values_migrate_enabled = DagsterHelmValues.construct(
+        migrate=Migrate(enabled=True),
+        dagsterWebserver=Webserver.construct(
+            annotations=kubernetes.Annotations.parse_obj(annotations),
+        ),
+    )
+
+    jobs = template.render(helm_values_migrate_enabled)
+
+    assert len(jobs) == 1
+
+    job = jobs[0]
+
+    assert job.metadata.annotations == annotations
+    assert job.spec.template.metadata.annotations == annotations

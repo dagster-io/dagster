@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -24,6 +22,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -147,14 +146,24 @@ class UserFacingGraphQLError(Exception):
 
 def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector:
     asset_selection = cast(Optional[Iterable[Dict[str, List[str]]]], data.get("assetSelection"))
+    asset_check_selection = cast(
+        Optional[Iterable[Dict[str, Any]]], data.get("assetCheckSelection")
+    )
     return JobSubsetSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
         job_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
-        solid_selection=data.get("solidSelection"),
-        asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
-        if asset_selection
-        else None,
+        op_selection=data.get("solidSelection"),
+        asset_selection=(
+            [AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
+            if asset_selection
+            else None
+        ),
+        asset_check_selection=(
+            [AssetCheckKey.from_graphql_input(asset_check) for asset_check in asset_check_selection]
+            if asset_check_selection is not None
+            else None
+        ),
     )
 
 

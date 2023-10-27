@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING, cast
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
 
 from ..external import get_external_job_or_raise
@@ -12,23 +11,22 @@ from ..utils import (
     ExecutionMetadata,
     ExecutionParams,
     assert_permission_for_location,
-    capture_error,
 )
 from .run_lifecycle import create_valid_pipeline_run
 
 if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
+
     from dagster_graphql.schema.runs import GrapheneLaunchRunSuccess
     from dagster_graphql.schema.util import ResolveInfo
 
 
-@capture_error
 def launch_pipeline_reexecution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams
 ) -> "GrapheneLaunchRunSuccess":
     return _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=True)
 
 
-@capture_error
 def launch_pipeline_execution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams
 ) -> "GrapheneLaunchRunSuccess":
@@ -72,7 +70,6 @@ def _launch_pipeline_execution(
     return GrapheneLaunchRunSuccess(run=GrapheneRun(records[0]))
 
 
-@capture_error
 def launch_reexecution_from_parent_run(
     graphene_info: "ResolveInfo", parent_run_id: str, strategy: str
 ) -> "GrapheneLaunchRunSuccess":
@@ -91,7 +88,9 @@ def launch_reexecution_from_parent_run(
         location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
         job_name=parent_run.job_name,
-        solid_selection=None,
+        asset_selection=parent_run.asset_selection,
+        asset_check_selection=parent_run.asset_check_selection,
+        op_selection=None,
     )
 
     assert_permission_for_location(

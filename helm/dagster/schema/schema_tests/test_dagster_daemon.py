@@ -247,6 +247,23 @@ def test_run_monitoring_disabled(
     assert "run_monitoring" not in instance
 
 
+def test_run_monitoring_enabled_default(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert "run_monitoring" in instance
+    assert instance["run_monitoring"]["max_resume_run_attempts"] == 0
+
+
 def test_run_monitoring_no_max_resume_run_attempts(
     instance_template: HelmTemplate,
 ):
@@ -452,9 +469,28 @@ def test_sensor_threading(instance_template: HelmTemplate):
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     sensors_config = instance["sensors"]
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["sensors"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            sensors=Sensors.construct(
+                useThreads=True,
+                numWorkers=4,
+                numSubmitWorkers=8,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    sensors_config = instance["sensors"]
     assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
+    assert instance["sensors"]["num_submit_workers"] == 8
 
 
 def test_scheduler_threading(instance_template: HelmTemplate):
@@ -471,9 +507,24 @@ def test_scheduler_threading(instance_template: HelmTemplate):
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     schedules_config = instance["schedules"]
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["schedules"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            schedules=Schedules.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    schedules_config = instance["schedules"]
     assert schedules_config.keys() == schedules_daemon_config().config_type.fields.keys()
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
+    assert instance["schedules"]["num_submit_workers"] == 8
 
 
 def test_scheduler_name(template: HelmTemplate):
@@ -539,7 +590,7 @@ def test_env_configmap(env_configmap_template):
         )
     )
     [cm] = env_configmap_template.render(helm_values)
-    assert len(cm.data) == 7
+    assert len(cm.data) == 5
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert "TEST_ENV" not in cm.data
 
@@ -550,6 +601,6 @@ def test_env_configmap(env_configmap_template):
         )
     )
     [cm] = env_configmap_template.render(helm_values)
-    assert len(cm.data) == 8
+    assert len(cm.data) == 6
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert cm.data["TEST_ENV"] == "test_value"

@@ -82,7 +82,19 @@ def test_start_worker_config_from_partial_yaml(rabbitmq, instance):
     start_worker("dagster_test_worker", config_yaml=file_relative_path(__file__, "partial.yaml"))
 
 
+def test_start_worker_config_from_partial_yaml_legacy(rabbitmq, instance):
+    start_worker(
+        "dagster_test_worker", config_yaml=file_relative_path(__file__, "partial_legacy.yaml")
+    )
+
+
 def test_start_worker_config_from_yaml(rabbitmq, instance):
     start_worker(
         "dagster_test_worker", config_yaml=file_relative_path(__file__, "engine_config.yaml")
+    )
+
+
+def test_start_worker_config_from_yaml_legacy(rabbitmq, instance):
+    start_worker(
+        "dagster_test_worker", config_yaml=file_relative_path(__file__, "engine_config_legacy.yaml")
     )

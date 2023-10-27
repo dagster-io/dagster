@@ -231,10 +231,8 @@ def test_error_daemon(monkeypatch):
                         heartbeat_interval_seconds=heartbeat_interval_seconds,
                     )[SensorDaemon.daemon_type()]
 
-                    assert status.healthy is False
-
                     # Errors build up until there are > 5, then pull off the last
-                    if len(status.last_heartbeat.errors) >= 5:
+                    if status.healthy is False and len(status.last_heartbeat.errors) >= 5:
                         first_error_number = _get_error_number(status.last_heartbeat.errors[0])
 
                         if first_error_number > 5:

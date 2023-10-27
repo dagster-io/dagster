@@ -1,16 +1,24 @@
 import asyncio
 import os
 import sys
-from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, AsyncIterator, Mapping, Optional, Sequence, Tuple, Union
 
 # re-exports
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
-from dagster._core.events import EngineEventData
-from dagster._core.instance import DagsterInstance
+from dagster._core.events import (
+    AssetMaterialization,
+    AssetObservation,
+    DagsterEventType,
+    EngineEventData,
+)
+from dagster._core.instance import (
+    DagsterInstance,
+)
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
@@ -18,13 +26,11 @@ from starlette.concurrency import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
+    from dagster_graphql.schema.roots.mutation import (
+        GrapheneTerminateRunPolicy,
+    )
 
-from ..utils import (
-    assert_permission,
-    assert_permission_for_location,
-    capture_error,
-)
+from ..utils import assert_permission, assert_permission_for_location
 from .backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
@@ -46,7 +52,9 @@ if TYPE_CHECKING:
     from ...schema.roots.mutation import (
         GrapheneAssetWipeSuccess,
         GrapheneDeletePipelineRunSuccess,
+        GrapheneReportRunlessAssetEventsSuccess,
         GrapheneTerminateRunFailure,
+        GrapheneTerminateRunsResult,
         GrapheneTerminateRunSuccess,
     )
 
@@ -71,7 +79,9 @@ def _force_mark_as_canceled(
 
 
 def terminate_pipeline_execution(
-    graphene_info: "ResolveInfo", run_id: str, terminate_policy: "GrapheneTerminateRunPolicy"
+    graphene_info: "ResolveInfo",
+    run_id: str,
+    terminate_policy: "GrapheneTerminateRunPolicy",
 ) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
@@ -101,13 +111,21 @@ def terminate_pipeline_execution(
     location_name = run.external_job_origin.location_name if run.external_job_origin else None
 
     if location_name:
-        assert_permission_for_location(
-            graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
-        )
+        if not graphene_info.context.has_permission_for_location(
+            Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
+        ):
+            return GrapheneTerminateRunFailure(
+                run=graphene_run,
+                message="You do not have permission to terminate this run",
+            )
     else:
-        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
+        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
+            return GrapheneTerminateRunFailure(
+                run=graphene_run,
+                message="You do not have permission to terminate this run",
+            )
 
-    can_cancel_run = run.status == DagsterRunStatus.STARTED or run.status == DagsterRunStatus.QUEUED
+    can_cancel_run = run.status in CANCELABLE_RUN_STATUSES
 
     valid_status = not run.is_finished and (force_mark_as_canceled or can_cancel_run)
 
@@ -125,10 +143,8 @@ def terminate_pipeline_execution(
                 instance.run_coordinator.cancel_run(run_id)
         except:
             instance.report_engine_event(
-                (
-                    "Exception while attempting to force-terminate run. Run will still be marked as"
-                    " canceled."
-                ),
+                "Exception while attempting to force-terminate run. Run will still be marked as"
+                " canceled.",
                 job_name=run.job_name,
                 run_id=run.run_id,
                 engine_event_data=EngineEventData(
@@ -145,7 +161,30 @@ def terminate_pipeline_execution(
     )
 
 
-@capture_error
+def terminate_pipeline_execution_for_runs(
+    graphene_info: "ResolveInfo",
+    run_ids: Sequence[str],
+    terminate_policy: "GrapheneTerminateRunPolicy",
+) -> "GrapheneTerminateRunsResult":
+    from ...schema.roots.mutation import (
+        GrapheneTerminateRunsResult,
+    )
+
+    check.sequence_param(run_ids, "run_id", of_type=str)
+
+    terminate_run_results = []
+
+    for run_id in run_ids:
+        result = terminate_pipeline_execution(
+            graphene_info,
+            run_id,
+            terminate_policy,
+        )
+        terminate_run_results.append(result)
+
+    return GrapheneTerminateRunsResult(terminateRunResults=terminate_run_results)
+
+
 def delete_pipeline_run(
     graphene_info: "ResolveInfo", run_id: str
 ) -> Union["GrapheneDeletePipelineRunSuccess", "GrapheneRunNotFoundError"]:
@@ -156,6 +195,7 @@ def delete_pipeline_run(
 
     run = instance.get_run_by_id(run_id)
     if not run:
+        assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
         return GrapheneRunNotFoundError(run_id)
 
     location_name = run.external_job_origin.location_name if run.external_job_origin else None
@@ -171,8 +211,17 @@ def delete_pipeline_run(
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
+@deprecated(
+    breaking_version="2.0",
+    emit_runtime_warning=False,
+    additional_warn_text="DAGIT_EVENT_LOAD_CHUNK_SIZE is the only deprecated part.",
+)
 def get_chunk_size() -> int:
-    return int(os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000"))
+    return int(
+        os.getenv(
+            "DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000")
+        )
+    )
 
 
 async def gen_events_for_run(
@@ -321,7 +370,6 @@ async def gen_captured_log_data(
         subscription.dispose()
 
 
-@capture_error
 def wipe_assets(
     graphene_info: "ResolveInfo", asset_keys: Sequence[AssetKey]
 ) -> "GrapheneAssetWipeSuccess":
@@ -330,3 +378,47 @@ def wipe_assets(
     instance = graphene_info.context.instance
     instance.wipe_assets(asset_keys)
     return GrapheneAssetWipeSuccess(assetKeys=asset_keys)
+
+
+def create_asset_event(
+    event_type: DagsterEventType,
+    asset_key: AssetKey,
+    partition_key: Optional[str],
+    description: Optional[str],
+    tags: Optional[Mapping[str, str]],
+) -> Union[AssetMaterialization, AssetObservation]:
+    if event_type == DagsterEventType.ASSET_MATERIALIZATION:
+        return AssetMaterialization(
+            asset_key=asset_key, partition=partition_key, description=description, tags=tags
+        )
+    elif event_type == DagsterEventType.ASSET_OBSERVATION:
+        return AssetObservation(
+            asset_key=asset_key, partition=partition_key, description=description, tags=tags
+        )
+    else:
+        check.failed(f"Unexpected event type {event_type}")
+
+
+def report_runless_asset_events(
+    graphene_info: "ResolveInfo",
+    event_type: DagsterEventType,
+    asset_key: AssetKey,
+    partition_keys: Optional[Sequence[str]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> "GrapheneReportRunlessAssetEventsSuccess":
+    from ...schema.roots.mutation import GrapheneReportRunlessAssetEventsSuccess
+
+    instance = graphene_info.context.instance
+
+    if partition_keys is not None:
+        for partition_key in partition_keys:
+            instance.report_runless_asset_event(
+                create_asset_event(event_type, asset_key, partition_key, description, tags)
+            )
+    else:
+        instance.report_runless_asset_event(
+            create_asset_event(event_type, asset_key, None, description, tags)
+        )
+
+    return GrapheneReportRunlessAssetEventsSuccess(assetKey=asset_key)

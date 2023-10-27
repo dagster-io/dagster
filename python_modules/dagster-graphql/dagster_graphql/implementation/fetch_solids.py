@@ -3,7 +3,7 @@ from collections import OrderedDict, defaultdict
 import dagster._check as check
 from dagster._core.host_representation import ExternalRepository
 
-from .utils import GraphSelector, capture_error
+from .utils import GraphSelector
 
 
 def get_solid(repo, name):
@@ -51,7 +51,6 @@ def get_used_solid_map(repo):
     )
 
 
-@capture_error
 def get_graph_or_error(graphene_info, graph_selector):
     from ..schema.errors import GrapheneGraphNotFoundError
     from ..schema.pipelines.pipeline import GrapheneGraph

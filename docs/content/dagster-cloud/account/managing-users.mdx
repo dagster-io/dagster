@@ -1,632 +1,14 @@
 ---
-title: Managing users and permissions in Dagster Cloud | Dagster Docs
+title: Managing users in Dagster Cloud | Dagster Docs
 ---
 
-# Managing users and permissions in Dagster Cloud
+# Managing users in Dagster Cloud
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Users in Dagster Cloud can be granted specific permissions what they can and cannot do in your organization. Granularly assigning permissions to users ensures that the right people have appropriate access to what they require in Dagster Cloud, and no more.
+In this guide, we'll cover how to add and remove users in your Dagster Cloud organization.
 
-In this guide, we'll cover the available user roles, how permissions are assigned, and how to add and remove users in your organization.
-
----
-
-## Understanding user roles
-
-<TabGroup>
-  <TabItem name="Overview">
-
-### User roles
-
-Dagster Cloud supports five user roles for several levels of role-based access control:
-
-<table>
-  <thead>
-    <tr>
-      <th width="20%; fixed">Role</th>
-      <th width="15%; fixed">Plan</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>Viewer</strong>
-      </td>
-      <td>Enterprise</td>
-      <td>
-        The least permissive role. Grants view access to most things in a
-        deployment, with some exceptions. Refer to the{" "}
-        <a href="#user-role-permissions">
-          <strong>User role permissions</strong>
-        </a>{" "}
-        tab for more info.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Launcher</strong>
-      </td>
-      <td>Enterprise</td>
-      <td>
-        Includes all Viewer permissions and the ability to launch and terminate
-        runs.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Editor</strong>
-      </td>
-      <td>All plans</td>
-      <td>
-        Includes all Launcher permissions and the ability to:
-        <ul>
-          <li>
-            Manage{" "}
-            <a href="/concepts/partitions-schedules-sensors/sensors">sensors</a>{" "}
-            and{" "}
-            <a href="/concepts/partitions-schedules-sensors/schedules">
-              schedules
-            </a>
-          </li>
-          <li>
-            Launch and cancel{" "}
-            <a href="/concepts/partitions-schedules-sensors/backfills">
-              backfills
-            </a>
-          </li>
-          <li>
-            Manage{" "}
-            <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
-              environment variables
-            </a>
-          </li>
-          <li>
-            Manage{" "}
-            <a href="/dagster-cloud/managing-deployments/code-locations">
-              code locations
-            </a>
-          </li>
-          <li>
-            Manage{" "}
-            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens">
-              agents
-            </a>{" "}
-            and{" "}
-            <a href="dagster-cloud/managing-deployments/setting-up-alerts">
-              alerts
-            </a>
-          </li>
-          <li>
-            Manage own{" "}
-            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens">
-              user tokens
-            </a>
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Admin</strong>
-      </td>
-      <td>All plans</td>
-      <td>
-        Includes all Editor permissions and the ability to:
-        <ul>
-          <li>
-            Add and edit{" "}
-            <a href="/dagster-cloud/account/managing-users">users</a>
-          </li>
-          <li>
-            Manage and revoke others'
-            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens">
-              user tokens
-            </a>
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Organization Admin</strong>
-      </td>
-      <td>All plans</td>
-      <td>
-        The most permissive role. Includes all Admin permissions and the ability
-        to:
-        <ul>
-          <li>
-            Create and delete{" "}
-            <a href="/dagster-cloud/managing-deployments/managing-deployments">
-              deployments
-            </a>
-          </li>
-          <li>
-            <a href="/dagster-cloud/account/authentication">Administer SAML</a>
-          </li>
-          <li>
-            Remove <a href="/dagster-cloud/account/managing-users">users</a>
-          </li>
-          <li>View account usage</li>
-          <li>Manage billing</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-Click the **User role permissions** tab to view all granular permissions for each user role.
-
-  </TabItem>
-  <TabItem name="User role permissions">
-
-### User role permissions
-
-View <a href="#user-roles">user role summaries</a>.
-
-<table>
-  <thead>
-    <tr>
-      <th width="50%; fixed">&nbsp;</th>
-      <th width="10%; fixed">Viewer</th>
-      <th width="10%; fixed">Launcher</th>
-      <th width="10%; fixed">Editor</th>
-      <th width="10%; fixed">Admin</th>
-      <th width="10%; fixed">
-        Organization <br />
-        Admin
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td colspan="5">
-        <strong>GENERAL</strong>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        View runs of <a href="/concepts/ops-jobs-graphs/jobs">jobs</a>
-      </td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Launch, re-execute, terminate, and delete runs of jobs</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Start and stop{" "}
-        <a href="/concepts/partitions-schedules-sensors/schedules">schedules</a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Start and stop{" "}
-        <a href="/concepts/partitions-schedules-sensors/sensors">sensors</a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Wipe assets</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Launch and cancel{" "}
-        <a href="/concepts/partitions-schedules-sensors/backfills">backfills</a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td colspan="5">
-        <strong>DEPLOYMENTS</strong>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        View{" "}
-        <a href="/dagster-cloud/managing-deployments/managing-deployments">
-          deployments
-        </a>
-      </td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Modify{" "}
-        <a href="/dagster-cloud/managing-deployments/managing-deployments">
-          deployment
-        </a>{" "}
-        settings
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Create, edit, delete{" "}
-        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
-          environment variables
-        </a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        View{" "}
-        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
-          environment variable
-        </a>{" "}
-        values
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Export{" "}
-        <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets##exporting-variables-to-a-env-file">
-          environment variables
-        </a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Create and delete{" "}
-        <a href="/dagster-cloud/managing-deployments/managing-deployments">
-          deployments
-        </a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td colspan="5">
-        <strong>CODE LOCATIONS</strong>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        View
-        <a href="/dagster-cloud/managing-deployments/code-locations">
-          code locations
-        </a>
-      </td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Create and remove
-        <a href="/dagster-cloud/managing-deployments/code-locations">
-          code locations
-        </a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        Reload{" "}
-        <a href="/dagster-cloud/managing-deployments/code-locations">
-          code locations
-        </a>{" "}
-        and workspaces
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td colspan="5">
-        <strong>AGENT TOKENS</strong>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        View{" "}
-        <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens">
-          agent tokens
-        </a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Create agent tokens</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Edit agent tokens</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Revoke agent tokens</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td colspan="5">
-        <strong>USER TOKENS</strong>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        View and create own{" "}
-        <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens">
-          user tokens
-        </a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>List all user tokens</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Revoke all user tokens</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td colspan="5">
-        <strong>USER MANAGEMENT</strong>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/dagster-cloud/account/managing-users">View users</a>
-      </td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Add users</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Edit users</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Remove users</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td colspan="5">
-        <strong>WORKSPACE ADMINISTRATION</strong>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Manage{" "}
-        <a href="dagster-cloud/managing-deployments/setting-up-alerts">
-          alerts
-        </a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Edit workspace</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/dagster-cloud/account/authentication">Administer SAML</a>
-      </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>View usage</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-    <tr>
-      <td>Manage billing</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
-    </tr>
-  </tbody>
-</table>
-
-  </TabItem>
-</TabGroup>
-
-### Assigning user roles
-
-All user roles are enforced both in Dagster Cloud and the GraphQL API. With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/managing-deployments/managing-deployments), [code locations](/dagster-cloud/managing-deployments/code-locations), and [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments).
-
-#### Deployment permissions
-
-All Dagster Cloud accounts - Enterprise plan or not - can set permissions at the deployment level. When defined, the selected user role will be used as the default for all code locations contained in the deployment.
-
-For example, if a user is assigned the **Editor** user role for a deployment, they'll also be an **Editor** for all code locations in the deployment:
-
-<!-- ![Default Editor user role for prod code locations](/images/dagster-cloud/user-token-management/editor-permissions.png) -->
-
-<Image
-alt="Default Editor user role for prod code locations"
-src="/images/dagster-cloud/user-token-management/editor-permissions.png"
-width={1798}
-height={354}
-/>
-
-For Dagster Cloud Enterprise users, default user roles can be overridden at the [code location level](#code-location-permissions). For non-Enterprise users, the user will have the same level of access for all code locations in the deployment.
-
-**Note**: Having access to a deployment doesn't automatically grant access to Branch Deployments. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
-
-#### Code location permissions
-
-<Note>Code location permissions are a Dagster Cloud Enterprise feature.</Note>
-
-Dagster Cloud Enterprise users can override the deployment-level user role by setting permissions at the code location level. Overrides can only be performed if:
-
-- The user is not **Organization Admin**, and
-- The current user role for the deployment is **Viewer** or **Launcher**
-
-For example, if a user is assigned the **Viewer** user role for a deployment, only a more permissive role can be assigned for a code location in the deployment. Specifically, an **Editor** or **Launcher** user role:
-
-<!-- ![Overriding the Viewer user role for a code location](/images/dagster-cloud/user-token-management/code-location-override.png) -->
-
-<Image
-alt="Overriding the Viewer user role for a code location"
-src="/images/dagster-cloud/user-token-management/code-location-override.png"
-width={700}
-height={499}
-/>
-
-If a user is an **Organization Admin** or a deployment-level **Admin** or **Editor**, they already have the most permissive user role possible for the code location. In this case, an override is unnecessary and the **Edit user role** button next to the code location will be disabled:
-
-<!-- ![Override for a code location not allowed](/images/dagster-cloud/user-token-management/not-allowed-code-location-override.png) -->
-
-<Image
-alt="Override for a code location not allowed"
-src="/images/dagster-cloud/user-token-management/not-allowed-code-location-override.png"
-width={2064}
-height={1052}
-/>
-
-To remove an override, click **Edit user role** next to the code location to open the user role selection dialog. Then, click the **Remove override** button:
-
-<!-- ![Removing the override for a code location](/images/dagster-cloud/user-token-management/remove-code-location-override.png) -->
-
-<Image
-alt="Removing the override for a code location"
-src="/images/dagster-cloud/user-token-management/remove-code-location-override.png"
-width={700}
-height={500}
-/>
-
-#### Branch deployment permissions
-
-Granting access to Branch Deployments gives users access to all Branch Deployments for all the code locations they have access to. Consider the following example:
-
-<!-- ![User roles for prod, staging, and all Branch Deployments](/images/dagster-cloud/user-token-management/branch-deployment-example.png) -->
-
-<Image
-alt="User roles for prod, staging, and all Branch Deployments"
-src="/images/dagster-cloud/user-token-management/branch-deployment-example.png"
-width={992}
-height={636}
-/>
-
-In this case, the user would have **Editor** access to Branch Deployments for all code locations in the `prod` deployment, but not in `staging`. This is because they're a **Viewer** for the code locations in the `prod` deployment, but they don't have access to the `staging` deployment or any of its code locations.
+**Note**: If utilizing [SCIM provisioning](/dagster-cloud/account/authentication/utilizing-scim-provisioning), you'll need to manage users through your Identity Provider (IdP) instead of Dagster Cloud.
 
 ---
 
@@ -639,30 +21,76 @@ In this case, the user would have **Editor** access to Branch Deployments for al
 
 Before you start, note that:
 
+- **If SCIM provisioning is enabled,** you'll need to add new users in your IdP. Adding users will be disabled in Dagster Cloud.
 - **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
+- **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster Cloud. Refer to the [SSO setup guides](/dagster-cloud/account/authentication#single-sign-on) for setup instructions for each of our supported IdP solutions.
 
-- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/managing-deployments/deployment-settings-reference#sso-default-role).
+  By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/managing-deployments/deployment-settings-reference#sso-default-role).
 
 1. Sign in to your Dagster Cloud account.
-2. Click the **user menu (your icon) > Cloud Settings**.
+2. Click the **user menu (your icon) > Organization Settings**.
 3. Click the **Users** tab.
-4. In the **Enter an email...** field, enter the user's email address.
-5. Click **Add user**. The user will be added to the list of users.
-6. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment. **Note**: For Admins, you can only set permissions for deployments where you're an Admin:
-   1. Next to a deployment, click **Edit user role**.
-   2. Select the user role for the deployment. This [user role](#understanding-user-roles) will be used as the default for all code locations in the deployment.
-   3. Click **Save**.
-   4. **Enterprise only**: To set permissions for individual [code locations](#code-location-permissions) in a deployment:
-      1. Click the toggle to the left of the deployment to open a list of code locations.
-      2. Next to a code location, click **Edit user role**.
-      3. Select the user role for the code location.
-      4. Click **Save**.
-7. Repeat step 6 for each deployment.
-8. **Optional**: To change the user's permissions for branch deployments:
+4. Click **Add new user.**
+5. In the **User email** field, enter the user's email address.
+6. Click **Add user**. The user will be added to the list of users.
+
+After the user is created, you can [add the user to teams and assign user roles for each deployment](#managing-user-permissions).
+
+---
+
+## Managing user permissions
+
+<Note>
+  <strong>Organization Admin</strong> permissions are required to manage users
+  in Dagster Cloud.
+</Note>
+
+After a user is created, the **Manage user permissions** window will automatically display. You can also access this window by clicking **Edit** next to a user in the users table.
+
+<!-- ![Managing user teams and roles for a user in Dagster Cloud](/images/dagster-cloud/user-token-management/manage-new-user-permissions.png) -->
+
+<Image
+alt="Managing user teams and roles for a user in Dagster Cloud"
+src="/images/dagster-cloud/user-token-management/manage-new-user-permissions.png"
+width={1792}
+height={1474}
+/>
+
+### Adding users to teams
+
+<Note>Teams are a Dagster Cloud Enterprise feature.</Note>
+
+Using the **Teams** field, you can add users to one or more teams. This is useful for centralizing permission sets for different types of users. Refer to the [Managing teams](/dagster-cloud/account/managing-users/managing-teams) guide for more info about creating and managing teams.
+
+<!-- ![Adding a user to a team in the Dagster Cloud UI](/images/dagster-cloud/user-token-management/add-user-to-teams.png) -->
+
+<Image
+alt="Adding a user to a team in the Dagster Cloud UI"
+src="/images/dagster-cloud/user-token-management/add-user-to-teams.png"
+width={1742}
+height={376}
+/>
+
+**Note**: When determining a user's level of access, Dagster Cloud will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to the [Managing user roles and permissions](/dagster-cloud/account/managing-users/managing-user-roles-permissions#applying-role-overrides) guide for more info.
+
+### Assigning user roles
+
+In the **Roles** section, you can assign the select the appropriate [user role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) for each deployment.
+
+1. Next to a deployment, click **Edit user role**.
+2. Select the user role for the deployment. This [user role](/dagster-cloud/account/managing-users/managing-user-roles-permissions) will be used as the default for all code locations in the deployment.
+3. Click **Save**.
+4. **Enterprise only**: To set permissions for individual [code locations](/dagster-cloud/account/managing-users/managing-user-roles-permissions#code-locations) in a deployment:
+   1. Click the toggle to the left of the deployment to open a list of code locations.
+   2. Next to a code location, click **Edit user role**.
+   3. Select the user role for the code location.
+   4. Click **Save**.
+5. Repeat the previous steps for each deployment.
+6. **Optional**: To change the user's permissions for branch deployments:
    1. Next to **All branch deployments**, click **Edit user role**.
    2. Select the user role to use for all branch deployments.
    3. Click **Save**.
-9. Click **Done**.
+7. Click **Done**.
 
 ---
 
@@ -673,12 +101,31 @@ Before you start, note that:
   in Dagster Cloud.
 </Note>
 
-Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the Identity Provider (IdP). Removing the user in Dagster Cloud doesn't remove them from the IdP.
+Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the IdP. Removing the user in Dagster Cloud doesn't remove them from the IdP.
 
 1. Sign in to your Dagster Cloud account.
-2. Click the **user menu (your icon) > Cloud Settings**.
+2. Click the **user menu (your icon) > Organization Settings**.
 3. Click the **Users** tab.
 4. Locate the user in the user list.
 5. Click **Edit**.
 6. Click **Remove user**.
 7. When prompted, confirm the removal.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users/managing-user-roles-permissions"
+    title="Managing user roles and permissions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users/managing-teams"
+    title="Managing teams"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication"
+    title="SSO and SAML authentication"
+  ></ArticleListItem>
+</ArticleList>

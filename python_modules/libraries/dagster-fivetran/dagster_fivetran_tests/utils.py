@@ -220,6 +220,17 @@ def get_sample_connectors_response_multiple():
                 "id": DEFAULT_CONNECTOR_ID_2,
                 "service": "some_other_service",
                 "schema": "some_other_service.some_name",
+                "status": {
+                    "setup_state": "connected",
+                },
+            },
+            {
+                "id": "FAKE",
+                "service": "some_other_service",
+                "schema": "some_other_service.some_name",
+                "status": {
+                    "setup_state": "broken",
+                },
             },
         ]
     }

@@ -1,5 +1,6 @@
 from typing import Optional, Sequence, Type
 
+import pyarrow as pa
 import pyspark
 import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -11,6 +12,13 @@ from dagster_duckdb.io_manager import (
 )
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType
+
+
+def pyspark_df_to_arrow_table(df: pyspark.sql.DataFrame) -> pa.Table:
+    """Converts a PySpark DataFrame to a PyArrow Table."""
+    # `_collect_as_arrow` API call sourced from:
+    #   https://stackoverflow.com/questions/73203318/how-to-transform-spark-dataframe-to-polars-dataframe
+    return pa.Table.from_batches(df._collect_as_arrow())  # noqa: SLF001
 
 
 class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
@@ -49,15 +57,15 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         connection,
     ):
         """Stores the given object at the provided filepath."""
-        pd_df = obj.toPandas()  # noqa: F841
+        pa_df = pyspark_df_to_arrow_table(obj)  # noqa: F841
         connection.execute(
             f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
-            " pd_df;"
+            " pa_df;"
         )
         if not connection.fetchall():
             # table was not created, therefore already exists. Insert the data
             connection.execute(
-                f"insert into {table_slice.schema}.{table_slice.table} select * from pd_df"
+                f"insert into {table_slice.schema}.{table_slice.table} select * from pa_df;"
             )
 
         context.add_output_metadata(
@@ -77,7 +85,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pyspark.sql.DataFrame:
         """Loads the return of the query as the correct type."""
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.getOrCreate()  # type: ignore
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return spark.createDataFrame([], StructType([]))
 
@@ -199,6 +207,10 @@ class DuckDBPySparkIOManager(DuckDBIOManager):
                 ...
 
     """
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:

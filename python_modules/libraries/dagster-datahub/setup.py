@@ -18,15 +18,14 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-datahub",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for Datahub-specific Dagster framework solid and resource components.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datahub"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -37,10 +36,11 @@ setup(
     packages=find_packages(exclude=["dagster_datahub_tests*"]),
     include_package_data=True,
     install_requires=[
-        "acryl-datahub[datahub-rest, datahub-kafka]<0.8.41.2",
+        "acryl-datahub[datahub-rest, datahub-kafka]",
         f"dagster{pin}",
         "packaging",
         "requests",
+        "pydantic>=1.10.0,<2.0.0",
     ],
     extras_require={},
     zip_safe=False,

@@ -8,8 +8,12 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+    DagsterLaunchFailedError,
+    DagsterUserCodeProcessError,
+)
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import (
     ConfigurableClass,
@@ -85,7 +89,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                     instance_ref=instance.get_ref(),
                 )
             ),
-            StartRunResult,  # type: ignore
+            StartRunResult,
         )
         if not res.success:
             raise (
@@ -163,6 +167,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
+        self._instance.report_run_canceling(run)
+
         client = self._get_grpc_client_for_termination(run_id)
 
         if not client:
@@ -173,10 +179,13 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        self._instance.report_run_canceling(run)
         res = deserialize_value(
             client.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
         )
+
+        if res.serializable_error_info:
+            raise DagsterUserCodeProcessError.from_error_info(res.serializable_error_info)
+
         return res.success
 
     def join(self, timeout=30):
@@ -201,11 +210,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 return
 
             if total_time >= timeout:
-                raise Exception(
-                    "Timed out waiting for these runs to finish: {active_run_ids}".format(
-                        active_run_ids=repr(active_run_ids)
-                    )
-                )
+                raise Exception(f"Timed out waiting for these runs to finish: {active_run_ids!r}")
 
             total_time += interval
             time.sleep(interval)
