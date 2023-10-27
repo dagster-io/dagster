@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from dagster._utils.schedules import cron_string_iterator
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -37,6 +36,7 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.schedules import cron_string_iterator
 
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
 from .partition import SerializedPartitionsSubset
