@@ -381,6 +381,14 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
+    def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
+        """Materialize an asset partition if it has not been materialized since the previous
+        cron schedule tick.
+        """
+        return MaterializeOnParentUpdatedRule()
+
+    @public
+    @staticmethod
     def materialize_on_missing() -> "MaterializeOnMissingRule":
         """Materialize an asset partition if it has never been materialized before. This rule will
         not fire for non-root assets unless that asset's parents have been updated.
