@@ -14,6 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.executor_definition import in_process_executor
 import pendulum
 from dagster import (
     AssetKey,
@@ -47,20 +48,24 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import CURSOR_KEY, AssetDaemon
+import hashlib
 
 from .base_scenario import run_request
-
-_ACTIVE_TARGET = None
 
 
 def get_code_location_origin(
     scenario_state: "AssetDaemonScenarioState", location_name=None
 ) -> InProcessCodeLocationOrigin:
-    """Hacky method to allow us to point a code location at a module-scoped variable, even though
-    the variable is not defined until the scenario is run.
+    """Hacky method to allow us to point a code location at a module-scoped attribute, even though
+    the attribute is not defined until the scenario is run.
     """
-    global _ACTIVE_TARGET  # noqa: PLW0603
-    _ACTIVE_TARGET = Definitions(assets=scenario_state.assets)
+
+    attribute_name = (
+        f"_asset_daemon_target_{hashlib.md5(str(scenario_state.asset_specs).encode()).hexdigest()}"
+    )
+    globals()[attribute_name] = Definitions(
+        assets=scenario_state.assets, executor=in_process_executor
+    )
     return InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -68,7 +73,7 @@ def get_code_location_origin(
                 "dagster_tests.definitions_tests.auto_materialize_tests.asset_daemon_scenario"
             ),
             working_directory=os.getcwd(),
-            attribute="_ACTIVE_TARGET",
+            attribute=attribute_name,
         ),
         location_name=location_name or "test_location",
     )
