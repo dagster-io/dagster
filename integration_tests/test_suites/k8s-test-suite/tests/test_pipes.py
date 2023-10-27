@@ -46,7 +46,12 @@ def test_pipes_client(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"pipes_client": PipesK8sClient()},
+        resources={
+            "pipes_client": PipesK8sClient(
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+            )
+        },
         raise_on_error=False,
     )
     assert result.success
@@ -156,7 +161,13 @@ def test_pipes_client_file_inject(namespace, cluster_provider):
 
     result = materialize(
         [number_y],
-        resources={"pipes_client": PipesK8sClient(context_injector=injector)},
+        resources={
+            "pipes_client": PipesK8sClient(
+                context_injector=injector,
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+            )
+        },
         raise_on_error=False,
     )
     assert result.success
@@ -204,7 +215,12 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
 
     result = materialize(
         [number_y_job],
-        resources={"pipes_client": PipesK8sClient()},
+        resources={
+            "pipes_client": PipesK8sClient(
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+            )
+        },
         raise_on_error=False,
     )
     assert result.success
