@@ -1059,7 +1059,7 @@ def test_multi_asset_sensor_can_start_from_asset_sensor_cursor():
         materialize([my_asset], instance=instance)
         my_asset_sensor.evaluate_tick(ctx)
 
-        assert ctx.cursor == '3'
+        assert ctx.cursor == "3"
 
         # simulate changing a @asset_sensor to a @multi_asset_sensor with the same name and
         # therefore inheriting the same cursor.
