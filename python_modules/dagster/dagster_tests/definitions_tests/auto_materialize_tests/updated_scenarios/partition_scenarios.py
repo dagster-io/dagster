@@ -22,6 +22,9 @@ from .asset_daemon_scenario_states import (
     time_partitions_start,
     two_assets_in_sequence,
     two_partitions_def,
+    time_multipartitions_def,
+    static_multipartitions_def,
+    one_asset_depends_on_two,
 )
 
 hourly_to_daily = AssetDaemonScenarioState(
@@ -208,6 +211,58 @@ partition_scenarios = [
                 for i in range(4)
             ),
             run_request(asset_keys=["B"], partition_key=day_partition_key(state.current_time)),
+        ),
+    ),
+    AssetDaemonScenario(
+        id="time_dimension_multipartitioned",
+        initial_state=one_asset.with_asset_properties(
+            partitions_def=time_multipartitions_def,
+        )
+        .with_current_time(time_partitions_start)
+        .with_current_time_advanced(days=1, hours=1)
+        .with_all_eager(100),
+        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+            *(
+                run_request(["A"], partition_key=partition_key)
+                for partition_key in time_multipartitions_def.get_multipartition_keys_with_dimension_value(
+                    "time", time_partitions_start
+                )
+            )
+        ),
+    ),
+    AssetDaemonScenario(
+        id="static_multipartitioned",
+        initial_state=one_asset.with_asset_properties(
+            partitions_def=static_multipartitions_def,
+        ).with_all_eager(100),
+        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+            *(
+                run_request(["A"], partition_key=partition_key)
+                for partition_key in static_multipartitions_def.get_partition_keys()
+            )
+        ),
+    ),
+    AssetDaemonScenario(
+        id="partitioned_after_non_partitioned_multiple_updated",
+        initial_state=one_asset_depends_on_two.with_asset_properties(
+            keys=["C"], partitions_def=daily_partitions_def
+        )
+        .with_current_time(time_partitions_start)
+        .with_current_time_advanced(days=2, hours=1)
+        .with_all_eager(),
+        scenario=lambda state: state.with_runs(
+            run_request(["A", "B"]),
+            run_request(["C"], partition_key=day_partition_key(state.current_time)),
+            run_request(["A"]),
+        )
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request(["C"], partition_key=day_partition_key(state.current_time))
+        )
+        .with_runs(run_request(["B"]))
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request(["C"], partition_key=day_partition_key(state.current_time))
         ),
     ),
 ]
