@@ -600,6 +600,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         )
                     ]
                 )
+
                 for child in self.asset_graph.get_children(asset_key):
                     child_partitions_def = self.asset_graph.get_partitions_def(child)
                     if child not in target_asset_keys:

@@ -1442,7 +1442,18 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 next(iter(self._included_partition_keys))
             )
         else:
+            if len(self.included_time_windows) == 0:
+                check.failed(
+                    f"Empty subset. self._included_partition_keys: {self._included_partition_keys}"
+                )
             return self.included_time_windows[0].start
+
+    @property
+    def is_empty(self) -> bool:
+        if self._included_partition_keys is not None:
+            return len(self._included_partition_keys) == 0
+        else:
+            return len(self.included_time_windows) == 0
 
     def cheap_ends_before(self, dt: datetime, dt_cron_schedule: str) -> bool:
         """Performs a cheap calculation that checks whether the latest window in this subset ends
