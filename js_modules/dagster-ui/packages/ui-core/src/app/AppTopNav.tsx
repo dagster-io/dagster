@@ -28,13 +28,13 @@ interface Props {
   allowGlobalReload?: boolean;
 }
 
-export const AppTopNav: React.FC<Props> = ({
+export const AppTopNav = ({
   children,
   rightOfSearchBar,
   searchPlaceholder,
   getNavLinks,
   allowGlobalReload = false,
-}) => {
+}: Props) => {
   const history = useHistory();
 
   const navLinks = () => {
@@ -160,7 +160,7 @@ export const AppTopNav: React.FC<Props> = ({
   );
 };
 
-export const AppTopNavLogo: React.FC = () => {
+export const AppTopNavLogo = () => {
   const {nav} = React.useContext(LayoutContext);
   const navButton = React.useRef<null | HTMLButtonElement>(null);
 

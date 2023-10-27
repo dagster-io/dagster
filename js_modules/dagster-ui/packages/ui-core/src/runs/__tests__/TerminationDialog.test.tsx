@@ -59,10 +59,13 @@ function buildMockTerminateMutation(
 }
 
 describe('TerminationDialog', () => {
-  const Test: React.FC<{
+  const Test = ({
+    mocks,
+    propOverrides,
+  }: {
     mocks?: any;
     propOverrides?: Partial<TerminationDialogProps>;
-  }> = ({mocks, propOverrides}) => {
+  }) => {
     const props = {
       isOpen: true,
       onClose: () => {},

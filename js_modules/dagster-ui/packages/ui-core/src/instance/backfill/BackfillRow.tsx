@@ -255,10 +255,13 @@ const BackfillRunStatus = ({
   );
 };
 
-const BackfillTarget: React.FC<{
+const BackfillTarget = ({
+  backfill,
+  repoAddress,
+}: {
   backfill: BackfillTableFragment;
   repoAddress: RepoAddress | null;
-}> = ({backfill, repoAddress}) => {
+}) => {
   const repo = useRepository(repoAddress);
   const {assetSelection, partitionSet, partitionSetName} = backfill;
 

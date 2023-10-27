@@ -23,10 +23,7 @@ interface ITypeListContainerProps {
   repoAddress?: RepoAddress;
 }
 
-export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
-  explorerPath,
-  repoAddress,
-}) => {
+export const TypeListContainer = ({explorerPath, repoAddress}: ITypeListContainerProps) => {
   const {pipelineName, snapshotId} = explorerPath;
   const {options} = useRepositoryOptions();
 

@@ -34,13 +34,13 @@ interface Props {
   assetLastMaterializedAt: string | undefined;
 }
 
-export const AssetSidebarActivitySummary: React.FC<Props> = ({
+export const AssetSidebarActivitySummary = ({
   asset,
   assetLastMaterializedAt,
   isSourceAsset,
   liveData,
   stepKey,
-}) => {
+}: Props) => {
   const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
     useRecentAssetEvents(
       asset.assetKey,

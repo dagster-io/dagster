@@ -39,7 +39,7 @@ interface HeaderProps {
   label: React.ReactNode;
 }
 
-export const DialogHeader: React.FC<HeaderProps> = (props) => {
+export const DialogHeader = (props: HeaderProps) => {
   const {icon, label} = props;
   return (
     <Box background={Colors.White} padding={{vertical: 16, horizontal: 20}} border="bottom">
@@ -69,11 +69,7 @@ interface DialogFooterProps {
   left?: React.ReactNode;
 }
 
-export const DialogFooter: React.FC<DialogFooterProps> = ({
-  children,
-  left,
-  topBorder,
-}: DialogFooterProps) => {
+export const DialogFooter = ({children, left, topBorder}: DialogFooterProps) => {
   return (
     <Box
       padding={{bottom: 16, top: topBorder ? 16 : 8, horizontal: 20}}

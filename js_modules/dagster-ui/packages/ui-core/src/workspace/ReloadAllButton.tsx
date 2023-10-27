@@ -10,7 +10,7 @@ import {
 
 import {RepositoryLocationErrorDialog} from './RepositoryLocationErrorDialog';
 
-export const ReloadAllButton: React.FC<{label?: string}> = ({label = 'Reload all'}) => {
+export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
   const {
     permissions: {canReloadWorkspace},
     disabledReasons,

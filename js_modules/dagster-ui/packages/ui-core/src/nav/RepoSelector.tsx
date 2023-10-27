@@ -41,7 +41,7 @@ interface Props {
   selected: RepoSelectorOption[];
 }
 
-export const RepoSelector: React.FC<Props> = (props) => {
+export const RepoSelector = (props: Props) => {
   const {onBrowse, onToggle, options, selected} = props;
 
   const optionCount = options.length;
@@ -144,7 +144,7 @@ const RepoLocation = styled.div`
   color: ${Colors.Gray700};
 `;
 
-const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
   return (
     <ReloadRepositoryLocationButton
       location={repoAddress.location}

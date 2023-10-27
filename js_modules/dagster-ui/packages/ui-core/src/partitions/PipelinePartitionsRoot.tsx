@@ -16,7 +16,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
+export const PipelinePartitionsRoot = (props: Props) => {
   const {repoAddress} = props;
   const params = useParams<{pipelinePath: string}>();
   const {pipelinePath} = params;

@@ -16,13 +16,19 @@ import {isRunlessEvent} from './isRunlessEvent';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 
-export const AssetEventList: React.FC<{
+export const AssetEventList = ({
+  groups,
+  focused,
+  setFocused,
+  xAxis,
+  assetKey,
+}: {
   xAxis: 'time' | 'partition';
   groups: AssetEventGroup[];
   assetKey: AssetKeyInput;
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
-}> = ({groups, focused, setFocused, xAxis, assetKey}) => {
+}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const focusedRowRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -113,7 +119,7 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
     `}
 `;
 
-const AssetEventListPartitionRow: React.FC<{group: AssetEventGroup}> = ({group}) => {
+const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
   const {partition, latest, timestamp} = group;
   return (
     <>
@@ -137,9 +143,12 @@ const AssetEventListPartitionRow: React.FC<{group: AssetEventGroup}> = ({group})
   );
 };
 
-const AssetEventListEventRow: React.FC<{group: AssetEventGroup; assetKey: AssetKeyInput}> = ({
+const AssetEventListEventRow = ({
   group,
   assetKey,
+}: {
+  group: AssetEventGroup;
+  assetKey: AssetKeyInput;
 }) => {
   const {latest, partition, timestamp} = group;
   const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : null;

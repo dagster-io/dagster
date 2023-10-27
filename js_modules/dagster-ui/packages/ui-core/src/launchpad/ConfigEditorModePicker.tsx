@@ -16,7 +16,7 @@ interface ConfigEditorModePickerProps {
 
 const MODE_PICKER_HINT_TEXT = `To add a mode, add a ModeDefinition to the pipeline.`;
 
-export const ConfigEditorModePicker: React.FC<ConfigEditorModePickerProps> = (props) => {
+export const ConfigEditorModePicker = (props: ConfigEditorModePickerProps) => {
   const resolvedMode = props.modeName
     ? props.modes.find((m) => m.name === props.modeName)
     : props.modes[0];

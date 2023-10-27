@@ -67,11 +67,15 @@ const runGroupMock: MockedResponse<RunGroupPanelQuery, RunGroupPanelQueryVariabl
   },
 };
 
-const GanttTestCase: React.FC<{
+const GanttTestCase = ({
+  graph,
+  logs,
+  focusedTime,
+}: {
   graph: GraphQueryItem[];
   logs: RunMetadataProviderMessageFragment[];
   focusedTime: number;
-}> = ({graph, logs, focusedTime}) => {
+}) => {
   const [selectionQuery, setSelectionQuery] = useState<string>('');
   const [selectionKeys, setSelectionKeys] = useState<string[]>([]);
   const [progress, setProgress] = useState<number>(5);

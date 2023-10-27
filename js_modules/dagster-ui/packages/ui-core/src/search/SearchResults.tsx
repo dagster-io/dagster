@@ -38,7 +38,7 @@ interface ItemProps {
   result: Fuse.FuseResult<SearchResult>;
 }
 
-const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickResult, result}) => {
+const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
 

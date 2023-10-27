@@ -122,7 +122,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const OpsRoot: React.FC<Props> = (props) => {
+export const OpsRoot = (props: Props) => {
   useTrackPageView();
   useDocumentTitle('Ops');
 
@@ -156,7 +156,12 @@ export const OpsRoot: React.FC<Props> = (props) => {
   );
 };
 
-const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = (props) => {
+interface OpsRootWithDataProps extends Props {
+  name?: string;
+  usedSolids: Solid[];
+}
+
+const OpsRootWithData = (props: OpsRootWithDataProps) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
@@ -268,7 +273,7 @@ interface OpListProps {
   onClickOp: (name: string) => void;
 }
 
-const OpList: React.FC<OpListProps> = (props) => {
+const OpList = (props: OpListProps) => {
   const {items, selected} = props;
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 

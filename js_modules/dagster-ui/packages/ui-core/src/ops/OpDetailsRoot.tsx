@@ -20,7 +20,7 @@ interface UsedSolidDetailsProps {
   repoAddress: RepoAddress;
 }
 
-export const UsedSolidDetails: React.FC<UsedSolidDetailsProps> = (props) => {
+export const UsedSolidDetails = (props: UsedSolidDetailsProps) => {
   const {name, onClickInvocation, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 

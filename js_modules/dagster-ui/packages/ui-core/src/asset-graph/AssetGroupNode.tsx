@@ -10,7 +10,12 @@ import {workspacePath} from '../workspace/workspacePath';
 import {MINIMAL_SCALE, GROUPS_ONLY_SCALE} from './AssetGraphExplorer';
 import {GroupLayout} from './layout';
 
-export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({group, scale}) => {
+interface Props {
+  group: GroupLayout;
+  scale: number;
+}
+
+export const AssetGroupNode = ({group, scale}: Props) => {
   const {repositoryLocationName, repositoryDisambiguationRequired, repositoryName, groupName} =
     group;
 

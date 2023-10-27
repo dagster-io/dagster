@@ -233,10 +233,13 @@ const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetE
   },
 });
 
-const TestContainer: React.FC<{
+const TestContainer = ({
+  children,
+  mocks,
+}: {
   mocks?: MockedResponse<Record<string, any>>[];
   children: React.ReactNode;
-}> = ({children, mocks}) => (
+}) => (
   <MockedProvider
     cache={createAppCache()}
     mocks={

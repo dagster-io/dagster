@@ -8,9 +8,7 @@ import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraph
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
-export const AssetNodeList: React.FC<{
-  items: AssetNodeForGraphQueryFragment[] | null;
-}> = ({items}) => {
+export const AssetNodeList = ({items}: {items: AssetNodeForGraphQueryFragment[] | null}) => {
   const history = useHistory();
 
   if (items === null) {

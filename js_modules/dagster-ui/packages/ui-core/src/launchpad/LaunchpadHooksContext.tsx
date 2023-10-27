@@ -14,7 +14,7 @@ type LaunchpadHooksContextValue = {
   useLaunchWithTelemetry?: typeof useLaunchWithTelemetry;
   UserDisplay?: typeof UserDisplay;
   MaterializeButton?: typeof Button;
-  PythonErrorInfoHeader?: React.FC<{
+  PythonErrorInfoHeader?: React.ComponentType<{
     error: GenericError | PythonErrorFragment;
     fallback?: React.ReactNode;
   }>;

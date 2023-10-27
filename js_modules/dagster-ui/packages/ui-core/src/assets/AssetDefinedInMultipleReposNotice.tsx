@@ -16,11 +16,15 @@ import {
 
 export const MULTIPLE_DEFINITIONS_WARNING = 'Multiple asset definitions found';
 
-export const AssetDefinedInMultipleReposNotice: React.FC<{
+export const AssetDefinedInMultipleReposNotice = ({
+  assetKey,
+  loadedFromRepo,
+  padded,
+}: {
   assetKey: AssetKey;
   loadedFromRepo: RepoAddress;
   padded?: boolean;
-}> = ({assetKey, loadedFromRepo, padded}) => {
+}) => {
   const {data} = useQuery<AssetDefinitionCollisionQuery, AssetDefinitionCollisionQueryVariables>(
     ASSET_DEFINITION_COLLISION_QUERY,
     {

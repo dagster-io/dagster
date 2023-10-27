@@ -19,13 +19,19 @@ export function countsByState(partitionKeysForCounts: {partitionKey: string; sta
   return result;
 }
 
-export const PartitionRunStatusCheckboxes: React.FC<{
+export const PartitionRunStatusCheckboxes = ({
+  counts,
+  value,
+  onChange,
+  allowed,
+  disabled,
+}: {
   counts: {[status: string]: number};
   value: RunStatus[];
   allowed: RunStatus[];
   onChange: (selected: RunStatus[]) => void;
   disabled?: boolean;
-}> = ({counts, value, onChange, allowed, disabled}) => {
+}) => {
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} style={{overflow: 'hidden'}}>
       {allowed.map((status) => (

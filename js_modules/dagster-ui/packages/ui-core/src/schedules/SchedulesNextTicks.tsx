@@ -58,9 +58,11 @@ interface ScheduleTick {
   repoAddress: RepoAddress;
 }
 
-export const SchedulesNextTicks: React.FC<{
+interface Props {
   repos: RepositoryForNextTicksFragment[];
-}> = React.memo(({repos}) => {
+}
+
+export const SchedulesNextTicks = React.memo(({repos}: Props) => {
   const nextTicks: ScheduleTick[] = [];
   let anyPipelines = false;
   let anySchedules = false;
@@ -187,11 +189,13 @@ export const SchedulesNextTicks: React.FC<{
   );
 });
 
-const NextTickMenu: React.FC<{
+interface NextTickMenuProps {
   repoAddress: RepoAddress;
   schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
-}> = React.memo(({repoAddress, schedule, tickTimestamp}) => {
+}
+
+const NextTickMenu = React.memo(({repoAddress, schedule, tickTimestamp}: NextTickMenuProps) => {
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
     scheduleName: schedule.name,
@@ -249,13 +253,19 @@ const NextTickMenu: React.FC<{
   );
 });
 
-const NextTickMenuItems: React.FC<{
+const NextTickMenuItems = ({
+  repoAddress,
+  schedule,
+  evaluationResult,
+  loading,
+  onItemOpen,
+}: {
   repoAddress: RepoAddress;
   evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
   schedule: ScheduleNextFiveTicksFragment;
   loading: boolean;
   onItemOpen: (value: boolean) => void;
-}> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
+}) => {
   if (!evaluationResult) {
     return <MenuItem text="Could not preview tick for this schedule" />;
   }
@@ -309,14 +319,21 @@ const NextTickMenuItems: React.FC<{
   );
 };
 
-const NextTickDialog: React.FC<{
+const NextTickDialog = ({
+  repoAddress,
+  evaluationResult,
+  schedule,
+  tickTimestamp,
+  setOpen,
+  isOpen,
+}: {
   repoAddress: RepoAddress;
   isOpen: boolean;
   setOpen: (value: boolean) => void;
   evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
   schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
-}> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
+}) => {
   const [selectedRunRequest, setSelectedRunRequest] =
     React.useState<ScheduleFutureTickRunRequestFragment | null>(
       evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1

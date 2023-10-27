@@ -33,7 +33,7 @@ interface Props {
   onToggle: (repoAddresses: RepoAddress[]) => void;
 }
 
-export const RepoNavItem: React.FC<Props> = (props) => {
+export const RepoNavItem = (props: Props) => {
   const {allRepos, selected, onToggle} = props;
   const [open, setOpen] = React.useState(false);
 
@@ -92,10 +92,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   );
 };
 
-const SingleRepoSummary: React.FC<{repo: RepoSelectorOption; onlyRepo: boolean}> = ({
-  repo,
-  onlyRepo,
-}) => {
+const SingleRepoSummary = ({repo, onlyRepo}: {repo: RepoSelectorOption; onlyRepo: boolean}) => {
   const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const isDunder = repoAddress.name === DUNDER_REPO_NAME;
   return (

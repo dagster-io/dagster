@@ -21,12 +21,17 @@ const StateColors = {
   IN_PROGRESS: Colors.Gray200,
 };
 
-export const SidebarOpExecutionGraphs: React.FC<{
+export const SidebarOpExecutionGraphs = ({
+  repoAddress,
+  handleID,
+  pipelineName,
+  solidName,
+}: {
   handleID: string;
   solidName: string;
   pipelineName: string;
   repoAddress: RepoAddress;
-}> = ({repoAddress, handleID, pipelineName, solidName}) => {
+}) => {
   const [highlightedStartTime, setHighlightedStartTime] = React.useState<number | null>(null);
   const result = useQuery<SidebarOpGraphsQuery, SidebarOpGraphsQueryVariables>(
     SIDEBAR_OP_GRAPHS_QUERY,

@@ -109,7 +109,7 @@ interface GanttChartState {
   options: GanttChartLayoutOptions;
 }
 
-export const GanttChart: React.FC<GanttChartProps> = (props) => {
+export const GanttChart = (props: GanttChartProps) => {
   const {graph, onSetSelection, options, selection, toolbarActions} = props;
   const [mode, setMode] = useGanttChartMode();
   const [state, setState] = React.useState(() => ({
@@ -442,7 +442,7 @@ interface GanttChartViewportContentsProps {
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
-const GanttChartViewportContents: React.FC<GanttChartViewportContentsProps> = (props) => {
+const GanttChartViewportContents = (props: GanttChartViewportContentsProps) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
   const items: React.ReactChild[] = [];
 

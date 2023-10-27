@@ -7,11 +7,15 @@ import {LiveDataForNode} from '../asset-graph/Utils';
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 
-export const CurrentRunsBanner: React.FC<{
+export const CurrentRunsBanner = ({
+  stepKey,
+  liveData,
+  border,
+}: {
   liveData?: LiveDataForNode;
   border: BorderSide | BorderSetting;
   stepKey: string;
-}> = ({stepKey, liveData, border}) => {
+}) => {
   const {inProgressRunIds = [], unstartedRunIds = []} = liveData || {};
   const firstRunId = inProgressRunIds[0] || unstartedRunIds[0];
   const stepLogs = useStepLogs({runId: firstRunId, stepKeys: [stepKey]});

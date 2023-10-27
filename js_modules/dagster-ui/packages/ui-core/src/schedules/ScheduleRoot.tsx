@@ -30,7 +30,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const ScheduleRoot: React.FC<Props> = (props) => {
+export const ScheduleRoot = (props: Props) => {
   useTrackPageView();
 
   const {repoAddress} = props;
@@ -99,12 +99,16 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
   );
 };
 
-const SchedulePreviousRuns: React.FC<{
+const SchedulePreviousRuns = ({
+  schedule,
+  highlightedIds,
+  tabs,
+}: {
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
   tabs?: React.ReactElement;
   highlightedIds?: string[];
-}> = ({schedule, highlightedIds, tabs}) => {
+}) => {
   const queryResult = useQuery<PreviousRunsForScheduleQuery, PreviousRunsForScheduleQueryVariables>(
     PREVIOUS_RUNS_FOR_SCHEDULE_QUERY,
     {

@@ -12,7 +12,7 @@ interface OpCardProps {
   definition: OpCardSolidDefinitionFragment;
 }
 
-export const OpCard: React.FC<OpCardProps> = (props) => {
+export const OpCard = (props: OpCardProps) => {
   const {name, inputDefinitions, outputDefinitions} = props.definition;
   const layout = layoutOp(
     {

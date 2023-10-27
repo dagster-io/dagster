@@ -4,13 +4,13 @@ import React from 'react';
 
 import {AutoMaterializePolicyType, AutoMaterializeRule} from '../graphql/types';
 
-export const AutomaterializePolicyTag: React.FC<{
+export const AutomaterializePolicyTag = ({
+  policy,
+}: {
   policy: {
     policyType: AutoMaterializePolicyType;
   };
-}> = ({policy}) => (
-  <Tag>{policy.policyType === AutoMaterializePolicyType.LAZY ? 'Lazy' : 'Eager'}</Tag>
-);
+}) => <Tag>{policy.policyType === AutoMaterializePolicyType.LAZY ? 'Lazy' : 'Eager'}</Tag>;
 
 export const automaterializePolicyDescription = (policy: {
   policyType: AutoMaterializePolicyType;

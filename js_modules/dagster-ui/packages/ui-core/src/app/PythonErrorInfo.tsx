@@ -26,7 +26,7 @@ interface IPythonErrorInfoProps {
   errorSource?: ErrorSource | null;
 }
 
-export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
+export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
   const {message, stack = [], errorChain = []} = props.error;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
@@ -80,7 +80,7 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   );
 };
 
-const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
+const ErrorContext = ({errorSource}: {errorSource: ErrorSource}) => {
   switch (errorSource) {
     case ErrorSource.UNEXPECTED_ERROR:
       return (

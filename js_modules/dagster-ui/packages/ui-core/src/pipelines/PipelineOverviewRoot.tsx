@@ -22,7 +22,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelineOverviewRoot: React.FC<Props> = (props) => {
+export const PipelineOverviewRoot = (props: Props) => {
   useTrackPageView();
 
   const {repoAddress} = props;

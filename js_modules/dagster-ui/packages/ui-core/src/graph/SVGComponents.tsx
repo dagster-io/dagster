@@ -90,7 +90,13 @@ export class SVGMonospaceText extends React.PureComponent<
   }
 }
 
-export const SVGLabeledRect: React.FC<{
+export const SVGLabeledRect = ({
+  minified,
+  label,
+  fill,
+  className,
+  ...rect
+}: {
   x: number;
   y: number;
   minified: boolean;
@@ -99,7 +105,7 @@ export const SVGLabeledRect: React.FC<{
   label: string;
   fill: string;
   className?: string;
-}> = ({minified, label, fill, className, ...rect}) => (
+}) => (
   <g>
     <rect {...rect} fill={fill} stroke="#979797" strokeWidth={1} className={className} />
     <SVGMonospaceText

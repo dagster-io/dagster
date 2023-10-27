@@ -17,10 +17,13 @@ import {
  * This component shows the metadata entries attached to an Asset Materialization or Observation event.
  * AssetNodes also have definition-time metadata, which is unrelated to this event metadata.
  */
-export const AssetEventMetadataEntriesTable: React.FC<{
+export const AssetEventMetadataEntriesTable = ({
+  event,
+  observations,
+}: {
   event: AssetObservationFragment | AssetMaterializationFragment | null;
   observations?: (AssetObservationFragment | AssetMaterializationFragment)[];
-}> = ({event, observations}) => {
+}) => {
   if (!event || (!event.metadataEntries.length && !observations?.length)) {
     return <Caption color={Colors.Gray500}>No metadata entries</Caption>;
   }

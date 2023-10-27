@@ -68,10 +68,12 @@ export const AssetRunLogObserver = () => {
   );
 };
 
-const SingleRunLogObserver: React.FC<{
+interface SingleRunLogObserverProps {
   runId: string;
   callback: (runId: string, events: ObservedEvent[]) => void;
-}> = React.memo(({runId, callback}) => {
+}
+
+const SingleRunLogObserver = React.memo(({runId, callback}: SingleRunLogObserverProps) => {
   const counter = React.useRef(0);
 
   // Useful for testing this component:

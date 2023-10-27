@@ -46,7 +46,7 @@ interface OpGraphContentsProps extends OpGraphProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
+const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
   const [highlighted, setHighlighted] = React.useState<Edge[]>(() => []);
 
   const {

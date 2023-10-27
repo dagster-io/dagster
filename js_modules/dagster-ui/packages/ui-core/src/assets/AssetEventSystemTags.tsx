@@ -15,11 +15,15 @@ const ORDER = [
   DagsterTag.AssetEventCodeVersion.valueOf(),
 ];
 
-export const AssetEventSystemTags: React.FC<{
+export const AssetEventSystemTags = ({
+  event,
+  paddingLeft,
+  collapsible,
+}: {
   event: AssetEventGroup['latest'] | null;
   paddingLeft?: number;
   collapsible?: boolean;
-}> = ({event, paddingLeft, collapsible}) => {
+}) => {
   const [shown, setShown] = useStateWithStorage('show-asset-system-tags', Boolean);
 
   if (collapsible && !shown) {

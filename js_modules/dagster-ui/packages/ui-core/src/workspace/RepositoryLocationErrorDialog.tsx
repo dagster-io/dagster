@@ -13,7 +13,7 @@ interface Props {
   onTryReload: () => void;
 }
 
-export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
+export const RepositoryLocationErrorDialog = (props: Props) => {
   const {isOpen, error, location, reloading, onTryReload, onDismiss} = props;
   return (
     <Dialog
@@ -37,7 +37,7 @@ export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
   );
 };
 
-export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props) => {
+export const RepositoryLocationNonBlockingErrorDialog = (props: Props) => {
   const {isOpen, error, location, reloading, onTryReload, onDismiss} = props;
   return (
     <Dialog
@@ -60,10 +60,13 @@ export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props)
   );
 };
 
-const ErrorContents: React.FC<{
+const ErrorContents = ({
+  location,
+  error,
+}: {
   location: string;
   error: PythonErrorFragment | {message: string} | null;
-}> = ({location, error}) => (
+}) => (
   <>
     <Box margin={{bottom: 12}}>
       Error loading <strong>{location}</strong>. Try reloading the code location after resolving the

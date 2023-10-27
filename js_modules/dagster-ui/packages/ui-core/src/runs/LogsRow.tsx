@@ -210,11 +210,14 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const StructuredMemoizedContent: React.FC<{
+interface StructuredMemoizedContentProps {
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
-}> = React.memo(({node, metadata, highlighted}) => {
+}
+
+const StructuredMemoizedContent = React.memo((props: StructuredMemoizedContentProps) => {
+  const {node, metadata, highlighted} = props;
   const stepKey = node.stepKey;
   const step = stepKey ? metadata.steps[stepKey] : null;
   const stepStartTime = step?.start;
@@ -295,11 +298,14 @@ export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   }
 `;
 
-const UnstructuredMemoizedContent: React.FC<{
+interface UnstructuredMemoizedContentProps {
   node: LogsRowUnstructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
-}> = React.memo(({node, highlighted, metadata}) => {
+}
+
+const UnstructuredMemoizedContent = React.memo((props: UnstructuredMemoizedContentProps) => {
+  const {node, highlighted, metadata} = props;
   const stepKey = node.stepKey;
   const step = stepKey ? metadata.steps[stepKey] : null;
   const stepStartTime = step?.start;

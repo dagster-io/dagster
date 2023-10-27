@@ -34,9 +34,12 @@ interface AssetGroupRootParams {
   0: string;
 }
 
-export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' | 'list'}> = ({
+export const AssetGroupRoot = ({
   repoAddress,
   tab,
+}: {
+  repoAddress: RepoAddress;
+  tab: 'lineage' | 'list';
 }) => {
   useTrackPageView();
 
@@ -131,9 +134,12 @@ const ASSET_GROUP_METADATA_QUERY = gql`
   }
 `;
 
-const AssetGroupTags: React.FC<{groupSelector: AssetGroupSelector; repoAddress: RepoAddress}> = ({
+const AssetGroupTags = ({
   repoAddress,
   groupSelector,
+}: {
+  groupSelector: AssetGroupSelector;
+  repoAddress: RepoAddress;
 }) => {
   const {data} = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
     ASSET_GROUP_METADATA_QUERY,

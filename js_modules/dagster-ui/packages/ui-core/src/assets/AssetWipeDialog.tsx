@@ -12,13 +12,19 @@ interface AssetKey {
   path: string[];
 }
 
-export const AssetWipeDialog: React.FC<{
+export const AssetWipeDialog = ({
+  assetKeys,
+  isOpen,
+  onClose,
+  onComplete,
+  requery,
+}: {
   assetKeys: AssetKey[];
   isOpen: boolean;
   onClose: () => void;
   onComplete: (assetKeys: AssetKey[]) => void;
   requery?: RefetchQueriesFunction;
-}> = ({assetKeys, isOpen, onClose, onComplete, requery}) => {
+}) => {
   const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
     ASSET_WIPE_MUTATION,
     {

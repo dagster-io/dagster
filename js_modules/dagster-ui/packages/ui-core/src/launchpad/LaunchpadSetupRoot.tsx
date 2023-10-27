@@ -14,7 +14,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-export const LaunchpadSetupRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
+export const LaunchpadSetupRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {
     permissions: {canLaunchPipelineExecution},
@@ -32,7 +32,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
+const LaunchpadSetupAllowedRoot = (props: Props) => {
   const {pipelinePath, repoAddress} = props;
 
   const explorerPath = explorerPathFromString(pipelinePath);

@@ -40,7 +40,7 @@ interface Props {
   searchGroups: AssetGroupSelector[];
 }
 
-export const AssetTable: React.FC<Props> = ({
+export const AssetTable = ({
   assets,
   actionBarComponents,
   refreshState,
@@ -50,7 +50,7 @@ export const AssetTable: React.FC<Props> = ({
   searchPath,
   searchGroups,
   view,
-}) => {
+}: Props) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
   const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
@@ -195,11 +195,14 @@ export const AssetTable: React.FC<Props> = ({
   );
 };
 
-const MoreActionsDropdown: React.FC<{
+interface MoreActionsDropdownProps {
   selected: Asset[];
   clearSelection: () => void;
   requery?: RefetchQueriesFunction;
-}> = React.memo(({selected, clearSelection, requery}) => {
+}
+
+const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
+  const {selected, clearSelection, requery} = props;
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
   const {
     permissions: {canWipeAssets},

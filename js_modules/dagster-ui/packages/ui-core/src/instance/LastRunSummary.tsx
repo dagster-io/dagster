@@ -19,8 +19,8 @@ interface Props {
   showSummary?: boolean;
 }
 
-export const LastRunSummary: React.FC<Props> = React.memo(
-  ({name, run, showHover = false, showButton = true, showSummary = true}) => {
+export const LastRunSummary = React.memo(
+  ({name, run, showHover = false, showButton = true, showSummary = true}: Props) => {
     const {status} = run;
 
     const intent = React.useMemo(() => {

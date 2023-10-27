@@ -264,7 +264,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
 
 const alreadyViewingCodeLocations = () => document.location.pathname.endsWith('/locations');
 
-const ViewCodeLocationsButton: React.FC<{onClick: () => void}> = ({onClick}) => {
+const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
   return (
     <ViewButton onClick={onClick} color={Colors.White}>
       View

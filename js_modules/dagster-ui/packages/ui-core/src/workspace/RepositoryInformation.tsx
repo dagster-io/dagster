@@ -18,9 +18,11 @@ export const REPOSITORY_INFO_FRAGMENT = gql`
   }
 `;
 
-export const InstigatorSelectorInformation: React.FC<{
+export const InstigatorSelectorInformation = ({
+  instigatorState,
+}: {
   instigatorState: InstigationStateFragment;
-}> = ({instigatorState}) => {
+}) => {
   return (
     <>
       <div>
