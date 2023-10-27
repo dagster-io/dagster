@@ -1434,3 +1434,39 @@ class TestRunStorage:
         )
         assert len(two_runs) == 1
         assert two_runs[0].run_id == one
+
+    def test_or_tags_filter(self, storage):
+        assert storage
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "bar", "1": "2", "a": "b"},
+            )
+        )
+
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "qux", "1": "2"},
+            )
+        )
+
+        assert storage.get_run_ids(RunsFilter(or_tags=[{"foo": "bar"}])) == [one]
+        assert storage.get_run_ids(RunsFilter(or_tags=[{"foo": "bar", "1": "2"}])) == [one, two]
+        assert storage.get_run_ids(RunsFilter(or_tags=[{"foo": "bar"}, {"1": "2"}])) == [one]
+        assert storage.get_run_ids(RunsFilter(or_tags=[{"foo": ["bar", "qux"]}, {"1": "2"}])) == [
+            one,
+            two,
+        ]
+        assert storage.get_run_ids(RunsFilter(or_tags=[{"foo": "qux", "a": "b"}, {"1": "2"}])) == [
+            one,
+            two,
+        ]

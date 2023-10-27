@@ -466,6 +466,7 @@ class RunsFilter(
             ("updated_before", Optional[datetime]),
             ("created_after", Optional[datetime]),
             ("created_before", Optional[datetime]),
+            ("or_tags", Optional[List[Mapping[str, Union[str, Sequence[str]]]]]),
         ],
     )
 ):
@@ -487,6 +488,9 @@ class RunsFilter(
         snapshot_id (Optional[str]): The ID of the job snapshot to query for. Intended for internal use.
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
+        or_tags (Optional[List[Dict[str, Union[str, List[str]]]]]):
+            A list of dictionaries of run tags. At least one tag from each dictionary must be present
+            for a given run to pass the filter.
 
     """
 
@@ -501,6 +505,7 @@ class RunsFilter(
         updated_before: Optional[datetime] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
+        or_tags: Optional[List[Mapping[str, Union[str, Sequence[str]]]]] = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
@@ -515,6 +520,7 @@ class RunsFilter(
             updated_before=check.opt_inst_param(updated_before, "updated_before", datetime),
             created_after=check.opt_inst_param(created_after, "created_after", datetime),
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
+            or_tags=check.opt_list_param(or_tags, "or_tags"),
         )
 
     @staticmethod
