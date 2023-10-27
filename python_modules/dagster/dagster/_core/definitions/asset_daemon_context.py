@@ -577,6 +577,7 @@ class AssetDaemonContext:
                 ],
                 observe_request_timestamp=observe_request_timestamp,
                 evaluations=list(evaluations_by_asset_key.values()),
+                evaluation_time=self.instance_queryer.evaluation_time,
             ),
             # only record evaluations where something changed
             [

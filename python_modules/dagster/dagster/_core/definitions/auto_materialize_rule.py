@@ -370,14 +370,23 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
-    def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
-        """Materialize an asset partition if one of its parents has been updated more recently
-        than it has.
+    def materialize_on_cron(
+        cron_schedule: str, timezone: str = "UTC", all_partitions: bool = False
+    ) -> "MaterializeOnCronRule":
+        """Materialize an asset partition if it has not been materialized since the previous cron
+        schedule tick.
 
-        Note: For time-partitioned or dynamic-partitioned assets downstream of an unpartitioned
-        asset, this rule will only fire for the most recent partition of the downstream.
+        Args:
+            cron_schedule (str): A cron schedule string (e.g. "0 * * * *") indicating the ticks for
+                which this rule should fire.
+            timezone (str): The timezone in which this cron schedule should be evaluated. Defaults
+                to "UTC".
+            all_partitions (bool): If True, this rule fires for all partitions of this asset on each
+                cron tick. If False, this rule fires only for the last partition of this asset.
+                Defaults to False.
+
         """
-        return MaterializeOnParentUpdatedRule()
+        return MaterializeOnCronRule()
 
     @public
     @staticmethod
@@ -419,7 +428,7 @@ class AutoMaterializeRule(ABC):
         """Skip materializing an asset partition if any of its parents have not been updated since
         the asset's last materialization.
 
-        Attributes:
+        Args:
             require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
                 asset or an asset partition that depends on more than one partition in any upstream asset.
                 If true, requires all upstream partitions in each upstream asset to be materialized since
@@ -447,7 +456,7 @@ class AutoMaterializeRule(ABC):
     ) -> "SkipOnBackfillInProgressRule":
         """Skip an asset's partitions if targeted by an in-progress backfill.
 
-        Attributes:
+        Args:
             all_partitions (bool): If True, skips all partitions of the asset being backfilled,
                 regardless of whether the specific partition is targeted by a backfill.
                 If False, skips only partitions targeted by a backfill. Defaults to False.
@@ -489,6 +498,68 @@ class MaterializeOnRequiredForFreshnessRule(
             expected_data_time_mapping=context.expected_data_time_mapping,
         )
         return freshness_conditions
+
+
+@whitelist_for_serdes
+class MaterializeOnCronRule(AutoMaterializeRule, NamedTuple("_MaterializeOnCronRule", [])):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.MATERIALIZE
+
+    @property
+    def description(self) -> str:
+        return "<TODO>"
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        """Evaluates the set of asset partitions of this asset whose parents have been updated,
+        or will update on this tick.
+        """
+        asset_partitions_by_evaluation_data = defaultdict(set)
+
+        will_update_parents_by_asset_partition = context.get_will_update_parent_mapping()
+
+        # the set of asset partitions whose parents have been updated since last tick, or will be
+        # requested this tick.
+        has_or_will_update = context.get_asset_partitions_with_updated_parents() | set(
+            will_update_parents_by_asset_partition.keys()
+        )
+        for asset_partition in has_or_will_update:
+            parent_asset_partitions = context.asset_graph.get_parents_partitions(
+                dynamic_partitions_store=context.instance_queryer,
+                current_time=context.instance_queryer.evaluation_time,
+                asset_key=asset_partition.asset_key,
+                partition_key=asset_partition.partition_key,
+            ).parent_partitions
+
+            updated_parent_asset_partitions = context.instance_queryer.get_parent_asset_partitions_updated_after_child(
+                asset_partition,
+                parent_asset_partitions,
+                # do a precise check for updated parents, factoring in data versions, as long as
+                # we're within reasonable limits on the number of partitions to check
+                respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
+                and len(parent_asset_partitions | has_or_will_update) < 100,
+                # ignore self-dependencies when checking for updated parents, to avoid historical
+                # rematerializations from causing a chain of materializations to be kicked off
+                ignored_parent_keys={context.asset_key},
+            )
+            updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
+            will_update_parents = will_update_parents_by_asset_partition[asset_partition]
+
+            if updated_parents or will_update_parents:
+                asset_partitions_by_evaluation_data[
+                    ParentUpdatedRuleEvaluationData(
+                        updated_asset_keys=frozenset(updated_parents),
+                        will_update_asset_keys=frozenset(will_update_parents),
+                    )
+                ].add(asset_partition)
+
+        return self.add_evaluation_data_from_previous_tick(
+            context,
+            asset_partitions_by_evaluation_data,
+            should_use_past_data_fn=lambda ap: not context.materialized_requested_or_discarded_since_previous_tick(
+                ap
+            ),
+        )
 
 
 @whitelist_for_serdes
