@@ -541,6 +541,7 @@ class MaterializeOnCronRule(
             )
         )
 
+        asset_partitions = set()
         if current_cron_schedule_tick != previous_cron_schedule_tick:
             partitions_def = context.asset_graph.get_partitions_def(context.asset_key)
             if partitions_def is not None:
@@ -552,22 +553,19 @@ class MaterializeOnCronRule(
                         )
                     }
                 else:
-                    asset_partitions = {
-                        AssetKeyPartitionKey(
-                            context.asset_key,
-                            partitions_def.get_last_partition_key(
-                                current_time=context.evaluation_time
-                            ),
-                        )
-                    }
+                    last_partition_key = partitions_def.get_last_partition_key(
+                        current_time=context.evaluation_time
+                    )
+                    if last_partition_key is not None:
+                        asset_partitions = {
+                            AssetKeyPartitionKey(context.asset_key, last_partition_key)
+                        }
             else:
                 asset_partitions = {AssetKeyPartitionKey(context.asset_key, None)}
-        else:
-            asset_partitions = set()
 
         return self.add_evaluation_data_from_previous_tick(
             context,
-            # TODO
+            # TODO: better evaluation data
             {TextRuleEvaluationData(text=self.cron_schedule): asset_partitions}
             if asset_partitions
             else {},
