@@ -1,4 +1,5 @@
 import pytest
+from dagster import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
@@ -29,8 +30,6 @@ def test_scenario_fast(scenario: AssetDaemonScenario) -> None:
     scenario.evaluate_fast()
 
 
-"""
 @pytest.mark.parametrize("scenario", all_scenarios, ids=[scenario.id for scenario in all_scenarios])
 def test_scenario_daemon(scenario: AssetDaemonScenario, daemon_instance: DagsterInstance) -> None:
     scenario.evaluate_daemon(daemon_instance)
-"""
