@@ -1,4 +1,3 @@
-from audioop import reverse
 import datetime
 import functools
 from abc import ABC, abstractmethod, abstractproperty
@@ -11,7 +10,6 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
-    Iterator,
     Mapping,
     NamedTuple,
     Optional,
@@ -20,7 +18,6 @@ from typing import (
     Tuple,
     cast,
 )
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 
 import dagster._check as check
 from dagster._annotations import public
@@ -29,9 +26,10 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -534,7 +532,7 @@ class MaterializeOnCronRule(
         return str(self)
 
     def missed_cron_ticks(self, context: RuleEvaluationContext) -> Sequence[datetime.datetime]:
-        """Returns the cron ticks which have been missed since the previous tick"""
+        """Returns the cron ticks which have been missed since the previous cursor was generated."""
         if not context.cursor.latest_evaluation_timestamp:
             previous_dt = next(
                 reverse_cron_string_iterator(
