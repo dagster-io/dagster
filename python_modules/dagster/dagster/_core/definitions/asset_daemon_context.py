@@ -30,6 +30,7 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._utils.cached_method import cached_method
 
 from ... import PartitionKeyRange
@@ -634,6 +635,7 @@ def build_run_requests_with_backfill_policies(
     asset_partitions: Iterable[AssetKeyPartitionKey],
     asset_graph: AssetGraph,
     run_tags: Optional[Mapping[str, str]],
+    dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
 ) -> Sequence[RunRequest]:
     """If all assets have backfill policies, we should respect them and materialize them according
     to their backfill policies.
@@ -685,6 +687,7 @@ def build_run_requests_with_backfill_policies(
                         check.not_none(partition_keys),
                         check.not_none(partitions_def),
                         tags,
+                        dynamic_partitions_store,
                     )
                 )
             else:
@@ -698,6 +701,7 @@ def build_run_requests_with_backfill_policies(
                             check.not_none(partition_keys),
                             check.not_none(partitions_def),
                             tags,
+                            dynamic_partitions_store,
                         )
                     )
     return run_requests
@@ -709,10 +713,13 @@ def _build_run_requests_with_backfill_policy(
     partition_keys: FrozenSet[str],
     partitions_def: PartitionsDefinition,
     tags: Dict[str, Any],
+    dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
 ) -> Sequence[RunRequest]:
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
-    partition_key_ranges = partition_subset.get_partition_key_ranges()
+    partition_key_ranges = partition_subset.get_partition_key_ranges(
+        dynamic_partitions_store=dynamic_partitions_store
+    )
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.
