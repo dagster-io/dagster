@@ -179,16 +179,30 @@ export function autolinkTextContent(el: HTMLElement, options: {useIdleCallback: 
   const matchers: AutolinkMatcher[] = [{prefix: '', regexp: buildURLRegex()}];
 
   if (options.useIdleCallback) {
-    const fn: IdleRequestCallback = (deadline) => {
+    const processUntilDeadline = (deadline: {timeRemaining: () => number}) => {
       while (textWalker.nextNode()) {
         runOnTextNode(textWalker.currentNode, matchers);
         if (deadline.timeRemaining() <= 0) {
-          window.requestIdleCallback(fn, {timeout: 500});
+          queueIdleCallback();
           return;
         }
       }
     };
-    window.requestIdleCallback(fn, {timeout: 500});
+    const queueIdleCallback = () => {
+      if ('useIdleCallback' in window) {
+        window.requestIdleCallback(processUntilDeadline, {timeout: 500});
+      } else {
+        // If the browser does not support requestIdleCallback but this behavior was requested,
+        // set a timeout to ensure we don't block the event loop and then run the fn for a max
+        // of 500ms before exiting.
+        setTimeout(() => {
+          const start = Date.now();
+          processUntilDeadline({timeRemaining: () => 500 - (Date.now() - start)});
+        }, 100);
+      }
+    };
+
+    queueIdleCallback();
   } else {
     while (textWalker.nextNode()) {
       runOnTextNode(textWalker.currentNode, matchers);
