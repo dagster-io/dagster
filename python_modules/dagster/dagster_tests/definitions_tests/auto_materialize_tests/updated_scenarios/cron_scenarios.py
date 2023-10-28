@@ -35,22 +35,16 @@ cron_scenarios = [
         .assert_requested_runs(run_request(["A"]))
         .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
         # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs()
+        .with_current_time_advanced(seconds=30).evaluate_tick().assert_requested_runs()
         # still no runs should be requested
-        .with_current_time_advanced(minutes=50)
-        .evaluate_tick()
-        .assert_requested_runs()
+        .with_current_time_advanced(minutes=50).evaluate_tick().assert_requested_runs()
         # moved to a new cron schedule tick, request another run
         .with_current_time_advanced(minutes=10)
         .evaluate_tick()
         .assert_requested_runs(run_request(["A"]))
         .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
         # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs(),
+        .with_current_time_advanced(seconds=30).evaluate_tick().assert_requested_runs(),
     ),
     AssetDaemonScenario(
         id="basic_hourly_cron_partitioned",
@@ -71,13 +65,9 @@ cron_scenarios = [
             ],
         )
         # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs()
+        .with_current_time_advanced(seconds=30).evaluate_tick().assert_requested_runs()
         # still no runs should be requested
-        .with_current_time_advanced(minutes=50)
-        .evaluate_tick()
-        .assert_requested_runs()
+        .with_current_time_advanced(minutes=50).evaluate_tick().assert_requested_runs()
         # moved to a new cron schedule tick, request another run for the new partition
         .with_current_time_advanced(minutes=10)
         .evaluate_tick()
@@ -144,9 +134,7 @@ cron_scenarios = [
         .assert_requested_runs(run_request("C"))
         .assert_evaluation("C", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
         # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs(),
+        .with_current_time_advanced(seconds=30).evaluate_tick().assert_requested_runs(),
     ),
     AssetDaemonScenario(
         id="hourly_cron_partitioned_wait_for_parents",
@@ -154,13 +142,15 @@ cron_scenarios = [
             partitions_def=hourly_partitions_def,
         )
         .with_asset_properties(
-            keys="C", auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule)
+            keys="C",
+            auto_materialize_policy=get_cron_policy(
+                basic_hourly_cron_rule, max_materializations_per_minute=100
+            ),
         )
         .with_current_time(time_partitions_start),
         scenario=lambda state: state.evaluate_tick()
         # no partitions exist yet
-        .assert_requested_runs()
-        .assert_evaluation("C", [])
+        .assert_requested_runs().assert_evaluation("C", [])
         # don't materialize C because we're waiting for A and B
         .with_current_time_advanced(hours=1, minutes=5)
         .evaluate_tick()
@@ -219,19 +209,19 @@ cron_scenarios = [
         .evaluate_tick()
         .assert_requested_runs()
         .assert_evaluation("C", [])
-        # now 2 hours later, only materialize the latest partition even though multiple partitions
-        # have updated
+        # next tick happens, 2 hours later, but should still materialize both missed time partitions
         .with_current_time_advanced(hours=2)
         .with_runs(
             run_request(["A", "B"], hour_partition_key(state.current_time, delta=2)),
             run_request(["A", "B"], hour_partition_key(state.current_time, delta=3)),
         )
         .evaluate_tick()
-        .assert_requested_runs(run_request("C", hour_partition_key(state.current_time, delta=3)))
+        .assert_requested_runs(
+            run_request("C", hour_partition_key(state.current_time, delta=2)),
+            run_request("C", hour_partition_key(state.current_time, delta=3)),
+        )
         # next tick should not request any more runs
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs()
+        .with_current_time_advanced(seconds=30).evaluate_tick().assert_requested_runs()
         # now we get two new cron schedule ticks, but parents are not available for either, so we
         # keep track of both new partitions
         .with_current_time_advanced(hours=1)

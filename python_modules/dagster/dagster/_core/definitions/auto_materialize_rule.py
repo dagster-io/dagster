@@ -1,3 +1,4 @@
+from audioop import reverse
 import datetime
 import functools
 from abc import ABC, abstractmethod, abstractproperty
@@ -10,6 +11,7 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Iterator,
     Mapping,
     NamedTuple,
     Optional,
@@ -18,6 +20,7 @@ from typing import (
     Tuple,
     cast,
 )
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 
 import dagster._check as check
 from dagster._annotations import public
@@ -27,6 +30,7 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
@@ -36,7 +40,7 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-from dagster._utils.schedules import cron_string_iterator
+from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
 from .partition import SerializedPartitionsSubset
@@ -380,7 +384,8 @@ class AutoMaterializeRule(ABC):
         cron_schedule: str, timezone: str = "UTC", all_partitions: bool = False
     ) -> "MaterializeOnCronRule":
         """Materialize an asset partition if it has not been materialized since the previous cron
-        schedule tick.
+        schedule tick. For assets with a time component to their partitions_def, this rule will
+        request all partitions that have been missed since the previous tick.
 
         Args:
             cron_schedule (str): A cron schedule string (e.g. "0 * * * *") indicating the ticks for
@@ -528,50 +533,93 @@ class MaterializeOnCronRule(
         # TODO
         return str(self)
 
+    def missed_cron_ticks(self, context: RuleEvaluationContext) -> Sequence[datetime.datetime]:
+        """Returns the cron ticks which have been missed since the previous tick"""
+        if not context.cursor.latest_evaluation_timestamp:
+            previous_dt = next(
+                reverse_cron_string_iterator(
+                    end_timestamp=context.evaluation_time.timestamp(),
+                    cron_string=self.cron_schedule,
+                    execution_timezone=self.timezone,
+                )
+            )
+            return [previous_dt]
+        missed_ticks = []
+        for dt in cron_string_iterator(
+            start_timestamp=context.cursor.latest_evaluation_timestamp,
+            cron_string=self.cron_schedule,
+            execution_timezone=self.timezone,
+        ):
+            if dt > context.evaluation_time:
+                break
+            missed_ticks.append(dt)
+        return missed_ticks
+
+    def get_asset_partitions_to_request(
+        self, context: RuleEvaluationContext
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        missed_ticks = self.missed_cron_ticks(context)
+
+        if not missed_ticks:
+            return set()
+
+        partitions_def = context.asset_graph.get_partitions_def(context.asset_key)
+        if partitions_def is None:
+            return {AssetKeyPartitionKey(context.asset_key)}
+
+        # if all_partitions is set, then just return all partitions if any ticks have been missed
+        if self.all_partitions:
+            return {
+                AssetKeyPartitionKey(context.asset_key, partition_key)
+                for partition_key in partitions_def.get_partition_keys(
+                    current_time=context.evaluation_time
+                )
+            }
+
+        # for partitions_defs without a time component, just return the last partition if any ticks
+        # have been missed
+        time_partitions_def = get_time_partitions_def(partitions_def)
+        if time_partitions_def is None:
+            return {
+                AssetKeyPartitionKey(context.asset_key, partitions_def.get_last_partition_key())
+            }
+
+        missed_time_partition_keys = filter(
+            None,
+            [
+                time_partitions_def.get_last_partition_key(current_time=missed_tick)
+                for missed_tick in missed_ticks
+            ],
+        )
+        # for multi partitions definitions, request to materialize all partitions for each missed
+        # cron schedule tick
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            return {
+                AssetKeyPartitionKey(context.asset_key, partition_key)
+                for time_partition_key in missed_time_partition_keys
+                for partition_key in partitions_def.get_multipartition_keys_with_dimension_value(
+                    partitions_def.time_window_dimension.name,
+                    time_partition_key,
+                    dynamic_partitions_store=context.instance_queryer,
+                )
+            }
+        else:
+            return {
+                AssetKeyPartitionKey(context.asset_key, time_partition_key)
+                for time_partition_key in missed_time_partition_keys
+            }
+
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        previous_cron_schedule_tick = next(
-            cron_string_iterator(
-                start_timestamp=context.cursor.latest_evaluation_timestamp,
-                cron_string=self.cron_schedule,
-                execution_timezone=self.timezone,
+        asset_partitions_to_request = self.get_asset_partitions_to_request(context)
+        asset_partitions_by_evaluation_data = defaultdict(set)
+        if asset_partitions_to_request:
+            # TODO: better evaluation data
+            asset_partitions_by_evaluation_data[TextRuleEvaluationData(self.cron_schedule)].update(
+                asset_partitions_to_request
             )
-        )
-        current_cron_schedule_tick = next(
-            cron_string_iterator(
-                start_timestamp=context.evaluation_time.timestamp(),
-                cron_string=self.cron_schedule,
-                execution_timezone=self.timezone,
-            )
-        )
-
-        asset_partitions = set()
-        if current_cron_schedule_tick != previous_cron_schedule_tick:
-            partitions_def = context.asset_graph.get_partitions_def(context.asset_key)
-            if partitions_def is not None:
-                if self.all_partitions:
-                    asset_partitions = {
-                        AssetKeyPartitionKey(context.asset_key, partition)
-                        for partition in partitions_def.get_partition_keys(
-                            current_time=context.evaluation_time
-                        )
-                    }
-                else:
-                    last_partition_key = partitions_def.get_last_partition_key(
-                        current_time=context.evaluation_time
-                    )
-                    if last_partition_key is not None:
-                        asset_partitions = {
-                            AssetKeyPartitionKey(context.asset_key, last_partition_key)
-                        }
-            else:
-                asset_partitions = {AssetKeyPartitionKey(context.asset_key, None)}
-
         return self.add_evaluation_data_from_previous_tick(
             context,
-            # TODO: better evaluation data
-            {TextRuleEvaluationData(text=self.cron_schedule): asset_partitions}
-            if asset_partitions
-            else {},
+            asset_partitions_by_evaluation_data,
             should_use_past_data_fn=lambda ap: not context.materialized_requested_or_discarded_since_previous_tick(
                 ap
             ),

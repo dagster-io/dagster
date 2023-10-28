@@ -59,7 +59,7 @@ class AssetDaemonCursor(NamedTuple):
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
     latest_evaluation_by_asset_key: Mapping[AssetKey, AutoMaterializeAssetEvaluation]
-    latest_evaluation_timestamp: float
+    latest_evaluation_timestamp: Optional[float]
 
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
         return asset_key in self.handled_root_asset_keys
@@ -178,7 +178,7 @@ class AssetDaemonCursor(NamedTuple):
             evaluation_id=0,
             last_observe_request_timestamp_by_asset_key={},
             latest_evaluation_by_asset_key={},
-            latest_evaluation_timestamp=0,
+            latest_evaluation_timestamp=None,
         )
 
     @classmethod
