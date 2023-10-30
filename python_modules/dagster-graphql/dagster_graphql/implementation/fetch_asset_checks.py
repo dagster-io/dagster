@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Optional, cast
 import dagster._check as check
 from dagster import AssetKey
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.asset_check_execution_record import (
@@ -77,11 +78,11 @@ def _get_asset_check_execution_status(
         check.failed(f"Unexpected status {record_status}")
 
 
-def fetch_executions(
-    instance: DagsterInstance, asset_check: ExternalAssetCheck, limit: int, cursor: Optional[str]
+def fetch_asset_check_executions(
+    instance: DagsterInstance, asset_check_key: AssetCheckKey, limit: int, cursor: Optional[str]
 ) -> List[GrapheneAssetCheckExecution]:
     executions = instance.event_log_storage.get_asset_check_execution_history(
-        check_key=asset_check.key,
+        check_key=asset_check_key,
         limit=limit,
         cursor=int(cursor) if cursor else None,
     )

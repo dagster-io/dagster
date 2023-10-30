@@ -42,7 +42,7 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
 """
 
 GET_ASSET_CHECK_HISTORY = """
-query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!) {
     assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
         ... on AssetChecks {
             checks {
@@ -63,6 +63,22 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
                         }
                     }
                 }
+            }
+        }
+    }
+    assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: 10) {
+        runId
+        status
+        evaluation {
+            severity
+            timestamp
+            targetMaterialization {
+                storageId
+                runId
+                timestamp
+            }
+            metadataEntries {
+                label
             }
         }
     }
@@ -424,7 +440,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ]
-            }
+            },
+            "assetCheckExecutions": [
+                {
+                    "runId": "foo",
+                    "status": "IN_PROGRESS",
+                    "evaluation": None,
+                }
+            ],
         }
 
         evaluation_timestamp = time.time()
@@ -476,7 +499,25 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-            }
+            },
+            "assetCheckExecutions": [
+                {
+                    "runId": "foo",
+                    "status": "SUCCEEDED",
+                    "evaluation": {
+                        "timestamp": evaluation_timestamp,
+                        "severity": "ERROR",
+                        "targetMaterialization": {
+                            "storageId": 42,
+                            "runId": "bizbuz",
+                            "timestamp": 3.3,
+                        },
+                        "metadataEntries": [
+                            {"label": "foo"},
+                        ],
+                    },
+                }
+            ],
         }
 
     def test_asset_check_events(self, graphql_context: WorkspaceRequestContext):
@@ -552,7 +593,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ]
-            }
+            },
+            "assetCheckExecutions": [
+                {
+                    "runId": run.run_id,
+                    "status": "IN_PROGRESS",
+                    "evaluation": None,
+                }
+            ],
         }
 
         graphql_context.instance.report_run_failed(run)
@@ -572,7 +620,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-            }
+            },
+            "assetCheckExecutions": [
+                {"runId": run.run_id, "status": "EXECUTION_FAILED", "evaluation": None}
+            ],
         }
 
     def test_latest_execution(self, graphql_context: WorkspaceRequestContext):
