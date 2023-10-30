@@ -684,6 +684,18 @@ class JobDefinition(IHasInternalInit):
         if partition_key:
             if not (self.partitions_def and self.partitioned_config):
                 check.failed("Attempted to execute a partitioned run for a non-partitioned job")
+
+            if (
+                isinstance(self.partitions_def, DynamicPartitionsDefinition)
+                and self.partitions_def.name
+                and instance is None
+            ):
+                check.failed(
+                    "Must provide instance to validate partition key. This can be resolved by either:\n"
+                    "(1) Fetching your default instance via `DagsterInstance.get()` and passing it to `materialize`\n"
+                    "(2) Creating an ephemeral instance via `DagsterInstance.ephemeral()`, adding a dynamic partition, and passing it to `materialize`"
+                )
+
             self.partitions_def.validate_partition_key(
                 partition_key, dynamic_partitions_store=instance
             )
