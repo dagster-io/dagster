@@ -7,7 +7,7 @@ services:
   # This is the standard MySQL test instance, running the latest version of MySQL. We use this for
   # all of our storage tests.
   test-mysql-db:
-    image: mysql:8
+    image: mysql:8.0.34
     command: mysqld --default-authentication-plugin=mysql_native_password
     container_name: test-mysql-db
     ports:
