@@ -260,28 +260,6 @@ class TimeWindowPartitionsDefinition(
 
         return partition_keys
 
-    def _get_validated_time_window_for_partition_key(
-        self, partition_key: str, current_time: Optional[datetime] = None
-    ) -> Optional[TimeWindow]:
-        """Returns a TimeWindow for the given partition key if it is valid, otherwise returns None."""
-        try:
-            time_window = self.time_window_for_partition_key(partition_key)
-        except ValueError:
-            return None
-
-        first_partition_window = self.get_first_partition_window(current_time=current_time)
-        last_partition_window = self.get_last_partition_window(current_time=current_time)
-        if (
-            first_partition_window is None
-            or last_partition_window is None
-            or time_window.start < first_partition_window.start
-            or time_window.start > last_partition_window.start
-            or time_window.start.strftime(self.fmt) != partition_key
-        ):
-            return None
-
-        return time_window
-
     def __str__(self) -> str:
         schedule_str = (
             self.schedule_type.value.capitalize() if self.schedule_type else self.cron_schedule
@@ -770,16 +748,26 @@ class TimeWindowPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        # first, a quick check for the simple case where we only need the start time of the
-        # partition key to validate if it's valid
-        if self.end is None:
-            try:
-                return self.start_time_for_partition_key(partition_key) >= self.start
-            except ValueError:
-                return False
+        """Returns a boolean representing if the given partition key is valid."""
+        try:
+            partition_start_time = self.start_time_for_partition_key(partition_key)
+        except ValueError:
+            # unparseable partition key
+            return False
 
-        # otherwise, must compute the full time window
-        return bool(self._get_validated_time_window_for_partition_key(partition_key, current_time))
+        first_partition_window = self.get_first_partition_window(current_time=current_time)
+        last_partition_window = self.get_last_partition_window(current_time=current_time)
+        return not (
+            # no partitions at all
+            first_partition_window is None
+            or last_partition_window is None
+            # partition starts before the first valid partition
+            or partition_start_time < first_partition_window.start
+            # partition starts after the last valid partition
+            or partition_start_time > last_partition_window.start
+            # partition key string does not represent the start of an actual partition
+            or partition_start_time.strftime(self.fmt) != partition_key
+        )
 
     def equal_except_for_start_or_end(self, other: "TimeWindowPartitionsDefinition") -> bool:
         """Returns True iff this is identical to other, except they're allowed to have different

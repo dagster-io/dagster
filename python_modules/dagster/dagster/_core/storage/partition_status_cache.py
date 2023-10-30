@@ -30,6 +30,7 @@ from dagster._core.storage.tags import (
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
+import pendulum
 
 if TYPE_CHECKING:
     from dagster._core.storage.event_log.base import AssetRecord
@@ -214,7 +215,12 @@ def get_validated_partition_keys(
     else:
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Unexpected partitions definition type {partitions_def}")
-        validated_partitions = {pk for pk in partition_keys if partitions_def.has_partition_key(pk)}
+        current_time = pendulum.now("UTC")
+        validated_partitions = {
+            pk
+            for pk in partition_keys
+            if partitions_def.has_partition_key(pk, current_time=current_time)
+        }
     return validated_partitions
 
 
