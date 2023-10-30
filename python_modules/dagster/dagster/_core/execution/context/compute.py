@@ -1423,7 +1423,7 @@ class RunInfo(
         )
 
 
-class AssetExecutionContext(OpExecutionContext):
+class AssetExecutionContext:
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
@@ -1434,7 +1434,6 @@ class AssetExecutionContext(OpExecutionContext):
             dagster_run=self._op_execution_context.run,
             retry_number=self._op_execution_context.retry_number,
         )
-        super().__init__(step_execution_context=op_execution_context._step_execution_context)  # noqa: SLF001
 
     @staticmethod
     def get() -> "AssetExecutionContext":
