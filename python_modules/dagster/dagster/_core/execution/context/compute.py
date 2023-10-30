@@ -9,6 +9,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -17,7 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import PublicAttr, deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
@@ -1358,40 +1359,59 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 ######## AssetExecutionContext
 ###############################
 
-OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
-    [
-        "describe_op",
-        "file_manager",
-        "has_assets_def",
-        "get_mapping_key",
-        "get_step_execution_context",
-        "job_def",
-        "node_handle",
-        "op",
-        "op_config",
-        "op_def",
-        "op_handle",
-        "step_launcher",
-        "has_events",
-        "consume_events",
-        "log_event",
-        "get_asset_provenance",
-    ]
-)
+ALTERNATE_METHODS = {
+    "run_id": "run_info.run_id",
+    "run": "run_info.dagster_run",
+    "run_config": "run_info.run_config",
+    "retry_number": "run_info.retry_number",
+}
 
 
 def _get_deprecation_kwargs(attr: str):
     deprecation_kwargs = {"breaking_version": "1.8.0"}
     deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
 
-    if attr in OP_EXECUTION_CONTEXT_ONLY_METHODS:
+    if attr in ALTERNATE_METHODS:
         deprecation_kwargs["additional_warn_text"] = (
             f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
-            " the underlying OpExecutionContext instead by calling"
-            f" context.op_execution_context.{attr}."
+            f" context.{ALTERNATE_METHODS[attr]} instead."
         )
 
     return deprecation_kwargs
+
+
+class RunInfo(
+    NamedTuple(
+        "_RunInfo",
+        [
+            ("run_id", PublicAttr[str]),
+            ("dagster_run", PublicAttr[DagsterRun]),
+            ("run_config", PublicAttr[Mapping[str, object]]),
+            ("retry_number", PublicAttr[int]),
+        ],
+    )
+):
+    """Relevant information about a run while it is executing. Contains:
+    * The run ID
+    * The DagsterRun object, which contains further information about the run
+    * The run config
+    * The retry number - how many times this step has been retried.
+    """
+
+    def __new__(
+        cls,
+        run_id: str,
+        dagster_run: DagsterRun,
+        run_config: Mapping[str, object],
+        retry_number: int,
+    ):
+        return super(RunInfo, cls).__new__(
+            cls,
+            run_id=run_id,
+            dagster_run=dagster_run,
+            run_config=run_config,
+            retry_number=retry_number,
+        )
 
 
 class AssetExecutionContext(OpExecutionContext):
@@ -1399,86 +1419,43 @@ class AssetExecutionContext(OpExecutionContext):
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
         )
+        self._run_info = RunInfo(
+            run_id=self._op_execution_context.run_id,
+            run_config=self._op_execution_context.run_config,
+            dagster_run=self._op_execution_context.run,
+            retry_number=self._op_execution_context.retry_number,
+        )
         super().__init__(step_execution_context=op_execution_context._step_execution_context)  # noqa: SLF001
 
     @property
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
 
+    @property
+    def run_info(self) -> RunInfo:
+        return self._run_info
+
     ######## Deprecated methods
-    @deprecated(**_get_deprecation_kwargs("has_assets_def"))
+
+    @deprecated(**_get_deprecation_kwargs("run"))
     @property
-    def has_assets_def(self) -> bool:
-        return self.op_execution_context.has_assets_def
+    def run(self) -> DagsterRun:
+        return self.op_execution_context.run
 
-    @deprecated(**_get_deprecation_kwargs("op_def"))
+    @deprecated(**_get_deprecation_kwargs("run_id"))
     @property
-    def op_def(self) -> OpDefinition:
-        return self.op_execution_context.op_def
+    def run_id(self) -> str:
+        return self.op_execution_context.run_id
 
-    @deprecated(**_get_deprecation_kwargs("op_config"))
+    @deprecated(**_get_deprecation_kwargs("run_config"))
     @property
-    def op_config(self) -> Any:
-        return self.op_execution_context.op_config
+    def run_config(self) -> Mapping[str, object]:
+        return self.op_execution_context.run_config
 
-    @deprecated(**_get_deprecation_kwargs("file_manager"))
+    @deprecated(**_get_deprecation_kwargs("retry_number"))
     @property
-    def file_manager(self):
-        return self.op_execution_context.file_manager
-
-    @deprecated(**_get_deprecation_kwargs("get_mapping_key"))
-    def get_mapping_key(self) -> Optional[str]:
-        return self.op_execution_context.get_mapping_key()
-
-    @deprecated(**_get_deprecation_kwargs("node_handle"))
-    @property
-    def node_handle(self) -> NodeHandle:
-        return self.op_execution_context.node_handle
-
-    @deprecated(**_get_deprecation_kwargs("op"))
-    @property
-    def op(self) -> Node:
-        return self.op_execution_context.op
-
-    @deprecated(**_get_deprecation_kwargs("job_def"))
-    @property
-    def job_def(self) -> JobDefinition:
-        return self.op_execution_context.job_def
-
-    @deprecated(**_get_deprecation_kwargs("describe_op"))
-    def describe_op(self):
-        return self.op_execution_context.describe_op()
-
-    @deprecated(**_get_deprecation_kwargs("op_handle"))
-    @property
-    def op_handle(self) -> NodeHandle:
-        return self.op_execution_context.op_handle
-
-    @deprecated(**_get_deprecation_kwargs("step_launcher"))
-    @property
-    def step_launcher(self) -> Optional[StepLauncher]:
-        return self.op_execution_context.step_launcher
-
-    @deprecated(**_get_deprecation_kwargs("consume_events"))
-    def consume_events(self) -> Iterator[DagsterEvent]:
-        return self.op_execution_context.consume_events()
-
-    @deprecated(**_get_deprecation_kwargs("get_step_execution_context"))
-    def get_step_execution_context(self) -> StepExecutionContext:
-        return self.op_execution_context.get_step_execution_context()
-
-    @deprecated(**_get_deprecation_kwargs("has_events"))
-    def has_events(self) -> bool:
-        return self.op_execution_context.has_events()
-
-    @deprecated(**_get_deprecation_kwargs("log_event"))
-    def log_event(self, event: UserEvent) -> None:
-        return self._op_execution_context.log_event(event)
-
-    @deprecated(**_get_deprecation_kwargs("get_asset_provenance"))
-    @experimental
-    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
-        return self._op_execution_context.get_asset_provenance(asset_key)
+    def retry_number(self):
+        return self.op_execution_context.retry_number
 
     @staticmethod
     def get() -> "AssetExecutionContext":
