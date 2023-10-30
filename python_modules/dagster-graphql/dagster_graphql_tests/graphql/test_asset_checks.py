@@ -221,6 +221,13 @@ query AssetNodeChecksQuery {
         assetChecks {
             name
         }
+        assetChecksOrError {
+            ... on AssetChecks {
+                checks {
+                    name
+                }
+            }
+        }
     }
 }
 """
@@ -319,11 +326,22 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         res = execute_dagster_graphql(graphql_context, ASSET_NODE_CHECKS_QUERY)
         with_checks = [node for node in res.data["assetNodes"] if node["assetChecks"]]
         assert with_checks == [
-            {"assetKey": {"path": ["asset_1"]}, "assetChecks": [{"name": "my_check"}]},
-            {"assetKey": {"path": ["check_in_op_asset"]}, "assetChecks": [{"name": "my_check"}]},
+            {
+                "assetKey": {"path": ["asset_1"]},
+                "assetChecks": [{"name": "my_check"}],
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["check_in_op_asset"]},
+                "assetChecks": [{"name": "my_check"}],
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
             {
                 "assetKey": {"path": ["one"]},
                 "assetChecks": [{"name": "my_check"}, {"name": "my_other_check"}],
+                "assetChecksOrError": {
+                    "checks": [{"name": "my_check"}, {"name": "my_other_check"}]
+                },
             },
         ]
 

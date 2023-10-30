@@ -689,6 +689,7 @@ type AssetNode {
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecks: [AssetCheck!]!
+  assetChecksOrError: AssetChecksOrError!
 }
 
 type MaterializationUpstreamDataVersion {
@@ -890,6 +891,28 @@ enum AssetCheckCanExecuteIndividually {
   CAN_EXECUTE
   REQUIRES_MATERIALIZATION
   NEEDS_USER_CODE_UPGRADE
+}
+
+union AssetChecksOrError =
+    AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
+
+type AssetChecks {
+  checks: [AssetCheck!]!
+}
+
+type AssetCheckNeedsMigrationError implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsUserCodeUpgrade implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsAgentUpgradeError implements Error {
+  message: String!
 }
 
 enum EvaluationErrorReason {
@@ -3286,28 +3309,6 @@ type WaitingOnKeysRuleEvaluationData {
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
-  message: String!
-}
-
-union AssetChecksOrError =
-    AssetChecks
-  | AssetCheckNeedsMigrationError
-  | AssetCheckNeedsUserCodeUpgrade
-  | AssetCheckNeedsAgentUpgradeError
-
-type AssetChecks {
-  checks: [AssetCheck!]!
-}
-
-type AssetCheckNeedsMigrationError implements Error {
-  message: String!
-}
-
-type AssetCheckNeedsUserCodeUpgrade implements Error {
-  message: String!
-}
-
-type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
 }
 
