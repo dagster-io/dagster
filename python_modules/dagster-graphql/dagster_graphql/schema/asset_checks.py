@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import List, Optional, Union, cast
 
 import dagster._check as check
 import graphene
@@ -210,6 +210,14 @@ class GrapheneAssetCheckNeedsUserCodeUpgrade(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
         name = "AssetCheckNeedsUserCodeUpgrade"
+
+
+AssetChecksOrErrorUnion = Union[
+    GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
+    GrapheneAssetChecks,
+]
 
 
 class GrapheneAssetChecksOrError(graphene.Union):
