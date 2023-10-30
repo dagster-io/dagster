@@ -108,11 +108,16 @@ export type AssetAssetObservationsArgs = {
 export type AssetBackfillData = {
   __typename: 'AssetBackfillData';
   assetBackfillStatuses: Array<AssetBackfillStatus>;
-  rootAssetTargetedPartitions: Maybe<Array<Scalars['String']>>;
-  rootAssetTargetedRanges: Maybe<Array<PartitionKeyRange>>;
+  rootTargetedPartitions: AssetBackfillTargetPartitions;
 };
 
 export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
+
+export type AssetBackfillTargetPartitions = {
+  __typename: 'AssetBackfillTargetPartitions';
+  partitionKeys: Maybe<Array<Scalars['String']>>;
+  ranges: Maybe<Array<PartitionKeyRange>>;
+};
 
 export type AssetCheck = {
   __typename: 'AssetCheck';
@@ -2360,6 +2365,7 @@ export type PartitionBackfill = {
   partitionSetName: Maybe<Scalars['String']>;
   partitionStatusCounts: Array<PartitionStatusCounts>;
   partitionStatuses: Maybe<PartitionStatuses>;
+  partitionsTargetedForAssetKey: Maybe<AssetBackfillTargetPartitions>;
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
   status: BulkActionStatus;
@@ -2367,6 +2373,10 @@ export type PartitionBackfill = {
   timestamp: Scalars['Float'];
   unfinishedRuns: Array<Run>;
   user: Maybe<Scalars['String']>;
+};
+
+export type PartitionBackfillPartitionsTargetedForAssetKeyArgs = {
+  assetKey?: InputMaybe<AssetKeyInput>;
 };
 
 export type PartitionBackfillRunsArgs = {
@@ -4538,14 +4548,26 @@ export const buildAssetBackfillData = (
       overrides && overrides.hasOwnProperty('assetBackfillStatuses')
         ? overrides.assetBackfillStatuses!
         : [],
-    rootAssetTargetedPartitions:
-      overrides && overrides.hasOwnProperty('rootAssetTargetedPartitions')
-        ? overrides.rootAssetTargetedPartitions!
-        : [],
-    rootAssetTargetedRanges:
-      overrides && overrides.hasOwnProperty('rootAssetTargetedRanges')
-        ? overrides.rootAssetTargetedRanges!
-        : [],
+    rootTargetedPartitions:
+      overrides && overrides.hasOwnProperty('rootTargetedPartitions')
+        ? overrides.rootTargetedPartitions!
+        : relationshipsToOmit.has('AssetBackfillTargetPartitions')
+        ? ({} as AssetBackfillTargetPartitions)
+        : buildAssetBackfillTargetPartitions({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetBackfillTargetPartitions = (
+  overrides?: Partial<AssetBackfillTargetPartitions>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetBackfillTargetPartitions'} & AssetBackfillTargetPartitions => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetBackfillTargetPartitions');
+  return {
+    __typename: 'AssetBackfillTargetPartitions',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+    ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
 
@@ -8899,6 +8921,12 @@ export const buildPartitionBackfill = (
         : relationshipsToOmit.has('PartitionStatuses')
         ? ({} as PartitionStatuses)
         : buildPartitionStatuses({}, relationshipsToOmit),
+    partitionsTargetedForAssetKey:
+      overrides && overrides.hasOwnProperty('partitionsTargetedForAssetKey')
+        ? overrides.partitionsTargetedForAssetKey!
+        : relationshipsToOmit.has('AssetBackfillTargetPartitions')
+        ? ({} as AssetBackfillTargetPartitions)
+        : buildAssetBackfillTargetPartitions({}, relationshipsToOmit),
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
