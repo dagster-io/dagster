@@ -11,6 +11,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -20,6 +21,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import (
+    PublicAttr,
     deprecated,
     experimental,
     public,
@@ -1355,40 +1357,59 @@ def _copy_docs_from_op_execution_context(obj):
 ######## AssetExecutionContext
 ###############################
 
-OP_EXECUTION_CONTEXT_ONLY_METHODS = set(
-    [
-        "describe_op",
-        "file_manager",
-        "has_assets_def",
-        "get_mapping_key",
-        "get_step_execution_context",
-        "job_def",
-        "node_handle",
-        "op",
-        "op_config",
-        "op_def",
-        "op_handle",
-        "step_launcher",
-        "has_events",
-        "consume_events",
-        "log_event",
-        "get_asset_provenance",
-    ]
-)
+ALTERNATE_METHODS = {
+    "run_id": "run_info.run_id",
+    "run": "run_info.dagster_run",
+    "run_config": "run_info.run_config",
+    "retry_number": "run_info.retry_number",
+}
 
 
 def _get_deprecation_kwargs(attr: str):
     deprecation_kwargs = {"breaking_version": "1.8.0"}
     deprecation_kwargs["subject"] = f"AssetExecutionContext.{attr}"
 
-    if attr in OP_EXECUTION_CONTEXT_ONLY_METHODS:
+    if attr in ALTERNATE_METHODS:
         deprecation_kwargs["additional_warn_text"] = (
             f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
-            " the underlying OpExecutionContext instead by calling"
-            f" context.op_execution_context.{attr}."
+            f" context.{ALTERNATE_METHODS[attr]} instead."
         )
 
     return deprecation_kwargs
+
+
+class RunInfo(
+    NamedTuple(
+        "_RunInfo",
+        [
+            ("run_id", PublicAttr[str]),
+            ("dagster_run", PublicAttr[DagsterRun]),
+            ("run_config", PublicAttr[Mapping[str, object]]),
+            ("retry_number", PublicAttr[int]),
+        ],
+    )
+):
+    """Relevant information about a run while it is executing. Contains:
+    * The run ID
+    * The DagsterRun object, which contains further information about the run
+    * The run config
+    * The retry number - how many times this step has been retried.
+    """
+
+    def __new__(
+        cls,
+        run_id: str,
+        dagster_run: DagsterRun,
+        run_config: Mapping[str, object],
+        retry_number: int,
+    ):
+        return super(RunInfo, cls).__new__(
+            cls,
+            run_id=run_id,
+            dagster_run=dagster_run,
+            run_config=run_config,
+            retry_number=retry_number,
+        )
 
 
 class AssetExecutionContext(OpExecutionContext):
@@ -1397,6 +1418,13 @@ class AssetExecutionContext(OpExecutionContext):
             op_execution_context, "op_execution_context", OpExecutionContext
         )
         self._step_execution_context = self._op_execution_context._step_execution_context  # noqa: SLF001
+        self._run_info = RunInfo(
+            run_id=self._op_execution_context.run_id,
+            run_config=self._op_execution_context.run_config,
+            dagster_run=self._op_execution_context.run,
+            retry_number=self._op_execution_context.retry_number,
+        )
+        super().__init__(step_execution_context=op_execution_context._step_execution_context)  # noqa: SLF001
 
     @staticmethod
     def get() -> "AssetExecutionContext":
@@ -1412,25 +1440,30 @@ class AssetExecutionContext(OpExecutionContext):
     #### Run related
 
     @property
+    def run_info(self) -> RunInfo:
+        return self._run_info
+
+    ######## Deprecated methods
+
+    @deprecated(**_get_deprecation_kwargs("run"))
+    @property
     @_copy_docs_from_op_execution_context
     def run(self) -> DagsterRun:
         return self.op_execution_context.run
 
-    @property
-    @_copy_docs_from_op_execution_context
-    def dagster_run(self) -> DagsterRun:
-        return self.op_execution_context.dagster_run
-
+    @deprecated(**_get_deprecation_kwargs("run_id"))
     @property
     @_copy_docs_from_op_execution_context
     def run_id(self) -> str:
         return self.op_execution_context.run_id
 
+    @deprecated(**_get_deprecation_kwargs("run_config"))
     @property
     @_copy_docs_from_op_execution_context
     def run_config(self) -> Mapping[str, object]:
         return self.op_execution_context.run_config
 
+    @deprecated(**_get_deprecation_kwargs("retry_number"))
     @property
     @_copy_docs_from_op_execution_context
     def run_tags(self) -> Mapping[str, str]:
@@ -1452,6 +1485,9 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def retry_number(self):
         return self.op_execution_context.retry_number
+
+
+    # pass-through methods
 
     @public
     @property
