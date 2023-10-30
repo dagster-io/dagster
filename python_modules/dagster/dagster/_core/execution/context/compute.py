@@ -317,8 +317,6 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         you can use ``partition_keys`` to get all of the partitions being materialized
         by the backfill.
 
-        Raises an error if the asset is a multi-asset. In a multi-asset, use ``asset_partition_keys_for_output``
-
         Examples:
             .. code-block:: python
 
@@ -331,25 +329,12 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
-
-
-                @asset(
-                    partitions_def=partitions_def,
-                    ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
-                    }
-                )
-                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
-                    context.log.info(context.partition_keys)
-
-                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
-                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
         key_range = self.partition_key_range
         partitions_def = self.assets_def.partitions_def
         if partitions_def is None:
             raise DagsterInvariantViolationError(
-                "Cannot access partition_key for a non-partitioned run"
+                "Cannot access partition_keys for a non-partitioned run"
             )
 
         return partitions_def.get_partition_keys_in_range(
