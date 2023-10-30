@@ -103,11 +103,13 @@ BACKFILL_STATUS_BY_ASSET = """
                     failed
                 }
             }
-            rootAssetTargetedRanges {
+            rootTargetedPartitions {
+                partitionKeys
+                ranges {
                 start
                 end
+                }
             }
-            rootAssetTargetedPartitions
         }
       }
       ... on PythonError {
@@ -819,8 +821,8 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         backfill_data = result.data["partitionBackfillOrError"]["assetBackfillData"]
 
-        assert backfill_data["rootAssetTargetedRanges"] is None
-        assert set(backfill_data["rootAssetTargetedPartitions"]) == set(partitions)
+        assert backfill_data["rootTargetedPartitions"]["ranges"] is None
+        assert set(backfill_data["rootTargetedPartitions"]["partitionKeys"]) == set(partitions)
 
         asset_partition_status_counts = backfill_data["assetBackfillStatuses"]
         assert len(asset_partition_status_counts) == 1
@@ -889,7 +891,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         backfill_data = result.data["partitionBackfillOrError"]["assetBackfillData"]
 
-        assert backfill_data["rootAssetTargetedRanges"] == [
+        assert backfill_data["rootTargetedPartitions"]["ranges"] == [
             {"start": "2023-01-09", "end": "2023-01-09"}
         ]
 

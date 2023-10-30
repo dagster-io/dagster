@@ -73,11 +73,13 @@ ASSET_BACKFILL_DATA_QUERY = """
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         assetBackfillData {
-            rootAssetTargetedRanges {
+            rootTargetedPartitions {
+                partitionKeys
+                ranges {
                 start
                 end
+                }
             }
-            rootAssetTargetedPartitions
         }
         isAssetBackfill
       }
@@ -673,7 +675,7 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
             )
             targeted_ranges = asset_backfill_data_result.data["partitionBackfillOrError"][
                 "assetBackfillData"
-            ]["rootAssetTargetedRanges"]
+            ]["rootTargetedPartitions"]["ranges"]
             assert len(targeted_ranges) == 1
             assert targeted_ranges[0]["start"] == "2020-01-02-22:00"
             assert targeted_ranges[0]["end"] == "2020-01-03-00:00"

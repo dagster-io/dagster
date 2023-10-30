@@ -162,6 +162,26 @@ class PartitionBackfill(
         else:
             return []
 
+    def get_target_partitions_subset(
+        self, workspace: IWorkspace, asset_key: AssetKey
+    ) -> Optional[PartitionsSubset]:
+        if not self.is_valid_serialization(workspace):
+            return None
+
+        if self.serialized_asset_backfill_data is not None:
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                    self.backfill_timestamp,
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
+            return asset_backfill_data.get_target_partitions_subset(asset_key)
+        else:
+            return None
+
     def get_target_root_partitions_subset(
         self, workspace: IWorkspace
     ) -> Optional[PartitionsSubset]:
