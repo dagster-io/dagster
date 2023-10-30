@@ -1,5 +1,6 @@
 import calendar
 
+import pendulum
 import pytest
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils.schedules import cron_string_iterator
@@ -50,6 +51,78 @@ def test_cron_iterator_leap_day():
 @pytest.mark.parametrize(
     "execution_timezone,cron_string,times",
     [
+        (
+            "Europe/Berlin",
+            "45 1 * * *",
+            [
+                create_pendulum_time(2023, 10, 27, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 28, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 29, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 30, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 31, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 11, 1, 1, 45, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "0 2 * * *",
+            [
+                create_pendulum_time(
+                    2023, 10, 27, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 28, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 29, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 30, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 31, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 11, 1, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "30 2 * * *",
+            [
+                create_pendulum_time(
+                    2023, 10, 27, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 28, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 29, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 30, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 31, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 11, 1, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "0 3 * * *",
+            [
+                create_pendulum_time(2023, 10, 27, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 28, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 29, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 30, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 31, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 11, 1, 3, 0, 0, tz="Europe/Berlin"),
+            ],
+        ),
         (
             "Europe/Berlin",
             "0 1 * * *",
@@ -104,10 +177,11 @@ def test_cron_iterator_leap_day():
         ),
     ],
 )
-def test_dst_spring_forward_transition_advances(execution_timezone, cron_string, times):
+def test_dst_transition_advances(execution_timezone, cron_string, times):
     # Starting 1 second after each time produces the next tick
     for i in range(len(times) - 1):
-        start_timestamp = to_timezone(times[i], "UTC").timestamp() + 1
+        orig_start_timestamp = to_timezone(times[i], "UTC").timestamp() + 1
+        start_timestamp = orig_start_timestamp
 
         next_timestamp = times[i + 1].timestamp()
         # Verify that for any start timestamp until the next tick, cron_string_iterator behaves
@@ -120,6 +194,6 @@ def test_dst_spring_forward_transition_advances(execution_timezone, cron_string,
 
                 assert (
                     next_time.timestamp() == times[j].timestamp()
-                ), f"Expected {times[i]} to advance to {times[j]}, got {next_time}"
+                ), f"Expected {times[i]} (starting from offset ({next_timestamp - start_timestamp}) to advance to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
 
             start_timestamp = start_timestamp + 75
