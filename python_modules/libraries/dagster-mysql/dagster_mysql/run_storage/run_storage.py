@@ -30,13 +30,11 @@ from ..utils import (
     mysql_alembic_config,
     mysql_isolation_level,
     mysql_url_from_config,
-    parse_mysql_version,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
 
 MINIMUM_MYSQL_BUCKET_VERSION = "8.0.0"
-MINIMUM_MYSQL_INTERSECT_VERSION = "8.0.31"
 
 
 class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
@@ -157,12 +155,6 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         super(MySQLRunStorage, self).mark_index_built(migration_name)
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
-
-    @property
-    def supports_intersect(self) -> bool:
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(  # type: ignore
-            MINIMUM_MYSQL_INTERSECT_VERSION
-        )
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
         with self.connect() as conn:

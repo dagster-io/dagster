@@ -237,10 +237,6 @@ class SqlRunStorage(RunStorage):
 
         return query
 
-    @property
-    def supports_intersect(self) -> bool:
-        return True
-
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
 
