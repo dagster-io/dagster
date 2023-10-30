@@ -54,7 +54,7 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
 
 
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
-    """Base class for an IO manager definition that reads inputs from and writes outputs to DuckDB.
+    """Base class for an IO manager definition that reads inputs from and writes outputs to Delta Lake.
 
     Examples:
         .. code-block:: python

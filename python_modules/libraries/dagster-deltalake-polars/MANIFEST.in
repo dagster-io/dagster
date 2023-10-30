@@ -1,2 +1,2 @@
 include LICENSE
-include dagster_deltalake_pandas/py.typed
+include dagster_deltalake_polars/py.typed

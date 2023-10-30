@@ -1,7 +1,7 @@
 DuckDB + Polars (dagster-duckdb-polars)
 ---------------------------------------
 
-This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ database and Polars data processing library.
+This library provides an integration with the `DuckDB <https://duckdb.org/>`_ database and Polars data processing library.
 
 Related guides:
 
