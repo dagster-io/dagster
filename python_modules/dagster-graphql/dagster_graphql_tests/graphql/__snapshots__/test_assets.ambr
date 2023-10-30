@@ -279,6 +279,13 @@
         dict({
           'key': dict({
             'path': list([
+              'multi_run_backfill_policy_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
               'multipartitions_1',
             ]),
           }),
@@ -315,6 +322,13 @@
           'key': dict({
             'path': list([
               'one',
+            ]),
+          }),
+        }),
+        dict({
+          'key': dict({
+            'path': list([
+              'single_run_backfill_policy_asset',
             ]),
           }),
         }),
@@ -634,6 +648,11 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test.test_repo.["multi_run_backfill_policy_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test.test_repo.["multipartitions_1"]',
       }),
       dict({
@@ -660,6 +679,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["one"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["single_run_backfill_policy_asset"]',
       }),
       dict({
         'freshnessInfo': None,

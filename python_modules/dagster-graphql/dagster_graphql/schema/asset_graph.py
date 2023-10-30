@@ -69,6 +69,7 @@ from ..schema.asset_checks import (
 from . import external
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializePolicy
+from .backfill import GrapheneBackfillPolicy
 from .dagster_types import (
     GrapheneDagsterType,
     GrapheneListDagsterType,
@@ -218,6 +219,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
+    backfillPolicy = graphene.Field(GrapheneBackfillPolicy)
     computeKind = graphene.String()
     configField = graphene.Field(GrapheneConfigTypeField)
     dataVersion = graphene.Field(graphene.String(), partition=graphene.String())
@@ -829,6 +831,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GrapheneAutoMaterializePolicy]:
         if self._external_asset_node.auto_materialize_policy:
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
+        return None
+
+    def resolve_backfillPolicy(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneBackfillPolicy]:
+        if self._external_asset_node.backfill_policy:
+            return GrapheneBackfillPolicy(self._external_asset_node.backfill_policy)
         return None
 
     def resolve_jobNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
