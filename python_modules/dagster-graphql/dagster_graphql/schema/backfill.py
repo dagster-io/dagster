@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
@@ -485,3 +486,28 @@ class GraphenePartitionBackfillsOrError(graphene.Union):
     class Meta:
         types = (GraphenePartitionBackfills, GraphenePythonError)
         name = "PartitionBackfillsOrError"
+
+
+GrapheneBackfillPolicyType = graphene.Enum.from_enum(BackfillPolicyType)
+
+
+class GrapheneBackfillPolicy(graphene.ObjectType):
+    maxPartitionsPerRun = graphene.Field(graphene.Int())
+    description = graphene.NonNull(graphene.String)
+    policyType = graphene.NonNull(GrapheneBackfillPolicyType)
+
+    class Meta:
+        name = "BackfillPolicy"
+
+    def __init__(self, backfill_policy: BackfillPolicy):
+        self._backfill_policy = check.inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
+        super().__init__(
+            maxPartitionsPerRun=backfill_policy.max_partitions_per_run,
+            policyType=backfill_policy.policy_type,
+        )
+
+    def resolve_description(self, _graphene_info: ResolveInfo) -> str:
+        if self._backfill_policy.max_partitions_per_run is None:
+            return "Backfills all partitions in a single run"
+        else:
+            return f"Backfills in multiple runs, with a maximum of {self._backfill_policy.max_partitions_per_run} partitions per run"

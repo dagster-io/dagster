@@ -23,6 +23,7 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     AutoMaterializePolicy,
+    BackfillPolicy,
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -1772,6 +1773,22 @@ def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success)
     raise Exception("oops")
 
 
+@asset(
+    partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def single_run_backfill_policy_asset(context):
+    pass
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition("2023-01-03"),
+    backfill_policy=BackfillPolicy.multi_run(10),
+)
+def multi_run_backfill_policy_asset(context):
+    pass
+
+
 named_groups_job = build_assets_job(
     "named_groups_job",
     [
@@ -1924,6 +1941,8 @@ def define_asset_jobs():
         checked_multi_asset_job,
         check_in_op_asset,
         asset_check_job,
+        single_run_backfill_policy_asset,
+        multi_run_backfill_policy_asset,
     ]
 
 

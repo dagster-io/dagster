@@ -646,6 +646,7 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  backfillPolicy: BackfillPolicy
   computeKind: String
   configField: ConfigTypeField
   dataVersion(partition: String): String
@@ -696,6 +697,17 @@ type MaterializationUpstreamDataVersion {
   assetKey: AssetKey!
   downstreamAssetKey: AssetKey!
   timestamp: String!
+}
+
+type BackfillPolicy {
+  maxPartitionsPerRun: Int
+  description: String!
+  policyType: BackfillPolicyType!
+}
+
+enum BackfillPolicyType {
+  SINGLE_RUN
+  MULTI_RUN
 }
 
 type AssetDependency {

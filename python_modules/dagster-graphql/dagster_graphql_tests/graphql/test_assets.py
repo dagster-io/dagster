@@ -629,6 +629,23 @@ BATCH_LOAD_ASSETS = """
     }
 """
 
+GET_ASSET_BACKFILL_POLICY = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                assetKey {
+                    path
+                }
+                backfillPolicy {
+                    maxPartitionsPerRun
+                    policyType
+                    description
+                }
+            }
+        }
+    }
+"""
+
 
 def _create_run(
     graphql_context: WorkspaceRequestContext,
@@ -2321,6 +2338,43 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 assert a["hasAssetChecks"] is True
             else:
                 assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"
+
+    def test_get_backfill_policy(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_BACKFILL_POLICY,
+            variables={
+                "assetKey": {"path": ["single_run_backfill_policy_asset"]},
+            },
+        )
+
+        assert result.data["assetNodeOrError"]["assetKey"]["path"] == [
+            "single_run_backfill_policy_asset"
+        ]
+        assert result.data["assetNodeOrError"]["backfillPolicy"]["policyType"] == "SINGLE_RUN"
+        assert result.data["assetNodeOrError"]["backfillPolicy"]["maxPartitionsPerRun"] is None
+        assert (
+            result.data["assetNodeOrError"]["backfillPolicy"]["description"]
+            == "Backfills all partitions in a single run"
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_BACKFILL_POLICY,
+            variables={
+                "assetKey": {"path": ["multi_run_backfill_policy_asset"]},
+            },
+        )
+
+        assert result.data["assetNodeOrError"]["assetKey"]["path"] == [
+            "multi_run_backfill_policy_asset"
+        ]
+        assert result.data["assetNodeOrError"]["backfillPolicy"]["policyType"] == "MULTI_RUN"
+        assert result.data["assetNodeOrError"]["backfillPolicy"]["maxPartitionsPerRun"] == 10
+        assert (
+            result.data["assetNodeOrError"]["backfillPolicy"]["description"]
+            == "Backfills in multiple runs, with a maximum of 10 partitions per run"
+        )
 
 
 class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):

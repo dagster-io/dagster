@@ -338,6 +338,7 @@ export type AssetNode = {
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
+  backfillPolicy: Maybe<BackfillPolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   dataVersion: Maybe<Scalars['String']>;
@@ -551,6 +552,18 @@ export type BackfillNotFoundError = Error & {
   backfillId: Scalars['String'];
   message: Scalars['String'];
 };
+
+export type BackfillPolicy = {
+  __typename: 'BackfillPolicy';
+  description: Scalars['String'];
+  maxPartitionsPerRun: Maybe<Scalars['Int']>;
+  policyType: BackfillPolicyType;
+};
+
+export enum BackfillPolicyType {
+  MULTI_RUN = 'MULTI_RUN',
+  SINGLE_RUN = 'SINGLE_RUN',
+}
 
 export type BoolMetadataEntry = MetadataEntry & {
   __typename: 'BoolMetadataEntry';
@@ -5081,6 +5094,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AutoMaterializePolicy')
         ? ({} as AutoMaterializePolicy)
         : buildAutoMaterializePolicy({}, relationshipsToOmit),
+    backfillPolicy:
+      overrides && overrides.hasOwnProperty('backfillPolicy')
+        ? overrides.backfillPolicy!
+        : relationshipsToOmit.has('BackfillPolicy')
+        ? ({} as BackfillPolicy)
+        : buildBackfillPolicy({}, relationshipsToOmit),
     computeKind:
       overrides && overrides.hasOwnProperty('computeKind') ? overrides.computeKind! : 'quasi',
     configField:
@@ -5447,6 +5466,27 @@ export const buildBackfillNotFoundError = (
     backfillId:
       overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'nobis',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'est',
+  };
+};
+
+export const buildBackfillPolicy = (
+  overrides?: Partial<BackfillPolicy>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BackfillPolicy'} & BackfillPolicy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BackfillPolicy');
+  return {
+    __typename: 'BackfillPolicy',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'molestiae',
+    maxPartitionsPerRun:
+      overrides && overrides.hasOwnProperty('maxPartitionsPerRun')
+        ? overrides.maxPartitionsPerRun!
+        : 9025,
+    policyType:
+      overrides && overrides.hasOwnProperty('policyType')
+        ? overrides.policyType!
+        : BackfillPolicyType.MULTI_RUN,
   };
 };
 
