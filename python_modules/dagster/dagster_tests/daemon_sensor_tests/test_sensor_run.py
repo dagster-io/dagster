@@ -67,7 +67,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop, MIN_INTERVAL_LOOP_TIME
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .conftest import create_workspace_load_target
@@ -1515,7 +1515,7 @@ def test_custom_interval_sensor_with_offset(
 
         # call the sensor_iteration_loop, which should loop, and call the monkeypatched sleep
         # to advance 30 seconds
-        list(
+        results = list(
             execute_sensor_iteration_loop(
                 workspace_context,
                 get_default_daemon_logger("dagster.daemon.SensorDaemon"),
@@ -1524,12 +1524,56 @@ def test_custom_interval_sensor_with_offset(
             )
         )
 
-        assert pendulum.now() == freeze_datetime.add(seconds=65)
+        expected_seconds = 65
+        expected_yields = expected_seconds / MIN_INTERVAL_LOOP_TIME
+
+        assert len(results) == expected_yields
+
+        assert pendulum.now() == freeze_datetime.add(seconds=expected_seconds)
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
-        assert sum(sleeps) == 65
+        assert sum(sleeps) == expected_seconds
+
+
+def test_execute_sensor_iteration_loop_yield_count(
+    monkeypatch, workspace_context
+):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
+    )
+
+    sleeps = []
+
+    def fake_sleep(s):
+        sleeps.append(s)
+        pendulum.set_test_now(pendulum.now().add(seconds=s))
+
+    monkeypatch.setattr(time, "sleep", fake_sleep)
+
+    shutdown_event = mock.MagicMock()
+    shutdown_event.wait.side_effect = fake_sleep
+
+    with pendulum.test(freeze_datetime):
+        results = list(
+            execute_sensor_iteration_loop(
+                workspace_context,
+                get_default_daemon_logger("dagster.daemon.SensorDaemon"),
+                shutdown_event=shutdown_event,
+                until=freeze_datetime.add(seconds=1).timestamp(),
+            )
+        )
+
+        expected_seconds = MIN_INTERVAL_LOOP_TIME
+        expected_yields = expected_seconds / MIN_INTERVAL_LOOP_TIME
+
+        assert len(results) == expected_yields
+
+        assert pendulum.now() == freeze_datetime.add(seconds=expected_seconds)
+        assert sum(sleeps) == expected_seconds
+
+
 
 
 def test_sensor_start_stop(executor, instance, workspace_context, external_repo):
