@@ -67,7 +67,11 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop, MIN_INTERVAL_LOOP_TIME
+from dagster._daemon.sensor import (
+    MIN_INTERVAL_LOOP_TIME,
+    execute_sensor_iteration,
+    execute_sensor_iteration_loop,
+)
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .conftest import create_workspace_load_target
@@ -1537,9 +1541,7 @@ def test_custom_interval_sensor_with_offset(
         assert sum(sleeps) == expected_seconds
 
 
-def test_execute_sensor_iteration_loop_yield_count(
-    monkeypatch, workspace_context
-):
+def test_execute_sensor_iteration_loop_yield_count(monkeypatch, executor, workspace_context):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
     )
