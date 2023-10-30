@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
@@ -39,8 +40,18 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import RunShardedEventsCursor
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
+from dagster._core.event_api import (
+    EventRecordsResult,
+    RunShardedEventsCursor,
+    RunStatusChangeRecordsFilter,
+)
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    MARKER_EVENTS,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.asset_check_execution_record import (
@@ -75,6 +86,7 @@ from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
+    AssetRecordsFilter,
     EventLogConnection,
     EventLogCursor,
     EventLogRecord,
@@ -98,6 +110,26 @@ if TYPE_CHECKING:
 
 MAX_CONCURRENCY_SLOTS = 1000
 MIN_ASSET_ROWS = 25
+DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
+
+
+def get_max_event_records_limit() -> int:
+    max_value = os.getenv("MAX_LIMIT_GET_EVENT_RECORDS")
+    if not max_value:
+        return DEFAULT_MAX_LIMIT_EVENT_RECORDS
+    try:
+        return int(max_value)
+    except ValueError:
+        return DEFAULT_MAX_LIMIT_EVENT_RECORDS
+
+
+def enforce_max_records_limit(limit: int):
+    max_limit = get_max_event_records_limit()
+    if limit > max_limit:
+        raise DagsterInvariantViolationError(
+            f"Cannot fetch more than {max_limit} event records at a time. Requested {limit}."
+        )
+
 
 # We are using third-party library objects for DB connections-- at this time, these libraries are
 # untyped. When/if we upgrade to typed variants, the `Any` here can be replaced or the alias as a
@@ -900,6 +932,16 @@ class SqlEventLogStorage(EventLogStorage):
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
+        return self._get_event_records(
+            event_records_filter=event_records_filter, limit=limit, ascending=ascending
+        )
+
+    def _get_event_records(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
@@ -979,6 +1021,131 @@ class SqlEventLogStorage(EventLogStorage):
     @property
     def supports_intersect(self) -> bool:
         return True
+
+    def _get_event_records_result(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: int,
+        cursor: Optional[str],
+        ascending: bool,
+    ):
+        records = self._get_event_records(
+            event_records_filter=event_records_filter,
+            limit=limit,
+            ascending=ascending,
+        )
+        if records:
+            new_cursor = EventLogCursor.from_storage_id(records[-1].storage_id).to_string()
+        elif cursor:
+            new_cursor = cursor
+        else:
+            new_cursor = EventLogCursor.from_storage_id(-1).to_string()
+        has_more = len(records) == limit
+        return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
+
+    def fetch_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            asset_key = records_filter
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
+
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def fetch_observations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            asset_key = records_filter
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
+
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def fetch_planned_materializations(
+        self,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            asset_key = records_filter
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def fetch_run_status_changes(
+        self,
+        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        event_type = (
+            records_filter
+            if isinstance(records_filter, DagsterEventType)
+            else records_filter.event_type
+        )
+        if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            expected = ", ".join(EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys())
+            check.failed(f"Expected one of {expected}, received {event_type.value}")
+
+        before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+        event_records_filter = (
+            records_filter.to_event_records_filter(cursor, ascending)
+            if isinstance(records_filter, RunStatusChangeRecordsFilter)
+            else EventRecordsFilter(
+                event_type, before_cursor=before_cursor, after_cursor=after_cursor
+            )
+        )
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_logs_for_all_runs_by_log_id(
         self,
