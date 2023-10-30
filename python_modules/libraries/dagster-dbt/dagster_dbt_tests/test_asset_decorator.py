@@ -138,6 +138,18 @@ def test_manifest_argument(manifest: DbtManifestParam):
                 "cereals",
             },
         ),
+        (
+            "*",
+            "tag:does-not-exist",
+            {
+                "sort_by_calories",
+                "cold_schema/sort_cold_cereals_by_calories",
+                "subdir_schema/least_caloric",
+                "sort_hot_cereals_by_calories",
+                "orders_snapshot",
+                "cereals",
+            },
+        ),
     ],
 )
 def test_selections(

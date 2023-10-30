@@ -28,6 +28,7 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
 )
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
     RepositoryScopedBatchLoader,
@@ -340,12 +341,18 @@ class GrapheneRepository(graphene.ObjectType):
             if value is not None
         ]
 
-    def resolve_assetNodes(self, _graphene_info: ResolveInfo):
+    def resolve_assetNodes(self, graphene_info: ResolveInfo):
+        external_asset_nodes = self._repository.get_external_asset_nodes()
+        asset_checks_loader = AssetChecksLoader(
+            context=graphene_info.context,
+            asset_keys=[node.asset_key for node in external_asset_nodes],
+        )
         return [
             GrapheneAssetNode(
                 self._repository_location,
                 self._repository,
                 external_asset_node,
+                asset_checks_loader=asset_checks_loader,
                 stale_status_loader=self._stale_status_loader,
                 dynamic_partitions_loader=self._dynamic_partitions_loader,
             )

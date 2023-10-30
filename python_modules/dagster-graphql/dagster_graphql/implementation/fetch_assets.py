@@ -54,6 +54,7 @@ from dagster._core.storage.partition_status_cache import (
     get_validated_partition_keys,
     is_cacheable_partition_type,
 )
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
@@ -125,13 +126,20 @@ def get_assets(
     )
 
 
+def repository_iter(
+    context: WorkspaceRequestContext
+) -> Iterator[Tuple[CodeLocation, ExternalRepository]]:
+    for location in context.code_locations:
+        for repository in location.get_repositories().values():
+            yield location, repository
+
+
 def asset_node_iter(
     graphene_info: "ResolveInfo",
 ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
-    for location in graphene_info.context.code_locations:
-        for repository in location.get_repositories().values():
-            for external_asset_node in repository.get_external_asset_nodes():
-                yield location, repository, external_asset_node
+    for location, repository in repository_iter(graphene_info.context):
+        for external_asset_node in repository.get_external_asset_nodes():
+            yield location, repository, external_asset_node
 
 
 def get_asset_node_definition_collisions(
@@ -178,6 +186,7 @@ def get_asset_nodes_by_asset_key(
     has an op.
     """
     from ..schema.asset_graph import GrapheneAssetNode
+    from .asset_checks_loader import AssetChecksLoader
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
@@ -188,20 +197,37 @@ def get_asset_nodes_by_asset_key(
 
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
 
-    asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
+    asset_nodes_by_asset_key: Dict[
+        AssetKey, Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]
+    ] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
-        preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
-        if preexisting_node is None or preexisting_node.external_asset_node.is_source:
-            asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
+        _, _, preexisting_asset_node = asset_nodes_by_asset_key.get(
+            external_asset_node.asset_key, (None, None, None)
+        )
+        if preexisting_asset_node is None or preexisting_asset_node.is_source:
+            asset_nodes_by_asset_key[external_asset_node.asset_key] = (
                 repo_loc,
                 repo,
                 external_asset_node,
-                depended_by_loader=depended_by_loader,
-                stale_status_loader=stale_status_loader,
-                dynamic_partitions_loader=dynamic_partitions_loader,
             )
 
-    return asset_nodes_by_asset_key
+    asset_checks_loader = AssetChecksLoader(
+        context=graphene_info.context,
+        asset_keys=asset_nodes_by_asset_key.keys(),
+    )
+
+    return {
+        external_asset_node.asset_key: GrapheneAssetNode(
+            repo_loc,
+            repo,
+            external_asset_node,
+            asset_checks_loader=asset_checks_loader,
+            depended_by_loader=depended_by_loader,
+            stale_status_loader=stale_status_loader,
+            dynamic_partitions_loader=dynamic_partitions_loader,
+        )
+        for repo_loc, repo, external_asset_node in asset_nodes_by_asset_key.values()
+    }
 
 
 def get_asset_nodes(graphene_info: "ResolveInfo"):
