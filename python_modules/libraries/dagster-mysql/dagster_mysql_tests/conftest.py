@@ -12,7 +12,9 @@ def hostname(conn_string):
 
 
 @pytest.fixture(
-    scope="session", params=[("test-mysql-db", {}), ("test-mysql-db-pinned", {"port": 3307})]
+    scope="session",
+    params=[("test-mysql-db", {}), ("test-mysql-db-pinned", {"port": 3307})],
+    ids=["latest-db-version", "pinned-db-version"],
 )
 def conn_string(request):
     service, conn_args = request.param
@@ -25,6 +27,7 @@ def conn_string(request):
 @pytest.fixture(
     scope="session",
     params=[("test-mysql-db", {}), ("test-mysql-db-pinned-backcompat", {"port": 3308})],
+    ids=["latest-db-version", "pinned-db-version"],
 )
 def backcompat_conn_string(request):
     service, conn_args = request.param
