@@ -2856,6 +2856,7 @@ export type PythonError = Error & {
 export type Query = {
   __typename: 'Query';
   allTopLevelResourceDetailsOrError: ResourcesOrError;
+  assetCheckExecutions: Array<AssetCheckExecution>;
   assetChecksOrError: AssetChecksOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
@@ -2910,6 +2911,13 @@ export type Query = {
 
 export type QueryAllTopLevelResourceDetailsOrErrorArgs = {
   repositorySelector: RepositorySelector;
+};
+
+export type QueryAssetCheckExecutionsArgs = {
+  assetKey: AssetKeyInput;
+  checkName: Scalars['String'];
+  cursor?: InputMaybe<Scalars['String']>;
+  limit: Scalars['Int'];
 };
 
 export type QueryAssetChecksOrErrorArgs = {
@@ -9858,6 +9866,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    assetCheckExecutions:
+      overrides && overrides.hasOwnProperty('assetCheckExecutions')
+        ? overrides.assetCheckExecutions!
+        : [],
     assetChecksOrError:
       overrides && overrides.hasOwnProperty('assetChecksOrError')
         ? overrides.assetChecksOrError!

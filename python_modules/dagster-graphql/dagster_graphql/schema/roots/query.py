@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
+from dagster import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
@@ -39,7 +40,7 @@ from ...implementation.external import (
     fetch_repository,
     fetch_workspace,
 )
-from ...implementation.fetch_asset_checks import fetch_asset_checks
+from ...implementation.fetch_asset_checks import fetch_asset_check_executions, fetch_asset_checks
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -90,7 +91,7 @@ from ...implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
-from ..asset_checks import GrapheneAssetChecksOrError
+from ..asset_checks import GrapheneAssetCheckExecution, GrapheneAssetChecksOrError
 from ..asset_graph import (
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
@@ -512,11 +513,21 @@ class GrapheneQuery(graphene.ObjectType):
         description="Fetch the history of auto-materialization ticks",
     )
 
+    # deprecated. Use assetNode { assetChecksOrError } or assetCheckExecutions instead
     assetChecksOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetChecksOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         checkName=graphene.Argument(graphene.String()),
         description="Retrieve the asset checks for a given asset key.",
+    )
+
+    assetCheckExecutions = graphene.Field(
+        non_null_list(GrapheneAssetCheckExecution),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        checkName=graphene.Argument(graphene.NonNull(graphene.String)),
+        limit=graphene.NonNull(graphene.Int),
+        cursor=graphene.String(),
+        description="Retrieve the executions for a given asset check.",
     )
 
     @capture_error
@@ -1110,3 +1121,20 @@ class GrapheneQuery(graphene.ObjectType):
         checkName: Optional[str] = None,
     ):
         return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey), checkName)
+
+    def resolve_assetCheckExecutions(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        checkName: str,
+        limit: int,
+        cursor: Optional[str] = None,
+    ):
+        return fetch_asset_check_executions(
+            graphene_info.context.instance,
+            asset_check_key=AssetCheckKey(
+                asset_key=AssetKey.from_graphql_input(assetKey), name=checkName
+            ),
+            limit=limit,
+            cursor=cursor,
+        )
