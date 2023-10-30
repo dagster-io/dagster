@@ -244,8 +244,7 @@ def execute_sensor_iteration_loop(
     threadpool_executor = None
     with ExitStack() as stack:
         settings = workspace_process_context.instance.get_settings("sensors")
-        use_threads = settings.get("use_threads")
-        if use_threads:
+        if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
                 InheritContextThreadPoolExecutor(
                     max_workers=settings.get("num_workers"),
@@ -272,7 +271,9 @@ def execute_sensor_iteration_loop(
             verbose_logs_iteration = (
                 last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
             )
-            yield from execute_sensor_iteration(
+
+            yielded = False
+            for result in execute_sensor_iteration(
                 workspace_process_context,
                 logger,
                 threadpool_executor=threadpool_executor,
@@ -280,10 +281,14 @@ def execute_sensor_iteration_loop(
                 sensor_tick_futures=sensor_tick_futures,
                 sensor_state_lock=sensor_state_lock,
                 log_verbose_checks=verbose_logs_iteration,
-            )
+            ):
+                if result:
+                    yielded = True
+                    yield result
+
             # Yield to check for heartbeats in case there were no yields within
             # execute_sensor_iteration
-            if not use_threads:
+            if not yielded:
                 yield None
 
             end_time = pendulum.now("UTC").timestamp()
@@ -294,9 +299,6 @@ def execute_sensor_iteration_loop(
             loop_duration = end_time - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
             shutdown_event.wait(sleep_time)
-
-            if not use_threads:
-                yield None
 
 
 def execute_sensor_iteration(
