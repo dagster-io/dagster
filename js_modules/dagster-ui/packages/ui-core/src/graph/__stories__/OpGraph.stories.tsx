@@ -232,3 +232,71 @@ export const Composite = () => {
     />
   );
 };
+
+export const CompositeCollapsedIO = () => {
+  const [focusOps, setFocusOps] = React.useState<string[]>([]);
+  const [parentOpName, setParentOpName] = React.useState<string | undefined>();
+
+  const composite = buildGraphSolidFragment(
+    'C',
+    ['in1', 'in2', 'in3', 'in4', 'in5'],
+    ['out1', 'out2', 'out3', 'out4', 'out5'],
+    [],
+  );
+  const ops: OpGraphOpFragment[] = [composite];
+
+  const childEdges = [buildEdge(`CA:out=>CB:in`)];
+  const childOps = [
+    buildGraphSolidFragment(`CA`, ['in1', 'in2', 'in3', 'in4', 'in5'], ['out'], childEdges),
+    buildGraphSolidFragment(`CB`, ['in'], ['out1', 'out2', 'out3', 'out4', 'out5'], childEdges),
+  ];
+
+  composite.definition = {
+    ...composite.definition,
+    __typename: 'CompositeSolidDefinition',
+    id: 'composite-solid-id',
+    inputMappings: childOps[0]!.definition.inputDefinitions.map((inputDef, idx) => ({
+      __typename: 'InputMapping',
+      definition: composite.definition.inputDefinitions[idx]!,
+      mappedInput: {
+        __typename: 'Input',
+        solid: childOps[0]!,
+        definition: inputDef!,
+      },
+    })),
+    outputMappings: childOps[1]!.definition.outputDefinitions.map((outputDef, idx) => ({
+      __typename: 'OutputMapping',
+      definition: composite.definition.outputDefinitions[idx]!,
+      mappedOutput: {
+        __typename: 'Output',
+        solid: childOps[1]!,
+        definition: outputDef!,
+      },
+    })),
+  };
+
+  const toName = (s: OpNameOrPath) => ('name' in s ? s.name : s.path.join('.'));
+  const parentOp = ops.find((s) => s.name === parentOpName);
+
+  return (
+    <OpGraph
+      jobName="Test Pipeline"
+      ops={parentOp ? childOps : ops}
+      parentOp={parentOp}
+      parentHandleID={parentOpName}
+      layout={parentOp ? getFullOpLayout(childOps, {parentOp}) : getFullOpLayout(ops, {})}
+      interactor={SVGViewport.Interactors.PanAndZoom}
+      focusOps={ops.filter((s) => focusOps.includes(s.name))}
+      highlightedOps={[]}
+      onClickOp={(nameOrPath) => setFocusOps([toName(nameOrPath)])}
+      onEnterSubgraph={(nameOrPath) => setParentOpName(toName(nameOrPath))}
+      onLeaveSubgraph={() => setParentOpName(undefined)}
+      onDoubleClickOp={(nameOrPath) => {
+        const solid = ops.find((s) => s.name === toName(nameOrPath));
+        if (solid?.definition.__typename === 'CompositeSolidDefinition') {
+          setParentOpName(solid.name);
+        }
+      }}
+    />
+  );
+};
