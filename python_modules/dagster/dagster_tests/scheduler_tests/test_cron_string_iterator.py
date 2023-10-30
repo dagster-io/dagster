@@ -102,9 +102,21 @@ def test_cron_iterator_leap_day():
                 create_pendulum_time(2023, 3, 29, 3, 0, 0, tz="Europe/Berlin"),
             ],
         ),
+        (
+            "Europe/Berlin",
+            "45 1 * * *",
+            [
+                create_pendulum_time(2023, 10, 27, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 28, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 29, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 30, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 31, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 11, 1, 1, 45, 0, tz="Europe/Berlin"),
+            ],
+        ),
     ],
 )
-def test_dst_spring_forward_transition_advances(execution_timezone, cron_string, times):
+def test_dst_transition_advances(execution_timezone, cron_string, times):
     # Starting 1 second after each time produces the next tick
     for i in range(len(times) - 1):
         start_timestamp = to_timezone(times[i], "UTC").timestamp() + 1
