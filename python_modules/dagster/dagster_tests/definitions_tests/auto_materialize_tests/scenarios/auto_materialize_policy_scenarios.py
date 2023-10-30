@@ -245,7 +245,6 @@ auto_materialize_policy_scenarios = {
                 )
             ],
             expected_evaluations=[
-                AssetEvaluationSpec.empty("daily"),
                 AssetEvaluationSpec(
                     asset_key="hourly",
                     rule_evaluations=[
@@ -332,7 +331,6 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-04:00"),
         ],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -377,7 +375,6 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-00:00"),
         ],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -412,8 +409,6 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
-            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -570,7 +565,6 @@ auto_materialize_policy_scenarios = {
                 ],
                 expected_run_requests=[],
                 expected_evaluations=[
-                    AssetEvaluationSpec.empty("C"),
                     AssetEvaluationSpec(
                         asset_key="D",
                         rule_evaluations=[
@@ -857,8 +851,6 @@ auto_materialize_policy_scenarios = {
         current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
         expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
-            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -932,8 +924,6 @@ auto_materialize_policy_scenarios = {
             run_request(["asset3"], "2023-01-01-03:00"),
         ],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
-            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
