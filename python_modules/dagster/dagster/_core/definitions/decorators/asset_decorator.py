@@ -336,7 +336,15 @@ class _Asset:
         self.freshness_policy = freshness_policy
         self.retry_policy = retry_policy
         self.auto_materialize_policy = auto_materialize_policy
-        self.backfill_policy = backfill_policy
+
+        self.backfill_policy = (
+            backfill_policy
+            if backfill_policy
+            else BackfillPolicy.multi_run()
+            if partitions_def
+            else BackfillPolicy.single_run()
+        )
+
         self.code_version = code_version
         self.check_specs = check_specs
         self.key = key
