@@ -1,7 +1,7 @@
 Delta Lake (dagster-deltalake)
 ------------------------------
 
-This library provides an integration with the `Delta Lake <hhttps://delta.io/>`_ storage framework.
+This library provides an integration with the `Delta Lake <https://delta.io/>`_ storage framework.
 
 Related Guides:
 
