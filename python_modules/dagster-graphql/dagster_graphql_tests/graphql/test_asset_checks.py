@@ -212,6 +212,19 @@ query RunQuery($runId: ID!) {
   }
 """
 
+ASSET_NODE_CHECKS_QUERY = """
+query AssetNodeChecksQuery {
+    assetNodes {
+        assetKey {
+            path
+        }
+        assetChecks {
+            name
+        }
+    }
+}
+"""
+
 
 def _planned_event(run_id: str, planned: AssetCheckEvaluationPlanned) -> EventLogEntry:
     return EventLogEntry(
@@ -301,6 +314,18 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 ]
             }
         }
+
+    def test_asset_check_asset_node(self, graphql_context: WorkspaceRequestContext):
+        res = execute_dagster_graphql(graphql_context, ASSET_NODE_CHECKS_QUERY)
+        with_checks = [node for node in res.data["assetNodes"] if node["assetChecks"]]
+        assert with_checks == [
+            {"assetKey": {"path": ["asset_1"]}, "assetChecks": [{"name": "my_check"}]},
+            {"assetKey": {"path": ["check_in_op_asset"]}, "assetChecks": [{"name": "my_check"}]},
+            {
+                "assetKey": {"path": ["one"]},
+                "assetChecks": [{"name": "my_check"}, {"name": "my_other_check"}],
+            },
+        ]
 
     def test_asset_check_execution_cursoring(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
