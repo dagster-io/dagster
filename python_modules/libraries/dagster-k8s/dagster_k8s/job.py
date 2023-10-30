@@ -892,6 +892,6 @@ def get_k8s_job_name(input_1, input_2=None):
         input_2 = "".join(random.choice(letters) for i in range(20))
 
     # Creates 32-bit signed int, so could be negative
-    name_hash = hashlib.md5((input_1 + input_2).encode("utf-8"))
+    name_hash = hashlib.md5((input_1 + input_2).encode("utf-8"), usedforsecurity=False)
 
     return name_hash.hexdigest()

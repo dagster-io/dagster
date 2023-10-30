@@ -429,7 +429,7 @@ def _dbt_nodes_to_assets(
     if not op_name:
         op_name = f"run_dbt_{project_id}"
         if select != "fqn:*" or exclude:
-            op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
+            op_name += "_" + hashlib.md5(select.encode() + exclude.encode(), usedforsecurity=False).hexdigest()[-5:]
 
     check_outs_by_output_name: Mapping[str, Out] = {}
     if check_specs_by_output_name:
