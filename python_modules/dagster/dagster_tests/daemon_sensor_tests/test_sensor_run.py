@@ -1576,8 +1576,6 @@ def test_execute_sensor_iteration_loop_yield_count(monkeypatch, executor, worksp
         assert sum(sleeps) == expected_seconds
 
 
-
-
 def test_sensor_start_stop(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
