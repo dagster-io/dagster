@@ -272,7 +272,6 @@ def execute_sensor_iteration_loop(
                 last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
             )
 
-            yielded = False
             for result in execute_sensor_iteration(
                 workspace_process_context,
                 logger,
@@ -283,13 +282,11 @@ def execute_sensor_iteration_loop(
                 log_verbose_checks=verbose_logs_iteration,
             ):
                 if result:
-                    yielded = True
                     yield result
 
             # Yield to check for heartbeats in case there were no yields within
             # execute_sensor_iteration
-            if not yielded:
-                yield None
+            yield None
 
             end_time = pendulum.now("UTC").timestamp()
 
