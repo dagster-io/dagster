@@ -54,6 +54,7 @@ from dagster._core.storage.partition_status_cache import (
     get_validated_partition_keys,
     is_cacheable_partition_type,
 )
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
@@ -125,13 +126,20 @@ def get_assets(
     )
 
 
+def repository_iter(
+    context: WorkspaceRequestContext
+) -> Iterator[Tuple[CodeLocation, ExternalRepository]]:
+    for location in context.code_locations:
+        for repository in location.get_repositories().values():
+            yield location, repository
+
+
 def asset_node_iter(
     graphene_info: "ResolveInfo",
 ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
-    for location in graphene_info.context.code_locations:
-        for repository in location.get_repositories().values():
-            for external_asset_node in repository.get_external_asset_nodes():
-                yield location, repository, external_asset_node
+    for location, repository in repository_iter(graphene_info.context):
+        for external_asset_node in repository.get_external_asset_nodes():
+            yield location, repository, external_asset_node
 
 
 def get_asset_node_definition_collisions(
