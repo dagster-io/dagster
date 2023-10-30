@@ -2,6 +2,7 @@ import ast
 import datetime
 import tempfile
 from typing import Sequence
+from dagster._core.definitions.assets import ASSET_SUBSET_INPUT_PREFIX
 
 import pytest
 from dagster import (
@@ -85,10 +86,16 @@ def test_with_replaced_asset_keys():
 @pytest.mark.parametrize(
     "subset,expected_keys,expected_inputs,expected_outputs",
     [
-        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", "a,b,c", 3, 3),
+        # there are 5 inputs here, because in addition to in1, in2, and in3, "artificial" inputs are
+        # needed for both a and b, as c depends on both and could be executed in a separate step
+        # depending on how it is subset. in these cases, the step that contains c will need to
+        # have inputs for a and b to connect to.
+        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", f"a,b,c", 5, 3),
         ("foo,bar,baz", None, 0, 0),
-        ("in1,a,b,c", "a,b,c", 3, 3),
-        ("foo,in1,a,b,c,bar", "a,b,c", 3, 3),
+        # see above
+        ("in1,a,b,c", "a,b,c", 5, 3),
+        # see above
+        ("foo,in1,a,b,c,bar", "a,b,c", 5, 3),
         ("foo,in1,in2,in3,a,bar", "a", 2, 1),
         ("foo,in1,in2,a,b,bar", "a,b", 2, 2),
         ("in1,in2,in3,b", "b", 0, 1),

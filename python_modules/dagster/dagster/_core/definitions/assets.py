@@ -301,7 +301,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         _validate_self_deps(
             input_keys=[
                 key
-                for key in self._keys_by_input_name.values()
+                # filter out the special inputs which are used for cases when a multi-asset is
+                # subsetted, as these are not the same as self-dependencies and are never loaded
+                # in the same step that their corresponding output is produced
                 for input_name, key in self._keys_by_input_name.items()
                 if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
             ],
