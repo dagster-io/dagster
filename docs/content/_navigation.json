@@ -22,6 +22,10 @@
         "path": "/getting-started/project-file-reference"
       },
       {
+        "title": "Getting help",
+        "path": "/getting-started/getting-help"
+      },
+      {
         "title": "Telemetry",
         "path": "/getting-started/telemetry"
       }
