@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
 
+import pendulum
+
 from dagster import (
     AssetKey,
     DagsterEventType,
@@ -30,7 +32,6 @@ from dagster._core.storage.tags import (
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-import pendulum
 
 if TYPE_CHECKING:
     from dagster._core.storage.event_log.base import AssetRecord
