@@ -832,12 +832,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        upstream_keys = {
-            dep_key
-            for key in self.keys
-            for dep_key in self.asset_deps[key]
-            if dep_key not in self.keys
-        }
+        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         return {
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }

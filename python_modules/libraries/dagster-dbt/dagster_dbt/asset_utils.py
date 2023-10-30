@@ -34,7 +34,6 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
-from dagster._core.definitions.decorators.asset_decorator import build_subsettable_asset_ins
 from dagster._core.definitions.decorators.asset_decorator import (
     _validate_and_assign_output_names_to_check_specs,
 )
@@ -746,7 +745,7 @@ def get_asset_deps(
 
     return (
         asset_deps,
-        {**asset_ins, **build_subsettable_asset_ins(asset_ins, asset_outs, deps.values())},
+        asset_ins,
         asset_outs,
         group_names_by_key,
         freshness_policies_by_key,
