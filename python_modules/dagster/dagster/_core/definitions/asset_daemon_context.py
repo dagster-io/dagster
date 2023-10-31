@@ -3,6 +3,7 @@ import datetime
 import itertools
 import logging
 import os
+import time
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -444,6 +445,7 @@ class AssetDaemonContext:
                 continue
 
             num_checked_assets = num_checked_assets + 1
+            start_time = time.time()
             self._verbose_log_fn(
                 "Evaluating asset"
                 f" {asset_key.to_user_string()} ({num_checked_assets}/{num_target_asset_keys})"
@@ -475,7 +477,7 @@ class AssetDaemonContext:
             log_fn(
                 f"Asset {asset_key.to_user_string()} evaluation result: {evaluation.num_requested}"
                 f" requested ({to_materialize_str}), {evaluation.num_skipped}"
-                f" skipped, {evaluation.num_discarded} discarded"
+                f" skipped, {evaluation.num_discarded} discarded ({format(time.time()-start_time, '.3f')} seconds)"
             )
 
             evaluations_by_key[asset_key] = evaluation
