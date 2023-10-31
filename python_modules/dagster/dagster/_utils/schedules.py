@@ -8,6 +8,7 @@ import pytz
 from croniter import croniter as _croniter
 
 import dagster._check as check
+from dagster._core.definitions.partition import ScheduleType
 from dagster._seven.compat.pendulum import PendulumDateTime, create_pendulum_time, to_timezone
 
 
@@ -108,21 +109,42 @@ def _replace_hour_and_minute(pendulum_date: PendulumDateTime, hour: int, minute:
     return new_time
 
 
-def _find_previous_daily_schedule_time(
-    minute: int, hour: int, pendulum_date: PendulumDateTime
+def _find_previous_schedule_time(
+    minute: Optional[int],
+    hour: Optional[int],
+    schedule_type: ScheduleType,
+    pendulum_date: PendulumDateTime,
 ) -> PendulumDateTime:
-    # First move to the correct time of day today (ignoring whether it is the correct day)
-    new_time = _replace_hour_and_minute(pendulum_date, hour, minute)
+    if schedule_type == ScheduleType.HOURLY:
+        new_timestamp = int(pendulum_date.timestamp())
+        new_timestamp = new_timestamp - new_timestamp % 60
 
-    if new_time.timestamp() >= pendulum_date.timestamp():
-        # Move back a day if needed
-        new_time = new_time.subtract(days=1)
+        current_minute = pendulum_date.minute
+        new_timestamp = new_timestamp - 60 * ((current_minute - check.not_none(minute)) % 60)
 
-        # Doing so may have adjusted the hour again if we crossed a DST boundary,
-        # so make sure it's still correct
-        new_time = _replace_hour_and_minute(new_time, hour, minute)
+        if new_timestamp >= pendulum_date.timestamp():
+            new_timestamp = new_timestamp - 60 * 60
 
-    return new_time
+        return pendulum.from_timestamp(new_timestamp, tz=pendulum_date.timezone_name)
+    elif schedule_type == ScheduleType.DAILY:
+        # First move to the correct time of day today (ignoring whether it is the correct day)
+        new_time = _replace_hour_and_minute(
+            pendulum_date, check.not_none(hour), check.not_none(minute)
+        )
+
+        if new_time.timestamp() >= pendulum_date.timestamp():
+            # Move back a day if needed
+            new_time = new_time.subtract(days=1)
+
+            # Doing so may have adjusted the hour again if we crossed a DST boundary,
+            # so make sure it's still correct
+            new_time = _replace_hour_and_minute(
+                new_time, check.not_none(hour), check.not_none(minute)
+            )
+
+        return new_time
+    else:
+        raise Exception(f"Unexpected schedule type {schedule_type}")
 
 
 def cron_string_iterator(
@@ -159,7 +181,7 @@ def cron_string_iterator(
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
-    is_daily_schedule = not nth_weekday_of_month and all(is_numeric[0:2]) and all(is_wildcard[2:])
+    known_schedule_type: Optional[ScheduleType] = None
 
     delta_fn = None
     should_hour_change = False
@@ -172,15 +194,19 @@ def cron_string_iterator(
         if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
             delta_fn = lambda d, num: d.add(months=num)
             should_hour_change = False
+            known_schedule_type = ScheduleType.MONTHLY
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
             delta_fn = lambda d, num: d.add(weeks=num)
             should_hour_change = False
-        elif is_daily_schedule:  # daily
+            known_schedule_type = ScheduleType.WEEKLY
+        elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
             delta_fn = lambda d, num: d.add(days=num)
             should_hour_change = False
+            known_schedule_type = ScheduleType.DAILY
         elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
             delta_fn = lambda d, num: d.add(hours=num)
             should_hour_change = True
+            known_schedule_type = ScheduleType.HOURLY
 
     if is_numeric[1]:
         expected_hour = int(cron_parts[1][0])
@@ -203,21 +229,23 @@ def cron_string_iterator(
         # This is already on a cron boundary, so yield it
         yield to_timezone(pendulum.instance(next_date), timezone_str)
 
-    elif is_daily_schedule:
+    elif known_schedule_type == ScheduleType.DAILY or known_schedule_type == ScheduleType.HOURLY:
         # This logic working correctly requires a pendulum datetime to ensure that we are tracking
         # corretly which side of a DST transition we are on
         pendulum_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
-        next_date = _find_previous_daily_schedule_time(
-            check.not_none(expected_minute),
-            check.not_none(expected_hour),
+        next_date = _find_previous_schedule_time(
+            expected_minute,
+            expected_hour,
+            known_schedule_type,
             pendulum_datetime,
         )
 
         check.invariant(start_offset <= 0)
         for _ in range(-start_offset):
-            next_date = _find_previous_daily_schedule_time(
-                check.not_none(expected_minute),
-                check.not_none(expected_hour),
+            next_date = _find_previous_schedule_time(
+                expected_minute,
+                expected_hour,
+                known_schedule_type,
                 next_date,
             )
     else:
@@ -279,7 +307,11 @@ def cron_string_iterator(
             yield next_date
     else:
         # Otherwise fall back to croniter
-        check.invariant(not is_daily_schedule, "Should never need croniter on a daily schedule")
+        check.invariant(
+            known_schedule_type != ScheduleType.DAILY
+            and known_schedule_type != ScheduleType.HOURLY,
+            "Should never need croniter on a daily or hourly schedule",
+        )
 
         while True:
             next_date = to_timezone(

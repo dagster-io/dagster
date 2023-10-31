@@ -48,6 +48,9 @@ def test_cron_iterator_leap_day():
         assert next_datetime.minute == 2
 
 
+# In Europe/Berlin on 10/29, 2AM-3AM happen twice (first with dst_rule=PRE_TRANSITION,
+# then dst_rule=POST_TRANSITION)
+# In Europe/Berlin on Sunday 3/26, 2AM jumps ahead to 3AM
 @pytest.mark.parametrize(
     "execution_timezone,cron_string,times",
     [
@@ -125,6 +128,36 @@ def test_cron_iterator_leap_day():
         ),
         (
             "Europe/Berlin",
+            "45 * * * *",
+            [
+                create_pendulum_time(2023, 10, 29, 0, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 29, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(
+                    2023, 10, 29, 2, 45, 0, tz="Europe/Berlin", dst_rule=pendulum.PRE_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 29, 2, 45, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(2023, 10, 29, 3, 45, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "0 * * * *",
+            [
+                create_pendulum_time(2023, 10, 29, 0, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 10, 29, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(
+                    2023, 10, 29, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.PRE_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 29, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(2023, 10, 29, 3, 0, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
             "0 1 * * *",
             [
                 create_pendulum_time(2023, 3, 24, 1, 0, 0, tz="Europe/Berlin"),
@@ -173,6 +206,26 @@ def test_cron_iterator_leap_day():
                 create_pendulum_time(2023, 3, 27, 3, 0, 0, tz="Europe/Berlin"),
                 create_pendulum_time(2023, 3, 28, 3, 0, 0, tz="Europe/Berlin"),
                 create_pendulum_time(2023, 3, 29, 3, 0, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "45 * * * *",
+            [
+                create_pendulum_time(2023, 3, 26, 0, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 1, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 3, 45, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 4, 45, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "0 * * * *",
+            [
+                create_pendulum_time(2023, 3, 26, 0, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 4, 0, 0, tz="Europe/Berlin"),
             ],
         ),
     ],
