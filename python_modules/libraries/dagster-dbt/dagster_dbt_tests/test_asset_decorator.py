@@ -12,12 +12,12 @@ from dagster import (
     DailyPartitionsDefinition,
     Definitions,
     DependencyDefinition,
+    LastPartitionMapping,
+    TimeWindowPartitionMapping,
+    PartitionMapping,
     FreshnessPolicy,
     NodeInvocation,
-    LastPartitionMapping,
-    PartitionMapping,
     PartitionsDefinition,
-    TimeWindowPartitionMapping,
     asset,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
@@ -326,7 +326,10 @@ def test_with_asset_key_replacements() -> None:
     def my_dbt_assets():
         ...
 
-    assert my_dbt_assets.keys_by_input_name == {}
+    assert my_dbt_assets.keys_by_input_name == {
+        "__subset_input__cereals": AssetKey(["prefix", "cereals"]),
+        "__subset_input__sort_by_calories": AssetKey(["prefix", "sort_by_calories"]),
+    }
     assert set(my_dbt_assets.keys_by_output_name.values()) == {
         AssetKey(["prefix", "cereals"]),
         AssetKey(["prefix", "cold_schema", "sort_cold_cereals_by_calories"]),
@@ -335,6 +338,22 @@ def test_with_asset_key_replacements() -> None:
         AssetKey(["prefix", "sort_hot_cereals_by_calories"]),
         AssetKey(["prefix", "sort_by_calories"]),
     }
+
+
+def test_with_description_replacements() -> None:
+    expected_description = "customized description"
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
+            return expected_description
+
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
+    def my_dbt_assets():
+        ...
+
+    for description in my_dbt_assets.descriptions_by_key.values():
+        assert description == expected_description
 
 
 @pytest.mark.parametrize(
@@ -376,7 +395,7 @@ def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) 
         AssetKey("customers"),
     }
     dependencies_without_self_dependencies = set(my_dbt_assets.dependency_keys).difference(
-        dependencies_with_self_dependencies
+        my_dbt_assets.keys
     )
 
     assert dependencies_without_self_dependencies
@@ -388,22 +407,6 @@ def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) 
             my_dbt_assets.get_partition_mapping(self_dependency_asset_key)
             == expected_self_dependency_partition_mapping
         )
-
-
-def test_with_description_replacements() -> None:
-    expected_description = "customized description"
-
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
-            return expected_description
-
-    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
-
-    for description in my_dbt_assets.descriptions_by_key.values():
-        assert description == expected_description
 
 
 def test_with_metadata_replacements() -> None:
@@ -506,9 +509,9 @@ def test_dbt_meta_asset_key() -> None:
         ...
 
     # Assert that source asset keys are set properly.
-    assert set(my_dbt_assets.keys_by_input_name.values()) == {
-        AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"])
-    }
+    assert AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"]) in set(
+        my_dbt_assets.keys_by_input_name.values()
+    )
 
     # Assert that models asset keys are set properly.
     assert {
