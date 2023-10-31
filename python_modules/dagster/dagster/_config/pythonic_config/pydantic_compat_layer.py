@@ -14,9 +14,14 @@ from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 
+USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
+
 PydanticUndefined = None
 try:
-    from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
+    if USING_PYDANTIC_2:
+        from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
+    else:
+        from pydantic.fields import Undefined as _PydanticUndefined  # type: ignore
 
     PydanticUndefined = _PydanticUndefined
 except:
@@ -24,8 +29,6 @@ except:
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
-
-USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
 
 
 class ModelFieldCompat:
@@ -50,7 +53,11 @@ class ModelFieldCompat:
 
     @property
     def default(self) -> Any:
-        return self.field.default
+        if USING_PYDANTIC_2:
+            return self.field.default
+        else:
+            field_info = getattr(self.field, "field_info", None)
+            return field_info.default if field_info else PydanticUndefined
 
     @property
     def description(self) -> Optional[str]:
@@ -65,7 +72,9 @@ class ModelFieldCompat:
             return self.field.is_required()  # type: ignore
         else:
             # required is of type 'BoolUndefined', which is a Union of bool and pydantic 1.x's UndefinedType
-            return self.field.required if isinstance(self.field.required, bool) else False
+            return (
+                self.field.required if isinstance(self.field.required, bool) else False
+            )
 
     @property
     def discriminator(self) -> Optional[str]:
