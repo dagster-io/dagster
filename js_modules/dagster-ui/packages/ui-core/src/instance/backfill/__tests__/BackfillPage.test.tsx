@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, waitFor, screen, getByText, getAllByText} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {getAllByText, getByText, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
@@ -8,7 +7,6 @@ import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
   buildAssetBackfillData,
-  buildAssetBackfillTargetPartitions,
   buildAssetKey,
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
@@ -16,7 +14,7 @@ import {
   buildPythonError,
   buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
-import {BACKFILL_DETAILS_QUERY, BackfillPage, PartitionSelection} from '../BackfillPage';
+import {BACKFILL_DETAILS_QUERY, BackfillPage} from '../BackfillPage';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../../graph/asyncGraphLayout', () => ({}));
