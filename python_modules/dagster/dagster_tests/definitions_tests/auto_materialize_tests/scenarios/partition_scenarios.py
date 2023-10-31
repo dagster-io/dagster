@@ -467,7 +467,6 @@ partition_scenarios = {
                 num_requested=4,
                 num_skipped=1,
             ),
-            AssetEvaluationSpec.empty("daily"),
         ],
     ),
     "test_skip_entire_asset_on_backfill_in_progress": AssetReconciliationScenario(
@@ -529,7 +528,6 @@ partition_scenarios = {
                 num_requested=0,
                 num_skipped=5,
             ),
-            AssetEvaluationSpec.empty("daily"),
         ],
     ),
 }

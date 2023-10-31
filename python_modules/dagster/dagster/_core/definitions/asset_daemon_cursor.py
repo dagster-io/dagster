@@ -151,7 +151,10 @@ class AssetDaemonCursor(NamedTuple):
             )
 
         latest_evaluation_by_asset_key = {
-            evaluation.asset_key: evaluation for evaluation in evaluations
+            evaluation.asset_key: evaluation
+            for evaluation in evaluations
+            # don't bother storing empty evaluations on the cursor
+            if not evaluation.is_empty
         }
 
         return AssetDaemonCursor(
