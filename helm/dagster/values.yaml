@@ -1033,7 +1033,7 @@ dagsterDaemon:
     tag: ~
     pullPolicy: Always
 
-  heartbeatTolerance: 300
+  heartbeatTolerance: 1800
 
   runCoordinator:
     # Whether or not to enable the run queue (or some other custom run coordinator). See
