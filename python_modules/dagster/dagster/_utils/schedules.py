@@ -8,7 +8,7 @@ import pytz
 from croniter import croniter as _croniter
 
 import dagster._check as check
-from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
+from dagster._seven.compat.pendulum import PendulumDateTime, create_pendulum_time, to_timezone
 
 
 class CroniterShim(_croniter):
@@ -64,52 +64,43 @@ def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
 def _replace_hour_and_minute(pendulum_date: PendulumDateTime, hour: int, minute: int):
     tz = pendulum_date.tz
     try:
-        new_time = pendulum.instance(
-            tz.convert(
-                datetime.datetime(
-                    pendulum_date.year,
-                    pendulum_date.month,
-                    pendulum_date.day,
-                    hour,
-                    minute,
-                    0,
-                    0,
-                ),
-                dst_rule=pendulum.TRANSITION_ERROR,
-            )
+        new_time = create_pendulum_time(
+            pendulum_date.year,
+            pendulum_date.month,
+            pendulum_date.day,
+            hour,
+            minute,
+            0,
+            0,
+            tz=pendulum_date.timezone_name,
+            dst_rule=pendulum.TRANSITION_ERROR,
         )
     except pendulum.tz.exceptions.NonExistingTime:  # type: ignore
         # If we fall on a non-existant time (e.g. between 2 and 3AM during a DST transition)
         # advance to the end of the window, which does exist
-        new_time = pendulum.instance(
-            tz.convert(
-                datetime.datetime(
-                    pendulum_date.year,
-                    pendulum_date.month,
-                    pendulum_date.day,
-                    hour + 1,
-                    0,
-                    0,
-                    0,
-                ),
-                dst_rule=pendulum.TRANSITION_ERROR,
-            )
+        new_time = create_pendulum_time(
+            pendulum_date.year,
+            pendulum_date.month,
+            pendulum_date.day,
+            hour + 1,
+            0,
+            0,
+            0,
+            tz=pendulum_date.timezone_name,
+            dst_rule=pendulum.TRANSITION_ERROR,
         )
     except pendulum.tz.exceptions.AmbiguousTime:  # type: ignore
         # Choose the later of the two possible timestamps
-        new_time = pendulum.instance(
-            tz.convert(
-                datetime.datetime(
-                    pendulum_date.year,
-                    pendulum_date.month,
-                    pendulum_date.day,
-                    hour,
-                    minute,
-                    0,
-                    0,
-                ),
-                dst_rule=pendulum.POST_TRANSITION,
-            )
+        new_time = create_pendulum_time(
+            pendulum_date.year,
+            pendulum_date.month,
+            pendulum_date.day,
+            hour,
+            minute,
+            0,
+            0,
+            tz=pendulum_date.timezone_name,
+            dst_rule=pendulum.POST_TRANSITION,
         )
 
     return new_time
