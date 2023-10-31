@@ -194,7 +194,10 @@ def build_asset_with_blocking_check(
     check.invariant(len(asset_def.op.output_defs) == 1)
     asset_out_type = asset_def.op.output_defs[0].dagster_type
 
-    @op(ins={"asset_return_value": In(asset_out_type), "check_evaluations": In(Nothing)})
+    @op(
+        name=f"{asset_def.op.name}_asset_and_checks",
+        ins={"asset_return_value": In(asset_out_type), "check_evaluations": In(Nothing)},
+    )
     def fan_in_checks_and_asset_return_value(context: OpExecutionContext, asset_return_value: Any):
         # we pass the asset_return_value through and store it again so that downstream assets can load it.
         # This is a little silly- we only do this because this op has the asset key in its StepOutputProperties
@@ -219,7 +222,9 @@ def build_asset_with_blocking_check(
 
     # kwargs are the inputs to the asset_def.op that we are wrapping
     def blocking_asset(**kwargs):
-        asset_return_value = asset_def.op.with_replaced_properties(name="asset_op")(**kwargs)
+        asset_return_value = asset_def.op.with_replaced_properties(
+            name=f"{asset_def.op.name}_graph_asset_op"
+        )(**kwargs)
         check_evaluations = [check.node_def(asset_return_value) for check in checks]
 
         return {
