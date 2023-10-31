@@ -40,7 +40,7 @@ partition_scenarios = [
         initial_state=one_asset.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             run_request(asset_keys=["A"], partition_key="1")
         ),
     ),
@@ -49,7 +49,7 @@ partition_scenarios = [
         initial_state=one_asset.with_asset_properties(
             partitions_def=two_partitions_def,
         ).with_all_eager(2),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             run_request(asset_keys=["A"], partition_key="1"),
             run_request(asset_keys=["A"], partition_key="2"),
         ),
@@ -59,7 +59,7 @@ partition_scenarios = [
         initial_state=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             run_request(asset_keys=["A", "B"], partition_key="1")
         ),
     ),
@@ -68,7 +68,7 @@ partition_scenarios = [
         initial_state=one_asset.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
-        scenario=lambda state: state.evaluate_tick()
+        execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["A"], partition_key="1"))
         .evaluate_tick()
         .assert_requested_runs(),
@@ -78,7 +78,7 @@ partition_scenarios = [
         initial_state=one_asset.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
-        scenario=lambda state: state.with_runs(run_request(asset_keys=["A"], partition_key="1"))
+        execution_fn=lambda state: state.with_runs(run_request(asset_keys=["A"], partition_key="1"))
         .evaluate_tick()
         .assert_requested_runs(),
     ),
@@ -87,7 +87,7 @@ partition_scenarios = [
         initial_state=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
-        scenario=lambda state: state.with_runs(
+        execution_fn=lambda state: state.with_runs(
             run_request(asset_keys=["A", "B"], partition_key="1")
         )
         .evaluate_tick()
@@ -98,7 +98,7 @@ partition_scenarios = [
         initial_state=two_assets_in_sequence.with_asset_properties(
             partitions_def=two_partitions_def
         ).with_all_eager(2),
-        scenario=lambda state: state.with_runs(
+        execution_fn=lambda state: state.with_runs(
             run_request(asset_keys=["A"], partition_key="1"),
             run_request(asset_keys=["A"], partition_key="2"),
         )
@@ -113,7 +113,7 @@ partition_scenarios = [
         initial_state=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
-        scenario=lambda state: state.with_runs(run_request(asset_keys=["A"], partition_key="1"))
+        execution_fn=lambda state: state.with_runs(run_request(asset_keys=["A"], partition_key="1"))
         .evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["B"], partition_key="1")),
     ),
@@ -122,7 +122,7 @@ partition_scenarios = [
         initial_state=two_assets_in_sequence.with_asset_properties(
             partitions_def=one_partitions_def
         ).with_all_eager(),
-        scenario=lambda state: state.with_runs(
+        execution_fn=lambda state: state.with_runs(
             run_request(asset_keys=["A", "B"], partition_key="1"),
             run_request(asset_keys=["A"], partition_key="1"),
         )
@@ -135,7 +135,7 @@ partition_scenarios = [
         .with_current_time(time_partitions_start)
         .with_current_time_advanced(days=2, hours=4)
         .with_all_eager(),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             run_request(asset_keys=["A"], partition_key=day_partition_key(state.current_time))
         ),
     ),
@@ -145,7 +145,7 @@ partition_scenarios = [
         .with_current_time(time_partitions_start)
         .with_current_time_advanced(days=30, hours=4)
         .with_all_eager(),
-        scenario=lambda state: state.evaluate_tick()
+        execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(
             run_request(asset_keys=["A"], partition_key=day_partition_key(state.current_time))
         )
@@ -171,7 +171,7 @@ partition_scenarios = [
         .with_current_time(time_partitions_start)
         .with_current_time_advanced(years=2, hours=4)
         .with_all_eager(),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             run_request(asset_keys=["A"], partition_key=day_partition_key(state.current_time))
         ),
     ),
@@ -180,7 +180,7 @@ partition_scenarios = [
         initial_state=hourly_to_daily.with_current_time(time_partitions_start)
         .with_current_time_advanced(days=3, hours=1)
         .with_all_eager(100),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             *(
                 run_request(
                     asset_keys=["A"], partition_key=hour_partition_key(state.current_time, delta=-i)
@@ -194,7 +194,7 @@ partition_scenarios = [
         initial_state=hourly_to_daily.with_current_time(time_partitions_start)
         .with_current_time_advanced(days=1, hours=4)
         .with_all_eager(100),
-        scenario=lambda state: state.with_runs(
+        execution_fn=lambda state: state.with_runs(
             *[
                 run_request(
                     ["A"], partition_key=hour_partition_key(state.current_time, delta=-i - 4)
@@ -221,7 +221,7 @@ partition_scenarios = [
         .with_current_time(time_partitions_start)
         .with_current_time_advanced(days=1, hours=1)
         .with_all_eager(100),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             *(
                 run_request(["A"], partition_key=partition_key)
                 for partition_key in time_multipartitions_def.get_multipartition_keys_with_dimension_value(
@@ -235,7 +235,7 @@ partition_scenarios = [
         initial_state=one_asset.with_asset_properties(
             partitions_def=static_multipartitions_def,
         ).with_all_eager(100),
-        scenario=lambda state: state.evaluate_tick().assert_requested_runs(
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
             *(
                 run_request(["A"], partition_key=partition_key)
                 for partition_key in static_multipartitions_def.get_partition_keys()
@@ -250,7 +250,7 @@ partition_scenarios = [
         .with_current_time(time_partitions_start)
         .with_current_time_advanced(days=2, hours=1)
         .with_all_eager(),
-        scenario=lambda state: state.with_runs(
+        execution_fn=lambda state: state.with_runs(
             run_request(["A", "B"]),
             run_request(["C"], partition_key=day_partition_key(state.current_time)),
             run_request(["A"]),

@@ -82,12 +82,12 @@ def get_code_location_origin(
 
 def day_partition_key(time: datetime.datetime, delta: int = 0) -> str:
     """Returns the partition key of a day partition delta days from the initial time."""
-    return (time + pendulum.duration(days=delta - 1)).strftime("%Y-%m-%d")
+    return (time + datetime.timedelta(days=delta - 1)).strftime("%Y-%m-%d")
 
 
 def hour_partition_key(time: datetime.datetime, delta: int = 0) -> str:
     """Returns the partition key of a day partition delta days from the initial time."""
-    return (time + pendulum.duration(hours=delta - 1)).strftime("%Y-%m-%d-%H:00")
+    return (time + datetime.timedelta(hours=delta - 1)).strftime("%Y-%m-%d-%H:00")
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
@@ -229,7 +229,7 @@ class AssetDaemonScenarioState(NamedTuple):
         return self._replace(current_time=pendulum.parse(time))
 
     def with_current_time_advanced(self, **kwargs) -> "AssetDaemonScenarioState":
-        return self._replace(current_time=self.current_time + pendulum.duration(**kwargs))
+        return self._replace(current_time=self.current_time + datetime.timedelta(**kwargs))
 
     def with_runs(self, *run_requests: RunRequest) -> "AssetDaemonScenarioState":
         with pendulum.test(self.current_time):
