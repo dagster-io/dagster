@@ -25,6 +25,7 @@ from dagster import (
     DailyPartitionsDefinition,
     Definitions,
     HourlyPartitionsDefinition,
+    LastPartitionMapping,
     Nothing,
     PartitionKeyRange,
     PartitionsDefinition,
@@ -1352,3 +1353,46 @@ def test_partition_outside_backfill_materialized():
         "2023-10-03"
         not in materialized_subset.get_partitions_subset(foo_child.key).get_partition_keys()
     )
+
+
+def test_asset_backfill_unpartitioned_downstream_of_partitioned():
+    instance = DagsterInstance.ephemeral()
+
+    foo_partitions_def = DailyPartitionsDefinition("2023-10-01")
+
+    @asset(partitions_def=foo_partitions_def)
+    def foo():
+        pass
+
+    @asset(
+        partitions_def=foo_partitions_def,
+        ins={
+            "foo": AssetIn(
+                key=foo.key, partition_mapping=LastPartitionMapping(), dagster_type=Nothing
+            )
+        },
+    )
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {"repo": [foo, foo_child]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    partition_key_range = PartitionKeyRange(start="2023-10-01", end="2023-10-07")
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=foo_partitions_def.get_partition_keys_in_range(partition_key_range),
+        asset_selection=[foo.key, foo_child.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 10, 8, 0, 0, 0),
+    )
+
+    assert asset_backfill_data.target_subset.partitions_subsets_by_asset_key == {
+        foo.key: foo_partitions_def.empty_subset().with_partition_key_range(partition_key_range),
+        foo_child.key: foo_partitions_def.empty_subset().with_partition_key_range(
+            partition_key_range
+        ),
+    }
+
+    run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
