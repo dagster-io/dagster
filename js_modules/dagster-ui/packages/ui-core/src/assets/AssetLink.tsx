@@ -24,7 +24,7 @@ export const AssetLink: React.FC<{
       style={{maxWidth: '100%'}}
     >
       {icon ? (
-        <Box margin={{right: 8, top: 2}} style={{width: 16}}>
+        <Box margin={{right: 8, top: 2}}>
           <Icon name={icon} color={Colors.Gray400} />
         </Box>
       ) : null}
