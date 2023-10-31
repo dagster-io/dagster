@@ -538,6 +538,8 @@ class ActiveExecution:
                     else None
                 ),
             )
+            if self._instance_concurrency_context:
+                self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_successful_output:
             event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
             self.mark_step_produced_output(event_specific_data.step_output_handle)
