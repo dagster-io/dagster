@@ -10,7 +10,10 @@ from dagster import (
     BackfillPolicy,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    Definitions,
+    DependencyDefinition,
     FreshnessPolicy,
+    NodeInvocation,
     LastPartitionMapping,
     PartitionMapping,
     PartitionsDefinition,
@@ -561,3 +564,76 @@ def test_dbt_with_downstream_asset():
     assert len(downstream_of_dbt.input_names) == 2
     assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
     assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing
+
+
+def test_dbt_with_python_interleaving() -> None:
+    dbt_project_dir = (
+        Path(__file__)
+        .joinpath("..", "dbt_projects", "test_dagster_dbt_python_interleaving")
+        .resolve()
+    )
+    manifest_path = dbt_project_dir.joinpath("manifest.json").resolve()
+    manifest = json.loads(manifest_path.read_bytes())
+
+    # don't select the seeds
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    assert set(my_dbt_assets.keys_by_input_name.values()) == {
+        AssetKey(["dagster", "python_augmented_customers"]),
+        # these inputs are necessary for copies of this asset to properly reflect the dependencies
+        # of this asset when it is automatically subset
+        AssetKey("raw_customers"),
+        AssetKey("raw_orders"),
+        AssetKey("raw_payments"),
+        AssetKey("stg_orders"),
+        AssetKey("stg_payments"),
+    }
+
+    @asset(key_prefix="dagster", deps=["raw_customers"])
+    def python_augmented_customers():
+        ...
+
+    defs = Definitions(assets=[my_dbt_assets, python_augmented_customers])
+    global_job = defs.get_implicit_global_asset_job_def()
+    # my_dbt_assets gets split up
+    assert global_job.dependencies == {
+        # no dependencies for the first invocation of my_dbt_assets
+        NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
+        # the python augmented customers asset depends on the second invocation of my_dbt_assets
+        NodeInvocation(name="dagster__python_augmented_customers"): {
+            "raw_customers": DependencyDefinition(node="my_dbt_assets_2", output="raw_customers")
+        },
+        # the second invocation of my_dbt_assets depends on the first, and the python step
+        NodeInvocation(name="my_dbt_assets"): {
+            "__subset_input__stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_orders"
+            ),
+            "__subset_input__stg_payments": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_payments"
+            ),
+            "dagster_python_augmented_customers": DependencyDefinition(
+                node="dagster__python_augmented_customers", output="result"
+            ),
+        },
+    }
+    # two distinct node definitions, but 3 nodes overall
+    assert len(global_job.all_node_defs) == 2
+    assert len(global_job.nodes) == 3
+
+    # now make sure that if you just select these two, we still get a valid dependency graph (where)
+    # customers executes after its parent "stg_orders", even though the python step is not selected
+    subset_job = global_job.get_subset(
+        asset_selection={AssetKey("stg_orders"), AssetKey("customers")}
+    )
+    assert subset_job.dependencies == {
+        # no dependencies for the first invocation of my_dbt_assets
+        NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
+        # the second invocation of my_dbt_assets depends on the first
+        NodeInvocation(name="my_dbt_assets"): {
+            "__subset_input__stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_orders"
+            )
+        },
+    }
