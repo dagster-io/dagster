@@ -11,6 +11,8 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     FreshnessPolicy,
+    LastPartitionMapping,
+    PartitionMapping,
     PartitionsDefinition,
     asset,
 )
@@ -329,6 +331,29 @@ def test_with_asset_key_replacements() -> None:
         AssetKey(["prefix", "sort_hot_cereals_by_calories"]),
         AssetKey(["prefix", "sort_by_calories"]),
     }
+
+
+@pytest.mark.parametrize("partition_mapping", [None, LastPartitionMapping()])
+def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) -> None:
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_partition_mapping(
+            cls,
+            dbt_resource_props: Mapping[str, Any],
+            dbt_parent_resource_props: Mapping[str, Any],
+        ) -> Optional[PartitionMapping]:
+            return partition_mapping
+
+    @dbt_assets(
+        manifest=test_dagster_metadata_manifest,
+        dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
+    )
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.keys_by_input_name
+    for input_asset_key in my_dbt_assets.keys_by_input_name.values():
+        assert my_dbt_assets.get_partition_mapping(input_asset_key) == partition_mapping
 
 
 def test_with_description_replacements() -> None:
