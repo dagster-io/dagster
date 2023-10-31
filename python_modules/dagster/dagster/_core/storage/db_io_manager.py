@@ -174,7 +174,16 @@ class DbIOManager(IOManager):
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
-            if len(asset_key_path) > 1 and self._schema:
+            if output_context_metadata.get("schema") and self._schema:
+                raise DagsterInvalidDefinitionError(
+                    f"Schema {output_context_metadata.get('schema')} "
+                    "specified via output metadata, but conflicting schema "
+                    f"{self._schema} was provided via run_config. "
+                    "Schema can only be specified one way."
+                )
+            elif output_context_metadata.get("schema"):
+                schema = cast(str, output_context_metadata["schema"])
+            elif len(asset_key_path) > 1 and self._schema:
                 raise DagsterInvalidDefinitionError(
                     f"Asset {asset_key_path} specifies a schema with "
                     f"its key prefixes {asset_key_path[:-1]}, but schema  "
