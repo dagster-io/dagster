@@ -248,6 +248,9 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
         description
       }
     }
+    backfillPolicy {
+      description
+    }
     partitionDefinition {
       description
     }
