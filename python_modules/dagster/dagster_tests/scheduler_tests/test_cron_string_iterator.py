@@ -48,12 +48,13 @@ def test_cron_iterator_leap_day():
         assert next_datetime.minute == 2
 
 
-# In Europe/Berlin on 10/29, 2AM-3AM happen twice (first with dst_rule=PRE_TRANSITION,
+# Fall back: In Europe/Berlin on 10/29, 2AM-3AM happen twice (first with dst_rule=PRE_TRANSITION,
 # then dst_rule=POST_TRANSITION)
-# In Europe/Berlin on Sunday 3/26, 2AM jumps ahead to 3AM
+# Spring forward: In Europe/Berlin on Sunday 3/26, 2AM jumps ahead to 3AM
 @pytest.mark.parametrize(
     "execution_timezone,cron_string,times",
     [
+        # Daily / fall back
         (
             "Europe/Berlin",
             "45 1 * * *",
@@ -126,6 +127,7 @@ def test_cron_iterator_leap_day():
                 create_pendulum_time(2023, 11, 1, 3, 0, 0, tz="Europe/Berlin"),
             ],
         ),
+        # Hourly / fall back
         (
             "Europe/Berlin",
             "45 * * * *",
@@ -156,6 +158,82 @@ def test_cron_iterator_leap_day():
                 create_pendulum_time(2023, 10, 29, 3, 0, 0, tz="Europe/Berlin"),
             ],
         ),
+        # Monthly / fall back (11/5 2AM is turned back to 1AM)
+        (
+            "US/Central",
+            "45 0 5 * *",  # 5th of each month at 00:45 (No DST issues)
+            [
+                create_pendulum_time(2023, 9, 5, 0, 45, 0, tz="US/Central"),
+                create_pendulum_time(2023, 10, 5, 0, 45, 0, tz="US/Central"),
+                create_pendulum_time(2023, 11, 5, 0, 45, 0, tz="US/Central"),
+                create_pendulum_time(2023, 12, 5, 0, 45, 0, tz="US/Central"),
+                create_pendulum_time(2024, 1, 5, 0, 45, 0, tz="US/Central"),
+            ],
+        ),
+        (
+            "US/Central",
+            "0 1 5 * *",  # 5th of each month at 1AM
+            [
+                create_pendulum_time(
+                    2023, 9, 5, 1, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 5, 1, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 11, 5, 1, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 12, 5, 1, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2024, 1, 5, 1, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+            ],
+        ),
+        (
+            "US/Central",
+            "30 1 5 * *",  # 5th of each month at 130AM
+            [
+                create_pendulum_time(
+                    2023, 9, 5, 1, 30, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 5, 1, 30, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 11, 5, 1, 30, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 12, 5, 1, 30, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2024, 1, 5, 1, 30, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+            ],
+        ),
+        (
+            "US/Central",
+            "0 2 5 * *",  # 5th of each month at 2AM
+            [
+                create_pendulum_time(
+                    2023, 9, 5, 2, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 10, 5, 2, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 11, 5, 2, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2023, 12, 5, 2, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+                create_pendulum_time(
+                    2024, 1, 5, 2, 0, 0, tz="US/Central", dst_rule=pendulum.POST_TRANSITION
+                ),
+            ],
+        ),
+        # Daily / spring forward
         (
             "Europe/Berlin",
             "0 1 * * *",
@@ -208,6 +286,54 @@ def test_cron_iterator_leap_day():
                 create_pendulum_time(2023, 3, 29, 3, 0, 0, tz="Europe/Berlin"),
             ],
         ),
+        # Monthly / spring forward
+        (
+            "Europe/Berlin",
+            "0 1 26 * *",
+            [
+                create_pendulum_time(2023, 1, 26, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 2, 26, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 4, 26, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 5, 26, 1, 0, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "0 2 26 * *",
+            [
+                create_pendulum_time(2023, 1, 26, 2, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 2, 26, 2, 0, 0, tz="Europe/Berlin"),
+                # 2AM on 3/26 does not exist, move forward to 3AM
+                create_pendulum_time(2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 4, 26, 2, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 5, 26, 2, 0, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "30 2 26 * *",
+            [
+                create_pendulum_time(2023, 1, 26, 2, 30, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 2, 26, 2, 30, 0, tz="Europe/Berlin"),
+                # 230AM on 3/26 does not exist, move forward to 3AM
+                create_pendulum_time(2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 4, 26, 2, 30, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 5, 26, 2, 30, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "0 3 26 * *",
+            [
+                create_pendulum_time(2023, 1, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 2, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 4, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 5, 26, 3, 0, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        # Hourly / spring forward
         (
             "Europe/Berlin",
             "45 * * * *",
@@ -237,8 +363,11 @@ def test_dst_transition_advances(execution_timezone, cron_string, times):
         start_timestamp = orig_start_timestamp
 
         next_timestamp = times[i + 1].timestamp()
-        # Verify that for any start timestamp until the next tick, cron_string_iterator behaves
-        # as expected
+
+        # Spot-check 100 points on the interval between the two timestamps, making sure the last
+        # one is very close to the end
+        timestamp_interval = ((next_timestamp - 75) - orig_start_timestamp) / 100
+
         while start_timestamp < next_timestamp:
             fresh_cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
 
@@ -249,4 +378,4 @@ def test_dst_transition_advances(execution_timezone, cron_string, times):
                     next_time.timestamp() == times[j].timestamp()
                 ), f"Expected {times[i]} (starting from offset ({next_timestamp - start_timestamp}) to advance to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
 
-            start_timestamp = start_timestamp + 75
+            start_timestamp = start_timestamp + timestamp_interval
