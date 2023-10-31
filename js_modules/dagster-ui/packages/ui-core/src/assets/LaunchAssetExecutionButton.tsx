@@ -39,13 +39,13 @@ import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
 import {AssetKey} from './types';
 import {
+  LaunchAssetCheckUpstreamQuery,
+  LaunchAssetCheckUpstreamQueryVariables,
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
-  LaunchAssetCheckUpstreamQuery,
-  LaunchAssetCheckUpstreamQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
 
 export type LaunchAssetsChoosePartitionsTarget =
@@ -678,6 +678,14 @@ const PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT = gql`
   }
 `;
 
+const BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT = gql`
+  fragment BackfillPolicyForLaunchAssetFragment on BackfillPolicy {
+    maxPartitionsPerRun
+    description
+    policyType
+  }
+`;
+
 const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
@@ -687,6 +695,9 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     hasMaterializePermission
     partitionDefinition {
       ...PartitionDefinitionForLaunchAssetFragment
+    }
+    backfillPolicy {
+      ...BackfillPolicyForLaunchAssetFragment
     }
     isObservable
     isExecutable
@@ -717,6 +728,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT}
+  ${BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_LOADER_QUERY = gql`

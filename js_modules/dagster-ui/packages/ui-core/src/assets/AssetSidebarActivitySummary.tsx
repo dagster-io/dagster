@@ -97,6 +97,14 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         </SidebarSection>
       )}
 
+      {asset.backfillPolicy && (
+        <SidebarSection title="Backfill policy">
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
+            <Body style={{flex: 1}}>{asset.backfillPolicy.description}</Body>
+          </Box>
+        </SidebarSection>
+      )}
+
       {loadedPartitionKeys.length > 1 ? null : (
         <>
           <SidebarSection

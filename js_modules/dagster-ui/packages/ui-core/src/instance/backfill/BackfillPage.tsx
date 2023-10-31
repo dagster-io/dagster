@@ -1,18 +1,15 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
+  Box,
+  ButtonLink,
+  Colors,
+  Heading,
+  NonIdealState,
   Page,
   PageHeader,
-  Colors,
-  Box,
-  Tag,
-  Table,
   Spinner,
-  Dialog,
-  Button,
-  DialogFooter,
-  ButtonLink,
-  NonIdealState,
-  Heading,
+  Table,
+  Tag,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -32,20 +29,17 @@ import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../../assets/types';
 import {AssetKey, BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
-import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
-import {numberFormatter} from '../../ui/formatters';
 
 import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
+import {TargetPartitionsDisplay} from './TargetPartitionsDisplay';
 import {
   BackfillPartitionsForAssetKeyQuery,
   BackfillPartitionsForAssetKeyQueryVariables,
   BackfillStatusesByAssetQuery,
   BackfillStatusesByAssetQueryVariables,
-  PartitionBackfillFragment,
 } from './types/BackfillPage.types';
 
 dayjs.extend(duration);
@@ -200,9 +194,9 @@ export const BackfillPage = () => {
           <Detail
             label="Partition selection"
             detail={
-              <PartitionSelection
-                numPartitions={backfill.numPartitions || 0}
-                rootTargetedPartitions={backfill.assetBackfillData?.rootTargetedPartitions}
+              <TargetPartitionsDisplay
+                targetPartitionCount={backfill.numPartitions || 0}
+                targetPartitions={backfill.assetBackfillData?.rootTargetedPartitions}
               />
             }
           />
@@ -459,102 +453,6 @@ export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
     }
   }
 `;
-
-const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
-
-type AssetBackfillData = Extract<
-  PartitionBackfillFragment['assetBackfillData'],
-  {__typename: 'AssetBackfillData'}
->;
-
-export const PartitionSelection = ({
-  numPartitions,
-  rootTargetedPartitions,
-}: {
-  numPartitions: number;
-  rootTargetedPartitions?: AssetBackfillData['rootTargetedPartitions'];
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-
-  const {partitionKeys, ranges} = rootTargetedPartitions || {};
-
-  if (partitionKeys) {
-    if (partitionKeys.length <= 3) {
-      return (
-        <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
-          {partitionKeys.map((p) => (
-            <Tag key={p}>{p}</Tag>
-          ))}
-        </Box>
-      );
-    }
-
-    return (
-      <>
-        <ButtonLink onClick={() => setIsDialogOpen(true)}>
-          {numberFormatter.format(numPartitions)} partitions
-        </ButtonLink>
-        <Dialog
-          isOpen={isDialogOpen}
-          title={`Partition selection (${partitionKeys.length})`}
-          onClose={() => setIsDialogOpen(false)}
-        >
-          <div style={{height: '340px', overflow: 'hidden'}}>
-            <VirtualizedItemListForDialog
-              items={[...partitionKeys].sort((a, b) => COLLATOR.compare(a, b))}
-              renderItem={(assetKey) => (
-                <div key={assetKey}>
-                  <TruncatedTextWithFullTextOnHover text={assetKey} />
-                </div>
-              )}
-            />
-          </div>
-          <DialogFooter topBorder>
-            <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </Dialog>
-      </>
-    );
-  }
-
-  if (ranges) {
-    if (ranges.length === 1) {
-      const {start, end} = ranges[0]!;
-      return (
-        <div>
-          {start}...{end}
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <ButtonLink onClick={() => setIsDialogOpen(true)}>
-          {numberFormatter.format(numPartitions)} partitions
-        </ButtonLink>
-        <Dialog
-          isOpen={isDialogOpen}
-          title={`Partition selection (${ranges?.length})`}
-          onClose={() => setIsDialogOpen(false)}
-        >
-          <div style={{height: '340px', overflow: 'hidden'}}>
-            <VirtualizedItemListForDialog
-              items={ranges || []}
-              renderItem={({start, end}) => {
-                return <div key={`${start}:${end}`}>{`${start}...${end}`}</div>;
-              }}
-            />
-          </div>
-          <DialogFooter topBorder>
-            <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </Dialog>
-      </>
-    );
-  }
-
-  return <div>{numPartitions === 1 ? '1 partition' : `${numPartitions} partitions`}</div>;
-};
 
 const formatDuration = (duration: number) => {
   const seconds = Math.floor((duration / 1000) % 60);

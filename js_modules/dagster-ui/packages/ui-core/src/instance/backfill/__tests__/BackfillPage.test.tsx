@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, waitFor, screen, getByText, getAllByText} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {getAllByText, getByText, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
@@ -8,7 +7,6 @@ import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
   buildAssetBackfillData,
-  buildAssetBackfillTargetPartitions,
   buildAssetKey,
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
@@ -16,7 +14,7 @@ import {
   buildPythonError,
   buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
-import {BACKFILL_DETAILS_QUERY, BackfillPage, PartitionSelection} from '../BackfillPage';
+import {BACKFILL_DETAILS_QUERY, BackfillPage} from '../BackfillPage';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../../graph/asyncGraphLayout', () => ({}));
@@ -166,82 +164,5 @@ describe('BackfillPage', () => {
     expect(getByText(assetBRow, 'assetB')).toBeVisible();
     expect(getByText(assetBRow, 'Completed')).toBeVisible();
     expect(getAllByText(assetBRow, '-').length).toBe(3);
-  });
-});
-
-describe('PartitionSelection', () => {
-  it('renders the targeted partitions when rootAssetTargetedPartitions is provided and length <= 3', async () => {
-    const {getByText} = render(
-      <PartitionSelection
-        numPartitions={3}
-        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
-          partitionKeys: ['1', '2', '3'],
-          ranges: null,
-        })}
-      />,
-    );
-
-    expect(getByText('1')).toBeInTheDocument();
-    expect(getByText('2')).toBeInTheDocument();
-    expect(getByText('3')).toBeInTheDocument();
-  });
-
-  it('renders the targeted partitions in a dialog when rootAssetTargetedPartitions is provided and length > 3', async () => {
-    const {getByText} = render(
-      <PartitionSelection
-        numPartitions={4}
-        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
-          partitionKeys: ['1', '2', '3', '4'],
-          ranges: null,
-        })}
-      />,
-    );
-
-    await userEvent.click(getByText('4 partitions'));
-
-    expect(getByText('1')).toBeInTheDocument();
-    expect(getByText('2')).toBeInTheDocument();
-    expect(getByText('3')).toBeInTheDocument();
-    expect(getByText('4')).toBeInTheDocument();
-  });
-
-  it('renders the single targeted range when rootAssetTargetedRanges is provided and length === 1', async () => {
-    const {getByText} = render(
-      <PartitionSelection
-        numPartitions={1}
-        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
-          partitionKeys: null,
-          ranges: [buildPartitionKeyRange({start: '1', end: '2'})],
-        })}
-      />,
-    );
-
-    expect(getByText('1...2')).toBeInTheDocument();
-  });
-
-  it('renders the targeted ranges in a dialog when rootAssetTargetedRanges is provided and length > 1', async () => {
-    const {getByText} = render(
-      <PartitionSelection
-        numPartitions={2}
-        rootTargetedPartitions={buildAssetBackfillTargetPartitions({
-          partitionKeys: null,
-          ranges: [
-            buildPartitionKeyRange({start: '1', end: '2'}),
-            buildPartitionKeyRange({start: '3', end: '4'}),
-          ],
-        })}
-      />,
-    );
-
-    await userEvent.click(getByText('2 partitions'));
-
-    expect(getByText('1...2')).toBeInTheDocument();
-    expect(getByText('3...4')).toBeInTheDocument();
-  });
-
-  it('renders the numPartitions when neither rootAssetTargetedPartitions nor rootAssetTargetedRanges are provided', async () => {
-    const {getByText} = render(<PartitionSelection numPartitions={2} />);
-
-    expect(getByText('2 partitions')).toBeInTheDocument();
   });
 });

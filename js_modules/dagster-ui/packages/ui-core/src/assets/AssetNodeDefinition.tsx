@@ -95,6 +95,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
+
           {assetNode.freshnessPolicy && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
@@ -127,6 +128,21 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
+
+          {assetNode.backfillPolicy && (
+            <>
+              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
+                <Subheading>Backfill policy</Subheading>
+              </Box>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                flex={{gap: 12, alignItems: 'flex-start'}}
+              >
+                <Body style={{flex: 1}}>{assetNode.backfillPolicy.description}</Body>
+              </Box>
+            </>
+          )}
+
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border="top-and-bottom"
@@ -326,7 +342,9 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       cronSchedule
       cronScheduleTimezone
     }
-
+    backfillPolicy {
+      description
+    }
     partitionDefinition {
       description
     }

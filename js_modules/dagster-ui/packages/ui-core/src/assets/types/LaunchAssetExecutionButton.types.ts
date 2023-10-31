@@ -14,6 +14,13 @@ export type PartitionDefinitionForLaunchAssetFragment = {
   }>;
 };
 
+export type BackfillPolicyForLaunchAssetFragment = {
+  __typename: 'BackfillPolicy';
+  maxPartitionsPerRun: number | null;
+  description: string;
+  policyType: Types.BackfillPolicyType;
+};
+
 export type LaunchAssetExecutionAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
@@ -34,6 +41,12 @@ export type LaunchAssetExecutionAssetNodeFragment = {
       name: string;
       dynamicPartitionsDefinitionName: string | null;
     }>;
+  } | null;
+  backfillPolicy: {
+    __typename: 'BackfillPolicy';
+    maxPartitionsPerRun: number | null;
+    description: string;
+    policyType: Types.BackfillPolicyType;
   } | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   assetChecks: Array<{
@@ -629,6 +642,12 @@ export type LaunchAssetLoaderQuery = {
         name: string;
         dynamicPartitionsDefinitionName: string | null;
       }>;
+    } | null;
+    backfillPolicy: {
+      __typename: 'BackfillPolicy';
+      maxPartitionsPerRun: number | null;
+      description: string;
+      policyType: Types.BackfillPolicyType;
     } | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     assetChecks: Array<{

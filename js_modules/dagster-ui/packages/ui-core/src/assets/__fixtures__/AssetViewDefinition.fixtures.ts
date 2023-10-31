@@ -66,6 +66,7 @@ export const AssetViewDefinitionSourceAsset: MockedResponse<AssetViewDefinitionQ
           hasAssetChecks: false,
           id: 'test.py.repo.["observable_source_asset"]',
           groupName: 'GROUP3',
+          backfillPolicy: null,
           partitionDefinition: null,
           partitionKeysByDimension: [],
           repository: {
@@ -134,6 +135,7 @@ export const AssetViewDefinitionSDA: MockedResponse<AssetViewDefinitionQuery> = 
           hasAssetChecks: false,
           id: 'test.py.repo.["sda_asset"]',
           groupName: 'GROUP3',
+          backfillPolicy: null,
           partitionDefinition: null,
           partitionKeysByDimension: [],
           repository: {
