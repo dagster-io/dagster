@@ -284,8 +284,10 @@ class AssetDaemonScenario(NamedTuple):
 
     id: str
     initial_state: AssetDaemonScenarioState
-    scenario: Callable[[AssetDaemonScenarioState], AssetDaemonScenarioState]
+    execution_fn: Callable[[AssetDaemonScenarioState], AssetDaemonScenarioState]
 
     def evaluate(self) -> None:
         self.initial_state.logger.setLevel(logging.DEBUG)
-        self.scenario(self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral()))
+        self.execution_fn(
+            self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral())
+        )
