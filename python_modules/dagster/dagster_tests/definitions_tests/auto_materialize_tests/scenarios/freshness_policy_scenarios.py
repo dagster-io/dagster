@@ -396,14 +396,11 @@ freshness_policy_scenarios = {
         evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
             AssetEvaluationSpec.from_single_rule(
                 "asset2",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
-            AssetEvaluationSpec.empty("asset3"),
-            AssetEvaluationSpec.empty("asset4"),
             AssetEvaluationSpec.from_single_rule(
                 "asset5",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),

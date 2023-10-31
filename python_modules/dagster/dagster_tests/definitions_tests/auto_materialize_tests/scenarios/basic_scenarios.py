@@ -113,7 +113,6 @@ basic_scenarios = {
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
             AssetEvaluationSpec(
                 "asset2",
                 [
@@ -143,7 +142,6 @@ basic_scenarios = {
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
             AssetEvaluationSpec(
                 "asset2",
                 [
@@ -221,12 +219,26 @@ basic_scenarios = {
         ],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
+    "parent_rematerialized_next_tick_empty": AssetReconciliationScenario(
+        assets=two_assets_in_sequence,
+        unevaluated_runs=[],
+        cursor_from=AssetReconciliationScenario(
+            assets=two_assets_in_sequence,
+            unevaluated_runs=[
+                run(["asset1", "asset2"]),
+                single_asset_run(asset_key="asset1"),
+            ],
+            expected_run_requests=[run_request(asset_keys=["asset2"])],
+        ),
+        expected_run_requests=[],
+        # should have no evaluation data for asset2 anymore
+        expected_evaluations=[AssetEvaluationSpec.empty("asset2")],
+    ),
     "one_parent_materialized_other_never_materialized": AssetReconciliationScenario(
         assets=one_asset_depends_on_two,
         unevaluated_runs=[single_asset_run(asset_key="parent1")],
         expected_run_requests=[run_request(asset_keys=["parent2", "child"])],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("parent1"),
             AssetEvaluationSpec.from_single_rule(
                 "parent2", AutoMaterializeRule.materialize_on_missing()
             ),

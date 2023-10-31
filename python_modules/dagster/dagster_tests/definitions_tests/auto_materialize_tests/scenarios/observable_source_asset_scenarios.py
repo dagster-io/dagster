@@ -242,7 +242,7 @@ observable_source_asset_scenarios = {
         assets=partitioned_downstream_of_changing_observable_source,
         unevaluated_runs=[],
         expected_run_requests=[],
-        expected_evaluations=[AssetEvaluationSpec.empty("asset1")],
+        expected_evaluations=[],
     ),
     "partitioned_downstream_of_unchanging_observable_source": AssetReconciliationScenario(
         assets=partitioned_downstream_of_unchanging_observable_source,
