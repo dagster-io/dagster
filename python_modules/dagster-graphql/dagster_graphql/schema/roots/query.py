@@ -22,6 +22,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
+from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
     fetch_auto_materialize_asset_evaluations_for_evaluation_id,
@@ -99,6 +100,7 @@ from ..asset_graph import (
     GrapheneAssetNodeOrError,
 )
 from ..backfill import (
+    GrapheneAssetPartitions,
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
@@ -111,6 +113,7 @@ from ..external import (
     GrapheneWorkspaceOrError,
 )
 from ..inputs import (
+    GrapheneAssetBackfillPreviewParams,
     GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
     GrapheneGraphSelector,
@@ -136,7 +139,10 @@ from ..logs.compute_logs import (
     GrapheneCapturedLogsMetadata,
     from_captured_log_data,
 )
-from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
+from ..partition_sets import (
+    GraphenePartitionSetOrError,
+    GraphenePartitionSetsOrError,
+)
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
@@ -428,6 +434,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePartitionBackfillOrError),
         backfillId=graphene.Argument(graphene.NonNull(graphene.String)),
         description="Retrieve a backfill by backfill id.",
+    )
+
+    assetBackfillPreview = graphene.Field(
+        non_null_list(GrapheneAssetPartitions),
+        params=graphene.Argument(graphene.NonNull(GrapheneAssetBackfillPreviewParams)),
+        description="Fetch the partitions that would be targeted by a backfill, given the root partitions targeted.",
     )
 
     partitionBackfillsOrError = graphene.Field(
@@ -1002,6 +1014,11 @@ class GrapheneQuery(graphene.ObjectType):
             cursor=cursor,
             limit=limit,
         )
+
+    def resolve_assetBackfillPreview(
+        self, graphene_info: ResolveInfo, params: GrapheneAssetBackfillPreviewParams
+    ) -> Sequence[GrapheneAssetPartitions]:
+        return get_asset_backfill_preview(graphene_info, params)
 
     def resolve_permissions(self, graphene_info: ResolveInfo):
         permissions = graphene_info.context.permissions

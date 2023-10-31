@@ -3098,6 +3098,7 @@ type Query {
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]): [AssetNodeDefinitionCollision!]!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
+  assetBackfillPreview(params: AssetBackfillPreviewParams!): [AssetPartitions!]!
   partitionBackfillsOrError(
     status: BulkActionStatus
     cursor: String
@@ -3241,6 +3242,16 @@ union PartitionBackfillOrError = PartitionBackfill | BackfillNotFoundError | Pyt
 type BackfillNotFoundError implements Error {
   message: String!
   backfillId: String!
+}
+
+type AssetPartitions {
+  assetKey: AssetKey!
+  partitions: AssetBackfillTargetPartitions
+}
+
+input AssetBackfillPreviewParams {
+  partitionNames: [String!]!
+  assetSelection: [AssetKeyInput!]!
 }
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError

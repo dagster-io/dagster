@@ -111,6 +111,11 @@ export type AssetBackfillData = {
   rootTargetedPartitions: AssetBackfillTargetPartitions;
 };
 
+export type AssetBackfillPreviewParams = {
+  assetSelection: Array<AssetKeyInput>;
+  partitionNames: Array<Scalars['String']>;
+};
+
 export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
 
 export type AssetBackfillTargetPartitions = {
@@ -453,6 +458,12 @@ export type AssetPartitionStatuses =
   | DefaultPartitionStatuses
   | MultiPartitionStatuses
   | TimePartitionStatuses;
+
+export type AssetPartitions = {
+  __typename: 'AssetPartitions';
+  assetKey: AssetKey;
+  partitions: Maybe<AssetBackfillTargetPartitions>;
+};
 
 export type AssetPartitionsStatusCounts = {
   __typename: 'AssetPartitionsStatusCounts';
@@ -2879,6 +2890,7 @@ export type PythonError = Error & {
 export type Query = {
   __typename: 'Query';
   allTopLevelResourceDetailsOrError: ResourcesOrError;
+  assetBackfillPreview: Array<AssetPartitions>;
   assetCheckExecutions: Array<AssetCheckExecution>;
   assetChecksOrError: AssetChecksOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
@@ -2934,6 +2946,10 @@ export type Query = {
 
 export type QueryAllTopLevelResourceDetailsOrErrorArgs = {
   repositorySelector: RepositorySelector;
+};
+
+export type QueryAssetBackfillPreviewArgs = {
+  params: AssetBackfillPreviewParams;
 };
 
 export type QueryAssetCheckExecutionsArgs = {
@@ -4570,6 +4586,20 @@ export const buildAssetBackfillData = (
   };
 };
 
+export const buildAssetBackfillPreviewParams = (
+  overrides?: Partial<AssetBackfillPreviewParams>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): AssetBackfillPreviewParams => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetBackfillPreviewParams');
+  return {
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    partitionNames:
+      overrides && overrides.hasOwnProperty('partitionNames') ? overrides.partitionNames! : [],
+  };
+};
+
 export const buildAssetBackfillTargetPartitions = (
   overrides?: Partial<AssetBackfillTargetPartitions>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -5257,6 +5287,29 @@ export const buildAssetNotFoundError = (
   return {
     __typename: 'AssetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'beatae',
+  };
+};
+
+export const buildAssetPartitions = (
+  overrides?: Partial<AssetPartitions>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetPartitions'} & AssetPartitions => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetPartitions');
+  return {
+    __typename: 'AssetPartitions',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    partitions:
+      overrides && overrides.hasOwnProperty('partitions')
+        ? overrides.partitions!
+        : relationshipsToOmit.has('AssetBackfillTargetPartitions')
+        ? ({} as AssetBackfillTargetPartitions)
+        : buildAssetBackfillTargetPartitions({}, relationshipsToOmit),
   };
 };
 
@@ -9934,6 +9987,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    assetBackfillPreview:
+      overrides && overrides.hasOwnProperty('assetBackfillPreview')
+        ? overrides.assetBackfillPreview!
+        : [],
     assetCheckExecutions:
       overrides && overrides.hasOwnProperty('assetCheckExecutions')
         ? overrides.assetCheckExecutions!
