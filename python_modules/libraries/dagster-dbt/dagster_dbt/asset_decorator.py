@@ -12,6 +12,7 @@ from typing import (
 
 from dagster import (
     AssetCheckSpec,
+    AssetDep,
     AssetKey,
     AssetOut,
     AssetsDefinition,
@@ -20,6 +21,9 @@ from dagster import (
     Nothing,
     PartitionsDefinition,
     multi_asset,
+)
+from dagster._utils.warnings import (
+    disable_dagster_warnings,
 )
 
 from .asset_utils import (
@@ -257,19 +261,19 @@ def dbt_assets(
         select=select, exclude=exclude or "", manifest_json=manifest
     )
     node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
-    deps = get_deps(
+    dbt_unique_id_deps = get_deps(
         dbt_nodes=node_info_by_dbt_unique_id,
         selected_unique_ids=unique_ids,
         asset_resource_types=ASSET_RESOURCE_TYPES,
     )
     (
-        non_argument_deps,
+        deps,
         outs,
         internal_asset_deps,
         check_specs,
     ) = get_dbt_multi_asset_args(
         dbt_nodes=node_info_by_dbt_unique_id,
-        deps=deps,
+        dbt_unique_id_deps=dbt_unique_id_deps,
         io_manager_key=io_manager_key,
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
@@ -298,7 +302,7 @@ def dbt_assets(
             outs=outs,
             name=name,
             internal_asset_deps=internal_asset_deps,
-            deps=non_argument_deps,
+            deps=deps,
             compute_kind="dbt",
             partitions_def=partitions_def,
             can_subset=True,
@@ -314,22 +318,22 @@ def dbt_assets(
 
 def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
-    deps: Mapping[str, FrozenSet[str]],
+    dbt_unique_id_deps: Mapping[str, FrozenSet[str]],
     io_manager_key: Optional[str],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> Tuple[
-    Sequence[AssetKey],
+    Sequence[AssetDep],
     Dict[str, AssetOut],
     Dict[str, Set[AssetKey]],
     Sequence[AssetCheckSpec],
 ]:
-    non_argument_deps: Set[AssetKey] = set()
+    deps: Set[AssetDep] = set()
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs: Sequence[AssetCheckSpec] = []
 
-    for unique_id, parent_unique_ids in deps.items():
+    for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
         output_name = output_name_fn(dbt_resource_props)
@@ -368,17 +372,18 @@ def get_dbt_multi_asset_args(
             if check_spec:
                 check_specs.append(check_spec)
 
-        # Translate parent unique ids to internal asset deps and non argument dep
-        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
-        for parent_unique_id in parent_unique_ids:
-            parent_resource_props = dbt_nodes[parent_unique_id]
-            parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
+        # Translate parent unique ids to dependencies
+        with disable_dagster_warnings():
+            output_internal_deps = internal_asset_deps.setdefault(output_name, set())
+            for parent_unique_id in parent_unique_ids:
+                parent_resource_props = dbt_nodes[parent_unique_id]
+                parent_asset_key = dagster_dbt_translator.get_asset_key(parent_resource_props)
 
-            # Add this parent as an internal dependency
-            output_internal_deps.add(parent_asset_key)
+                # Add this parent as an internal dependency
+                output_internal_deps.add(parent_asset_key)
 
-            # Mark this parent as an input if it has no dependencies
-            if parent_unique_id not in deps:
-                non_argument_deps.add(parent_asset_key)
+                # Mark this parent as an input if it has no dependencies
+                if parent_unique_id not in dbt_unique_id_deps:
+                    deps.add(AssetDep(asset=parent_asset_key))
 
-    return list(non_argument_deps), outs, internal_asset_deps, check_specs
+    return list(deps), outs, internal_asset_deps, check_specs
