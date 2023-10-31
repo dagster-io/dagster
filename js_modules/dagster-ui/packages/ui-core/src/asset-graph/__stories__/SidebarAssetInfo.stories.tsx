@@ -71,6 +71,7 @@ const buildSidebarQueryMock = (
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset1"]',
         description: null,
+        backfillPolicy: null,
         configField: null,
         metadataEntries: [],
         assetChecks: [],

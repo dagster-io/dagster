@@ -32,6 +32,7 @@ export type AssetNodeDefinitionFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
+  backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   repository: {
     __typename: 'Repository';

@@ -62,6 +62,7 @@ describe('buildAssetTabs', () => {
     opVersion: null,
     jobNames: ['__ASSET_JOB_0'],
     autoMaterializePolicy,
+    backfillPolicy: null,
     freshnessPolicy: null,
     requiredResources: [],
     configField: {
@@ -206,6 +207,7 @@ describe('buildAssetTabs', () => {
     opVersion: null,
     jobNames: ['__ASSET_JOB_0'],
     autoMaterializePolicy,
+    backfillPolicy: null,
     freshnessPolicy: null,
     requiredResources: [],
     configField: {

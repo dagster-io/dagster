@@ -88,6 +88,7 @@ export type AssetViewDefinitionQuery = {
             cronSchedule: string | null;
             cronScheduleTimezone: string | null;
           } | null;
+          backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           configField: {
@@ -15807,6 +15808,7 @@ export type AssetViewDefinitionNodeFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
+  backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   configField: {
