@@ -23,16 +23,17 @@ import orjson
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetMaterialization,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
+    OpExecutionContext,
     Output,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.errors import DagsterInvalidPropertyError
-from dagster._core.execution.context.compute import OpExecutionContext
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -99,7 +100,8 @@ class DbtCliEventMessage:
         self,
         manifest: DbtManifestParam,
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
-    ) -> Iterator[Union[Output, AssetObservation, AssetCheckResult]]:
+        context: Optional[OpExecutionContext] = None,
+    ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
         Args:
@@ -108,13 +110,19 @@ class DbtCliEventMessage:
                 linking dbt nodes to Dagster assets.
 
         Returns:
-            Iterator[Union[Output, AssetObservation, AssetCheckResult]]: A set of corresponding Dagster events.
-                - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetObservation for dbt test results that are not enabled as asset checks.
-                - AssetCheckResult for dbt test results that are enabled as asset checks.
-        """
-        dagster_dbt_translator = validate_translator(dagster_dbt_translator)
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+                A set of corresponding Dagster events.
 
+                In a Dagster asset definition, the following are yielded:
+                - Output for refables (e.g. models, seeds, snapshots.)
+                - AssetCheckResult for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
+
+                In a Dagster op definition, the following are yielded:
+                - AssetMaterialization for dbt test results that are not enabled as asset checks.
+                - AssetObservation for dbt test results.
+
+        """
         if self.raw_event["info"]["level"] == "debug":
             return
 
@@ -122,12 +130,15 @@ class DbtCliEventMessage:
         if not event_node_info:
             return
 
+        dagster_dbt_translator = validate_translator(dagster_dbt_translator)
         manifest = validate_manifest(manifest)
 
         if not manifest:
             logger.info(
                 "No dbt manifest was provided. Dagster events for dbt tests will not be created."
             )
+
+        has_asset_def: bool = bool(context and context.has_assets_def)
 
         invocation_id: str = self.raw_event["info"]["invocation_id"]
         unique_id: str = event_node_info["unique_id"]
@@ -141,15 +152,28 @@ class DbtCliEventMessage:
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             duration_seconds = (finished_at - started_at).total_seconds()
 
-            yield Output(
-                value=None,
-                output_name=output_name_fn(event_node_info),
-                metadata={
-                    "unique_id": unique_id,
-                    "invocation_id": invocation_id,
-                    "Execution Duration": duration_seconds,
-                },
-            )
+            if has_asset_def:
+                yield Output(
+                    value=None,
+                    output_name=output_name_fn(event_node_info),
+                    metadata={
+                        "unique_id": unique_id,
+                        "invocation_id": invocation_id,
+                        "Execution Duration": duration_seconds,
+                    },
+                )
+            else:
+                dbt_resource_props = manifest["nodes"][unique_id]
+                asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
+
+                yield AssetMaterialization(
+                    asset_key=asset_key,
+                    metadata={
+                        "unique_id": unique_id,
+                        "invocation_id": invocation_id,
+                        "Execution Duration": duration_seconds,
+                    },
+                )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
             test_resource_props = manifest["nodes"][unique_id]
@@ -163,7 +187,7 @@ class DbtCliEventMessage:
             attached_node_unique_id = test_resource_props.get("attached_node")
             is_generic_test = bool(attached_node_unique_id)
 
-            if is_asset_check and is_generic_test:
+            if has_asset_def and is_asset_check and is_generic_test:
                 is_test_successful = node_status == TestStatus.Pass
                 severity = AssetCheckSeverity(test_resource_props["config"]["severity"].upper())
 
@@ -214,6 +238,7 @@ class DbtCliInvocation:
     project_dir: Path
     target_path: Path
     raise_on_error: bool
+    context: Optional[OpExecutionContext] = field(default=None, repr=False)
     _error_messages: List[str] = field(init=False, default_factory=list)
 
     @classmethod
@@ -226,6 +251,7 @@ class DbtCliInvocation:
         project_dir: Path,
         target_path: Path,
         raise_on_error: bool,
+        context: Optional[OpExecutionContext],
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -280,6 +306,7 @@ class DbtCliInvocation:
             project_dir=project_dir,
             target_path=target_path,
             raise_on_error=raise_on_error,
+            context=context,
         )
 
     @public
@@ -324,14 +351,30 @@ class DbtCliInvocation:
         return self.process.wait() == 0
 
     @public
-    def stream(self) -> Iterator[Union[Output, AssetObservation, AssetCheckResult]]:
+    def stream(
+        self
+    ) -> Iterator[
+        Union[
+            Output,
+            AssetMaterialization,
+            AssetObservation,
+            AssetCheckResult,
+        ]
+    ]:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetObservation, AssetCheckResult]]: A set of corresponding Dagster events.
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+                A set of corresponding Dagster events.
+
+                In a Dagster asset definition, the following are yielded:
                 - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetObservation for dbt test results that are not enabled as asset checks.
                 - AssetCheckResult for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
+
+                In a Dagster op definition, the following are yielded:
+                - AssetMaterialization for dbt test results that are not enabled as asset checks.
+                - AssetObservation for dbt test results.
 
         Examples:
             .. code-block:: python
@@ -345,7 +388,9 @@ class DbtCliInvocation:
         """
         for event in self.stream_raw_events():
             yield from event.to_default_asset_events(
-                manifest=self.manifest, dagster_dbt_translator=self.dagster_dbt_translator
+                manifest=self.manifest,
+                dagster_dbt_translator=self.dagster_dbt_translator,
+                context=self.context,
             )
 
     @public
@@ -891,6 +936,7 @@ class DbtCliResource(ConfigurableResource):
             project_dir=project_dir,
             target_path=target_path,
             raise_on_error=raise_on_error,
+            context=context,
         )
 
 

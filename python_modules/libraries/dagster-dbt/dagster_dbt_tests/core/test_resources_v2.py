@@ -8,15 +8,15 @@ from typing import List, Optional, Union, cast
 import pytest
 from dagster import (
     AssetCheckResult,
+    AssetMaterialization,
     AssetObservation,
     FloatMetadataValue,
-    Output,
     TextMetadataValue,
     job,
     materialize,
     op,
 )
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
@@ -28,6 +28,7 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtT
 from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from pydantic import ValidationError
+from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
 
@@ -395,6 +396,8 @@ def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
 
 
 def test_dbt_cli_op_execution() -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+
     @op
     def my_dbt_op(dbt: DbtCliResource):
         dbt.cli(["run"]).wait()
@@ -403,11 +406,19 @@ def test_dbt_cli_op_execution() -> None:
     def my_dbt_job():
         my_dbt_op()
 
-    result = my_dbt_job.execute_in_process(
-        resources={
-            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
-        }
-    )
+    result = my_dbt_job.execute_in_process(resources={"dbt": dbt})
+
+    assert result.success
+
+    @op(out={})
+    def my_dbt_op_yield_events(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], manifest=manifest, context=context).stream()
+
+    @job
+    def my_dbt_job_yield_events():
+        my_dbt_op_yield_events()
+
+    result = my_dbt_job_yield_events.execute_in_process(resources={"dbt": dbt})
 
     assert result.success
 
@@ -491,12 +502,24 @@ def test_to_default_asset_output_events() -> None:
             },
         },
     }
+    manifest = {
+        "nodes": {
+            "a.b.c": {
+                "meta": {
+                    "dagster": {
+                        "asset_key": ["a", "b", "c"],
+                    },
+                },
+            },
+        },
+    }
+
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest={})
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
     )
 
     assert len(asset_events) == 1
-    assert all(isinstance(e, Output) for e in asset_events)
+    assert all(isinstance(e, AssetMaterialization) for e in asset_events)
     assert asset_events[0].metadata == {
         "unique_id": TextMetadataValue("a.b.c"),
         "invocation_id": TextMetadataValue("1-2-3"),
@@ -505,7 +528,7 @@ def test_to_default_asset_output_events() -> None:
 
 
 @pytest.mark.parametrize("is_asset_check", [False, True])
-def test_dbt_tests_to_events(is_asset_check: bool) -> None:
+def test_dbt_tests_to_events(mocker: MockerFixture, is_asset_check: bool) -> None:
     manifest = {
         "nodes": {
             "model.a": {
@@ -545,13 +568,18 @@ def test_dbt_tests_to_events(is_asset_check: bool) -> None:
         },
     }
 
+    mock_context = mocker.MagicMock()
+    mock_context.has_assets_def = True
+
     dagster_dbt_translator = DagsterDbtTranslator(
         settings=DagsterDbtTranslatorSettings(enable_asset_checks=is_asset_check)
     )
 
     asset_events = list(
         DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(
-            manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator,
+            context=mock_context,
         )
     )
 
