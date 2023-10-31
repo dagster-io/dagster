@@ -7,6 +7,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -880,7 +881,21 @@ class DiscardOnMaxMaterializationsExceededRule(
         return []
 
 
-@whitelist_for_serdes
+class AutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
+    def before_unpack(self, context, unpacked_dict: Any) -> Any:
+        # tuples are currently deserialized as lists, so we need to convert them back into tuples
+        conditions_key = "partition_subsets_by_condition"
+        partition_subsets_by_condition = unpacked_dict.get(conditions_key)
+        if partition_subsets_by_condition is not None:
+            unpacked_dict[conditions_key] = [
+                # coerce the deserialized dictionary back into a tuple
+                tuple(item)
+                for item in partition_subsets_by_condition
+            ]
+        return unpacked_dict
+
+
+@whitelist_for_serdes(serializer=AutoMaterializeAssetEvaluationSerializer)
 class AutoMaterializeAssetEvaluation(NamedTuple):
     """Represents the results of the auto-materialize logic for a single asset.
 
@@ -1072,7 +1087,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             # when rule evaluation results are deserialized from json, they are lists instead of
             # tuples, so we must convert them before comparing
             and sorted(self.partition_subsets_by_condition)
-            == sorted([tuple(x) for x in stored_evaluation.partition_subsets_by_condition])
+            == sorted(stored_evaluation.partition_subsets_by_condition)
         )
 
 
