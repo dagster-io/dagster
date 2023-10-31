@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster import AssetKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
@@ -143,6 +144,22 @@ class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):
             ranges=ranges,
             partitionKeys=partition_keys,
         )
+
+
+class GrapheneAssetPartitions(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    partitions = graphene.Field(GrapheneAssetBackfillTargetPartitions)
+
+    class Meta:
+        name = "AssetPartitions"
+
+    def __init__(self, asset_key: AssetKey, partitions_subset: Optional[PartitionsSubset]):
+        if partitions_subset is None:
+            partitions = None
+        else:
+            partitions = GrapheneAssetBackfillTargetPartitions(partitions_subset)
+
+        super().__init__(assetKey=GrapheneAssetKey(path=asset_key.path), partitions=partitions)
 
 
 class GrapheneAssetBackfillData(graphene.ObjectType):

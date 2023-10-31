@@ -6,6 +6,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
 from dagster._core.errors import DagsterError, DagsterUserCodeProcessError
 from dagster._core.events import AssetKey
+from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
 from dagster._core.host_representation.external_data import ExternalPartitionExecutionErrorData
@@ -14,7 +15,12 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from ..utils import BackfillParams, assert_permission, assert_permission_for_location
+from ..utils import (
+    AssetBackfillPreviewParams,
+    BackfillParams,
+    assert_permission,
+    assert_permission_for_location,
+)
 
 BACKFILL_CHUNK_SIZE = 25
 
@@ -23,6 +29,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
     from ...schema.backfill import (
+        GrapheneAssetPartitions,
         GrapheneCancelBackfillSuccess,
         GrapheneLaunchBackfillSuccess,
         GrapheneResumeBackfillSuccess,
@@ -64,6 +71,44 @@ def _assert_permission_for_asset_graph(
     else:
         for location_name in location_names:
             assert_permission_for_location(graphene_info, permission, location_name)
+
+
+def get_asset_backfill_preview(
+    graphene_info: "ResolveInfo", backfill_preview_params: AssetBackfillPreviewParams
+) -> Sequence["GrapheneAssetPartitions"]:
+    from ...schema.backfill import GrapheneAssetPartitions
+
+    asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+
+    check.invariant(backfill_preview_params.get("assetSelection") is not None)
+    check.invariant(backfill_preview_params.get("partitionNames") is not None)
+
+    asset_selection = [
+        cast(AssetKey, AssetKey.from_graphql_input(asset_key))
+        for asset_key in backfill_preview_params["assetSelection"]
+    ]
+    partition_names: List[str] = backfill_preview_params["partitionNames"]
+
+    asset_backfill_data = create_asset_backfill_data_from_asset_partitions(
+        asset_graph, asset_selection, partition_names, graphene_info.context.instance
+    )
+
+    asset_partitions = []
+
+    for asset_key in asset_backfill_data.get_targeted_asset_keys_topological_order():
+        if asset_graph.get_partitions_def(asset_key):
+            partitions_subset = asset_backfill_data.target_subset.partitions_subsets_by_asset_key[
+                asset_key
+            ]
+            asset_partitions.append(
+                GrapheneAssetPartitions(asset_key=asset_key, partitions_subset=partitions_subset)
+            )
+        else:
+            asset_partitions.append(
+                GrapheneAssetPartitions(asset_key=asset_key, partitions_subset=None)
+            )
+
+    return asset_partitions
 
 
 def create_and_launch_partition_backfill(
