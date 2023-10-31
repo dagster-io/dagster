@@ -96,6 +96,7 @@ def _replace_hour_and_minute(pendulum_date: PendulumDateTime, hour: int, minute:
             )
         )
     except pendulum.tz.exceptions.AmbiguousTime:  # type: ignore
+        # Choose the later of the two possible timestamps
         new_time = pendulum.instance(
             tz.convert(
                 datetime.datetime(
@@ -204,12 +205,19 @@ def cron_string_iterator(
         # This is already on a cron boundary, so yield it
         yield to_timezone(pendulum.instance(next_date), timezone_str)
 
-    elif start_offset == 0 and is_daily_schedule:
+    elif is_daily_schedule:
         # This logic working correctly requires a pendulum datetime rather than a pytz datetime
         pendulum_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
         next_date = _find_previous_daily_schedule_time_matching_cron_string(
             check.not_none(expected_minute), check.not_none(expected_hour), pendulum_datetime
         )
+        check.invariant(start_offset <= 0)
+        for _ in range(-start_offset):
+            next_date = _find_previous_daily_schedule_time_matching_cron_string(
+                check.not_none(expected_minute),
+                check.not_none(expected_hour),
+                pendulum_datetime.subtract(seconds=1),
+            )
     else:
         # Go back one iteration so that the next iteration is the first time that is >= start_datetime
         # and matches the cron schedule
@@ -223,7 +231,6 @@ def cron_string_iterator(
             next_date = date_iter.get_next(datetime.datetime)
 
         check.invariant(start_offset <= 0)
-
         for _ in range(-start_offset):
             next_date = date_iter.get_prev(datetime.datetime)
 
@@ -269,10 +276,10 @@ def cron_string_iterator(
 
             yield next_date
     else:
-        assert not (
-            start_offset == 0 and is_daily_schedule
-        )  # make sure we didn't skip croniter initialization earlier
         # Otherwise fall back to croniter
+
+        assert not is_daily_schedule  # make sure we didn't skip croniter initialization earlier
+
         while True:
             next_date = to_timezone(
                 pendulum.instance(check.not_none(date_iter).get_next(datetime.datetime)),
