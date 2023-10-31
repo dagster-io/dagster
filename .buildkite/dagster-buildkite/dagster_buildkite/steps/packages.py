@@ -499,6 +499,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-azure",
         env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
+        pytest_tox_factors=[
+            "pydantic1",
+            "pydantic2",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-celery",
