@@ -677,7 +677,9 @@ def _pack_value(
         }
 
     # inlined is_named_tuple_instance
-    if isinstance(val, tuple) and hasattr(val, "_fields"):
+    if isinstance(val, tuple):
+        if not hasattr(val, "_fields"):
+            check.failed("serdes does not support regular tuples, only whitelisted NamedTuples")
         klass_name = val.__class__.__name__
         if not whitelist_map.has_tuple_serializer(klass_name):
             raise SerializationError(
