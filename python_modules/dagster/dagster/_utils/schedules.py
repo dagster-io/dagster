@@ -118,6 +118,7 @@ def _find_previous_schedule_time(
     minute: Optional[int],
     hour: Optional[int],
     day: Optional[int],
+    day_of_week: Optional[int],
     schedule_type: ScheduleType,
     pendulum_date: PendulumDateTime,
 ) -> PendulumDateTime:
@@ -155,6 +156,35 @@ def _find_previous_schedule_time(
             )
 
         return new_time
+    elif schedule_type == ScheduleType.WEEKLY:
+        # first move to the correct time of day
+        new_time = _replace_date_fields(
+            pendulum_date,
+            check.not_none(hour),
+            check.not_none(minute),
+            pendulum_date.day,
+        )
+
+        # Go back far enough to make sure that we're now on the correct day of the week
+        current_day_of_week = new_time.day_of_week
+        if day_of_week != current_day_of_week:
+            new_time = new_time.subtract(days=(current_day_of_week - day_of_week) % 7)
+
+        # Make sure that we've actually moved back, go back a week if we haven't
+        if new_time.timestamp() >= pendulum_date.timestamp():
+            new_time = new_time.subtract(weeks=1)
+
+        # Doing so may have adjusted the hour again if we crossed a DST boundary,
+        # so make sure the time is still correct
+        new_time = _replace_date_fields(
+            new_time,
+            check.not_none(hour),
+            check.not_none(minute),
+            new_time.day,
+        )
+
+        return new_time
+
     elif schedule_type == ScheduleType.MONTHLY:
         # First move to the correct day and time of day
         new_time = _replace_date_fields(
@@ -223,6 +253,7 @@ def cron_string_iterator(
     expected_hour = None
     expected_minute = None
     expected_day = None
+    expected_day_of_week = None
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower than adding a fixed interval
@@ -253,6 +284,9 @@ def cron_string_iterator(
     if is_numeric[2]:
         expected_day = int(cron_parts[2][0])
 
+    if is_numeric[4]:
+        expected_day_of_week = int(cron_parts[4][0])
+
     date_iter: Optional[CroniterShim] = None
 
     # Croniter doesn't behave nicely with pendulum timezones
@@ -268,11 +302,7 @@ def cron_string_iterator(
         # This is already on a cron boundary, so yield it
         yield to_timezone(pendulum.instance(next_date), timezone_str)
 
-    elif (
-        known_schedule_type == ScheduleType.DAILY
-        or known_schedule_type == ScheduleType.HOURLY
-        or known_schedule_type == ScheduleType.MONTHLY
-    ):
+    elif known_schedule_type:
         # This logic working correctly requires a pendulum datetime to ensure that we are tracking
         # corretly which side of a DST transition we are on
         pendulum_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
@@ -280,6 +310,7 @@ def cron_string_iterator(
             expected_minute,
             expected_hour,
             expected_day,
+            expected_day_of_week,
             known_schedule_type,
             pendulum_datetime,
         )
@@ -290,6 +321,7 @@ def cron_string_iterator(
                 expected_minute,
                 expected_hour,
                 expected_day,
+                expected_day_of_week,
                 known_schedule_type,
                 next_date,
             )
@@ -353,10 +385,8 @@ def cron_string_iterator(
     else:
         # Otherwise fall back to croniter
         check.invariant(
-            known_schedule_type != ScheduleType.DAILY
-            and known_schedule_type != ScheduleType.HOURLY
-            and known_schedule_type != ScheduleType.MONTHLY,
-            "Should never need croniter on a daily or hourly or monthly schedule",
+            not known_schedule_type,
+            f"Should never need croniter on a {known_schedule_type} schedule",
         )
 
         while True:
