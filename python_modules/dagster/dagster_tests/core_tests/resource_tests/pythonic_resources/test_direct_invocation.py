@@ -483,7 +483,7 @@ def test_direct_invocation_resource_context_manager():
     from dagster import resource
 
     class YieldedResource:
-        def get_value():
+        def get_value(self):
             return 1
 
     @resource
@@ -494,6 +494,16 @@ def test_direct_invocation_resource_context_manager():
     def my_asset(context):
         assert context.resources.yielded_resource.get_value() == 1
 
-    ctx = build_op_context(resources={"yielded_resource": yielding_resource})
+    with build_op_context(resources={"yielded_resource": yielding_resource}) as ctx:
+        my_asset(ctx)
 
+
+def test_bound_state():
+    @asset
+    def my_asset(context):
+        assert context._bound  # noqa: SLF001
+
+    ctx = build_op_context()
+    assert not ctx._bound  # noqa: SLF001
     my_asset(ctx)
+    assert not ctx._bound  # noqa: SLF001gi
