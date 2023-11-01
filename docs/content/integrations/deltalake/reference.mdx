@@ -5,7 +5,7 @@ description: Store your Dagster assets in Delta Lake
 
 # dagster-deltalake integration reference
 
-This reference page provides information for working with [`dagster-deltalake`](/_apidocs/libraries/dagster-deltalake) features that are not covered as part of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+This reference page provides information for working with [`dagster-deltalake`](/\_apidocs/libraries/dagster-deltalake) features that are not covered as part of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
 
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
@@ -363,20 +363,16 @@ defs = Definitions(
 
 ## Configuring storage backends
 
-The deltalake library comes with support for many storage backends out fo the box.
-WHich exact storage is to be used, is derived from the URL of a storage location.
+The deltalake library comes with support for many storage backends out fo the box. WHich exact storage is to be used, is derived from the URL of a storage location.
 
 ### S3 compatible storages
 
-The S3 APIs are implemented by a number of providers and it is possible to interact with many
-of them. However, most S3 implementations do not offer support for atomic operations, which is
-a requirement for multi writer support. As such some additional setup and configuration is required.
+The S3 APIs are implemented by a number of providers and it is possible to interact with many of them. However, most S3 implementations do not offer support for atomic operations, which is a requirement for multi writer support. As such some additional setup and configuration is required.
 
 <TabGroup>
 <TabItem name="Unsafe rename">
 
-In case there will always be only a single writer to a table - this includes no concurrent dagster
-jobs writing to the same table - you can allow unsafe writes to the table.
+In case there will always be only a single writer to a table - this includes no concurrent dagster jobs writing to the same table - you can allow unsafe writes to the table.
 
 ```py
 from dagster_deltalake import S3Config
@@ -388,9 +384,7 @@ config = S3Config(allow_unsafe_rename=True)
 
 <TabItem name="Set-up a locking client">
 
-To use DynamoDB, set the `AWS_S3_LOCKING_PROVIDER` variable to `dynamodb` and create a table
-named delta_rs_lock_table in Dynamo. An example DynamoDB table creation snippet using the
-aws CLI follows, and should be customized for your environment’s needs (e.g. read/write capacity modes):
+To use DynamoDB, set the `AWS_S3_LOCKING_PROVIDER` variable to `dynamodb` and create a table named delta_rs_lock_table in Dynamo. An example DynamoDB table creation snippet using the aws CLI follows, and should be customized for your environment’s needs (e.g. read/write capacity modes):
 
 ```bash
 aws dynamodb create-table --table-name delta_rs_lock_table \
@@ -413,8 +407,7 @@ aws dynamodb create-table --table-name delta_rs_lock_table \
 
 <TabItem name="Cloudflare R2 storage">
 
-Couldflare R2 storage has build in support for atomic copy operations.
-This can be leveraged by sending additional headers with the copy requrests.
+Couldflare R2 storage has build in support for atomic copy operations. This can be leveraged by sending additional headers with the copy requrests.
 
 ```py
 from dagster_deltalake import S3Config
@@ -426,8 +419,7 @@ config = S3Config(copy_if_not_exists="header: cf-copy-destination-if-none-match:
 
 </TabGroup>
 
-In caeses where now-AWS S3 implementations are used, the endpoint URL or the S§ service
-needs to be provided.
+In caeses where now-AWS S3 implementations are used, the endpoint URL or the S§ service needs to be provided.
 
 ```py
 config = S3Config(endpoint="https://<my-s3-endpoint-url>")
@@ -435,9 +427,7 @@ config = S3Config(endpoint="https://<my-s3-endpoint-url>")
 
 ### Working with locally running storage (emulators)
 
-A common pattern for e.g. integration tests is to run a storage emulator like
-Azurite, Localstack, o.a. If not configures to use TLS, we need to configure
-the http client, to allow for http traffic.
+A common pattern for e.g. integration tests is to run a storage emulator like Azurite, Localstack, o.a. If not configures to use TLS, we need to configure the http client, to allow for http traffic.
 
 ```py
 config = AzureConfig(use_emulator=True, client=ClientConfig(allow_http=True))
