@@ -14,18 +14,17 @@ from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 
+USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
+
 PydanticUndefined = None
-try:
+if USING_PYDANTIC_2:
     from pydantic_core import PydanticUndefined as _PydanticUndefined  # type: ignore
 
     PydanticUndefined = _PydanticUndefined
-except:
-    pass
+
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
-
-USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
 
 
 class ModelFieldCompat:
