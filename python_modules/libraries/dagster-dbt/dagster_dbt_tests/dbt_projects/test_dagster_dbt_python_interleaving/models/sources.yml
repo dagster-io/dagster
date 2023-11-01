@@ -2,7 +2,10 @@ version: 2
 
 sources:
   - name: dagster
-    database: raw
-    schema: jaffle_shop
     tables:
-      - name: python_augmented_customers
+      # the python asset doesn't actually do anything, so just link it back to
+      # the real table that it consumes from
+      - name: stg_customers
+        path: 'jaffle_shop.duckdb'
+        dagster:
+          asset_key: ['dagster', 'python_agumented_customers']

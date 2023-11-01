@@ -2,6 +2,8 @@ import json
 import os
 from pathlib import Path
 from typing import AbstractSet, Any, Mapping, Optional
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster_dbt.core.resources_v2 import DbtCliResource
 
 import pytest
 from dagster import (
@@ -577,10 +579,9 @@ def test_dbt_with_downstream_asset():
 
 
 def test_dbt_with_python_interleaving() -> None:
-    # don't select the seeds
     @dbt_assets(manifest=test_python_interleaving_manifest)
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
 
     assert set(my_dbt_assets.keys_by_input_name.values()) == {
         AssetKey(["dagster", "python_augmented_customers"]),
@@ -597,7 +598,12 @@ def test_dbt_with_python_interleaving() -> None:
     def python_augmented_customers():
         ...
 
-    defs = Definitions(assets=[my_dbt_assets, python_augmented_customers])
+    defs = Definitions(
+        assets=[my_dbt_assets, python_augmented_customers],
+        resources={
+            "dbt": DbtCliResource(project_dir=test_python_interleaving_manifest_path.parent)
+        },
+    )
     global_job = defs.get_implicit_global_asset_job_def()
     # my_dbt_assets gets split up
     assert global_job.dependencies == {
@@ -624,6 +630,9 @@ def test_dbt_with_python_interleaving() -> None:
     assert len(global_job.all_node_defs) == 2
     assert len(global_job.nodes) == 3
 
+    result = global_job.execute_in_process()
+    assert result.success
+
     # now make sure that if you just select these two, we still get a valid dependency graph (where)
     # customers executes after its parent "stg_orders", even though the python step is not selected
     subset_job = global_job.get_subset(
@@ -639,3 +648,5 @@ def test_dbt_with_python_interleaving() -> None:
             )
         },
     }
+    result = subset_job.execute_in_process()
+    assert result.success

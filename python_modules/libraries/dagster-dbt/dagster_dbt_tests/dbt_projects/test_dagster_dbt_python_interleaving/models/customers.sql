@@ -1,6 +1,6 @@
 with customers as (
 
-    select * from {{ source('dagster', 'python_augmented_customers') }}
+    select * from {{ source('dagster', 'jaffle_shop.stg_customers') }}
 
 ),
 
