@@ -32,6 +32,5 @@ export const calculateMiddleTruncation = (
       end = mid - 1;
     }
   }
-
   return `${text.slice(0, end)}…${text.slice(-end)}`;
 };

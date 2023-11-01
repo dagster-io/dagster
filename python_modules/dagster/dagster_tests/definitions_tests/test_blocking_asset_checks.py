@@ -170,3 +170,35 @@ def test_check_fail_and_block_with_inputs():
     assert len(materialization_events) == 2
     assert materialization_events[0].asset_key == AssetKey(["upstream_asset"])
     assert materialization_events[1].asset_key == AssetKey(["my_asset_with_managed_input"])
+
+
+@asset
+def asset1():
+    return "asset1"
+
+
+@asset
+def asset2():
+    return "asset2"
+
+
+@asset_check(asset="asset1")
+def check1():
+    return AssetCheckResult(passed=True)
+
+
+@asset_check(asset="asset2")
+def check2():
+    return AssetCheckResult(passed=True)
+
+
+blocking_asset_1 = build_asset_with_blocking_check(asset_def=asset1, checks=[check1])
+blocking_asset_2 = build_asset_with_blocking_check(asset_def=asset2, checks=[check2])
+
+
+def test_multiple_blocking_assets():
+    result = execute_assets_and_checks(
+        assets=[blocking_asset_1, blocking_asset_2],
+        raise_on_error=False,
+    )
+    assert result.success

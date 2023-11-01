@@ -844,3 +844,35 @@ def test_dynamic_partition_mapping_with_asset_deps():
         materialize(
             [asset_1_multi_asset, asset_2_multi_asset], partition_key="orange", instance=instance
         )
+
+
+def test_last_partition_mapping_get_downstream_partitions():
+    upstream_partitions_def = DailyPartitionsDefinition("2023-10-01")
+    downstream_partitions_def = DailyPartitionsDefinition("2023-10-01")
+
+    current_time = datetime(2023, 10, 5, 1)
+
+    assert LastPartitionMapping().get_downstream_partitions_for_partitions(
+        upstream_partitions_def.empty_subset().with_partition_keys(["2023-10-04"]),
+        downstream_partitions_def,
+        current_time,
+    ) == downstream_partitions_def.empty_subset().with_partition_keys(
+        downstream_partitions_def.get_partition_keys(current_time)
+    )
+
+    assert LastPartitionMapping().get_downstream_partitions_for_partitions(
+        upstream_partitions_def.empty_subset().with_partition_keys(["2023-10-03", "2023-10-04"]),
+        downstream_partitions_def,
+        current_time,
+    ) == downstream_partitions_def.empty_subset().with_partition_keys(
+        downstream_partitions_def.get_partition_keys(current_time)
+    )
+
+    assert (
+        LastPartitionMapping().get_downstream_partitions_for_partitions(
+            upstream_partitions_def.empty_subset().with_partition_keys(["2023-10-03"]),
+            downstream_partitions_def,
+            current_time,
+        )
+        == downstream_partitions_def.empty_subset()
+    )

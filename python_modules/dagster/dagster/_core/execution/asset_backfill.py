@@ -19,6 +19,8 @@ from typing import (
     cast,
 )
 
+import pendulum
+
 from dagster import (
     PartitionKeyRange,
     _check as check,
@@ -250,6 +252,10 @@ class AssetBackfillData(NamedTuple):
             )
 
         return list(root_subset.iterate_asset_partitions())
+
+    def get_target_partitions_subset(self, asset_key: AssetKey) -> PartitionsSubset:
+        # Return the targeted partitions for the root partitioned asset keys
+        return self.target_subset.get_partitions_subset(asset_key)
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
@@ -555,6 +561,23 @@ class AssetBackfillData(NamedTuple):
             ),
         }
         return json.dumps(storage_dict)
+
+
+def create_asset_backfill_data_from_asset_partitions(
+    asset_graph: ExternalAssetGraph,
+    asset_selection: Sequence[AssetKey],
+    partition_names: Sequence[str],
+    dynamic_partitions_store: DynamicPartitionsStore,
+) -> AssetBackfillData:
+    backfill_timestamp = pendulum.now("UTC").timestamp()
+    return AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=partition_names,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=dynamic_partitions_store,
+        all_partitions=False,
+        backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+    )
 
 
 def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) -> Sequence[str]:

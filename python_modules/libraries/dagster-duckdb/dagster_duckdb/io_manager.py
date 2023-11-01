@@ -119,20 +119,27 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
                     return [DuckDBPandasTypeHandler()]
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+                key_prefix=["my_prefix"],
+                metadata={"schema": "my_schema"} # will be used as the schema in duckdb
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+            )
+            def my_second_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
+
             defs = Definitions(
-                assets=[my_table],
+                assets=[my_table, my_second_table],
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
-    For ops, the schema can be specified by including a "schema" entry in output metadata. If none
-    of these is provided, the schema will default to "public".
+    the IO Manager. The schema can be specified by including a "schema" entry in output metadata.
+    If this is not set, then for assets, the schema will be determined from the asset key, as in the above example.
+    If none of these is provided, the schema will default to "public".
 
     .. code-block:: python
 

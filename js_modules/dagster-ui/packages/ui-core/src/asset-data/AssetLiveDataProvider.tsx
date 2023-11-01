@@ -347,8 +347,31 @@ async function _batchedQueryAssets(
     doNextFetch(pollRate);
   } catch (e) {
     console.error(e);
-    // Retry fetching in 5 seconds if theres a network error
-    setTimeout(doNextFetch, 5000);
+
+    if ((e as any)?.message?.includes('500')) {
+      // Mark these assets as fetched so that we don't retry them until after the poll interval rather than retrying them immediately.
+      // This is preferable because if the assets failed to fetch it's likely due to a timeout due to the query being too expensive and retrying it
+      // will not make it more likely to succeed and it would add more load to the database.
+      const fetchedTime = Date.now();
+      assetKeys.forEach((key) => {
+        lastFetchedOrRequested[tokenForAssetKey(key)] = {
+          fetched: fetchedTime,
+        };
+      });
+    } else {
+      // If it's not a timeout from the backend then lets keep retrying instead of moving on.
+      assetKeys.forEach((key) => {
+        delete lastFetchedOrRequested[tokenForAssetKey(key)];
+      });
+    }
+
+    setTimeout(
+      () => {
+        doNextFetch(pollRate);
+      },
+      // If the poll rate is faster than 5 seconds lets use that instead
+      Math.min(pollRate, 5000),
+    );
   }
 }
 

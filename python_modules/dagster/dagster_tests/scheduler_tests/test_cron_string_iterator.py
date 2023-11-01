@@ -8,17 +8,24 @@ from dagster._utils.schedules import cron_string_iterator
 def test_cron_iterator_always_advances():
     tz = "Europe/Berlin"
 
-    start_timestamp = create_pendulum_time(2023, 3, 27, 1, 0, 0, tz=tz).timestamp()
+    start_timestamp = create_pendulum_time(2023, 3, 26, 2, 0, 0, tz=tz).timestamp() + 1
 
-    cron_iter = cron_string_iterator(
-        start_timestamp + 1,
-        "0 2 * * *",
-        tz,
-    )
+    expected_next_timestamp = 1679875200  # 2023-03-272:00+2:00
 
-    next_datetime = next(cron_iter)
+    # Verify that for all start timestamps until the next tick, cron_string_iterator behaves
+    # as expected
+    while start_timestamp < expected_next_timestamp:
+        cron_iter = cron_string_iterator(
+            start_timestamp + 1,
+            "0 2 * * *",
+            tz,
+        )
 
-    assert next_datetime.timestamp() > start_timestamp
+        next_datetime = next(cron_iter)
+
+        assert next_datetime.timestamp() > start_timestamp
+
+        start_timestamp = start_timestamp + 75
 
 
 def test_cron_iterator_leap_day():
@@ -101,11 +108,18 @@ def test_dst_spring_forward_transition_advances(execution_timezone, cron_string,
     # Starting 1 second after each time produces the next tick
     for i in range(len(times) - 1):
         start_timestamp = to_timezone(times[i], "UTC").timestamp() + 1
-        fresh_cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
 
-        for j in range(i + 1, len(times)):
-            next_time = next(fresh_cron_iter)
+        next_timestamp = times[i + 1].timestamp()
+        # Verify that for any start timestamp until the next tick, cron_string_iterator behaves
+        # as expected
+        while start_timestamp < next_timestamp:
+            fresh_cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
 
-            assert (
-                next_time.timestamp() == times[j].timestamp()
-            ), f"Expected {times[i]} to advance to {times[j]}, got {next_time}"
+            for j in range(i + 1, len(times)):
+                next_time = next(fresh_cron_iter)
+
+                assert (
+                    next_time.timestamp() == times[j].timestamp()
+                ), f"Expected {times[i]} to advance to {times[j]}, got {next_time}"
+
+            start_timestamp = start_timestamp + 75

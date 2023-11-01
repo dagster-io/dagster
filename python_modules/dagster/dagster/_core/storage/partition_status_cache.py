@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, NamedTuple, Optional, Sequence, Set, Tuple
 
+import pendulum
+
 from dagster import (
     AssetKey,
     DagsterEventType,
@@ -213,8 +215,11 @@ def get_validated_partition_keys(
     else:
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Unexpected partitions definition type {partitions_def}")
+        current_time = pendulum.now("UTC")
         validated_partitions = {
-            pk for pk in partition_keys if partitions_def.is_valid_partition_key(pk)
+            pk
+            for pk in partition_keys
+            if partitions_def.has_partition_key(pk, current_time=current_time)
         }
     return validated_partitions
 

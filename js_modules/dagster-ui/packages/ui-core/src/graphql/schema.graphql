@@ -646,6 +646,7 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  backfillPolicy: BackfillPolicy
   computeKind: String
   configField: ConfigTypeField
   dataVersion(partition: String): String
@@ -689,12 +690,24 @@ type AssetNode {
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecks: [AssetCheck!]!
+  assetChecksOrError(limit: Int): AssetChecksOrError!
 }
 
 type MaterializationUpstreamDataVersion {
   assetKey: AssetKey!
   downstreamAssetKey: AssetKey!
   timestamp: String!
+}
+
+type BackfillPolicy {
+  maxPartitionsPerRun: Int
+  description: String!
+  policyType: BackfillPolicyType!
+}
+
+enum BackfillPolicyType {
+  SINGLE_RUN
+  MULTI_RUN
 }
 
 type AssetDependency {
@@ -890,6 +903,28 @@ enum AssetCheckCanExecuteIndividually {
   CAN_EXECUTE
   REQUIRES_MATERIALIZATION
   NEEDS_USER_CODE_UPGRADE
+}
+
+union AssetChecksOrError =
+    AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
+
+type AssetChecks {
+  checks: [AssetCheck!]!
+}
+
+type AssetCheckNeedsMigrationError implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsUserCodeUpgrade implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsAgentUpgradeError implements Error {
+  message: String!
 }
 
 enum EvaluationErrorReason {
@@ -2611,6 +2646,7 @@ type PartitionBackfill {
   error: PythonError
   partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
+  partitionsTargetedForAssetKey(assetKey: AssetKeyInput): AssetBackfillTargetPartitions
   isAssetBackfill: Boolean!
   assetBackfillData: AssetBackfillData
   hasCancelPermission: Boolean!
@@ -2627,10 +2663,19 @@ enum BulkActionStatus {
   CANCELING
 }
 
+type AssetBackfillTargetPartitions {
+  ranges: [PartitionKeyRange!]
+  partitionKeys: [String!]
+}
+
+type PartitionKeyRange {
+  start: String!
+  end: String!
+}
+
 type AssetBackfillData {
   assetBackfillStatuses: [AssetBackfillStatus!]!
-  rootAssetTargetedRanges: [PartitionKeyRange!]
-  rootAssetTargetedPartitions: [String!]
+  rootTargetedPartitions: AssetBackfillTargetPartitions!
 }
 
 union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
@@ -2648,11 +2693,6 @@ type UnpartitionedAssetStatus {
   inProgress: Boolean!
   materialized: Boolean!
   failed: Boolean!
-}
-
-type PartitionKeyRange {
-  start: String!
-  end: String!
 }
 
 union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
@@ -3058,6 +3098,7 @@ type Query {
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]): [AssetNodeDefinitionCollision!]!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
+  assetBackfillPreview(params: AssetBackfillPreviewParams!): [AssetPartitions!]!
   partitionBackfillsOrError(
     status: BulkActionStatus
     cursor: String
@@ -3089,6 +3130,12 @@ type Query {
     afterTimestamp: Float
   ): [InstigationTick!]!
   assetChecksOrError(assetKey: AssetKeyInput!, checkName: String): AssetChecksOrError!
+  assetCheckExecutions(
+    assetKey: AssetKeyInput!
+    checkName: String!
+    limit: Int!
+    cursor: String
+  ): [AssetCheckExecution!]!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3197,6 +3244,16 @@ type BackfillNotFoundError implements Error {
   backfillId: String!
 }
 
+type AssetPartitions {
+  assetKey: AssetKey!
+  partitions: AssetBackfillTargetPartitions
+}
+
+input AssetBackfillPreviewParams {
+  partitionNames: [String!]!
+  assetSelection: [AssetKeyInput!]!
+}
+
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
 
 type PartitionBackfills {
@@ -3286,28 +3343,6 @@ type WaitingOnKeysRuleEvaluationData {
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
-  message: String!
-}
-
-union AssetChecksOrError =
-    AssetChecks
-  | AssetCheckNeedsMigrationError
-  | AssetCheckNeedsUserCodeUpgrade
-  | AssetCheckNeedsAgentUpgradeError
-
-type AssetChecks {
-  checks: [AssetCheck!]!
-}
-
-type AssetCheckNeedsMigrationError implements Error {
-  message: String!
-}
-
-type AssetCheckNeedsUserCodeUpgrade implements Error {
-  message: String!
-}
-
-type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
 }
 

@@ -42,7 +42,7 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
 """
 
 GET_ASSET_CHECK_HISTORY = """
-query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!) {
     assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
         ... on AssetChecks {
             checks {
@@ -63,6 +63,22 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
                         }
                     }
                 }
+            }
+        }
+    }
+    assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: 10) {
+        runId
+        status
+        evaluation {
+            severity
+            timestamp
+            targetMaterialization {
+                storageId
+                runId
+                timestamp
+            }
+            metadataEntries {
+                label
             }
         }
     }
@@ -221,6 +237,30 @@ query AssetNodeChecksQuery {
         assetChecks {
             name
         }
+        assetChecksOrError {
+            ... on AssetChecks {
+                checks {
+                    name
+                }
+            }
+        }
+    }
+}
+"""
+
+ASSET_NODE_CHECKS_LIMIT_QUERY = """
+query AssetNodeChecksLimitQuery($limit: Int) {
+    assetNodes {
+        assetKey {
+            path
+        }
+        assetChecksOrError(limit: $limit) {
+            ... on AssetChecks {
+                checks {
+                    name
+                }
+            }
+        }
     }
 }
 """
@@ -319,11 +359,44 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         res = execute_dagster_graphql(graphql_context, ASSET_NODE_CHECKS_QUERY)
         with_checks = [node for node in res.data["assetNodes"] if node["assetChecks"]]
         assert with_checks == [
-            {"assetKey": {"path": ["asset_1"]}, "assetChecks": [{"name": "my_check"}]},
-            {"assetKey": {"path": ["check_in_op_asset"]}, "assetChecks": [{"name": "my_check"}]},
+            {
+                "assetKey": {"path": ["asset_1"]},
+                "assetChecks": [{"name": "my_check"}],
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["check_in_op_asset"]},
+                "assetChecks": [{"name": "my_check"}],
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
             {
                 "assetKey": {"path": ["one"]},
                 "assetChecks": [{"name": "my_check"}, {"name": "my_other_check"}],
+                "assetChecksOrError": {
+                    "checks": [{"name": "my_check"}, {"name": "my_other_check"}]
+                },
+            },
+        ]
+
+    def test_asset_check_asset_node_limit(self, graphql_context: WorkspaceRequestContext):
+        res = execute_dagster_graphql(
+            graphql_context, ASSET_NODE_CHECKS_LIMIT_QUERY, variables={"limit": 1}
+        )
+        with_checks = [
+            node for node in res.data["assetNodes"] if node["assetChecksOrError"] != {"checks": []}
+        ]
+        assert with_checks == [
+            {
+                "assetKey": {"path": ["asset_1"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["check_in_op_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["one"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
         ]
 
@@ -406,7 +479,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ]
-            }
+            },
+            "assetCheckExecutions": [
+                {
+                    "runId": "foo",
+                    "status": "IN_PROGRESS",
+                    "evaluation": None,
+                }
+            ],
         }
 
         evaluation_timestamp = time.time()
@@ -458,7 +538,25 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-            }
+            },
+            "assetCheckExecutions": [
+                {
+                    "runId": "foo",
+                    "status": "SUCCEEDED",
+                    "evaluation": {
+                        "timestamp": evaluation_timestamp,
+                        "severity": "ERROR",
+                        "targetMaterialization": {
+                            "storageId": 42,
+                            "runId": "bizbuz",
+                            "timestamp": 3.3,
+                        },
+                        "metadataEntries": [
+                            {"label": "foo"},
+                        ],
+                    },
+                }
+            ],
         }
 
     def test_asset_check_events(self, graphql_context: WorkspaceRequestContext):
@@ -534,7 +632,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ]
-            }
+            },
+            "assetCheckExecutions": [
+                {
+                    "runId": run.run_id,
+                    "status": "IN_PROGRESS",
+                    "evaluation": None,
+                }
+            ],
         }
 
         graphql_context.instance.report_run_failed(run)
@@ -554,7 +659,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-            }
+            },
+            "assetCheckExecutions": [
+                {"runId": run.run_id, "status": "EXECUTION_FAILED", "evaluation": None}
+            ],
         }
 
     def test_latest_execution(self, graphql_context: WorkspaceRequestContext):

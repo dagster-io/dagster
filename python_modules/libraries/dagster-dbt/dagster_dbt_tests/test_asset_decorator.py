@@ -11,7 +11,10 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     FreshnessPolicy,
+    LastPartitionMapping,
+    PartitionMapping,
     PartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
@@ -329,6 +332,59 @@ def test_with_asset_key_replacements() -> None:
         AssetKey(["prefix", "sort_hot_cereals_by_calories"]),
         AssetKey(["prefix", "sort_by_calories"]),
     }
+
+
+@pytest.mark.parametrize(
+    "partition_mapping",
+    [
+        None,
+        LastPartitionMapping(),
+        TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+    ],
+)
+def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) -> None:
+    expected_self_dependency_partition_mapping = TimeWindowPartitionMapping(
+        start_offset=-8, end_offset=-9
+    )
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_partition_mapping(
+            cls,
+            dbt_resource_props: Mapping[str, Any],
+            dbt_parent_resource_props: Mapping[str, Any],
+        ) -> Optional[PartitionMapping]:
+            is_self_dependency = dbt_resource_props == dbt_parent_resource_props
+            if is_self_dependency:
+                return expected_self_dependency_partition_mapping
+
+            return partition_mapping
+
+    @dbt_assets(
+        manifest=test_dagster_metadata_manifest,
+        dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
+        partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"),
+    )
+    def my_dbt_assets():
+        ...
+
+    dependencies_with_self_dependencies = {
+        # Self dependency enabled with `+meta.dagster.has_self_dependency`
+        AssetKey("customers"),
+    }
+    dependencies_without_self_dependencies = set(my_dbt_assets.dependency_keys).difference(
+        dependencies_with_self_dependencies
+    )
+
+    assert dependencies_without_self_dependencies
+    for input_asset_key in dependencies_without_self_dependencies:
+        assert my_dbt_assets.get_partition_mapping(input_asset_key) == partition_mapping
+
+    for self_dependency_asset_key in dependencies_with_self_dependencies:
+        assert (
+            my_dbt_assets.get_partition_mapping(self_dependency_asset_key)
+            == expected_self_dependency_partition_mapping
+        )
 
 
 def test_with_description_replacements() -> None:

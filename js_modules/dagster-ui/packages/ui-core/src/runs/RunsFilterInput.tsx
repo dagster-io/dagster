@@ -401,6 +401,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       !enabledFilters || enabledFilters?.includes('status') ? statusFilter : null,
       useStaticSetFilter({
         name: 'Launched by',
+        allowMultipleSelections: false,
         icon: 'add_circle',
         allValues: createdByValues,
         renderLabel: ({value}) => {

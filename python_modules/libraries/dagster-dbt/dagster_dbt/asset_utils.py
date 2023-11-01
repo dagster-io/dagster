@@ -754,3 +754,10 @@ def get_asset_deps(
         fqns_by_output_name,
         metadata_by_output_name,
     )
+
+
+def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    has_self_dependency = dagster_metadata.get("has_self_dependency", False)
+
+    return has_self_dependency

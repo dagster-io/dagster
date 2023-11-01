@@ -48,15 +48,22 @@ def build_bigquery_io_manager(
             from dagster import Definitions
 
             @asset(
-                key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
+                key_prefix=["my_prefix"],
+                metadata={"schema": "my_dataset"} # will be used as the dataset in BigQuery
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
+
+            @asset(
+                key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
+            )
+            def my_second_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
             bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
             defs = Definitions(
-                assets=[my_table],
+                assets=[my_table, my_second_table],
                 resources={
                     "io_manager": bigquery_io_manager.configured({
                         "project" : {"env": "GCP_PROJECT"}
@@ -66,11 +73,11 @@ def build_bigquery_io_manager(
 
         You can tell Dagster in which dataset to create tables by setting the ``dataset`` configuration value.
         If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based
-        on the assets and ops using the I/O Manager. For assets, the dataset will be determined from the asset key,
+        on the assets and ops using the I/O Manager. The dataset can be specified by including a "schema" entry in output metadata.
+        If this is not set, then for assets, the dataset will be determined from the asset key,
         as shown in the above example. The final prefix before the asset name will be used as the dataset. For example,
         if the asset ``my_table`` had the key prefix ``["gcp", "bigquery", "my_dataset"]``, the dataset ``my_dataset`` will be
-        used. For ops, the dataset can be specified by including a `schema` entry in output metadata. If ``schema`` is
-        not provided via config or on the asset/op, ``public`` will be used for the dataset.
+        used. If none of these is provided, ``public`` will be used for the dataset.
 
         .. code-block:: python
 

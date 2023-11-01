@@ -61,12 +61,15 @@ from ..implementation.loader import (
     StaleStatusLoader,
 )
 from ..schema.asset_checks import (
+    AssetChecksOrErrorUnion,
     GrapheneAssetCheck,
     GrapheneAssetChecks,
+    GrapheneAssetChecksOrError,
 )
 from . import external
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializePolicy
+from .backfill import GrapheneBackfillPolicy
 from .dagster_types import (
     GrapheneDagsterType,
     GrapheneListDagsterType,
@@ -216,6 +219,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
+    backfillPolicy = graphene.Field(GrapheneBackfillPolicy)
     computeKind = graphene.String()
     configField = graphene.Field(GrapheneConfigTypeField)
     dataVersion = graphene.Field(graphene.String(), partition=graphene.String())
@@ -278,7 +282,12 @@ class GrapheneAssetNode(graphene.ObjectType):
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
+    # this field is deprecated- use assetChecksOrError instead
     assetChecks = non_null_list(GrapheneAssetCheck)
+    assetChecksOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetChecksOrError),
+        limit=graphene.Argument(graphene.Int),
+    )
 
     class Meta:
         name = "AssetNode"
@@ -827,6 +836,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
         return None
 
+    def resolve_backfillPolicy(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneBackfillPolicy]:
+        if self._external_asset_node.backfill_policy:
+            return GrapheneBackfillPolicy(self._external_asset_node.backfill_policy)
+        return None
+
     def resolve_jobNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
         return self._external_asset_node.job_names
 
@@ -1121,12 +1137,18 @@ class GrapheneAssetNode(graphene.ObjectType):
         return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
-        # use the batched loader with a single asset
         res = self._asset_checks_loader.get_checks_for_asset(self._external_asset_node.asset_key)
         if not isinstance(res, GrapheneAssetChecks):
             return []
 
         return res.checks
+
+    def resolve_assetChecksOrError(
+        self, graphene_info: ResolveInfo, limit=None
+    ) -> AssetChecksOrErrorUnion:
+        return self._asset_checks_loader.get_checks_for_asset(
+            self._external_asset_node.asset_key, limit
+        )
 
 
 class GrapheneAssetGroup(graphene.ObjectType):

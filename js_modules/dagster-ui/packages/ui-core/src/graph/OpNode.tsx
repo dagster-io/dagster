@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
+import {testId} from '../testing/testId';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
@@ -119,6 +120,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
         $dim={dim}
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
+        data-testid={testId(definition.name)}
       >
         <div className="highlight-box" style={{...position(layout.bounds)}} />
         {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
