@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: dagster
+    database: raw
+    schema: jaffle_shop
+    tables:
+      - name: python_augmented_customers

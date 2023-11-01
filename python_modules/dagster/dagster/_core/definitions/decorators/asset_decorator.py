@@ -983,7 +983,7 @@ def build_subsettable_asset_ins(
     a separate input to represent the fact that C depends on A.
     """
     # set of asset keys which are upstream of another asset, and are not currently inputs
-    potential_deps = set().union(*internal_upstream_deps) - set(asset_ins.keys())
+    potential_deps = set().union(*internal_upstream_deps).difference(set(asset_ins.keys()))
     return {
         key: (f"{ASSET_SUBSET_INPUT_PREFIX}{name}", In(Nothing))
         for key, (name, _) in asset_outs.items()

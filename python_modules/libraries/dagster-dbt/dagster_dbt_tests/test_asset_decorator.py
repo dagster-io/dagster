@@ -38,6 +38,13 @@ test_dagster_metadata_manifest_path = (
 )
 test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
 
+test_python_interleaving_manifest_path = (
+    Path(__file__)
+    .joinpath("..", "dbt_projects", "test_dagster_dbt_python_interleaving", "manifest.json")
+    .resolve()
+)
+test_python_interleaving_manifest = json.loads(test_python_interleaving_manifest_path.read_bytes())
+
 
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
 def test_manifest_argument(manifest: DbtManifestParam):
@@ -570,16 +577,8 @@ def test_dbt_with_downstream_asset():
 
 
 def test_dbt_with_python_interleaving() -> None:
-    dbt_project_dir = (
-        Path(__file__)
-        .joinpath("..", "dbt_projects", "test_dagster_dbt_python_interleaving")
-        .resolve()
-    )
-    manifest_path = dbt_project_dir.joinpath("manifest.json").resolve()
-    manifest = json.loads(manifest_path.read_bytes())
-
     # don't select the seeds
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=test_python_interleaving_manifest)
     def my_dbt_assets():
         ...
 
