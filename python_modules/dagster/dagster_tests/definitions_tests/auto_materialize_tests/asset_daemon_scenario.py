@@ -229,6 +229,9 @@ class AssetDaemonScenarioState(NamedTuple):
         return self._replace(current_time=pendulum.parse(time))
 
     def with_current_time_advanced(self, **kwargs) -> "AssetDaemonScenarioState":
+        # hacky support for adding years
+        if "years" in kwargs:
+            kwargs["days"] = kwargs.get("days", 0) + 365 * kwargs.pop("years")
         return self._replace(current_time=self.current_time + datetime.timedelta(**kwargs))
 
     def with_runs(self, *run_requests: RunRequest) -> "AssetDaemonScenarioState":
