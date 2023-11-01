@@ -506,4 +506,4 @@ def test_bound_state():
     ctx = build_op_context()
     assert not ctx._bound  # noqa: SLF001
     my_asset(ctx)
-    assert not ctx._bound  # noqa: SLF001gi
+    assert not ctx._bound  # noqa: SLF001
