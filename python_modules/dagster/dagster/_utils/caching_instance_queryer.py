@@ -828,12 +828,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ):
                 continue
 
-            # when mapping from time or dynamic downstream to unpartitioned upstream, only check
-            # for updates to the latest upstream partition
+            # when mapping from unpartitioned assets to time partitioned assets, we ignore
+            # historical time partitions
             if (
-                isinstance(
-                    partitions_def, (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition)
-                )
+                isinstance(partitions_def, TimeWindowPartitionsDefinition)
                 and not self.asset_graph.is_partitioned(parent_key)
                 and asset_partition.partition_key
                 != partitions_def.get_last_partition_key(
