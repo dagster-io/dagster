@@ -643,7 +643,9 @@ class ConfigurableResourceFactory(
                     yield my_resource
 
         """
-        with cls(**context.resource_config or {})._initialize_and_run_cm(context) as value:  # noqa: SLF001
+        with cls(**context.resource_config or {})._initialize_and_run_cm(  # noqa: SLF001
+            context
+        ) as value:
             yield value
 
 
