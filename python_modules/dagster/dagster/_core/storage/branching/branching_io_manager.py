@@ -7,8 +7,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager
@@ -22,17 +21,14 @@ def get_text_metadata_value(materialization: AssetMaterialization, key: str) -> 
 def latest_materialization_log_entry(
     instance: DagsterInstance, asset_key: AssetKey, partition_key: Optional[str] = None
 ) -> Optional[EventLogEntry]:
-    event_records = [
-        *instance.get_event_records(
-            event_records_filter=EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                asset_partitions=[partition_key] if partition_key else None,
-            ),
-            limit=1,
-        )
-    ]
-    return event_records[0].event_log_entry if event_records else None
+    records = instance.fetch_materializations(
+        AssetRecordsFilter(
+            asset_key,
+            asset_partitions=[partition_key] if partition_key else None,
+        ),
+        limit=1,
+    ).records
+    return records[0].event_log_entry if records else None
 
 
 class BranchingIOManager(ConfigurableIOManager):

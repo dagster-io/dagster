@@ -2971,8 +2971,7 @@ class DagsterInstance(DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.storage.event_log.base import AssetRecordsFilter
 
         # When we cant don't know whether the requested key corresponds to a source or regular
         # asset, we need to retrieve both the latest observation and materialization for all assets.
@@ -2980,31 +2979,29 @@ class DagsterInstance(DynamicPartitionsStore):
 
         observation: Optional[EventLogRecord] = None
         if is_source or is_source is None:
-            observations = self.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_OBSERVATION,
+            observation_result = self.fetch_observations(
+                AssetRecordsFilter(
                     asset_key=key,
                     asset_partitions=[partition_key] if partition_key else None,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
+                    before_storage_id=before_cursor,
+                    after_storage_id=after_cursor,
                 ),
                 limit=1,
             )
-            observation = next(iter(observations), None)
+            observation = next(iter(observation_result.records), None)
 
         materialization: Optional[EventLogRecord] = None
         if not is_source:
-            materializations = self.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            materialization_result = self.fetch_materializations(
+                AssetRecordsFilter(
                     asset_key=key,
                     asset_partitions=[partition_key] if partition_key else None,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
+                    before_storage_id=before_cursor,
+                    after_storage_id=after_cursor,
                 ),
                 limit=1,
             )
-            materialization = next(iter(materializations), None)
+            materialization = next(iter(materialization_result.records), None)
 
         return materialization or observation
 

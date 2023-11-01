@@ -10,8 +10,6 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
 from dagster._seven import json
 from dagster_pipes import PipesContext
 from dagster_webserver.external_assets import (
@@ -270,13 +268,7 @@ def test_report_asset_check_evaluation_apis_consistent(
 
 
 def _assert_stored_obs(instance: DagsterInstance, asset_key: str):
-    records = instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_OBSERVATION,
-            asset_key=AssetKey(asset_key),
-        ),
-        limit=1,
-    )
+    records = instance.fetch_observations(AssetKey(asset_key), limit=1).records
     assert records
     evt = records[0]
     assert evt.event_log_entry.dagster_event

@@ -13,7 +13,6 @@ from dagster import (
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
@@ -25,6 +24,8 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
+
+DEFAULT_LIMIT = 1000
 
 
 @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
@@ -324,12 +325,9 @@ def test_multi_run_concurrency(instance, workspace, two_tier_job_def):
     assert run_one.status == DagsterRunStatus.SUCCESS
     assert run_two.status == DagsterRunStatus.SUCCESS
 
-    records = instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION, asset_key=AssetKey(["foo_slot"])
-        ),
-        ascending=True,
-    )
+    records = instance.fetch_materializations(
+        AssetKey(["foo_slot"]), limit=DEFAULT_LIMIT, ascending=True
+    ).records
     max_active = 0
     for record in records:
         num_active = record.asset_materialization.metadata["active"].value

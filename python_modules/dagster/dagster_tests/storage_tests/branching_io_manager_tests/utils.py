@@ -12,8 +12,7 @@ from dagster import (
 )
 from dagster._config.pythonic_config.io_manager import ConfigurableIOManager
 from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.event_api import EventLogRecord, EventRecordsFilter
-from dagster._core.events import DagsterEventType
+from dagster._core.event_api import EventLogRecord
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import PrivateAttr
 
@@ -63,16 +62,13 @@ class DefinitionsRunner:
             asset_key=asset_key, instance=self.instance, partition_key=partition_key
         )
 
-    def get_all_asset_materialization_event_records(
-        self, asset_key: CoercibleToAssetKey
+    def get_asset_materialization_records(
+        self, asset_key: CoercibleToAssetKey, limit: int
     ) -> List[EventLogRecord]:
         return [
-            *self.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey.from_coercible(asset_key),
-                )
-            )
+            *self.instance.fetch_materializations(
+                AssetKey.from_coercible(asset_key), limit=limit
+            ).records
         ]
 
 

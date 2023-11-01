@@ -24,10 +24,12 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
 
 DATE_FORMAT = "%Y-%m-%d"
+DEFAULT_LIMIT = 1000
 
 
 def test_invalid_chars():
@@ -133,45 +135,45 @@ def test_tags_multi_dimensional_partitions():
             )
 
         materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
+            instance.fetch_materializations(
+                AssetRecordsFilter(
                     asset_key=AssetKey("asset1"),
                     tags={get_multidimensional_partition_tag("abc"): "a"},
-                )
-            )
+                ),
+                limit=DEFAULT_LIMIT,
+            ).records
         )
         assert len(materializations) == 1
 
         materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
+            instance.fetch_materializations(
+                AssetRecordsFilter(
                     asset_key=AssetKey("asset1"),
                     tags={get_multidimensional_partition_tag("abc"): "nonexistent"},
-                )
-            )
+                ),
+                limit=DEFAULT_LIMIT,
+            ).records
         )
         assert len(materializations) == 0
 
         materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
+            instance.fetch_materializations(
+                AssetRecordsFilter(
                     asset_key=AssetKey("asset1"),
                     tags={get_multidimensional_partition_tag("date"): "2021-06-01"},
-                )
-            )
+                ),
+                limit=DEFAULT_LIMIT,
+            ).records
         )
         assert len(materializations) == 1
         materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
+            instance.fetch_materializations(
+                AssetRecordsFilter(
                     asset_key=AssetKey("asset2"),
                     tags={get_multidimensional_partition_tag("date"): "2021-06-01"},
-                )
-            )
+                ),
+                limit=DEFAULT_LIMIT,
+            ).records
         )
         assert len(materializations) == 1
 

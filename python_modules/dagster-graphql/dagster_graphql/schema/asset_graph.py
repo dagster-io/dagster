@@ -18,7 +18,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import EventRecordsFilter
+from dagster._core.event_api import AssetRecordsFilter, EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.host_representation.external import ExternalJob, ExternalSensor
@@ -526,15 +526,14 @@ class GrapheneAssetNode(graphene.ObjectType):
             instance=graphene_info.context.instance, asset_graph=asset_graph
         )
         data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
-        event_records = instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+        event_records = instance.fetch_materializations(
+            AssetRecordsFilter(
+                asset_key=asset_key,
                 before_timestamp=int(timestampMillis) / 1000.0 + 1,
                 after_timestamp=int(timestampMillis) / 1000.0 - 1,
-                asset_key=asset_key,
             ),
             limit=1,
-        )
+        ).records
 
         if not event_records:
             return []

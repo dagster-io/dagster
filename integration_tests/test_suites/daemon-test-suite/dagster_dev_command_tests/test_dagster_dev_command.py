@@ -6,7 +6,7 @@ import time
 
 import requests
 import yaml
-from dagster import DagsterEventType, DagsterInstance, EventRecordsFilter
+from dagster import DagsterEventType, DagsterInstance
 from dagster._core.test_utils import environ, new_cwd
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import wait_for_grpc_server
@@ -124,10 +124,9 @@ def test_dagster_dev_command_no_dagster_home():
                             if (
                                 len(instance.get_runs()) > 0
                                 and len(
-                                    instance.get_event_records(
-                                        event_records_filter=EventRecordsFilter(
-                                            event_type=DagsterEventType.PIPELINE_ENQUEUED
-                                        )
+                                    instance.fetch_run_status_changes(
+                                        records_filter=DagsterEventType.PIPELINE_ENQUEUED,
+                                        limit=1,
                                     )
                                 )
                                 > 0

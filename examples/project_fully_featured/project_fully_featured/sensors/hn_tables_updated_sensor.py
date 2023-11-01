@@ -2,8 +2,7 @@ import json
 
 from dagster import (
     AssetKey,
-    DagsterEventType,
-    EventRecordsFilter,
+    AssetRecordsFilter,
     RunRequest,
     SensorDefinition,
     sensor,
@@ -21,20 +20,18 @@ def make_hn_tables_updated_sensor(job) -> SensorDefinition:
         comments_cursor = cursor_dict.get("comments")
         stories_cursor = cursor_dict.get("stories")
 
-        comments_event_records = context.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+        comments_event_records = context.instance.fetch_materializations(
+            AssetRecordsFilter(
                 asset_key=AssetKey(["snowflake", "core", "comments"]),
-                after_cursor=comments_cursor,
+                after_storage_id=comments_cursor,
             ),
             ascending=False,
             limit=1,
         )
-        stories_event_records = context.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+        stories_event_records = context.instance.fetch_materializations(
+            AssetRecordsFilter(
                 asset_key=AssetKey(["snowflake", "core", "stories"]),
-                after_cursor=stories_cursor,
+                after_storage_id=stories_cursor,
             ),
             ascending=False,
             limit=1,

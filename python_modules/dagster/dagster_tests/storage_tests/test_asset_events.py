@@ -12,7 +12,6 @@ from dagster import (
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetLineageInfo
-from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.input_manager import input_manager
@@ -175,10 +174,7 @@ def test_asset_materialization_accessors():
         assert log_entry.asset_materialization.asset_key == AssetKey("return_one")
 
         # test when it is not a materilization event
-        records = [
-            *instance.get_event_records(EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT))
-        ]
-
-        assert len(records) == 1
-        assert records[0].event_log_entry
-        assert records[0].event_log_entry.asset_materialization is None
+        result = instance.fetch_run_status_changes(DagsterEventType.PIPELINE_START, limit=10)
+        assert len(result.records) == 1
+        assert result.records[0].event_log_entry
+        assert result.records[0].event_log_entry.asset_materialization is None

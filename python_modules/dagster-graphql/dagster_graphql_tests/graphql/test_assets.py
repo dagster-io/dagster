@@ -20,7 +20,6 @@ from dagster import (
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
@@ -893,13 +892,19 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             == "ReportRunlessAssetEventsSuccess"
         )
 
-        event_records = graphql_context.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=event_type,
-                asset_key=asset_key,
-            ),
-            ascending=True,
-        )
+        if event_type == DagsterEventType.ASSET_MATERIALIZATION:
+            event_records = graphql_context.instance.fetch_materializations(
+                asset_key,
+                limit=1000,
+                ascending=True,
+            ).records
+        else:
+            assert event_type == DagsterEventType.ASSET_OBSERVATION
+            event_records = graphql_context.instance.fetch_observations(
+                asset_key,
+                limit=1000,
+                ascending=True,
+            ).records
         if partitions:
             assert len(event_records) == len(partitions)
         else:
@@ -2443,10 +2448,8 @@ class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
         assert result.data["reportRunlessAssetEvents"]
         assert result.data["reportRunlessAssetEvents"]["__typename"] == "UnauthorizedError"
 
-        event_records = graphql_context.instance.get_event_records(
-            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-        )
-        assert len(event_records) == 0
+        mats = graphql_context.instance.fetch_materializations(AssetKey("asset1"), limit=1)
+        assert len(mats.records) == 0
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

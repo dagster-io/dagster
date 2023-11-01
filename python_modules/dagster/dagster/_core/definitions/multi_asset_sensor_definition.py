@@ -30,6 +30,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._utils import normalize_to_repository
@@ -301,9 +302,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
-
         # This method caches the initial unconsumed events for each asset key. To generate the
         # current unconsumed events, call get_trailing_unconsumed_events instead.
         if self._fetched_initial_unconsumed_events:
@@ -314,14 +312,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values()
             )
             if unconsumed_event_ids:
-                event_records = self.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        storage_ids=unconsumed_event_ids,
-                    )
+                result = self.instance.fetch_materializations(
+                    AssetRecordsFilter(asset_key, storage_ids=unconsumed_event_ids),
+                    limit=MAX_NUM_UNCONSUMED_EVENTS,
                 )
                 self._initial_unconsumed_events_by_id.update(
-                    {event_record.storage_id: event_record for event_record in event_records}
+                    {event_record.storage_id: event_record for event_record in result.records}
                 )
 
         self._fetched_initial_unconsumed_events = True
@@ -935,19 +931,10 @@ class MultiAssetSensorCursorAdvances:
 def get_cursor_from_latest_materializations(
     asset_keys: Sequence[AssetKey], instance: DagsterInstance
 ) -> str:
-    from dagster._core.events import DagsterEventType
-    from dagster._core.storage.event_log.base import EventRecordsFilter
-
     cursor_dict: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
     for asset_key in asset_keys:
-        materializations = instance.get_event_records(
-            EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-            ),
-            limit=1,
-        )
+        materializations = instance.fetch_materializations(asset_key, limit=1).records
         if materializations:
             last_materialization = list(materializations)[-1]
 
