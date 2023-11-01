@@ -248,6 +248,23 @@ query AssetNodeChecksQuery {
 }
 """
 
+ASSET_NODE_CHECKS_LIMIT_QUERY = """
+query AssetNodeChecksLimitQuery($limit: Int) {
+    assetNodes {
+        assetKey {
+            path
+        }
+        assetChecksOrError(limit: $limit) {
+            ... on AssetChecks {
+                checks {
+                    name
+                }
+            }
+        }
+    }
+}
+"""
+
 
 def _planned_event(run_id: str, planned: AssetCheckEvaluationPlanned) -> EventLogEntry:
     return EventLogEntry(
@@ -358,6 +375,28 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "assetChecksOrError": {
                     "checks": [{"name": "my_check"}, {"name": "my_other_check"}]
                 },
+            },
+        ]
+
+    def test_asset_check_asset_node_limit(self, graphql_context: WorkspaceRequestContext):
+        res = execute_dagster_graphql(
+            graphql_context, ASSET_NODE_CHECKS_LIMIT_QUERY, variables={"limit": 1}
+        )
+        with_checks = [
+            node for node in res.data["assetNodes"] if node["assetChecksOrError"] != {"checks": []}
+        ]
+        assert with_checks == [
+            {
+                "assetKey": {"path": ["asset_1"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["check_in_op_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["one"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
         ]
 

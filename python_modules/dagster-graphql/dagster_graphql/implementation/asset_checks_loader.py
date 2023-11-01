@@ -40,8 +40,11 @@ class AssetChecksLoader:
         self._context = context
         self._asset_keys = list(asset_keys)
         self._checks: Optional[Mapping[AssetKey, AssetChecksOrErrorUnion]] = None
+        self._limit_per_asset = None
 
-    def _fetch_checks(self) -> Mapping[AssetKey, AssetChecksOrErrorUnion]:
+    def _fetch_checks(
+        self, limit_per_asset: Optional[int]
+    ) -> Mapping[AssetKey, AssetChecksOrErrorUnion]:
         instance = self._context.instance
         asset_check_support = instance.get_asset_check_support()
         if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
@@ -92,8 +95,12 @@ class AssetChecksLoader:
             if asset_key in errors:
                 graphene_checks[asset_key] = errors[asset_key]
             else:
-                checks = []
-                for external_check in external_checks.get(asset_key, []):
+                external_checks_for_asset = external_checks.get(asset_key, [])
+                if limit_per_asset:
+                    external_checks_for_asset = external_checks_for_asset[:limit_per_asset]
+
+                graphene_checks_for_asset = []
+                for external_check in external_checks_for_asset:
                     can_execute_individually = (
                         GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
                         if len(
@@ -104,19 +111,27 @@ class AssetChecksLoader:
                         # non subsettable multi checks
                         else GrapheneAssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION
                     )
-                    checks.append(
+                    graphene_checks_for_asset.append(
                         GrapheneAssetCheck(
                             asset_check=external_check,
                             can_execute_individually=can_execute_individually,
                         )
                     )
-                graphene_checks[asset_key] = GrapheneAssetChecks(checks=checks)
+                graphene_checks[asset_key] = GrapheneAssetChecks(checks=graphene_checks_for_asset)
 
         return graphene_checks
 
-    def get_checks_for_asset(self, asset_key: AssetKey) -> AssetChecksOrErrorUnion:
+    def get_checks_for_asset(
+        self, asset_key: AssetKey, limit: Optional[int] = None
+    ) -> AssetChecksOrErrorUnion:
         if self._checks is None:
-            self._checks = self._fetch_checks()
+            self._limit_per_asset = limit
+            self._checks = self._fetch_checks(limit_per_asset=limit)
+        else:
+            check.invariant(
+                self._limit_per_asset == limit,
+                "Limit must be the same for all calls to this loader",
+            )
 
         check.invariant(
             asset_key in self._checks, f"Asset key {asset_key} not included in this loader."

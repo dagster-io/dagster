@@ -690,7 +690,7 @@ type AssetNode {
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecks: [AssetCheck!]!
-  assetChecksOrError: AssetChecksOrError!
+  assetChecksOrError(limit: Int): AssetChecksOrError!
 }
 
 type MaterializationUpstreamDataVersion {

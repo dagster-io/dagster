@@ -284,7 +284,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
     # this field is deprecated- use assetChecksOrError instead
     assetChecks = non_null_list(GrapheneAssetCheck)
-    assetChecksOrError = graphene.NonNull(GrapheneAssetChecksOrError)
+    assetChecksOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetChecksOrError),
+        limit=graphene.Argument(graphene.Int),
+    )
 
     class Meta:
         name = "AssetNode"
@@ -1140,8 +1143,12 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return res.checks
 
-    def resolve_assetChecksOrError(self, graphene_info: ResolveInfo) -> AssetChecksOrErrorUnion:
-        return self._asset_checks_loader.get_checks_for_asset(self._external_asset_node.asset_key)
+    def resolve_assetChecksOrError(
+        self, graphene_info: ResolveInfo, limit=None
+    ) -> AssetChecksOrErrorUnion:
+        return self._asset_checks_loader.get_checks_for_asset(
+            self._external_asset_node.asset_key, limit
+        )
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
