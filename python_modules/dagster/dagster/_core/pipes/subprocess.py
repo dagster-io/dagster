@@ -1,3 +1,4 @@
+import os
 from subprocess import Popen
 from typing import Mapping, Optional, Sequence, Union
 
@@ -101,9 +102,10 @@ class _PipesSubprocess(PipesClient):
                 command,
                 cwd=cwd or self.cwd,
                 env={
-                    **pipes_session.get_bootstrap_env_vars(),
+                    **os.environ,
                     **self.env,
                     **(env or {}),
+                    **pipes_session.get_bootstrap_env_vars(),
                 },
             )
             process.wait()
