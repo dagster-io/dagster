@@ -1,6 +1,6 @@
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Union
 
@@ -24,8 +24,10 @@ from .utils import (
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
-    "python_modules/dagit",
     "python_modules/dagster-graphql",
+    "python_modules/dagster-pipes",
+    "python_modules/dagster-webserver",
+    "python_modules/dagit",
     "js_modules/dagster-ui",
 ]
 
@@ -108,6 +110,8 @@ class PackageSpec:
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
+        other_tox_envs (List[str], optional): Other tox testenvs to run as part of the package step
+            group. Defaults to [].
     """
 
     directory: str
@@ -126,6 +130,7 @@ class PackageSpec:
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
     always_run_if: Optional[Callable[[], bool]] = None
+    other_tox_envs: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if not self.name:
@@ -207,6 +212,9 @@ class PackageSpec:
                             skip_reason=self.skip_reason,
                         )
                     )
+
+        for testenv in self.other_tox_envs:
+            steps.append(build_tox_step(self.directory, testenv, base_label=testenv))
 
         emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
         if len(steps) >= 2:

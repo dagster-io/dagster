@@ -1,0 +1,192 @@
+{
+  "$defs": {
+    "PipesDataProvenance": {
+      "properties": {
+        "code_version": {
+          "title": "Code Version",
+          "type": "string"
+        },
+        "input_data_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Input Data Versions",
+          "type": "object"
+        },
+        "is_user_provided": {
+          "title": "Is User Provided",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code_version",
+        "input_data_versions",
+        "is_user_provided"
+      ],
+      "title": "PipesDataProvenance",
+      "type": "object"
+    },
+    "PipesPartitionKeyRange": {
+      "properties": {
+        "start": {
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "title": "End",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "PipesPartitionKeyRange",
+      "type": "object"
+    },
+    "PipesTimeWindow": {
+      "properties": {
+        "start": {
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "title": "End",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "PipesTimeWindow",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "asset_keys": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Asset Keys"
+    },
+    "code_version_by_asset_key": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Code Version By Asset Key"
+    },
+    "provenance_by_asset_key": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PipesDataProvenance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Provenance By Asset Key"
+    },
+    "partition_key": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Partition Key"
+    },
+    "partition_key_range": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PipesPartitionKeyRange"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "partition_time_window": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PipesTimeWindow"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "job_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Job Name"
+    },
+    "retry_number": {
+      "title": "Retry Number",
+      "type": "integer"
+    },
+    "extras": {
+      "title": "Extras",
+      "type": "object"
+    }
+  },
+  "required": [
+    "asset_keys",
+    "code_version_by_asset_key",
+    "provenance_by_asset_key",
+    "partition_key",
+    "partition_key_range",
+    "partition_time_window",
+    "run_id",
+    "job_name",
+    "retry_number",
+    "extras"
+  ],
+  "title": "PipesContextData",
+  "type": "object"
+}

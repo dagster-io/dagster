@@ -219,6 +219,10 @@ class UnboundOpExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("assets_def", "property"))
 
     @property
+    def has_assets_def(self) -> bool:
+        return self._assets_def is not None
+
+    @property
     def has_partition_key(self) -> bool:
         return self._partition_key is not None
 

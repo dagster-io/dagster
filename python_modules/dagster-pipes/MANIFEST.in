@@ -1,3 +1,4 @@
 include README.md
 include LICENSE
 include dagster_pipes/py.typed
+include json_schema/*.json

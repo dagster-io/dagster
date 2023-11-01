@@ -1,0 +1,28 @@
+{
+  "properties": {
+    "method": {
+      "title": "Method",
+      "type": "string"
+    },
+    "params": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Params"
+    },
+    "__dagster_pipes_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "method",
+    "params"
+  ],
+  "title": "PipesMessage",
+  "type": "object"
+}

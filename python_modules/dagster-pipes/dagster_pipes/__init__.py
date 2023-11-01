@@ -153,6 +153,25 @@ PipesMetadataType = Literal[
     "null",
 ]
 
+
+# ##### JSON SCHEMA
+
+_JsonSchemaName = Literal["context", "message"]
+_schema_root = os.path.join(os.path.dirname(__file__), "../json_schema")
+_json_schemas: Dict[Literal["context", "message"], Mapping[str, Any]] = {}
+
+
+def get_pipes_json_schema_path(name: _JsonSchemaName) -> str:
+    return os.path.join(_schema_root, f"{name}.json")
+
+
+def get_pipes_json_schema(name: _JsonSchemaName) -> Mapping[str, Any]:
+    if name not in _json_schemas:
+        with open(get_pipes_json_schema_path(name)) as f:
+            _json_schemas[name] = json.load(f)
+    return _json_schemas[name]
+
+
 # ########################
 # ##### UTIL
 # ########################

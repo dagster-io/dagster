@@ -2,7 +2,12 @@ from contextlib import contextmanager
 from typing import Iterator
 from unittest.mock import MagicMock
 
+import jsonschema
 import pytest
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.materialize import materialize
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.pipes.context import build_external_execution_context_data
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION,
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -15,6 +20,7 @@ from dagster_pipes import (
     PipesParams,
     PipesPartitionKeyRange,
     PipesTimeWindow,
+    get_pipes_json_schema,
 )
 
 TEST_PIPES_CONTEXT_DEFAULTS = PipesContextData(
@@ -41,10 +47,11 @@ class _DirectContextLoader(PipesContextLoader):
 
 
 def _make_external_execution_context(**kwargs):
-    kwargs = {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs}
+    data = PipesContextData(**{**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs})
+    jsonschema.validate(data, get_pipes_json_schema("context"))
     return PipesContext(
         params_loader=MagicMock(),
-        context_loader=_DirectContextLoader(PipesContextData(**kwargs)),
+        context_loader=_DirectContextLoader(data),
         message_writer=MagicMock(),
     )
 
@@ -249,3 +256,32 @@ def test_multiple_close():
     # `close` is idempotent, multiple calls should not raise an error
     context.close()
     context.close()
+
+
+def test_message_json_schema_validation():
+    message = {
+        PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
+        "method": "foo",
+        "params": {"bar": "baz"},
+    }
+    jsonschema.validate(message, get_pipes_json_schema("message"))
+
+
+def test_context_json_schema_validation():
+    @asset
+    def foo(context: AssetExecutionContext):
+        context_data_no_extras = build_external_execution_context_data(context, extras=None)
+        jsonschema.validate(context_data_no_extras, get_pipes_json_schema("context"))
+        context_data_with_extras = build_external_execution_context_data(
+            context, extras={"foo": "bar"}
+        )
+        jsonschema.validate(context_data_with_extras, get_pipes_json_schema("context"))
+
+    materialize([foo])
+
+
+def test_json_schema_rejects_invalid():
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate({"foo": "bar"}, get_pipes_json_schema("context"))
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate({"foo": "bar"}, get_pipes_json_schema("message"))
