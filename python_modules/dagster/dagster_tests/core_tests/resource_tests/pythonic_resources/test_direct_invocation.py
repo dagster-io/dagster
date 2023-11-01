@@ -460,3 +460,22 @@ def test_async_assets_with_shared_context():
     result = asyncio.run(main())
     assert result[0] == "one"
     assert result[1] == "two"
+
+def test_direct_invocation_resource_context_manager():
+    from dagster import resource
+
+    class YieldedResource:
+        def get_value():
+            return 1
+
+    @resource
+    def yielding_resource(context):
+        yield YieldedResource()
+
+    @asset(required_resource_keys={"yielded_resource"})
+    def my_asset(context):
+        assert context.resources.yielded_resource.get_value() == 1
+
+    ctx = build_op_context(resources={"yielded_resource": yielding_resource})
+
+    my_asset(ctx)
