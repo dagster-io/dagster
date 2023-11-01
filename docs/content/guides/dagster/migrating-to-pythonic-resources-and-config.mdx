@@ -260,18 +260,18 @@ def asset_one(context) -> None:
     context.resources.fancy_db.execute_query("SELECT * FROM foo")
 ```
 
-This could cause confusion and difficult-to-understand stack traces. With Pythonic resources, you can manage this directly in the body of the asset or op:
+This is also supported when using `ConfigurableResource` as a factory. You can override `yield_for_execution` which allows you to use a context manager to yield an object of a different type at runtime.
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_new_resource_code_contextmanager endbefore=end_new_resource_code_contextmanager dedent=4
 from contextlib import contextmanager
 
-from dagster import ConfigurableResource, asset
+from dagster import ConfigurableResource, ResourceParam, asset
 
-class FancyDbResource(ConfigurableResource):
+class FancyDbResource(ConfigurableResource[FancyDbClient]):
     conn_string: str
 
     @contextmanager
-    def get_client(self) -> Iterator[FancyDbClient]:
+    def yield_for_execution(self, context) -> Iterator[FancyDbClient]:
         try:
             some_expensive_setup()
             yield FancyDbClient(self.conn_string)
@@ -279,9 +279,8 @@ class FancyDbResource(ConfigurableResource):
             some_expensive_teardown()
 
 @asset
-def asset_one(fancy_db: FancyDbResource) -> None:
-    with fancy_db.get_client() as client:
-        client.execute_query("SELECT * FROM foo")
+def asset_one(fancy_db: ResourceParam[FancyDbClient]) -> None:
+    fancy_db.execute_query("SELECT * FROM foo")
 ```
 
 ---

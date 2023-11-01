@@ -216,13 +216,13 @@ def new_resource_code_contextmanager() -> Definitions:
 
     from contextlib import contextmanager
 
-    from dagster import ConfigurableResource, asset
+    from dagster import ConfigurableResource, ResourceParam, asset
 
-    class FancyDbResource(ConfigurableResource):
+    class FancyDbResource(ConfigurableResource[FancyDbClient]):
         conn_string: str
 
         @contextmanager
-        def get_client(self) -> Iterator[FancyDbClient]:
+        def yield_for_execution(self, context) -> Iterator[FancyDbClient]:
             try:
                 some_expensive_setup()
                 yield FancyDbClient(self.conn_string)
@@ -230,9 +230,8 @@ def new_resource_code_contextmanager() -> Definitions:
                 some_expensive_teardown()
 
     @asset
-    def asset_one(fancy_db: FancyDbResource) -> None:
-        with fancy_db.get_client() as client:
-            client.execute_query("SELECT * FROM foo")
+    def asset_one(fancy_db: ResourceParam[FancyDbClient]) -> None:
+        fancy_db.execute_query("SELECT * FROM foo")
 
     # end_new_resource_code_contextmanager
 
