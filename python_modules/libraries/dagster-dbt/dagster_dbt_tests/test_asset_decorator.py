@@ -2,8 +2,6 @@ import json
 import os
 from pathlib import Path
 from typing import AbstractSet, Any, Mapping, Optional
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster_dbt.core.resources_v2 import DbtCliResource
 
 import pytest
 from dagster import (
@@ -23,7 +21,9 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
 
@@ -349,22 +349,6 @@ def test_with_asset_key_replacements() -> None:
     }
 
 
-def test_with_description_replacements() -> None:
-    expected_description = "customized description"
-
-    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-        @classmethod
-        def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
-            return expected_description
-
-    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets():
-        ...
-
-    for description in my_dbt_assets.descriptions_by_key.values():
-        assert description == expected_description
-
-
 @pytest.mark.parametrize(
     "partition_mapping",
     [
@@ -416,6 +400,22 @@ def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) 
             my_dbt_assets.get_partition_mapping(self_dependency_asset_key)
             == expected_self_dependency_partition_mapping
         )
+
+
+def test_with_description_replacements() -> None:
+    expected_description = "customized description"
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
+            return expected_description
+
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
+    def my_dbt_assets():
+        ...
+
+    for description in my_dbt_assets.descriptions_by_key.values():
+        assert description == expected_description
 
 
 def test_with_metadata_replacements() -> None:
