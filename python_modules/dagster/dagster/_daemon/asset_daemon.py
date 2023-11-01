@@ -98,7 +98,6 @@ class AutoMaterializeLaunchContext:
         self._instance = instance
 
         self._purge_settings = defaultdict(set)
-
         for status, day_offset in tick_retention_settings.items():
             self._purge_settings[day_offset].add(status)
 
@@ -276,6 +275,7 @@ class AssetDaemon(IntervalDaemon):
 
         max_retries = instance.get_settings("auto_materialize").get("max_tick_retries")
 
+        # Determine if the most recent tick requires retrying
         retry_tick: Optional[InstigatorTick] = None
 
         if latest_tick:
@@ -290,13 +290,17 @@ class AssetDaemon(IntervalDaemon):
                 == stored_cursor.evaluation_id
             ):
                 if latest_tick.status == TickStatus.STARTED:
-                    self._logger.warn("Tick was interrupted part-way through, resuming")
+                    self._logger.warn(
+                        f"Tick for evaluation {stored_cursor.evaluation_id} was interrupted part-way through, resuming"
+                    )
                     retry_tick = latest_tick
                 elif (
                     latest_tick.status == TickStatus.FAILURE
                     and latest_tick.tick_data.failure_count <= max_retries
                 ):
-                    self._logger.info("Retrying failed tick")
+                    self._logger.info(
+                        f"Retrying failed tick for evaluation {stored_cursor.evaluation_id}"
+                    )
                     retry_tick = instance.create_tick(
                         latest_tick.tick_data.with_status(
                             TickStatus.STARTED,
@@ -311,7 +315,10 @@ class AssetDaemon(IntervalDaemon):
                 # re-evaluate things from scratch in a new tick without retrying anything)
                 if latest_tick.status == TickStatus.STARTED:
                     # Old tick that won't be resumed - move it into a SKIPPED state so it isn't
-                    # dangling in STARTED
+                    # left dangling in STARTED
+                    self._logger.warn(
+                        f"Moving dangling STARTED tick from evaluation {latest_tick.tick_data.auto_materialize_evaluation_id} into SKIPPED"
+                    )
                     latest_tick = latest_tick.with_status(status=TickStatus.SKIPPED)
                     instance.update_tick(latest_tick)
 
