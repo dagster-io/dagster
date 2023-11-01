@@ -78,7 +78,7 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 
-SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int]
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, Union[int, Exception]]
 DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
 
 
@@ -88,11 +88,15 @@ def check_for_debug_crash(
     if not debug_crash_flags:
         return
 
-    kill_signal = debug_crash_flags.get(key)
-    if not kill_signal:
+    kill_signal_or_exception = debug_crash_flags.get(key)
+
+    if not kill_signal_or_exception:
         return
 
-    os.kill(os.getpid(), kill_signal)
+    if isinstance(kill_signal_or_exception, Exception):
+        raise kill_signal_or_exception
+
+    os.kill(os.getpid(), kill_signal_or_exception)
     time.sleep(10)
     raise Exception("Process didn't terminate after sending crash signal")
 
