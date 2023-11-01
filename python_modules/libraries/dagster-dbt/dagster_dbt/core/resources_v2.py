@@ -27,6 +27,7 @@ from dagster import (
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
+    MetadataValue,
     OpExecutionContext,
     Output,
     get_dagster_logger,
@@ -145,6 +146,21 @@ class DbtCliEventMessage:
         node_resource_type: str = event_node_info["resource_type"]
         node_status: str = event_node_info["node_status"]
 
+        compiled_code: Optional[str] = (
+            manifest.get("nodes", {}).get(unique_id, {}).get("compiled_code")
+        )
+        formatted_compiled_code = f"```sql\n{compiled_code}\n```"
+
+        metadata: Dict[str, Any] = {
+            "unique_id": unique_id,
+            "invocation_id": invocation_id,
+            **(
+                {"compiled_code": MetadataValue.md(formatted_compiled_code)}
+                if compiled_code
+                else {}
+            ),
+        }
+
         is_node_successful = node_status == NodeStatus.Success
         is_node_finished = bool(event_node_info.get("node_finished_at"))
         if node_resource_type in NodeType.refable() and is_node_successful:
@@ -152,15 +168,13 @@ class DbtCliEventMessage:
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             duration_seconds = (finished_at - started_at).total_seconds()
 
+            metadata["Execution Duration"] = duration_seconds
+
             if has_asset_def:
                 yield Output(
                     value=None,
                     output_name=output_name_fn(event_node_info),
-                    metadata={
-                        "unique_id": unique_id,
-                        "invocation_id": invocation_id,
-                        "Execution Duration": duration_seconds,
-                    },
+                    metadata=metadata,
                 )
             else:
                 dbt_resource_props = manifest["nodes"][unique_id]
@@ -168,20 +182,11 @@ class DbtCliEventMessage:
 
                 yield AssetMaterialization(
                     asset_key=asset_key,
-                    metadata={
-                        "unique_id": unique_id,
-                        "invocation_id": invocation_id,
-                        "Execution Duration": duration_seconds,
-                    },
+                    metadata=metadata,
                 )
         elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
             test_resource_props = manifest["nodes"][unique_id]
-            metadata = {
-                "unique_id": unique_id,
-                "invocation_id": invocation_id,
-                "status": node_status,
-            }
 
             is_asset_check = dagster_dbt_translator.settings.enable_asset_checks
             attached_node_unique_id = test_resource_props.get("attached_node")
@@ -206,6 +211,8 @@ class DbtCliEventMessage:
                     severity=severity,
                 )
             else:
+                metadata["status"] = node_status
+
                 for upstream_unique_id in upstream_unique_ids:
                     upstream_resource_props: Dict[str, Any] = manifest["nodes"].get(
                         upstream_unique_id
