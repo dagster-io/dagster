@@ -34,10 +34,7 @@ from dagster._core.definitions.definition_config_schema import (
     DefinitionConfigSchema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.execution.context.init import (
-    InitResourceContext,
-    build_init_resource_context,
-)
+from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster._utils.cached_method import cached_method
 
 from .attach_other_object_to_context import (
@@ -506,8 +503,7 @@ class ConfigurableResourceFactory(
             yield self._with_updated_values(to_update)
 
     @deprecated(
-        breaking_version="2.0",
-        additional_warn_text="Use `with_replaced_resource_context` instead",
+        breaking_version="2.0", additional_warn_text="Use `with_replaced_resource_context` instead"
     )
     def with_resource_context(
         self, resource_context: InitResourceContext
@@ -593,8 +589,7 @@ class ConfigurableResourceFactory(
         return self.from_resource_context(
             build_init_resource_context(
                 config=post_process_config(
-                    self._config_schema.config_type,
-                    self._convert_to_config_dictionary(),
+                    self._config_schema.config_type, self._convert_to_config_dictionary()
                 ).value
             )
         )
@@ -624,7 +619,7 @@ class ConfigurableResourceFactory(
             "Use from_resource_context_cm for resources which have custom teardown behavior,"
             " e.g. overriding yield_for_execution or teardown_after_execution",
         )
-        return cls(**context.resource_config or {})._initialize_and_run(context)
+        return cls(**context.resource_config or {})._initialize_and_run(context)  # noqa: SLF001
 
     @classmethod
     @contextlib.contextmanager
@@ -648,7 +643,7 @@ class ConfigurableResourceFactory(
                     yield my_resource
 
         """
-        with cls(**context.resource_config or {})._initialize_and_run_cm(context) as value:
+        with cls(**context.resource_config or {})._initialize_and_run_cm(context) as value:  # noqa: SLF001
             yield value
 
 
@@ -1053,5 +1048,5 @@ def _resolve_required_resource_keys_for_resource(
     this mapping is used to obtain the top-level resource keys to depend on.
     """
     if isinstance(resource, AllowDelayedDependencies):
-        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)
+        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)  # noqa: SLF001
     return resource.required_resource_keys
