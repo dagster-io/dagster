@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import functools
+import math
 from typing import Iterator, Optional, Sequence, Union
 
 import pendulum
@@ -47,8 +48,8 @@ def _exact_match(
 
     return (
         dt.timestamp()
-        == _find_previous_schedule_time(
-            minute, hour, day, day_of_week, schedule_type, dt.add(seconds=1)
+        == _find_schedule_time(
+            minute, hour, day, day_of_week, schedule_type, dt.add(seconds=1), ascending=False
         ).timestamp()
     )
 
@@ -124,100 +125,221 @@ def _replace_date_fields(
     return new_time
 
 
-def _find_previous_schedule_time(
-    minute: Optional[int],
-    hour: Optional[int],
-    day: Optional[int],
-    day_of_week: Optional[int],
-    schedule_type: ScheduleType,
+SECONDS_PER_MINUTE = 60
+MINUTES_PER_HOUR = 60
+
+
+def _find_hourly_schedule_time(
+    minute: int,
     pendulum_date: PendulumDateTime,
+    ascending: bool,
 ) -> PendulumDateTime:
-    if schedule_type == ScheduleType.HOURLY:
-        new_timestamp = int(pendulum_date.timestamp())
-        new_timestamp = new_timestamp - new_timestamp % 60
+    if ascending:
+        # short-circuit if minutes and seconds are already correct
+        if (
+            pendulum_date.minute == minute
+            and pendulum_date.second == 0
+            and pendulum_date.microsecond == 0
+        ):
+            return pendulum_date.add(hours=1)
 
-        current_minute = pendulum_date.minute
-        new_timestamp = new_timestamp - 60 * ((current_minute - check.not_none(minute)) % 60)
-
-        if new_timestamp >= pendulum_date.timestamp():
-            new_timestamp = new_timestamp - 60 * 60
-
-        return pendulum.from_timestamp(new_timestamp, tz=pendulum_date.timezone_name)
-    elif schedule_type == ScheduleType.DAILY:
-        # First move to the correct time of day today (ignoring whether it is the correct day)
-        new_time = _replace_date_fields(
-            pendulum_date,
-            check.not_none(hour),
-            check.not_none(minute),
-            pendulum_date.day,
+        # clear microseconds
+        new_timestamp = math.ceil(pendulum_date.timestamp())
+        # clear seconds
+        new_timestamp = (
+            new_timestamp
+            + (SECONDS_PER_MINUTE - new_timestamp % SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
         )
 
+        # advance minutes to correct place
+        current_minute = (new_timestamp // SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
+
+        new_timestamp = new_timestamp + SECONDS_PER_MINUTE * (
+            (minute - current_minute) % MINUTES_PER_HOUR
+        )
+
+        # move forward an hour if we haven't moved forwards yet
+        if new_timestamp <= pendulum_date.timestamp():
+            new_timestamp = new_timestamp + SECONDS_PER_MINUTE * MINUTES_PER_HOUR
+    else:
+        if (
+            pendulum_date.minute == minute
+            and pendulum_date.second == 0
+            and pendulum_date.microsecond == 0
+        ):
+            return pendulum_date.subtract(hours=1)
+
+        # clear microseconds
+        new_timestamp = math.floor(pendulum_date.timestamp())
+        # clear seconds
+        new_timestamp = new_timestamp - new_timestamp % SECONDS_PER_MINUTE
+
+        # move minutes back to correct place
+        current_minute = (new_timestamp // SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
+
+        new_timestamp = new_timestamp - SECONDS_PER_MINUTE * (
+            (current_minute - minute) % MINUTES_PER_HOUR
+        )
+
+        # move back an hour if we haven't moved backwards yet
+        if new_timestamp >= pendulum_date.timestamp():
+            new_timestamp = new_timestamp - SECONDS_PER_MINUTE * MINUTES_PER_HOUR
+
+    return pendulum.from_timestamp(new_timestamp, tz=pendulum_date.timezone_name)
+
+
+def _find_daily_schedule_time(
+    minute: int,
+    hour: int,
+    pendulum_date: PendulumDateTime,
+    ascending: bool,
+) -> PendulumDateTime:
+    # First move to the correct time of day today (ignoring whether it is the correct day)
+    new_time = _replace_date_fields(
+        pendulum_date,
+        hour,
+        minute,
+        pendulum_date.day,
+    )
+
+    moved = False
+    if ascending:
+        if new_time.timestamp() <= pendulum_date.timestamp():
+            new_time = new_time.add(days=1)
+            moved = True
+    else:
         if new_time.timestamp() >= pendulum_date.timestamp():
+            moved = True
             # Move back a day if needed
             new_time = new_time.subtract(days=1)
 
-            # Doing so may have adjusted the hour again if we crossed a DST boundary,
-            # so make sure it's still correct
-            new_time = _replace_date_fields(
-                new_time,
-                check.not_none(hour),
-                check.not_none(minute),
-                new_time.day,
-            )
-
-        return new_time
-    elif schedule_type == ScheduleType.WEEKLY:
-        # first move to the correct time of day
-        new_time = _replace_date_fields(
-            pendulum_date,
-            check.not_none(hour),
-            check.not_none(minute),
-            pendulum_date.day,
-        )
-
-        # Go back far enough to make sure that we're now on the correct day of the week
-        current_day_of_week = new_time.day_of_week
-        if day_of_week != current_day_of_week:
-            new_time = new_time.subtract(days=(current_day_of_week - day_of_week) % 7)
-
-        # Make sure that we've actually moved back, go back a week if we haven't
-        if new_time.timestamp() >= pendulum_date.timestamp():
-            new_time = new_time.subtract(weeks=1)
-
+    if moved:
         # Doing so may have adjusted the hour again if we crossed a DST boundary,
-        # so make sure the time is still correct
+        # so make sure it's still correct
         new_time = _replace_date_fields(
             new_time,
-            check.not_none(hour),
-            check.not_none(minute),
+            hour,
+            minute,
             new_time.day,
         )
 
-        return new_time
+    return new_time
 
-    elif schedule_type == ScheduleType.MONTHLY:
-        # First move to the correct day and time of day
+
+def _find_weekly_schedule_time(
+    minute: int,
+    hour: int,
+    day_of_week: int,
+    pendulum_date: PendulumDateTime,
+    ascending: bool,
+) -> PendulumDateTime:
+    # first move to the correct time of day
+    new_time = _replace_date_fields(
+        pendulum_date,
+        hour,
+        minute,
+        pendulum_date.day,
+    )
+
+    # Move to the correct day of the week
+    current_day_of_week = new_time.day_of_week
+    if day_of_week != current_day_of_week:
+        if ascending:
+            new_time = new_time.add(days=(day_of_week - current_day_of_week) % 7)
+        else:
+            new_time = new_time.subtract(days=(current_day_of_week - day_of_week) % 7)
+
+    # Make sure that we've actually moved in the correct direction, advance if we haven't
+    if ascending and new_time.timestamp() <= pendulum_date.timestamp():
+        new_time = new_time.add(weeks=1)
+
+    if not ascending and new_time.timestamp() >= pendulum_date.timestamp():
+        new_time = new_time.subtract(weeks=1)
+
+    # Doing so may have adjusted the hour again if we crossed a DST boundary,
+    # so make sure the time is still correct
+    new_time = _replace_date_fields(
+        new_time,
+        hour,
+        minute,
+        new_time.day,
+    )
+
+    return new_time
+
+
+def _find_monthly_schedule_time(
+    minute: int,
+    hour: int,
+    day: int,
+    pendulum_date: PendulumDateTime,
+    ascending: bool,
+) -> PendulumDateTime:
+    # First move to the correct day and time of day
+    new_time = _replace_date_fields(
+        pendulum_date,
+        check.not_none(hour),
+        check.not_none(minute),
+        check.not_none(day),
+    )
+
+    moved = False
+
+    if ascending:
+        if new_time.timestamp() <= pendulum_date.timestamp():
+            new_time = new_time.add(months=1)
+            moved = True
+
+    else:
+        if new_time.timestamp() >= pendulum_date.timestamp():
+            # Move back a month if needed
+            new_time = new_time.subtract(months=1)
+            moved = True
+
+    if moved:
+        # Doing so may have adjusted the hour again if we crossed a DST boundary,
+        # so make sure it's still correct
         new_time = _replace_date_fields(
-            pendulum_date,
+            new_time,
             check.not_none(hour),
             check.not_none(minute),
             check.not_none(day),
         )
 
-        if new_time.timestamp() >= pendulum_date.timestamp():
-            # Move back a month if needed
-            new_time = new_time.subtract(months=1)
+    return new_time
 
-            # Doing so may have adjusted the hour again if we crossed a DST boundary,
-            # so make sure it's still correct
-            new_time = _replace_date_fields(
-                new_time,
-                check.not_none(hour),
-                check.not_none(minute),
-                check.not_none(day),
-            )
 
-        return new_time
+def _find_schedule_time(
+    minute: Optional[int],
+    hour: Optional[int],
+    day_of_month: Optional[int],
+    day_of_week: Optional[int],
+    schedule_type: ScheduleType,
+    pendulum_date: PendulumDateTime,
+    ascending: bool,
+) -> PendulumDateTime:
+    if schedule_type == ScheduleType.HOURLY:
+        return _find_hourly_schedule_time(check.not_none(minute), pendulum_date, ascending)
+    elif schedule_type == ScheduleType.DAILY:
+        return _find_daily_schedule_time(
+            check.not_none(minute), check.not_none(hour), pendulum_date, ascending
+        )
+    elif schedule_type == ScheduleType.WEEKLY:
+        return _find_weekly_schedule_time(
+            check.not_none(minute),
+            check.not_none(hour),
+            check.not_none(day_of_week),
+            pendulum_date,
+            ascending,
+        )
+    elif schedule_type == ScheduleType.MONTHLY:
+        return _find_monthly_schedule_time(
+            check.not_none(minute),
+            check.not_none(hour),
+            check.not_none(day_of_month),
+            pendulum_date,
+            ascending,
+        )
     else:
         raise Exception(f"Unexpected schedule type {schedule_type}")
 
@@ -258,31 +380,21 @@ def cron_string_iterator(
 
     known_schedule_type: Optional[ScheduleType] = None
 
-    delta_fn = None
-    should_hour_change = False
     expected_hour = None
     expected_minute = None
     expected_day = None
     expected_day_of_week = None
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
-    # much slower than adding a fixed interval
+    # much slower and has correctness issues on DST boundaries
     if not nth_weekday_of_month:
         if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
-            delta_fn = lambda d, num: d.add(months=num)
-            should_hour_change = False
             known_schedule_type = ScheduleType.MONTHLY
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
-            delta_fn = lambda d, num: d.add(weeks=num)
-            should_hour_change = False
             known_schedule_type = ScheduleType.WEEKLY
         elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
-            delta_fn = lambda d, num: d.add(days=num)
-            should_hour_change = False
             known_schedule_type = ScheduleType.DAILY
         elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
-            delta_fn = lambda d, num: d.add(hours=num)
-            should_hour_change = True
             known_schedule_type = ScheduleType.HOURLY
 
     if is_numeric[1]:
@@ -315,59 +427,40 @@ def cron_string_iterator(
             # This is already on a cron boundary, so yield it
             yield start_datetime
         else:
-            next_date = _find_previous_schedule_time(
+            next_date = _find_schedule_time(
                 expected_minute,
                 expected_hour,
                 expected_day,
                 expected_day_of_week,
                 known_schedule_type,
                 start_datetime,
+                ascending=False,
             )
             check.invariant(start_offset <= 0)
             for _ in range(-start_offset):
-                next_date = _find_previous_schedule_time(
+                next_date = _find_schedule_time(
                     expected_minute,
                     expected_hour,
                     expected_day,
                     expected_day_of_week,
                     known_schedule_type,
                     next_date,
+                    ascending=False,
                 )
 
         while True:
-            curr_hour = next_date.hour
-
-            next_date_cand = check.not_none(delta_fn)(next_date, 1)
-            new_hour = next_date_cand.hour
-            new_minute = next_date_cand.minute
-
-            if not should_hour_change and new_hour != curr_hour:
-                # If the hour changes during a daily/weekly/monthly schedule, it
-                # indicates that the time shifted due to falling in a time that doesn't
-                # exist due to a DST transition (for example, 2:30AM CST on 3/10/2019).
-                # Instead, execute at the first time that does exist (the start of the hour),
-                # but return to the original hour for all subsequent executions so that the
-                # hour doesn't stay different permanently.
-
-                check.invariant(new_hour == curr_hour + 1)
-                yield next_date_cand.replace(minute=0)
-
-                next_date_cand = check.not_none(delta_fn)(next_date, 2)
-                check.invariant(next_date_cand.hour == curr_hour)
-            elif expected_hour is not None and new_hour != expected_hour:
-                # hour should only be different than expected if the timezone has just changed -
-                # if it hasn't, it means we are moving from e.g. 3AM on spring DST day back to
-                # 2AM on the next day and need to reset back to the expected hour
-                if next_date_cand.utcoffset() == next_date.utcoffset():
-                    next_date_cand = next_date_cand.set(hour=expected_hour)
-
-            if expected_minute is not None and new_minute != expected_minute:
-                next_date_cand = next_date_cand.set(minute=expected_minute)
-
-            next_date = next_date_cand
+            next_date = _find_schedule_time(
+                expected_minute,
+                expected_hour,
+                expected_day,
+                expected_day_of_week,
+                known_schedule_type,
+                next_date,
+                ascending=True,
+            )
 
             if start_offset == 0:
-                # Guard against _find_previous_schedule_time returning unexpected results
+                # Guard against _find_schedule_time returning unexpected results
                 check.invariant(next_date.timestamp() >= start_timestamp)
 
             yield next_date
@@ -412,15 +505,6 @@ def reverse_cron_string_iterator(
     """Generator of datetimes < end_timestamp for the given cron string."""
     timezone_str = execution_timezone if execution_timezone else "UTC"
 
-    utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(end_timestamp))
-    end_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
-
-    date_iter = CroniterShim(cron_string, end_datetime)
-
-    # Go forward one iteration so that the next iteration is the first time that is < end_datetime
-    # and matches the cron schedule
-    next_date = date_iter.get_next(datetime.datetime)
-
     # Croniter < 1.4 returns 2 items
     # Croniter >= 1.4 returns 3 items
     cron_parts, *_ = CroniterShim.expand(cron_string)
@@ -428,57 +512,74 @@ def reverse_cron_string_iterator(
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
+    known_schedule_type: Optional[ScheduleType] = None
+
+    expected_hour = None
+    expected_minute = None
+    expected_day = None
+    expected_day_of_week = None
+
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
-    # much slower than adding a fixed interval
+    # much slower and has correctness issues on DST boundaries
     if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
-        delta_fn = lambda d, num: d.subtract(months=num)
-        should_hour_change = False
+        known_schedule_type = ScheduleType.MONTHLY
     elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
-        delta_fn = lambda d, num: d.subtract(weeks=num)
-        should_hour_change = False
+        known_schedule_type = ScheduleType.WEEKLY
     elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
-        delta_fn = lambda d, num: d.subtract(days=num)
-        should_hour_change = False
+        known_schedule_type = ScheduleType.DAILY
     elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
-        delta_fn = lambda d, num: d.subtract(hours=num)
-        should_hour_change = True
-    else:
-        delta_fn = None
-        should_hour_change = False
+        known_schedule_type = ScheduleType.HOURLY
 
-    if delta_fn is not None:
-        # Use pendulums for intervals when possible
-        next_date = to_timezone(pendulum.instance(next_date), timezone_str)
+    if is_numeric[1]:
+        expected_hour = int(cron_parts[1][0])
+
+    if is_numeric[0]:
+        expected_minute = int(cron_parts[0][0])
+
+    if is_numeric[2]:
+        expected_day = int(cron_parts[2][0])
+
+    if is_numeric[4]:
+        expected_day_of_week = int(cron_parts[4][0])
+
+    if known_schedule_type:
+        start_datetime = pendulum.from_timestamp(end_timestamp, tz=timezone_str)
+        next_date = _find_schedule_time(
+            expected_minute,
+            expected_hour,
+            expected_day,
+            expected_day_of_week,
+            known_schedule_type,
+            start_datetime,
+            ascending=True,
+        )
+
         while True:
-            curr_hour = next_date.hour
+            next_date = _find_schedule_time(
+                expected_minute,
+                expected_hour,
+                expected_day,
+                expected_day_of_week,
+                known_schedule_type,
+                next_date,
+                ascending=False,
+            )
 
-            next_date_cand = delta_fn(next_date, 1)
-            new_hour = next_date_cand.hour
-
-            if not should_hour_change and new_hour != curr_hour:
-                # If the hour changes during a daily/weekly/monthly schedule, it
-                # indicates that the time shifted due to falling in a time that doesn't
-                # exist due to a DST transition (for example, 2:30AM CST on 3/10/2019).
-                # Instead, execute at the first time that does exist (the start of the hour),
-                # but return to the original hour for all subsequent executions so that the
-                # hour doesn't stay different permanently.
-
-                check.invariant(new_hour == curr_hour + 1)
-                yield next_date_cand.replace(minute=0)
-
-                next_date_cand = delta_fn(next_date, 2)
-                check.invariant(next_date_cand.hour == curr_hour)
-
-            next_date = next_date_cand
-
-            if next_date.timestamp() > end_timestamp:
-                # Guard against edge cases where croniter get_next() returns unexpected
-                # results that cause us to get stuck
-                continue
+            # Guard against _find_schedule_time returning unexpected results
+            check.invariant(next_date.timestamp() <= end_timestamp)
 
             yield next_date
     else:
         # Otherwise fall back to croniter
+        utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(end_timestamp))
+        end_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
+
+        date_iter = CroniterShim(cron_string, end_datetime)
+
+        # Go forward one iteration so that the next iteration is the first time that is >= start_datetime
+        # and matches the cron schedule
+        next_date = date_iter.get_next(datetime.datetime)
+
         while True:
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_prev(datetime.datetime)), timezone_str
