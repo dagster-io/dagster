@@ -221,21 +221,20 @@ def existing_asset(context) -> None:
     context.resources.fancy_db.execute_query("SELECT * FROM foo")
 ```
 
-With Pythonic-style resources you would write a class that can return that client from a method. In code that consumes that resource you would call that method to access the underlying client.
+With Pythonic-style resources you would write `ConfigurableResource` subclass that overrides `create_resource` to return the original object type
 
 ```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_new_third_party_resource endbefore=end_new_third_party_resource dedent=4
-from dagster import ConfigurableResource, asset
+from dagster import ConfigurableResource, ResourceParam, asset
 
 class FancyDbResource(ConfigurableResource):
     conn_string: str
 
-    def get_client(self) -> FancyDbClient:
+    def create_resource(self, context) -> FancyDbClient:
         return FancyDbClient(self.conn_string)
 
 @asset
-def new_asset(fancy_db: FancyDbResource) -> None:
-    client = fancy_db.get_client()
-    client.execute_query("SELECT * FROM foo")
+def new_asset(fancy_db: ResourceParam[FancyDbClient]) -> None:
+    fancy_db.execute_query("SELECT * FROM foo")
 ```
 
 ### Resources with context managers
@@ -283,47 +282,6 @@ class FancyDbResource(ConfigurableResource):
 def asset_one(fancy_db: FancyDbResource) -> None:
     with fancy_db.get_client() as client:
         client.execute_query("SELECT * FROM foo")
-```
-
-### Migrating code with resources with separate business objects
-
-While there are benefits to managing object access in a resource rather than having the `@resource` factory function return the object, this does present a problem with performing an at-scale migration. The old code will expect the business object on the `context` object while the new code will expect the enclosing resource object when it's accessed as a parameter.
-
-```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_broken_unmigrated_code endbefore=end_broken_unmigrated_code dedent=4
-@asset(required_resource_keys={"fancy_db"})
-def existing_asset(context) -> None:
-    # This code is now broken because the resource is no longer a FancyDbClient
-    # but it is a FancyDbResource.
-    context.resources.fancy_db.execute_query("SELECT * FROM foo")
-```
-
-Ultimately, we want the underlying client to reside in the context of the old code, but in the new code, have the new resource passed to the asset.
-
-You can accomplish this by using Dagster's framework support, `IAttachDifferentObjectToOpContext`. Implementing this interface allows you to instruct the framework to place a different object on the context object.
-
-This framework can be implemented while you migrate your code, so that both new and old code can co-exist:
-
-```python file=/guides/dagster/migrating_to_python_resources_and_config/migrating_resources.py  startafter=begin_new_third_party_resource_with_interface endbefore=end_new_third_party_resource_with_interface dedent=4    return FancyDbClient(self.conn_string)
-from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, asset
-
-class FancyDbResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    conn_string: str
-
-    def get_object_to_set_on_execution_context(self) -> FancyDbClient:
-        return self.get_client()
-
-    def get_client(self) -> FancyDbClient:
-        return FancyDbClient(self.conn_string)
-
-@asset
-def new_asset(fancy_db: FancyDbResource) -> None:
-    client = fancy_db.get_client()
-    client.execute_query("SELECT * FROM foo")
-
-@asset(required_resource_keys={"fancy_db"})
-def existing_asset(context) -> None:
-    # This code now works because context.resources.fancy_db is now a FancyDbClient
-    context.resources.fancy_db.execute_query("SELECT * FROM foo")
 ```
 
 ---

@@ -242,7 +242,7 @@ def new_resource_code_contextmanager() -> Definitions:
     )
 
 
-def new_third_party_resource_old_code_broken() -> Definitions:
+def new_third_party_resource_factory_pattern() -> Definitions:
     class FancyDbClient:
         def __init__(self, conn_string: str) -> None:
             self.conn_string = conn_string
@@ -251,79 +251,24 @@ def new_third_party_resource_old_code_broken() -> Definitions:
             ...
 
     # begin_new_third_party_resource
-    from dagster import ConfigurableResource, asset
+    from dagster import ConfigurableResource, ResourceParam, asset
 
     class FancyDbResource(ConfigurableResource):
         conn_string: str
 
-        def get_client(self) -> FancyDbClient:
+        def create_resource(self, context) -> FancyDbClient:
             return FancyDbClient(self.conn_string)
 
     @asset
-    def new_asset(fancy_db: FancyDbResource) -> None:
-        client = fancy_db.get_client()
-        client.execute_query("SELECT * FROM foo")
+    def new_asset(fancy_db: ResourceParam[FancyDbClient]) -> None:
+        fancy_db.execute_query("SELECT * FROM foo")
 
     # end_new_third_party_resource
 
-    # begin_broken_unmigrated_code
-    @asset(required_resource_keys={"fancy_db"})
-    def existing_asset(context) -> None:
-        # This code is now broken because the resource is no longer a FancyDbClient
-        # but it is a FancyDbResource.
-        context.resources.fancy_db.execute_query("SELECT * FROM foo")
-
-    # end_broken_unmigrated_code
-
     defs = Definitions(
-        assets=[new_asset, existing_asset],
+        assets=[new_asset],
         jobs=[
             define_asset_job("new_asset_job", "new_asset"),
-            define_asset_job("existing_asset_job", "existing_asset"),
-        ],
-        resources={"fancy_db": FancyDbResource(conn_string="some_value")},
-    )
-
-    return defs
-
-
-def new_third_party_resource_fixed() -> Definitions:
-    class FancyDbClient:
-        def __init__(self, conn_string: str) -> None:
-            self.conn_string = conn_string
-
-        def execute_query(self, query: str) -> None:
-            ...
-
-    # begin_new_third_party_resource_with_interface
-    from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, asset
-
-    class FancyDbResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-        conn_string: str
-
-        def get_object_to_set_on_execution_context(self) -> FancyDbClient:
-            return self.get_client()
-
-        def get_client(self) -> FancyDbClient:
-            return FancyDbClient(self.conn_string)
-
-    @asset
-    def new_asset(fancy_db: FancyDbResource) -> None:
-        client = fancy_db.get_client()
-        client.execute_query("SELECT * FROM foo")
-
-    @asset(required_resource_keys={"fancy_db"})
-    def existing_asset(context) -> None:
-        # This code now works because context.resources.fancy_db is now a FancyDbClient
-        context.resources.fancy_db.execute_query("SELECT * FROM foo")
-
-    # end_new_third_party_resource_with_interface
-
-    defs = Definitions(
-        assets=[new_asset, existing_asset],
-        jobs=[
-            define_asset_job("new_asset_job", "new_asset"),
-            define_asset_job("existing_asset_job", "existing_asset"),
         ],
         resources={"fancy_db": FancyDbResource(conn_string="some_value")},
     )

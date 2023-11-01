@@ -4,8 +4,7 @@ from docs_snippets.guides.dagster.migrating_to_python_resources_and_config.migra
     new_resource_code_contextmanager,
     new_style_resource_on_context,
     new_style_resource_on_param,
-    new_third_party_resource_fixed,
-    new_third_party_resource_old_code_broken,
+    new_third_party_resource_factory_pattern,
     old_resource_code_contextmanager,
     old_third_party_resource,
 )
@@ -43,19 +42,6 @@ def test_new_resource_code_contextmanager() -> None:
     assert defs.get_implicit_global_asset_job_def().execute_in_process().success
 
 
-def test_new_third_party_resource_old_code_broken() -> None:
-    defs = new_third_party_resource_old_code_broken()
-
+def test_new_third_party_resource_factory_pattern() -> None:
+    defs = new_third_party_resource_factory_pattern()
     assert defs.get_job_def("new_asset_job").execute_in_process().success
-    assert (
-        not defs.get_job_def("existing_asset_job")
-        .execute_in_process(raise_on_error=False)
-        .success
-    )
-
-
-def test_new_third_party_resource_fixed() -> None:
-    defs = new_third_party_resource_fixed()
-
-    assert defs.get_job_def("new_asset_job").execute_in_process().success
-    assert defs.get_job_def("existing_asset_job").execute_in_process().success
