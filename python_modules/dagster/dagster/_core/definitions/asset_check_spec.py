@@ -31,7 +31,7 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-@experimental
+@experimental(emit_runtime_warning=False)
 @whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
 class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
