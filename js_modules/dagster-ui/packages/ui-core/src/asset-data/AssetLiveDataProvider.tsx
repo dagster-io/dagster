@@ -365,7 +365,13 @@ async function _batchedQueryAssets(
       });
     }
 
-    setTimeout(doNextFetch, Math.min(pollRate, 5000));
+    setTimeout(
+      () => {
+        doNextFetch(pollRate);
+      },
+      // If the poll rate is faster than 5 seconds lets use that instead
+      Math.min(pollRate, 5000),
+    );
   }
 }
 
