@@ -21,7 +21,15 @@ class CroniterShim(_croniter):
         return super().expand(*args, **kwargs)
 
 
-def _exact_match(cron_expression: str, dt: datetime.datetime) -> bool:
+def _exact_match(
+    cron_expression: str,
+    schedule_type: ScheduleType,
+    minute: Optional[int],
+    hour: Optional[int],
+    day: Optional[int],
+    day_of_week: Optional[int],
+    dt: PendulumDateTime,
+) -> bool:
     """The default croniter match function only checks that the given datetime is within 60 seconds
     of a cron schedule tick. This function checks that the given datetime is exactly on a cron tick.
     """
@@ -37,10 +45,12 @@ def _exact_match(cron_expression: str, dt: datetime.datetime) -> bool:
     if cron_expression == "0 * * * *" and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0:
         return True
 
-    cron = CroniterShim(
-        cron_expression, dt + datetime.timedelta(microseconds=1), ret_type=datetime.datetime
+    return (
+        dt.timestamp()
+        == _find_previous_schedule_time(
+            minute, hour, day, day_of_week, schedule_type, dt.add(seconds=1)
+        ).timestamp()
     )
-    return dt == cron.get_prev()
 
 
 def is_valid_cron_string(cron_string: str) -> bool:
@@ -287,67 +297,47 @@ def cron_string_iterator(
     if is_numeric[4]:
         expected_day_of_week = int(cron_parts[4][0])
 
-    date_iter: Optional[CroniterShim] = None
+    if known_schedule_type:
+        start_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
 
-    # Croniter doesn't behave nicely with pendulum timezones
-    utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
-    start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
-
-    date_iter = CroniterShim(cron_string, start_datetime)
-
-    if delta_fn is not None and start_offset == 0 and _exact_match(cron_string, start_datetime):
-        # In simple cases, where you're already on a cron boundary, the below logic is unnecessary
-        # and slow
-        next_date = start_datetime
-        # This is already on a cron boundary, so yield it
-        yield to_timezone(pendulum.instance(next_date), timezone_str)
-
-    elif known_schedule_type:
-        # This logic working correctly requires a pendulum datetime to ensure that we are tracking
-        # corretly which side of a DST transition we are on
-        pendulum_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
-        next_date = _find_previous_schedule_time(
+        if start_offset == 0 and _exact_match(
+            cron_string,
+            known_schedule_type,
             expected_minute,
             expected_hour,
             expected_day,
             expected_day_of_week,
-            known_schedule_type,
-            pendulum_datetime,
-        )
-
-        check.invariant(start_offset <= 0)
-        for _ in range(-start_offset):
+            start_datetime,
+        ):
+            # In simple cases, where you're already on a cron boundary, the below logic is unnecessary
+            # and slow
+            next_date = start_datetime
+            # This is already on a cron boundary, so yield it
+            yield start_datetime
+        else:
             next_date = _find_previous_schedule_time(
                 expected_minute,
                 expected_hour,
                 expected_day,
                 expected_day_of_week,
                 known_schedule_type,
-                next_date,
+                start_datetime,
             )
-    else:
-        # Go back one iteration so that the next iteration is the first time that is >= start_datetime
-        # and matches the cron schedule
-        next_date = date_iter.get_prev(datetime.datetime)
+            check.invariant(start_offset <= 0)
+            for _ in range(-start_offset):
+                next_date = _find_previous_schedule_time(
+                    expected_minute,
+                    expected_hour,
+                    expected_day,
+                    expected_day_of_week,
+                    known_schedule_type,
+                    next_date,
+                )
 
-        if not CroniterShim.match(cron_string, next_date):
-            # Workaround for upstream croniter bug where get_prev sometimes overshoots to a time
-            # that doesn't actually match the cron string (e.g. 3AM on Spring DST day
-            # goes back to 1AM on the previous day) - when this happens, advance to the correct
-            # time that actually matches the cronstring
-            next_date = date_iter.get_next(datetime.datetime)
-
-        check.invariant(start_offset <= 0)
-        for _ in range(-start_offset):
-            next_date = date_iter.get_prev(datetime.datetime)
-
-    if delta_fn is not None:
-        # Use pendulums for intervals when possible
-        next_date = to_timezone(pendulum.instance(next_date), timezone_str)
         while True:
             curr_hour = next_date.hour
 
-            next_date_cand = delta_fn(next_date, 1)
+            next_date_cand = check.not_none(delta_fn)(next_date, 1)
             new_hour = next_date_cand.hour
             new_minute = next_date_cand.minute
 
@@ -362,7 +352,7 @@ def cron_string_iterator(
                 check.invariant(new_hour == curr_hour + 1)
                 yield next_date_cand.replace(minute=0)
 
-                next_date_cand = delta_fn(next_date, 2)
+                next_date_cand = check.not_none(delta_fn)(next_date, 2)
                 check.invariant(next_date_cand.hour == curr_hour)
             elif expected_hour is not None and new_hour != expected_hour:
                 # hour should only be different than expected if the timezone has just changed -
@@ -376,18 +366,31 @@ def cron_string_iterator(
 
             next_date = next_date_cand
 
-            if start_offset == 0 and next_date.timestamp() < start_timestamp:
-                # Guard against edge cases where croniter get_prev() returns unexpected
-                # results that cause us to get stuck
-                continue
+            if start_offset == 0:
+                # Guard against _find_previous_schedule_time returning unexpected results
+                check.invariant(next_date.timestamp() >= start_timestamp)
 
             yield next_date
     else:
-        # Otherwise fall back to croniter
-        check.invariant(
-            not known_schedule_type,
-            f"Should never need croniter on a {known_schedule_type} schedule",
-        )
+        # Croniter doesn't behave nicely with pendulum timezones
+        utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
+        start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
+
+        date_iter = CroniterShim(cron_string, start_datetime)
+        # Go back one iteration so that the next iteration is the first time that is >= start_datetime
+        # and matches the cron schedule
+        next_date = date_iter.get_prev(datetime.datetime)
+
+        if not CroniterShim.match(cron_string, next_date):
+            # Workaround for upstream croniter bug where get_prev sometimes overshoots to a time
+            # that doesn't actually match the cron string (e.g. 3AM on Spring DST day
+            # goes back to 1AM on the previous day) - when this happens, advance to the correct
+            # time that actually matches the cronstring
+            next_date = date_iter.get_next(datetime.datetime)
+
+        check.invariant(start_offset <= 0)
+        for _ in range(-start_offset):
+            next_date = date_iter.get_prev(datetime.datetime)
 
         while True:
             next_date = to_timezone(
