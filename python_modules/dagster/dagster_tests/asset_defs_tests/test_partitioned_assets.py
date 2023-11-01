@@ -219,7 +219,7 @@ def test_access_partition_keys_from_context_direct_invocation():
     @asset
     def non_partitioned_asset(context):
         with pytest.raises(
-            CheckError, match="Tried to access partition_key for a non-partitioned asset"
+            CheckError, match="Tried to access partition_key for a non-partitioned run"
         ):
             context.asset_partition_key_for_output()
 
