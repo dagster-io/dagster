@@ -273,7 +273,7 @@ class AssetDaemon(IntervalDaemon):
         )
         latest_tick = ticks[0] if ticks else None
 
-        max_retries = instance.get_settings("auto_materialize").get("max_tick_retries")
+        max_retries = instance.auto_materialize_max_tick_retries
 
         # Determine if the most recent tick requires retrying
         retry_tick: Optional[InstigatorTick] = None
@@ -395,7 +395,7 @@ class AssetDaemon(IntervalDaemon):
 
                 reserved_run_ids = [make_new_run_id() for _ in range(len(run_requests))]
 
-                # Write out the tick, which ensures that if the tick crashes or raises an exception, it will retry
+                # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
                 tick = tick_context.set_run_requests(
                     run_requests=run_requests,
                     reserved_run_ids=reserved_run_ids,
@@ -403,7 +403,8 @@ class AssetDaemon(IntervalDaemon):
                 tick_context.write()
                 check_for_debug_crash(debug_crash_flags, "RUN_REQUESTS_CREATED")
 
-                # Write out the persistent cursor, which ensures that future ticks will move on
+                # Write out the persistent cursor, which ensures that future ticks will move on once
+                # they determine that nothing needs to be retried
                 instance.daemon_cursor_storage.set_cursor_values(
                     {CURSOR_KEY: new_cursor.serialize()}
                 )

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import pendulum
 import pytest
 from dagster import AssetKey
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import instance_for_test
@@ -219,8 +220,52 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
 
     last_cursor = None
 
+    # User code error retries but does not increment the retry count
+    test_time = execution_time.add(seconds=15)
+    with pendulum.test(test_time):
+        debug_crash_flags = {crash_location: DagsterUserCodeUnreachableError("WHERE IS THE CODE")}
+
+        with pytest.raises(
+            Exception,
+            match="WHERE IS THE CODE",
+        ):
+            error_asset_scenario.do_daemon_scenario(
+                instance,
+                scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
+                debug_crash_flags=debug_crash_flags,
+            )
+        ticks = instance.get_ticks(
+            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        )
+
+        assert len(ticks) == 1
+        assert ticks[0].status == TickStatus.FAILURE
+        assert ticks[0].timestamp == test_time.timestamp()
+        assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
+        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+
+        # failure count does not increase since it was a user code error
+        assert ticks[0].tick_data.failure_count == 0
+
+        assert "WHERE IS THE CODE" in str(ticks[0].tick_data.error)
+        assert "Auto-materialization will resume once the code server is available" in str(
+            ticks[0].tick_data.error
+        )
+
+        # Run requests are still on the tick since they were stored there before the
+        # failure happened during run submission
+        _assert_run_requests_match(
+            error_asset_scenario.expected_run_requests, ticks[0].tick_data.run_requests
+        )
+
+        cursor = _get_raw_cursor(instance)
+        # Same cursor due to the retry
+        assert cursor is not None
+        last_cursor = cursor
+
     for trial_num in range(3):
-        test_time = execution_time.add(seconds=15 * trial_num)
+        test_time = test_time.add(seconds=15)
         with pendulum.test(test_time):
             debug_crash_flags = {crash_location: Exception(f"Oops {trial_num}")}
 
@@ -236,7 +281,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
                 selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
             )
 
-            assert len(ticks) == trial_num + 1
+            assert len(ticks) == trial_num + 2
             assert ticks[0].status == TickStatus.FAILURE
             assert ticks[0].timestamp == test_time.timestamp()
             assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
@@ -256,14 +301,11 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
 
             # Same cursor due to the retry
             retry_cursor = _get_raw_cursor(instance)
-            if trial_num > 0:
-                assert retry_cursor == last_cursor
-
-            last_cursor = retry_cursor
+            assert retry_cursor == last_cursor
 
     # Next tick moves on to use the new cursor / evaluation ID since we have passed the maximum
     # number of retries
-    test_time = execution_time.add(seconds=45)
+    test_time = test_time.add(seconds=45)
     with pendulum.test(test_time):
         debug_crash_flags = {"RUN_IDS_ADDED_TO_EVALUATIONS": Exception("Oops new tick")}
         with pytest.raises(Exception, match="Oops new tick"):
@@ -278,7 +320,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
         )
 
-        assert len(ticks) == 4
+        assert len(ticks) == 5
         assert ticks[0].status == TickStatus.FAILURE
         assert ticks[0].timestamp == test_time.timestamp()
         assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
@@ -306,7 +348,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
     )
 
-    assert len(ticks) == 5
+    assert len(ticks) == 6
     assert ticks[0].status != TickStatus.FAILURE
     assert ticks[0].timestamp == test_time.timestamp()
     assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
