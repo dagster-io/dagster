@@ -483,6 +483,7 @@ class _Asset:
             descriptions_by_key=None,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
+            is_subsetted=False,
         )
 
 
@@ -866,6 +867,7 @@ def multi_asset(
             metadata_by_key=metadata_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
+            is_subsetted=False,
         )
 
     return inner
