@@ -118,6 +118,12 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
         self._assets_def = check.opt_inst_param(assets_def, "assets_def", AssetsDefinition)
 
+        # These attributes will be set when the context is bound to an op invocation
+        self._op_def = None
+        self._alias = None
+        self._hook_defs = None
+        self._tags = {}
+
         # Indicates whether the context has been bound to a particular invocation of an op
         # @op
         # def my_op(context):
@@ -199,7 +205,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._check_bound(fn_name="run_config", fn_type="property")
 
         run_config: Dict[str, object] = {}
-        if self._op_config:
+        if self._op_config and self._op_def:
             run_config["ops"] = {self._op_def.name: {"config": self._op_config}}
         run_config["resources"] = self._resources_config
         return run_config
