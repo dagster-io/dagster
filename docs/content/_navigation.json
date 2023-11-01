@@ -690,6 +690,20 @@
         "path": "/integrations/dbt-cloud"
       },
       {
+        "title": "Delta Lake",
+        "path": "/integrations/deltalake",
+        "children": [
+          {
+            "title": "Delta Lake + Dagster tutorial",
+            "path": "/integrations/deltalake/using-deltalake-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/deltalake/reference"
+          }
+        ]
+      },
+      {
         "title": "DuckDB",
         "path": "/integrations/duckdb",
         "children": [

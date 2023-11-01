@@ -20,13 +20,13 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
-from dagster_deltalake import DELTA_DATE_FORMAT, DeltaTablePyarrowIOManager, LocalConfig
+from dagster_deltalake import DELTA_DATE_FORMAT, DeltaLakePyarrowIOManager, LocalConfig
 from deltalake import DeltaTable
 
 
 @pytest.fixture
-def io_manager(tmp_path) -> DeltaTablePyarrowIOManager:
-    return DeltaTablePyarrowIOManager(root_uri=str(tmp_path), storage_options=LocalConfig())
+def io_manager(tmp_path) -> DeltaLakePyarrowIOManager:
+    return DeltaLakePyarrowIOManager(root_uri=str(tmp_path), storage_options=LocalConfig())
 
 
 @op(out=Out(metadata={"schema": "a_df"}))
@@ -44,7 +44,7 @@ def add_one_to_dataframe():
     add_one(a_df())
 
 
-def test_deltalake_io_manager_with_ops(tmp_path, io_manager: DeltaTablePyarrowIOManager):
+def test_deltalake_io_manager_with_ops(tmp_path, io_manager: DeltaLakePyarrowIOManager):
     resource_defs = {"io_manager": io_manager}
 
     job = add_one_to_dataframe.to_job(resource_defs=resource_defs)
@@ -74,7 +74,7 @@ def b_plus_one(b_df: pa.Table) -> pa.Table:
     return b_df.set_column(0, "a", pa.array([2, 3, 4]))
 
 
-def test_deltalake_io_manager_with_assets(tmp_path, io_manager: DeltaTablePyarrowIOManager):
+def test_deltalake_io_manager_with_assets(tmp_path, io_manager: DeltaLakePyarrowIOManager):
     resource_defs = {"io_manager": io_manager}
 
     # materialize asset twice to ensure that tables get properly deleted
@@ -100,7 +100,7 @@ def test_deltalake_io_manager_with_schema(tmp_path):
     def my_df_plus_one(my_df: pa.Table) -> pa.Table:
         return my_df.set_column(0, "a", pa.array([2, 3, 4]))
 
-    io_manager = DeltaTablePyarrowIOManager(
+    io_manager = DeltaLakePyarrowIOManager(
         root_uri=str(tmp_path), storage_options=LocalConfig(), schema="custom_schema"
     )
 

@@ -23,7 +23,7 @@ from .resource import DeltaTableResource as DeltaTableResource
 from .version import __version__
 
 
-class DeltaTablePyarrowIOManager(DeltaLakeIOManager):
+class DeltaLakePyarrowIOManager(DeltaLakeIOManager):
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
         return [DeltaLakePyArrowTypeHandler()]

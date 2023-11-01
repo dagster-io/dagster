@@ -40,6 +40,7 @@
    sections/api/apidocs/libraries/dagster-datadog
    sections/api/apidocs/libraries/dagster-datahub
    sections/api/apidocs/libraries/dagster-dbt
+   sections/api/apidocs/libraries/dagster-deltalake
    sections/api/apidocs/libraries/dagster-duckdb
    sections/api/apidocs/libraries/dagster-duckdb-pandas
    sections/api/apidocs/libraries/dagster-duckdb-pyspark

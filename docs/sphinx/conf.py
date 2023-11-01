@@ -69,6 +69,9 @@ paths = [
     "../../python_modules/libraries/dagster-duckdb-polars",
     "../../python_modules/libraries/dagster-duckdb-pyspark",
     "../../python_modules/libraries/dagster-wandb",
+    "../../python_modules/libraries/dagster-deltalake",
+    "../../python_modules/libraries/dagster-deltalake-pandas",
+    "../../python_modules/libraries/dagster-deltalake-polars",
     ### autodoc_dagster extension
     "./_ext",
 ]
