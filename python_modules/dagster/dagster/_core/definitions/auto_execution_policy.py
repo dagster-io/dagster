@@ -10,7 +10,7 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
 
 class AutoExecutionEvaluationData(NamedTuple):
-    """TODO: a place to put more data about why something evaluated as true or false"""
+    """TODO: a place to put more data about why something evaluated as true or false."""
 
     result: bool
 
