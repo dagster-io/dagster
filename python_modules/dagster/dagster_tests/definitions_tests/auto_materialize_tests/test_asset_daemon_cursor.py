@@ -1,9 +1,9 @@
+import datetime
 import json
 
 from dagster import AssetKey, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
-import datetime
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
