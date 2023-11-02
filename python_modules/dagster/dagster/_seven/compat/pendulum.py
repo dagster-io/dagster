@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 import packaging.version
 import pendulum
+from typing_extensions import TypeAlias
 
 _IS_PENDULUM_2 = (
     hasattr(pendulum, "__version__")
@@ -45,15 +46,13 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
     )
 
 
-PendulumDateTime = (
+PendulumDateTime: TypeAlias = (
     pendulum.DateTime if _IS_PENDULUM_2 else pendulum.Pendulum  # type: ignore[attr-defined]
 )
 
 
-# Workaround for issues with .in_tz() in pendulum:
+# Workaround for issue with .in_tz() in pendulum:
 # https://github.com/sdispater/pendulum/issues/535
-def to_timezone(dt, tz):
-    import dagster._check as check
-
-    check.inst_param(dt, "dt", PendulumDateTime)
-    return pendulum.from_timestamp(dt.timestamp(), tz=tz)
+def to_timezone(dt: PendulumDateTime, tz: str):
+    timezone = pendulum.timezone(tz)
+    return timezone.convert(dt)
