@@ -28,6 +28,9 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import FieldSerializer
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -50,6 +53,24 @@ from .partition import (
 from .partition_key_range import PartitionKeyRange
 
 
+class DatetimeFieldSerializer(FieldSerializer):
+    """Serializes datetime objects to and from floats."""
+
+    def pack(self, datetime: Optional[datetime], **_kwargs) -> Optional[float]:
+        if datetime:
+            check.invariant(datetime.tzinfo is not None)
+
+        # Get the timestamp in UTC
+        return datetime.timestamp() if datetime else None
+
+    def unpack(
+        self,
+        datetime_float: Optional[float],
+        **_kwargs,
+    ) -> Optional[datetime]:
+        return utc_datetime_from_timestamp(datetime_float) if datetime_float else None
+
+
 class TimeWindow(NamedTuple):
     """An interval that is closed at the start and open at the end.
 
@@ -62,15 +83,18 @@ class TimeWindow(NamedTuple):
     end: PublicAttr[datetime]
 
 
+@whitelist_for_serdes(
+    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer}
+)
 class TimeWindowPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_TimeWindowPartitionsDefinition",
         [
             ("start", PublicAttr[datetime]),
+            ("fmt", PublicAttr[str]),
             ("timezone", PublicAttr[str]),
             ("end", PublicAttr[Optional[datetime]]),
-            ("fmt", PublicAttr[str]),
             ("end_offset", PublicAttr[int]),
             ("cron_schedule", PublicAttr[str]),
         ],
@@ -108,20 +132,25 @@ class TimeWindowPartitionsDefinition(
         cls,
         start: Union[datetime, str],
         fmt: str,
-        end: Union[datetime, str, None] = None,
-        schedule_type: Optional[ScheduleType] = None,
         timezone: Optional[str] = None,
+        end: Union[datetime, str, None] = None,
         end_offset: int = 0,
+        cron_schedule: Optional[str] = None,
+        schedule_type: Optional[ScheduleType] = None,
         minute_offset: Optional[int] = None,
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
-        cron_schedule: Optional[str] = None,
     ):
         check.opt_str_param(timezone, "timezone")
         timezone = timezone or "UTC"
 
         if isinstance(start, datetime):
             start_dt = pendulum.instance(start, tz=timezone)
+
+            if start.tzinfo:
+                # Pendulum.instance does not override the timezone of the datetime object,
+                # so we convert it to the provided timezone
+                start_dt = start_dt.in_tz(tz=timezone)
         else:
             start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
 
@@ -156,7 +185,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone, end_dt, fmt, end_offset, cron_schedule
+            cls, start_dt, fmt, timezone, end_dt, end_offset, cron_schedule
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
