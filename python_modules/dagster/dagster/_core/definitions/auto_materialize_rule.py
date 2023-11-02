@@ -19,6 +19,8 @@ from typing import (
     cast,
 )
 
+import pytz
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -38,8 +40,11 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-from dagster._utils.schedules import cron_string_iterator, is_valid_cron_string, reverse_cron_string_iterator
-import pytz
+from dagster._utils.schedules import (
+    cron_string_iterator,
+    is_valid_cron_string,
+    reverse_cron_string_iterator,
+)
 
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
 from .partition import SerializedPartitionsSubset
@@ -396,8 +401,12 @@ class AutoMaterializeRule(ABC):
                 Defaults to False.
 
         """
-        check.param_invariant(is_valid_cron_string(cron_schedule), "cron_schedule", "must be a valid cron string")
-        check.param_invariant(timezone in pytz.all_timezones_set, "timezone", "must be a valid timezone")
+        check.param_invariant(
+            is_valid_cron_string(cron_schedule), "cron_schedule", "must be a valid cron string"
+        )
+        check.param_invariant(
+            timezone in pytz.all_timezones_set, "timezone", "must be a valid timezone"
+        )
         return MaterializeOnCronRule(
             cron_schedule=cron_schedule, timezone=timezone, all_partitions=all_partitions
         )
@@ -559,7 +568,6 @@ class MaterializeOnCronRule(
         self, context: RuleEvaluationContext
     ) -> AbstractSet[AssetKeyPartitionKey]:
         missed_ticks = self.missed_cron_ticks(context)
-        print("MISSED", missed_ticks)
 
         if not missed_ticks:
             return set()
