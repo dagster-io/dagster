@@ -1,5 +1,49 @@
 # Changelog
 
+# 1.5.6 / 0.21.6 (libraries)
+
+### New
+
+- [dagster-k8s] The `PipesK8sClient` will now attempt to load the appropriate kubernetes config, and exposes arguments for controlling this process.
+- [ui] The launch asset backfill modal now offers a preview dialog showing the targeted asset partitions and their backfill policies when partition mapping or varying backfill policies are present.
+- [asset-checks] New `load_asset_checks_from_modules` functions for loading asset checks in tandem with `load_assets_from_modules`.
+- Previously, the daemon process would terminate with an error if it believed that a thread might be hanging, which sometimes caused undesirable terminations when doing large backfills or auto-materializing many assets. Now, the daemon process will emit a warning instead of terminate.
+- [dagster-dbt] `dagster-dbt project scaffold` now uses `~/.dbt/profiles.yml` if a `profiles.yml` is not present in the dbt project directory.
+- [dagster-dbt] `@dbt_assets` now support `PartitionMapping` using `DagsterDbtTranslator.get_partition_mapping`.
+- [dagster-dbt] Self dependencies can now be enabled for dbt models that are represented by `@dbt_assets`. To enable this, add the following metadata to your dbt model’s metadata in your dbt project:
+```
+meta:
+  dagster:
+    has_self_dependency: True
+```
+
+### Bugfixes
+
+- Fixed an issue where Dagster imports would throw errors when using `pydantic<2.0.0` but having `pydantic-core` installed.
+- Previously, asset backfills that targeted partitioned assets with a `LastPartitionMapping` dependency would raise an error. This has been fixed.
+- Fixed a multipartitions partition mapping bug where a `instance is not available to load partitions` error was raised.
+- [asset-checks] Fixed an issue with conflicting op names when using `build_asset_with_blocking_check`
+- [ui] Viewing run logs containing very large messages no longer causes the UI to crash in Safari on macOS
+- [ui] Drilling into the graph of a graph-backed asset with 4+ inputs or outputs no longer causes the asset graph to crash with a rendering error.
+- [ui] On the backfill details page, clicking to a specific asset correctly shows the partitions that were materialized for that asset when partition mapping is in use.
+- [ui] The Asset > Partition page now loads partition details more quickly in cases where calculating the staleness of the partition took a significant amount of time.
+- Fixed a bug introduced in `1.5.0` where instances that haven’t been migrated to the latest schema hit an error upon run deletion.
+- [auto-materialize] Previously, if an asset partition was skipped on a tick for one reason, and then processed and skipped on a later tick for an additional reason, only the most recent skip reason would be tracked. Now, all skip reasons are tracked.
+- [dagster-dbt] Fixed an issue where if an `exclude` that didn’t match any dbt nodes was used in `@dbt_assets`, an error would be raised. The error is now properly handled.
+- [dagster-dbt] When invoking `DbtCliResource.cli(...)` in an `op`, `AssetMaterialization`'s instead of `Output` are now emitted.
+
+### Experimental
+
+- Global op concurrency slots are now released in between retries of op execution failures.
+
+### Documentation
+
+- Updated the tutorial to reflect best practices and APIs as of Dagster 1.5
+
+### Dagster Cloud
+
+- The `report_asset_observation` REST endpoint for reporting runless events is now available.
+
 # 1.5.5 / 0.21.5 (libraries)
 
 ### New
