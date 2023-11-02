@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterator, List, Mapping, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster import AssetKey
@@ -12,7 +12,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
     AssetCheckExecutionResolvedStatus,
 )
-from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 from ..schema.asset_checks import (
@@ -42,31 +42,51 @@ def has_asset_checks(
     )
 
 
-def get_asset_check_execution_status(
-    instance: DagsterInstance, execution: AssetCheckExecutionRecord
-) -> AssetCheckExecutionResolvedStatus:
-    """Asset checks stay in PLANNED status until the evaluation event arives. Check if the run is
-    still active, and if not, return the actual status.
-    """
-    record_status = execution.status
-
-    if record_status == AssetCheckExecutionRecordStatus.SUCCEEDED:
-        return AssetCheckExecutionResolvedStatus.SUCCEEDED
-    elif record_status == AssetCheckExecutionRecordStatus.FAILED:
-        return AssetCheckExecutionResolvedStatus.FAILED
-    elif record_status == AssetCheckExecutionRecordStatus.PLANNED:
-        run = check.not_none(instance.get_run_by_id(execution.run_id))
-
-        if run.is_finished:
-            if run.status == DagsterRunStatus.FAILURE:
-                return AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-            else:
-                return AssetCheckExecutionResolvedStatus.SKIPPED
-        else:
-            return AssetCheckExecutionResolvedStatus.IN_PROGRESS
-
+# fetch all statuses at once in order to batch the run query
+def get_asset_check_execution_statuses_by_id(
+    instance: DagsterInstance, executions: Sequence[AssetCheckExecutionRecord]
+) -> Mapping[int, AssetCheckExecutionResolvedStatus]:
+    planned_status_executions = [
+        e for e in executions if e.status == AssetCheckExecutionRecordStatus.PLANNED
+    ]
+    if planned_status_executions:
+        planned_status_run_ids = list({e.run_id for e in planned_status_executions})
+        planned_execution_runs_by_run_id = {
+            r.run_id: r
+            for r in instance.get_runs(filters=RunsFilter(run_ids=planned_status_run_ids))
+        }
     else:
-        check.failed(f"Unexpected status {record_status}")
+        planned_execution_runs_by_run_id = {}
+
+    def _status_for_execution(
+        execution: AssetCheckExecutionRecord
+    ) -> AssetCheckExecutionResolvedStatus:
+        record_status = execution.status
+
+        if record_status == AssetCheckExecutionRecordStatus.SUCCEEDED:
+            return AssetCheckExecutionResolvedStatus.SUCCEEDED
+        elif record_status == AssetCheckExecutionRecordStatus.FAILED:
+            return AssetCheckExecutionResolvedStatus.FAILED
+        # Asset checks stay in PLANNED status until the evaluation event arrives. Check if the run is
+        # still active, and if not, return the actual status.
+        elif record_status == AssetCheckExecutionRecordStatus.PLANNED:
+            check.invariant(
+                execution.run_id in planned_execution_runs_by_run_id, "Check run not found"
+            )
+            run = planned_execution_runs_by_run_id[execution.run_id]
+
+            if run.is_finished:
+                if run.status == DagsterRunStatus.FAILURE:
+                    return AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+                else:
+                    return AssetCheckExecutionResolvedStatus.SKIPPED
+            else:
+                return AssetCheckExecutionResolvedStatus.IN_PROGRESS
+
+        else:
+            check.failed(f"Unexpected status {record_status}")
+
+    return {e.id: _status_for_execution(e) for e in executions}
 
 
 def fetch_asset_check_executions(
@@ -77,10 +97,10 @@ def fetch_asset_check_executions(
         limit=limit,
         cursor=int(cursor) if cursor else None,
     )
+    statuses = get_asset_check_execution_statuses_by_id(instance, executions)
 
     res = []
     for execution in executions:
-        resolved_status = get_asset_check_execution_status(instance, execution)
-        res.append(GrapheneAssetCheckExecution(execution, resolved_status))
+        res.append(GrapheneAssetCheckExecution(execution, statuses[execution.id]))
 
     return res
