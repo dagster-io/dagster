@@ -70,7 +70,7 @@ class AssetChecksLoader:
                 f"Unexpected asset check support status {asset_check_support}",
             )
 
-        external_checks: Mapping[AssetKey, List[ExternalAssetCheck]] = {}
+        external_checks_by_asset_key: Mapping[AssetKey, List[ExternalAssetCheck]] = {}
         errors: Mapping[AssetKey, GrapheneAssetCheckNeedsUserCodeUpgrade] = {}
 
         for location, _, external_check in asset_checks_iter(self._context):
@@ -89,15 +89,19 @@ class AssetChecksLoader:
                         )
                     )
                 else:
-                    external_checks.setdefault(external_check.asset_key, []).append(external_check)
+                    external_checks_by_asset_key.setdefault(external_check.asset_key, []).append(
+                        external_check
+                    )
 
         if limit_per_asset:
-            for asset_key, external_checks_for_asset in external_checks.items():
-                external_checks[asset_key] = external_checks_for_asset[:limit_per_asset]
+            for asset_key, external_checks_for_asset in external_checks_by_asset_key.items():
+                external_checks_by_asset_key[asset_key] = external_checks_for_asset[
+                    :limit_per_asset
+                ]
 
         all_check_keys = [
             external_check.key
-            for external_checks in external_checks.values()
+            for external_checks in external_checks_by_asset_key.values()
             for external_check in external_checks
         ]
         execution_loader = AssetChecksExecutionForLatestMaterializationLoader(
@@ -111,7 +115,7 @@ class AssetChecksLoader:
                 graphene_checks[asset_key] = errors[asset_key]
             else:
                 graphene_checks_for_asset = []
-                for external_check in external_checks.get(asset_key, []):
+                for external_check in external_checks_by_asset_key.get(asset_key, []):
                     can_execute_individually = (
                         GrapheneAssetCheckCanExecuteIndividually.CAN_EXECUTE
                         if len(
