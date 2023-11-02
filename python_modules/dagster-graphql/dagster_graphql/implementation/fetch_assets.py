@@ -108,7 +108,7 @@ def get_assets(
         asset_key: asset_node
         for asset_key, asset_node in get_asset_nodes_by_asset_key(graphene_info).items()
         if (not prefix or asset_key.path[: len(prefix)] == prefix)
-        and (not cursor or asset_key.to_string() > cursor)
+        and (not cursor or asset_key.to_string() > normalized_cursor_str)
     }
 
     asset_keys = sorted(set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str)
