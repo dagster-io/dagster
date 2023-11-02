@@ -9,7 +9,6 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
-    DiscardOnMaxMaterializationsExceededRule,
 )
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
@@ -26,7 +25,6 @@ from ..base_scenario import (
     asset_def,
     run,
     run_request,
-    single_asset_run,
     with_auto_materialize_policy,
 )
 
@@ -127,149 +125,6 @@ unpartitioned_with_one_parent_partitioned = [
 ]
 
 partition_scenarios = {
-    "one_asset_one_partition_never_materialized": AssetReconciliationScenario(
-        assets=one_asset_one_partition,
-        unevaluated_runs=[],
-        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="a")],
-    ),
-    "one_asset_two_partitions_never_materialized": AssetReconciliationScenario(
-        assets=one_asset_two_partitions,
-        unevaluated_runs=[],
-        expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key="a"),
-            run_request(asset_keys=["asset1"], partition_key="b"),
-        ],
-    ),
-    "two_assets_one_partition_never_materialized": AssetReconciliationScenario(
-        assets=two_assets_in_sequence_one_partition,
-        unevaluated_runs=[],
-        expected_run_requests=[
-            run_request(asset_keys=["asset1", "asset2"], partition_key="a"),
-        ],
-    ),
-    "one_asset_one_partition_already_requested": AssetReconciliationScenario(
-        assets=one_asset_one_partition,
-        unevaluated_runs=[],
-        cursor_from=AssetReconciliationScenario(
-            assets=one_asset_one_partition, unevaluated_runs=[]
-        ),
-        expected_run_requests=[],
-    ),
-    "one_asset_one_partition_already_materialized": AssetReconciliationScenario(
-        assets=one_asset_one_partition,
-        unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="a")],
-        expected_run_requests=[],
-    ),
-    "two_assets_one_partition_already_materialized": AssetReconciliationScenario(
-        assets=two_assets_in_sequence_one_partition,
-        unevaluated_runs=[run(["asset1", "asset2"], partition_key="a")],
-        expected_run_requests=[],
-    ),
-    "two_assets_both_upstream_partitions_materialized": AssetReconciliationScenario(
-        assets=two_assets_in_sequence_two_partitions,
-        unevaluated_runs=[run(["asset1"], partition_key="a"), run(["asset1"], partition_key="b")],
-        expected_run_requests=[
-            run_request(asset_keys=["asset2"], partition_key="a"),
-            run_request(asset_keys=["asset2"], partition_key="b"),
-        ],
-    ),
-    "parent_one_partition_one_run": AssetReconciliationScenario(
-        assets=two_assets_in_sequence_one_partition,
-        unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="a")],
-        expected_run_requests=[run_request(asset_keys=["asset2"], partition_key="a")],
-    ),
-    "parent_rematerialized_one_partition": AssetReconciliationScenario(
-        assets=two_assets_in_sequence_one_partition,
-        unevaluated_runs=[
-            run(["asset1", "asset2"], partition_key="a"),
-            single_asset_run(asset_key="asset1", partition_key="a"),
-        ],
-        expected_run_requests=[run_request(asset_keys=["asset2"], partition_key="a")],
-    ),
-    "one_asset_daily_partitions_never_materialized": AssetReconciliationScenario(
-        assets=one_asset_daily_partitions,
-        unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
-        expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key="2013-01-06"),
-        ],
-    ),
-    "one_asset_daily_partitions_never_materialized_respect_discards": AssetReconciliationScenario(
-        assets=one_asset_daily_partitions,
-        cursor_from=AssetReconciliationScenario(
-            assets=one_asset_daily_partitions,
-            unevaluated_runs=[],
-            current_time=create_pendulum_time(year=2013, month=1, day=27, hour=4),
-            expected_run_requests=[
-                run_request(asset_keys=["asset1"], partition_key="2013-01-27"),
-            ],
-            expected_evaluations=[
-                AssetEvaluationSpec(
-                    asset_key="asset1",
-                    rule_evaluations=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            {f"2013-01-{i:02}" for i in range(28)},
-                        ),
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=DiscardOnMaxMaterializationsExceededRule(
-                                    limit=1
-                                ).to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            {f"2013-01-{i:02}" for i in range(27)},
-                        ),
-                    ],
-                    num_requested=1,
-                    num_discarded=27,
-                ),
-            ],
-        ),
-        unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=27, hour=5),
-        # should be no new run requests as all the prior partitions were discarded
-        expected_run_requests=[],
-    ),
-    "one_asset_daily_partitions_two_years_never_materialized": AssetReconciliationScenario(
-        assets=one_asset_daily_partitions,
-        unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4),
-        expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key="2015-01-06"),
-        ],
-    ),
-    "hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
-        assets=hourly_to_daily_partitions,
-        unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
-        expected_run_requests=[
-            run_request(asset_keys=["hourly"], partition_key=partition_key)
-            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
-            )
-        ],
-    ),
-    "hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
-        assets=hourly_to_daily_partitions,
-        unevaluated_runs=[
-            run(["hourly"], partition_key=partition_key)
-            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-23:00")
-            )
-        ],
-        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=4),
-        expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2013-01-05")]
-        + [
-            run_request(asset_keys=["hourly"], partition_key=partition_key)
-            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-06-03:00")
-            )
-        ],
-    ),
     "hourly_to_daily_partitions_with_active_backfill_independent": AssetReconciliationScenario(
         assets=hourly_to_daily_partitions,
         unevaluated_runs=[],
@@ -373,43 +228,6 @@ partition_scenarios = {
             run(["asset1"], partition_key="a"),
         ],
         expected_run_requests=[run_request(asset_keys=["asset2"], partition_key="a")],
-    ),
-    "time_dimension_multipartitioned": AssetReconciliationScenario(
-        assets=time_multipartitioned_asset,
-        unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
-        expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key=partition_key)
-            for partition_key in time_multipartitions_def.get_multipartition_keys_with_dimension_value(
-                "time",
-                "2020-01-01",
-                current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
-            )
-        ],
-    ),
-    "static_multipartitioned": AssetReconciliationScenario(
-        assets=static_multipartitioned_asset,
-        unevaluated_runs=[],
-        expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key=partition_key)
-            for partition_key in static_multipartitions_def.get_partition_keys()
-        ],
-    ),
-    "partitioned_after_non_partitioned_multiple_updates": AssetReconciliationScenario(
-        assets=partitioned_after_non_partitioned,
-        cursor_from=AssetReconciliationScenario(
-            assets=partitioned_after_non_partitioned,
-            unevaluated_runs=[
-                run(["asset1", "asset2"]),
-                run(["asset3"], partition_key="2020-01-02"),
-                run(["asset1"]),
-            ],
-            current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
-            expected_run_requests=[run(["asset3"], partition_key="2020-01-02")],
-        ),
-        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
-        unevaluated_runs=[run(["asset2"])],
-        expected_run_requests=[run_request(["asset3"], partition_key="2020-01-02")],
     ),
     "test_skip_on_backfill_in_progress": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(

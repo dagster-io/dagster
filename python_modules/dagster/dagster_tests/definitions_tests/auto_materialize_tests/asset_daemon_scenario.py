@@ -3,6 +3,7 @@ import hashlib
 import logging
 import os
 import sys
+from collections import namedtuple
 from typing import (
     Any,
     Callable,
@@ -12,6 +13,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    Union,
 )
 
 import dagster._check as check
@@ -78,6 +80,16 @@ def get_code_location_origin(
     )
 
 
+def day_partition_key(time: datetime.datetime, delta: int = 0) -> str:
+    """Returns the partition key of a day partition delta days from the initial time."""
+    return (time + datetime.timedelta(days=delta - 1)).strftime("%Y-%m-%d")
+
+
+def hour_partition_key(time: datetime.datetime, delta: int = 0) -> str:
+    """Returns the partition key of a day partition delta days from the initial time."""
+    return (time + datetime.timedelta(hours=delta - 1)).strftime("%Y-%m-%d-%H:00")
+
+
 class AssetRuleEvaluationSpec(NamedTuple):
     """Provides a convenient way to specify information about an AutoMaterializeRuleEvaluation
     that is expected to exist within the context of a test.
@@ -120,8 +132,18 @@ class AssetRuleEvaluationSpec(NamedTuple):
                 rule_snapshot=self.rule.to_snapshot(),
                 evaluation_data=self.rule_evaluation_data,
             ),
-            self.partitions,
+            sorted(self.partitions) if self.partitions else None,
         )
+
+
+class AssetSpecWithPartitionsDef(
+    namedtuple(
+        "AssetSpecWithPartitionsDef",
+        AssetSpec._fields + ("partitions_def",),
+        defaults=(None,) * (1 + len(AssetSpec._fields)),
+    )
+):
+    ...
 
 
 class AssetDaemonScenarioState(NamedTuple):
@@ -138,7 +160,7 @@ class AssetDaemonScenarioState(NamedTuple):
         current_time (datetime): The current time of the scenario.
     """
 
-    asset_specs: Sequence[AssetSpec]
+    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
     current_time: datetime.datetime = pendulum.now()
     run_requests: Sequence[RunRequest] = []
     cursor: AssetDaemonCursor = AssetDaemonCursor.empty()
@@ -158,7 +180,14 @@ class AssetDaemonScenarioState(NamedTuple):
             ...
 
         assets = []
-        params = {"key", "deps", "group_name", "code_version", "auto_materialize_policy"}
+        params = {
+            "key",
+            "deps",
+            "group_name",
+            "code_version",
+            "auto_materialize_policy",
+            "partitions_def",
+        }
         for spec in self.asset_specs:
             assets.append(
                 asset(compute_fn=fn, **{k: v for k, v in spec._asdict().items() if k in params})
@@ -176,16 +205,34 @@ class AssetDaemonScenarioState(NamedTuple):
         new_asset_specs = []
         for spec in self.asset_specs:
             if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
-                new_asset_specs.append(spec._replace(**kwargs))
+                if "partitions_def" in kwargs:
+                    # partitions_def is not a field on AssetSpec, so we need to do this hack
+                    new_asset_specs.append(
+                        AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
+                    )
+                else:
+                    new_asset_specs.append(spec._replace(**kwargs))
             else:
                 new_asset_specs.append(spec)
         return self._replace(asset_specs=new_asset_specs)
 
-    def with_all_eager(self) -> "AssetDaemonScenarioState":
-        return self.with_asset_properties(auto_materialize_policy=AutoMaterializePolicy.eager())
+    def with_all_eager(
+        self, max_materializations_per_minute: int = 1
+    ) -> "AssetDaemonScenarioState":
+        return self.with_asset_properties(
+            auto_materialize_policy=AutoMaterializePolicy.eager(
+                max_materializations_per_minute=max_materializations_per_minute
+            )
+        )
 
     def with_current_time(self, time: str) -> "AssetDaemonScenarioState":
         return self._replace(current_time=pendulum.parse(time))
+
+    def with_current_time_advanced(self, **kwargs) -> "AssetDaemonScenarioState":
+        # hacky support for adding years
+        if "years" in kwargs:
+            kwargs["days"] = kwargs.get("days", 0) + 365 * kwargs.pop("years")
+        return self._replace(current_time=self.current_time + datetime.timedelta(**kwargs))
 
     def with_runs(self, *run_requests: RunRequest) -> "AssetDaemonScenarioState":
         with pendulum.test(self.current_time):
