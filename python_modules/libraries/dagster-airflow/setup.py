@@ -35,6 +35,7 @@ setup(
         "docker>=5.0.3,<6.0.0",
         "lazy_object_proxy",
         "pendulum",
+        "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
     ],
     project_urls={
         # airflow will embed a link this in the providers page UI
