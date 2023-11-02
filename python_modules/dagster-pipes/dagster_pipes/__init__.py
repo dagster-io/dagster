@@ -12,6 +12,7 @@ from contextlib import ExitStack, contextmanager
 from io import StringIO
 from queue import Queue
 from threading import Event, Thread
+from traceback import TracebackException
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -152,6 +153,19 @@ PipesMetadataType = Literal[
     "asset",
     "null",
 ]
+
+
+class PipesException(TypedDict):
+    message: str
+    stack: Sequence[str]
+    # class name of Exception object in python, left as optional for flexibility
+    name: Optional[str]
+    # https://docs.python.org/3/library/exceptions.html#exception-context
+    # exception that explicitly led to this exception
+    cause: Optional["PipesException"]
+    # exception that being handled when this exception was raised
+    context: Optional["PipesException"]
+
 
 # ########################
 # ##### UTIL
@@ -406,6 +420,16 @@ class _PipesLoggerHandler(logging.Handler):
         self._context._write_message(  # noqa: SLF001
             "log", {"message": record.getMessage(), "level": record.levelname}
         )
+
+
+def _pipes_exc_from_tb(tb: TracebackException):
+    return PipesException(
+        message="".join(list(tb.format_exception_only())),
+        stack=tb.stack.format(),
+        name=tb.exc_type.__name__ if tb.exc_type is not None else None,
+        cause=_pipes_exc_from_tb(tb.__cause__) if tb.__cause__ else None,
+        context=_pipes_exc_from_tb(tb.__context__) if tb.__context__ else None,
+    )
 
 
 # ########################
@@ -971,15 +995,25 @@ class PipesContext:
         return self
 
     def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
-        self.close()
+        # expected to all be present or absent together
+        # https://docs.python.org/3/reference/datamodel.html#object.__exit__
+        if exc_type and exc_value and traceback:
+            exc = _pipes_exc_from_tb(TracebackException(exc_type, exc_value, traceback))
+        else:
+            exc = None
+        self.close(exc)
 
-    def close(self) -> None:
+    def close(
+        self,
+        exc: Optional[PipesException] = None,
+    ) -> None:
         """Close the pipes connection. This will flush all buffered messages to the orchestration
         process and cause any further attempt to write a message to raise an error. This method is
         idempotent-- subsequent calls after the first have no effect.
         """
         if not self._closed:
-            self._message_channel.write_message(_make_message("closed", {}))
+            payload = {"exception": exc} if exc else {}
+            self._message_channel.write_message(_make_message("closed", payload))
             self._io_stack.close()
             self._closed = True
 
