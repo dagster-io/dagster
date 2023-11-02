@@ -24,6 +24,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.auto_execution_policy import AutoExecutionPolicy
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -288,6 +289,34 @@ class AssetDaemonContext:
         ) = self._get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id()
         return updated_parent_mapping.get(asset_key, set())
 
+    def evaluate_asset2(
+        self,
+        asset_key: AssetKey,
+        will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        auto_execution_policy: AutoExecutionPolicy,
+        context: RuleEvaluationContext,
+    ) -> Tuple[
+        AutoMaterializeAssetEvaluation,
+        AbstractSet[AssetKeyPartitionKey],
+        AbstractSet[AssetKeyPartitionKey],
+    ]:
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
+        candidates = (
+            {
+                AssetKeyPartitionKey(asset_key, pk)
+                for pk in partitions_def.get_partition_keys(
+                    current_time=self.instance_queryer.evaluation_time,
+                    dynamic_partitions_store=self.instance_queryer,
+                )
+            }
+            if partitions_def is not None
+            else {AssetKeyPartitionKey(asset_key)}
+        )
+        result = auto_execution_policy.evaluate(context.with_candidates(candidates))
+
+        return result.to_retval(asset_key)
+
     def evaluate_asset(
         self,
         asset_key: AssetKey,
@@ -319,15 +348,6 @@ class AssetDaemonContext:
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         )
 
-        # the results of evaluating individual rules
-        all_results: List[
-            Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
-        ] = []
-        # a set of asset partitions that should be materialized, skipped, or discarded
-        to_materialize: Set[AssetKeyPartitionKey] = set()
-        to_skip: Set[AssetKeyPartitionKey] = set()
-        to_discard: Set[AssetKeyPartitionKey] = set()
-
         materialize_context = RuleEvaluationContext(
             asset_key=asset_key,
             cursor=self.cursor,
@@ -338,6 +358,24 @@ class AssetDaemonContext:
             candidates=set(),
             daemon_context=self,
         )
+
+        if isinstance(auto_materialize_policy, AutoExecutionPolicy):
+            return self.evaluate_asset2(
+                asset_key,
+                will_materialize_mapping,
+                expected_data_time_mapping,
+                auto_materialize_policy,
+                materialize_context,
+            )
+
+        # the results of evaluating individual rules
+        all_results: List[
+            Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
+        ] = []
+        # a set of asset partitions that should be materialized, skipped, or discarded
+        to_materialize: Set[AssetKeyPartitionKey] = set()
+        to_skip: Set[AssetKeyPartitionKey] = set()
+        to_discard: Set[AssetKeyPartitionKey] = set()
 
         for materialize_rule in auto_materialize_policy.materialize_rules:
             rule_snapshot = materialize_rule.to_snapshot()

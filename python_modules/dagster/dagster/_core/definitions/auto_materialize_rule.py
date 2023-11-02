@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import functools
 from abc import ABC, abstractmethod, abstractproperty
@@ -141,6 +142,12 @@ class RuleEvaluationContext:
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: AbstractSet[AssetKeyPartitionKey]
     daemon_context: "AssetDaemonContext"
+
+    def with_candidates(
+        self, candidates: AbstractSet[AssetKeyPartitionKey]
+    ) -> "RuleEvaluationContext":
+        """Returns a copy of this context with the given candidates."""
+        return dataclasses.replace(self, candidates=candidates)
 
     @property
     def asset_graph(self) -> AssetGraph:

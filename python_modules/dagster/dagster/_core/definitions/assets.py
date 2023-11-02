@@ -277,7 +277,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_key,
             "auto_materialize_policies_by_key",
             key_type=AssetKey,
-            value_type=AutoMaterializePolicy,
+            # value_type=AutoMaterializePolicy,
         )
 
         self._backfill_policy = check.opt_inst_param(
