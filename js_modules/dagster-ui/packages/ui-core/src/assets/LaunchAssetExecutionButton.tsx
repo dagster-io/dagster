@@ -520,7 +520,9 @@ async function stateForLaunchingAssets(
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
         assetChecksAvailable: assets.flatMap((a) =>
-          a.assetChecks.map((check) => ({...check, assetKey: a.assetKey})),
+          a.assetChecksOrError.__typename === 'AssetChecks'
+            ? a.assetChecksOrError.checks.map((check) => ({...check, assetKey: a.assetKey}))
+            : [],
         ),
         includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
@@ -621,7 +623,10 @@ async function upstreamAssetsWithNoMaterializations(
 export function executionParamsForAssetJob(
   repoAddress: RepoAddress,
   jobName: string,
-  assets: {assetKey: AssetKey; opNames: string[]; assetChecks: {name: string}[]}[],
+  assets: Pick<
+    LaunchAssetExecutionAssetNodeFragment,
+    'assetKey' | 'opNames' | 'assetChecksOrError'
+  >[],
   tags: {key: string; value: string}[],
 ): LaunchPipelineExecutionMutationVariables['executionParams'] {
   return {
@@ -705,9 +710,13 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     assetKey {
       path
     }
-    assetChecks {
-      name
-      canExecuteIndividually
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          canExecuteIndividually
+        }
+      }
     }
     dependencyKeys {
       path

@@ -7,10 +7,6 @@ import {
   buildAssetCheckExecution,
   buildAssetKey,
   buildIntMetadataEntry,
-  buildTable,
-  buildTableColumn,
-  buildTableMetadataEntry,
-  buildTableSchema,
 } from '../../../graphql/types';
 
 export const testAssetKey = {path: ['test']};
@@ -21,92 +17,36 @@ export const TestAssetCheck = buildAssetCheck({
   assetKey: buildAssetKey(testAssetKey),
   name: 'Test check',
   description: 'Test description',
-  executions: [
-    buildAssetCheckExecution({
-      evaluation: buildAssetCheckEvaluation({
-        targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
-          timestamp: testLatestMaterializationTimeStamp,
-          runId: testLatestMaterializationRunId,
-        }),
-        metadataEntries: [buildIntMetadataEntry({})],
-        severity: AssetCheckSeverity.ERROR,
+  executionForLatestMaterialization: buildAssetCheckExecution({
+    id: '1234',
+    evaluation: buildAssetCheckEvaluation({
+      targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
+        timestamp: testLatestMaterializationTimeStamp,
+        runId: testLatestMaterializationRunId,
       }),
-      runId: testLatestMaterializationRunId,
-      status: AssetCheckExecutionResolvedStatus.FAILED,
+      metadataEntries: [buildIntMetadataEntry({})],
+      severity: AssetCheckSeverity.ERROR,
     }),
-    buildAssetCheckExecution({
-      evaluation: buildAssetCheckEvaluation({
-        targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
-          timestamp: testLatestMaterializationTimeStamp,
-          runId: testLatestMaterializationRunId,
-        }),
-        metadataEntries: [
-          buildTableMetadataEntry({
-            table: buildTable({
-              records: [JSON.stringify({test: 'hi'})],
-              schema: buildTableSchema({
-                columns: [
-                  buildTableColumn({
-                    name: 'test',
-                    description: 'A test column description',
-                  }),
-                ],
-              }),
-            }),
-          }),
-        ],
-      }),
-    }),
-  ],
+    runId: testLatestMaterializationRunId,
+    status: AssetCheckExecutionResolvedStatus.FAILED,
+  }),
 });
 
 export const TestAssetCheckWarning = buildAssetCheck({
   assetKey: buildAssetKey(testAssetKey),
   name: 'Test check warning',
   description: 'Test description',
-
-  executions: [
-    buildAssetCheckExecution({
-      evaluation: buildAssetCheckEvaluation({
-        targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
-          timestamp: testLatestMaterializationTimeStamp,
-          runId: testLatestMaterializationRunId,
-        }),
-        metadataEntries: [buildIntMetadataEntry({})],
-        severity: AssetCheckSeverity.WARN,
+  executionForLatestMaterialization: buildAssetCheckExecution({
+    id: '5678',
+    evaluation: buildAssetCheckEvaluation({
+      targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
+        timestamp: testLatestMaterializationTimeStamp,
+        runId: testLatestMaterializationRunId,
       }),
-      runId: testLatestMaterializationRunId,
-      status: AssetCheckExecutionResolvedStatus.FAILED,
+      metadataEntries: [buildIntMetadataEntry({})],
+      severity: AssetCheckSeverity.WARN,
     }),
-    buildAssetCheckExecution({
-      evaluation: buildAssetCheckEvaluation({
-        targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
-          timestamp: testLatestMaterializationTimeStamp,
-          runId: testLatestMaterializationRunId,
-        }),
-        metadataEntries: [
-          buildTableMetadataEntry({
-            table: buildTable({
-              records: [JSON.stringify({test: 'hi'})],
-              schema: buildTableSchema({
-                columns: [
-                  buildTableColumn({
-                    name: 'test',
-                    description: 'A test column description',
-                  }),
-                ],
-              }),
-            }),
-          }),
-        ],
-      }),
-    }),
-  ],
-});
-
-export const TestAssetCheckNoExecutions = buildAssetCheck({
-  assetKey: buildAssetKey(testAssetKey),
-  name: 'Test check',
-  description: 'Test description',
-  executions: [],
+    runId: testLatestMaterializationRunId,
+    status: AssetCheckExecutionResolvedStatus.FAILED,
+  }),
 });
