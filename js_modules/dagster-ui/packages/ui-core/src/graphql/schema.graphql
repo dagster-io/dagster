@@ -865,7 +865,6 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
-  executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
 }
