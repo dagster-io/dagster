@@ -169,19 +169,7 @@ partition_scenarios = {
                     ],
                 ),
             },
-<<<<<<< HEAD
-            {
-                AssetKey(
-                    "non_existant_asset"  # ignored since can't be loaded
-                ): TimeWindowPartitionsSubset(hourly_partitions_def).with_partition_keys(
-                    [
-                        "2013-01-05-00:00",
-                    ],
-                ),
-            },
-=======
             [AssetKey("non_existant_asset")],  # ignored since can't be loaded
->>>>>>> 32cf1a8d2d (first stab)
         ],
         current_time=create_pendulum_time(year=2013, month=1, day=5, hour=17),
         expected_run_requests=[

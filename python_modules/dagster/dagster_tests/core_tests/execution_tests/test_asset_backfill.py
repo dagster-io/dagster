@@ -1389,7 +1389,9 @@ def test_asset_backfill_unpartitioned_downstream_of_partitioned():
     )
 
     assert asset_backfill_data.target_subset.partitions_subsets_by_asset_key == {
-        foo.key: foo_partitions_def.empty_subset().with_partition_key_range(partition_key_range),
+        foo.key: foo_partitions_def.empty_subset().with_partition_key_range(
+            foo_partitions_def, partition_key_range
+        ),
         foo_child.key: foo_partitions_def.empty_subset().with_partition_key_range(
             partition_key_range
         ),

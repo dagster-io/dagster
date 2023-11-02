@@ -1,11 +1,15 @@
+from typing import cast
+
 import pytest
 from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     TimePartitionKeyPartitionsSubset,
+    TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
+from dagster._serdes import deserialize_value, serialize_value
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -77,3 +81,28 @@ def test_get_subset_type():
 def test_empty_subsets():
     assert type(static_partitions.empty_subset()) is DefaultPartitionsSubset
     assert type(time_window_partitions.empty_subset()) is TimePartitionKeyPartitionsSubset
+
+
+@pytest.mark.parametrize(
+    "partitions_def",
+    [
+        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+    ],
+)
+def test_time_window_partitions_subset_serialization_deserialization(
+    partitions_def: DailyPartitionsDefinition,
+):
+    time_window_partitions_def = TimeWindowPartitionsDefinition(
+        start=partitions_def.start,
+        end=partitions_def.end,
+        cron_schedule="0 0 * * *",
+        fmt="%Y-%m-%d",
+        timezone=partitions_def.timezone,
+        end_offset=partitions_def.end_offset,
+    )
+    subset = TimeWindowPartitionsSubset.empty_subset(
+        time_window_partitions_def
+    ).with_partition_keys(["2023-01-01"])
+
+    assert deserialize_value(serialize_value(cast(TimeWindowPartitionsSubset, subset))) == subset

@@ -958,32 +958,14 @@ class PartitionsSubset(ABC, Generic[T_str]):
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[T_str]:
         ...
 
+    @abstractmethod
     def get_partition_key_ranges(
         self,
         partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        partition_keys = partitions_def.get_partition_keys(
-            current_time, dynamic_partitions_store=dynamic_partitions_store
-        )
-        cur_range_start = None
-        cur_range_end = None
-        result = []
-        for partition_key in partition_keys:
-            if partition_key in set(self.get_partition_keys()):
-                if cur_range_start is None:
-                    cur_range_start = partition_key
-                cur_range_end = partition_key
-            else:
-                if cur_range_start is not None and cur_range_end is not None:
-                    result.append(PartitionKeyRange(cur_range_start, cur_range_end))
-                cur_range_start = cur_range_end = None
-
-        if cur_range_start is not None and cur_range_end is not None:
-            result.append(PartitionKeyRange(cur_range_start, cur_range_end))
-
-        return result
+        ...
 
     @abstractmethod
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]":
@@ -1062,11 +1044,6 @@ class PartitionsSubset(ABC, Generic[T_str]):
         ...
 
 
-class PartitionsSubsetWithDefinition(NamedTuple):
-    subset: PartitionsSubset
-    partitions_def: PartitionsDefinition
-
-
 @whitelist_for_serdes
 class SerializedPartitionsSubset(NamedTuple):
     serialized_subset: str
@@ -1133,6 +1110,33 @@ class DefaultPartitionsSubset(
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
         return self.subset
+
+    def get_partition_key_ranges(
+        self,
+        partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[PartitionKeyRange]:
+        partition_keys = partitions_def.get_partition_keys(
+            current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+        cur_range_start = None
+        cur_range_end = None
+        result = []
+        for partition_key in partition_keys:
+            if partition_key in self.subset:
+                if cur_range_start is None:
+                    cur_range_start = partition_key
+                cur_range_end = partition_key
+            else:
+                if cur_range_start is not None and cur_range_end is not None:
+                    result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+                cur_range_start = cur_range_end = None
+
+        if cur_range_start is not None and cur_range_end is not None:
+            result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+
+        return result
 
     def get_partitions_def(self) -> Optional[PartitionsDefinition]:
         return None

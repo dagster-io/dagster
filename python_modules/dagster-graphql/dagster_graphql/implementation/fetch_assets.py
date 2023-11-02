@@ -450,11 +450,7 @@ def build_partition_statuses(
         " in_progress_partitions_subset to be of the same type",
     )
 
-<<<<<<< HEAD
     if isinstance(materialized_partitions_subset, BaseTimeWindowPartitionsSubset):
-=======
-    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
->>>>>>> 32cf1a8d2d (first stab)
         ranges = fetch_flattened_time_window_ranges(
             {
                 PartitionRangeStatus.MATERIALIZED: materialized_partitions_subset,
@@ -530,34 +526,34 @@ def get_2d_run_length_encoded_partitions(
         lambda: secondary_dim.partitions_def.empty_subset()
     )
     for partition_key in materialized_partitions_subset.get_partition_keys():
-        partition_key = partitions_def.get_partition_key_from_str(partition_key)
+        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
         dim2_materialized_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
+            multipartition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_materialized_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
+            multipartition_key.keys_by_dimension[primary_dim.name]
+        ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
 
     dim2_failed_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
     )
     for partition_key in failed_partitions_subset.get_partition_keys():
-        partition_key = partitions_def.get_partition_key_from_str(partition_key)
+        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
         dim2_failed_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
+            multipartition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_failed_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
+            multipartition_key.keys_by_dimension[primary_dim.name]
+        ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
 
     dim2_in_progress_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
     )
     for partition_key in in_progress_partitions_subset.get_partition_keys():
-        partition_key = partitions_def.get_partition_key_from_str(partition_key)
+        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
         dim2_in_progress_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
+            multipartition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_in_progress_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
+            multipartition_key.keys_by_dimension[primary_dim.name]
+        ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
 
     materialized_2d_ranges = []
 

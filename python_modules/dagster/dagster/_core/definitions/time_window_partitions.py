@@ -27,9 +27,9 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._utils.cached_method import cached_method
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import (
+    whitelist_for_serdes,
+)
 from dagster._serdes.serdes import FieldSerializer
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.cached_method import cached_method
@@ -73,6 +73,9 @@ class DatetimeFieldSerializer(FieldSerializer):
         return utc_datetime_from_timestamp(datetime_float) if datetime_float else None
 
 
+@whitelist_for_serdes(
+    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer}
+)
 class TimeWindow(NamedTuple):
     """An interval that is closed at the start and open at the end.
 
@@ -1681,7 +1684,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         return (
             isinstance(other, BaseTimeWindowPartitionsSubset)
             and self.partitions_def == other.partitions_def
-            and self.included_time_windows == other.included_time_windows
+            and self.get_included_time_windows() == other.get_included_time_windows()
         )
 
 

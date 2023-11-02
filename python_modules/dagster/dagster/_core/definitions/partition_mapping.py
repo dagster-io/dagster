@@ -226,7 +226,9 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        last_upstream_partition = upstream_partitions_subset.partitions_def.get_last_partition_key(
+        last_upstream_partition = check.not_none(
+            upstream_partitions_subset.get_partitions_def()
+        ).get_last_partition_key(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
         if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:

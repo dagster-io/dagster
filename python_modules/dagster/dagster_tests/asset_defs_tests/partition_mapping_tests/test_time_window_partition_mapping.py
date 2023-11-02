@@ -683,7 +683,7 @@ def test_downstream_partition_has_valid_upstream_partitions(
         allow_nonexistent_upstream_partitions=allow_nonexistent_upstream_partitions
     ).get_upstream_mapped_partitions_result_for_partitions(
         downstream_partitions_subset=downstream_partitions_subset,
-        downstream_partitions_def=downstream_partitions_subset.partitions_def,
+        downstream_partitions_def=downstream_partitions_subset.get_partitions_def(),
         upstream_partitions_def=upstream_partitions_def,
         current_time=current_time,
     )

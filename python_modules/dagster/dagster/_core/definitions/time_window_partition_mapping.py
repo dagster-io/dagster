@@ -117,7 +117,7 @@ class TimeWindowPartitionMapping(
             check.failed("downstream_partitions_subset must be a BaseTimeWindowPartitionsSubset")
 
         return self._map_partitions(
-            downstream_partitions_subset.partitions_def,
+            downstream_partitions_subset.get_partitions_def(),
             upstream_partitions_def,
             downstream_partitions_subset,
             start_offset=self.start_offset,
