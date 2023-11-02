@@ -3,6 +3,7 @@ import json
 from dagster import AssetKey, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
+import datetime
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
@@ -12,7 +13,7 @@ def my_asset(_):
     pass
 
 
-def test_asset_reconciliation_cursor_evaluation_id_backcompat():
+def test_asset_reconciliation_cursor_evaluation_id_backcompat() -> None:
     backcompat_serialized = (
         """[20, ["a"], {"my_asset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]"""
     )
@@ -29,6 +30,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         0,
         {},
         {},
+        0,
     )
 
     c2 = c.with_updates(
@@ -42,6 +44,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         [],
         0,
         [],
+        datetime.datetime.now(),
     )
 
     serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)
