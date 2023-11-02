@@ -59,7 +59,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -592,9 +592,11 @@ def run(
     )
 
 
-def run_request(asset_keys: List[str], partition_key: Optional[str] = None) -> RunRequest:
+def run_request(
+    asset_keys: Sequence[CoercibleToAssetKey], partition_key: Optional[str] = None
+) -> RunRequest:
     return RunRequest(
-        asset_selection=[AssetKey(key) for key in asset_keys],
+        asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
         partition_key=partition_key,
     )
 
