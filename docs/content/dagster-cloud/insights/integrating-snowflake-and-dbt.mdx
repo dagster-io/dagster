@@ -69,7 +69,9 @@ This allows you to add a comment to every query recorded in Snowflake's `query_h
 
 The last step is to create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster Cloud ingestion API.
 
-To do this, you'll need a Snowflake resource (<PyObject module="dagster_snowflake" object="SnowflakeResource" />) that can query the `query_history` table. For example:
+To do this, you'll need a Snowflake resource (<PyObject module="dagster_snowflake" object="SnowflakeResource" />) that can query the `snowflake.account_usage.query_history` table. For more information on granting access to this table, see the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles).
+
+Once you have credentials for an account with access, you can set up a resource like the following:
 
 ```python
 from dagster_snowflake import SnowflakeResource
