@@ -257,7 +257,7 @@ def asset(
     return inner
 
 
-def _resolve_key_and_name(
+def resolve_asset_key_and_name_for_decorator(
     *,
     key: Optional[CoercibleToAssetKey],
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
@@ -351,7 +351,7 @@ class _Asset:
 
         asset_ins = build_asset_ins(fn, self.ins or {}, {dep.asset_key for dep in self.deps})
 
-        out_asset_key, asset_name = _resolve_key_and_name(
+        out_asset_key, asset_name = resolve_asset_key_and_name_for_decorator(
             key=self.key,
             key_prefix=self.key_prefix,
             name=self.name,
@@ -1158,7 +1158,7 @@ def graph_asset_no_defaults(
 ) -> AssetsDefinition:
     ins = ins or {}
     asset_ins = build_asset_ins(compose_fn, ins or {}, set())
-    out_asset_key, _asset_name = _resolve_key_and_name(
+    out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
         name=name,
