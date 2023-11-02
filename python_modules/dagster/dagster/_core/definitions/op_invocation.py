@@ -221,7 +221,7 @@ def direct_invocation_result(
 
     res = _type_check_output_wrapper(op_def, result, bound_context)
 
-    bound_context.unbind()
+    # bound_context.unbind()
 
     return res
 
