@@ -292,8 +292,6 @@ class AssetDaemonContext:
     def evaluate_asset2(
         self,
         asset_key: AssetKey,
-        will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
-        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
         auto_execution_policy: AutoExecutionPolicy,
         context: RuleEvaluationContext,
     ) -> Tuple[
@@ -301,7 +299,12 @@ class AssetDaemonContext:
         AbstractSet[AssetKeyPartitionKey],
         AbstractSet[AssetKeyPartitionKey],
     ]:
+        """Placeholder method for evaluating an asset with an AutoExecutionPolicy."""
         partitions_def = self.asset_graph.get_partitions_def(asset_key)
+
+        # (EXPENSIVE!) If an asset is partitioned, the initial set of candidates to evaluate is all
+        # partitions of that asset. Many rules (all existing materialize rules) don't actually need
+        # this to be explicitly passed in, so this is pretty wasteful.
         candidates = (
             {
                 AssetKeyPartitionKey(asset_key, pk)
@@ -362,8 +365,6 @@ class AssetDaemonContext:
         if isinstance(auto_materialize_policy, AutoExecutionPolicy):
             return self.evaluate_asset2(
                 asset_key,
-                will_materialize_mapping,
-                expected_data_time_mapping,
                 auto_materialize_policy,
                 materialize_context,
             )
