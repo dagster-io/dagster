@@ -13,6 +13,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionResolvedStatus,
     AssetCheckInstanceSupport,
 )
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.context import WorkspaceRequestContext
 from packaging import version
 
@@ -153,7 +154,7 @@ class AssetChecksLoader:
 
 def _execution_targets_latest_materialization(
     instance: DagsterInstance,
-    check_key: AssetCheckKey,
+    asset_record: Optional[AssetRecord],
     execution: AssetCheckExecutionRecord,
     resolved_status: AssetCheckExecutionResolvedStatus,
 ) -> bool:
@@ -161,8 +162,9 @@ def _execution_targets_latest_materialization(
     if resolved_status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
         return True
 
-    records = instance.get_asset_records([check_key.asset_key])
-    latest_materialization = records[0].asset_entry.last_materialization_record if records else None
+    latest_materialization = (
+        asset_record.asset_entry.last_materialization_record if asset_record else None
+    )
 
     if not latest_materialization:
         # asset hasn't been materialized yet, so no reason to hide the check
@@ -224,15 +226,21 @@ class AssetChecksExecutionForLatestMaterializationLoader:
     def _fetch_executions(self) -> Mapping[AssetCheckKey, Optional[GrapheneAssetCheckExecution]]:
         from .fetch_asset_checks import get_asset_check_execution_status
 
-        latest_executions = (
+        latest_executions_by_check_key = (
             self._instance.event_log_storage.get_latest_asset_check_execution_by_key(
                 self._check_keys
             )
         )
+        asset_records_by_asset_key = {
+            record.asset_entry.asset_key: record
+            for record in self._instance.get_asset_records(
+                list({ck.asset_key for ck in self._check_keys})
+            )
+        }
 
         self._executions = {}
         for check_key in self._check_keys:
-            execution = latest_executions.get(check_key)
+            execution = latest_executions_by_check_key.get(check_key)
             if not execution:
                 self._executions[check_key] = None
             else:
@@ -240,7 +248,10 @@ class AssetChecksExecutionForLatestMaterializationLoader:
                 self._executions[check_key] = (
                     GrapheneAssetCheckExecution(execution, resolved_status)
                     if _execution_targets_latest_materialization(
-                        self._instance, check_key, execution, resolved_status
+                        instance=self._instance,
+                        asset_record=asset_records_by_asset_key.get(check_key.asset_key),
+                        execution=execution,
+                        resolved_status=resolved_status,
                     )
                     else None
                 )
