@@ -1,3 +1,4 @@
+import datetime
 from contextlib import contextmanager
 
 import packaging.version
@@ -20,6 +21,23 @@ def mock_pendulum_timezone(override_timezone):
 
 
 def create_pendulum_time(year, month, day, *args, **kwargs):
+    if "tz" in kwargs and "dst_rule" in kwargs and not _IS_PENDULUM_2:
+        tz = pendulum.timezone(kwargs.pop("tz"))
+        dst_rule = kwargs.pop("dst_rule")
+
+        return pendulum.instance(
+            tz.convert(
+                datetime.datetime(
+                    year,
+                    month,
+                    day,
+                    *args,
+                    **kwargs,
+                ),
+                dst_rule=dst_rule,
+            )
+        )
+
     return (
         pendulum.datetime(year, month, day, *args, **kwargs)
         if _IS_PENDULUM_2

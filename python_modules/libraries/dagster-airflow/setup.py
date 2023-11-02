@@ -34,7 +34,7 @@ setup(
         "dagster==1.5.6",
         "docker>=5.0.3,<6.0.0",
         "lazy_object_proxy",
-        "pendulum",
+        "pendulum<3",
     ],
     project_urls={
         # airflow will embed a link this in the providers page UI
