@@ -68,7 +68,7 @@ setup(
         ],
         "test": [
             "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-        ]
+        ],
     },
     entry_points={
         # airflow 1.0/2.0 plugin format
