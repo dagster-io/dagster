@@ -468,7 +468,15 @@ class PlanExecutionContext(IPlanContext):
         return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.dagster_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
-        partition_key = self.partition_key if self.has_partitions else None
+        try:
+            partition_key = self.partition_key
+        except DagsterInvariantViolationError:
+            partition_key = None
+
+        try:
+            partition_key_range = self.asset_partition_key_range
+        except DagsterInvariantViolationError:
+            partition_key_range = None
 
         return TypeCheckContext(
             self.run_id,
@@ -476,6 +484,7 @@ class PlanExecutionContext(IPlanContext):
             self._execution_data.scoped_resources_builder,
             dagster_type,
             partition_key,
+            partition_key_range,
         )
 
 
@@ -1251,11 +1260,13 @@ class TypeCheckContext:
         scoped_resources_builder: ScopedResourcesBuilder,
         dagster_type: DagsterType,
         partition_key: Optional[str] = None,
+        partition_key_range: Optional[PartitionKeyRange] = None,
     ):
         self._run_id = run_id
         self._log = log_manager
         self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
         self._partition_key = partition_key
+        self._partition_key_range = partition_key_range
 
     @public
     @property
@@ -1280,6 +1291,12 @@ class TypeCheckContext:
     def partition_key(self) -> Optional[str]:
         """Partition key of current run."""
         return self._partition_key
+
+    @public
+    @property
+    def partition_key_range(self) -> Optional[PartitionKeyRange]:
+        """Partition key range of current run."""
+        return self._partition_key_range
 
 
 class DagsterTypeLoaderContext(StepExecutionContext):

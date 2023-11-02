@@ -560,6 +560,7 @@ class BoundOpExecutionContext(OpExecutionContext):
             ScopedResourcesBuilder(resources._asdict()),
             dagster_type,
             self._partition_key,
+            self._partition_key_range,
         )
 
     def get_mapping_key(self) -> Optional[str]:
