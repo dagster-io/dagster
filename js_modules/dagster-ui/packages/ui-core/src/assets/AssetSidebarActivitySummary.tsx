@@ -168,55 +168,56 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
           columnCount={1}
         />
       </SidebarSection>
-      {asset.assetChecks.length > 0 && (
-        <SidebarSection title="Checks">
-          <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
-            <ExecuteChecksButton assetNode={asset} checks={asset.assetChecks} />
-            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
-              View all check details
-            </Link>
-          </Box>
-
-          {asset.assetChecks.slice(0, 10).map((check) => {
-            const execution =
-              liveData &&
-              liveData.assetChecks?.find((c) => c.name === check.name)
-                ?.executionForLatestMaterialization;
-
-            return (
-              <Box
-                key={check.name}
-                style={{minHeight: 40}}
-                border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-                padding={{vertical: 8, right: 12, left: 24}}
-                flex={{
-                  gap: 8,
-                  direction: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <MiddleTruncate text={`${check.name}`} />
-                {execution ? (
-                  <AssetCheckStatusTag execution={execution} />
-                ) : (
-                  <Spinner purpose="caption-text" />
-                )}
-              </Box>
-            );
-          })}
-          {asset.assetChecks.length > 10 && (
-            <Box
-              padding={{vertical: 12, right: 12, left: 24}}
-              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-            >
+      {asset.assetChecksOrError.__typename === 'AssetChecks' &&
+        asset.assetChecksOrError.checks.length > 0 && (
+          <SidebarSection title="Checks">
+            <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
+              <ExecuteChecksButton assetNode={asset} checks={asset.assetChecksOrError.checks} />
               <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
-                View {asset.assetChecks.length - 10} more…
+                View all check details
               </Link>
             </Box>
-          )}
-        </SidebarSection>
-      )}
+
+            {asset.assetChecksOrError.checks.slice(0, 10).map((check) => {
+              const execution =
+                liveData &&
+                liveData.assetChecks?.find((c) => c.name === check.name)
+                  ?.executionForLatestMaterialization;
+
+              return (
+                <Box
+                  key={check.name}
+                  style={{minHeight: 40}}
+                  border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+                  padding={{vertical: 8, right: 12, left: 24}}
+                  flex={{
+                    gap: 8,
+                    direction: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <MiddleTruncate text={`${check.name}`} />
+                  {execution ? (
+                    <AssetCheckStatusTag execution={execution} />
+                  ) : (
+                    <Spinner purpose="caption-text" />
+                  )}
+                </Box>
+              );
+            })}
+            {asset.assetChecksOrError.checks.length > 10 && (
+              <Box
+                padding={{vertical: 12, right: 12, left: 24}}
+                border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+              >
+                <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
+                  View {asset.assetChecksOrError.checks.length - 10} more…
+                </Link>
+              </Box>
+            )}
+          </SidebarSection>
+        )}
     </>
   );
 };

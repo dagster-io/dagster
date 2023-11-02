@@ -8,6 +8,7 @@ import {
   LaunchBackfillParams,
   PartitionDefinitionType,
   PartitionRangeStatus,
+  buildAssetChecks,
   buildDaemonHealth,
   buildDaemonStatus,
   buildDimensionDefinitionType,
@@ -656,7 +657,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         {
           ...ASSET_DAILY,
           requiredResources: [],
-          assetChecks: [],
+          assetChecksOrError: buildAssetChecks({checks: []}),
           backfillPolicy: null,
           partitionDefinition: {
             name: 'Foo',
@@ -684,7 +685,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         {
           ...ASSET_WEEKLY,
           requiredResources: [],
-          assetChecks: [],
+          assetChecksOrError: buildAssetChecks({checks: []}),
           backfillPolicy: null,
           partitionDefinition: {
             name: 'Foo',
@@ -807,7 +808,7 @@ type LaunchAssetLoaderQueryAssetNode = LaunchAssetLoaderQuery['assetNodes'][0];
 const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_DAILY,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: {
     name: 'Foo',
@@ -836,7 +837,7 @@ const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: {
     name: 'Foo',
@@ -876,7 +877,7 @@ const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY_ROOT,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: {
     name: 'Foo',
@@ -905,7 +906,7 @@ const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: null,
   configField: {
@@ -927,7 +928,7 @@ const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET_OTHER_REPO,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: null,
   configField: {
@@ -950,7 +951,7 @@ const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetN
 const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
   backfillPolicy: null,
   partitionDefinition: null,
   configField: {

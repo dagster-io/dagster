@@ -10,6 +10,7 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
+  AssetCheckLiveFragment,
 } from '../asset-data/types/AssetLiveDataProvider.types';
 import {RunStatus, StaleStatus} from '../graphql/types';
 
@@ -141,7 +142,7 @@ export interface LiveDataForNode {
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
   staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
-  assetChecks: AssetGraphLiveQuery['assetNodes'][0]['assetChecks'];
+  assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
@@ -210,7 +211,10 @@ export const buildLiveDataForNode = (
         ? latestRunForAsset.status
         : null,
     lastObservation,
-    assetChecks: assetNode.assetChecks,
+    assetChecks:
+      assetNode.assetChecksOrError.__typename === 'AssetChecks'
+        ? assetNode.assetChecksOrError.checks
+        : [],
     staleStatus: assetNode.staleStatus,
     staleCauses: assetNode.staleCauses,
     stepKey: stepKeyForAsset(assetNode),
