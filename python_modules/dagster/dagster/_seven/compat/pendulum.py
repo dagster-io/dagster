@@ -1,7 +1,9 @@
+import datetime
 from contextlib import contextmanager
 
 import packaging.version
 import pendulum
+from typing_extensions import TypeAlias
 
 _IS_PENDULUM_2 = (
     hasattr(pendulum, "__version__")
@@ -20,6 +22,23 @@ def mock_pendulum_timezone(override_timezone):
 
 
 def create_pendulum_time(year, month, day, *args, **kwargs):
+    if "tz" in kwargs and "dst_rule" in kwargs and not _IS_PENDULUM_2:
+        tz = pendulum.timezone(kwargs.pop("tz"))
+        dst_rule = kwargs.pop("dst_rule")
+
+        return pendulum.instance(
+            tz.convert(
+                datetime.datetime(
+                    year,
+                    month,
+                    day,
+                    *args,
+                    **kwargs,
+                ),
+                dst_rule=dst_rule,
+            )
+        )
+
     return (
         pendulum.datetime(year, month, day, *args, **kwargs)
         if _IS_PENDULUM_2
@@ -27,15 +46,13 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
     )
 
 
-PendulumDateTime = (
+PendulumDateTime: TypeAlias = (
     pendulum.DateTime if _IS_PENDULUM_2 else pendulum.Pendulum  # type: ignore[attr-defined]
 )
 
 
-# Workaround for issues with .in_tz() in pendulum:
+# Workaround for issue with .in_tz() in pendulum:
 # https://github.com/sdispater/pendulum/issues/535
-def to_timezone(dt, tz):
-    import dagster._check as check
-
-    check.inst_param(dt, "dt", PendulumDateTime)
-    return pendulum.from_timestamp(dt.timestamp(), tz=tz)
+def to_timezone(dt: PendulumDateTime, tz: str):
+    timezone = pendulum.timezone(tz)
+    return timezone.convert(dt)

@@ -396,6 +396,15 @@ class DagsterApiServer(DagsterApiServicer):
             )
         return loaded_repos.definitions_by_name[external_repo_origin.repository_name]
 
+    def ReloadCode(self, _request, _context):
+        self._logger.warn(
+            "Reloading definitions from a code server launched via `dagster api grpc` "
+            "without restarting the process is not currently supported. To enable this functionality, "
+            "launch the code server with the `dagster code-server start` command instead."
+        )
+
+        return api_pb2.ReloadCodeReply()
+
     def Ping(self, request, _context) -> api_pb2.PingReply:
         echo = request.echo
         return api_pb2.PingReply(echo=echo)  # type: ignore  # (grpc generated)

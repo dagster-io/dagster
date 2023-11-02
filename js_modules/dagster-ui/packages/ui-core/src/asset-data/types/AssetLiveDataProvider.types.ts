@@ -36,20 +36,30 @@ export type AssetNodeLiveFragment = {
     runId: string;
   }>;
   assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
-  assetChecks: Array<{
-    __typename: 'AssetCheck';
-    name: string;
-    canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-    executionForLatestMaterialization: {
-      __typename: 'AssetCheckExecution';
-      id: string;
-      runId: string;
-      status: Types.AssetCheckExecutionResolvedStatus;
-      timestamp: number;
-      stepKey: string | null;
-      evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
-    } | null;
-  }>;
+  assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+    | {__typename: 'AssetCheckNeedsMigrationError'}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+    | {
+        __typename: 'AssetChecks';
+        checks: Array<{
+          __typename: 'AssetCheck';
+          name: string;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+          executionForLatestMaterialization: {
+            __typename: 'AssetCheckExecution';
+            id: string;
+            runId: string;
+            status: Types.AssetCheckExecutionResolvedStatus;
+            timestamp: number;
+            stepKey: string | null;
+            evaluation: {
+              __typename: 'AssetCheckEvaluation';
+              severity: Types.AssetCheckSeverity;
+            } | null;
+          } | null;
+        }>;
+      };
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   staleCauses: Array<{
     __typename: 'StaleCause';
@@ -84,6 +94,21 @@ export type AssetNodeLiveObservationFragment = {
   runId: string;
 };
 
+export type AssetCheckLiveFragment = {
+  __typename: 'AssetCheck';
+  name: string;
+  canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+  executionForLatestMaterialization: {
+    __typename: 'AssetCheckExecution';
+    id: string;
+    runId: string;
+    status: Types.AssetCheckExecutionResolvedStatus;
+    timestamp: number;
+    stepKey: string | null;
+    evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
+  } | null;
+};
+
 export type AssetGraphLiveQueryVariables = Types.Exact<{
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
@@ -103,20 +128,30 @@ export type AssetGraphLiveQuery = {
       runId: string;
     }>;
     assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
-    assetChecks: Array<{
-      __typename: 'AssetCheck';
-      name: string;
-      canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-      executionForLatestMaterialization: {
-        __typename: 'AssetCheckExecution';
-        id: string;
-        runId: string;
-        status: Types.AssetCheckExecutionResolvedStatus;
-        timestamp: number;
-        stepKey: string | null;
-        evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
-      } | null;
-    }>;
+    assetChecksOrError:
+      | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+      | {__typename: 'AssetCheckNeedsMigrationError'}
+      | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+      | {
+          __typename: 'AssetChecks';
+          checks: Array<{
+            __typename: 'AssetCheck';
+            name: string;
+            canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+            executionForLatestMaterialization: {
+              __typename: 'AssetCheckExecution';
+              id: string;
+              runId: string;
+              status: Types.AssetCheckExecutionResolvedStatus;
+              timestamp: number;
+              stepKey: string | null;
+              evaluation: {
+                __typename: 'AssetCheckEvaluation';
+                severity: Types.AssetCheckSeverity;
+              } | null;
+            } | null;
+          }>;
+        };
     freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
     staleCauses: Array<{
       __typename: 'StaleCause';

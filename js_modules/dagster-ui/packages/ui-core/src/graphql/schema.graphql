@@ -689,7 +689,6 @@ type AssetNode {
   type: DagsterType
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
-  assetChecks: [AssetCheck!]!
   assetChecksOrError(limit: Int): AssetChecksOrError!
 }
 
@@ -852,6 +851,16 @@ enum StaleCauseCategory {
   DEPENDENCIES
 }
 
+union AssetChecksOrError =
+    AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
+
+type AssetChecks {
+  checks: [AssetCheck!]!
+}
+
 type AssetCheck {
   name: String!
   assetKey: AssetKey!
@@ -903,16 +912,6 @@ enum AssetCheckCanExecuteIndividually {
   CAN_EXECUTE
   REQUIRES_MATERIALIZATION
   NEEDS_USER_CODE_UPGRADE
-}
-
-union AssetChecksOrError =
-    AssetChecks
-  | AssetCheckNeedsMigrationError
-  | AssetCheckNeedsUserCodeUpgrade
-  | AssetCheckNeedsAgentUpgradeError
-
-type AssetChecks {
-  checks: [AssetCheck!]!
 }
 
 type AssetCheckNeedsMigrationError implements Error {

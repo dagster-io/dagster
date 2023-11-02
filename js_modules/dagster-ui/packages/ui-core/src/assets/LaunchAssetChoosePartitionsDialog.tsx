@@ -30,7 +30,7 @@ import {
   itemWithAssetKey,
 } from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {AssetCheck, LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
+import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -78,7 +78,7 @@ import {
   LaunchAssetWarningsQueryVariables,
 } from './types/LaunchAssetChoosePartitionsDialog.types';
 import {
-  BackfillPolicyForLaunchAssetFragment,
+  LaunchAssetExecutionAssetNodeFragment,
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
@@ -95,13 +95,10 @@ interface Props {
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
   target: LaunchAssetsChoosePartitionsTarget;
-  assets: {
-    assetKey: AssetKey;
-    assetChecks: Pick<AssetCheck, 'name'>[];
-    opNames: string[];
-    partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
-    backfillPolicy: BackfillPolicyForLaunchAssetFragment | null;
-  }[];
+  assets: Pick<
+    LaunchAssetExecutionAssetNodeFragment,
+    'assetKey' | 'assetChecksOrError' | 'opNames' | 'partitionDefinition' | 'backfillPolicy'
+  >[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
   refetch?: () => Promise<void>;
 }
