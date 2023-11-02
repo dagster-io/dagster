@@ -35,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_airbyte_tests*"]),
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.5.6",
         "requests",
     ],
     zip_safe=False,
@@ -49,7 +49,7 @@ setup(
             "requests-mock",
         ],
         "managed": [
-            f"dagster-managed-elements{pin}",
+            "dagster-managed-elements==0.21.6",
         ],
     },
 )

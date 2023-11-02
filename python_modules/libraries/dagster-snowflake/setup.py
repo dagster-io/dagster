@@ -32,7 +32,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_snowflake_tests*"]),
-    install_requires=[f"dagster{pin}", "snowflake-connector-python>=2.1.0"],
+    install_requires=["dagster==1.5.6", "snowflake-connector-python>=2.1.0"],
     extras_require={
         "snowflake.sqlalchemy": [
             "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
