@@ -146,7 +146,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     ):
         self._asset_check = asset_check
         self._can_execute_individually = can_execute_individually
-        self._exeuction_loader = execution_loader
+        self._execution_loader = execution_loader
 
     def resolve_assetKey(self, _):
         return self._asset_check.asset_key
@@ -160,7 +160,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_executionForLatestMaterialization(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetCheckExecution]:
-        return self._exeuction_loader.get_execution_for_latest_materialization(
+        return self._execution_loader.get_execution_for_latest_materialization(
             self._asset_check.key
         )
 
