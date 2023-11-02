@@ -41,7 +41,7 @@ from ...implementation.external import (
     fetch_repository,
     fetch_workspace,
 )
-from ...implementation.fetch_asset_checks import fetch_asset_check_executions, fetch_asset_checks
+from ...implementation.fetch_asset_checks import fetch_asset_check_executions
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -92,7 +92,7 @@ from ...implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
-from ..asset_checks import GrapheneAssetCheckExecution, GrapheneAssetChecksOrError
+from ..asset_checks import GrapheneAssetCheckExecution
 from ..asset_graph import (
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
@@ -523,14 +523,6 @@ class GrapheneQuery(graphene.ObjectType):
         beforeTimestamp=graphene.Float(),
         afterTimestamp=graphene.Float(),
         description="Fetch the history of auto-materialization ticks",
-    )
-
-    # deprecated. Use assetNode { assetChecksOrError } or assetCheckExecutions instead
-    assetChecksOrError = graphene.Field(
-        graphene.NonNull(GrapheneAssetChecksOrError),
-        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
-        checkName=graphene.Argument(graphene.String()),
-        description="Retrieve the asset checks for a given asset key.",
     )
 
     assetCheckExecutions = graphene.Field(
@@ -1130,14 +1122,6 @@ class GrapheneQuery(graphene.ObjectType):
             before=beforeTimestamp,
             after=afterTimestamp,
         )
-
-    def resolve_assetChecksOrError(
-        self,
-        graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput,
-        checkName: Optional[str] = None,
-    ):
-        return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey), checkName)
 
     def resolve_assetCheckExecutions(
         self,

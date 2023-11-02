@@ -14,11 +14,9 @@ from dagster._core.storage.asset_check_execution_record import (
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
 from ..schema.asset_checks import (
-    AssetChecksOrErrorUnion,
     GrapheneAssetCheckExecution,
-    GrapheneAssetChecks,
 )
-from .asset_checks_loader import AssetChecksLoader, asset_checks_iter
+from .asset_checks_loader import asset_checks_iter
 
 if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
@@ -31,23 +29,6 @@ def has_asset_checks(
     return any(
         external_check.asset_key == asset_key
         for _, _, external_check in asset_checks_iter(graphene_info.context)
-    )
-
-
-def fetch_asset_checks(
-    graphene_info: "ResolveInfo",
-    asset_key: AssetKey,
-    check_name: Optional[str] = None,
-) -> AssetChecksOrErrorUnion:
-    # use the batched loader with a single asset
-    loader = AssetChecksLoader(context=graphene_info.context, asset_keys=[asset_key])
-    all_checks = loader.get_checks_for_asset(asset_key)
-    if not check_name or not isinstance(all_checks, GrapheneAssetChecks):
-        return all_checks
-    # the only case where we filter by check name is for execution history. We'll make that it's own resolver.
-    # For now, just filter the checks in the response.
-    return GrapheneAssetChecks(
-        checks=[check for check in all_checks.checks if check._asset_check.name == check_name]  # noqa: SLF001
     )
 
 

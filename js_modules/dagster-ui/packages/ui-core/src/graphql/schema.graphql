@@ -3128,7 +3128,6 @@ type Query {
     beforeTimestamp: Float
     afterTimestamp: Float
   ): [InstigationTick!]!
-  assetChecksOrError(assetKey: AssetKeyInput!, checkName: String): AssetChecksOrError!
   assetCheckExecutions(
     assetKey: AssetKeyInput!
     checkName: String!

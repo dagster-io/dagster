@@ -2895,7 +2895,6 @@ export type Query = {
   allTopLevelResourceDetailsOrError: ResourcesOrError;
   assetBackfillPreview: Array<AssetPartitions>;
   assetCheckExecutions: Array<AssetCheckExecution>;
-  assetChecksOrError: AssetChecksOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -2960,11 +2959,6 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String'];
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
-};
-
-export type QueryAssetChecksOrErrorArgs = {
-  assetKey: AssetKeyInput;
-  checkName?: InputMaybe<Scalars['String']>;
 };
 
 export type QueryAssetNodeDefinitionCollisionsArgs = {
@@ -9997,12 +9991,6 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('assetCheckExecutions')
         ? overrides.assetCheckExecutions!
         : [],
-    assetChecksOrError:
-      overrides && overrides.hasOwnProperty('assetChecksOrError')
-        ? overrides.assetChecksOrError!
-        : relationshipsToOmit.has('AssetCheckNeedsAgentUpgradeError')
-        ? ({} as AssetCheckNeedsAgentUpgradeError)
-        : buildAssetCheckNeedsAgentUpgradeError({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!
