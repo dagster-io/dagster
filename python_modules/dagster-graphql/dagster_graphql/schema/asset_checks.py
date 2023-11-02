@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import dagster._check as check
 import graphene
@@ -132,12 +132,6 @@ class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
-    # deprecated. Use the top level assetCheckExecutions resolver instead
-    executions = graphene.Field(
-        non_null_list(GrapheneAssetCheckExecution),
-        limit=graphene.NonNull(graphene.Int),
-        cursor=graphene.String(),
-    )
     executionForLatestMaterialization = graphene.Field(GrapheneAssetCheckExecution)
     canExecuteIndividually = graphene.NonNull(GrapheneAssetCheckCanExecuteIndividually)
 
@@ -162,20 +156,6 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     def resolve_description(self, _) -> Optional[str]:
         return self._asset_check.description
-
-    def resolve_executions(
-        self, graphene_info: ResolveInfo, **kwargs
-    ) -> List[GrapheneAssetCheckExecution]:
-        from dagster_graphql.implementation.fetch_asset_checks import (
-            fetch_asset_check_executions,
-        )
-
-        return fetch_asset_check_executions(
-            graphene_info.context.instance,
-            self._asset_check.key,
-            kwargs["limit"],
-            kwargs.get("cursor"),
-        )
 
     def resolve_executionForLatestMaterialization(
         self, _graphene_info: ResolveInfo
