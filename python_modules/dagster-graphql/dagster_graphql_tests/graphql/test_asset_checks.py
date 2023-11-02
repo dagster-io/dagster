@@ -228,27 +228,8 @@ query RunQuery($runId: ID!) {
   }
 """
 
-ASSET_NODE_CHECKS_QUERY = """
-query AssetNodeChecksQuery {
-    assetNodes {
-        assetKey {
-            path
-        }
-        assetChecks {
-            name
-        }
-        assetChecksOrError {
-            ... on AssetChecks {
-                checks {
-                    name
-                }
-            }
-        }
-    }
-}
-"""
 
-ASSET_NODE_CHECKS_LIMIT_QUERY = """
+ASSET_NODE_CHECKS_QUERY = """
 query AssetNodeChecksLimitQuery($limit: Int) {
     assetNodes {
         assetKey {
@@ -357,21 +338,20 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
     def test_asset_check_asset_node(self, graphql_context: WorkspaceRequestContext):
         res = execute_dagster_graphql(graphql_context, ASSET_NODE_CHECKS_QUERY)
-        with_checks = [node for node in res.data["assetNodes"] if node["assetChecks"]]
+        with_checks = [
+            node for node in res.data["assetNodes"] if node["assetChecksOrError"] != {"checks": []}
+        ]
         assert with_checks == [
             {
                 "assetKey": {"path": ["asset_1"]},
-                "assetChecks": [{"name": "my_check"}],
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
             {
                 "assetKey": {"path": ["check_in_op_asset"]},
-                "assetChecks": [{"name": "my_check"}],
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
             {
                 "assetKey": {"path": ["one"]},
-                "assetChecks": [{"name": "my_check"}, {"name": "my_other_check"}],
                 "assetChecksOrError": {
                     "checks": [{"name": "my_check"}, {"name": "my_other_check"}]
                 },
@@ -380,7 +360,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
     def test_asset_check_asset_node_limit(self, graphql_context: WorkspaceRequestContext):
         res = execute_dagster_graphql(
-            graphql_context, ASSET_NODE_CHECKS_LIMIT_QUERY, variables={"limit": 1}
+            graphql_context, ASSET_NODE_CHECKS_QUERY, variables={"limit": 1}
         )
         with_checks = [
             node for node in res.data["assetNodes"] if node["assetChecksOrError"] != {"checks": []}

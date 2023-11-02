@@ -62,8 +62,6 @@ from ..implementation.loader import (
 )
 from ..schema.asset_checks import (
     AssetChecksOrErrorUnion,
-    GrapheneAssetCheck,
-    GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
 from . import external
@@ -282,8 +280,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
-    # this field is deprecated- use assetChecksOrError instead
-    assetChecks = non_null_list(GrapheneAssetCheck)
     assetChecksOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetChecksOrError),
         limit=graphene.Argument(graphene.Int),
@@ -1135,13 +1131,6 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
         return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
-
-    def resolve_assetChecks(self, graphene_info: ResolveInfo) -> List[GrapheneAssetCheck]:
-        res = self._asset_checks_loader.get_checks_for_asset(self._external_asset_node.asset_key)
-        if not isinstance(res, GrapheneAssetChecks):
-            return []
-
-        return res.checks
 
     def resolve_assetChecksOrError(
         self, graphene_info: ResolveInfo, limit=None
