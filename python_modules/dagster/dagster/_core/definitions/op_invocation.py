@@ -219,7 +219,11 @@ def direct_invocation_result(
         resource_args=resource_arg_mapping,
     )
 
-    return _type_check_output_wrapper(op_def, result, bound_context)
+    res = _type_check_output_wrapper(op_def, result, bound_context)
+
+    bound_context.unbind()
+
+    return res
 
 
 def _resolve_inputs(
