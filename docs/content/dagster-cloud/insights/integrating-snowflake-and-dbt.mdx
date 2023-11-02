@@ -29,8 +29,10 @@ To complete the steps in this guide, you'll need:
 
 ---
 
-## Step 1: Instrument your dbt asset definition
+## Step 1: Instrument your Dagster code
 
+<TabGroup>
+<TabItem name="Using assets">
 First, instrument the Dagster <PyObject module="dagster_dbt" object="dbt_assets" decorator /> function with `dbt_with_snowflake_insights`:
 
 ```python
@@ -38,14 +40,36 @@ from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
 
 
 @dbt_assets(...)
-def my_asset(context: AssetExecutionContext):
+def my_asset(context: AssetExecutionContext, dbt: DbtCliResource):
     # Typically you have a `yield from dbt_resource.cli(...)`.
     # Wrap the original call with `dbt_with_snowflake_insights` as below.
     dbt_cli_invocation = dbt_resource.cli(["build"], context=context)
     yield from dbt_with_snowflake_insights(context, dbt_cli_invocation)
 ```
 
-This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log.
+This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log. </TabItem> <TabItem name="Using ops and jobs"> First, instrument the op function with `dbt_with_snowflake_insights`:
+
+```python
+from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
+
+
+@op(out={})
+def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
+    # Typically you have a `yield from dbt_resource.cli(...)`.
+    # Wrap the original call with `dbt_with_snowflake_insights` as below.
+    dbt_cli_invocation = dbt.cli(
+        ["build"], context=context, manifest=dbt_manifest_path
+    )
+    yield from dbt_with_snowflake_insights(context, dbt_cli_invocation)
+
+@job
+def my_dbt_job():
+  ...
+  my_dbt_op()
+  ...
+```
+
+This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log. </TabItem> </TabGroup>
 
 ---
 
