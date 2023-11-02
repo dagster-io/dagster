@@ -224,12 +224,15 @@ class AssetChecksExecutionForLatestMaterializationLoader:
         ] = None
 
     def _fetch_executions(self) -> Mapping[AssetCheckKey, Optional[GrapheneAssetCheckExecution]]:
-        from .fetch_asset_checks import get_asset_check_execution_status
+        from .fetch_asset_checks import get_asset_check_execution_statuses_by_id
 
         latest_executions_by_check_key = (
             self._instance.event_log_storage.get_latest_asset_check_execution_by_key(
                 self._check_keys
             )
+        )
+        statuses_by_execution_id = get_asset_check_execution_statuses_by_id(
+            self._instance, list(latest_executions_by_check_key.values())
         )
         asset_records_by_asset_key = {
             record.asset_entry.asset_key: record
@@ -244,7 +247,7 @@ class AssetChecksExecutionForLatestMaterializationLoader:
             if not execution:
                 self._executions[check_key] = None
             else:
-                resolved_status = get_asset_check_execution_status(self._instance, execution)
+                resolved_status = statuses_by_execution_id[execution.id]
                 self._executions[check_key] = (
                     GrapheneAssetCheckExecution(execution, resolved_status)
                     if _execution_targets_latest_materialization(
