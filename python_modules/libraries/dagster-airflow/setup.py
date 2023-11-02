@@ -50,6 +50,7 @@ setup(
             "apache-airflow-providers-apache-spark",
             # Logging messages are set to debug starting 4.1.1
             "apache-airflow-providers-http<4.1.1",
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
         ],
         "test_airflow_1": [
             "apache-airflow>=1.0.0,<2.0.0",
@@ -63,6 +64,10 @@ setup(
             # https://github.com/dagster-io/dagster/issues/3858
             "sqlalchemy>=1.0,<1.4.0",
             "marshmallow-sqlalchemy<0.26.0",
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+        ],
+        "test": [
+            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
         ],
     },
     entry_points={
