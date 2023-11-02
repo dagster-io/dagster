@@ -26,46 +26,34 @@ export const GroupNodeNameAndRepo: React.FC<{
             overflow: 'hidden',
             textAlign: 'center',
             textOverflow: 'ellipsis',
-            fontFamily: FontFamily.monospace,
-            fontSize: 30,
-            lineHeight: '30px',
-            fontWeight: 600,
+            fontFamily: FontFamily.default,
+            fontSize: 24,
+            lineHeight: '32px',
+            fontWeight: 500,
           }}
         >
-          {withMiddleTruncation(name, {maxLength: 18})}
-        </Box>
-        <Box style={{fontFamily: FontFamily.monospace, textAlign: 'center', fontSize: 20}}>
-          {withMiddleTruncation(location, {maxLength: 26})}
+          {withMiddleTruncation(name, {maxLength: 16})}
         </Box>
       </Box>
     );
   }
   return (
     <>
-      <Box style={{padding: '6px 8px'}} flex={{direction: 'row', gap: 4}}>
-        <span style={{marginTop: 1}}>
-          <Icon name="asset_group" />
-        </span>
+      <Box style={{padding: '6px 8px'}} flex={{direction: 'row', gap: 8}}>
         <div
           data-tooltip={name}
           data-tooltip-style={NameTooltipStyle}
           style={{
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            fontWeight: 600,
-            fontFamily: FontFamily.monospace,
+            fontWeight: 500,
+            fontFamily: FontFamily.default,
+            fontSize: 20,
           }}
         >
-          {withMiddleTruncation(name, {maxLength: 35})}
+          {withMiddleTruncation(name, {maxLength: 19})}
         </div>
         <div style={{flex: 1}} />
-      </Box>
-      <Box
-        style={{padding: '6px 8px', fontFamily: FontFamily.monospace}}
-        flex={{direction: 'column', gap: 4}}
-        border="top"
-      >
-        {withMiddleTruncation(location, {maxLength: 38})}
       </Box>
     </>
   );
@@ -82,15 +70,26 @@ export const CollapsedGroupNode: React.FC<{
 }> = ({group, minimal, onExpand}) => {
   return (
     <CollapsedGroupNodeContainer>
-      <CollapsedGroupNodeBox $minimal={minimal}>
-        <GroupNodeNameAndRepo group={group} minimal={minimal} />
+      <CollapsedGroupNodeBox $minimal={minimal} onClick={onExpand}>
+        <Box
+          style={{paddingRight: '6px'}}
+
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        >
+          <GroupNodeNameAndRepo group={group} minimal={minimal} />
+          <Icon size={24} color={Colors.Gray500} name="unfold_more" />
+        </Box>
         <Box
           style={{padding: '6px 8px'}}
           flex={{direction: 'row', justifyContent: 'space-between', gap: 4}}
-          border="top"
         >
-          <ButtonLink onClick={onExpand}>Expand</ButtonLink>
-          <AssetDescription $color={Colors.Gray400}>{group.assetCount} assets</AssetDescription>
+          <p style={{
+            color: Colors.Gray600,
+            margin: '0px',
+            fontSize: '16px',
+          }}>
+            {group.assetCount} {group.assetCount === 1 ? "asset" : "assets"}
+          </p>
         </Box>
       </CollapsedGroupNodeBox>
     </CollapsedGroupNodeContainer>
@@ -99,13 +98,49 @@ export const CollapsedGroupNode: React.FC<{
 
 const CollapsedGroupNodeContainer = styled.div`
   user-select: none;
-  cursor: default;
-  padding: 4px;
+  padding: 3px;
 `;
 
 const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
-  background: ${Colors.White};
-  border-radius: 8px;
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.KeylineGray};
+  background: ${Colors.Gray50};
+  border-radius: 12px;
+  padding: 6px;
+  cursor: pointer;
   position: relative;
+  transition: all 200ms ease-in-out;
+  :hover {
+    background: ${Colors.Gray100};
+    scale: 1.02;
+    :before{
+      bottom: -8px;
+    }
+    :after{
+      bottom: -14px;
+    }
+  }
+  :before{
+    content: "";
+    transition: all 200ms ease-in-out;
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+    width: 94%;
+    margin: 0 auto;
+    height: 2px;
+    background: ${Colors.KeylineGray};
+  }
+  :after{
+    content: "";
+    transition: all 200ms ease-in-out;
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    width: 90%;
+    margin: 0 auto;
+    height: 2px;
+    background: ${Colors.KeylineGray};
+  }
 `;

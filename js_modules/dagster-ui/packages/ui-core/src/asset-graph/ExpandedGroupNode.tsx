@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Colors, FontFamily} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, FontFamily, Icon, Button} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -20,21 +20,23 @@ export const ExpandedGroupNode: React.FC<{
   return (
     <div style={{position: 'relative', width: '100%', height: '100%'}}>
       {scale > GROUPS_ONLY_SCALE && (
-        <GroupNodeHeaderBox $minimal={minimal}>
+        <GroupNodeHeaderBox 
+          $minimal={minimal}
+          onClick={onCollapse} 
+        >
           <GroupNodeNameAndRepo group={group} minimal={minimal} />
+          <Icon size={24} color={Colors.Gray500} name="unfold_less" />
+
         </GroupNodeHeaderBox>
       )}
-      <Box padding={{horizontal: 8, vertical: 4}}>
-        <ButtonLink onClick={onCollapse}>Collapse</ButtonLink>
-      </Box>
       <GroupOutline
         $minimal={minimal}
         style={{
           inset: 0,
-          top: 60,
+          top: 0,
           position: 'absolute',
-          background:
-            scale < GROUPS_ONLY_SCALE ? `rgba(234, 234, 234, 1)` : `rgba(217, 217, 217, 0.25)`,
+          zIndex: -1,
+          background: `rgba(255, 255, 255, .4)`,
         }}
       />
 
@@ -43,17 +45,6 @@ export const ExpandedGroupNode: React.FC<{
           flex={{justifyContent: 'center', alignItems: 'center'}}
           style={{inset: 0, position: 'absolute', fontSize: `${12 / scale}px`, userSelect: 'none'}}
         >
-          <Box
-            flex={{direction: 'column', alignItems: 'center'}}
-            style={{fontWeight: 600, fontFamily: FontFamily.monospace}}
-          >
-            {groupName}
-            <GroupRepoName>
-              {withMiddleTruncation(buildRepoPathForHuman(repositoryName, repositoryLocationName), {
-                maxLength: 48,
-              })}
-            </GroupRepoName>
-          </Box>
         </Box>
       ) : undefined}
     </div>
@@ -62,10 +53,9 @@ export const ExpandedGroupNode: React.FC<{
 
 const GroupOutline = styled.div<{$minimal: boolean}>`
   width: 100%;
-  border-radius: 10px;
-  border-top-left-radius: 0;
+  border-radius: 12px;
   pointer-events: none;
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
+  border: ${(p) => (p.$minimal ? '2px' : '2px')} solid ${Colors.KeylineGray};
 `;
 
 const GroupRepoName = styled.div`
@@ -76,12 +66,23 @@ const GroupRepoName = styled.div`
 `;
 
 const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
-  background: ${Colors.White};
-  max-width: 300px;
-  border-radius: 8px;
+  border: 2px solid ${Colors.KeylineGray};
+  background: ${Colors.Gray50};
+  color: ${Colors.Gray900};
+  max-width: 100%;
+  border-radius: 12px;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   border-bottom: 0;
   position: relative;
+  transition: background 200ms ease-in-out;
+  cursor: pointer;
+  display: flex; 
+  flex-direction: row; 
+  justify-content: space-between;
+  align-items: center; 
+  padding: 6px 12px;
+  :hover {
+    background: ${Colors.Gray100};
+  }
 `;
