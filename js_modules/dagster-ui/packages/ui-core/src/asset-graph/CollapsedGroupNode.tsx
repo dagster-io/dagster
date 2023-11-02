@@ -27,7 +27,8 @@ export const GroupNodeNameAndRepo: React.FC<{
             textAlign: 'center',
             textOverflow: 'ellipsis',
             fontFamily: FontFamily.default,
-            fontSize: 24,
+            padding: '4px 8px',
+            fontSize: '24px',
             lineHeight: '32px',
             fontWeight: 500,
           }}
@@ -48,7 +49,7 @@ export const GroupNodeNameAndRepo: React.FC<{
             textOverflow: 'ellipsis',
             fontWeight: 500,
             fontFamily: FontFamily.default,
-            fontSize: 20,
+            fontSize: 24,
           }}
         >
           {withMiddleTruncation(name, {maxLength: 19})}
@@ -102,7 +103,7 @@ const CollapsedGroupNodeContainer = styled.div`
 `;
 
 const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.KeylineGray};
+  border: ${(p) => (p.$minimal ? '2px' : '2px')} solid ${Colors.KeylineGray};
   background: ${Colors.Gray50};
   border-radius: 12px;
   padding: 6px;
