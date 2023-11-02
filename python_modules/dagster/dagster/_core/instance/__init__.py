@@ -1536,7 +1536,8 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run: DagsterRun,
         code_location: "CodeLocation",
         external_job: "ExternalJob",
-        strategy: "ReexecutionStrategy",
+        strategy: Optional["ReexecutionStrategy"],
+        step_keys_to_execute: Optional[Sequence[str]] = None,
         extra_tags: Optional[Mapping[str, Any]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         use_parent_run_tags: bool = False,
@@ -1591,6 +1592,12 @@ class DagsterInstance(DynamicPartitionsStore):
         elif strategy == ReexecutionStrategy.ALL_STEPS:
             step_keys_to_execute = None
             known_state = None
+        elif strategy is None:
+            if not step_keys_to_execute:
+                raise DagsterInvariantViolationError(
+                    "Expected step_keys_to_execute with no reexecution strategy"
+                )
+            known_state = KnownExecutionState.build_for_reexecution(self, parent_run)
         else:
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 

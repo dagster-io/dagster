@@ -6,7 +6,6 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._utils.merger import merge_dicts
 
@@ -31,29 +30,15 @@ def compute_step_keys_to_execute(
 
     instance = graphene_info.context.instance
 
-    if not execution_params.step_keys and is_resume_retry(execution_params):
-        # Get step keys from parent_run_id if it's a resume/retry
-        parent_run_id = check.not_none(execution_params.execution_metadata.parent_run_id)
-        parent_run = _get_run(instance, parent_run_id)
-        return KnownExecutionState.build_resume_retry_reexecution(
+    known_state = None
+    if execution_params.execution_metadata.parent_run_id and execution_params.step_keys:
+        parent_run = _get_run(instance, execution_params.execution_metadata.parent_run_id)
+        known_state = KnownExecutionState.build_for_reexecution(
             instance,
             parent_run,
-        )
-    else:
-        known_state = None
-        if execution_params.execution_metadata.parent_run_id and execution_params.step_keys:
-            parent_run = _get_run(instance, execution_params.execution_metadata.parent_run_id)
-            known_state = KnownExecutionState.build_for_reexecution(
-                instance,
-                parent_run,
-            ).update_for_step_selection(execution_params.step_keys)
+        ).update_for_step_selection(execution_params.step_keys)
 
-        return execution_params.step_keys, known_state
-
-
-def is_resume_retry(execution_params: ExecutionParams) -> bool:
-    check.inst_param(execution_params, "execution_params", ExecutionParams)
-    return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == "true"
+    return execution_params.step_keys, known_state
 
 
 def create_valid_pipeline_run(

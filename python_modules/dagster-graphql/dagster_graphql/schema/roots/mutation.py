@@ -4,6 +4,7 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
@@ -16,7 +17,6 @@ from dagster_graphql.implementation.execution.backfill import (
 from dagster_graphql.implementation.execution.dynamic_partitions import add_dynamic_partition
 from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_execution,
-    launch_pipeline_reexecution,
     launch_reexecution_from_parent_run,
 )
 
@@ -379,16 +379,6 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
         )
 
 
-def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
-    execution_params = create_execution_params(graphene_info, execution_params_dict)
-    assert_permission_for_location(
-        graphene_info,
-        Permissions.LAUNCH_PIPELINE_REEXECUTION,
-        execution_params.selector.location_name,
-    )
-    return launch_pipeline_reexecution(graphene_info, execution_params=execution_params)
-
-
 class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     """Re-executes a job run."""
 
@@ -415,15 +405,23 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
             )
 
         if executionParams:
-            return create_execution_params_and_launch_pipeline_reexec(
+            execution_params = create_execution_params(graphene_info, executionParams)
+            launch_reexecution_from_parent_run(
                 graphene_info,
-                execution_params_dict=executionParams,
+                execution_params.execution_metadata.parent_run_id,
+                reexecutionParams["strategy"],
             )
+            # assert_permission_for_location(
+            #     graphene_info,
+            #     Permissions.LAUNCH_PIPELINE_REEXECUTION,
+            #     execution_params.selector.location_name,
+            # )
+            # return launch_pipeline_reexecution(graphene_info, execution_params=execution_params)
         elif reexecutionParams:
             return launch_reexecution_from_parent_run(
                 graphene_info,
                 reexecutionParams["parentRunId"],
-                reexecutionParams["strategy"],
+                ReexecutionStrategy(reexecutionParams["strategy"]),
             )
         else:
             check.failed("Unreachable")
