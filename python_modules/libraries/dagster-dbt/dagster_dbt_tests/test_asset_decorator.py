@@ -601,7 +601,9 @@ def test_dbt_with_python_interleaving() -> None:
     defs = Definitions(
         assets=[my_dbt_assets, python_augmented_customers],
         resources={
-            "dbt": DbtCliResource(project_dir=test_python_interleaving_manifest_path.parent.absolute().as_posix())
+            "dbt": DbtCliResource(
+                project_dir=test_python_interleaving_manifest_path.parent.absolute().as_posix()
+            )
         },
     )
     global_job = defs.get_implicit_global_asset_job_def()
