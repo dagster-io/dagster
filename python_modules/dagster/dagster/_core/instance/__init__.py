@@ -1575,10 +1575,10 @@ class DagsterInstance(DynamicPartitionsStore):
         run_config = run_config if run_config is not None else parent_run.run_config
 
         if strategy == ReexecutionStrategy.FROM_FAILURE:
-            check.invariant(
-                parent_run.status == DagsterRunStatus.FAILURE,
-                "Cannot reexecute from failure a run that is not failed",
-            )
+            if parent_run.status != DagsterRunStatus.FAILURE:
+                raise DagsterInvariantViolationError(
+                    "Cannot reexecute from failure a run that is not failed",
+                )
 
             (
                 step_keys_to_execute,
