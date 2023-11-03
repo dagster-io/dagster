@@ -17,6 +17,7 @@ from typing import (
 )
 
 import dagster._check as check
+import mock
 import pendulum
 from dagster import (
     AssetKey,
@@ -43,7 +44,7 @@ from dagster._core.definitions.auto_materialize_rule import (
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -195,6 +196,10 @@ class AssetDaemonScenarioState(NamedTuple):
         return assets
 
     @property
+    def defs(self) -> Definitions:
+        return Definitions(assets=self.assets)
+
+    @property
     def asset_graph(self) -> AssetGraph:
         return AssetGraph.from_assets(self.assets)
 
@@ -235,7 +240,14 @@ class AssetDaemonScenarioState(NamedTuple):
         return self._replace(current_time=self.current_time + datetime.timedelta(**kwargs))
 
     def with_runs(self, *run_requests: RunRequest) -> "AssetDaemonScenarioState":
-        with pendulum.test(self.current_time):
+        start = datetime.datetime.now()
+
+        def test_time_fn() -> float:
+            # this function will increment the current timestamp in real time, relative to the
+            # fake current_time on the scenario state
+            return (self.current_time + (datetime.datetime.now() - start)).timestamp()
+
+        with pendulum.test(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
                 materialize(
                     assets=self.assets,
@@ -245,10 +257,26 @@ class AssetDaemonScenarioState(NamedTuple):
                     raise_on_error=False,
                     selection=rr.asset_selection,
                 )
-        return self
+        # increment current_time by however much time elapsed during the materialize call
+        return self._replace(current_time=datetime.datetime.fromtimestamp(test_time_fn()))
 
     def with_requested_runs(self) -> "AssetDaemonScenarioState":
         return self.with_runs(*self.run_requests)
+
+    def with_not_started_runs(self) -> "AssetDaemonScenarioState":
+        """Execute all runs in the NOT_STARTED state."""
+        not_started_runs = self.instance.get_runs(
+            filters=RunsFilter(statuses=[DagsterRunStatus.NOT_STARTED])
+        )
+        return self.with_runs(
+            *[
+                run_request(
+                    asset_keys=list(run.asset_selection or set()),
+                    partition_key=run.tags.get(PARTITION_NAME_TAG),
+                )
+                for run in not_started_runs
+            ]
+        )
 
     def _evaluate_tick_fast(
         self,
@@ -316,6 +344,16 @@ class AssetDaemonScenarioState(NamedTuple):
                 new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_daemon()
             else:
                 new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_fast()
+
+        # make sure these run requests are available on the instance
+        for request in new_run_requests:
+            asset_selection = check.not_none(request.asset_selection)
+            job_def = self.defs.get_implicit_job_def_for_assets(asset_selection)
+            self.instance.create_run_for_job(
+                job_def=check.not_none(job_def),
+                asset_selection=set(asset_selection),
+                tags=request.tags,
+            )
 
         return self._replace(
             run_requests=new_run_requests,

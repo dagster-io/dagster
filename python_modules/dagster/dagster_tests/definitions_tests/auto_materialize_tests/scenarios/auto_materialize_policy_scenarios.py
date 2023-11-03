@@ -34,7 +34,6 @@ from .exotic_partition_mapping_scenarios import (
 )
 from .freshness_policy_scenarios import (
     daily_to_unpartitioned,
-    overlapping_freshness_inf,
 )
 from .partition_scenarios import (
     hourly_partitions_def,
@@ -175,42 +174,6 @@ one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated = (
 
 # auto materialization policies
 auto_materialize_policy_scenarios = {
-    "auto_materialize_policy_lazy_missing": AssetReconciliationScenario(
-        assets=single_lazy_asset,
-        unevaluated_runs=[],
-        expected_run_requests=[],
-    ),
-    "auto_materialize_policy_lazy_freshness_missing": AssetReconciliationScenario(
-        assets=single_lazy_asset_with_freshness_policy,
-        unevaluated_runs=[],
-        expected_run_requests=[run_request(asset_keys=["asset1"])],
-    ),
-    "auto_materialize_policy_eager_with_freshness_policies": AssetReconciliationScenario(
-        assets=with_auto_materialize_policy(
-            overlapping_freshness_inf, AutoMaterializePolicy.eager()
-        ),
-        cursor_from=AssetReconciliationScenario(
-            assets=overlapping_freshness_inf,
-            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
-        ),
-        # change at the top, should be immediately propagated as all assets have eager reconciliation
-        unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[
-            run_request(asset_keys=["asset2", "asset3", "asset4", "asset5", "asset6"])
-        ],
-    ),
-    "auto_materialize_policy_lazy_with_freshness_policies": AssetReconciliationScenario(
-        assets=with_auto_materialize_policy(
-            overlapping_freshness_inf, AutoMaterializePolicy.lazy()
-        ),
-        cursor_from=AssetReconciliationScenario(
-            assets=overlapping_freshness_inf,
-            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
-        ),
-        # change at the top, should be immediately propagated as all assets have eager reconciliation
-        unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[],
-    ),
     "auto_materialize_policy_with_default_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,

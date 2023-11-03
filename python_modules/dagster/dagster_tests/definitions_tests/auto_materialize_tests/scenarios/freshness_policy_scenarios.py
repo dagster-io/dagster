@@ -111,58 +111,6 @@ daily_to_unpartitioned = [
 ]
 
 freshness_policy_scenarios = {
-    "freshness_blank_slate": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        unevaluated_runs=[],
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
-    ),
-    "freshness_blank_slate_root_unselected": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        asset_selection=AssetSelection.all() - AssetSelection.keys("asset1"),
-        unevaluated_runs=[],
-        expected_run_requests=[],
-    ),
-    "freshness_blank_slate_root_unselected_and_materialized": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        asset_selection=AssetSelection.all() - AssetSelection.keys("asset1"),
-        unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
-    ),
-    "freshness_all_fresh": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
-        expected_run_requests=[],
-    ),
-    "freshness_all_fresh_with_new_run": AssetReconciliationScenario(
-        # expect no runs as the freshness policy will propagate the new change w/in the plan window
-        assets=diamond_freshness,
-        cursor_from=AssetReconciliationScenario(
-            assets=diamond_freshness,
-            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
-        ),
-        unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[],
-    ),
-    "freshness_all_fresh_with_new_run_stale": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        cursor_from=AssetReconciliationScenario(
-            assets=diamond_freshness,
-            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
-        ),
-        unevaluated_runs=[run(["asset1"])],
-        evaluation_delta=datetime.timedelta(minutes=35),
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
-    ),
-    "freshness_half_run": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        unevaluated_runs=[run(["asset1", "asset2"])],
-        expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
-    ),
-    "freshness_nothing_dep": AssetReconciliationScenario(
-        assets=nothing_dep_freshness,
-        unevaluated_runs=[],
-        expected_run_requests=[run_request(asset_keys=["asset1"])],
-    ),
     "freshness_many_to_one_some_updated": AssetReconciliationScenario(
         assets=many_to_one_freshness,
         unevaluated_runs=[
@@ -443,19 +391,5 @@ freshness_policy_scenarios = {
             ),
         ],
         expected_run_requests=[],
-    ),
-    "freshness_partitioned_to_unpartitioned_empty": AssetReconciliationScenario(
-        assets=daily_to_unpartitioned,
-        asset_selection=AssetSelection.keys("unpartitioned"),
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=6, tz="UTC"),
-        unevaluated_runs=[],
-        expected_run_requests=[],
-    ),
-    "freshness_partitioned_to_unpartitioned_nonempty": AssetReconciliationScenario(
-        assets=daily_to_unpartitioned,
-        asset_selection=AssetSelection.keys("unpartitioned"),
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=6, tz="UTC"),
-        unevaluated_runs=[run(["daily"], partition_key="2020-01-01")],
-        expected_run_requests=[run_request(["unpartitioned"])],
     ),
 }
