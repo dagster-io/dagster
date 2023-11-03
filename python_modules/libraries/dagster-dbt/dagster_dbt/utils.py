@@ -45,7 +45,11 @@ def input_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
 
 def output_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
     # hyphens are valid in dbt model names, but not in output names
-    return dbt_resource_props["unique_id"].split(".")[-1].replace("-", "_")
+    if dbt_resource_props.get("latest_version"):
+        return dbt_resource_props["unique_id"].split(".")[-2].replace("-", "_")
+    else:
+        return dbt_resource_props["unique_id"].split(".")[-1].replace("-", "_")
+
 
 
 def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
