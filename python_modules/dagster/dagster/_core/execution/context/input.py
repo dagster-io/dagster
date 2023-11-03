@@ -20,7 +20,10 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
+    TimeWindow,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 
@@ -402,7 +405,7 @@ class InputContext:
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        if not isinstance(subset, TimeWindowPartitionsSubset):
+        if not isinstance(subset, BaseTimeWindowPartitionsSubset):
             check.failed(
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned"
                 " with time windows.",

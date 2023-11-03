@@ -6,6 +6,7 @@ from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -111,8 +112,8 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
+        if not isinstance(downstream_partitions_subset, BaseTimeWindowPartitionsSubset):
+            check.failed("downstream_partitions_subset must be a BaseTimeWindowPartitionsSubset")
 
         return self._map_partitions(
             downstream_partitions_subset.partitions_def,
@@ -161,8 +162,8 @@ class TimeWindowPartitionMapping(
         the filtered subset, also returning a bool indicating whether there were mapped time windows
         that did not exist in to_partitions_def.
         """
-        if not isinstance(from_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("from_partitions_subset must be a TimeWindowPartitionsSubset")
+        if not isinstance(from_partitions_subset, BaseTimeWindowPartitionsSubset):
+            check.failed("from_partitions_subset must be a BaseTimeWindowPartitionsSubset")
 
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("from_partitions_def must be a TimeWindowPartitionsDefinition")
@@ -303,7 +304,7 @@ class TimeWindowPartitionMapping(
         self,
         from_partitions_def: TimeWindowPartitionsDefinition,
         to_partitions_def: TimeWindowPartitionsDefinition,
-        from_partitions_subset: TimeWindowPartitionsSubset,
+        from_partitions_subset: BaseTimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
         current_time: Optional[datetime],
