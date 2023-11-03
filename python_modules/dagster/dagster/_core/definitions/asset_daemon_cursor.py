@@ -239,7 +239,7 @@ class AssetDaemonCursor(NamedTuple):
                     and isinstance(partitions_def, TimeWindowPartitionsDefinition)
                     and any(
                         time_window.start < partitions_def.start
-                        for time_window in subset.included_time_windows
+                        for time_window in subset.get_included_time_windows()
                     )
                 ):
                     subset = partitions_def.empty_subset()

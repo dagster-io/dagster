@@ -977,7 +977,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset[T_str]":
         return self.with_partition_keys(
-            self.partitions_def.get_partition_keys_in_range(
+            self.get_partitions_def().get_partition_keys_in_range(
                 partition_key_range, dynamic_partitions_store=dynamic_partitions_store
             )
         )
@@ -989,16 +989,22 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
         if self is other:
-            return self.partitions_def.empty_subset()
-        return self.partitions_def.empty_subset().with_partition_keys(
-            set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
+            return self.get_partitions_def().empty_subset()
+        return (
+            self.get_partitions_def()
+            .empty_subset()
+            .with_partition_keys(
+                set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
+            )
         )
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
         if self is other:
             return self
-        return self.partitions_def.empty_subset().with_partition_keys(
-            set(self.get_partition_keys()) & set(other.get_partition_keys())
+        return (
+            self.get_partitions_def()
+            .empty_subset()
+            .with_partition_keys(set(self.get_partition_keys()) & set(other.get_partition_keys()))
         )
 
     @abstractmethod
@@ -1023,9 +1029,8 @@ class PartitionsSubset(ABC, Generic[T_str]):
     ) -> bool:
         ...
 
-    @property
     @abstractmethod
-    def partitions_def(self) -> PartitionsDefinition[T_str]:
+    def get_partitions_def(self) -> PartitionsDefinition[T_str]:
         ...
 
     @abstractmethod
@@ -1186,8 +1191,7 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
             data.get("subset") is not None and data.get("version") == cls.SERIALIZATION_VERSION
         )
 
-    @property
-    def partitions_def(self) -> PartitionsDefinition[T_str]:
+    def get_partitions_def(self) -> PartitionsDefinition[T_str]:
         return self._partitions_def
 
     def __eq__(self, other: object) -> bool:

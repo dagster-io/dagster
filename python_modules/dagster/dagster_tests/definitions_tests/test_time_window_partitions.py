@@ -50,10 +50,13 @@ def test_daily_partitions():
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
     assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
     assert (
-        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06")) == "2021-05-05"
+        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06"))
+        == "2021-05-05"
     )
     assert (
-        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06").add(minutes=1))
+        partitions_def.get_last_partition_key(
+            pendulum.parser.parse("2021-05-06").add(minutes=1)
+        )
         == "2021-05-05"
     )
     assert (
@@ -66,7 +69,9 @@ def test_daily_partitions():
 
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-05-07", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-05-07", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-05", "2021-05-06"),
         time_window("2021-05-06", "2021-05-07"),
@@ -85,7 +90,9 @@ def test_daily_partitions_with_end_offset():
     partitions_def = my_partitioned_config.partitions_def
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-05-07", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-05-07", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-05", "2021-05-06"),
         time_window("2021-05-06", "2021-05-07"),
@@ -102,7 +109,9 @@ def test_daily_partitions_with_negative_end_offset():
     partitions_def = my_partitioned_config.partitions_def
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-05-07", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-05-07", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-01", "2021-05-02"),
         time_window("2021-05-02", "2021-05-03"),
@@ -117,12 +126,18 @@ def test_daily_partitions_with_time_offset():
         return {}
 
     partitions_def = my_partitioned_config.partitions_def
-    assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05", minute_offset=15)
+    assert partitions_def == DailyPartitionsDefinition(
+        start_date="2021-05-05", minute_offset=15
+    )
 
-    partition_keys = partitions_def.get_partition_keys(datetime.strptime("2021-05-07", DATE_FORMAT))
+    partition_keys = partitions_def.get_partition_keys(
+        datetime.strptime("2021-05-07", DATE_FORMAT)
+    )
     assert partition_keys == ["2021-05-05"]
 
-    assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
+    assert [
+        partitions_def.time_window_for_partition_key(key) for key in partition_keys
+    ] == [
         time_window("2021-05-05T00:15:00", "2021-05-06T00:15:00"),
     ]
 
@@ -141,7 +156,9 @@ def test_monthly_partitions():
 
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-07-03", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-07-03", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-01", "2021-06-01"),
         time_window("2021-06-01", "2021-07-01"),
@@ -160,7 +177,9 @@ def test_monthly_partitions_with_end_offset():
     partitions_def = my_partitioned_config.partitions_def
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-07-03", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-07-03", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-01", "2021-06-01"),
         time_window("2021-06-01", "2021-07-01"),
@@ -184,13 +203,17 @@ def test_monthly_partitions_with_time_offset():
         start_date="2021-05-01", minute_offset=15, hour_offset=3, day_offset=12
     )
 
-    partition_keys = partitions_def.get_partition_keys(datetime.strptime("2021-07-13", DATE_FORMAT))
+    partition_keys = partitions_def.get_partition_keys(
+        datetime.strptime("2021-07-13", DATE_FORMAT)
+    )
     assert partition_keys == [
         "2021-05-12",
         "2021-06-12",
     ]
 
-    assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
+    assert [
+        partitions_def.time_window_for_partition_key(key) for key in partition_keys
+    ] == [
         time_window("2021-05-12T03:15:00", "2021-06-12T03:15:00"),
         time_window("2021-06-12T03:15:00", "2021-07-12T03:15:00"),
     ]
@@ -216,14 +239,16 @@ def test_hourly_partitions():
         "2021-05-05-02:00",
     ]
 
-    assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
+    assert [
+        partitions_def.time_window_for_partition_key(key) for key in partition_keys
+    ] == [
         time_window("2021-05-05T01:00:00", "2021-05-05T02:00:00"),
         time_window("2021-05-05T02:00:00", "2021-05-05T03:00:00"),
     ]
 
-    assert partitions_def.time_window_for_partition_key("2021-05-05-01:00") == time_window(
-        "2021-05-05T01:00:00", "2021-05-05T02:00:00"
-    )
+    assert partitions_def.time_window_for_partition_key(
+        "2021-05-05-01:00"
+    ) == time_window("2021-05-05T01:00:00", "2021-05-05T02:00:00")
 
 
 def test_hourly_partitions_with_time_offset():
@@ -244,14 +269,16 @@ def test_hourly_partitions_with_time_offset():
         "2021-05-05-02:15",
     ]
 
-    assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
+    assert [
+        partitions_def.time_window_for_partition_key(key) for key in partition_keys
+    ] == [
         time_window("2021-05-05T01:15:00", "2021-05-05T02:15:00"),
         time_window("2021-05-05T02:15:00", "2021-05-05T03:15:00"),
     ]
 
-    assert partitions_def.time_window_for_partition_key("2021-05-05-01:00") == time_window(
-        "2021-05-05T01:15:00", "2021-05-05T02:15:00"
-    )
+    assert partitions_def.time_window_for_partition_key(
+        "2021-05-05-01:00"
+    ) == time_window("2021-05-05T01:15:00", "2021-05-05T02:15:00")
 
 
 def test_weekly_partitions():
@@ -265,7 +292,9 @@ def test_weekly_partitions():
     partitions_def = my_partitioned_config.partitions_def
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-05-18", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-05-18", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-02", "2021-05-09"),
         time_window("2021-05-09", "2021-05-16"),
@@ -288,13 +317,17 @@ def test_weekly_partitions_with_time_offset():
         start_date="2021-05-01", minute_offset=15, hour_offset=4, day_offset=3
     )
 
-    partition_keys = partitions_def.get_partition_keys(datetime.strptime("2021-05-20", DATE_FORMAT))
+    partition_keys = partitions_def.get_partition_keys(
+        datetime.strptime("2021-05-20", DATE_FORMAT)
+    )
     assert partition_keys == [
         "2021-05-05",
         "2021-05-12",
     ]
 
-    assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
+    assert [
+        partitions_def.time_window_for_partition_key(key) for key in partition_keys
+    ] == [
         time_window("2021-05-05T04:15:00", "2021-05-12T04:15:00"),
         time_window("2021-05-12T04:15:00", "2021-05-19T04:15:00"),
     ]
@@ -305,15 +338,23 @@ def test_weekly_partitions_with_time_offset():
 
 
 def test_partitioned_config_invalid_offsets():
-    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid cron schedule"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Found invalid cron schedule"
+    ):
 
-        @weekly_partitioned_config(start_date=datetime(year=2021, month=1, day=1), day_offset=8)
+        @weekly_partitioned_config(
+            start_date=datetime(year=2021, month=1, day=1), day_offset=8
+        )
         def my_weekly_partitioned_config(_start, _end):
             return {}
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid cron schedule"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Found invalid cron schedule"
+    ):
 
-        @monthly_partitioned_config(start_date=datetime(year=2021, month=1, day=1), day_offset=32)
+        @monthly_partitioned_config(
+            start_date=datetime(year=2021, month=1, day=1), day_offset=32
+        )
         def my_monthly_partitioned_config(_start, _end):
             return {}
 
@@ -321,9 +362,13 @@ def test_partitioned_config_invalid_offsets():
 def assert_expected_partition_keys(
     generated_partition_keys: Sequence[str], expected_partition_keys: Sequence[str]
 ):
-    assert all(isinstance(generated_key, str) for generated_key in generated_partition_keys)
+    assert all(
+        isinstance(generated_key, str) for generated_key in generated_partition_keys
+    )
     assert len(generated_partition_keys) == len(expected_partition_keys)
-    for generated_key, expected_key in zip(generated_partition_keys, expected_partition_keys):
+    for generated_key, expected_key in zip(
+        generated_partition_keys, expected_partition_keys
+    ):
         assert generated_key == expected_key
 
 
@@ -557,7 +602,9 @@ def test_time_partitions_weekly_partitions(
     current_time,
     expected_partition_keys: Sequence[str],
 ):
-    partitions_def = WeeklyPartitionsDefinition(start_date=start, end_offset=partition_weeks_offset)
+    partitions_def = WeeklyPartitionsDefinition(
+        start_date=start, end_offset=partition_weeks_offset
+    )
 
     assert_expected_partition_keys(
         partitions_def.get_partition_keys(current_time=current_time),
@@ -717,9 +764,13 @@ def test_time_partitions_hourly_partitions(
         ],
     ],
 )
-def test_get_partition_keys_in_range(partitions_def, range_start, range_end, partition_keys):
+def test_get_partition_keys_in_range(
+    partitions_def, range_start, range_end, partition_keys
+):
     assert (
-        partitions_def.get_partition_keys_in_range(PartitionKeyRange(range_start, range_end))
+        partitions_def.get_partition_keys_in_range(
+            PartitionKeyRange(range_start, range_end)
+        )
         == partition_keys
     )
 
@@ -733,7 +784,9 @@ def test_twice_daily_partitions():
 
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-05-07", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-05-07", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-05T00:00:00", "2021-05-05T11:00:00"),
         time_window("2021-05-05T11:00:00", "2021-05-06T00:00:00"),
@@ -741,12 +794,12 @@ def test_twice_daily_partitions():
         time_window("2021-05-06T11:00:00", "2021-05-07T00:00:00"),
     ]
 
-    assert partitions_def.time_window_for_partition_key("2021-05-08-00:00") == time_window(
-        "2021-05-08T00:00:00", "2021-05-08T11:00:00"
-    )
-    assert partitions_def.time_window_for_partition_key("2021-05-08-11:00") == time_window(
-        "2021-05-08T11:00:00", "2021-05-09T00:00:00"
-    )
+    assert partitions_def.time_window_for_partition_key(
+        "2021-05-08-00:00"
+    ) == time_window("2021-05-08T00:00:00", "2021-05-08T11:00:00")
+    assert partitions_def.time_window_for_partition_key(
+        "2021-05-08-11:00"
+    ) == time_window("2021-05-08T11:00:00", "2021-05-09T00:00:00")
 
 
 def test_start_not_aligned():
@@ -758,7 +811,9 @@ def test_start_not_aligned():
 
     assert [
         partitions_def.time_window_for_partition_key(key)
-        for key in partitions_def.get_partition_keys(datetime.strptime("2021-05-08", DATE_FORMAT))
+        for key in partitions_def.get_partition_keys(
+            datetime.strptime("2021-05-08", DATE_FORMAT)
+        )
     ] == [
         time_window("2021-05-05T07:00:00", "2021-05-06T07:00:00"),
         time_window("2021-05-06T07:00:00", "2021-05-07T07:00:00"),
@@ -802,13 +857,15 @@ def test_partition_subset_get_partition_keys_not_in_subset(
 
     subset = cast(
         BaseTimeWindowPartitionsSubset,
-        partitions_subset_class.empty_subset(partitions_def).with_partition_keys(subset_keys),
+        partitions_subset_class.empty_subset(partitions_def).with_partition_keys(
+            subset_keys
+        ),
     )
     for partition_key in subset_keys:
         assert partition_key in subset
     assert (
         subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
         )
         == expected_keys_not_in_subset
     )
@@ -816,12 +873,12 @@ def test_partition_subset_get_partition_keys_not_in_subset(
         cast(
             TimeWindowPartitionsSubset,
             partitions_def.deserialize_subset(subset.serialize()),
-        ).included_time_windows
-        == subset.included_time_windows
+        ).get_included_time_windows()
+        == subset.get_included_time_windows()
     )
 
     expected_range_count = case_str.count("-+") + (1 if case_str[0] == "+" else 0)
-    assert len(subset.included_time_windows) == expected_range_count, case_str
+    assert len(subset.get_included_time_windows()) == expected_range_count, case_str
     assert len(subset) == case_str.count("+")
 
 
@@ -958,7 +1015,9 @@ def test_partition_subset_with_partition_keys(
     expected_range_count = updated_subset_str.count("-+") + (
         1 if updated_subset_str[0] == "+" else 0
     )
-    assert len(updated_subset.included_time_windows) == expected_range_count, updated_subset_str
+    assert (
+        len(updated_subset.get_included_time_windows()) == expected_range_count
+    ), updated_subset_str
     assert len(updated_subset) == updated_subset_str.count("+")
 
 
@@ -999,7 +1058,9 @@ def test_time_window_partiitons_deserialize_backwards_compatible():
 def test_current_time_window_partitions_serialization():
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     serialized = (
-        partitions_def.empty_subset().with_partition_keys(["2015-01-02", "2015-01-04"]).serialize()
+        partitions_def.empty_subset()
+        .with_partition_keys(["2015-01-02", "2015-01-04"])
+        .serialize()
     )
     deserialized = partitions_def.deserialize_subset(serialized)
     assert partitions_def.deserialize_subset(serialized)
@@ -1124,25 +1185,39 @@ def test_dst_transition_daily_partitions() -> None:
 
 def test_unique_identifier():
     assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").get_serializable_unique_identifier()
-        != DailyPartitionsDefinition(start_date="2015-01-02").get_serializable_unique_identifier()
+        DailyPartitionsDefinition(
+            start_date="2015-01-01"
+        ).get_serializable_unique_identifier()
+        != DailyPartitionsDefinition(
+            start_date="2015-01-02"
+        ).get_serializable_unique_identifier()
     )
     assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").get_serializable_unique_identifier()
-        == DailyPartitionsDefinition(start_date="2015-01-01").get_serializable_unique_identifier()
+        DailyPartitionsDefinition(
+            start_date="2015-01-01"
+        ).get_serializable_unique_identifier()
+        == DailyPartitionsDefinition(
+            start_date="2015-01-01"
+        ).get_serializable_unique_identifier()
     )
 
 
 def test_time_window_partition_len():
-    partitions_def = HourlyPartitionsDefinition(start_date="2021-05-05-01:00", minute_offset=15)
-    assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
+    partitions_def = HourlyPartitionsDefinition(
+        start_date="2021-05-05-01:00", minute_offset=15
+    )
+    assert partitions_def.get_num_partitions() == len(
+        partitions_def.get_partition_keys()
+    )
     assert (
         partitions_def.get_partition_keys_between_indexes(50, 51)
         == partitions_def.get_partition_keys()[50:51]
     )
     current_time = datetime.strptime("2021-05-07-03:15", "%Y-%m-%d-%H:%M")
     assert (
-        partitions_def.get_partition_keys_between_indexes(50, 51, current_time=current_time)
+        partitions_def.get_partition_keys_between_indexes(
+            50, 51, current_time=current_time
+        )
         == partitions_def.get_partition_keys(current_time)[50:51]
     )
 
@@ -1150,15 +1225,21 @@ def test_time_window_partition_len():
     def my_partitioned_config(_start, _end):
         return {}
 
-    partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config.partitions_def)
-    assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
+    partitions_def = cast(
+        TimeWindowPartitionsDefinition, my_partitioned_config.partitions_def
+    )
+    assert partitions_def.get_num_partitions() == len(
+        partitions_def.get_partition_keys()
+    )
     assert (
         partitions_def.get_partition_keys_between_indexes(50, 53)
         == partitions_def.get_partition_keys()[50:53]
     )
     current_time = datetime.strptime("2021-06-23", "%Y-%m-%d")
     assert (
-        partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
+        partitions_def.get_partition_keys_between_indexes(
+            50, 53, current_time=current_time
+        )
         == partitions_def.get_partition_keys(current_time)[50:53]
     )
 
@@ -1168,7 +1249,9 @@ def test_time_window_partition_len():
     )
     current_time = datetime.strptime("2023-01-21", "%Y-%m-%d")
     assert (
-        weekly_partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
+        weekly_partitions_def.get_partition_keys_between_indexes(
+            50, 53, current_time=current_time
+        )
         == weekly_partitions_def.get_partition_keys(current_time)[50:53]
     )
 
@@ -1176,10 +1259,14 @@ def test_time_window_partition_len():
     def my_partitioned_config_2(_start, _end):
         return {}
 
-    partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config_2.partitions_def)
+    partitions_def = cast(
+        TimeWindowPartitionsDefinition, my_partitioned_config_2.partitions_def
+    )
     current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
     assert (
-        partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
+        partitions_def.get_partition_keys_between_indexes(
+            50, 53, current_time=current_time
+        )
         == partitions_def.get_partition_keys(current_time=current_time)[50:53]
     )
 
@@ -1193,10 +1280,14 @@ def test_get_first_partition_window():
         start_date="2023-01-01", end_offset=1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-01", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-01-02")
+    ) == time_window(
+        "2023-01-01", "2023-01-02"
+    )
 
     assert (
-        DailyPartitionsDefinition(start_date="2023-02-15", end_offset=1).get_first_partition_window(
+        DailyPartitionsDefinition(
+            start_date="2023-02-15", end_offset=1
+        ).get_first_partition_window(
             current_time=datetime.strptime("2023-02-14", "%Y-%m-%d")
         )
         is None
@@ -1206,18 +1297,24 @@ def test_get_first_partition_window():
         start_date="2023-01-01", end_offset=2
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-02", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-01-02")
+    ) == time_window(
+        "2023-01-01", "2023-01-02"
+    )
 
     assert MonthlyPartitionsDefinition(
         start_date="2023-01-01", end_offset=1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-15", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-02-01")
+    ) == time_window(
+        "2023-01-01", "2023-02-01"
+    )
 
     assert (
         DailyPartitionsDefinition(
             start_date="2023-01-15", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-16", "%Y-%m-%d"))
+        ).get_first_partition_window(
+            current_time=datetime.strptime("2023-01-16", "%Y-%m-%d")
+        )
         is None
     )
 
@@ -1225,12 +1322,16 @@ def test_get_first_partition_window():
         start_date="2023-01-15", end_offset=-1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-17", "%Y-%m-%d")
-    ) == time_window("2023-01-15", "2023-01-16")
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
 
     assert (
         DailyPartitionsDefinition(
             start_date="2023-01-15", end_offset=-2
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-17", "%Y-%m-%d"))
+        ).get_first_partition_window(
+            current_time=datetime.strptime("2023-01-17", "%Y-%m-%d")
+        )
         is None
     )
 
@@ -1238,17 +1339,23 @@ def test_get_first_partition_window():
         start_date="2023-01-15", end_offset=-2
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-18", "%Y-%m-%d")
-    ) == time_window("2023-01-15", "2023-01-16")
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
 
     assert (
         MonthlyPartitionsDefinition(
             start_date="2023-01-01", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
+        ).get_first_partition_window(
+            current_time=datetime.strptime("2023-01-15", "%Y-%m-%d")
+        )
         is None
     )
 
     assert (
-        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
+        DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=1
+        ).get_first_partition_window(
             current_time=datetime.strptime("2023-01-14", "%Y-%m-%d")
         )
         is None
@@ -1258,17 +1365,25 @@ def test_get_first_partition_window():
         start_date="2023-01-15", end_offset=1
     ).get_first_partition_window(
         current_time=datetime(year=2023, month=1, day=15, hour=12, minute=0, second=0)
-    ) == time_window("2023-01-15", "2023-01-16")
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
 
     assert DailyPartitionsDefinition(
         start_date="2023-01-15", end_offset=1
     ).get_first_partition_window(
         current_time=datetime(year=2023, month=1, day=14, hour=12, minute=0, second=0)
-    ) == time_window("2023-01-15", "2023-01-16")
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
 
     assert (
-        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
-            current_time=datetime(year=2023, month=1, day=13, hour=12, minute=0, second=0)
+        DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=1
+        ).get_first_partition_window(
+            current_time=datetime(
+                year=2023, month=1, day=13, hour=12, minute=0, second=0
+            )
         )
         is None
     )
@@ -1276,14 +1391,18 @@ def test_get_first_partition_window():
     assert (
         MonthlyPartitionsDefinition(
             start_date="2023-01-01", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
+        ).get_first_partition_window(
+            current_time=datetime.strptime("2023-01-15", "%Y-%m-%d")
+        )
         is None
     )
 
     assert (
         MonthlyPartitionsDefinition(
             start_date="2023-01-01", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-02-01", "%Y-%m-%d"))
+        ).get_first_partition_window(
+            current_time=datetime.strptime("2023-02-01", "%Y-%m-%d")
+        )
         is None
     )
 
@@ -1291,7 +1410,9 @@ def test_get_first_partition_window():
         start_date="2023-01-01", end_offset=-1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-03-01", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-02-01")
+    ) == time_window(
+        "2023-01-01", "2023-02-01"
+    )
 
 
 def test_invalid_cron_schedule():
@@ -1336,7 +1457,9 @@ def test_has_partition_key():
     "partitions_def,first_partition_window,last_partition_window,number_of_partitions,fmt",
     [
         (
-            HourlyPartitionsDefinition(start_date="2022-01-01-00:00", end_date="2022-02-01-00:00"),
+            HourlyPartitionsDefinition(
+                start_date="2022-01-01-00:00", end_date="2022-02-01-00:00"
+            ),
             ["2022-01-01-00:00", "2022-01-01-01:00"],
             ["2022-01-31-23:00", "2022-02-01-00:00"],
             744,
@@ -1376,19 +1499,30 @@ def test_partition_with_end_date(
     fmt: str,
 ):
     first_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(first_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(first_partition_window[1], fmt), tz="UTC"),
+        start=pendulum.instance(
+            datetime.strptime(first_partition_window[0], fmt), tz="UTC"
+        ),
+        end=pendulum.instance(
+            datetime.strptime(first_partition_window[1], fmt), tz="UTC"
+        ),
     )
 
     last_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(last_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(last_partition_window[1], fmt), tz="UTC"),
+        start=pendulum.instance(
+            datetime.strptime(last_partition_window[0], fmt), tz="UTC"
+        ),
+        end=pendulum.instance(
+            datetime.strptime(last_partition_window[1], fmt), tz="UTC"
+        ),
     )
 
     # get_last_partition_window
     assert partitions_def.get_last_partition_window() == last_partition_window_
     # get_next_partition_window
-    assert partitions_def.get_next_partition_window(partitions_def.start) == first_partition_window_
+    assert (
+        partitions_def.get_next_partition_window(partitions_def.start)
+        == first_partition_window_
+    )
     assert (
         partitions_def.get_next_partition_window(last_partition_window_.start)
         == last_partition_window_

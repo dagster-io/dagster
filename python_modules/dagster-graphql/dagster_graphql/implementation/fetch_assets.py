@@ -469,7 +469,7 @@ def build_partition_statuses(
         graphene_ranges = []
         for r in ranges:
             partition_key_range = cast(
-                TimeWindowPartitionsDefinition, materialized_partitions_subset.partitions_def
+                TimeWindowPartitionsDefinition, materialized_partitions_subset.get_partitions_def()
             ).get_partition_key_range_for_time_window(r.time_window)
             graphene_ranges.append(
                 GrapheneTimePartitionRangeStatus(
@@ -518,15 +518,28 @@ def get_2d_run_length_encoded_partitions(
         GrapheneMultiPartitionStatuses,
     )
 
-    if (
-        not isinstance(materialized_partitions_subset.partitions_def, MultiPartitionsDefinition)
-        or not isinstance(failed_partitions_subset.partitions_def, MultiPartitionsDefinition)
-        or not isinstance(in_progress_partitions_subset.partitions_def, MultiPartitionsDefinition)
-    ):
-        check.failed("Can only fetch 2D run length encoded partitions for multipartitioned assets")
+    partitions_defs = set(
+        [
+            subset.get_partitions_def()
+            for subset in [
+                materialized_partitions_subset,
+                failed_partitions_subset,
+                in_progress_partitions_subset,
+            ]
+        ]
+    )
+    check.invariant(
+        len(partitions_defs) == 1, "All subsets should have the same partitions definition"
+    )
 
-    primary_dim = materialized_partitions_subset.partitions_def.primary_dimension
-    secondary_dim = materialized_partitions_subset.partitions_def.secondary_dimension
+    partitions_def = cast(MultiPartitionsDefinition, next(iter(partitions_defs)))
+    check.invariant(
+        isinstance(partitions_def, MultiPartitionsDefinition),
+        "Partitions definition should be multipartitioned",
+    )
+
+    primary_dim = partitions_def.primary_dimension
+    secondary_dim = partitions_def.secondary_dimension
 
     dim2_materialized_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
