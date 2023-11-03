@@ -23,6 +23,7 @@ from dagster._core.definitions.time_window_partitions import (
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
+    UnresolvedTimeWindowPartitionsSubset,
 )
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -743,6 +744,10 @@ def test_start_not_aligned():
 
 
 @pytest.mark.parametrize(
+    "partitions_subset_class",
+    [UnresolvedTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+)
+@pytest.mark.parametrize(
     "case_str",
     [
         "+",
@@ -758,7 +763,9 @@ def test_start_not_aligned():
         "--+++---+++--",
     ],
 )
-def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
+def test_partition_subset_get_partition_keys_not_in_subset(
+    case_str: str, partitions_subset_class: BaseTimeWindowPartitionsSubset
+):
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     full_set_keys = partitions_def.get_partition_keys(
         current_time=datetime(year=2015, month=1, day=30)
@@ -773,7 +780,7 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
 
     subset = cast(
         BaseTimeWindowPartitionsSubset,
-        partitions_def.empty_subset().with_partition_keys(subset_keys),
+        partitions_subset_class.empty_subset(partitions_def).with_partition_keys(subset_keys),
     )
     for partition_key in subset_keys:
         assert partition_key in subset
@@ -813,6 +820,10 @@ def test_time_partitions_subset_identical_serialization():
     assert serialized1 == serialized2
 
 
+@pytest.mark.parametrize(
+    "partitions_subset_class",
+    [UnresolvedTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+)
 @pytest.mark.parametrize(
     "initial, added",
     [
@@ -882,7 +893,9 @@ def test_time_partitions_subset_identical_serialization():
         ),
     ],
 )
-def test_partition_subset_with_partition_keys(initial: str, added: str):
+def test_partition_subset_with_partition_keys(
+    initial: str, added: str, partitions_subset_class: BaseTimeWindowPartitionsSubset
+):
     assert len(initial) == len(added)
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     full_set_keys = partitions_def.get_partition_keys(
@@ -901,7 +914,9 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         if initial[i] != "+" and added[i] != "+":
             expected_keys_not_in_updated_subset.append(full_set_keys[i])
 
-    subset = partitions_def.empty_subset().with_partition_keys(initial_subset_keys)
+    subset = partitions_subset_class.empty_subset(partitions_def).with_partition_keys(
+        initial_subset_keys
+    )
     assert all(partition_key in subset for partition_key in initial_subset_keys)
     updated_subset = cast(
         BaseTimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys)
