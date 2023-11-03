@@ -272,14 +272,3 @@ freshness_policy_scenarios = [
         .assert_requested_runs(run_request("B")),
     ),
 ]
-
-import pytest
-
-
-@pytest.mark.parametrize(
-    "scenario",
-    freshness_policy_scenarios,
-    ids=[scenario.id for scenario in freshness_policy_scenarios],
-)
-def test_scenario_fast(scenario: AssetDaemonScenario) -> None:
-    scenario.evaluate_fast()
