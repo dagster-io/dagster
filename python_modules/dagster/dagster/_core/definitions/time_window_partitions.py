@@ -733,7 +733,7 @@ class TimeWindowPartitionsDefinition(
 
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
-        return TimeWindowPartitionsSubset
+        return UnresolvedTimeWindowPartitionsSubset
 
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
@@ -1377,7 +1377,6 @@ def weekly_partitioned_config(
 
     return inner
 
-
 class BaseTimeWindowPartitionsSubset(PartitionsSubset):
     # Every time we change the serialization format, we should increment the version number.
     # This will ensure that we can gracefully degrade when deserializing old data.
@@ -1731,6 +1730,12 @@ class UnresolvedTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
         return cls(partitions_def, set())
 
+    def resolve(self) -> "TimeWindowPartitionsSubset":
+        return TimeWindowPartitionsSubset(
+            partitions_def=self.partitions_def,
+            num_partitions=self.num_partitions,
+            included_time_windows=self.included_time_windows,
+        )
 
 class TimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
     def __init__(
@@ -1739,11 +1744,11 @@ class TimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         num_partitions: int,
         included_time_windows: Sequence[TimeWindow],
     ):
-        self._partitions_def = check.inst_param(
+        self.partitions_def = check.inst_param(
             partitions_def, "partitions_def", TimeWindowPartitionsDefinition
         )
-        self._num_partitions = check.int_param(num_partitions, "num_partitions")
-        self._included_time_windows = check.sequence_param(
+        self.num_partitions = check.int_param(num_partitions, "num_partitions")
+        self.included_time_windows = check.sequence_param(
             included_time_windows, "included_time_windows", of_type=TimeWindow
         )
 
