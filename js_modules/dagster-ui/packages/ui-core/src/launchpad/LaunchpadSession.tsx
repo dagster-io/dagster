@@ -519,8 +519,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       } else {
         runConfigYaml = yaml.stringify(
           merge(
-            yaml.parse(sanitizeConfigYamlString(partition.runConfigOrError.yaml)),
             yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml)),
+            yaml.parse(sanitizeConfigYamlString(partition.runConfigOrError.yaml)),
           ),
         );
       }
