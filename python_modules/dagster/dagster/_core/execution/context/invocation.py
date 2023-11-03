@@ -1,3 +1,4 @@
+import warnings
 from contextlib import ExitStack
 from typing import (
     AbstractSet,
@@ -84,7 +85,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._op_config = op_config
-        self._init_op_config = op_config  # so we can unbind the context back to it's original state
         self._mapping_key = mapping_key
 
         self._exit_stack = ExitStack()
@@ -129,6 +129,10 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._tags = {}
         self._seen_outputs = {}
 
+        # maintain init time versions of these values so we can unbind the context
+        self._init_op_config = op_config
+        self._init_resources = self._resources
+
         # Indicates whether the context has been bound to a particular invocation of an op
         # @op
         # def my_op(context):
@@ -139,17 +143,14 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._bound = False
 
     def __enter__(self):
-        if not self._bound:
-            self._cm_scope_entered = True
+        self._cm_scope_entered = True
         return self
 
     def __exit__(self, *exc):
-        if not self._bound:
-            self._exit_stack.close()
+        self._exit_stack.close()
 
     def __del__(self):
-        if not self._bound:
-            self._exit_stack.close()
+        self._exit_stack.close()
 
     def _check_bound(self, fn_name: str, fn_type: str):
         if not self._bound:
@@ -163,126 +164,17 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
     ) -> "DirectInvocationOpExecutionContext":
-        return self.bind_copy(
-            op_def=op_def,
-            pending_invocation=pending_invocation,
-            assets_def=assets_def,
-            config_from_args=config_from_args,
-            resources_from_args=resources_from_args,
-        )
-
-    def bind_copy(
-        self,
-        op_def: OpDefinition,
-        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
-        assets_def: Optional[AssetsDefinition],
-        config_from_args: Optional[Mapping[str, Any]],
-        resources_from_args: Optional[Mapping[str, Any]],
-    ) -> "DirectInvocationOpExecutionContext":
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
         if self._bound:
-            raise DagsterInvalidInvocationError(
-                "Cannot call bind() on a DirectInvocationOpExecutionContext that has already been bound."
+            warnings.warn(
+                f"This context was already used to execute {self.alias}. The information about"
+                f" {self.alias} will be cleared, including user events and output metadata."
+                " If you would like to keep this information, you can create a new context"
+                " using build_op_context() to invoke other ops. You can also manually clear the"
+                f" information about {self.alias} using the unbind() method."
             )
-
-        # make a copy of the current context that will be bound to a particular op execution
-        bound_ctx = DirectInvocationOpExecutionContext(
-            op_config=self._op_config,
-            resources_dict=self._resource_defs,
-            instance=self._instance,
-            resources_config=self._resources_config,
-            partition_key=self._partition_key,
-            partition_key_range=self._partition_key_range,
-            mapping_key=self._mapping_key,
-            assets_def=self._assets_def,
-        )
-        bound_ctx._user_events = self._user_events  # noqa: SLF001
-        bound_ctx._output_metadata = self._output_metadata  # noqa: SLF001
-
-        # update the bound context with properties relevant to the execution of the op
-        bound_ctx._op_def = op_def  # noqa: SLF001
-
-        invocation_tags = (
-            pending_invocation.tags
-            if isinstance(pending_invocation, PendingNodeInvocation)
-            else None
-        )
-        bound_ctx._tags = (  # noqa: SLF001
-            merge_dicts(bound_ctx._op_def.tags, invocation_tags)  # noqa: SLF001
-            if invocation_tags
-            else bound_ctx._op_def.tags  # noqa: SLF001
-        )
-
-        bound_ctx._hook_defs = (  # noqa: SLF001
-            pending_invocation.hook_defs
-            if isinstance(pending_invocation, PendingNodeInvocation)
-            else None
-        )
-        invocation_alias = (
-            pending_invocation.given_alias
-            if isinstance(pending_invocation, PendingNodeInvocation)
-            else None
-        )
-        bound_ctx._alias = invocation_alias if invocation_alias else bound_ctx._op_def.name  # noqa: SLF001
-
-        bound_ctx._assets_def = assets_def  # noqa: SLF001
-
-        if resources_from_args:
-            if self._resource_defs:
-                raise DagsterInvalidInvocationError(
-                    "Cannot provide resources in both context and kwargs"
-                )
-            resource_defs = wrap_resources_for_execution(resources_from_args)
-            # add new resources context to the stack to be cleared on exit
-            bound_ctx._resources = self._exit_stack.enter_context(  # noqa: SLF001
-                build_resources(resource_defs, self.instance)
-            )
-        elif assets_def and assets_def.resource_defs:
-            for key in sorted(list(assets_def.resource_defs.keys())):
-                if key in self._resource_defs:
-                    raise DagsterInvalidInvocationError(
-                        f"Error when invoking {assets_def!s} resource '{key}' "
-                        "provided on both the definition and invocation context. Please "
-                        "provide on only one or the other."
-                    )
-            resource_defs = wrap_resources_for_execution(
-                {**self._resource_defs, **assets_def.resource_defs}
-            )
-            # add new resources context to the stack to be cleared on exit
-            bound_ctx._resources = self._exit_stack.enter_context(  # noqa: SLF001
-                build_resources(resource_defs, self.instance, self._resources_config)
-            )
-        else:
-            bound_ctx._resources = self.resources  # noqa: SLF001
-            resource_defs = self._resource_defs
-
-        _validate_resource_requirements(resource_defs, op_def)
-
-        if self.op_config and config_from_args:
-            raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
-        bound_ctx._op_config = resolve_bound_config(config_from_args or self.op_config, op_def)  # noqa: SLF001
-
-        bound_ctx._requires_typed_event_stream = False  # noqa: SLF001
-        bound_ctx._typed_event_stream_error_message = None  # noqa: SLF001
-        bound_ctx._bound = True  # noqa: SLF001
-
-        return bound_ctx
-
-    def bind_self(
-        self,
-        op_def: OpDefinition,
-        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
-        assets_def: Optional[AssetsDefinition],
-        config_from_args: Optional[Mapping[str, Any]],
-        resources_from_args: Optional[Mapping[str, Any]],
-    ) -> "DirectInvocationOpExecutionContext":
-        from dagster._core.definitions.resource_invocation import resolve_bound_config
-
-        if self._bound:
-            raise DagsterInvalidInvocationError(
-                "Cannot call bind() on a DirectInvocationOpExecutionContext that has already been bound."
-            )
+            self.unbind()
 
         # update the bound context with properties relevant to the execution of the op
         self._op_def = op_def
@@ -361,6 +253,8 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._seen_outputs = {}
         self._resources = self._init_resources
         self._op_config = self._init_op_config
+        self._user_events = []
+        self._output_metadata = {}
 
         self._bound = False
 
