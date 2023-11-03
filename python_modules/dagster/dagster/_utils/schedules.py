@@ -380,6 +380,7 @@ def cron_string_iterator(
     start_timestamp: float,
     cron_string: str,
     execution_timezone: Optional[str],
+    ascending: bool = True,
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
@@ -392,6 +393,7 @@ def cron_string_iterator(
             start_timestamp=start_timestamp,
             cron_string=day_before,
             execution_timezone=execution_timezone,
+            ascending=ascending,
             start_offset=start_offset,
         ):
             # only return on leap years
@@ -466,7 +468,7 @@ def cron_string_iterator(
                 expected_day_of_week,
                 known_schedule_type,
                 start_datetime,
-                ascending=False,
+                ascending=not ascending,  # Going in the reverse direction
                 already_on_boundary=False,
             )
             check.invariant(start_offset <= 0)
@@ -478,7 +480,7 @@ def cron_string_iterator(
                     expected_day_of_week,
                     known_schedule_type,
                     next_date,
-                    ascending=False,
+                    ascending=not ascending,  # Going in the reverse direction
                     already_on_boundary=True,
                 )
 
@@ -490,13 +492,16 @@ def cron_string_iterator(
                 expected_day_of_week,
                 known_schedule_type,
                 next_date,
-                ascending=True,
+                ascending=ascending,
                 already_on_boundary=True,
             )
 
             if start_offset == 0:
-                # Guard against _find_schedule_time returning unexpected results
-                check.invariant(next_date.timestamp() >= start_timestamp)
+                if ascending:
+                    # Guard against _find_schedule_time returning unexpected results
+                    check.invariant(next_date.timestamp() >= start_timestamp)
+                else:
+                    check.invariant(next_date.timestamp() <= start_timestamp)
 
             yield next_date
     else:
@@ -507,29 +512,49 @@ def cron_string_iterator(
         date_iter = CroniterShim(cron_string, start_datetime)
         # Go back one iteration so that the next iteration is the first time that is >= start_datetime
         # and matches the cron schedule
-        next_date = date_iter.get_prev(datetime.datetime)
+        next_date = (
+            date_iter.get_prev(datetime.datetime)
+            if ascending
+            else date_iter.get_next(datetime.datetime)
+        )
 
         if not CroniterShim.match(cron_string, next_date):
             # Workaround for upstream croniter bug where get_prev sometimes overshoots to a time
             # that doesn't actually match the cron string (e.g. 3AM on Spring DST day
             # goes back to 1AM on the previous day) - when this happens, advance to the correct
             # time that actually matches the cronstring
-            next_date = date_iter.get_next(datetime.datetime)
+            next_date = (
+                date_iter.get_next(datetime.datetime)
+                if ascending
+                else date_iter.get_prev(datetime.datetime)
+            )
 
         check.invariant(start_offset <= 0)
         for _ in range(-start_offset):
-            next_date = date_iter.get_prev(datetime.datetime)
+            next_date = (
+                date_iter.get_prev(datetime.datetime)
+                if ascending
+                else date_iter.get_next(datetime.datetime)
+            )
 
         while True:
             next_date = to_timezone(
-                pendulum.instance(check.not_none(date_iter).get_next(datetime.datetime)),
+                pendulum.instance(
+                    date_iter.get_next(datetime.datetime)
+                    if ascending
+                    else date_iter.get_prev(datetime.datetime)
+                ),
                 timezone_str,
             )
 
-            if start_offset == 0 and next_date.timestamp() < start_timestamp:
-                # Guard against edge cases where croniter get_prev() returns unexpected
-                # results that cause us to get stuck
-                continue
+            if start_offset == 0:
+                if ascending and next_date.timestamp() < start_timestamp:
+                    # Guard against edge cases where croniter get_prev() returns unexpected
+                    # results that would cause us to get stuck
+                    continue
+
+                if not ascending and next_date.timestamp() > start_timestamp:
+                    continue
 
             yield next_date
 
@@ -537,97 +562,7 @@ def cron_string_iterator(
 def reverse_cron_string_iterator(
     end_timestamp: float, cron_string: str, execution_timezone: Optional[str]
 ) -> Iterator[datetime.datetime]:
-    """Generator of datetimes < end_timestamp for the given cron string."""
-    timezone_str = execution_timezone if execution_timezone else "UTC"
-
-    # Croniter < 1.4 returns 2 items
-    # Croniter >= 1.4 returns 3 items
-    cron_parts, *_ = CroniterShim.expand(cron_string)
-
-    is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
-    is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
-
-    known_schedule_type: Optional[ScheduleType] = None
-
-    expected_hour = None
-    expected_minute = None
-    expected_day = None
-    expected_day_of_week = None
-
-    # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
-    # much slower and has correctness issues on DST boundaries
-    if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
-        known_schedule_type = ScheduleType.MONTHLY
-    elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
-        known_schedule_type = ScheduleType.WEEKLY
-    elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
-        known_schedule_type = ScheduleType.DAILY
-    elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
-        known_schedule_type = ScheduleType.HOURLY
-
-    if is_numeric[1]:
-        expected_hour = int(cron_parts[1][0])
-
-    if is_numeric[0]:
-        expected_minute = int(cron_parts[0][0])
-
-    if is_numeric[2]:
-        expected_day = int(cron_parts[2][0])
-
-    if is_numeric[4]:
-        expected_day_of_week = int(cron_parts[4][0])
-
-    if known_schedule_type:
-        start_datetime = pendulum.from_timestamp(end_timestamp, tz=timezone_str)
-        next_date = _find_schedule_time(
-            expected_minute,
-            expected_hour,
-            expected_day,
-            expected_day_of_week,
-            known_schedule_type,
-            start_datetime,
-            ascending=True,
-            already_on_boundary=False,
-        )
-
-        while True:
-            next_date = _find_schedule_time(
-                expected_minute,
-                expected_hour,
-                expected_day,
-                expected_day_of_week,
-                known_schedule_type,
-                next_date,
-                ascending=False,
-                already_on_boundary=True,
-            )
-
-            # Guard against _find_schedule_time returning unexpected results
-            check.invariant(next_date.timestamp() <= end_timestamp)
-
-            yield next_date
-    else:
-        # Otherwise fall back to croniter
-        utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(end_timestamp))
-        end_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
-
-        date_iter = CroniterShim(cron_string, end_datetime)
-
-        # Go forward one iteration so that the next iteration is the first time that is >= start_datetime
-        # and matches the cron schedule
-        next_date = date_iter.get_next(datetime.datetime)
-
-        while True:
-            next_date = to_timezone(
-                pendulum.instance(date_iter.get_prev(datetime.datetime)), timezone_str
-            )
-
-            if next_date.timestamp() > end_timestamp:
-                # Guard against edge cases where croniter get_next() returns unexpected
-                # results that cause us to get stuck
-                continue
-
-            yield next_date
+    yield from cron_string_iterator(end_timestamp, cron_string, execution_timezone, ascending=False)
 
 
 def schedule_execution_time_iterator(
