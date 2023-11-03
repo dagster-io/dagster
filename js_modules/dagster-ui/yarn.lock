@@ -2481,8 +2481,6 @@ __metadata:
     lru-cache: ^6.0.0
     moment: ^2.29.4
     moment-timezone: ^0.5.42
-    patch-package: ^8.0.0
-    postinstall-postinstall: ^2.1.0
     prettier: ^3.0.3
     qs: ^6.10.3
     react: ^18.2.0
