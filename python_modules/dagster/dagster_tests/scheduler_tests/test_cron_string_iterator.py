@@ -486,8 +486,18 @@ DST_PARAMS = [
 def test_dst_transition_advances(execution_timezone, cron_string, times):
     # Starting 1 second after each time produces the next tick
     for i in range(len(times) - 1):
-        orig_start_timestamp = to_timezone(times[i], "UTC").timestamp() + 1
-        start_timestamp = orig_start_timestamp
+        orig_start_timestamp = to_timezone(times[i], "UTC").timestamp()
+        # first start from the timestamp that's exactly on the interval -
+        # verify that it first returns the passed in timestamp, then advances
+        fresh_cron_iter = cron_string_iterator(
+            orig_start_timestamp, cron_string, execution_timezone
+        )
+        for j in range(i, len(times)):
+            next_time = next(fresh_cron_iter)
+
+            assert next_time.timestamp() == times[j].timestamp()
+
+        start_timestamp = orig_start_timestamp + 1
 
         next_timestamp = times[i + 1].timestamp()
 
@@ -515,8 +525,19 @@ def test_dst_transition_advances(execution_timezone, cron_string, times):
 def test_reversed_dst_transition_advances(execution_timezone, cron_string, times):
     times = list(reversed(times))
     for i in range(len(times) - 1):
-        orig_start_timestamp = to_timezone(times[i], "UTC").timestamp() - 1
-        start_timestamp = orig_start_timestamp
+        orig_start_timestamp = to_timezone(times[i], "UTC").timestamp()
+
+        # first start from the timestamp that's exactly on the interval -
+        # verify that it first returns the passed in timestamp, then advances
+        fresh_cron_iter = reverse_cron_string_iterator(
+            orig_start_timestamp, cron_string, execution_timezone
+        )
+        for j in range(i, len(times)):
+            next_time = next(fresh_cron_iter)
+
+            assert next_time.timestamp() == times[j].timestamp()
+
+        start_timestamp = orig_start_timestamp - 1
 
         next_timestamp = times[i + 1].timestamp()
 

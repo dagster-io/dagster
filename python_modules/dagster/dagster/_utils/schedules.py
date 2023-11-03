@@ -34,22 +34,23 @@ def _exact_match(
     """The default croniter match function only checks that the given datetime is within 60 seconds
     of a cron schedule tick. This function checks that the given datetime is exactly on a cron tick.
     """
-    if (
-        cron_expression == "0 0 * * *"
-        and dt.hour == 0
-        and dt.minute == 0
-        and dt.second == 0
-        and dt.microsecond == 0
-    ):
-        return True
+    if cron_expression == "0 0 * * *":
+        return dt.hour == 0 and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0
 
-    if cron_expression == "0 * * * *" and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0:
-        return True
+    if cron_expression == "0 * * * *":
+        return dt.minute == 0 and dt.second == 0 and dt.microsecond == 0
 
     return (
         dt.timestamp()
         == _find_schedule_time(
-            minute, hour, day, day_of_week, schedule_type, dt.add(seconds=1), ascending=False
+            minute,
+            hour,
+            day,
+            day_of_week,
+            schedule_type,
+            dt.add(seconds=1),
+            ascending=False,
+            already_on_boundary=False,
         ).timestamp()
     )
 
@@ -133,10 +134,11 @@ def _find_hourly_schedule_time(
     minute: int,
     pendulum_date: PendulumDateTime,
     ascending: bool,
+    already_on_boundary: bool,
 ) -> PendulumDateTime:
     if ascending:
         # short-circuit if minutes and seconds are already correct
-        if (
+        if already_on_boundary or (
             pendulum_date.minute == minute
             and pendulum_date.second == 0
             and pendulum_date.microsecond == 0
@@ -162,7 +164,7 @@ def _find_hourly_schedule_time(
         if new_timestamp <= pendulum_date.timestamp():
             new_timestamp = new_timestamp + SECONDS_PER_MINUTE * MINUTES_PER_HOUR
     else:
-        if (
+        if already_on_boundary or (
             pendulum_date.minute == minute
             and pendulum_date.second == 0
             and pendulum_date.microsecond == 0
@@ -193,29 +195,38 @@ def _find_daily_schedule_time(
     hour: int,
     pendulum_date: PendulumDateTime,
     ascending: bool,
+    already_on_boundary: bool,
 ) -> PendulumDateTime:
     # First move to the correct time of day today (ignoring whether it is the correct day)
-    new_time = _replace_date_fields(
-        pendulum_date,
-        hour,
-        minute,
-        pendulum_date.day,
-    )
 
-    moved = False
-    if ascending:
-        if new_time.timestamp() <= pendulum_date.timestamp():
-            new_time = new_time.add(days=1)
-            moved = True
+    if not already_on_boundary and (
+        pendulum_date.hour != hour
+        or pendulum_date.minute != minute
+        or pendulum_date.second != 0
+        or pendulum_date.microsecond != 0
+    ):
+        new_time = _replace_date_fields(
+            pendulum_date,
+            hour,
+            minute,
+            pendulum_date.day,
+        )
     else:
-        if new_time.timestamp() >= pendulum_date.timestamp():
-            moved = True
+        new_time = pendulum_date
+
+    new_hour = new_time.hour
+
+    if ascending:
+        if already_on_boundary or new_time.timestamp() <= pendulum_date.timestamp():
+            new_time = new_time.add(days=1)
+    else:
+        if already_on_boundary or new_time.timestamp() >= pendulum_date.timestamp():
             # Move back a day if needed
             new_time = new_time.subtract(days=1)
 
-    if moved:
-        # Doing so may have adjusted the hour again if we crossed a DST boundary,
-        # so make sure it's still correct
+    # If the hour has changed from either what it was before or the hour on the cronstring,
+    # double-check that it's still correct in case we crossed a DST boundary
+    if new_time.hour != new_hour or new_time.hour != hour:
         new_time = _replace_date_fields(
             new_time,
             hour,
@@ -232,38 +243,47 @@ def _find_weekly_schedule_time(
     day_of_week: int,
     pendulum_date: PendulumDateTime,
     ascending: bool,
+    already_on_boundary: bool,
 ) -> PendulumDateTime:
     # first move to the correct time of day
-    new_time = _replace_date_fields(
-        pendulum_date,
-        hour,
-        minute,
-        pendulum_date.day,
-    )
+    if not already_on_boundary:
+        new_time = _replace_date_fields(
+            pendulum_date,
+            hour,
+            minute,
+            pendulum_date.day,
+        )
 
-    # Move to the correct day of the week
-    current_day_of_week = new_time.day_of_week
-    if day_of_week != current_day_of_week:
-        if ascending:
-            new_time = new_time.add(days=(day_of_week - current_day_of_week) % 7)
-        else:
-            new_time = new_time.subtract(days=(current_day_of_week - day_of_week) % 7)
+        # Move to the correct day of the week
+        current_day_of_week = new_time.day_of_week
+        if day_of_week != current_day_of_week:
+            if ascending:
+                new_time = new_time.add(days=(day_of_week - current_day_of_week) % 7)
+            else:
+                new_time = new_time.subtract(days=(current_day_of_week - day_of_week) % 7)
+
+    else:
+        new_time = pendulum_date
+
+    new_hour = new_time.hour
 
     # Make sure that we've actually moved in the correct direction, advance if we haven't
-    if ascending and new_time.timestamp() <= pendulum_date.timestamp():
-        new_time = new_time.add(weeks=1)
+    if ascending:
+        if already_on_boundary or new_time.timestamp() <= pendulum_date.timestamp():
+            new_time = new_time.add(weeks=1)
+    else:
+        if already_on_boundary or new_time.timestamp() >= pendulum_date.timestamp():
+            new_time = new_time.subtract(weeks=1)
 
-    if not ascending and new_time.timestamp() >= pendulum_date.timestamp():
-        new_time = new_time.subtract(weeks=1)
-
-    # Doing so may have adjusted the hour again if we crossed a DST boundary,
-    # so make sure the time is still correct
-    new_time = _replace_date_fields(
-        new_time,
-        hour,
-        minute,
-        new_time.day,
-    )
+    # If the hour has changed from either what it was before or the hour on the cronstring,
+    # double-check that it's still correct in case we crossed a DST boundary
+    if new_time.hour != new_hour or new_time.hour != hour:
+        new_time = _replace_date_fields(
+            new_time,
+            hour,
+            minute,
+            new_time.day,
+        )
 
     return new_time
 
@@ -274,29 +294,30 @@ def _find_monthly_schedule_time(
     day: int,
     pendulum_date: PendulumDateTime,
     ascending: bool,
+    already_on_boundary: bool,
 ) -> PendulumDateTime:
     # First move to the correct day and time of day
-    new_time = _replace_date_fields(
-        pendulum_date,
-        check.not_none(hour),
-        check.not_none(minute),
-        check.not_none(day),
-    )
+    if not already_on_boundary:
+        new_time = _replace_date_fields(
+            pendulum_date,
+            check.not_none(hour),
+            check.not_none(minute),
+            check.not_none(day),
+        )
+    else:
+        new_time = pendulum_date
 
-    moved = False
+    new_hour = new_time.hour
 
     if ascending:
-        if new_time.timestamp() <= pendulum_date.timestamp():
+        if already_on_boundary or new_time.timestamp() <= pendulum_date.timestamp():
             new_time = new_time.add(months=1)
-            moved = True
-
     else:
-        if new_time.timestamp() >= pendulum_date.timestamp():
+        if already_on_boundary or new_time.timestamp() >= pendulum_date.timestamp():
             # Move back a month if needed
             new_time = new_time.subtract(months=1)
-            moved = True
 
-    if moved:
+    if new_time.hour != new_hour or new_time.hour != hour:
         # Doing so may have adjusted the hour again if we crossed a DST boundary,
         # so make sure it's still correct
         new_time = _replace_date_fields(
@@ -317,12 +338,21 @@ def _find_schedule_time(
     schedule_type: ScheduleType,
     pendulum_date: PendulumDateTime,
     ascending: bool,
+    # lets us skip slow work to find the starting point if we know that
+    # we are already on the boundary of the cron interval
+    already_on_boundary: bool,
 ) -> PendulumDateTime:
     if schedule_type == ScheduleType.HOURLY:
-        return _find_hourly_schedule_time(check.not_none(minute), pendulum_date, ascending)
+        return _find_hourly_schedule_time(
+            check.not_none(minute), pendulum_date, ascending, already_on_boundary
+        )
     elif schedule_type == ScheduleType.DAILY:
         return _find_daily_schedule_time(
-            check.not_none(minute), check.not_none(hour), pendulum_date, ascending
+            check.not_none(minute),
+            check.not_none(hour),
+            pendulum_date,
+            ascending,
+            already_on_boundary,
         )
     elif schedule_type == ScheduleType.WEEKLY:
         return _find_weekly_schedule_time(
@@ -331,6 +361,7 @@ def _find_schedule_time(
             check.not_none(day_of_week),
             pendulum_date,
             ascending,
+            already_on_boundary,
         )
     elif schedule_type == ScheduleType.MONTHLY:
         return _find_monthly_schedule_time(
@@ -339,6 +370,7 @@ def _find_schedule_time(
             check.not_none(day_of_month),
             pendulum_date,
             ascending,
+            already_on_boundary,
         )
     else:
         raise Exception(f"Unexpected schedule type {schedule_type}")
@@ -435,6 +467,7 @@ def cron_string_iterator(
                 known_schedule_type,
                 start_datetime,
                 ascending=False,
+                already_on_boundary=False,
             )
             check.invariant(start_offset <= 0)
             for _ in range(-start_offset):
@@ -446,6 +479,7 @@ def cron_string_iterator(
                     known_schedule_type,
                     next_date,
                     ascending=False,
+                    already_on_boundary=True,
                 )
 
         while True:
@@ -457,6 +491,7 @@ def cron_string_iterator(
                 known_schedule_type,
                 next_date,
                 ascending=True,
+                already_on_boundary=True,
             )
 
             if start_offset == 0:
@@ -552,6 +587,7 @@ def reverse_cron_string_iterator(
             known_schedule_type,
             start_datetime,
             ascending=True,
+            already_on_boundary=False,
         )
 
         while True:
@@ -563,6 +599,7 @@ def reverse_cron_string_iterator(
                 known_schedule_type,
                 next_date,
                 ascending=False,
+                already_on_boundary=True,
             )
 
             # Guard against _find_schedule_time returning unexpected results
