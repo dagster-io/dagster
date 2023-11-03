@@ -1,10 +1,13 @@
 import tempfile
 from contextlib import contextmanager
 
+import pytest
 from dagster import (
     AssetKey,
     DagsterInstance,
     DailyPartitionsDefinition,
+    Definitions,
+    DynamicPartitionsDefinition,
     IOManager,
     PartitionKeyRange,
     ResourceDefinition,
@@ -17,7 +20,9 @@ from dagster import (
     resource,
     with_resources,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
+from dagster._utils.env import environ
 
 
 def test_single_asset():
@@ -364,3 +369,14 @@ def test_nested_resource_deps():
 
     with repo.get_asset_value_loader() as loader:
         assert loader.load_asset_value(AssetKey("asset1")) == "asset1_5"
+
+
+def test_no_instance_dynamic_partitions():
+    @asset(partitions_def=DynamicPartitionsDefinition(name="a"))
+    def asset1():
+        ...
+
+    defs = Definitions(assets=[asset1])
+    with environ({"DAGSTER_HOME": ""}):
+        with pytest.raises(DagsterInvalidInvocationError, match="Nonexistent partition keys"):
+            defs.load_asset_value("asset1", partition_key="1")
