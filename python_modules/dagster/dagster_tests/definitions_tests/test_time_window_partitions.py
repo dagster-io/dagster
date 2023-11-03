@@ -19,6 +19,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
@@ -771,7 +772,8 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
             expected_keys_not_in_subset.append(full_set_keys[i])
 
     subset = cast(
-        TimeWindowPartitionsSubset, partitions_def.empty_subset().with_partition_keys(subset_keys)
+        BaseTimeWindowPartitionsSubset,
+        partitions_def.empty_subset().with_partition_keys(subset_keys),
     )
     for partition_key in subset_keys:
         assert partition_key in subset
@@ -901,7 +903,9 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
 
     subset = partitions_def.empty_subset().with_partition_keys(initial_subset_keys)
     assert all(partition_key in subset for partition_key in initial_subset_keys)
-    updated_subset = cast(TimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys))
+    updated_subset = cast(
+        BaseTimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys)
+    )
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
     assert (
         updated_subset.get_partition_keys_not_in_subset(

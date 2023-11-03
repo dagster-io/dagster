@@ -131,19 +131,19 @@ partition_scenarios = {
         active_backfill_targets=[
             {
                 AssetKey("daily"): TimeWindowPartitionsSubset(
-                    daily_partitions_def, num_partitions=1, included_partition_keys={"2013-01-06"}
-                )
+                    daily_partitions_def
+                ).with_partition_keys(["2013-01-06"])
             },
             {
                 AssetKey("hourly"): TimeWindowPartitionsSubset(
-                    hourly_partitions_def,
-                    num_partitions=3,
-                    included_partition_keys={
+                    hourly_partitions_def
+                ).with_partition_keys(
+                    [
                         "2013-01-06-01:00",
                         "2013-01-06-02:00",
                         "2013-01-06-03:00",
-                    },
-                )
+                    ]
+                ),
             },
         ],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
@@ -160,24 +160,22 @@ partition_scenarios = {
         active_backfill_targets=[
             {
                 AssetKey("hourly"): TimeWindowPartitionsSubset(
-                    hourly_partitions_def,
-                    num_partitions=3,
-                    included_partition_keys={
+                    hourly_partitions_def
+                ).with_partition_keys(
+                    [
                         "2013-01-05-00:00",
                         "2013-01-05-01:00",
                         "2013-01-05-02:00",
-                    },
+                    ],
                 ),
             },
             {
                 AssetKey(
                     "non_existant_asset"  # ignored since can't be loaded
-                ): TimeWindowPartitionsSubset(
-                    hourly_partitions_def,
-                    num_partitions=1,
-                    included_partition_keys={
+                ): TimeWindowPartitionsSubset(hourly_partitions_def).with_partition_keys(
+                    [
                         "2013-01-05-00:00",
-                    },
+                    ],
                 ),
             },
         ],
@@ -195,23 +193,13 @@ partition_scenarios = {
         active_backfill_targets=[
             {
                 AssetKey("hourly"): TimeWindowPartitionsSubset(
-                    hourly_partitions_def,
-                    num_partitions=len(
-                        {
-                            partition_key
-                            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-07-03:00")
-                            )
-                        },
-                    ),
-                    included_partition_keys={
-                        partition_key
-                        for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                            PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-07-03:00")
-                        )
-                    },
+                    hourly_partitions_def
+                ).with_partition_keys(
+                    hourly_partitions_def.get_partition_keys_in_range(
+                        PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-07-03:00")
+                    )
                 )
-            },
+            }
         ],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[],
@@ -241,10 +229,8 @@ partition_scenarios = {
         active_backfill_targets=[
             {
                 AssetKey("hourly"): TimeWindowPartitionsSubset(
-                    hourly_partitions_def,
-                    num_partitions=1,
-                    included_partition_keys={"2013-01-05-04:00"},
-                )
+                    hourly_partitions_def
+                ).with_partition_keys(["2013-01-05-04:00"])
             }
         ],
         unevaluated_runs=[],
@@ -302,9 +288,7 @@ partition_scenarios = {
             {
                 AssetKey("hourly"): TimeWindowPartitionsSubset(
                     hourly_partitions_def,
-                    num_partitions=1,
-                    included_partition_keys={"2013-01-05-04:00"},
-                )
+                ).with_partition_keys(["2013-01-05-04:00"])
             }
         ],
         unevaluated_runs=[],
