@@ -407,17 +407,15 @@ partition_scenarios = [
                 )
             ],
         )
-        .with_all_eager(100),
+        .with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(
-            run_request(["A"], partition_key="1"),
-            run_request(["A"], partition_key="2"),
-            run_request(["A"], partition_key="3"),
-        )
-        .with_runs(run_request(["A"], partition_key="1"), run_request(["A"], partition_key="2"))
+        .assert_requested_runs(run_request(["A"], partition_key="3"))
+        .with_runs(run_request(["A"], partition_key="2"))
         .evaluate_tick()
+        # still waiting for partition 1
         .assert_requested_runs()
-        .with_runs(run_request(["A"], partition_key="3"))
+        # now can materialize
+        .with_runs(run_request(["A"], partition_key="1"))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"], partition_key="1"))
         .with_runs(
@@ -441,12 +439,6 @@ partition_scenarios = [
         .with_all_eager(100),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"], partition_key="1"))
-        # parent hasn't materialized yet
-        .evaluate_tick()
-        .assert_requested_runs()
-        .evaluate_tick()
-        .assert_requested_runs()
-        # now parent materializes
         .with_not_started_runs()
         .evaluate_tick()
         .assert_requested_runs(
@@ -479,10 +471,6 @@ partition_scenarios = [
                 ["A"], partition_key=hour_partition_key(time_partitions_start_datetime, delta=1)
             )
         )
-        # prior partition hasn't materialized yet
-        .evaluate_tick()
-        .assert_requested_runs()
-        # now it has been
         .with_not_started_runs()
         .evaluate_tick()
         .assert_requested_runs(
@@ -577,19 +565,18 @@ partition_scenarios = [
         )
         .with_all_eager()
         .with_current_time(time_partitions_start_str)
-        .with_current_time_advanced(days=2),
+        .with_current_time_advanced(days=3, hours=1),
         execution_fn=lambda state: state.with_runs(
             # materialize partitions out of order, the second one coming before the first
             run_request(
                 ["A"], partition_key=day_partition_key(time_partitions_start_datetime, delta=2)
             )
         )
-        # can't materialize B in the same run as A, so only A materializes
+        # B's self dependency isn't satisfied yet, so don't kick off the downstream
         .evaluate_tick()
         .assert_requested_runs(
             run_request(
-                ["A", "B", "C"],
-                partition_key=day_partition_key(time_partitions_start_datetime, delta=1),
+                ["A"], partition_key=day_partition_key(time_partitions_start_datetime, delta=3)
             )
         )
         .with_not_started_runs()
@@ -597,7 +584,7 @@ partition_scenarios = [
         # unblocks the self dependency chain
         .with_runs(
             run_request(
-                ["B"], partition_key=day_partition_key(time_partitions_start_datetime, delta=1)
+                ["A", "B"], partition_key=day_partition_key(time_partitions_start_datetime, delta=1)
             )
         )
         .evaluate_tick()
@@ -613,6 +600,7 @@ partition_scenarios = [
                 ["A"], partition_key=day_partition_key(time_partitions_start_datetime, delta=1)
             )
         )
+        .evaluate_tick()
         .assert_requested_runs(
             run_request(
                 ["B", "C"], partition_key=day_partition_key(time_partitions_start_datetime, delta=1)
@@ -697,12 +685,3 @@ partition_scenarios = [
         .assert_requested_runs(run_request("C")),
     ),
 ]
-
-import pytest
-
-all_scenarios = partition_scenarios
-
-
-@pytest.mark.parametrize("scenario", all_scenarios, ids=[scenario.id for scenario in all_scenarios])
-def test_scenario_fast(scenario: AssetDaemonScenario) -> None:
-    scenario.evaluate_fast()

@@ -717,7 +717,6 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 context.asset_key
             )
         )
-        print("MISSING", missing_asset_partitions)
         # in addition to missing root asset partitions, check any asset partitions with updated
         # parents to see if they're missing
         for (
