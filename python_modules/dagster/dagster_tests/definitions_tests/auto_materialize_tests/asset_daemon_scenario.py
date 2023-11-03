@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import json
 import logging
 import os
 import sys
@@ -20,6 +21,7 @@ import dagster._check as check
 import mock
 import pendulum
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
     AssetSpec,
@@ -53,7 +55,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import CURSOR_KEY, AssetDaemon
 
-from .base_scenario import run_request
+from .base_scenario import FAIL_TAG, run_request
 
 
 def get_code_location_origin(
@@ -177,8 +179,13 @@ class AssetDaemonScenarioState(NamedTuple):
 
     @property
     def assets(self) -> Sequence[AssetsDefinition]:
-        def fn() -> None:
-            ...
+        def compute_fn(context: AssetExecutionContext) -> None:
+            fail_keys = {
+                AssetKey.from_coercible(s)
+                for s in json.loads(context.run.tags.get(FAIL_TAG) or "[]")
+            }
+            if context.asset_key in fail_keys:
+                raise Exception("Asset failed")
 
         assets = []
         params = {
@@ -187,11 +194,15 @@ class AssetDaemonScenarioState(NamedTuple):
             "group_name",
             "code_version",
             "auto_materialize_policy",
+            "freshness_policy",
             "partitions_def",
         }
         for spec in self.asset_specs:
             assets.append(
-                asset(compute_fn=fn, **{k: v for k, v in spec._asdict().items() if k in params})
+                asset(
+                    compute_fn=compute_fn,
+                    **{k: v for k, v in spec._asdict().items() if k in params},
+                )
             )
         return assets
 
@@ -258,16 +269,18 @@ class AssetDaemonScenarioState(NamedTuple):
                     selection=rr.asset_selection,
                 )
         # increment current_time by however much time elapsed during the materialize call
-        return self._replace(current_time=datetime.datetime.fromtimestamp(test_time_fn()))
-
-    def with_requested_runs(self) -> "AssetDaemonScenarioState":
-        return self.with_runs(*self.run_requests)
+        return self._replace(current_time=pendulum.from_timestamp(test_time_fn()))
 
     def with_not_started_runs(self) -> "AssetDaemonScenarioState":
-        """Execute all runs in the NOT_STARTED state."""
+        """Execute all runs in the NOT_STARTED state and delete them from the instance. The scenario
+        adds in the run requests from previous ticks as runs in the NOT_STARTED state, so this method
+        executes requested runs from previous ticks.
+        """
         not_started_runs = self.instance.get_runs(
             filters=RunsFilter(statuses=[DagsterRunStatus.NOT_STARTED])
         )
+        for run in not_started_runs:
+            self.instance.delete_run(run_id=run.run_id)
         return self.with_runs(
             *[
                 run_request(

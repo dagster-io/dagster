@@ -1,3 +1,5 @@
+from typing import Generator
+
 import pytest
 from dagster import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
@@ -6,13 +8,14 @@ from dagster._daemon.asset_daemon import set_auto_materialize_paused
 from .asset_daemon_scenario import AssetDaemonScenario
 from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.cron_scenarios import cron_scenarios
+from .updated_scenarios.freshness_policy_scenarios import freshness_policy_scenarios
 from .updated_scenarios.partition_scenarios import partition_scenarios
 
-all_scenarios = basic_scenarios + partition_scenarios + cron_scenarios
+all_scenarios = basic_scenarios + cron_scenarios + freshness_policy_scenarios + partition_scenarios
 
 
 @pytest.fixture
-def daemon_instance():
+def daemon_instance() -> Generator[DagsterInstance, None, None]:
     with instance_for_test(
         overrides={
             "run_launcher": {
@@ -20,9 +23,9 @@ def daemon_instance():
                 "class": "SyncInMemoryRunLauncher",
             }
         }
-    ) as the_instance:
-        set_auto_materialize_paused(the_instance, False)
-        yield the_instance
+    ) as instance:
+        set_auto_materialize_paused(instance, False)
+        yield instance
 
 
 @pytest.mark.parametrize("scenario", all_scenarios, ids=[scenario.id for scenario in all_scenarios])
