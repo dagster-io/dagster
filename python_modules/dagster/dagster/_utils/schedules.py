@@ -12,6 +12,9 @@ import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
 from dagster._seven.compat.pendulum import PendulumDateTime, create_pendulum_time, to_timezone
 
+# Monthly schedules with 29-31 won't reliably run every month
+MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
+
 
 class CroniterShim(_croniter):
     """Lightweight shim to enable caching certain values that may be calculated many times."""
@@ -422,7 +425,11 @@ def cron_string_iterator(
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower and has correctness issues on DST boundaries
     if not nth_weekday_of_month:
-        if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
+        if (
+            all(is_numeric[0:3])
+            and all(is_wildcard[3:])
+            and int(cron_parts[2][0]) <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL
+        ):  # monthly
             known_schedule_type = ScheduleType.MONTHLY
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
             known_schedule_type = ScheduleType.WEEKLY
