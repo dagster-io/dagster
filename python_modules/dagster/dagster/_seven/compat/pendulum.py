@@ -54,5 +54,4 @@ PendulumDateTime: TypeAlias = (
 # Workaround for issue with .in_tz() in pendulum:
 # https://github.com/sdispater/pendulum/issues/535
 def to_timezone(dt: PendulumDateTime, tz: str):
-    timezone = pendulum.timezone(tz)
-    return timezone.convert(dt)
+    return pendulum.from_timestamp(dt.timestamp(), tz=tz)
