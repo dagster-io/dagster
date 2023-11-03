@@ -21,9 +21,9 @@ from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
     ScheduleType,
+    TimePartitionKeyPartitionsSubset,
     TimeWindow,
     TimeWindowPartitionsSubset,
-    UnresolvedTimeWindowPartitionsSubset,
 )
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -745,7 +745,7 @@ def test_start_not_aligned():
 
 @pytest.mark.parametrize(
     "partitions_subset_class",
-    [UnresolvedTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+    [TimePartitionKeyPartitionsSubset, TimeWindowPartitionsSubset],
 )
 @pytest.mark.parametrize(
     "case_str",
@@ -822,7 +822,7 @@ def test_time_partitions_subset_identical_serialization():
 
 @pytest.mark.parametrize(
     "partitions_subset_class",
-    [UnresolvedTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+    [TimePartitionKeyPartitionsSubset, TimeWindowPartitionsSubset],
 )
 @pytest.mark.parametrize(
     "initial, added",

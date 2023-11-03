@@ -734,7 +734,7 @@ class TimeWindowPartitionsDefinition(
 
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
-        return UnresolvedTimeWindowPartitionsSubset
+        return TimePartitionKeyPartitionsSubset
 
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
@@ -1647,7 +1647,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         )
 
 
-class UnresolvedTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
+class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
@@ -1664,7 +1664,7 @@ class UnresolvedTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         self, partition_keys: Iterable[str]
     ) -> "BaseTimeWindowPartitionsSubset":
         new_partitions = {*(self._included_partition_keys or []), *partition_keys}
-        return UnresolvedTimeWindowPartitionsSubset(
+        return TimePartitionKeyPartitionsSubset(
             self._partitions_def,
             included_partition_keys=new_partitions,
         )
@@ -1744,10 +1744,10 @@ class UnresolvedTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
 
     def __eq__(self, other):
         return (
-            isinstance(other, UnresolvedTimeWindowPartitionsSubset)
+            isinstance(other, TimePartitionKeyPartitionsSubset)
             and self.partitions_def == other.partitions_def
             and self._included_partition_keys == other._included_partition_keys
-        ) or super(UnresolvedTimeWindowPartitionsSubset, self).__eq__(other)
+        ) or super(TimePartitionKeyPartitionsSubset, self).__eq__(other)
 
     @classmethod
     def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
@@ -1764,7 +1764,7 @@ class UnresolvedTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
             "num_partitions would become inaccurate if the partitions_defs had different cron"
             " schedules",
         )
-        return UnresolvedTimeWindowPartitionsSubset(
+        return TimePartitionKeyPartitionsSubset(
             partitions_def=partitions_def,
             included_partition_keys=self._included_partition_keys,
         )
