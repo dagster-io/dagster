@@ -116,6 +116,7 @@ from dagster._core.definitions.asset_check_spec import (
     AssetCheckSeverity as AssetCheckSeverity,
     AssetCheckSpec as AssetCheckSpec,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition as AssetChecksDefinition
 from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut

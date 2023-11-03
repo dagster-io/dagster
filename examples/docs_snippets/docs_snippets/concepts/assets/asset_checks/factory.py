@@ -1,6 +1,12 @@
 from typing import Any, Mapping, Sequence
 
-from dagster import AssetCheckResult, Definitions, asset, asset_check
+from dagster import (
+    AssetCheckResult,
+    AssetChecksDefinition,
+    Definitions,
+    asset,
+    asset_check,
+)
 
 
 @asset
@@ -13,7 +19,9 @@ def items():
     ...
 
 
-def make_checks(check_blobs: Sequence[Mapping[str, str]]):
+def make_checks(
+    check_blobs: Sequence[Mapping[str, str]]
+) -> Sequence[AssetChecksDefinition]:
     checks = []
     for check_blob in check_blobs:
 
