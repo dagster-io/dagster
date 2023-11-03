@@ -808,7 +808,8 @@ def test_partition_subset_get_partition_keys_not_in_subset(
         assert partition_key in subset
     assert (
         subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+            partitions_def=partitions_def,
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
         )
         == expected_keys_not_in_subset
     )
@@ -946,7 +947,8 @@ def test_partition_subset_with_partition_keys(
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
     assert (
         updated_subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+            partitions_def=partitions_def,
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
         )
         == expected_keys_not_in_updated_subset
     )

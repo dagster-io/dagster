@@ -213,6 +213,7 @@ def test_custom_unsupported_partition_mapping():
         def get_upstream_mapped_partitions_result_for_partitions(
             self,
             downstream_partitions_subset: Optional[PartitionsSubset],
+            downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
             current_time: Optional[datetime] = None,
             dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -223,7 +224,8 @@ def test_custom_unsupported_partition_mapping():
             partition_keys = list(downstream_partitions_subset.get_partition_keys())
             return UpstreamPartitionsResult(
                 upstream_partitions_def.empty_subset().with_partition_key_range(
-                    PartitionKeyRange(str(max(1, int(partition_keys[0]) - 1)), partition_keys[-1])
+                    upstream_partitions_def,
+                    PartitionKeyRange(str(max(1, int(partition_keys[0]) - 1)), partition_keys[-1]),
                 ),
                 [],
             )
@@ -231,6 +233,7 @@ def test_custom_unsupported_partition_mapping():
         def get_downstream_partitions_for_partitions(
             self,
             upstream_partitions_subset: PartitionsSubset,
+            upstream_partitions_def: PartitionsDefinition,
             downstream_partitions_def: PartitionsDefinition,
             current_time: Optional[datetime] = None,
             dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -405,7 +408,8 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets):
         asset_graph,
         partitions_subsets_by_asset_key={
             asset3.key: asset3.partitions_def.empty_subset().with_partition_key_range(
-                PartitionKeyRange("2022-01-02-00:00", "2022-01-03-23:00")
+                asset3.partitions_def,
+                PartitionKeyRange("2022-01-02-00:00", "2022-01-03-23:00"),
             ),
         },
     )

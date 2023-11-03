@@ -133,7 +133,9 @@ class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):
         if isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
             ranges = [
                 GraphenePartitionKeyRange(start, end)
-                for start, end in partition_subset.get_partition_key_ranges()
+                for start, end in partition_subset.get_partition_key_ranges(
+                    partition_subset.partitions_def
+                )
             ]
             partition_keys = None
         else:  # Default partitions subset

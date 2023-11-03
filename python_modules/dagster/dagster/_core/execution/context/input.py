@@ -365,7 +365,7 @@ class InputContext:
             )
 
         partition_key_ranges = subset.get_partition_key_ranges(
-            dynamic_partitions_store=self.instance
+            self.asset_partitions_def, dynamic_partitions_store=self.instance
         )
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -608,7 +608,7 @@ def build_input_context(
     )
     if asset_partitions_def and asset_partition_key_range:
         asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partition_key_range, dynamic_partitions_store=instance
+            asset_partitions_def, asset_partition_key_range, dynamic_partitions_store=instance
         )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
@@ -643,6 +643,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def get_partition_keys_not_in_subset(
         self,
+        partitions_def: "PartitionsDefinition",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
@@ -656,6 +657,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def get_partition_key_ranges(
         self,
+        partitions_def: "PartitionsDefinition",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
@@ -675,7 +677,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @property
-    def partitions_def(self) -> "PartitionsDefinition":
+    def partitions_def(self) -> Optional["PartitionsDefinition"]:
         raise NotImplementedError()
 
     def __len__(self) -> int:
@@ -701,5 +703,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @classmethod
-    def empty_subset(cls, partitions_def: "PartitionsDefinition") -> "PartitionsSubset":
+    def empty_subset(
+        cls, partitions_def: Optional["PartitionsDefinition"] = None
+    ) -> "PartitionsSubset":
         raise NotImplementedError()

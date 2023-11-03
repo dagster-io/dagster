@@ -1643,6 +1643,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
 
     def get_partition_keys_not_in_subset(
         self,
+        partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
@@ -1675,6 +1676,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
 
     def get_partition_key_ranges(
         self,
+        partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
@@ -1955,7 +1957,9 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         ) or super(PartitionKeysTimeWindowPartitionsSubset, self).__eq__(other)
 
     @classmethod
-    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+    def empty_subset(
+        cls, partitions_def: Optional[PartitionsDefinition] = None
+    ) -> "PartitionsSubset":
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
         partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
@@ -2120,7 +2124,7 @@ class TimeWindowPartitionsSubset(
         )
 
     def __repr__(self) -> str:
-        return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges()})"
+        return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
 
 class PartitionRangeStatus(Enum):

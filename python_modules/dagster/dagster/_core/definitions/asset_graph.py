@@ -363,6 +363,7 @@ class AssetGraph:
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
         child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
             parent_partitions_def.empty_subset().with_partition_keys([parent_partition_key]),
+            parent_partitions_def,
             downstream_partitions_def=child_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
@@ -436,7 +437,7 @@ class AssetGraph:
         """
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
-        child_partitions_def = self.get_partitions_def(child_asset_key)
+        child_partitions_def = cast(PartitionsDefinition, self.get_partitions_def(child_asset_key))
         parent_partitions_def = self.get_partitions_def(parent_asset_key)
 
         if parent_partitions_def is None:
@@ -448,12 +449,11 @@ class AssetGraph:
 
         return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
             (
-                cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
-                    [partition_key]
-                )
+                child_partitions_def.subset_with_partition_keys([partition_key])
                 if partition_key
                 else None
             ),
+            downstream_partitions_def=child_partitions_def,
             upstream_partitions_def=parent_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
@@ -610,6 +610,7 @@ class AssetGraph:
                             child_partitions_subset = (
                                 partition_mapping.get_downstream_partitions_for_partitions(
                                     partitions_subset,
+                                    check.not_none(self.get_partitions_def(asset_key)),
                                     downstream_partitions_def=child_partitions_def,
                                     dynamic_partitions_store=dynamic_partitions_store,
                                     current_time=current_time,

@@ -320,9 +320,9 @@ def test_multipartitions_subset_addition(initial, added):
     assert added_subset.get_partition_keys(current_time=current_day) == set(
         added_subset_keys + initial_subset_keys
     )
-    assert added_subset.get_partition_keys_not_in_subset(current_time=current_day) == set(
-        expected_keys_not_in_updated_subset
-    )
+    assert added_subset.get_partition_keys_not_in_subset(
+        multipartitions_def, current_time=current_day
+    ) == set(expected_keys_not_in_updated_subset)
 
 
 def test_asset_partition_key_is_multipartition_key():

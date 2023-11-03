@@ -108,6 +108,7 @@ class TimeWindowPartitionMapping(
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -127,6 +128,7 @@ class TimeWindowPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: Optional[PartitionsDefinition],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -137,7 +139,7 @@ class TimeWindowPartitionMapping(
         if not provided.
         """
         return self._map_partitions(
-            upstream_partitions_subset.partitions_def,
+            upstream_partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
             end_offset=-self.start_offset,
