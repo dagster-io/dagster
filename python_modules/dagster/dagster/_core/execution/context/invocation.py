@@ -139,14 +139,17 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._bound = False
 
     def __enter__(self):
-        self._cm_scope_entered = True
+        if not self._bound:
+            self._cm_scope_entered = True
         return self
 
     def __exit__(self, *exc):
-        self._exit_stack.close()
+        if not self._bound:
+            self._exit_stack.close()
 
     def __del__(self):
-        self._exit_stack.close()
+        if not self._bound:
+            self._exit_stack.close()
 
     def _check_bound(self, fn_name: str, fn_type: str):
         if not self._bound:
@@ -160,7 +163,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
     ) -> "DirectInvocationOpExecutionContext":
-        return self.bind_self(
+        return self.bind_copy(
             op_def=op_def,
             pending_invocation=pending_invocation,
             assets_def=assets_def,
