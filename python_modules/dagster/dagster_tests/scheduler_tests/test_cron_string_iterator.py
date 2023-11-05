@@ -479,23 +479,85 @@ DST_PARAMS = [
             create_pendulum_time(2023, 3, 26, 4, 0, 0, tz="Europe/Berlin"),
         ],
     ),
+    (
+        "Europe/Berlin",
+        "*/15 * * * *",
+        [
+            create_pendulum_time(2023, 3, 26, 1, 0, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 3, 26, 1, 15, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 3, 26, 1, 30, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 3, 26, 1, 45, 0, tz="Europe/Berlin"),
+            # 2 AM does not exist
+            create_pendulum_time(2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 3, 26, 3, 15, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 3, 26, 3, 30, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 3, 26, 3, 45, 0, tz="Europe/Berlin"),
+        ],
+    ),
+    (
+        "Europe/Berlin",
+        "*/15 * * * *",
+        [
+            create_pendulum_time(2023, 10, 29, 1, 0, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 10, 29, 1, 15, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 10, 29, 1, 30, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 10, 29, 1, 45, 0, tz="Europe/Berlin"),
+            create_pendulum_time(
+                2023, 10, 29, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.PRE_TRANSITION
+            ),
+            create_pendulum_time(
+                2023, 10, 29, 2, 15, 0, tz="Europe/Berlin", dst_rule=pendulum.PRE_TRANSITION
+            ),
+            create_pendulum_time(
+                2023, 10, 29, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.PRE_TRANSITION
+            ),
+            create_pendulum_time(
+                2023, 10, 29, 2, 45, 0, tz="Europe/Berlin", dst_rule=pendulum.PRE_TRANSITION
+            ),
+            create_pendulum_time(
+                2023, 10, 29, 2, 0, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+            ),
+            create_pendulum_time(
+                2023, 10, 29, 2, 15, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+            ),
+            create_pendulum_time(
+                2023, 10, 29, 2, 30, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+            ),
+            create_pendulum_time(
+                2023, 10, 29, 2, 45, 0, tz="Europe/Berlin", dst_rule=pendulum.POST_TRANSITION
+            ),
+            create_pendulum_time(2023, 10, 29, 3, 0, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 10, 29, 3, 15, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 10, 29, 3, 30, 0, tz="Europe/Berlin"),
+            create_pendulum_time(2023, 10, 29, 3, 45, 0, tz="Europe/Berlin"),
+        ],
+    ),
 ]
 
 
 @pytest.mark.parametrize("execution_timezone,cron_string,times", DST_PARAMS)
-def test_dst_transition_advances(execution_timezone, cron_string, times):
+@pytest.mark.parametrize(
+    "force_croniter",
+    [False, True],
+)
+def test_dst_transition_advances(execution_timezone, cron_string, times, force_croniter):
     # Starting 1 second after each time produces the next tick
+
     for i in range(len(times) - 1):
         orig_start_timestamp = to_timezone(times[i], "UTC").timestamp()
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
         fresh_cron_iter = cron_string_iterator(
-            orig_start_timestamp, cron_string, execution_timezone
+            orig_start_timestamp, cron_string, execution_timezone, force_croniter=force_croniter
         )
+        prev_time = None
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
 
-            assert next_time.timestamp() == times[j].timestamp()
+            assert (
+                next_time.timestamp() == times[j].timestamp()
+            ), f"Expected ({pendulum.from_timestamp(orig_start_timestamp, tz=execution_timezone)}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+            prev_time = next_time
 
         start_timestamp = orig_start_timestamp + 1
 
@@ -522,7 +584,11 @@ def test_dst_transition_advances(execution_timezone, cron_string, times):
 
 
 @pytest.mark.parametrize("execution_timezone,cron_string,times", DST_PARAMS)
-def test_reversed_dst_transition_advances(execution_timezone, cron_string, times):
+@pytest.mark.parametrize(
+    "force_croniter",
+    [False, True],
+)
+def test_reversed_dst_transition_advances(execution_timezone, cron_string, times, force_croniter):
     times = list(reversed(times))
     for i in range(len(times) - 1):
         orig_start_timestamp = to_timezone(times[i], "UTC").timestamp()
@@ -530,7 +596,7 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
         fresh_cron_iter = reverse_cron_string_iterator(
-            orig_start_timestamp, cron_string, execution_timezone
+            orig_start_timestamp, cron_string, execution_timezone, force_croniter=force_croniter
         )
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
