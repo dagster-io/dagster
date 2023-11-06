@@ -76,33 +76,3 @@ const CenteredContainer = styled.div`
   transform: translate(-50%, -50%);
   z-index: 2;
 `;
-
-const LargeDAGContainer = styled.div`
-  width: 45vw;
-  position: absolute;
-  top: 60px;
-  z-index: 2;
-  max-width: 500px;
-  display: flex;
-  flex-direction: column;
-  [role='img'] {
-    opacity: 0.5;
-    margin-left: 10vw;
-  }
-`;
-
-const LargeDAGInstructionBox = styled.div`
-  padding: 15px 20px;
-  border: 1px solid #fff5c3;
-  margin-top: 20px;
-  color: ${Colors.Gray800};
-  background: #fffbe5;
-  text-align: left;
-  line-height: 1.4rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  code {
-    background: #f8ebad;
-    font-weight: 500;
-    padding: 0 4px;
-  }
-`;
