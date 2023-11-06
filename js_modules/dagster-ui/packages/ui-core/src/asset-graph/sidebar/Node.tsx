@@ -147,13 +147,13 @@ export const Node = ({
                   toggleOpen();
                 }
               }}
-              padding={{horizontal: 8, vertical: 5 as any}}
               style={{
                 width: '100%',
                 borderRadius: '8px',
                 ...(isSelected ? {background: Colors.Blue50} : {}),
               }}
               $showFocusOutline={true}
+              autoFocus={isSelected}
             >
               <div
                 style={{
