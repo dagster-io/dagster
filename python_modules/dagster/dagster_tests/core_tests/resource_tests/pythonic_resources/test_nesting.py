@@ -1,3 +1,4 @@
+import contextlib
 import enum
 import json
 from abc import ABC, abstractmethod
@@ -18,6 +19,7 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManager,
     ConfigurableResourceFactory,
 )
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager
 
 
@@ -594,3 +596,176 @@ def test_enum_nested_resource_run_config_override() -> None:
     )
     assert result.success
     assert result.output_for_node("asset_with_outer_resource") == "b_value"
+
+
+def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
+    log = []
+
+    class MyMultiwriteIOManager(ConfigurableIOManager):
+        base_io_manager: ResourceDependency[IOManager]
+        mirror_io_manager: ResourceDependency[IOManager]
+
+        def handle_output(self, context, obj) -> None:
+            self.base_io_manager.handle_output(context, obj)
+            self.mirror_io_manager.handle_output(context, obj)
+
+        def load_input(self, context) -> Any:
+            return self.base_io_manager.load_input(context)
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("MyMultiwriteIOManager setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("MyMultiwriteIOManager teardown_after_execution")
+
+    class ConfigIOManager(ConfigurableIOManager):
+        path_prefix: List[str]
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("ConfigIOManager setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("ConfigIOManager teardown_after_execution")
+
+        def handle_output(self, context, obj) -> None:
+            log.append(
+                "ConfigIOManager handle_output "
+                + "/".join(self.path_prefix + list(context.asset_key.path))
+            )
+
+        def load_input(self, context) -> Any:
+            log.append(
+                "ConfigIOManager load_input "
+                + "/".join(self.path_prefix + list(context.asset_key.path))
+            )
+            return "foo"
+
+    class RawIOManager(IOManager):
+        def handle_output(self, context, obj) -> None:
+            log.append("RawIOManager handle_output " + "/".join(list(context.asset_key.path)))
+
+        def load_input(self, context) -> Any:
+            log.append("RawIOManager load_input " + "/".join(list(context.asset_key.path)))
+            return "foo"
+
+    @asset
+    def my_asset() -> str:
+        return "foo"
+
+    @asset
+    def my_downstream_asset(my_asset: str) -> str:
+        return my_asset + "bar"
+
+    defs = Definitions(
+        assets=[my_asset, my_downstream_asset],
+        resources={
+            "io_manager": MyMultiwriteIOManager(
+                base_io_manager=ConfigIOManager(path_prefix=["base"]),
+                mirror_io_manager=RawIOManager(),
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert log == [
+        "ConfigIOManager setup_for_execution",
+        "MyMultiwriteIOManager setup_for_execution",
+        "ConfigIOManager handle_output base/my_asset",
+        "RawIOManager handle_output my_asset",
+        "ConfigIOManager load_input base/my_asset",
+        "ConfigIOManager handle_output base/my_downstream_asset",
+        "RawIOManager handle_output my_downstream_asset",
+        "MyMultiwriteIOManager teardown_after_execution",
+        "ConfigIOManager teardown_after_execution",
+    ]
+
+
+def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
+    log = []
+
+    class MyMultiwriteIOManager(ConfigurableIOManager):
+        base_io_manager: ResourceDependency[IOManager]
+        mirror_io_manager: ResourceDependency[IOManager]
+
+        def handle_output(self, context, obj) -> None:
+            self.base_io_manager.handle_output(context, obj)
+            self.mirror_io_manager.handle_output(context, obj)
+
+        def load_input(self, context) -> Any:
+            return self.base_io_manager.load_input(context)
+
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("MyMultiwriteIOManager setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("MyMultiwriteIOManager teardown_after_execution")
+
+    class ConfigIOManager(ConfigurableIOManager):
+        path_prefix: List[str]
+
+        @contextlib.contextmanager
+        def yield_for_execution(self, context: InitResourceContext):
+            log.append("ConfigIOManager cm setup")
+            yield self
+            log.append("ConfigIOManager cm teardown")
+
+        def handle_output(self, context, obj) -> None:
+            log.append(
+                "ConfigIOManager handle_output "
+                + "/".join(self.path_prefix + list(context.asset_key.path))
+            )
+
+        def load_input(self, context) -> Any:
+            log.append(
+                "ConfigIOManager load_input "
+                + "/".join(self.path_prefix + list(context.asset_key.path))
+            )
+            return "foo"
+
+    class RawIOManager(IOManager):
+        def handle_output(self, context, obj) -> None:
+            log.append("RawIOManager handle_output " + "/".join(list(context.asset_key.path)))
+
+        def load_input(self, context) -> Any:
+            log.append("RawIOManager load_input " + "/".join(list(context.asset_key.path)))
+            return "foo"
+
+    @resource
+    @contextlib.contextmanager
+    def raw_io_manager(context):
+        log.append("RawIOManager cm setup")
+        yield RawIOManager()
+        log.append("RawIOManager cm teardown")
+
+    @asset
+    def my_asset() -> str:
+        return "foo"
+
+    @asset
+    def my_downstream_asset(my_asset: str) -> str:
+        return my_asset + "bar"
+
+    defs = Definitions(
+        assets=[my_asset, my_downstream_asset],
+        resources={
+            "io_manager": MyMultiwriteIOManager(
+                base_io_manager=ConfigIOManager(path_prefix=["base"]),
+                mirror_io_manager=raw_io_manager,
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert log == [
+        "ConfigIOManager cm setup",
+        "RawIOManager cm setup",
+        "MyMultiwriteIOManager setup_for_execution",
+        "ConfigIOManager handle_output base/my_asset",
+        "RawIOManager handle_output my_asset",
+        "ConfigIOManager load_input base/my_asset",
+        "ConfigIOManager handle_output base/my_downstream_asset",
+        "RawIOManager handle_output my_downstream_asset",
+        "MyMultiwriteIOManager teardown_after_execution",
+        "RawIOManager cm teardown",
+        "ConfigIOManager cm teardown",
+    ]
