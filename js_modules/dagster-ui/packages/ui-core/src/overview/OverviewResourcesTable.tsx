@@ -32,7 +32,7 @@ interface Resource extends ResourceEntryFragment {
 
 type RowType = {type: 'header'; repoAddress: RepoAddress; resourceCount: number} | Resource;
 
-export const OverviewResourcesTable: React.FC<Props> = ({repos}) => {
+export const OverviewResourcesTable = ({repos}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),

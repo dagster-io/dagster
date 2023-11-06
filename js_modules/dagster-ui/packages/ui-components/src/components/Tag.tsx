@@ -62,16 +62,19 @@ interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' |
   tooltipText?: string;
 }
 
-const IconOrSpinner: React.FC<{icon: IconName | 'spinner' | null; color: string}> = React.memo(
-  ({icon, color}) => {
-    if (icon === 'spinner') {
-      return <Spinner fillColor={color} purpose="body-text" />;
-    }
-    return icon ? <Icon name={icon} color={color} /> : null;
-  },
-);
+interface IconOrSpinnerProps {
+  icon: IconName | 'spinner' | null;
+  color: string;
+}
 
-export const Tag: React.FC<Props> = (props) => {
+const IconOrSpinner = React.memo(({icon, color}: IconOrSpinnerProps) => {
+  if (icon === 'spinner') {
+    return <Spinner fillColor={color} purpose="body-text" />;
+  }
+  return icon ? <Icon name={icon} color={color} /> : null;
+});
+
+export const Tag = (props: Props) => {
   const {children, icon = null, rightIcon = null, intent, ...rest} = props;
 
   const fillColor = intentToFillColor(intent);

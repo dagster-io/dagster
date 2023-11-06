@@ -20,11 +20,15 @@ import {
   TickLogEventFragment,
 } from './types/TickLogDialog.types';
 
-export const TickLogDialog: React.FC<{
+export const TickLogDialog = ({
+  tick,
+  instigationSelector,
+  onClose,
+}: {
   tick: HistoryTickFragment;
   instigationSelector: InstigationSelector;
   onClose: () => void;
-}> = ({tick, instigationSelector, onClose}) => {
+}) => {
   const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
     variables: {instigationSelector, timestamp: tick.timestamp},
     notifyOnNetworkStatusChange: true,
@@ -64,7 +68,7 @@ export const TickLogDialog: React.FC<{
   );
 };
 
-const TickLogsTable: React.FC<{events: TickLogEventFragment[]}> = ({events}) => {
+const TickLogsTable = ({events}: {events: TickLogEventFragment[]}) => {
   return (
     <div style={{overflow: 'hidden', borderBottom: '0.5px solid #ececec', flex: 1}}>
       <ColumnWidthsProvider onWidthsChanged={() => {}}>
@@ -99,7 +103,7 @@ const Headers = () => {
   );
 };
 
-const TickLogRow: React.FC<{event: TickLogEventFragment}> = ({event}) => {
+const TickLogRow = ({event}: {event: TickLogEventFragment}) => {
   return (
     <Row level={event.level} highlighted={false}>
       <EventTypeColumn>

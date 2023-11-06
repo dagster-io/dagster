@@ -188,7 +188,7 @@ export function topLabelHeightForLabels(labels: string[]) {
   return (maxlength > 10 ? maxlength * 4.9 : 55) + TITLE_MARGIN_BOTTOM;
 }
 
-export const TopLabelTilted: React.FC<{label: string; $height: number}> = ({label, $height}) => {
+export const TopLabelTilted = ({label, $height}: {label: string; $height: number}) => {
   return (
     <TopLabelTiltedInner style={{height: $height - TITLE_MARGIN_BOTTOM}}>
       <div className="tilted">{label}</div>

@@ -34,7 +34,7 @@ interface OpIOBoxProps extends OpIORenderMetadata {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const OpIOBox: React.FC<OpIOBoxProps> = ({
+export const OpIOBox = ({
   minified,
   title,
   jumpTargetOp,
@@ -45,7 +45,7 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
   layoutInfo,
   onDoubleClick,
   onHighlightEdges,
-}) => {
+}: OpIOBoxProps) => {
   if (!layoutInfo) {
     return null;
   }

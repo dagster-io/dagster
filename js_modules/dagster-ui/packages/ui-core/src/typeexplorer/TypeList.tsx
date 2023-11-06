@@ -28,7 +28,7 @@ function groupTypes(types: TypeListFragment[]): {[key: string]: TypeListFragment
   return groups;
 }
 
-export const TypeList: React.FC<ITypeListProps> = (props) => {
+export const TypeList = (props: ITypeListProps) => {
   const groups = groupTypes(props.types);
   return (
     <>

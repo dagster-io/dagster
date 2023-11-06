@@ -12,9 +12,11 @@ import {RUN_TIME_FRAGMENT, titleForRun} from '../runs/RunUtils';
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 
-export const InstigatedRunStatus: React.FC<{
+export const InstigatedRunStatus = ({
+  instigationState,
+}: {
   instigationState: InstigationStateFragment;
-}> = ({instigationState}) => {
+}) => {
   const [instigationRun] = instigationState.runs;
   if (!instigationRun) {
     return <span style={{color: Colors.Gray300}}>None</span>;
@@ -22,7 +24,7 @@ export const InstigatedRunStatus: React.FC<{
   return <LastRunSummary run={instigationRun} name={instigationState.name} />;
 };
 
-export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
+export const RunStatusLink = ({run}: {run: RunStatusFragment}) => (
   <Group direction="row" spacing={4} alignItems="center">
     <RunStatusIndicator status={run.status} />
     <Link to={`/runs/${run.id}`} target="_blank" rel="noreferrer">

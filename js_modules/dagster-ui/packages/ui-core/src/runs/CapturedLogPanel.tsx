@@ -27,8 +27,8 @@ interface CapturedOrExternalLogPanelProps extends CapturedLogProps {
   logCaptureInfo?: ILogCaptureInfo;
 }
 
-export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProps> = React.memo(
-  ({logCaptureInfo, ...props}) => {
+export const CapturedOrExternalLogPanel = React.memo(
+  ({logCaptureInfo, ...props}: CapturedOrExternalLogPanelProps) => {
     const externalUrl =
       logCaptureInfo &&
       (props.visibleIOType === 'stdout'
@@ -125,10 +125,13 @@ const initialState: State = {
   isLoading: true,
 };
 
-const CapturedLogSubscription: React.FC<{
+interface CapturedLogSubscriptionProps {
   logKey: string[];
   onLogData: (logData: CapturedLogFragment) => void;
-}> = React.memo(({logKey, onLogData}) => {
+}
+
+const CapturedLogSubscription = React.memo((props: CapturedLogSubscriptionProps) => {
+  const {logKey, onLogData} = props;
   useSubscription<CapturedLogsSubscription, CapturedLogsSubscriptionVariables>(
     CAPTURED_LOGS_SUBSCRIPTION,
     {
@@ -238,8 +241,8 @@ const CAPTURED_LOGS_QUERY = gql`
   }
 `;
 
-const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
-  ({logKey, visibleIOType, onSetDownloadUrl}) => {
+const CapturedLogPanel = React.memo(
+  ({logKey, visibleIOType, onSetDownloadUrl}: CapturedLogProps) => {
     const {rootServerURI} = React.useContext(AppContext);
     const {availability, disabled} = React.useContext(WebSocketContext);
     const queryResult = useQuery<CapturedLogsMetadataQuery, CapturedLogsMetadataQueryVariables>(

@@ -70,7 +70,7 @@ interface Props {
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
 
-export const AssetGraphExplorer: React.FC<Props> = (props) => {
+export const AssetGraphExplorer = (props: Props) => {
   const {
     fetchResult,
     assetGraphData,
@@ -119,15 +119,15 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   );
 };
 
-type WithDataProps = {
+interface WithDataProps extends Props {
   allAssetKeys: AssetKey[];
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
   applyingEmptyDefault: boolean;
-} & Props;
+}
 
-const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
+const AssetGraphExplorerWithData = ({
   options,
   setOptions,
   explorerPath,
@@ -140,7 +140,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   fetchOptions,
   fetchOptionFilters,
   allAssetKeys,
-}) => {
+}: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const {layout, loading, async} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();

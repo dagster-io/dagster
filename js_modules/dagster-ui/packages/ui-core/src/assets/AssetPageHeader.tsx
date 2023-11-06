@@ -18,7 +18,7 @@ import {useCopyToClipboard} from '../app/browser';
 
 type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
 
-export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
+export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
   const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
   const [didCopy, setDidCopy] = React.useState(false);

@@ -22,7 +22,7 @@ import {SensorInfo} from './SensorInfo';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
 import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRoot.types';
 
-export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
 
   const {sensorName} = useParams<{sensorName: string}>();

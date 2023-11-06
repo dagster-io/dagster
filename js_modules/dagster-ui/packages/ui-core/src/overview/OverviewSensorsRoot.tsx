@@ -319,9 +319,7 @@ export const OverviewSensorsRoot = () => {
   );
 };
 
-const UnloadableSensorsAlert: React.FC<{
-  count: number;
-}> = ({count}) => {
+const UnloadableSensorsAlert = ({count}: {count: number}) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   if (!count) {
@@ -368,7 +366,7 @@ const UnloadableSensorsAlert: React.FC<{
   );
 };
 
-const UnloadableSensorDialog: React.FC = () => {
+const UnloadableSensorDialog = () => {
   const {data} = useQuery<UnloadableSensorsQuery, UnloadableSensorsQueryVariables>(
     UNLOADABLE_SENSORS_QUERY,
   );

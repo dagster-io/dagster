@@ -22,11 +22,15 @@ import {
   AssetMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 
-export const LatestMaterializationMetadata: React.FC<{
+export const LatestMaterializationMetadata = ({
+  assetKey,
+  latest,
+  liveData,
+}: {
   assetKey: AssetKeyInput;
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
-}> = ({assetKey, latest, liveData}) => {
+}) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin

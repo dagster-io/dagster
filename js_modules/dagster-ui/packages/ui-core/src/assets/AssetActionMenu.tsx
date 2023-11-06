@@ -21,7 +21,7 @@ interface Props {
   onWipe?: (assets: AssetKeyInput[]) => void;
 }
 
-export const AssetActionMenu: React.FC<Props> = (props) => {
+export const AssetActionMenu = (props: Props) => {
   const {repoAddress, path, definition, onWipe} = props;
   const {
     permissions: {canWipeAssets},

@@ -14,7 +14,7 @@ import {TimeContext} from './TimeContext';
  * We detect the automatic behavior for the user's locale and show that as an option
  * as well. The user can override this with one of the choices above.
  */
-export const HourCycleSelect: React.FC = () => {
+export const HourCycleSelect = () => {
   const {
     hourCycle: [hourCycle, setHourCycle],
   } = React.useContext(TimeContext);

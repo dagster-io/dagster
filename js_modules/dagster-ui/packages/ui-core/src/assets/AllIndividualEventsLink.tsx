@@ -32,13 +32,21 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 
-const AssetEventsTable: React.FC<{
+interface AssetEventsTableProps {
   hasPartitions: boolean;
   hasLineage: boolean;
   groups: AssetEventGroup[];
   focused?: AssetEventGroup;
   setFocused?: (timestamp: AssetEventGroup | undefined) => void;
-}> = ({hasPartitions, hasLineage, groups, focused, setFocused}) => {
+}
+
+const AssetEventsTable = ({
+  hasPartitions,
+  hasLineage,
+  groups,
+  focused,
+  setFocused,
+}: AssetEventsTableProps) => {
   return (
     <Table>
       <thead>
@@ -82,10 +90,12 @@ const AssetEventsTable: React.FC<{
 
 const NoneSpan = () => <span style={{color: Colors.Gray400}}>None</span>;
 
-const MetadataEntriesRow: React.FC<{
+interface MetadataEntriesRowProps {
   group: AssetEventGroup;
   hasLineage: boolean;
-}> = React.memo(({group, hasLineage}) => {
+}
+
+const MetadataEntriesRow = React.memo(({group, hasLineage}: MetadataEntriesRowProps) => {
   const {latest, timestamp} = group;
   if (!latest) {
     return <tr></tr>;
@@ -165,12 +175,15 @@ const MetadataEntriesRow: React.FC<{
   );
 });
 
-const EventGroupRow: React.FC<{
+interface EventGroupRowProps {
   group: AssetEventGroup;
   hasPartitions: boolean;
   hasLineage: boolean;
   isFocused: boolean;
-}> = React.memo(({group, hasPartitions, hasLineage, isFocused}) => {
+}
+
+const EventGroupRow = React.memo((props: EventGroupRowProps) => {
+  const {group, hasPartitions, hasLineage, isFocused} = props;
   const {latest, partition, timestamp, all} = group;
 
   const focusCss = isFocused
@@ -283,12 +296,12 @@ interface PredecessorDialogProps {
   children: React.ReactNode;
 }
 
-export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
+export const AllIndividualEventsLink = ({
   hasLineage,
   hasPartitions,
   events,
   children,
-}) => {
+}: PredecessorDialogProps) => {
   const [open, setOpen] = React.useState(false);
   const [focused, setFocused] = React.useState<AssetEventGroup | undefined>();
   const groups = React.useMemo(
@@ -343,7 +356,7 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
   );
 };
 
-const DisclosureTriangle: React.FC<{open: boolean; onClick?: () => void}> = ({open, onClick}) => (
+const DisclosureTriangle = ({open, onClick}: {open: boolean; onClick?: () => void}) => (
   <DisclosureTriangleButton onClick={onClick} $open={open}>
     <Icon name="arrow_drop_down" size={24} />
   </DisclosureTriangleButton>

@@ -51,7 +51,7 @@ interface GraphExplorerProps {
   isGraph: boolean;
 }
 
-export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
+export const GraphExplorer = (props: GraphExplorerProps) => {
   const {
     getInvocations,
     handles,

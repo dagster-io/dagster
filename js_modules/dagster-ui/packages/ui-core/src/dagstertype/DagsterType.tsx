@@ -22,10 +22,7 @@ export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}
   }
 };
 
-const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}> = ({
-  type,
-  className,
-}) => {
+const _DagsterTypeName = ({type, className}: {type: DagsterTypeFragment; className?: string}) => {
   const typeKind = dagsterTypeKind(type);
   const displayName = typeKind === 'standard' ? type.name : `${type.name} (${typeKind})`;
   return <Box className={className}>{displayName}</Box>;
@@ -38,10 +35,13 @@ const DagsterTypeName = styled(_DagsterTypeName)`
   text-overflow: ellipsis;
 `;
 
-export const DagsterTypeSummary: React.FC<{
+export const DagsterTypeSummary = ({
+  type,
+  horizontalPadding,
+}: {
   type: DagsterTypeFragment;
   horizontalPadding?: Spacing;
-}> = ({type, horizontalPadding}) => {
+}) => {
   horizontalPadding = horizontalPadding || 0;
   const tableSchemaEntry = (type.metadataEntries || []).find(
     gqlTypePredicate('TableSchemaMetadataEntry'),

@@ -112,12 +112,17 @@ type DialogAction =
     }
   | undefined;
 
-export const ConcurrencyLimits: React.FC<{
+export const ConcurrencyLimits = ({
+  instanceConfig,
+  hasSupport,
+  limits,
+  refetch,
+}: {
   limits: ConcurrencyLimitFragment[];
   refetch: () => void;
   instanceConfig?: string | null;
   hasSupport?: boolean;
-}> = ({instanceConfig, hasSupport, limits, refetch}) => {
+}) => {
   const [action, setAction] = React.useState<DialogAction>();
   const [selectedRuns, setSelectedRuns] = React.useState<string[] | undefined>(undefined);
   const [selectedKey, setSelectedKey] = React.useState<string | undefined>(undefined);
@@ -266,11 +271,15 @@ export const ConcurrencyLimits: React.FC<{
   );
 };
 
-const ConcurrencyLimitActionMenu: React.FC<{
+const ConcurrencyLimitActionMenu = ({
+  concurrencyKey,
+  onDelete,
+  onEdit,
+}: {
   concurrencyKey: string;
   onEdit: (key: string) => void;
   onDelete: (key: string) => void;
-}> = ({concurrencyKey, onDelete, onEdit}) => {
+}) => {
   return (
     <Popover
       content={
@@ -305,11 +314,15 @@ const isValidLimit = (concurrencyLimit?: string) => {
   return value > 0 && value < 1000;
 };
 
-const AddConcurrencyLimitDialog: React.FC<{
+const AddConcurrencyLimitDialog = ({
+  open,
+  onClose,
+  onComplete,
+}: {
   open: boolean;
   onClose: () => void;
   onComplete: () => void;
-}> = ({open, onClose, onComplete}) => {
+}) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [limitInput, setLimitInput] = React.useState('');
   const [keyInput, setKeyInput] = React.useState('');
@@ -370,12 +383,17 @@ const AddConcurrencyLimitDialog: React.FC<{
   );
 };
 
-const EditConcurrencyLimitDialog: React.FC<{
+const EditConcurrencyLimitDialog = ({
+  concurrencyKey,
+  open,
+  onClose,
+  onComplete,
+}: {
   concurrencyKey: string;
   open: boolean;
   onClose: () => void;
   onComplete: () => void;
-}> = ({concurrencyKey, open, onClose, onComplete}) => {
+}) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [limitInput, setLimitInput] = React.useState('');
 
@@ -438,12 +456,17 @@ const EditConcurrencyLimitDialog: React.FC<{
   );
 };
 
-const DeleteConcurrencyLimitDialog: React.FC<{
+const DeleteConcurrencyLimitDialog = ({
+  concurrencyKey,
+  open,
+  onClose,
+  onComplete,
+}: {
   concurrencyKey: string;
   open: boolean;
   onClose: () => void;
   onComplete: () => void;
-}> = ({concurrencyKey, open, onClose, onComplete}) => {
+}) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const [setConcurrencyLimit] = useMutation<
@@ -489,11 +512,15 @@ const DeleteConcurrencyLimitDialog: React.FC<{
   );
 };
 
-const ConcurrencyRunsDialog: React.FC<{
+const ConcurrencyRunsDialog = ({
+  runIds,
+  onClose,
+  title,
+}: {
   runIds?: string[];
   title: string | React.ReactNode;
   onClose: () => void;
-}> = ({runIds, onClose, title}) => {
+}) => {
   const {data} = useQuery<RunsForConcurrencyKeyQuery, RunsForConcurrencyKeyQueryVariables>(
     RUNS_FOR_CONCURRENCY_KEY_QUERY,
     {

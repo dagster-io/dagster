@@ -19,7 +19,7 @@ interface MenuLinkProps
 /**
  * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
  */
-export const MenuLink: React.FC<MenuLinkProps> = (props) => {
+export const MenuLink = (props: MenuLinkProps) => {
   const {icon, intent, text, disabled, ...rest} = props;
 
   if (disabled) {

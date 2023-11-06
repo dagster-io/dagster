@@ -11,9 +11,12 @@ describe('Analytics', () => {
     track: jest.fn(),
   });
 
-  const Test: React.FC<{mockAnalytics: GenericAnalytics; children: React.ReactNode}> = ({
+  const Test = ({
     children,
     mockAnalytics,
+  }: {
+    mockAnalytics: GenericAnalytics;
+    children: React.ReactNode;
   }) => {
     return <AnalyticsContext.Provider value={mockAnalytics}>{children}</AnalyticsContext.Provider>;
   };

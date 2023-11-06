@@ -23,10 +23,13 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 
-export const AssetEventDetail: React.FC<{
+export const AssetEventDetail = ({
+  event,
+  assetKey,
+}: {
   assetKey: AssetKeyInput;
   event: AssetMaterializationFragment | AssetObservationFragment;
-}> = ({event, assetKey}) => {
+}) => {
   const run = event.runOrError?.__typename === 'Run' ? event.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;
   const repoAddress = repositoryOrigin

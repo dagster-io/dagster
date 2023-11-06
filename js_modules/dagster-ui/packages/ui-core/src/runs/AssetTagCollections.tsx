@@ -67,11 +67,14 @@ function useShowMoreDialog<T>(
   return {dialog, showMore, setShowMore};
 }
 
-export const AssetKeyTagCollection: React.FC<{
+interface AssetKeyTagCollectionProps {
   assetKeys: AssetKey[] | null;
   dialogTitle?: string;
   useTags?: boolean;
-}> = React.memo(({assetKeys, useTags, dialogTitle = 'Assets in run'}) => {
+}
+
+export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
+  const {assetKeys, useTags, dialogTitle = 'Assets in run'} = props;
   const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetKeys, renderItemAssetKey);
 
   if (!assetKeys || !assetKeys.length) {
@@ -154,11 +157,14 @@ export const AssetKeyTagCollection: React.FC<{
 
 type Check = {name: string; assetKey: AssetKey};
 
-export const AssetCheckTagCollection: React.FC<{
+interface AssetCheckTagCollectionProps {
   assetChecks: Check[] | null;
   dialogTitle?: string;
   useTags?: boolean;
-}> = React.memo(({assetChecks, useTags, dialogTitle = 'Asset checks in run'}) => {
+}
+
+export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
+  const {assetChecks, useTags, dialogTitle = 'Asset checks in run'} = props;
   const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetChecks, renderItemAssetCheck);
 
   if (!assetChecks || !assetChecks.length) {

@@ -13,12 +13,12 @@ import * as React from 'react';
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
 import {AssetEventGroup} from './groupByPartition';
 
-export const AssetMaterializationGraphs: React.FC<{
+export const AssetMaterializationGraphs = (props: {
   groups: AssetEventGroup[];
   xAxis: 'partition' | 'time';
   asSidebarSection?: boolean;
   columnCount?: number;
-}> = (props) => {
+}) => {
   const [xHover, setXHover] = React.useState<string | number | null>(null);
 
   const reversed = React.useMemo(() => {

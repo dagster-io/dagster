@@ -29,10 +29,13 @@ import {NotebookButton} from '../ui/NotebookButton';
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntry.types';
 
-export const LogRowStructuredContentTable: React.FC<{
+export const LogRowStructuredContentTable = ({
+  rows,
+  styles,
+}: {
   rows: {label: string; item: JSX.Element}[];
   styles?: React.CSSProperties;
-}> = ({rows, styles}) => (
+}) => (
   <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
     <StructuredContentTable cellPadding="0" cellSpacing="0">
       <tbody>
@@ -54,10 +57,13 @@ export const LogRowStructuredContentTable: React.FC<{
   </div>
 );
 
-export const MetadataEntries: React.FC<{
+export const MetadataEntries = ({
+  entries,
+  expandSmallValues,
+}: {
   entries?: MetadataEntryFragment[];
   expandSmallValues?: boolean;
-}> = ({entries, expandSmallValues}) => {
+}) => {
   if (!entries || !entries.length) {
     return null;
   }
@@ -71,11 +77,15 @@ export const MetadataEntries: React.FC<{
   );
 };
 
-export const MetadataEntry: React.FC<{
+export const MetadataEntry = ({
+  entry,
+  expandSmallValues,
+  repoLocation,
+}: {
   entry: MetadataEntryFragment;
   expandSmallValues?: boolean;
   repoLocation?: string;
-}> = ({entry, expandSmallValues, repoLocation}) => {
+}) => {
   switch (entry.__typename) {
     case 'PathMetadataEntry':
       return (
@@ -313,12 +323,12 @@ const PythonArtifactLink = ({
   </>
 );
 
-const MetadataEntryModalAction: React.FC<{
+const MetadataEntryModalAction = (props: {
   children: React.ReactNode;
   label: string;
   content: () => React.ReactNode;
   copyContent: () => string;
-}> = (props) => {
+}) => {
   const [open, setOpen] = React.useState(false);
   return (
     <>
@@ -342,7 +352,7 @@ const MetadataEntryModalAction: React.FC<{
   );
 };
 
-export const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({entry}) => {
+export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}) => {
   const [showSchema, setShowSchema] = React.useState(false);
 
   const schema = entry.table.schema;

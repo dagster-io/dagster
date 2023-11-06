@@ -38,7 +38,7 @@ interface Props {
   locationNode: WorkspaceRepositoryLocationNode;
 }
 
-export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
+export const CodeLocationRowSet = ({locationNode}: Props) => {
   const {name, locationOrLoadError} = locationNode;
 
   if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
@@ -108,7 +108,7 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
   );
 };
 
-export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
+export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
@@ -163,8 +163,10 @@ const ImageNameBox = styled(Box)`
   }
 `;
 
-export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({
+export const ModuleOrPackageOrFile = ({
   metadata,
+}: {
+  metadata: WorkspaceDisplayMetadataFragment[];
 }) => {
   const imageKV = metadata.find(
     ({key}) => key === 'module_name' || key === 'package_name' || key === 'python_file',
@@ -183,10 +185,10 @@ export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadata
   return null;
 };
 
-export const LocationStatus: React.FC<{
+export const LocationStatus = (props: {
   location: string;
   locationOrError: WorkspaceRepositoryLocationNode;
-}> = (props) => {
+}) => {
   const {location, locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
 
@@ -242,7 +244,7 @@ export const LocationStatus: React.FC<{
   );
 };
 
-export const ReloadButton: React.FC<{location: string}> = ({location}) => {
+export const ReloadButton = ({location}: {location: string}) => {
   return (
     <ReloadRepositoryLocationButton
       location={location}

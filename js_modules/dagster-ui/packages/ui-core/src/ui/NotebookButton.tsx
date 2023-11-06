@@ -10,11 +10,15 @@ import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 
-export const NotebookButton: React.FC<{
+export const NotebookButton = ({
+  path,
+  repoLocation,
+  label,
+}: {
   path?: string;
   repoLocation: string;
   label?: string;
-}> = ({path, repoLocation, label}) => {
+}) => {
   const {rootServerURI} = React.useContext(AppContext);
   const [open, setOpen] = React.useState(false);
 

@@ -20,13 +20,7 @@ type Props = {
   mode?: string;
 };
 
-export const RunRequestTable: React.FC<Props> = ({
-  runRequests,
-  isJob,
-  repoAddress,
-  mode,
-  jobName,
-}) => {
+export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}: Props) => {
   const repo = useRepository(repoAddress);
 
   const body = (

@@ -205,10 +205,13 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   );
 };
 
-export const VirtualizedAssetCatalogHeader: React.FC<{
+export const VirtualizedAssetCatalogHeader = ({
+  headerCheckbox,
+  view,
+}: {
   headerCheckbox: React.ReactNode;
   view: AssetViewType;
-}> = ({headerCheckbox, view}) => {
+}) => {
   return (
     <Box
       background={Colors.White}
@@ -233,9 +236,7 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
   );
 };
 
-export const VirtualizedAssetHeader: React.FC<{
-  nameLabel: React.ReactNode;
-}> = ({nameLabel}) => {
+export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}) => {
   return (
     <Box
       border="top-and-bottom"

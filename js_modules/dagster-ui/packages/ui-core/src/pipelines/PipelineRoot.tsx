@@ -16,7 +16,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelineRoot: React.FC<Props> = (props) => {
+export const PipelineRoot = (props: Props) => {
   const {repoAddress} = props;
   const {FallthroughRoute} = React.useContext(JobFeatureContext);
 

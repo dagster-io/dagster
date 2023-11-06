@@ -37,8 +37,8 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
-  Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
-  TabButton: React.FC<{selected: 'timeline' | 'assets'}>;
+  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();

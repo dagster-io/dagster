@@ -19,7 +19,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const VirtualizedGraphTable: React.FC<Props> = ({repoAddress, graphs}) => {
+export const VirtualizedGraphTable = ({repoAddress, graphs}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({

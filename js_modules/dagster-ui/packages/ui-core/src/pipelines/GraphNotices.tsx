@@ -32,9 +32,12 @@ export const LargeDAGNotice = ({
   </LargeDAGContainer>
 );
 
-export const EmptyDAGNotice: React.FC<{isGraph: boolean; nodeType: 'asset' | 'op'}> = ({
+export const EmptyDAGNotice = ({
   isGraph,
   nodeType,
+}: {
+  isGraph: boolean;
+  nodeType: 'asset' | 'op';
 }) => {
   return (
     <CenteredContainer>
@@ -52,7 +55,7 @@ export const EmptyDAGNotice: React.FC<{isGraph: boolean; nodeType: 'asset' | 'op
   );
 };
 
-export const EntirelyFilteredDAGNotice: React.FC<{nodeType: 'asset' | 'op'}> = ({nodeType}) => {
+export const EntirelyFilteredDAGNotice = ({nodeType}: {nodeType: 'asset' | 'op'}) => {
   return (
     <CenteredContainer>
       <NonIdealState
@@ -69,7 +72,7 @@ export const EntirelyFilteredDAGNotice: React.FC<{nodeType: 'asset' | 'op'}> = (
   );
 };
 
-export const LoadingNotice: React.FC<{async: boolean; nodeType: 'asset' | 'op'}> = (props) => {
+export const LoadingNotice = (props: {async: boolean; nodeType: 'asset' | 'op'}) => {
   const {async} = props;
   return (
     <LoadingContainer>

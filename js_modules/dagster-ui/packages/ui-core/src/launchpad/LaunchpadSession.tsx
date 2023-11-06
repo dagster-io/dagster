@@ -148,10 +148,13 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
   }
 };
 
-const LaunchButtonContainer: React.FC<{
+const LaunchButtonContainer = ({
+  launchpadType,
+  children,
+}: {
   launchpadType: LaunchpadType;
   children: React.ReactNode;
-}> = ({launchpadType, children}) => {
+}) => {
   if (launchpadType === 'asset') {
     return (
       <Box flex={{direction: 'row'}} border="top" padding={{right: 12, vertical: 8}}>
@@ -174,7 +177,7 @@ const initialState: ILaunchpadSessionState = {
   tagEditorOpen: false,
 };
 
-const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
+const LaunchpadSession = (props: LaunchpadSessionProps) => {
   const {
     launchpadType,
     session: currentSession,

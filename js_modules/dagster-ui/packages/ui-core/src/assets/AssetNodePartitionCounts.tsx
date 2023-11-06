@@ -59,10 +59,10 @@ export const StyleForAssetPartitionStatus: Record<
   },
 };
 
-export const PartitionCountTags: React.FC<{
+export const PartitionCountTags = (props: {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
-}> = (props) => {
+}) => {
   const data = props.liveData?.partitionStats;
   return (
     <Box style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2}}>
@@ -85,11 +85,15 @@ export const PartitionCountTags: React.FC<{
   );
 };
 
-const PartitionCountTag: React.FC<{
+const PartitionCountTag = ({
+  status,
+  value,
+  total,
+}: {
   status: AssetPartitionStatus;
   value: number | undefined;
   total: number | undefined;
-}> = ({status, value, total}) => {
+}) => {
   const style = StyleForAssetPartitionStatus[status];
   const foreground = value ? style.foreground : Colors.Gray500;
   const background = value ? style.background : Colors.Gray50;
@@ -109,9 +113,11 @@ const PartitionCountTag: React.FC<{
   );
 };
 
-export const PartitionCountLabels: React.FC<{
+export const PartitionCountLabels = ({
+  partitionStats,
+}: {
   partitionStats: LiveDataForNode['partitionStats'] | null | undefined;
-}> = ({partitionStats}) => {
+}) => {
   return (
     <Box style={{display: 'flex', gap: 8}}>
       <PartitionCountLabel
@@ -138,11 +144,15 @@ export const PartitionCountLabels: React.FC<{
   );
 };
 
-const PartitionCountLabel: React.FC<{
+const PartitionCountLabel = ({
+  status,
+  value,
+  total,
+}: {
   status: AssetPartitionStatus;
   value: number | undefined;
   total: number | undefined;
-}> = ({status, value, total}) => {
+}) => {
   const style = StyleForAssetPartitionStatus[status];
 
   return (

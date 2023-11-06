@@ -24,11 +24,15 @@ import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {allPartitionsRange} from './SpanRepresentation';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 
-export const AssetJobPartitionsView: React.FC<{
+export const AssetJobPartitionsView = ({
+  partitionSetName,
+  repoAddress,
+  pipelineName,
+}: {
   pipelineName: string;
   partitionSetName: string;
   repoAddress: RepoAddress;
-}> = ({partitionSetName, repoAddress, pipelineName}) => {
+}) => {
   const {viewport, containerProps} = useViewport();
   const repositorySelector = repoAddressToSelector(repoAddress);
 
@@ -175,17 +179,7 @@ export const AssetJobPartitionsView: React.FC<{
   );
 };
 
-const AssetJobPartitionGraphs: React.FC<{
-  repositorySelector: RepositorySelector;
-  pipelineName: string;
-  partitionSetName: string;
-  multidimensional: boolean;
-  dimensionName: string | null;
-  dimensionKeys: string[];
-  selected: string[];
-  pageSize: number;
-  offset: number;
-}> = ({
+const AssetJobPartitionGraphs = ({
   repositorySelector,
   dimensionKeys,
   dimensionName,
@@ -195,6 +189,16 @@ const AssetJobPartitionGraphs: React.FC<{
   multidimensional,
   pipelineName,
   offset,
+}: {
+  repositorySelector: RepositorySelector;
+  pipelineName: string;
+  partitionSetName: string;
+  multidimensional: boolean;
+  dimensionName: string | null;
+  dimensionKeys: string[];
+  selected: string[];
+  pageSize: number;
+  offset: number;
 }) => {
   const partitions = usePartitionStepQuery({
     partitionSetName,

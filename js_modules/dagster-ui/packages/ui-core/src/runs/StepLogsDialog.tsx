@@ -55,11 +55,15 @@ export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: strin
   };
 }
 
-export const StepLogsDialog: React.FC<{
+export const StepLogsDialog = ({
+  runId,
+  stepKeys,
+  onClose,
+}: {
   runId?: string;
   stepKeys: string[];
   onClose: () => void;
-}> = ({runId, stepKeys, onClose}) => {
+}) => {
   return (
     <Dialog
       isOpen={!!runId}
@@ -97,12 +101,17 @@ export const StepLogsDialog: React.FC<{
   );
 };
 
-export const StepLogsModalContent: React.FC<{
+export const StepLogsModalContent = ({
+  runId,
+  stepKeys,
+  metadata,
+  logs,
+}: {
   runId: string;
   stepKeys: string[];
   metadata: IRunMetadataDict;
   logs: LogsProviderLogs;
-}> = ({runId, stepKeys, metadata, logs}) => {
+}) => {
   const supportsCapturedLogs = useSupportsCapturedLogs();
   const [logType, setComputeLogType] = useState<LogType>(LogType.structured);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);

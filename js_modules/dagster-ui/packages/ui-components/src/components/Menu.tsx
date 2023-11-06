@@ -13,7 +13,7 @@ import {IconName, Icon, IconWrapper} from './Icon';
 
 interface Props extends React.ComponentProps<typeof BlueprintMenu> {}
 
-export const Menu: React.FC<Props> = (props) => {
+export const Menu = (props: Props) => {
   return <StyledMenu {...props} />;
 };
 
@@ -67,7 +67,7 @@ interface ItemProps
   extends CommonMenuItemProps,
     Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'href' | 'icon'> {}
 
-export const MenuItem: React.FC<ItemProps> = (props) => {
+export const MenuItem = (props: ItemProps) => {
   const {icon, intent, ...rest} = props;
   return (
     <StyledMenuItem
@@ -88,7 +88,7 @@ interface MenuExternalLinkProps
 /**
  * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
  */
-export const MenuExternalLink: React.FC<MenuExternalLinkProps> = (props) => {
+export const MenuExternalLink = (props: MenuExternalLinkProps) => {
   const {icon, intent = 'none', ...rest} = props;
   return (
     <StyledMenuItem

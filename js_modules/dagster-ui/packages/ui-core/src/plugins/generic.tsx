@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
 
-export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
+export const SidebarComponent = (props: IPluginSidebarProps) => {
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {

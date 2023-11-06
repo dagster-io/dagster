@@ -61,7 +61,7 @@ interface ConfigEditorConfigPickerProps {
   assetSelection?: IExecutionSession['assetSelection'];
 }
 
-export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> = (props) => {
+export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) => {
   const {
     pipeline,
     base,
@@ -152,16 +152,14 @@ interface ConfigEditorPartitionPickerProps {
 const SORT_ORDER_KEY_BASE = 'dagster.partition-sort-order';
 type SortOrder = 'asc' | 'desc';
 
-const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = React.memo(
-  (props) => {
-    const {partitionSetName, value, onSelect, repoAddress, assetSelection} = props;
-    const {basePath} = React.useContext(AppContext);
-    const repositorySelector = repoAddressToSelector(repoAddress);
+const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPickerProps) => {
+  const {partitionSetName, value, onSelect, repoAddress, assetSelection} = props;
+  const {basePath} = React.useContext(AppContext);
+  const repositorySelector = repoAddressToSelector(repoAddress);
 
-    const {data, refetch, loading} = useQuery<
-      ConfigPartitionsQuery,
-      ConfigPartitionsQueryVariables
-    >(CONFIG_PARTITIONS_QUERY, {
+  const {data, refetch, loading} = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
+    CONFIG_PARTITIONS_QUERY,
+    {
       variables: {
         repositorySelector,
         partitionSetName,
@@ -170,166 +168,166 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
           : [],
       },
       fetchPolicy: 'network-only',
-    });
+    },
+  );
 
-    const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
-      repoAddress,
-    )}-${partitionSetName}`;
+  const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
+    repoAddress,
+  )}-${partitionSetName}`;
 
-    const [sortOrder, setSortOrder] = useStateWithStorage<SortOrder>(sortOrderKey, (value: any) =>
-      value === undefined ? 'asc' : value,
-    );
+  const [sortOrder, setSortOrder] = useStateWithStorage<SortOrder>(sortOrderKey, (value: any) =>
+    value === undefined ? 'asc' : value,
+  );
 
-    const partitions: Partition[] = React.useMemo(() => {
-      const retrieved =
-        data?.partitionSetOrError.__typename === 'PartitionSet' &&
-        data?.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
-          ? data.partitionSetOrError.partitionsOrError.results
-          : [];
-      return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
-    }, [data, sortOrder]);
-
-    const error =
+  const partitions: Partition[] = React.useMemo(() => {
+    const retrieved =
       data?.partitionSetOrError.__typename === 'PartitionSet' &&
-      data?.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
-        ? data.partitionSetOrError.partitionsOrError
-        : null;
+      data?.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
+        ? data.partitionSetOrError.partitionsOrError.results
+        : [];
+    return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
+  }, [data, sortOrder]);
 
-    const selected = partitions.find((p) => p.name === value);
+  const error =
+    data?.partitionSetOrError.__typename === 'PartitionSet' &&
+    data?.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
+      ? data.partitionSetOrError.partitionsOrError
+      : null;
 
-    const onClickSort = React.useCallback(
-      (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-        setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
-      },
-      [setSortOrder],
-    );
+  const selected = partitions.find((p) => p.name === value);
 
-    const rightElement = partitions.length ? (
-      <SortButton onMouseDown={onClickSort}>
-        <Icon name="sort_by_alpha" color={Colors.Gray400} />
-      </SortButton>
-    ) : undefined;
+  const onClickSort = React.useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
+    },
+    [setSortOrder],
+  );
 
-    const inputProps: InputGroupProps2 & HTMLInputProps = {
-      placeholder: 'Partition',
-      style: {width: 180},
-      intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
-      rightElement,
+  const rightElement = partitions.length ? (
+    <SortButton onMouseDown={onClickSort}>
+      <Icon name="sort_by_alpha" color={Colors.Gray400} />
+    </SortButton>
+  ) : undefined;
+
+  const inputProps: InputGroupProps2 & HTMLInputProps = {
+    placeholder: 'Partition',
+    style: {width: 180},
+    intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
+    rightElement,
+  };
+
+  const {isDynamicPartition, partitionDefinitionName} = React.useMemo(() => {
+    const assetNodes = data?.assetNodes;
+    const definition = assetNodes?.find((a) => !!a.partitionDefinition)?.partitionDefinition;
+    if (
+      !definition ||
+      assetNodes?.some(
+        (node) =>
+          node?.partitionDefinition?.name && node?.partitionDefinition?.name !== definition?.name,
+      )
+    ) {
+      return {isDynamicPartition: false, partitionDefinitionName: undefined};
+    }
+    return {
+      isDynamicPartition: definition.type === PartitionDefinitionType.DYNAMIC,
+      partitionDefinitionName: definition.name,
     };
+  }, [data?.assetNodes]);
 
-    const {isDynamicPartition, partitionDefinitionName} = React.useMemo(() => {
-      const assetNodes = data?.assetNodes;
-      const definition = assetNodes?.find((a) => !!a.partitionDefinition)?.partitionDefinition;
-      if (
-        !definition ||
-        assetNodes?.some(
-          (node) =>
-            node?.partitionDefinition?.name && node?.partitionDefinition?.name !== definition?.name,
-        )
-      ) {
-        return {isDynamicPartition: false, partitionDefinitionName: undefined};
-      }
-      return {
-        isDynamicPartition: definition.type === PartitionDefinitionType.DYNAMIC,
-        partitionDefinitionName: definition.name,
-      };
-    }, [data?.assetNodes]);
+  const [showCreatePartition, setShowCreatePartition] = React.useState(false);
 
-    const [showCreatePartition, setShowCreatePartition] = React.useState(false);
-
-    // If we are loading the partitions and do NOT have any cached data to display,
-    // show the component in a loading state with a spinner and fill it with the
-    // current partition's name so it doesn't flicker (if one is set already.)
-    if (loading && partitions.length === 0) {
-      return (
-        <Suggest<string>
-          key="loading"
-          inputProps={{
-            ...inputProps,
-            rightElement: !value ? (
-              <Box
-                flex={{direction: 'column', justifyContent: 'center'}}
-                padding={{right: 4}}
-                style={{height: '30px'}}
-              >
-                <Spinner purpose="body-text" />
-              </Box>
-            ) : undefined,
-          }}
-          items={[]}
-          itemRenderer={() => null}
-          noResults={<MenuItem disabled={true} text="Loading..." />}
-          inputValueRenderer={(str) => str}
-          selectedItem={value}
-          onItemSelect={() => {}}
-        />
-      );
-    }
-
-    if (error) {
-      showCustomAlert({
-        body: <PythonErrorInfo error={error} />,
-      });
-    }
-
-    // Note: We don't want this Suggest to be a fully "controlled" React component.
-    // Keeping it's state is annoyign and we only want to update our data model on
-    // selection change. However, we need to set an initial value (defaultSelectedItem)
-    // and ensure it is re-applied to the internal state when it changes (via `key` below).
+  // If we are loading the partitions and do NOT have any cached data to display,
+  // show the component in a loading state with a spinner and fill it with the
+  // current partition's name so it doesn't flicker (if one is set already.)
+  if (loading && partitions.length === 0) {
     return (
-      <>
-        <Suggest<Partition>
-          key={selected ? selected.name : 'none'}
-          defaultSelectedItem={selected}
-          items={partitions}
-          inputProps={inputProps}
-          inputValueRenderer={(partition) => partition.name}
-          itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
-          itemRenderer={(partition, props) => (
-            <MenuItem
-              active={props.modifiers.active}
-              onClick={props.handleClick}
-              key={partition.name}
-              text={partition.name}
-            />
-          )}
-          noResults={<MenuItem disabled={true} text="No presets." />}
-          onItemSelect={(item) => {
-            onSelect(repositorySelector, partitionSetName, item.name);
+      <Suggest<string>
+        key="loading"
+        inputProps={{
+          ...inputProps,
+          rightElement: !value ? (
+            <Box
+              flex={{direction: 'column', justifyContent: 'center'}}
+              padding={{right: 4}}
+              style={{height: '30px'}}
+            >
+              <Spinner purpose="body-text" />
+            </Box>
+          ) : undefined,
+        }}
+        items={[]}
+        itemRenderer={() => null}
+        noResults={<MenuItem disabled={true} text="Loading..." />}
+        inputValueRenderer={(str) => str}
+        selectedItem={value}
+        onItemSelect={() => {}}
+      />
+    );
+  }
+
+  if (error) {
+    showCustomAlert({
+      body: <PythonErrorInfo error={error} />,
+    });
+  }
+
+  // Note: We don't want this Suggest to be a fully "controlled" React component.
+  // Keeping it's state is annoyign and we only want to update our data model on
+  // selection change. However, we need to set an initial value (defaultSelectedItem)
+  // and ensure it is re-applied to the internal state when it changes (via `key` below).
+  return (
+    <>
+      <Suggest<Partition>
+        key={selected ? selected.name : 'none'}
+        defaultSelectedItem={selected}
+        items={partitions}
+        inputProps={inputProps}
+        inputValueRenderer={(partition) => partition.name}
+        itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
+        itemRenderer={(partition, props) => (
+          <MenuItem
+            active={props.modifiers.active}
+            onClick={props.handleClick}
+            key={partition.name}
+            text={partition.name}
+          />
+        )}
+        noResults={<MenuItem disabled={true} text="No presets." />}
+        onItemSelect={(item) => {
+          onSelect(repositorySelector, partitionSetName, item.name);
+        }}
+      />
+      {isDynamicPartition ? (
+        <Button
+          onClick={() => {
+            setShowCreatePartition(true);
+          }}
+        >
+          Add new partition
+        </Button>
+      ) : null}
+      {/* Wrapper div to avoid any key conflicts with the key on the Suggestion component */}
+      <div>
+        <CreatePartitionDialog
+          key={showCreatePartition ? '1' : '0'}
+          isOpen={showCreatePartition}
+          partitionDefinitionName={partitionDefinitionName}
+          repoAddress={repoAddress}
+          close={() => {
+            setShowCreatePartition(false);
+          }}
+          refetch={async () => {
+            await refetch();
+          }}
+          onCreated={(partitionName) => {
+            onSelect(repositorySelector, partitionSetName, partitionName);
           }}
         />
-        {isDynamicPartition ? (
-          <Button
-            onClick={() => {
-              setShowCreatePartition(true);
-            }}
-          >
-            Add new partition
-          </Button>
-        ) : null}
-        {/* Wrapper div to avoid any key conflicts with the key on the Suggestion component */}
-        <div>
-          <CreatePartitionDialog
-            key={showCreatePartition ? '1' : '0'}
-            isOpen={showCreatePartition}
-            partitionDefinitionName={partitionDefinitionName}
-            repoAddress={repoAddress}
-            close={() => {
-              setShowCreatePartition(false);
-            }}
-            refetch={async () => {
-              await refetch();
-            }}
-            onCreated={(partitionName) => {
-              onSelect(repositorySelector, partitionSetName, partitionName);
-            }}
-          />
-        </div>
-      </>
-    );
-  },
-);
+      </div>
+    </>
+  );
+});
 
 interface ConfigEditorConfigGeneratorPickerProps {
   label: string;
@@ -337,8 +335,8 @@ interface ConfigEditorConfigGeneratorPickerProps {
   onSelect: (configGenerator: ConfigGenerator) => void;
 }
 
-const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> =
-  React.memo((props) => {
+const ConfigEditorConfigGeneratorPicker = React.memo(
+  (props: ConfigEditorConfigGeneratorPickerProps) => {
     const {configGenerators, label, onSelect} = props;
     const button = React.useRef<HTMLButtonElement>(null);
 
@@ -414,7 +412,8 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
         </ShortcutHandler>
       </div>
     );
-  });
+  },
+);
 
 export const SortButton = styled.button`
   border: 0;

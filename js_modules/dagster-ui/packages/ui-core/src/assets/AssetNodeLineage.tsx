@@ -18,14 +18,21 @@ import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetLineageScope, AssetViewParams} from './types';
 
-export const AssetNodeLineage: React.FC<{
+export const AssetNodeLineage = ({
+  params,
+  setParams,
+  assetKey,
+  assetGraphData,
+  graphQueryItems,
+  requestedDepth,
+}: {
   params: AssetViewParams;
   setParams: (params: AssetViewParams) => void;
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
-}> = ({params, setParams, assetKey, assetGraphData, graphQueryItems, requestedDepth}) => {
+}) => {
   const maxDistances = React.useMemo(
     () => calculateGraphDistances(graphQueryItems, assetKey),
     [graphQueryItems, assetKey],
@@ -99,11 +106,15 @@ const DepthHidesAssetsNotice = styled.div`
   z-index: 2;
 `;
 
-const LineageDepthControl: React.FC<{
+const LineageDepthControl = ({
+  value,
+  max,
+  onChange,
+}: {
   value: number;
   max: number;
   onChange: (v: number) => void;
-}> = ({value, max, onChange}) => {
+}) => {
   const [text, setText] = React.useState(`${value}`);
   React.useEffect(() => {
     setText(`${value}`);

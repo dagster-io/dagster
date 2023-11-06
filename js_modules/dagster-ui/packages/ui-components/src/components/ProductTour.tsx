@@ -36,7 +36,7 @@ type Props = {
   width?: CSSProperties['width'];
 } & ObjectType;
 
-export const ProductTour: React.FC<Props> = ({
+export const ProductTour = ({
   title,
   description,
   actions,
@@ -46,7 +46,7 @@ export const ProductTour: React.FC<Props> = ({
   video,
   object,
   width = '260px',
-}) => {
+}: Props) => {
   const media = React.useMemo(() => {
     if (img) {
       return <img src={img} style={{borderRadius: '6px'}} />;
