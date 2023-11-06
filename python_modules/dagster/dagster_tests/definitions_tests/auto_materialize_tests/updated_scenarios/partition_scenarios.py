@@ -396,15 +396,17 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_in_sequence_fan_in_partitions",
-        initial_state=two_assets_in_sequence_fan_in_partitions.with_all_eager(),
+        initial_state=two_assets_in_sequence_fan_in_partitions.with_asset_properties(
+            keys=["B"], auto_materialize_policy=AutoMaterializePolicy.eager()
+        ),
         execution_fn=lambda state: state.evaluate_tick()
-        .assert_requested_runs(run_request(["A"], partition_key="3"))
-        .with_runs(run_request(["A"], partition_key="2"))
+        .assert_requested_runs()
+        .with_runs(run_request(["A"], partition_key="3"))
         .evaluate_tick()
-        # still waiting for partition 1
+        # still waiting for partitions 1 and 2
         .assert_requested_runs()
         # now can materialize
-        .with_runs(run_request(["A"], partition_key="1"))
+        .with_runs(run_request(["A"], partition_key="1"), run_request(["A"], partition_key="2"))
         .evaluate_tick()
         .assert_requested_runs(run_request(["B"], partition_key="1"))
         .with_runs(
@@ -412,7 +414,6 @@ partition_scenarios = [
             run_request(["A"], partition_key="2"),
             run_request(["A"], partition_key="3"),
         )
-        .evaluate_tick()
         .assert_requested_runs(run_request(["B"], partition_key="1")),
     ),
     AssetDaemonScenario(
