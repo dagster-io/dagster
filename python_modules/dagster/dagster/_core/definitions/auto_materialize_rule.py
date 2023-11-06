@@ -399,7 +399,6 @@ class AutoMaterializeRule(ABC):
             all_partitions (bool): If True, this rule fires for all partitions of this asset on each
                 cron tick. If False, this rule fires only for the last partition of this asset.
                 Defaults to False.
-
         """
         check.param_invariant(
             is_valid_cron_string(cron_schedule), "cron_schedule", "must be a valid cron string"
