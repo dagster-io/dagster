@@ -174,6 +174,12 @@ one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated = (
 
 # auto materialization policies
 auto_materialize_policy_scenarios = {
+    # need to keep this around temporarily as test_asset_daemon.py relies on it
+    "auto_materialize_policy_lazy_freshness_missing": AssetReconciliationScenario(
+        assets=single_lazy_asset_with_freshness_policy,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"])],
+    ),
     "auto_materialize_policy_with_default_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
