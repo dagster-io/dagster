@@ -173,7 +173,6 @@ export const Node = ({
                   onClick={(e) => {
                     // stop propagation outside of the popover to prevent parent onClick from being selected
                     e.stopPropagation();
-                    console.log('onClick');
                   }}
                 >
                   <Popover
