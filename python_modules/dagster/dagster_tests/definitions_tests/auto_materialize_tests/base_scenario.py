@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import itertools
+import json
 import logging
 import os
 import random
@@ -592,12 +593,18 @@ def run(
     )
 
 
+FAIL_TAG = "test/fail"
+
+
 def run_request(
-    asset_keys: Sequence[CoercibleToAssetKey], partition_key: Optional[str] = None
+    asset_keys: Sequence[CoercibleToAssetKey],
+    partition_key: Optional[str] = None,
+    fail_keys: Optional[Sequence[str]] = None,
 ) -> RunRequest:
     return RunRequest(
         asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
         partition_key=partition_key,
+        tags={FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {},
     )
 
 

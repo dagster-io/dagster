@@ -356,7 +356,7 @@ cron_scenarios = [
         .assert_requested_runs(
             *[run_request(["A"], hour_partition_key(state.current_time, delta=i)) for i in range(3)]
         )
-        .with_requested_runs()
+        .with_not_started_runs()
         .with_current_time_advanced(hours=2)
         .evaluate_tick()
         .assert_requested_runs(
