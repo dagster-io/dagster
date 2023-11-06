@@ -131,6 +131,12 @@ export const Node = ({
                   e.stopPropagation();
                   toggleOpen();
                 }}
+                onKeyDown={(e) => {
+                  if (e.code === 'Space') {
+                    // Prevent the default scrolling behavior
+                    e.preventDefault();
+                  }
+                }}
                 style={{cursor: 'pointer', width: 18}}
               >
                 <Icon
@@ -173,6 +179,12 @@ export const Node = ({
                   onClick={(e) => {
                     // stop propagation outside of the popover to prevent parent onClick from being selected
                     e.stopPropagation();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.code === 'Space') {
+                      // Prevent the default scrolling behavior
+                      e.preventDefault();
+                    }
                   }}
                 >
                   <Popover
