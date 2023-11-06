@@ -1317,7 +1317,7 @@ def test_partition_with_end_date(
     "partitions_def",
     [
         (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
-        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+        (DailyPartitionsDefinition("2023-01-01")),
     ],
 )
 def test_time_window_partitions_def_serialization(partitions_def):

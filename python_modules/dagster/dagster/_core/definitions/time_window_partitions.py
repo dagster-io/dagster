@@ -84,6 +84,10 @@ class TimeWindow(NamedTuple):
     end: PublicAttr[datetime]
 
 
+# Unfortunately we can't use @whitelist_for_serdes on TimeWindowPartitionsDefinition
+# because args to __new__ are a different order than the fields in the NamedTuple, and we can't
+# reorder them because it's a public API. Until TimeWindowPartitionsDefinition can decorated,
+# this class is used to serialize it.
 @whitelist_for_serdes(
     field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer}
 )
@@ -222,6 +226,8 @@ class TimeWindowPartitionsDefinition(
                 " TimeWindowPartitionsDefinition."
             )
 
+        # When adding new fields to the NamedTuple, update the SerializableTimeWindowPartitionsDefinition
+        # class with the same fields.
         return super(TimeWindowPartitionsDefinition, cls).__new__(
             cls, start_dt, timezone, end_dt, fmt, end_offset, cron_schedule
         )
