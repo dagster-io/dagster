@@ -3,7 +3,6 @@
   <a target="_blank" href="https://dagster.io" style="background:none">
     <img alt="dagster logo" src=".github/dagster-readme-header.svg" width="auto" height="100%">
   </a>
-<p style="text-align: center;">Remember to <a target="_blank" href="https://github.com/dagster-io/dagster">star the Dagster GitHub repo</a> for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
