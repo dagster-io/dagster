@@ -1,13 +1,14 @@
 import pytest
-from dagster._core.instance import DagsterInstance
+from dagster import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from .asset_daemon_scenario import AssetDaemonScenario
 from .updated_scenarios.basic_scenarios import basic_scenarios
+from .updated_scenarios.cron_scenarios import cron_scenarios
 from .updated_scenarios.partition_scenarios import partition_scenarios
 
-all_scenarios = basic_scenarios + partition_scenarios
+all_scenarios = basic_scenarios + partition_scenarios + cron_scenarios
 
 
 @pytest.fixture
