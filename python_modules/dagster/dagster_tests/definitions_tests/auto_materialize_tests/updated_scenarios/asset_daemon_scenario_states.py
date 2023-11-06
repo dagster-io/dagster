@@ -1,5 +1,6 @@
 from dagster import AssetSpec, StaticPartitionsDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -46,3 +47,4 @@ time_multipartitions_def = MultiPartitionsDefinition(
 static_multipartitions_def = MultiPartitionsDefinition(
     {"static1": two_partitions_def, "static2": two_partitions_def}
 )
+dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
