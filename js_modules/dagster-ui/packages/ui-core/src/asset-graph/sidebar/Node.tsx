@@ -110,6 +110,13 @@ export const Node = ({
   const showArrow =
     !isAssetNode || (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
 
+  const ref = React.useRef<HTMLElement | null>(null);
+  React.useLayoutEffect(() => {
+    if (isSelected) {
+      ref.current?.focus();
+    }
+  }, [isSelected]);
+
   return (
     <>
       {launchpadElement}
@@ -160,6 +167,7 @@ export const Node = ({
               }}
               $showFocusOutline={true}
               autoFocus={isSelected}
+              ref={ref}
             >
               <div
                 style={{

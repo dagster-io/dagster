@@ -295,6 +295,8 @@ export const AssetGraphExplorerSidebar = React.memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [viewType, renderedNodes, selectedNode],
     );
+    const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
+    indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 
     React.useLayoutEffect(() => {
       if (indexOfLastSelectedNode !== -1) {
@@ -354,7 +356,8 @@ export const AssetGraphExplorerSidebar = React.memo(
             onKeyDown={(e) => {
               let nextIndex = 0;
               if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
-                nextIndex = indexOfLastSelectedNode + (e.code === 'ArrowDown' ? 1 : -1);
+                nextIndex = indexOfLastSelectedNodeRef.current + (e.code === 'ArrowDown' ? 1 : -1);
+                indexOfLastSelectedNodeRef.current = nextIndex;
                 e.preventDefault();
                 const nextNode = renderedNodes[nextIndex % renderedNodes.length]!;
                 setSelectedNode(nextNode);
