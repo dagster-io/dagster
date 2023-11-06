@@ -392,7 +392,7 @@ class AutoMaterializeRule(ABC):
         request all partitions that have been missed since the previous tick.
 
         Args:
-            cron_schedule (str): A cron schedule string (e.g. "0 * * * *") indicating the ticks for
+            cron_schedule (str): A cron schedule string (e.g. "`0 * * * *`") indicating the ticks for
                 which this rule should fire.
             timezone (str): The timezone in which this cron schedule should be evaluated. Defaults
                 to "UTC".
