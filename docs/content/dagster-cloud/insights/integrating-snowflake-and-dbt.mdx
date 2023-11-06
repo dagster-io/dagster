@@ -48,7 +48,12 @@ def my_asset(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt_with_snowflake_insights(context, dbt_cli_invocation)
 ```
 
-This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log. </TabItem> <TabItem name="Using ops and jobs"> First, instrument the op function with `dbt_with_snowflake_insights`:
+This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log.
+
+</TabItem>
+<TabItem name="Using ops and jobs">
+
+First, instrument the op function with `dbt_with_snowflake_insights`:
 
 ```python
 from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
