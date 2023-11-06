@@ -8,6 +8,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
 import {LogLevel} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {autolinkTextContent} from '../ui/autolinking';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
@@ -247,11 +248,26 @@ interface UnstructuredProps {
   metadata: IRunMetadataDict;
 }
 
+export const UnstructuredDialogContent = ({message}: {message: string}) => {
+  const messageEl = React.createRef<HTMLDivElement>();
+  React.useEffect(() => {
+    if (messageEl.current) {
+      autolinkTextContent(messageEl.current, {useIdleCallback: true});
+    }
+  }, [message, messageEl]);
+
+  return (
+    <div style={{whiteSpace: 'pre-wrap', maxHeight: '70vh', overflow: 'auto'}} ref={messageEl}>
+      {message}
+    </div>
+  );
+};
+
 export class Unstructured extends React.Component<UnstructuredProps> {
   onExpand = () => {
     showCustomAlert({
       title: 'Log',
-      body: <div style={{whiteSpace: 'pre-wrap'}}>{this.props.node.message}</div>,
+      body: <UnstructuredDialogContent message={this.props.node.message} />,
     });
   };
 
@@ -288,6 +304,18 @@ const UnstructuredMemoizedContent: React.FC<{
   const step = stepKey ? metadata.steps[stepKey] : null;
   const stepStartTime = step?.start;
 
+  // Note: We need to render enough of our text content that the TruncationProvider wrapping the
+  // element knows whether to show "View full message", but that shows a modal with the full
+  // message - the full text is never needed in the log table. Clip to a max of 15,000 characters
+  // to avoid rendering 1M characters in a small box. 15k is 2700x580px with no whitespace.
+  const messageClipped = node.message.length > 15000 ? node.message.slice(0, 15000) : node.message;
+  const messageEl = React.createRef<HTMLDivElement>();
+  React.useEffect(() => {
+    if (messageEl.current) {
+      autolinkTextContent(messageEl.current, {useIdleCallback: messageClipped.length > 5000});
+    }
+  }, [messageClipped, messageEl]);
+
   return (
     <Row
       level={node.level}
@@ -304,8 +332,8 @@ const UnstructuredMemoizedContent: React.FC<{
       <EventTypeColumn>
         <span style={{marginLeft: 8}}>{node.level}</span>
       </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
-        {node.message}
+      <Box padding={{horizontal: 12}} style={{flex: 1}} ref={messageEl}>
+        {messageClipped}
       </Box>
     </Row>
   );

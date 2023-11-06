@@ -198,7 +198,31 @@ def test_project_scaffold_command_with_runtime_manifest_without_env_var(
         importlib.import_module(f"{project_name}.{project_name}.definitions")
 
 
-def test_project_scaffold_command_on_invalid_dbt_project(
+def test_project_scaffold_command_on_invalid_dagster_project_name(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    project_name = "test-dagster-scaffold-invalid-dagster-project-name"
+    dagster_project_dir = tmp_path.joinpath(project_name)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert not dagster_project_dir.exists()
+
+
+def test_project_scaffold_command_on_invalid_dbt_project_dir(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.chdir(tmp_path)

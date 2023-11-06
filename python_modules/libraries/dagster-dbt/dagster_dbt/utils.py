@@ -104,7 +104,11 @@ def result_to_events(
         status = (
             "fail"
             if result.get("fail")
-            else "skip" if result.get("skip") else "error" if result.get("error") else "success"
+            else "skip"
+            if result.get("skip")
+            else "error"
+            if result.get("error")
+            else "success"
         )
     else:
         status = result["status"]
@@ -272,16 +276,20 @@ def select_unique_ids_from_manifest(
         manifest = Manifest(
             # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
             nodes={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["nodes"].items()  # type: ignore
             },
             sources={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["sources"].items()  # type: ignore
             },
             metrics={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["metrics"].items()  # type: ignore
             },
             exposures={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["exposures"].items()  # type: ignore
             },
         )
         child_map = manifest_json["child_map"]

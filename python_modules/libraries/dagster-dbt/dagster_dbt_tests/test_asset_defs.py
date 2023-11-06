@@ -173,7 +173,11 @@ def test_fail_immediately(
     ).execute_in_process()
 
     if isinstance(good_dbt, DbtCliClientResource):
-        assert good_dbt.with_replaced_resource_context(build_init_resource_context()).get_dbt_client().get_run_results_json()  # type: ignore
+        assert (
+            good_dbt.with_replaced_resource_context(build_init_resource_context())
+            .get_dbt_client()
+            .get_run_results_json()
+        )
     elif isinstance(good_dbt, DbtCliResource):
         assert parse_run_results(test_project_dir)
     else:

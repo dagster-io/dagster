@@ -1,5 +1,6 @@
 import pytest
 from dagster import (
+    AssetCheckResult,
     AssetCheckSpec,
     AssetExecutionContext,
     AssetSpec,
@@ -7,6 +8,7 @@ from dagster import (
     ExecuteInProcessResult,
     MaterializeResult,
     asset,
+    asset_check,
     multi_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
@@ -183,8 +185,7 @@ def test_wrong_asset_check_name() -> None:
         execute_asset_through_def(an_asset, resources={"inprocess_client": InProcessPipesClient()})
     assert (
         "Received unexpected AssetCheckResult. No checks currently being evaluated target asset"
-        " 'an_asset' and have name 'wrong_name'"
-        in str(exc_info.value)
+        " 'an_asset' and have name 'wrong_name'" in str(exc_info.value)
     )
     assert called["yes"]
 
@@ -209,6 +210,38 @@ def test_forget_to_return_materialize_result() -> None:
     assert (
         "If using `<PipesClient>.run`, you should always return"
         " `<PipesClient>.run(...).get_results()` or"
-        " `<PipesClient>.run(...).get_materialize_result()"
-        in str(exc_info.value)
+        " `<PipesClient>.run(...).get_materialize_result()" in str(exc_info.value)
     )
+
+
+def test_get_asset_check_result() -> None:
+    called = {}
+
+    def _impl(context: PipesContext):
+        context.report_asset_check(
+            check_name="an_asset_check",
+            asset_key="an_asset",
+            passed=True,
+            metadata={"some_key": "some_value"},
+        )
+        called["yes"] = True
+
+    @asset_check(asset="an_asset")
+    def an_asset_check(
+        context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+    ) -> AssetCheckResult:
+        return inprocess_client.run(context=context, fn=_impl).get_asset_check_result()
+
+    result = (
+        Definitions(
+            asset_checks=[an_asset_check],
+            resources={"inprocess_client": InProcessPipesClient()},
+        )
+        .get_implicit_global_asset_job_def()
+        .execute_in_process()
+    )
+    assert result.success
+    chk_events = result.get_asset_check_evaluations()
+    assert len(chk_events) == 1
+    assert chk_events[0].metadata["some_key"].value == "some_value"
+    assert called["yes"]

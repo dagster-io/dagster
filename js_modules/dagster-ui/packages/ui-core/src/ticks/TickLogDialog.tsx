@@ -3,7 +3,7 @@ import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io
 import * as React from 'react';
 
 import {InstigationSelector} from '../graphql/types';
-import {HistoryTickFragment} from '../instigation/types/TickHistory.types';
+import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 import {EventTypeColumn, TimestampColumn, Row} from '../runs/LogsRowComponents';
 import {
   ColumnWidthsProvider,

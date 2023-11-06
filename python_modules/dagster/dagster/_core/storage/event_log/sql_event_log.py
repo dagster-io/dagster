@@ -1377,7 +1377,9 @@ class SqlEventLogStorage(EventLogStorage):
         )
         with self.index_connection() as conn:
             backcompat_rows = db_fetch_mappings(conn, backcompat_query)
-        return {AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows}  # type: ignore
+        return {
+            AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows
+        }  # type: ignore
 
     def _can_mark_assets_as_migrated(self, rows):
         if not self.has_asset_key_index_cols():
@@ -1853,7 +1855,7 @@ class SqlEventLogStorage(EventLogStorage):
         return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: AssetKey
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
@@ -1870,6 +1872,7 @@ class SqlEventLogStorage(EventLogStorage):
                 DagsterEventType.ASSET_MATERIALIZATION,
                 DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
             ],
+            after_cursor=after_storage_id,
         )
 
         latest_events_subquery = db_subquery(

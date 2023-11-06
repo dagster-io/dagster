@@ -61,6 +61,8 @@ def inner_plan_execution_iterator(
             while not active_execution.is_complete:
                 step = active_execution.get_next_step()
 
+                yield from active_execution.concurrency_event_iterator(job_context)
+
                 if not step:
                     active_execution.sleep_til_ready()
                     continue

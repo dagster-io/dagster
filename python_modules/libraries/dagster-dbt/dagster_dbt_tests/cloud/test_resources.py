@@ -33,7 +33,7 @@ def get_dbt_cloud_resource_fixture(request) -> Any:
                 auth_token="some_auth_token", account_id=SAMPLE_ACCOUNT_ID, **kwargs
             )
             .with_replaced_resource_context(build_init_resource_context())
-            .get_dbt_client()  # type: ignore
+            .get_dbt_client()
         )
 
     else:

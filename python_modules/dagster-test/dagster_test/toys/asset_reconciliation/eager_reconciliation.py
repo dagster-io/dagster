@@ -7,27 +7,33 @@ from dagster import (
 
 
 @asset
-def root1(): ...
+def root1():
+    ...
 
 
 @asset
-def root2(): ...
+def root2():
+    ...
 
 
 @asset
-def diamond_left(root1): ...
+def diamond_left(root1):
+    ...
 
 
 @asset
-def diamond_right(root1): ...
+def diamond_right(root1):
+    ...
 
 
 @asset
-def diamond_sink(diamond_left, diamond_right): ...
+def diamond_sink(diamond_left, diamond_right):
+    ...
 
 
 @asset
-def after_both_roots(root1, root2): ...
+def after_both_roots(root1, root2):
+    ...
 
 
 defs = Definitions(

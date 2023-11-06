@@ -394,7 +394,8 @@ def test_dependency_resolution_partition_mapping():
         return upstream
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj): ...
+        def handle_output(self, context, obj):
+            ...
 
         def load_input(self, context):
             assert context.asset_key.path == ["staging", "upstream"]

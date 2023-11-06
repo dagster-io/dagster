@@ -17,7 +17,7 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import ERROR_FRAGMENT
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    infer_job_or_pipeline_selector,
+    infer_job_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -132,7 +132,9 @@ query GetLatestExecution($assetKey: AssetKeyInput!) {
 }
 """
 
-LAUNCH_PIPELINE_EXECUTION_MUTATION = ERROR_FRAGMENT + """
+LAUNCH_PIPELINE_EXECUTION_MUTATION = (
+    ERROR_FRAGMENT
+    + """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
@@ -189,6 +191,7 @@ mutation($executionParams: ExecutionParams!) {
   }
 }
 """
+)
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {
@@ -720,7 +723,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
     def test_launch_subset_with_only_check(self, graphql_context: WorkspaceRequestContext):
         # materialize the asset and run the check first
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[{"path": ["asset_1"]}],
@@ -772,7 +775,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(materializations) == 1
 
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[],
@@ -824,7 +827,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 assert log.dagster_event.event_type != DagsterEventType.ASSET_MATERIALIZATION.value
 
     def test_launch_subset_asset_and_included_check(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[{"path": ["asset_1"]}],
@@ -877,7 +880,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 1
 
     def test_check_subset_error(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_check_selection=[
@@ -905,7 +908,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_launch_subset_asset_no_check(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[{"path": ["asset_1"]}],
@@ -945,7 +948,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 1
 
     def test_multi_asset(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "checked_multi_asset_job",
         )
@@ -987,7 +990,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 2
 
     def test_multi_asset_without_check(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "checked_multi_asset_job",
             asset_selection=[{"path": ["one"]}],
@@ -1030,7 +1033,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(materializations) == 1
 
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "checked_multi_asset_job",
             asset_selection=[{"path": ["two"]}],
@@ -1073,7 +1076,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(materializations) == 1
 
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "checked_multi_asset_job",
             asset_selection=[{"path": ["one"]}, {"path": ["two"]}],
@@ -1117,7 +1120,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 2
 
     def test_multi_asset_only_check(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "checked_multi_asset_job",
             asset_selection=[],
@@ -1163,7 +1166,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 0
 
     def test_step_key(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "checked_multi_asset_job",
             asset_selection=[],

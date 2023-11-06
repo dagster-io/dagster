@@ -41,7 +41,11 @@ from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_key_range import PartitionKeyRange
-from .partition_mapping import PartitionMapping, UpstreamPartitionsResult, infer_partition_mapping
+from .partition_mapping import (
+    PartitionMapping,
+    UpstreamPartitionsResult,
+    infer_partition_mapping,
+)
 from .source_asset import SourceAsset
 from .time_window_partitions import (
     get_time_partition_key,
@@ -158,9 +162,9 @@ class AssetGraph:
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
-        partition_mappings_by_key: Dict[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]] = (
-            {}
-        )
+        partition_mappings_by_key: Dict[
+            AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]
+        ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
@@ -178,9 +182,9 @@ class AssetGraph:
                 partitions_defs_by_key[asset.key] = asset.partitions_def
                 group_names_by_key[asset.key] = asset.group_name
                 is_observable_by_key[asset.key] = asset.is_observable
-                auto_observe_interval_minutes_by_key[asset.key] = (
-                    asset.auto_observe_interval_minutes
-                )
+                auto_observe_interval_minutes_by_key[
+                    asset.key
+                ] = asset.auto_observe_interval_minutes
             else:  # AssetsDefinition
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
@@ -597,7 +601,10 @@ class AssetGraph:
                     if child_partitions_def:
                         if partitions_subset is None:
                             child_partitions_subset = (
-                                child_partitions_def.subset_with_all_partitions()
+                                child_partitions_def.subset_with_all_partitions(
+                                    current_time=current_time,
+                                    dynamic_partitions_store=dynamic_partitions_store,
+                                )
                             )
                             queued_subsets_by_asset_key[child] = child_partitions_subset
                         else:

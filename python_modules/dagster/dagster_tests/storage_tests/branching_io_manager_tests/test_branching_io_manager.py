@@ -197,8 +197,7 @@ def test_basic_workflow():
 
         assert (
             # staging_after_iteration_runner.load_asset_value("now_time_plus_N")
-            result
-            == now_time_prod_value_1 + 17
+            result == now_time_prod_value_1 + 17
         )
 
         # we were able to do this without having an materializations in staging of the root asset

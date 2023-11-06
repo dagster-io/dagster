@@ -18,11 +18,12 @@ def create_db_connection():
 # start example
 import pandas as pd
 from dagster import graph_asset, op
+from dagster_slack import SlackResource
 
 
-@op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context) -> pd.DataFrame:
-    files = context.resources.slack.files_list(channel="#random")
+@op
+def fetch_files_from_slack(context, slack: SlackResource) -> pd.DataFrame:
+    files = slack.get_client().files_list(channel="#random")
     return pd.DataFrame(
         [
             {

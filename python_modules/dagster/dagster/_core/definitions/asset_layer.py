@@ -204,9 +204,9 @@ def _get_dependency_node_output_handles(
     if node_output_handle in dep_node_output_handles_by_node_output_handle:
         return dep_node_output_handles_by_node_output_handle[node_output_handle]
 
-    dependency_node_output_handles: List[NodeOutputHandle] = (
-        []
-    )  # first node in list is node output handle that outputs the asset
+    dependency_node_output_handles: List[
+        NodeOutputHandle
+    ] = []  # first node in list is node output handle that outputs the asset
 
     if curr_node_handle not in outputs_by_graph_handle:
         dependency_node_output_handles.append(node_output_handle)
@@ -233,9 +233,9 @@ def _get_dependency_node_output_handles(
         )
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dep_node_output_handles_by_node_output_handle[node_output_handle] = (
-            dependency_node_output_handles
-        )
+        dep_node_output_handles_by_node_output_handle[
+            node_output_handle
+        ] = dependency_node_output_handles
 
     return dependency_node_output_handles
 
@@ -296,13 +296,13 @@ def asset_key_to_dep_node_handles(
     dep_node_outputs_by_asset_key: Dict[AssetKey, List[NodeOutputHandle]] = {}
 
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        dep_node_output_handles_by_node: Dict[NodeOutputHandle, Sequence[NodeOutputHandle]] = (
-            {}
-        )  # memoized map of node output handles to all node output handle dependencies that are from ops
+        dep_node_output_handles_by_node: Dict[
+            NodeOutputHandle, Sequence[NodeOutputHandle]
+        ] = {}  # memoized map of node output handles to all node output handle dependencies that are from ops
         for output_name, asset_key in assets_defs.keys_by_output_name.items():
-            dep_nodes_by_asset_key[asset_key] = (
-                []
-            )  # first element in list is node that outputs asset
+            dep_nodes_by_asset_key[
+                asset_key
+            ] = []  # first element in list is node that outputs asset
 
             dep_node_outputs_by_asset_key[asset_key] = []
 
@@ -396,6 +396,7 @@ class AssetLayer(NamedTuple):
         graph_def: GraphDefinition,
         assets_defs_by_outer_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
         asset_checks_defs_by_node_handle: Mapping[NodeHandle, "AssetChecksDefinition"],
+        observable_source_assets_by_node_handle: Mapping[NodeHandle, "SourceAsset"],
         source_assets: Sequence["SourceAsset"],
         resolved_asset_deps: "ResolvedAssetDependencies",
     ) -> "AssetLayer":
@@ -444,9 +445,9 @@ class AssetLayer(NamedTuple):
 
                 partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
                 if partition_mapping is not None:
-                    partition_mappings_by_asset_dep[(node_handle, resolved_asset_key)] = (
-                        partition_mapping
-                    )
+                    partition_mappings_by_asset_dep[
+                        (node_handle, resolved_asset_key)
+                    ] = partition_mapping
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -494,10 +495,11 @@ class AssetLayer(NamedTuple):
                 check_names_by_asset_key_by_node_handle[node_handle] = defaultdict(set)
 
                 for output_name, check_spec in assets_def.check_specs_by_output_name.items():
-                    inner_output_def, inner_node_handle = (
-                        assets_def.node_def.resolve_output_to_origin(
-                            output_name, handle=node_handle
-                        )
+                    (
+                        inner_output_def,
+                        inner_node_handle,
+                    ) = assets_def.node_def.resolve_output_to_origin(
+                        output_name, handle=node_handle
                     )
                     node_output_handle = NodeOutputHandle(
                         check.not_none(inner_node_handle), inner_output_def.name
@@ -543,6 +545,25 @@ class AssetLayer(NamedTuple):
         }
 
         source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
+        for node_handle, source_asset in observable_source_assets_by_node_handle.items():
+            node_def = cast(NodeDefinition, source_asset.node_def)
+            check.invariant(len(node_def.output_defs) == 1)
+            output_name = node_def.output_defs[0].name
+            # resolve graph output to the op output it comes from
+            inner_output_def, inner_node_handle = node_def.resolve_output_to_origin(
+                output_name, handle=node_handle
+            )
+            node_output_handle = NodeOutputHandle(
+                check.not_none(inner_node_handle), inner_output_def.name
+            )
+
+            asset_info_by_output[node_output_handle] = AssetOutputInfo(
+                source_asset.key,
+                partitions_fn=None,
+                partitions_def=source_asset.partitions_def,
+                is_required=True,
+                code_version=inner_output_def.code_version,
+            )
 
         assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {
             # nodes for assets
@@ -580,7 +601,7 @@ class AssetLayer(NamedTuple):
     def upstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         check.invariant(
             asset_key in self.asset_deps,
-            "AssetKey '{asset_key}' is not produced by this JobDefinition.",
+            f"AssetKey '{asset_key}' is not produced by this JobDefinition.",
         )
         return self.asset_deps[asset_key]
 
@@ -690,6 +711,9 @@ class AssetLayer(NamedTuple):
             and self.source_assets_by_key[asset_key].is_observable
         )
 
+    def is_materializable_for_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.assets_defs_by_key
+
     def is_graph_backed_asset(self, asset_key: AssetKey) -> bool:
         assets_def = self.assets_defs_by_key.get(asset_key)
         return False if assets_def is None else isinstance(assets_def.node_def, GraphDefinition)
@@ -716,6 +740,13 @@ class AssetLayer(NamedTuple):
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetOutputInfo]:
         return self.asset_info_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
+
+    def asset_key_for_output(self, node_handle: NodeHandle, output_name: str) -> Optional[AssetKey]:
+        asset_info = self.asset_info_for_output(node_handle, output_name)
+        if asset_info:
+            return asset_info.key
+        else:
+            return None
 
     def asset_check_key_for_output(
         self, node_handle: NodeHandle, output_name: str
@@ -882,7 +913,10 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     selected_asset_keys: AbstractSet[AssetKey],
     selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
-) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"],]:
+) -> Tuple[
+    Sequence["AssetsDefinition"],
+    Sequence["AssetsDefinition"],
+]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """

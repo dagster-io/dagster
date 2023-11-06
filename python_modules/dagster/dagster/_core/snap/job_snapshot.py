@@ -309,8 +309,9 @@ def _construct_scalar_union_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 2,
-        "Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {}"
-        .format(config_type_snap.type_param_keys),
+        "Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {}".format(
+            config_type_snap.type_param_keys
+        ),
     )
 
     return ScalarUnion(

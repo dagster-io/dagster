@@ -13,11 +13,13 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 
 
 @asset
-def asset1(): ...
+def asset1():
+    ...
 
 
 @asset
-def asset2(): ...
+def asset2():
+    ...
 
 
 @asset_check(asset=asset1)

@@ -58,6 +58,9 @@ class InProcessPipesParamLoader(PipesParamsLoader):
     def load_messages_params(self) -> PipesParams:
         return {}
 
+    def is_dagster_pipes_process(self) -> bool:
+        return True
+
 
 class InProcessContextInjector(PipesContextInjector):
     @contextmanager

@@ -33,7 +33,7 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 // Asset Graph
 
-const _assetLayoutCacheKey = (graphData: GraphData) => {
+const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
   // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
   // both the displayed nodes and the displayed edges.
 
@@ -58,11 +58,13 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
     return newObj;
   }
 
-  return JSON.stringify({
+  return `${opts?.horizontalDAGs ? 'horizontal:' : ''}${opts?.tightTree ? 'tight-tree:' : ''}${
+    opts?.longestPath ? 'longest-path' : ''
+  }${JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
     nodes: Object.keys(graphData.nodes).sort(),
-  });
+  })}`;
 };
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
@@ -176,19 +178,24 @@ export function useAssetLayout(graphData: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
-  const cacheKey = _assetLayoutCacheKey(graphData);
+  const opts = React.useMemo(
+    () => ({
+      horizontalDAGs: flags.flagHorizontalDAGs,
+      tightTree: flags.flagTightTreeDag,
+      longestPath: flags.flagLongestPathDag,
+    }),
+    [flags],
+  );
+
+  const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
-  const {flagDisableDAGCache} = useFeatureFlags();
-
   React.useEffect(() => {
-    const opts = {horizontalDAGs: flags.flagHorizontalDAGs};
-
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
-      if (!flagDisableDAGCache) {
+      if (!flags.flagDisableDAGCache) {
         layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
@@ -202,7 +209,7 @@ export function useAssetLayout(graphData: GraphData) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, flags, flagDisableDAGCache]);
+  }, [cacheKey, graphData, runAsync, flags, opts]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,

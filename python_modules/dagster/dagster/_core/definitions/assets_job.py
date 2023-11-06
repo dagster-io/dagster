@@ -64,9 +64,9 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    assets_by_partitions_def: Dict[Optional[PartitionsDefinition], List[AssetsDefinition]] = (
-        defaultdict(list)
-    )
+    assets_by_partitions_def: Dict[
+        Optional[PartitionsDefinition], List[AssetsDefinition]
+    ] = defaultdict(list)
     for assets_def in assets:
         assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
@@ -210,12 +210,19 @@ def build_assets_job(
             *(asset.node_def for asset in assets),
             *(asset_check.node_def for asset_check in asset_checks),
         ]
+        observable_source_assets_by_node_handle = {}
     else:
-        node_defs = [
-            asset.node_def
-            for asset in source_assets
-            if isinstance(asset, SourceAsset) and asset.is_observable and asset.node_def is not None
-        ]
+        node_defs = []
+        observable_source_assets_by_node_handle: Mapping[NodeHandle, SourceAsset] = {}
+        for asset in source_assets:
+            if (
+                isinstance(asset, SourceAsset)
+                and asset.is_observable
+                and asset.node_def is not None
+            ):
+                node_defs.append(asset.node_def)
+                node_handle = NodeHandle(asset.node_def.name, parent=None)
+                observable_source_assets_by_node_handle[node_handle] = asset
 
     graph = GraphDefinition(
         name=name,
@@ -233,6 +240,7 @@ def build_assets_job(
         source_assets=resolved_source_assets,
         resolved_asset_deps=resolved_asset_deps,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
+        observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
     )
 
     all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
@@ -275,9 +283,9 @@ def build_job_partitions_from_assets(
     if len(assets_with_partitions_defs) == 0:
         return None
 
-    first_asset_with_partitions_def: Union[AssetsDefinition, SourceAsset] = (
-        assets_with_partitions_defs[0]
-    )
+    first_asset_with_partitions_def: Union[
+        AssetsDefinition, SourceAsset
+    ] = assets_with_partitions_defs[0]
     for asset in assets_with_partitions_defs:
         if asset.partitions_def != first_asset_with_partitions_def.partitions_def:
             first_asset_key = _key_for_asset(asset).to_string()

@@ -2,17 +2,12 @@ import gzip
 import io
 import uuid
 from os import path, walk
-from typing import Generic, List, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._annotations import deprecated
 from dagster._core.debug import DebugRunPayload
-from dagster._core.definitions.data_version import (
-    DATA_VERSION_IS_USER_PROVIDED_TAG,
-    DATA_VERSION_TAG,
-)
-from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
@@ -37,6 +32,11 @@ from starlette.responses import (
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
 
+from .external_assets import (
+    handle_report_asset_check_request,
+    handle_report_asset_materialization_request,
+    handle_report_asset_observation_request,
+)
 from .graphql import GraphQLServer
 from .version import __version__
 
@@ -51,9 +51,11 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         self,
         process_context: T_IWorkspaceProcessContext,
         app_path_prefix: str = "",
+        live_data_poll_rate: Optional[int] = None,
         uses_app_path_prefix: bool = True,
     ):
         self._process_context = process_context
+        self._live_data_poll_rate = live_data_poll_rate
         self._uses_app_path_prefix = uses_app_path_prefix
         super().__init__(app_path_prefix)
 
@@ -87,12 +89,14 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 csp_template = f.read()
                 return csp_template.replace("NONCE-PLACEHOLDER", nonce)
         except FileNotFoundError:
-            raise Exception("""
+            raise Exception(
+                """
                 CSP configuration file could not be found.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """)
+                """
+            )
 
     async def webserver_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -201,105 +205,16 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         return FileResponse(location, filename=f"{filebase}.{file_extension}")
 
     async def report_asset_materialization_endpoint(self, request: Request) -> JSONResponse:
-        # Record a runless asset materialization event.
-        # The asset key is passed as url path with / delimiting parts or as a query param.
-        # Properties can be passed as json post body or query params, with that order of precedence.
-
         context = self.make_request_context(request)
+        return await handle_report_asset_materialization_request(context, request)
 
-        body_content_type = request.headers.get("content-type")
-        if body_content_type is None:
-            json_body = {}
-        elif body_content_type == "application/json":
-            json_body = await request.json()
-        else:
-            return JSONResponse(
-                {
-                    "error": (
-                        f"Unhandled content type {body_content_type}, expect no body or"
-                        " application/json"
-                    ),
-                },
-                status_code=400,
-            )
+    async def report_asset_check_endpoint(self, request: Request) -> JSONResponse:
+        context = self.make_request_context(request)
+        return await handle_report_asset_check_request(context, request)
 
-        asset_key = None
-        if request.path_params.get(ReportAssetMatParam.asset_key):
-            # use from_user_string to treat / as multipart key separator
-            asset_key = AssetKey.from_user_string(request.path_params["asset_key"])
-        elif ReportAssetMatParam.asset_key in json_body:
-            asset_key = AssetKey(json_body[ReportAssetMatParam.asset_key])
-        elif ReportAssetMatParam.asset_key in request.query_params:
-            asset_key = AssetKey.from_db_string(request.query_params["asset_key"])
-
-        if asset_key is None:
-            return JSONResponse(
-                {
-                    "error": (
-                        "Empty asset key, must provide asset key as url path after"
-                        " /report_asset_materialization/ or query param asset_key."
-                    ),
-                },
-                status_code=400,
-            )
-
-        tags = None
-        if ReportAssetMatParam.data_version in json_body:
-            tags = {
-                DATA_VERSION_TAG: json_body[ReportAssetMatParam.data_version],
-                DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
-            }
-        elif ReportAssetMatParam.data_version in request.query_params:
-            tags = {
-                DATA_VERSION_TAG: request.query_params[ReportAssetMatParam.data_version],
-                DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
-            }
-
-        partition = None
-        if ReportAssetMatParam.partition in json_body:
-            partition = json_body[ReportAssetMatParam.partition]
-        elif ReportAssetMatParam.partition in request.query_params:
-            partition = request.query_params[ReportAssetMatParam.partition]
-
-        description = None
-        if ReportAssetMatParam.description in json_body:
-            description = json_body[ReportAssetMatParam.description]
-        elif ReportAssetMatParam.description in request.query_params:
-            description = request.query_params[ReportAssetMatParam.description]
-
-        metadata = None
-        if ReportAssetMatParam.metadata in json_body:
-            metadata = json_body["metadata"]
-        elif ReportAssetMatParam.metadata in request.query_params:
-            try:
-                metadata = json.loads(request.query_params[ReportAssetMatParam.metadata])
-            except Exception as exc:
-                return JSONResponse(
-                    {
-                        "error": f"Error parsing metadata json: {exc}",
-                    },
-                    status_code=400,
-                )
-
-        try:
-            mat = AssetMaterialization(
-                asset_key=asset_key,
-                partition=partition,
-                metadata=metadata,
-                description=description,
-                tags=tags,
-            )
-        except Exception as exc:
-            return JSONResponse(
-                {
-                    "error": f"Error constructing AssetMaterialization: {exc}",
-                },
-                status_code=400,
-            )
-
-        context.instance.report_runless_asset_event(mat)
-
-        return JSONResponse({})
+    async def report_asset_observation_endpoint(self, request: Request) -> JSONResponse:
+        context = self.make_request_context(request)
+        return await handle_report_asset_observation_request(context, request)
 
     def index_html_endpoint(self, request: Request):
         """Serves root html."""
@@ -315,7 +230,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     **{"Content-Security-Policy": self.make_csp_header(nonce)},
                     **self.make_security_headers(),
                 }
-                return HTMLResponse(
+                content = (
                     rendered_template.replace(
                         "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
                     )
@@ -323,16 +238,23 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     .replace(
                         '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
                     )
-                    .replace("NONCE-PLACEHOLDER", nonce),
-                    headers=headers,
+                    .replace("NONCE-PLACEHOLDER", nonce)
                 )
+
+                if self._live_data_poll_rate:
+                    content = content.replace(
+                        "__LIVE_DATA_POLL_RATE__", str(self._live_data_poll_rate)
+                    )
+                return HTMLResponse(content, headers=headers)
         except FileNotFoundError:
-            raise Exception("""
+            raise Exception(
+                """
                 Can't find webapp files.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """)
+                """
+            )
 
     def build_static_routes(self):
         def _static_file(path, file_path):
@@ -415,6 +337,16 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     self.report_asset_materialization_endpoint,
                     methods=["POST"],
                 ),
+                Route(
+                    "/report_asset_check/{asset_key:path}",
+                    self.report_asset_check_endpoint,
+                    methods=["POST"],
+                ),
+                Route(
+                    "/report_asset_observation/{asset_key:path}",
+                    self.report_asset_observation_endpoint,
+                    methods=["POST"],
+                ),
                 Route("/{path:path}", self.index_html_endpoint),
                 Route("/", self.index_html_endpoint),
             ]
@@ -456,17 +388,3 @@ class DagsterTracedCounterMiddleware:
             return send(message)
 
         await self.app(scope, receive, send_wrapper)
-
-
-class ReportAssetMatParam:
-    """Class to collect all supported args by report_asset_materialization endpoint
-    to ensure consistency with related APIs.
-
-    note: Enum not used to avoid value type problems X(str, Enum) doesn't work as partition conflicts with keyword
-    """
-
-    asset_key = "asset_key"
-    data_version = "data_version"
-    metadata = "metadata"
-    description = "description"
-    partition = "partition"

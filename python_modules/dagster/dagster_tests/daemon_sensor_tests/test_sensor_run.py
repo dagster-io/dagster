@@ -1112,8 +1112,7 @@ def test_bad_load_sensor_repository(
 
         assert (
             "Could not find repository invalid_repo_name in location test_location to run sensor"
-            " simple_sensor"
-            in caplog.text
+            " simple_sensor" in caplog.text
         )
 
 
@@ -1392,8 +1391,7 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
 
         assert (
             "Skipping 1 run for sensor run_key_sensor already completed with run keys:"
-            ' ["only_once"]'
-            in caplog.text
+            ' ["only_once"]' in caplog.text
         )
 
         launched_run = instance.get_runs()[0]
@@ -2889,8 +2887,7 @@ def test_add_dynamic_partitions_sensor(
     assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
     assert (
         "Skipping addition of partition keys for dynamic partitions definition 'quux' that already"
-        " exist: ['foo']"
-        in caplog.text
+        " exist: ['foo']" in caplog.text
     )
     assert ticks[0].tick_data.dynamic_partitions_request_results == [
         DynamicPartitionsRequestResult(
@@ -2950,8 +2947,7 @@ def test_add_delete_skip_dynamic_partitions(
         )
         assert (
             "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
-            " not exist: ['3']"
-            in caplog.text
+            " not exist: ['3']" in caplog.text
         )
         assert ticks[0].tick_data.dynamic_partitions_request_results == [
             DynamicPartitionsRequestResult(
@@ -2987,13 +2983,11 @@ def test_add_delete_skip_dynamic_partitions(
 
         assert (
             "Skipping addition of partition keys for dynamic partitions definition 'quux' that"
-            " already exist: ['1']"
-            in caplog.text
+            " already exist: ['1']" in caplog.text
         )
         assert (
             "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
-            " not exist: ['2', '3']"
-            in caplog.text
+            " not exist: ['2', '3']" in caplog.text
         )
 
 

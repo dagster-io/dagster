@@ -713,13 +713,23 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def include_cluster_info_in_failure_messages(self):
         return True
 
+    def _is_transient_stop_reason(self, stopped_reason: str):
+        if "Timeout waiting for network interface provisioning to complete" in stopped_reason:
+            return True
+
+        if "Timeout waiting for EphemeralStorage provisioning to complete" in stopped_reason:
+            return True
+
+        if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
+            return True
+
+        return False
+
     def _is_transient_startup_failure(self, run, task):
         if not task.get("stoppedReason"):
             return False
-        return (
-            run.status == DagsterRunStatus.STARTING
-            and "Timeout waiting for network interface provisioning to complete"
-            in task.get("stoppedReason")
+        return run.status == DagsterRunStatus.STARTING and self._is_transient_stop_reason(
+            task.get("stoppedReason")
         )
 
     def check_run_worker_health(self, run: DagsterRun):
@@ -752,12 +762,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
                 failure_text = []
 
+                cluster_failure_info = (
+                    f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
+                    + f" reason: {t.get('stoppedReason')}."
+                    + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
+                )
+
+                logging.warning(
+                    "Run monitoring detected run worker failure: " + cluster_failure_info
+                )
+
                 if self.include_cluster_info_in_failure_messages:
-                    failure_text.append(
-                        f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
-                        f" reason: {t.get('stoppedReason')}."
-                        + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
-                    )
+                    failure_text.append(cluster_failure_info)
 
                 logs = []
 

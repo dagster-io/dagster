@@ -31,7 +31,8 @@ dagster_dbt_translator_with_checks = DagsterDbtTranslator(
 
 def test_with_asset_checks() -> None:
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets_no_checks(): ...
+    def my_dbt_assets_no_checks():
+        ...
 
     [load_my_dbt_assets_no_checks] = load_assets_from_dbt_manifest(manifest=manifest)
 
@@ -44,7 +45,8 @@ def test_with_asset_checks() -> None:
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator_with_checks,
     )
-    def my_dbt_assets_with_checks(): ...
+    def my_dbt_assets_with_checks():
+        ...
 
     [load_my_dbt_assets_with_checks] = load_assets_from_dbt_manifest(
         manifest=manifest_path,
@@ -75,7 +77,8 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 
             super().__init__()
 
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator): ...
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        ...
 
     class CustomDagsterDbtTranslatorWithPassThrough(DagsterDbtTranslator):
         def __init__(self, test_arg: str, *args, **kwargs):

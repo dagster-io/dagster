@@ -106,7 +106,7 @@ setup(
         "docstring-parser",
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic != 1.10.7,<2.0.0",
+        "pydantic >1.10.0,!= 1.10.7",
         f"dagster-pipes{pin}",
     ],
     extras_require={
@@ -122,22 +122,19 @@ setup(
             "pytest-mock==3.3.1",
             "pytest-rerunfailures==10.0",
             "pytest-runner==5.2",
-            "pytest-xdist==2.1.0",
-            "pytest==7.0.1",  # last version supporting python 3.6
+            "pytest-xdist==3.3.1",
+            "pytest>=7.0.1",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
             "yamllint",
             "morefs[asynclocal]; python_version>='3.8'",
         ],
-        "black": [
-            "black[jupyter]==23.9.1",
-        ],
         "mypy": [
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.327",
+            "pyright==1.1.332",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -161,7 +158,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.289",
+            "ruff==0.1.1",
         ],
     },
     entry_points={

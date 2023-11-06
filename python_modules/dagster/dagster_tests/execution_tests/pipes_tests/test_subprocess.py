@@ -47,7 +47,7 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-from dagster_aws.pipes import PipesS3MessageReader
+from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
 from moto.server import ThreadedMotoServer
 
 _PYTHON_EXECUTABLE = shutil.which("python")
@@ -76,21 +76,30 @@ def external_script() -> Iterator[str]:
         import time
 
         from dagster_pipes import (
+            PipesS3ContextLoader,
             PipesS3MessageWriter,
             open_dagster_pipes,
         )
 
-        if os.getenv("MESSAGE_READER_SPEC") == "user/s3":
+        context_injector_spec = os.getenv("CONTEXT_INJECTOR_SPEC")
+        message_reader_spec = os.getenv("MESSAGE_READER_SPEC")
+
+        context_loader = None
+        message_writer = None
+        if context_injector_spec == "user/s3" or message_reader_spec == "user/s3":
             import boto3
 
             client = boto3.client(
                 "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
             )
-            message_writer = PipesS3MessageWriter(client, interval=0.001)
-        else:
-            message_writer = None  # use default
+            if context_injector_spec == "user/s3":
+                context_loader = PipesS3ContextLoader(client=client)
+            if message_reader_spec == "user/s3":
+                message_writer = PipesS3MessageWriter(client, interval=0.001)
 
-        with open_dagster_pipes(message_writer=message_writer) as context:
+        with open_dagster_pipes(
+            context_loader=context_loader, message_writer=message_writer
+        ) as context:
             context.log.info("hello world")
             time.sleep(
                 0.1
@@ -134,6 +143,7 @@ def s3_client() -> Iterator[boto3.client]:
         ("user/file", "user/file"),
         ("user/env", "default"),
         ("user/env", "user/file"),
+        ("user/s3", "default"),
     ],
 )
 def test_pipes_subprocess(
@@ -145,6 +155,8 @@ def test_pipes_subprocess(
         context_injector = PipesTempFileContextInjector()
     elif context_injector_spec == "user/env":
         context_injector = PipesEnvContextInjector()
+    elif context_injector_spec == "user/s3":
+        context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
     else:
         assert False, "Unreachable"
 
@@ -385,13 +397,13 @@ def test_pipes_no_orchestration():
     def script_fn():
         from dagster_pipes import (
             PipesContext,
-            is_dagster_pipes_process,
+            PipesEnvVarParamsLoader,
             open_dagster_pipes,
         )
 
-        assert not is_dagster_pipes_process()
-
-        with open_dagster_pipes() as _:
+        loader = PipesEnvVarParamsLoader()
+        assert not loader.is_dagster_pipes_process()
+        with open_dagster_pipes(params_loader=loader) as _:
             context = PipesContext.get()
             context.log.info("hello world")
             context.report_asset_materialization(

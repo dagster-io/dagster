@@ -10,13 +10,13 @@ from typing import (
     Tuple,
 )
 
-import dagster._check as check
 from dagster import (
     AssetCheckSpec,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     BackfillPolicy,
+    DagsterInvalidDefinitionError,
     Nothing,
     PartitionsDefinition,
     multi_asset,
@@ -29,7 +29,7 @@ from .asset_utils import (
     default_code_version_fn,
     get_deps,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
+from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, validate_translator
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
@@ -44,10 +44,12 @@ def dbt_assets(
     manifest: DbtManifestParam,
     select: str = "fqn:*",
     exclude: Optional[str] = None,
+    name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
     backfill_policy: Optional[BackfillPolicy] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -63,6 +65,7 @@ def dbt_assets(
             to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        name (Optional[str]): The name of the op.
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
@@ -72,7 +75,10 @@ def dbt_assets(
             dbt models, seeds, etc. to asset keys and asset metadata.
         backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
             how to execute backfills that target multiple partitions.
-
+        op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the assets.
+            Frameworks may expect and require certain metadata to be attached to a op. Values that
+            are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -244,15 +250,7 @@ def dbt_assets(
                 yield from dbt.cli(dbt_build_args, context=context).stream()
 
     """
-    check.inst_param(
-        dagster_dbt_translator,
-        "dagster_dbt_translator",
-        DagsterDbtTranslator,
-        additional_message=(
-            "Ensure that the argument is an instantiated class that subclasses"
-            " DagsterDbtTranslator."
-        ),
-    )
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
     manifest = validate_manifest(manifest)
 
     unique_ids = select_unique_ids_from_manifest(
@@ -277,18 +275,34 @@ def dbt_assets(
         dagster_dbt_translator=dagster_dbt_translator,
     )
 
+    if op_tags and "dagster-dbt/select" in op_tags:
+        raise DagsterInvalidDefinitionError(
+            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            " with op_tags"
+        )
+
+    if op_tags and "dagster-dbt/exclude" in op_tags:
+        raise DagsterInvalidDefinitionError(
+            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            " with op_tags"
+        )
+
+    resolved_op_tags = {
+        **({"dagster-dbt/select": select} if select else {}),
+        **({"dagster-dbt/exclude": exclude} if exclude else {}),
+        **(op_tags if op_tags else {}),
+    }
+
     def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
             outs=outs,
+            name=name,
             internal_asset_deps=internal_asset_deps,
             deps=non_argument_deps,
             compute_kind="dbt",
             partitions_def=partitions_def,
             can_subset=True,
-            op_tags={
-                **({"dagster-dbt/select": select} if select else {}),
-                **({"dagster-dbt/exclude": exclude} if exclude else {}),
-            },
+            op_tags=resolved_op_tags,
             check_specs=check_specs,
             backfill_policy=backfill_policy,
         )(fn)

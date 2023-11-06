@@ -32,7 +32,7 @@ export const AssetJobPartitionsView: React.FC<{
   const {viewport, containerProps} = useViewport();
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const assetGraph = useAssetGraphData('', {
+  const assetGraph = useAssetGraphData('*', {
     pipelineSelector: {
       pipelineName,
       repositoryName: repoAddress.name,

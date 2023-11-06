@@ -187,7 +187,7 @@ query getUnloadableSensors {
 """
 
 GET_SENSOR_TICK_RANGE_QUERY = """
-query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: Int) {
+query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: Int, $beforeTimestamp: Float, $afterTimestamp: Float) {
   sensorOrError(sensorSelector: $sensorSelector) {
     __typename
     ... on PythonError {
@@ -198,7 +198,7 @@ query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: 
       id
       sensorState {
         id
-        ticks(dayRange: $dayRange, dayOffset: $dayOffset) {
+        ticks(dayRange: $dayRange, dayOffset: $dayOffset, beforeTimestamp: $beforeTimestamp, afterTimestamp: $afterTimestamp) {
           id
           timestamp
           endTimestamp
@@ -950,6 +950,21 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
         graphql_context,
         GET_SENSOR_TICK_RANGE_QUERY,
         variables={"sensorSelector": sensor_selector, "dayRange": 1, "dayOffset": None},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["timestamp"] == three.timestamp()
+    assert (
+        result.data["sensorOrError"]["sensorState"]["ticks"][0]["endTimestamp"] >= three.timestamp()
+    )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SENSOR_TICK_RANGE_QUERY,
+        variables={
+            "sensorSelector": sensor_selector,
+            "beforeTimestamp": three.timestamp() + 1,
+            "afterTimestamp": three.timestamp() - 1,
+        },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["timestamp"] == three.timestamp()

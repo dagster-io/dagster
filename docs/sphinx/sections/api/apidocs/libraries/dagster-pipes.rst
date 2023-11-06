@@ -2,11 +2,11 @@ Pipes (dagster-pipes)
 -----------------------
 
 This library is intended for inclusion in an external process that integrates
-with Dagster using teh Pipes protocol.
+with Dagster using the Pipes protocol.
 
 .. currentmodule:: dagster_pipes
 
-.. autofunction:: init_dagster_pipes
+.. autofunction:: open_dagster_pipes
 
 .. autoclass:: PipesContext
 
@@ -17,8 +17,6 @@ with Dagster using teh Pipes protocol.
 .. autofunction:: encode_env_var
 
 .. autofunction:: decode_env_var
-
-.. autofunction:: is_dagster_pipes_process
 
 .. autoclass:: PipesContextLoader
 

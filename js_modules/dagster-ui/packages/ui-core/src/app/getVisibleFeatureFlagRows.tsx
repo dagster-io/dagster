@@ -58,7 +58,39 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDisableDAGCache,
   },
   {
-    key: 'Experimental Auto-materialize policy timeline page',
-    flagType: FeatureFlag.flagEnableAMPTimeline,
+    key: 'Experimental tight tree DAG algorithm (Faster)',
+    flagType: FeatureFlag.flagTightTreeDag,
+    label: (
+      <Box flex={{direction: 'column'}}>
+        Experimental tight tree asset graph algorithm (Faster).
+        <div>
+          <a
+            href="https://github.com/dagster-io/dagster/discussions/17240"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Learn more
+          </a>
+        </div>
+      </Box>
+    ),
+  },
+  {
+    key: 'Experimental longest path DAG algorithm (Faster)',
+    flagType: FeatureFlag.flagLongestPathDag,
+    label: (
+      <Box flex={{direction: 'column'}}>
+        Experimental longest path asset graph algorithm (Faster).
+        <div>
+          <a
+            href="https://github.com/dagster-io/dagster/discussions/17240"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Learn more
+          </a>
+        </div>
+      </Box>
+    ),
   },
 ];

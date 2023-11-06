@@ -27,6 +27,7 @@ from .ops import (
 from .pipes import (
     PipesDatabricksClient as PipesDatabricksClient,
     PipesDbfsContextInjector as PipesDbfsContextInjector,
+    PipesDbfsLogReader as PipesDbfsLogReader,
     PipesDbfsMessageReader as PipesDbfsMessageReader,
 )
 from .resources import (

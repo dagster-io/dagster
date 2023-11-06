@@ -136,8 +136,7 @@ def test_unknown_metadata_value():
         the_job.execute_in_process()
 
     assert (
-        str(exc_info.value)
-        == 'Could not resolve the metadata value for "bad" to a known type. '
+        str(exc_info.value) == 'Could not resolve the metadata value for "bad" to a known type. '
         "Its type was <class 'dagster._core.instance.DagsterInstance'>. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
@@ -187,8 +186,7 @@ def test_bad_json_metadata_value():
         the_job.execute_in_process()
 
     assert (
-        str(exc_info.value)
-        == 'Could not resolve the metadata value for "bad" to a known type. '
+        str(exc_info.value) == 'Could not resolve the metadata value for "bad" to a known type. '
         "Value is not JSON serializable."
     )
 

@@ -223,6 +223,23 @@ def test_parallel_concurrency(instance, parallel_recon_job):
     assert foo_info.assigned_step_count == 0
 
 
+def _has_concurrency_blocked_event(events, concurrency_key):
+    message_str = f"blocked by concurrency limit for key {concurrency_key}"
+    for event in events:
+        if message_str in event.message:
+            return True
+    return False
+
+
+def test_concurrency_blocked_events(instance, parallel_recon_job_not_inprocess):
+    instance.event_log_storage.set_concurrency_slots("foo", 1)
+    foo_info = instance.event_log_storage.get_concurrency_info("foo")
+    assert foo_info.slot_count == 1
+
+    with execute_job(parallel_recon_job_not_inprocess, instance=instance) as result:
+        assert _has_concurrency_blocked_event(result.all_events, "foo")
+
+
 def test_error_concurrency(instance, error_recon_job):
     instance.event_log_storage.set_concurrency_slots("foo", 1)
     foo_info = instance.event_log_storage.get_concurrency_info("foo")

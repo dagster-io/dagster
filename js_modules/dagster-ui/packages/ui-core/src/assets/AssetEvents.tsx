@@ -189,6 +189,7 @@ export const AssetEvents: React.FC<Props> = ({
               groups={grouped}
               focused={focused}
               setFocused={onSetFocused}
+              assetKey={assetKey}
             />
           )}
         </Box>

@@ -380,4 +380,5 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         return None
 
     @abstractmethod
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None: ...
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None:
+        ...

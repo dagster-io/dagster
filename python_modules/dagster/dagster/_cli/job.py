@@ -428,8 +428,9 @@ def do_execute_command(
 @job_cli.command(
     name="launch",
     help=(
-        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}"
-        .format(instructions=get_job_instructions("launch"))
+        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}".format(
+            instructions=get_job_instructions("launch")
+        )
     ),
 )
 @job_target_argument
