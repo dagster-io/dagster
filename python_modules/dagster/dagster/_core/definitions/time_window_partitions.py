@@ -1977,15 +1977,23 @@ class TimeWindowPartitionsSubset(
         num_partitions: Optional[int],
         included_time_windows: Sequence[TimeWindow],
     ):
+        check.sequence_param(included_time_windows, "included_time_windows", of_type=TimeWindow)
+
+        time_windows_with_timezone = [
+            TimeWindow(
+                start=pendulum.instance(tw.start).in_tz(tz=partitions_def.timezone),
+                end=pendulum.instance(tw.end).in_tz(tz=partitions_def.timezone),
+            )
+            for tw in included_time_windows
+        ]
+
         return super(TimeWindowPartitionsSubset, cls).__new__(
             cls,
             partitions_def=check.inst_param(
                 partitions_def, "partitions_def", TimeWindowPartitionsDefinition
             ),
             num_partitions=check.opt_int_param(num_partitions, "num_partitions"),
-            included_time_windows=check.sequence_param(
-                included_time_windows, "included_time_windows", of_type=TimeWindow
-            ),
+            included_time_windows=time_windows_with_timezone,
         )
 
     def get_included_time_windows(self) -> Sequence[TimeWindow]:

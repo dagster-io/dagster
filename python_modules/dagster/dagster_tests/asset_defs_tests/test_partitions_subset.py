@@ -91,7 +91,7 @@ def test_empty_subsets():
     "partitions_def",
     [
         (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
-        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+        (DailyPartitionsDefinition("2023-01-01")),
     ],
 )
 def test_time_window_partitions_subset_serialization_deserialization(
@@ -109,4 +109,8 @@ def test_time_window_partitions_subset_serialization_deserialization(
         time_window_partitions_def
     ).with_partition_keys(["2023-01-01"])
 
-    assert deserialize_value(serialize_value(cast(TimeWindowPartitionsSubset, subset))) == subset
+    deserialized = deserialize_value(
+        serialize_value(cast(TimeWindowPartitionsSubset, subset)), TimeWindowPartitionsSubset
+    )
+    assert deserialized == subset
+    assert deserialized.get_partition_keys() == ["2023-01-01"]
