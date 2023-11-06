@@ -31,6 +31,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer
 from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils.cached_method import cached_method
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -86,15 +87,52 @@ class TimeWindow(NamedTuple):
 @whitelist_for_serdes(
     field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer}
 )
+class SerializableTimeWindowPartitionsDefinition(
+    NamedTuple(
+        "_SerializableTimeWindowPartitionsDefinition",
+        [
+            ("start", PublicAttr[datetime]),
+            ("fmt", PublicAttr[str]),
+            ("timezone", PublicAttr[str]),
+            ("end", PublicAttr[Optional[datetime]]),
+            ("end_offset", PublicAttr[int]),
+            ("cron_schedule", PublicAttr[str]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        start: datetime,
+        fmt: str,
+        timezone: str,
+        end: Optional[datetime],
+        end_offset: int,
+        cron_schedule: str,
+    ):
+        return super(SerializableTimeWindowPartitionsDefinition, cls).__new__(
+            cls, start, fmt, timezone, end, end_offset, cron_schedule
+        )
+
+    def to_time_window_partitions_def(self) -> "TimeWindowPartitionsDefinition":
+        return TimeWindowPartitionsDefinition(
+            self.start,
+            self.fmt,
+            self.end,
+            timezone=self.timezone,
+            end_offset=self.end_offset,
+            cron_schedule=self.cron_schedule,
+        )
+
+
 class TimeWindowPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_TimeWindowPartitionsDefinition",
         [
             ("start", PublicAttr[datetime]),
-            ("fmt", PublicAttr[str]),
             ("timezone", PublicAttr[str]),
             ("end", PublicAttr[Optional[datetime]]),
+            ("fmt", PublicAttr[str]),
             ("end_offset", PublicAttr[int]),
             ("cron_schedule", PublicAttr[str]),
         ],
@@ -132,14 +170,14 @@ class TimeWindowPartitionsDefinition(
         cls,
         start: Union[datetime, str],
         fmt: str,
-        timezone: Optional[str] = None,
         end: Union[datetime, str, None] = None,
-        end_offset: int = 0,
-        cron_schedule: Optional[str] = None,
         schedule_type: Optional[ScheduleType] = None,
+        timezone: Optional[str] = None,
+        end_offset: int = 0,
         minute_offset: Optional[int] = None,
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
+        cron_schedule: Optional[str] = None,
     ):
         check.opt_str_param(timezone, "timezone")
         timezone = timezone or "UTC"
@@ -185,7 +223,14 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, fmt, timezone, end_dt, end_offset, cron_schedule
+            cls, start_dt, timezone, end_dt, fmt, end_offset, cron_schedule
+        )
+
+    def to_serializable_time_window_partitions_def(
+        self,
+    ) -> SerializableTimeWindowPartitionsDefinition:
+        return SerializableTimeWindowPartitionsDefinition(
+            self.start, self.fmt, self.timezone, self.end, self.end_offset, self.cron_schedule
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
