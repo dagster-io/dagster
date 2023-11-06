@@ -38,6 +38,7 @@ from dagster._seven.compat.pendulum import (
     create_pendulum_time,
     to_timezone,
 )
+from dagster._serdes.serdes import FieldSerializer, deserialize_value, serialize_value
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
@@ -1937,7 +1938,25 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges()})"
 
 
-@whitelist_for_serdes
+class TimeWindowPartitionsDefinitionSerializer(FieldSerializer):
+    """Serializes a TimeWindowPartitionsDefinition by converting it to a SerializableTimeWindowPartitionsDefinition."""
+
+    def pack(self, partitions_def: TimeWindowPartitionsDefinition, **_kwargs) -> str:
+        return serialize_value(partitions_def.to_serializable_time_window_partitions_def())
+
+    def unpack(
+        self,
+        serialized_time_window_partitions_def: str,
+        **_kwargs,
+    ) -> TimeWindowPartitionsDefinition:
+        return deserialize_value(
+            serialized_time_window_partitions_def, SerializableTimeWindowPartitionsDefinition
+        ).to_time_window_partitions_def()
+
+
+@whitelist_for_serdes(
+    field_serializers={"partitions_def": TimeWindowPartitionsDefinitionSerializer}
+)
 class TimeWindowPartitionsSubset(
     BaseTimeWindowPartitionsSubset,
     NamedTuple(
