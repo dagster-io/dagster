@@ -387,7 +387,7 @@ class AutoMaterializeRule(ABC):
     def materialize_on_cron(
         cron_schedule: str, timezone: str = "UTC", all_partitions: bool = False
     ) -> "MaterializeOnCronRule":
-        """Materialize an asset partition if it has not been materialized since the previous cron
+        """Materialize an asset partition if it has not been materialized since the latest cron
         schedule tick. For assets with a time component to their partitions_def, this rule will
         request all partitions that have been missed since the previous tick.
 
@@ -622,10 +622,7 @@ class MaterializeOnCronRule(
         asset_partitions_to_request = self.get_asset_partitions_to_request(context)
         asset_partitions_by_evaluation_data = defaultdict(set)
         if asset_partitions_to_request:
-            # TODO: better evaluation data
-            asset_partitions_by_evaluation_data[TextRuleEvaluationData(self.cron_schedule)].update(
-                asset_partitions_to_request
-            )
+            asset_partitions_by_evaluation_data[None].update(asset_partitions_to_request)
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
