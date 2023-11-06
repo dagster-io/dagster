@@ -84,7 +84,7 @@ function expansionDepthForClause(clause: string) {
 
 export function filterByQuery<T extends GraphQueryItem>(items: T[], query: string) {
   if (query === '*' || query === '') {
-    return {all: items, applyingEmptyDefault: false, focus: []};
+    return {all: items, focus: []};
   }
 
   const traverser = new GraphTraverser<T>(items);
@@ -124,6 +124,5 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
   return {
     all: Array.from(results),
     focus: Array.from(focus),
-    applyingEmptyDefault: false,
   };
 }

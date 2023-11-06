@@ -164,10 +164,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
   const queryResultOps = React.useMemo(
-    () =>
-      solidsQueryEnabled
-        ? filterByQuery(solids, opsQuery)
-        : {all: solids, focus: [], applyingEmptyDefault: false},
+    () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
     [opsQuery, solids, solidsQueryEnabled],
   );
 
@@ -262,8 +259,6 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
 
           {solids.length === 0 ? (
             <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
-          ) : queryResultOps.applyingEmptyDefault ? (
-            <LargeDAGNotice nodeType="op" />
           ) : Object.keys(queryResultOps.all).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
