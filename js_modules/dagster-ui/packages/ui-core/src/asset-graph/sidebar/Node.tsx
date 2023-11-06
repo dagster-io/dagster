@@ -110,10 +110,10 @@ export const Node = ({
   const showArrow =
     !isAssetNode || (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
 
-  const ref = React.useRef<HTMLElement | null>(null);
+  const ref = React.useRef<HTMLButtonElement | null>(null);
   React.useLayoutEffect(() => {
-    if (isSelected) {
-      ref.current?.focus();
+    if (ref.current && isSelected && !isElementInsideSVGViewport(document.activeElement)) {
+      ref.current.focus();
     }
   }, [isSelected]);
 
@@ -401,4 +401,18 @@ function StatusDot({node}: {node: Pick<GraphNode, 'assetKey' | 'definition'>}) {
     expanded: true,
   });
   return <StatusCaseDot statusCase={status.case} />;
+}
+
+function isElementInsideSVGViewport(element: Element | null) {
+  if (!element) {
+    // We've reached the root without finding an <svg> element
+    return false;
+  }
+
+  if (element.classList.contains('svgViewport')) {
+    return true;
+  }
+
+  // Start the recursive check
+  return isElementInsideSVG(element.parentElement);
 }
