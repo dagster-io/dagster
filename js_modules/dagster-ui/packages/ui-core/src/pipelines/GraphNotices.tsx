@@ -1,36 +1,7 @@
-import {Box, Colors, Icon, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import capitalize from 'lodash/capitalize';
 import * as React from 'react';
 import styled from 'styled-components';
-
-export const LargeDAGNotice = ({
-  nodeType,
-  anchorLeft = '40px',
-}: {
-  nodeType: 'op' | 'asset';
-  anchorLeft?: string;
-}) => (
-  <LargeDAGContainer style={{left: anchorLeft}}>
-    <Icon name="arrow_upward" size={24} />
-    <LargeDAGInstructionBox>
-      <p>
-        This is a large DAG that may be difficult to visualize. Type <code>*</code> in the graph
-        filter bar to render the entire thing, or type {nodeType} names and use:
-      </p>
-      <ul style={{marginBottom: 0}}>
-        <li>
-          <code>+</code> to expand a single layer before or after the {nodeType}.
-        </li>
-        <li>
-          <code>*</code> to expand recursively before or after the {nodeType}.
-        </li>
-        <li>
-          <code>AND</code> to render another disconnected fragment.
-        </li>
-      </ul>
-    </LargeDAGInstructionBox>
-  </LargeDAGContainer>
-);
 
 export const EmptyDAGNotice = ({
   isGraph,
