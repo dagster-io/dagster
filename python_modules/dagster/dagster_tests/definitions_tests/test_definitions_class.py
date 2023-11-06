@@ -551,7 +551,8 @@ def test_unresolved_partitioned_asset_schedule():
     partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     @asset(partitions_def=partitions_def)
-    def asset1(): ...
+    def asset1():
+        ...
 
     job1 = define_asset_job("job1")
     schedule1 = build_schedule_from_partitioned_job(job1)
@@ -569,13 +570,16 @@ def test_unresolved_partitioned_asset_schedule():
 
 def test_bare_executor():
     @asset
-    def an_asset(): ...
+    def an_asset():
+        ...
 
     class DummyExecutor(Executor):
-        def execute(self, plan_context, execution_plan): ...
+        def execute(self, plan_context, execution_plan):
+            ...
 
         @property
-        def retries(self): ...
+        def retries(self):
+            ...
 
     executor_inst = DummyExecutor()
 

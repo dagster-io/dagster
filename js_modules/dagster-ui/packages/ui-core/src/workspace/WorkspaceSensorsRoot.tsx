@@ -89,9 +89,8 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     return permissionedSensors.map(({name}) => makeSensorKey(repoAddress, name));
   }, [permissionedSensors, repoAddress]);
 
-  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    permissionedKeys,
-  );
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(permissionedKeys);
 
   const checkedSensors = React.useMemo(() => {
     return permissionedSensors

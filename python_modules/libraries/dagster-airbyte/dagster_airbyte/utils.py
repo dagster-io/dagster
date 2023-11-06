@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Mapping, Sequence
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 from dagster import AssetMaterialization, MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
@@ -46,13 +46,14 @@ def _get_attempt(attempt: dict):
 
 
 def generate_materializations(
-    output: AirbyteOutput, asset_key_prefix: Sequence[str]
+    output: AirbyteOutput,
+    asset_key_prefix: Sequence[str],
+    stream_to_asset_map: Optional[Mapping[str, str]] = None,
 ) -> Iterator[AssetMaterialization]:
     prefix = output.connection_details.get("prefix") or ""
     # all the streams that are set to be sync'd by this connection
     all_stream_props = {
-        prefix
-        + stream["stream"]["name"]: (
+        prefix + stream["stream"]["name"]: (
             stream.get("stream", {}).get("jsonSchema", {}).get("properties", {})
         )
         for stream in output.connection_details.get("syncCatalog", {}).get("streams", [])
@@ -64,11 +65,12 @@ def generate_materializations(
         s["streamName"]: s.get("stats", {})
         for s in _get_attempt(output.job_details.get("attempts", [{}])[-1]).get("streamStats", [])
     }
+    stream_to_asset_map = stream_to_asset_map if stream_to_asset_map else {}
     for stream_name, stream_props in all_stream_props.items():
         yield _materialization_for_stream(
-            stream_name,
+            stream_to_asset_map.get(stream_name, stream_name),
             stream_props,
-            # if no records are sync'd, no stats will be avaiable for this stream
+            # if no records are sync'd, no stats will be available for this stream
             all_stream_stats.get(stream_name, {}),
             asset_key_prefix=asset_key_prefix,
         )

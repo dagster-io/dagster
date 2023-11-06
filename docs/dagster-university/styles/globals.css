@@ -51,3 +51,14 @@ main {
 .callout p {
   margin: 0;
 }
+
+.prose.prose :where(tbody td):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+.prose.prose :where(thead th):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  vertical-align: top;
+}
+
+.prose.prose td :where(img):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+.prose.prose th :where(img):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
+}

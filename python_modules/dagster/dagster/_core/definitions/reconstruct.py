@@ -33,7 +33,7 @@ from dagster._core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -209,7 +209,7 @@ class ReconstructableJob(
             ("job_name", str),
             ("op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     ),
     IJob,
@@ -233,7 +233,7 @@ class ReconstructableJob(
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         op_selection = set(op_selection) if op_selection else None
         return super(ReconstructableJob, cls).__new__(
@@ -245,7 +245,7 @@ class ReconstructableJob(
                 asset_selection, "asset_selection", AssetKey
             ),
             asset_check_selection=check.opt_nullable_set_param(
-                asset_check_selection, "asset_check_selection", AssetCheckHandle
+                asset_check_selection, "asset_check_selection", AssetCheckKey
             ),
         )
 
@@ -262,6 +262,7 @@ class ReconstructableJob(
             self.job_name,
             self.op_selection,
             self.asset_selection,
+            self.asset_check_selection,
         )
 
     def get_reconstructable_repository(self) -> ReconstructableRepository:
@@ -272,7 +273,7 @@ class ReconstructableJob(
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> Self:
         if op_selection and (asset_selection or asset_check_selection):
             check.failed(
@@ -678,13 +679,15 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> "RepositoryDefinition": ...
+) -> "RepositoryDefinition":
+    ...
 
 
 @overload
 def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
-) -> None: ...
+) -> None:
+    ...
 
 
 def repository_def_from_target_def(

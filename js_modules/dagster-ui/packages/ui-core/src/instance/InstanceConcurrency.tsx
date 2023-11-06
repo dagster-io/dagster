@@ -543,7 +543,7 @@ const ConcurrencyRunsDialog: React.FC<{
       isOpen={!!runIds && runIds.length > 0}
       title={title}
       onClose={onClose}
-      style={{width: '60%', minWidth: '400px'}}
+      style={{minWidth: '400px', maxWidth: 'calc(100% - 40px)', width: 'fit-content'}}
     >
       <Box padding={{vertical: 16}}>
         {!data ? (
@@ -551,10 +551,12 @@ const ConcurrencyRunsDialog: React.FC<{
             <Spinner purpose="section" />
           </Box>
         ) : data.pipelineRunsOrError.__typename === 'Runs' ? (
-          <RunTable
-            runs={data.pipelineRunsOrError.results}
-            additionalActionsForRun={freeSlotsActionMenuItem}
-          />
+          <div style={{overflow: 'auto'}}>
+            <RunTable
+              runs={data.pipelineRunsOrError.results}
+              additionalActionsForRun={freeSlotsActionMenuItem}
+            />
+          </div>
         ) : (
           <Box padding={{vertical: 64}}>
             <NonIdealState

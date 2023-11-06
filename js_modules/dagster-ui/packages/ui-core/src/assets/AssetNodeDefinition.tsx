@@ -14,7 +14,7 @@ import {Link} from 'react-router-dom';
 
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
-import {isHiddenAssetGroupJob, LiveData, toGraphId} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
@@ -46,11 +46,9 @@ export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
-  liveDataByNode: LiveData;
   dependsOnSelf: boolean;
-}> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
+}> = ({assetNode, upstream, downstream, dependsOnSelf}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
-  const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
   const configType = assetNode.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
@@ -97,6 +95,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
+
           {assetNode.freshnessPolicy && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
@@ -109,11 +108,7 @@ export const AssetNodeDefinition: React.FC<{
                 <Body style={{flex: 1}}>
                   {freshnessPolicyDescription(assetNode.freshnessPolicy)}
                 </Body>
-                <OverdueTag
-                  liveData={liveDataForNode}
-                  policy={assetNode.freshnessPolicy}
-                  assetKey={assetNode.assetKey}
-                />
+                <OverdueTag policy={assetNode.freshnessPolicy} assetKey={assetNode.assetKey} />
               </Box>
             </>
           )}
@@ -133,6 +128,21 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
+
+          {assetNode.backfillPolicy && (
+            <>
+              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
+                <Subheading>Backfill policy</Subheading>
+              </Box>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                flex={{gap: 12, alignItems: 'flex-start'}}
+              >
+                <Body style={{flex: 1}}>{assetNode.backfillPolicy.description}</Body>
+              </Box>
+            </>
+          )}
+
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border="top-and-bottom"
@@ -149,7 +159,7 @@ export const AssetNodeDefinition: React.FC<{
             </Link>
           </Box>
           {dependsOnSelf && <DependsOnSelfBanner />}
-          <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
+          <AssetNodeList items={upstream} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border="top-and-bottom"
@@ -165,7 +175,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </Link>
           </Box>
-          <AssetNodeList items={downstream} liveDataByNode={liveDataByNode} />
+          <AssetNodeList items={downstream} />
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
           <div style={{flex: 1}} />
         </Box>
@@ -304,7 +314,7 @@ const DescriptionAnnotations: React.FC<{
     {assetNode.isSource ? (
       <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
     ) : !assetNode.isExecutable ? (
-      <Caption style={{lineHeight: '16px'}}>Non-executable Asset</Caption>
+      <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
 );
@@ -321,13 +331,20 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     isExecutable
     autoMaterializePolicy {
       policyType
+      rules {
+        className
+        description
+        decisionType
+      }
     }
     freshnessPolicy {
       maximumLagMinutes
       cronSchedule
       cronScheduleTimezone
     }
-
+    backfillPolicy {
+      description
+    }
     partitionDefinition {
       description
     }

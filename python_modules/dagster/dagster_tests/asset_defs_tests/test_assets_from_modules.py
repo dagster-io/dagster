@@ -233,13 +233,24 @@ def test_prefix(prefix):
     assert_assets_have_prefix(prefix, assets)
 
 
-def test_source_key_prefix():
+def _load_assets_from_module_with_assets(**kwargs):
     from .asset_package import module_with_assets
 
+    return load_assets_from_modules([module_with_assets], **kwargs)
+
+
+@pytest.mark.parametrize(
+    "load_fn",
+    [
+        _load_assets_from_module_with_assets,
+        lambda **kwargs: load_assets_from_package_name(
+            "dagster_tests.asset_defs_tests.asset_package", **kwargs
+        ),
+    ],
+)
+def test_source_key_prefix(load_fn):
     prefix = ["foo", "my_cool_prefix"]
-    assets_without_prefix_sources = load_assets_from_modules(
-        [module_with_assets], key_prefix=prefix
-    )
+    assets_without_prefix_sources = load_fn(key_prefix=prefix)
     assert get_source_asset_with_key(assets_without_prefix_sources, AssetKey(["elvis_presley"]))
     assert get_assets_def_with_key(
         assets_without_prefix_sources, AssetKey(["foo", "my_cool_prefix", "chuck_berry"])
@@ -248,8 +259,8 @@ def test_source_key_prefix():
         AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
     }
 
-    assets_with_prefix_sources = load_assets_from_modules(
-        [module_with_assets], key_prefix=prefix, source_key_prefix=["bar", "cooler_prefix"]
+    assets_with_prefix_sources = load_fn(
+        key_prefix=prefix, source_key_prefix=["bar", "cooler_prefix"]
     )
     assert get_source_asset_with_key(
         assets_with_prefix_sources, AssetKey(["bar", "cooler_prefix", "elvis_presley"])

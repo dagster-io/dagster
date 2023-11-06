@@ -136,7 +136,7 @@ export const OpsRoot: React.FC<Props> = (props) => {
   });
 
   return (
-    <div style={{height: '100%'}}>
+    <div style={{flex: 1, minHeight: 0}}>
       <Loading queryResult={queryResult}>
         {({repositoryOrError}) => {
           if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
@@ -190,19 +190,18 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
     }
   });
 
-  const onClickInvocation: React.ComponentProps<
-    typeof UsedSolidDetails
-  >['onClickInvocation'] = React.useCallback(
-    ({pipelineName, handleID}) => {
-      history.push(
-        workspacePathFromAddress(
-          repoAddress,
-          `/pipeline_or_job/${pipelineName}/${handleID.split('.').join('/')}`,
-        ),
-      );
-    },
-    [history, repoAddress],
-  );
+  const onClickInvocation: React.ComponentProps<typeof UsedSolidDetails>['onClickInvocation'] =
+    React.useCallback(
+      ({pipelineName, handleID}) => {
+        history.push(
+          workspacePathFromAddress(
+            repoAddress,
+            `/pipeline_or_job/${pipelineName}/${handleID.split('.').join('/')}`,
+          ),
+        );
+      },
+      [history, repoAddress],
+    );
 
   return (
     <div style={{height: '100%', display: 'flex'}}>
@@ -350,7 +349,8 @@ const OPS_ROOT_QUERY = gql`
 
 const OpListItem = styled.div<{selected: boolean}>`
   background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
-  box-shadow: ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
+  box-shadow:
+    ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
     ${Colors.KeylineGray} 0 -1px 0 inset;
   color: ${Colors.Gray800};
   cursor: pointer;

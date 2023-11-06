@@ -408,7 +408,9 @@ def _process_and_validate_target(
             dupe_target_type = (
                 "graph"
                 if target.name in coerced_graphs
-                else "unresolved asset job" if target.name in unresolved_jobs else "job"
+                else "unresolved asset job"
+                if target.name in unresolved_jobs
+                else "job"
             )
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)

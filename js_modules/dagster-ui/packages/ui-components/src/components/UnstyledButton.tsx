@@ -12,7 +12,9 @@ export const UnstyledButton = styled.button<Props>`
   cursor: pointer;
   padding: 0;
   text-align: start;
-  transition: box-shadow 150ms, opacity 150ms;
+  transition:
+    box-shadow 150ms,
+    opacity 150ms;
   user-select: none;
   white-space: nowrap;
 

@@ -34,6 +34,7 @@ Most sensors follow a similar lifecycle:
 Now that cursors have been explained, let’s start writing the sensor.
 
 1. Navigate to and open `sensors/__init__.py` in your Dagster project.
+
 2. Add the following imports to the top of the file:
 
    ```python

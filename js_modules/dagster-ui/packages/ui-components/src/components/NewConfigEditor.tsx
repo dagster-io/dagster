@@ -76,14 +76,8 @@ export type ConfigEditorHandle = {
 
 export const NewConfigEditor = React.forwardRef<ConfigEditorHandle, ConfigEditorProps>(
   (props, ref) => {
-    const {
-      configCode,
-      checkConfig,
-      readOnly,
-      configSchema,
-      onConfigChange,
-      onHelpContextChange,
-    } = props;
+    const {configCode, checkConfig, readOnly, configSchema, onConfigChange, onHelpContextChange} =
+      props;
     const editor = React.useRef<CodeMirror.Editor | null>(null);
 
     React.useImperativeHandle(

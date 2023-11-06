@@ -1,35 +1,57 @@
 from typing import List
 
 import typer
+from typing_extensions import Annotated
 
 from dagster_dbt.cloud.asset_defs import (
     DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR,
     DbtCloudCacheableAssetsDefinition,
 )
-from dagster_dbt.cloud.resources import DbtCloudResource
+from dagster_dbt.cloud.resources import DBT_DEFAULT_HOST, DbtCloudResource
 
 app = typer.Typer()
 
 
 @app.command()
 def cache_compile_references(
-    auth_token: str = typer.Argument(
-        ...,
-        envvar=["DBT_CLOUD_API_TOKEN", "DBT_CLOUD_API_KEY"],
-        help="The API token for your dbt Cloud account.",
-    ),
-    account_id: int = typer.Argument(
-        ..., envvar="DBT_CLOUD_ACCOUNT_ID", help="The id of your dbt Cloud account"
-    ),
-    project_id: int = typer.Argument(
-        ...,
-        envvar="DBT_CLOUD_PROJECT_ID",
-        help="The id of your dbt Cloud project, that corresponds to the dbt project managed in git",
-    ),
+    auth_token: Annotated[
+        str,
+        typer.Argument(
+            ...,
+            envvar=["DBT_CLOUD_API_TOKEN", "DBT_CLOUD_API_KEY"],
+            help="The API token for your dbt Cloud account.",
+        ),
+    ],
+    account_id: Annotated[
+        int,
+        typer.Argument(..., envvar="DBT_CLOUD_ACCOUNT_ID", help="The id of your dbt Cloud account"),
+    ],
+    project_id: Annotated[
+        int,
+        typer.Argument(
+            ...,
+            envvar="DBT_CLOUD_PROJECT_ID",
+            help=(
+                "The id of your dbt Cloud project, that corresponds to the dbt project managed"
+                " in git"
+            ),
+        ),
+    ],
+    host: Annotated[
+        str,
+        typer.Option(
+            default=...,
+            envvar="DBT_CLOUD_HOST",
+            help="The host of your dbt Cloud account.",
+        ),
+    ] = DBT_DEFAULT_HOST,
 ) -> None:
     """Cache the latest dbt cloud compile run id for a given project."""
     dbt_cloud_resource = DbtCloudResource(
-        auth_token=auth_token, account_id=account_id, disable_schedule_on_trigger=False
+        auth_token=auth_token,
+        account_id=account_id,
+        disable_schedule_on_trigger=False,
+        dbt_cloud_host=host,
     )
 
     # List the jobs from the project

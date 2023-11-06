@@ -14,6 +14,12 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head nonce="NONCE-PLACEHOLDER">
+        <script
+          nonce="NONCE-PLACEHOLDER"
+          dangerouslySetInnerHTML={{
+            __html: 'window.__webpack_public_path__ = "__PATH_PREFIX__"',
+          }}
+        />
         {/* Not sure if we need the following script */}
         <script
           id="webpack-nonce-setter"
@@ -29,7 +35,8 @@ export default function Document() {
             __html: `
     {
       "pathPrefix": "__PATH_PREFIX__",
-      "telemetryEnabled": "__TELEMETRY_ENABLED__"
+      "telemetryEnabled": "__TELEMETRY_ENABLED__",
+      "liveDataPollRate": "__LIVE_DATA_POLL_RATE__"
     }
   `,
           }}

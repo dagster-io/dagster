@@ -65,13 +65,13 @@ export type DeleteMutation = {
 };
 
 export type TerminateMutationVariables = Types.Exact<{
-  runId: Types.Scalars['String'];
+  runIds: Array<Types.Scalars['String']> | Types.Scalars['String'];
   terminatePolicy?: Types.InputMaybe<Types.TerminateRunPolicy>;
 }>;
 
 export type TerminateMutation = {
   __typename: 'Mutation';
-  terminatePipelineExecution:
+  terminateRuns:
     | {
         __typename: 'PythonError';
         message: string;
@@ -82,13 +82,28 @@ export type TerminateMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
-    | {__typename: 'RunNotFoundError'; message: string}
-    | {__typename: 'TerminateRunFailure'; message: string}
     | {
-        __typename: 'TerminateRunSuccess';
-        run: {__typename: 'Run'; id: string; canTerminate: boolean};
-      }
-    | {__typename: 'UnauthorizedError'; message: string};
+        __typename: 'TerminateRunsResult';
+        terminateRunResults: Array<
+          | {
+              __typename: 'PythonError';
+              message: string;
+              stack: Array<string>;
+              errorChain: Array<{
+                __typename: 'ErrorChainLink';
+                isExplicitLink: boolean;
+                error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+              }>;
+            }
+          | {__typename: 'RunNotFoundError'; message: string}
+          | {__typename: 'TerminateRunFailure'; message: string}
+          | {
+              __typename: 'TerminateRunSuccess';
+              run: {__typename: 'Run'; id: string; canTerminate: boolean};
+            }
+          | {__typename: 'UnauthorizedError'; message: string}
+        >;
+      };
 };
 
 export type LaunchPipelineReexecutionMutationVariables = Types.Exact<{

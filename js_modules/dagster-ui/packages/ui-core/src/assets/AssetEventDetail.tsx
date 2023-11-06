@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
+import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -15,6 +16,8 @@ import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
+import {RunlessEventTag} from './RunlessEventTag';
+import {isRunlessEvent} from './isRunlessEvent';
 import {
   AssetMaterializationFragment,
   AssetObservationFragment,
@@ -34,14 +37,11 @@ export const AssetEventDetail: React.FC<{
 
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
-      <Box
-        padding={{vertical: 24}}
-        border="bottom"
-        flex={{alignItems: 'center', justifyContent: 'space-between'}}
-      >
+      <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center', gap: 12}}>
         <Heading>
           <Timestamp timestamp={{ms: Number(event.timestamp)}} />
         </Heading>
+        {isRunlessEvent(event) ? <RunlessEventTag tags={event.tags} /> : undefined}
       </Box>
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
@@ -108,7 +108,7 @@ export const AssetEventDetail: React.FC<{
       {event.description && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
           <Subheading>Description</Subheading>
-          {event.description}
+          <Description description={event.description} />
         </Box>
       )}
 

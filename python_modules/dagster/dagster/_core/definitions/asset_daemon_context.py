@@ -1,6 +1,9 @@
+import dataclasses
 import datetime
 import itertools
 import logging
+import os
+import time
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -28,6 +31,7 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._utils.cached_method import cached_method
 
 from ... import PartitionKeyRange
@@ -71,6 +75,8 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
+            AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
         if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
             rules.add(AutoMaterializeRule.materialize_on_parent_updated())
@@ -93,10 +99,13 @@ class AssetDaemonContext:
         target_asset_keys: Optional[AbstractSet[AssetKey]],
         respect_materialization_data_versions: bool,
         logger: logging.Logger,
+        evaluation_time: Optional[datetime.datetime] = None,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-        self._instance_queryer = CachingInstanceQueryer(instance, asset_graph, logger=logger)
+        self._instance_queryer = CachingInstanceQueryer(
+            instance, asset_graph, evaluation_time=evaluation_time, logger=logger
+        )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._target_asset_keys = target_asset_keys or {
@@ -118,13 +127,9 @@ class AssetDaemonContext:
                 if not self.asset_graph.is_source(key)
             ]
         )
-        self.instance_queryer.prefetch_asset_partition_counts(
-            [
-                key
-                for key in self.target_asset_keys_and_parents
-                if self.asset_graph.is_partitioned(key) and not self.asset_graph.is_source(key)
-            ],
-            after_cursor=cursor.latest_storage_id,
+
+        self._verbose_log_fn = (
+            self._logger.info if os.getenv("ASSET_DAEMON_VERBOSE_LOGS") else self._logger.debug
         )
 
     @property
@@ -338,7 +343,7 @@ class AssetDaemonContext:
         for materialize_rule in auto_materialize_policy.materialize_rules:
             rule_snapshot = materialize_rule.to_snapshot()
 
-            self._logger.debug(f"Evaluating materialize rule: {rule_snapshot}")
+            self._verbose_log_fn(f"Evaluating materialize rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
             ):
@@ -350,37 +355,15 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
+                self._verbose_log_fn(f"Rule returned {len(asset_partitions)} partitions")
                 to_materialize.update(asset_partitions)
-            self._logger.debug("Done evaluating materialize rule")
+            self._verbose_log_fn("Done evaluating materialize rule")
 
-        # These should be conditions, but aren't currently, so we just manually strip out things
-        # from our materialization set
-        for candidate in list(to_materialize):
-            if (
-                # must not be part of an active asset backfill
-                candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset()
-                # must not have invalid parent partitions
-                or len(
-                    self.asset_graph.get_parents_partitions(
-                        self.instance_queryer,
-                        self.instance_queryer.evaluation_time,
-                        candidate.asset_key,
-                        candidate.partition_key,
-                    ).required_but_nonexistent_parents_partitions
-                )
-                > 0
-            ):
-                to_materialize.remove(candidate)
-                for rule_evaluation_data, asset_partitions in all_results:
-                    all_results.remove((rule_evaluation_data, asset_partitions))
-                    all_results.append((rule_evaluation_data, asset_partitions - {candidate}))
-
-        skip_context = materialize_context._replace(candidates=to_materialize)
+        skip_context = dataclasses.replace(materialize_context, candidates=to_materialize)
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
-            self._logger.debug(f"Evaluating skip rule: {rule_snapshot}")
+            self._verbose_log_fn(f"Evaluating skip rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
                 all_results.append(
                     (
@@ -390,9 +373,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
+                self._verbose_log_fn(f"Rule returned {len(asset_partitions)} partitions")
                 to_skip.update(asset_partitions)
-            self._logger.debug("Done evaluating skip rule")
+            self._verbose_log_fn("Done evaluating skip rule")
         to_materialize.difference_update(to_skip)
 
         # this is treated separately from other rules, for now
@@ -402,10 +385,10 @@ class AssetDaemonContext:
             )
             rule_snapshot = rule.to_snapshot()
 
-            self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
+            self._verbose_log_fn(f"Evaluating discard rule: {rule_snapshot}")
 
             for evaluation_data, asset_partitions in rule.evaluate_for_asset(
-                skip_context._replace(candidates=to_materialize)
+                dataclasses.replace(skip_context, candidates=to_materialize)
             ):
                 all_results.append(
                     (
@@ -415,9 +398,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
-                self._logger.debug(f"Discard rule returned {len(asset_partitions)} partitions")
+                self._verbose_log_fn(f"Discard rule returned {len(asset_partitions)} partitions")
                 to_discard.update(asset_partitions)
-            self._logger.debug("Done evaluating discard rule")
+            self._verbose_log_fn("Done evaluating discard rule")
 
         to_materialize.difference_update(to_discard)
         to_skip.difference_update(to_discard)
@@ -444,7 +427,7 @@ class AssetDaemonContext:
         AbstractSet[AssetKeyPartitionKey],
     ]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
-        well as a set of all asset partitions that should be materialized this tick.
+        well as sets of all asset partitions that should be materialized or discarded this tick.
         """
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
@@ -453,16 +436,31 @@ class AssetDaemonContext:
         to_discard: Set[AssetKeyPartitionKey] = set()
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         visited_multi_asset_keys = set()
+
+        num_checked_assets = 0
+        num_target_asset_keys = len(self.target_asset_keys)
+
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
-            if asset_key not in self.target_asset_keys or asset_key in visited_multi_asset_keys:
+            if asset_key not in self.target_asset_keys:
                 continue
 
-            self._logger.debug(f"Evaluating asset {asset_key.to_user_string()}")
-
-            (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
-                asset_key, will_materialize_mapping, expected_data_time_mapping
+            num_checked_assets = num_checked_assets + 1
+            start_time = time.time()
+            self._verbose_log_fn(
+                "Evaluating asset"
+                f" {asset_key.to_user_string()} ({num_checked_assets}/{num_target_asset_keys})"
             )
+
+            if asset_key in visited_multi_asset_keys:
+                self._verbose_log_fn(f"Asset {asset_key.to_user_string()} already visited")
+                continue
+
+            (
+                evaluation,
+                to_materialize_for_asset,
+                to_discard_for_asset,
+            ) = self.evaluate_asset(asset_key, will_materialize_mapping, expected_data_time_mapping)
 
             log_fn = (
                 self._logger.info
@@ -480,12 +478,13 @@ class AssetDaemonContext:
             log_fn(
                 f"Asset {asset_key.to_user_string()} evaluation result: {evaluation.num_requested}"
                 f" requested ({to_materialize_str}), {evaluation.num_skipped}"
-                f" skipped, {evaluation.num_discarded} discarded"
+                f" skipped, {evaluation.num_discarded} discarded ({format(time.time()-start_time, '.3f')} seconds)"
             )
 
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
             to_discard.update(to_discard_for_asset)
+
             expected_data_time = get_expected_data_time_for_asset_key(
                 self.asset_graph,
                 asset_key,
@@ -507,24 +506,29 @@ class AssetDaemonContext:
                     if auto_materialize_policy is None:
                         check.failed(f"Expected auto materialize policy on asset {asset_key}")
 
+                    to_materialize_for_neighbor = {
+                        ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
+                    }
+                    to_discard_for_neighbor = {
+                        ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset
+                    }
+
                     evaluations_by_key[neighbor_key] = evaluation._replace(
                         asset_key=neighbor_key,
                         rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
                     )
-                    will_materialize_mapping[neighbor_key] = {
-                        ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
-                    }
-                    to_discard.update(
-                        {ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset}
-                    )
+                    will_materialize_mapping[neighbor_key] = to_materialize_for_neighbor
+                    to_discard.update(to_discard_for_neighbor)
+
                     expected_data_time_mapping[neighbor_key] = expected_data_time
                     visited_multi_asset_keys.add(neighbor_key)
 
-        return evaluations_by_key, set().union(*will_materialize_mapping.values()), to_discard
+        to_materialize = set().union(*will_materialize_mapping.values())
+        return (evaluations_by_key, to_materialize, to_discard)
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
@@ -537,7 +541,11 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations, to_materialize, to_discard = self.get_auto_materialize_asset_evaluations()
+        (
+            evaluations_by_asset_key,
+            to_materialize,
+            to_discard,
+        ) = self.get_auto_materialize_asset_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -569,13 +577,16 @@ class AssetDaemonContext:
                     for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
                 ],
                 observe_request_timestamp=observe_request_timestamp,
+                evaluations=list(evaluations_by_asset_key.values()),
             ),
-            # only record evaluations where something happened
+            # only record evaluations where something changed
             [
                 evaluation
-                for evaluation in evaluations.values()
-                if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
-                > 0
+                for evaluation in evaluations_by_asset_key.values()
+                if not evaluation.equivalent_to_stored_evaluation(
+                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key),
+                    self.asset_graph,
+                )
             ],
         )
 
@@ -626,6 +637,7 @@ def build_run_requests_with_backfill_policies(
     asset_partitions: Iterable[AssetKeyPartitionKey],
     asset_graph: AssetGraph,
     run_tags: Optional[Mapping[str, str]],
+    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     """If all assets have backfill policies, we should respect them and materialize them according
     to their backfill policies.
@@ -677,6 +689,7 @@ def build_run_requests_with_backfill_policies(
                         check.not_none(partition_keys),
                         check.not_none(partitions_def),
                         tags,
+                        dynamic_partitions_store=dynamic_partitions_store,
                     )
                 )
             else:
@@ -690,6 +703,7 @@ def build_run_requests_with_backfill_policies(
                             check.not_none(partition_keys),
                             check.not_none(partitions_def),
                             tags,
+                            dynamic_partitions_store=dynamic_partitions_store,
                         )
                     )
     return run_requests
@@ -701,10 +715,13 @@ def _build_run_requests_with_backfill_policy(
     partition_keys: FrozenSet[str],
     partitions_def: PartitionsDefinition,
     tags: Dict[str, Any],
+    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
-    partition_key_ranges = partition_subset.get_partition_key_ranges()
+    partition_key_ranges = partition_subset.get_partition_key_ranges(
+        dynamic_partitions_store=dynamic_partitions_store
+    )
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.
@@ -748,7 +765,7 @@ def _build_run_requests_for_partition_key_range(
 
     partition_chunk_start_index = partition_range_start_index
     run_requests = []
-    while partition_chunk_start_index < partition_range_end_index:
+    while partition_chunk_start_index <= partition_range_end_index:
         partition_chunk_end_index = partition_chunk_start_index + max_partitions_per_run - 1
         if partition_chunk_end_index > partition_range_end_index:
             partition_chunk_end_index = partition_range_end_index

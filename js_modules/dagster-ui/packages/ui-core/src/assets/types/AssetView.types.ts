@@ -75,6 +75,12 @@ export type AssetViewDefinitionQuery = {
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
             policyType: Types.AutoMaterializePolicyType;
+            rules: Array<{
+              __typename: 'AutoMaterializeRule';
+              className: string;
+              description: string;
+              decisionType: Types.AutoMaterializeDecisionType;
+            }>;
           } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
@@ -82,6 +88,7 @@ export type AssetViewDefinitionQuery = {
             cronSchedule: string | null;
             cronScheduleTimezone: string | null;
           } | null;
+          backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           configField: {
@@ -15788,6 +15795,12 @@ export type AssetViewDefinitionNodeFragment = {
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
+    rules: Array<{
+      __typename: 'AutoMaterializeRule';
+      className: string;
+      description: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+    }>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
@@ -15795,6 +15808,7 @@ export type AssetViewDefinitionNodeFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
+  backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   configField: {

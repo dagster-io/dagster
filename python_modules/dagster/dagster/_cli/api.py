@@ -405,6 +405,7 @@ def _execute_step_command_body(
             .get_subset(
                 op_selection=dagster_run.resolved_op_selection,
                 asset_selection=dagster_run.asset_selection,
+                asset_check_selection=dagster_run.asset_check_selection,
             )
         )
 

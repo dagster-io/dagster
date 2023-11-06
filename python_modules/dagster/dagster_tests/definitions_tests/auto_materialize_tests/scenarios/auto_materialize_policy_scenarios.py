@@ -1,7 +1,9 @@
 import datetime
 
 from dagster import (
+    Field,
     PartitionKeyRange,
+    StringSource,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -28,6 +30,7 @@ from ..base_scenario import (
 from .basic_scenarios import diamond
 from .exotic_partition_mapping_scenarios import (
     one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
+    one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
 )
 from .freshness_policy_scenarios import (
     daily_to_unpartitioned,
@@ -65,6 +68,11 @@ vee = [
     asset_def("A"),
     asset_def("B"),
     asset_def("C", ["A", "B"]),
+]
+partitioned_vee = [
+    asset_def("A", partitions_def=two_partitions_partitions_def),
+    asset_def("B", partitions_def=two_partitions_partitions_def),
+    asset_def("C", ["A", "B"], partitions_def=two_partitions_partitions_def),
 ]
 lopsided_vee = [
     asset_def("root1"),
@@ -123,6 +131,26 @@ partitioned_to_unpartitioned_allow_missing_parent = [
         "unpartitioned2", ["unpartitioned1"], auto_materialize_policy=AutoMaterializePolicy.eager()
     ),
 ]
+
+two_partitioned_to_three_unpartitioned = [
+    asset_def("partitioned1", partitions_def=two_partitions_partitions_def),
+    asset_def("partitioned2", ["partitioned1"], partitions_def=two_partitions_partitions_def),
+    asset_def("unpartitioned1", ["partitioned2"]),
+    asset_def("unpartitioned2", ["unpartitioned1"]),
+    asset_def("unpartitioned3", ["unpartitioned2"]),
+]
+
+# Asset that triggers an error within the daemon when you try to generate
+# a plan to materialize it
+error_asset = [
+    asset_def(
+        "error_asset",
+        config_schema={
+            "foo": Field(StringSource, default_value={"env": "VAR_THAT_DOES_NOT_EXIST"}),
+        },
+    )
+]
+
 
 get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated = (
     lambda require_update_for_all_parent_partitions: with_auto_materialize_policy(
@@ -241,7 +269,7 @@ auto_materialize_policy_scenarios = {
                     ],
                     num_requested=48,
                     num_discarded=4,
-                )
+                ),
             ],
         )
     ),
@@ -327,7 +355,7 @@ auto_materialize_policy_scenarios = {
                 ],
                 num_requested=1,
                 num_discarded=4,
-            )
+            ),
         ],
     ),
     "auto_materialize_policy_max_materializations_not_exceeded": AssetReconciliationScenario(
@@ -361,7 +389,7 @@ auto_materialize_policy_scenarios = {
                     ),
                 ],
                 num_requested=5,
-            )
+            ),
         ],
     ),
     "auto_materialize_policy_daily_to_unpartitioned_freshness": AssetReconciliationScenario(
@@ -668,6 +696,21 @@ auto_materialize_policy_scenarios = {
         ],
         expected_run_requests=[run_request(["unpartitioned2"])],
     ),
+    "test_dont_allow_outdated_unpartitioned_parent": AssetReconciliationScenario(
+        assets=two_partitioned_to_three_unpartitioned,
+        asset_selection=AssetSelection.keys("unpartitioned3"),
+        unevaluated_runs=[
+            # fully backfill
+            run(["partitioned1", "partitioned2"], partition_key="a"),
+            run(["partitioned1", "partitioned2"], partition_key="b"),
+            run(["unpartitioned1", "unpartitioned2", "unpartitioned3"]),
+            # now unpartitioned2 is outdated...
+            run(["unpartitioned1"]),
+        ],
+        # unpartioned3 cannot run even though unpartitioned2 updated because unpartitioned2 is
+        # outdated
+        expected_run_requests=[],
+    ),
     "test_wait_for_all_parents_updated": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             vee,
@@ -781,5 +824,194 @@ auto_materialize_policy_scenarios = {
             current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
             expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-03:00")],
         )
+    ),
+    "error_asset_scenario": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(error_asset, AutoMaterializePolicy.eager()),
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(["error_asset"])],
+        expected_error_message=(
+            'You have attempted to fetch the environment variable "VAR_THAT_DOES_NOT_EXIST" which'
+            " is not set"
+        ),
+    ),
+    "test_skip_on_required_but_nonexistent_parents": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=None).without_rules(
+                AutoMaterializeRule.skip_on_parent_outdated()
+            ),
+        ),
+        unevaluated_runs=[
+            run(["asset1"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-02:00"),
+            run(["asset2"], partition_key="2023-01-01-01:00"),
+            run(["asset2"], partition_key="2023-01-01-00:00"),
+        ],
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+        expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="asset3",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
+                            evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                                frozenset({AssetKey("asset1")})
+                            ),
+                        ),
+                        # Assert that we discard on required but nonexistent parents
+                        ["2023-01-01-00:00", "2023-01-01-01:00", "2023-01-01-02:00"],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2023-01-01-00:00",
+                            "2023-01-01-01:00",
+                            "2023-01-01-02:00",
+                            "2023-01-01-03:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset1"), AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        ["2023-01-01-03:00"],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        ["2023-01-01-00:00", "2023-01-01-01:00", "2023-01-01-02:00"],
+                    ),
+                ],
+                num_requested=1,
+                num_skipped=3,
+            ),
+        ],
+    ),
+    "test_no_skip_when_nonexistent_upstream_partitions_allowed": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=None).without_rules(
+                AutoMaterializeRule.skip_on_parent_outdated()
+            ),
+        ),
+        unevaluated_runs=[
+            run(["asset1"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-03:00"),
+            run(["asset2"], partition_key="2023-01-01-02:00"),
+            run(["asset2"], partition_key="2023-01-01-01:00"),
+            run(["asset2"], partition_key="2023-01-01-00:00"),
+        ],
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+        expected_run_requests=[
+            run_request(["asset3"], "2023-01-01-00:00"),
+            run_request(["asset3"], "2023-01-01-01:00"),
+            run_request(["asset3"], "2023-01-01-02:00"),
+            run_request(["asset3"], "2023-01-01-03:00"),
+        ],
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="asset3",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
+                        ),
+                        [
+                            "2023-01-01-00:00",
+                            "2023-01-01-01:00",
+                            "2023-01-01-02:00",
+                            "2023-01-01-03:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset1"), AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        [
+                            "2023-01-01-03:00",
+                        ],
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                frozenset({AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset(),
+                            ),
+                        ),
+                        ["2023-01-01-00:00", "2023-01-01-01:00", "2023-01-01-02:00"],
+                    ),
+                ],
+                num_requested=4,
+                num_discarded=0,
+            ),
+        ],
+    ),
+    "skipped_subset_unpartitioned": AssetReconciliationScenario(
+        assets=vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[run(["A"])],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["B"])],
+        # can now run C because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"])],
+    ),
+    "skipped_on_last_tick_subset_partitioned": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["B"], partition_key="a")],
+        # can now run C[a] because the skip rule is no longer true
+        expected_run_requests=[run_request(["C"], partition_key="a")],
+    ),
+    "skipped_on_last_tick_subset_partitioned2": AssetReconciliationScenario(
+        assets=partitioned_vee,
+        asset_selection=AssetSelection.keys("C"),
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_vee,
+            asset_selection=AssetSelection.keys("C"),
+            unevaluated_runs=[
+                run(["A"], partition_key="a"),
+                run(["A"], partition_key="b"),
+            ],
+            # C must wait for B to be materialized
+            expected_run_requests=[],
+        ),
+        expected_run_requests=[],
+        unevaluated_runs=[],
     ),
 }

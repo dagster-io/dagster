@@ -367,9 +367,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             "dagster/run-id": execute_step_args.run_id,
         }
         if dagster_run.external_job_origin:
-            labels["dagster/code-location"] = (
-                dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
-            )
+            labels[
+                "dagster/code-location"
+            ] = dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
         job = construct_dagster_k8s_job(
             job_config,
             args,
@@ -532,7 +532,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             try:
                 raw_logs = api_client.retrieve_pod_logs(pod_name, namespace=job_namespace)
                 logs += raw_logs.split("\n")
-            except kubernetes.client.rest.ApiException:
+            except kubernetes.client.exceptions.ApiException:
                 instance.report_engine_event(
                     "Encountered unexpected error while fetching pod logs for Kubernetes job {}, "
                     "Pod name {} for step {}. Will attempt to continue with other pods.".format(

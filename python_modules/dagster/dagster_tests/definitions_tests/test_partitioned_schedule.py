@@ -318,6 +318,18 @@ def test_monthly_schedule():
         return [my_schedule]
 
 
+def test_monthly_schedule_late_in_month():
+    @monthly_partitioned_config(
+        start_date="2021-05-05", minute_offset=15, hour_offset=16, day_offset=31
+    )
+    def my_partitioned_config(start, end):
+        return {"start": str(start), "end": str(end)}
+
+    keys = my_partitioned_config.get_partition_keys()
+    assert keys[0] == "2021-05-31"
+    assert keys[1] == "2021-07-31"
+
+
 def test_monthly_schedule_with_offsets():
     @monthly_partitioned_config(
         start_date="2021-05-05", minute_offset=15, hour_offset=16, day_offset=12

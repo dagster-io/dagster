@@ -16,9 +16,9 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
@@ -26,6 +26,7 @@ import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwi
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
@@ -119,6 +120,8 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     return {disabled: false};
   }, [scheduleState]);
 
+  const tick = scheduleData?.scheduleState.ticks[0];
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
@@ -210,12 +213,9 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           ) : null}
         </RowCell>
         <RowCell>
-          {scheduleData?.scheduleState.ticks[0] ? (
+          {tick ? (
             <div>
-              <TickTag
-                tick={scheduleData.scheduleState.ticks[0]}
-                instigationType={InstigationType.SCHEDULE}
-              />
+              <TickStatusTag tick={tick} />
             </div>
           ) : (
             <LoadingOrNone queryResult={queryResult} />

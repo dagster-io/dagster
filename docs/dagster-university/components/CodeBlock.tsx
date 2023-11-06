@@ -7,6 +7,7 @@ Prism.manual = true;
 interface Props {
   children: React.ReactNode;
   'data-language': string;
+  obfuscated: boolean;
 }
 
 const COPY_CONFIRMATION_MSC = 3000;
@@ -14,7 +15,9 @@ const COPY_CONFIRMATION_MSC = 3000;
 export const CodeBlock = (props: Props) => {
   const text = props.children;
   const language = props['data-language'];
+  const {obfuscated} = props;
 
+  const [hidden, setHidden] = React.useState(obfuscated);
   const [copied, setCopied] = React.useState(false);
 
   const copyToClipboard = React.useCallback(() => {
@@ -80,6 +83,18 @@ export const CodeBlock = (props: Props) => {
           </span>
         </div>
       </Transition>
+      {hidden ? (
+        <div className="absolute backdrop-blur top-2 left-0 right-0 bottom-2 flex flex-row justify-center">
+          <div className="mt-8">
+            <button
+              className="bg-white py-2 px-4 rounded-full transition hover:no-underline cursor-pointer border text-gable-green hover:text-gable-green-darker hover:border-gable-green"
+              onClick={() => setHidden(false)}
+            >
+              View answer
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

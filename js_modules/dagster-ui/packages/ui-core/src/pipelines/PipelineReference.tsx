@@ -36,7 +36,7 @@ export const PipelineReference: React.FC<Props> = ({
 
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
-      <Link to={workspacePipelinePathGuessRepo(pipelineName, isJob)}>{truncatedName}</Link>
+      <Link to={workspacePipelinePathGuessRepo(pipelineName)}>{truncatedName}</Link>
     ) : pipelineHrefContext === 'no-link' ? (
       <>{truncatedName}</>
     ) : (

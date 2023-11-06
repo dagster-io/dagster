@@ -26,12 +26,16 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
 
 class AssetExecutionType(Enum):
+    OBSERVATION = "OBSERVATION"
     UNEXECUTABLE = "UNEXECUTABLE"
     MATERIALIZATION = "MATERIALIZATION"
 
     @staticmethod
     def is_executable(varietal_str: Optional[str]) -> bool:
-        return AssetExecutionType.str_to_enum(varietal_str) in {AssetExecutionType.MATERIALIZATION}
+        return AssetExecutionType.str_to_enum(varietal_str) in {
+            AssetExecutionType.MATERIALIZATION,
+            AssetExecutionType.OBSERVATION,
+        }
 
     @staticmethod
     def str_to_enum(varietal_str: Optional[str]) -> "AssetExecutionType":

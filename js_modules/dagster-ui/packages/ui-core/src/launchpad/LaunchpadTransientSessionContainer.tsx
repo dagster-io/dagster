@@ -7,6 +7,7 @@ import {
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
 import {useFeatureFlags} from '../app/Flags';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
 
 import LaunchpadSession from './LaunchpadSession';
@@ -26,14 +27,8 @@ interface Props {
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
-  const {
-    launchpadType,
-    pipeline,
-    partitionSets,
-    repoAddress,
-    sessionPresets,
-    rootDefaultYaml,
-  } = props;
+  const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets, rootDefaultYaml} =
+    props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialData = useInitialDataForMode(
@@ -51,10 +46,12 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
 
   const [session, setSession] = React.useState<IExecutionSession>(initialSessionComplete);
 
-  const onSaveSession = (changes: IExecutionSessionChanges) => {
-    const newSession = {...session, ...changes};
-    setSession(newSession);
-  };
+  const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(
+    session,
+    (changes: IExecutionSessionChanges) => {
+      setSession((session) => ({...session, ...changes}));
+    },
+  );
 
   return (
     <LaunchpadSession

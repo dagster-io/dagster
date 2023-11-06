@@ -104,7 +104,11 @@ def result_to_events(
         status = (
             "fail"
             if result.get("fail")
-            else "skip" if result.get("skip") else "error" if result.get("error") else "success"
+            else "skip"
+            if result.get("skip")
+            else "error"
+            if result.get("error")
+            else "success"
         )
     else:
         status = result["status"]
@@ -272,16 +276,20 @@ def select_unique_ids_from_manifest(
         manifest = Manifest(
             # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
             nodes={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["nodes"].items()  # type: ignore
             },
             sources={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["sources"].items()  # type: ignore
             },
             metrics={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["metrics"].items()  # type: ignore
             },
             exposures={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+                unique_id: _DictShim(info)
+                for unique_id, info in manifest_json["exposures"].items()  # type: ignore
             },
         )
         child_map = manifest_json["child_map"]
@@ -303,9 +311,8 @@ def select_unique_ids_from_manifest(
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
-        parsed_spec = graph_cli.SelectionDifference(
-            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
-        )
+        parsed_exclude_spec = graph_cli.parse_union([exclude], False)
+        parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
     # execute this selection against the graph
     selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)

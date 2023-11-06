@@ -139,7 +139,7 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
   }, []);
 
   return (
-    <Select<typeof allTimezoneItems[0]>
+    <Select<(typeof allTimezoneItems)[0]>
       popoverProps={{
         position: 'bottom-left',
         modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},

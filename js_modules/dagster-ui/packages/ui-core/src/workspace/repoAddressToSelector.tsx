@@ -4,11 +4,9 @@ import {RepositorySelector} from '../graphql/types';
 
 import {RepoAddress} from './types';
 
-export const repoAddressToSelector = memoize(
-  (repoAddress: RepoAddress): RepositorySelector => {
-    return {
-      repositoryName: repoAddress.name,
-      repositoryLocationName: repoAddress.location,
-    };
-  },
-);
+export const repoAddressToSelector = memoize((repoAddress: RepoAddress): RepositorySelector => {
+  return {
+    repositoryName: repoAddress.name,
+    repositoryLocationName: repoAddress.location,
+  };
+});

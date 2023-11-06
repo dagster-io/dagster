@@ -47,7 +47,9 @@ export const RepoSectionHeader = (props: Props) => {
 const SectionHeaderButton = styled.button<{$open: boolean}>`
   background-color: ${Colors.Gray50};
   border: 0;
-  box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
+  box-shadow:
+    inset 0px -1px 0 ${Colors.KeylineGray},
+    inset 0px 1px 0 ${Colors.KeylineGray};
   cursor: pointer;
   display: block;
   padding: 0;

@@ -22,6 +22,7 @@ from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
 from dagster._core.definitions import build_assets_job
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -142,12 +143,10 @@ def test_unified_storage_env_var(tmpdir):
         ) as instance:
             assert _runs_directory(str(tmpdir)) in instance.run_storage._conn_string  # noqa: SLF001
             assert (
-                _event_logs_directory(str(tmpdir))
-                == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
+                _event_logs_directory(str(tmpdir)) == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
             )
             assert (
-                _schedule_directory(str(tmpdir))
-                in instance.schedule_storage._conn_string  # noqa: SLF001
+                _schedule_directory(str(tmpdir)) in instance.schedule_storage._conn_string  # noqa: SLF001
             )
 
 
@@ -614,8 +613,7 @@ def test_dagster_env_vars_from_dotenv_file():
 
                 with get_instance_for_cli() as instance:
                     assert (
-                        _runs_directory(str(storage_dir))
-                        in instance.run_storage._conn_string  # noqa: SLF001
+                        _runs_directory(str(storage_dir)) in instance.run_storage._conn_string  # noqa: SLF001
                     )
 
 
@@ -769,13 +767,12 @@ def test_report_runless_asset_event():
             AssetCheckEvaluation(
                 asset_key=my_asset_key,
                 check_name=my_check,
-                success=True,
+                passed=True,
                 metadata={},
             )
         )
-        records = instance.event_log_storage.get_asset_check_executions(
-            asset_key=my_asset_key,
-            check_name=my_check,
+        records = instance.event_log_storage.get_asset_check_execution_history(
+            check_key=AssetCheckKey(asset_key=my_asset_key, name=my_check),
             limit=1,
         )
         assert len(records) == 1

@@ -10,6 +10,7 @@ import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
 
+import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -237,9 +238,9 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const createdByValues = React.useMemo(
     () => [
       tagToFilterValue(DagsterTag.Automaterialize, 'true'),
-      ...sensorValues,
-      ...scheduleValues,
-      ...userValues,
+      ...[...sensorValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
+      ...[...scheduleValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
+      ...[...userValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
     ],
     [sensorValues, scheduleValues, userValues],
   );
@@ -400,6 +401,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       !enabledFilters || enabledFilters?.includes('status') ? statusFilter : null,
       useStaticSetFilter({
         name: 'Launched by',
+        allowMultipleSelections: false,
         icon: 'add_circle',
         allValues: createdByValues,
         renderLabel: ({value}) => {

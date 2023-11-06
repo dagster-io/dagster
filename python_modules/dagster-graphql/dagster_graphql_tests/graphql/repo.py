@@ -12,7 +12,9 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
+    AssetCheckKey,
     AssetCheckResult,
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
@@ -21,6 +23,7 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     AutoMaterializePolicy,
+    BackfillPolicy,
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -41,6 +44,7 @@ from dagster import (
     Map,
     Noneable,
     Nothing,
+    OpExecutionContext,
     Out,
     Output,
     PythonObjectDagsterType,
@@ -84,10 +88,10 @@ from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.observable_asset import create_unexecutable_observable_assets_def
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
@@ -105,7 +109,7 @@ from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
-    infer_pipeline_selector,
+    infer_job_selector,
     main_repo_location_name,
     main_repo_name,
 )
@@ -733,7 +737,7 @@ def eventually_successful():
     @op(
         required_resource_keys={"retry_count"},
     )
-    def fail(context: AssetExecutionContext, depth: int) -> int:
+    def fail(context: OpExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 
@@ -959,7 +963,7 @@ def basic_job():
 def get_retry_multi_execution_params(
     graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
 ) -> Mapping[str, Any]:
-    selector = infer_pipeline_selector(graphql_context, "retry_multi_output_job")
+    selector = infer_job_selector(graphql_context, "retry_multi_output_job")
     return {
         "mode": "default",
         "selector": selector,
@@ -1382,7 +1386,7 @@ def executable_asset() -> None:
     pass
 
 
-unexecutable_asset = create_unexecutable_observable_assets_def([AssetSpec("unexecutable_asset")])
+unexecutable_asset = next(iter(external_assets_from_specs([AssetSpec("unexecutable_asset")])))
 
 executable_test_job = build_assets_job(
     name="executable_test_job", assets=[executable_asset, unexecutable_asset]
@@ -1769,6 +1773,22 @@ def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success)
     raise Exception("oops")
 
 
+@asset(
+    partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def single_run_backfill_policy_asset(context):
+    pass
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition("2023-01-03"),
+    backfill_policy=BackfillPolicy.multi_run(10),
+)
+def multi_run_backfill_policy_asset(context):
+    pass
+
+
 named_groups_job = build_assets_job(
     "named_groups_job",
     [
@@ -1917,13 +1937,19 @@ def define_asset_jobs():
                 "hanging_asset_resource": hanging_asset_resource,
             },
         ),
+        subsettable_checked_multi_asset,
+        checked_multi_asset_job,
+        check_in_op_asset,
+        asset_check_job,
+        single_run_backfill_policy_asset,
+        multi_run_backfill_policy_asset,
     ]
 
 
 @asset_check(asset=asset_1, description="asset_1 check")
 def my_check(asset_1):
     return AssetCheckResult(
-        success=True,
+        passed=True,
         metadata={
             "foo": "bar",
             "baz": "quux",
@@ -1931,7 +1957,42 @@ def my_check(asset_1):
     )
 
 
-asset_check_job = build_assets_job("asset_check_job", [asset_1], asset_checks=[my_check])
+@asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
+def check_in_op_asset():
+    yield Output(1)
+    yield AssetCheckResult(passed=True)
+
+
+asset_check_job = build_assets_job(
+    "asset_check_job", [asset_1, check_in_op_asset], asset_checks=[my_check]
+)
+
+
+@multi_asset(
+    outs={
+        "one": AssetOut(key="one", is_required=False),
+        "two": AssetOut(key="two", is_required=False),
+    },
+    check_specs=[
+        AssetCheckSpec("my_check", asset="one"),
+        AssetCheckSpec("my_other_check", asset="one"),
+    ],
+    can_subset=True,
+)
+def subsettable_checked_multi_asset(context: OpExecutionContext):
+    if AssetKey("one") in context.selected_asset_keys:
+        yield Output(1, output_name="one")
+    if AssetKey("two") in context.selected_asset_keys:
+        yield Output(1, output_name="two")
+    if AssetCheckKey(AssetKey("one"), "my_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_check", passed=True)
+    if AssetCheckKey(AssetKey("one"), "my_other_check") in context.selected_asset_check_keys:
+        yield AssetCheckResult(check_name="my_other_check", passed=True)
+
+
+checked_multi_asset_job = define_asset_job(
+    "checked_multi_asset_job", AssetSelection.assets(subsettable_checked_multi_asset)
+)
 
 
 def define_asset_checks():

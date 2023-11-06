@@ -102,7 +102,7 @@ RUNLESS_JOB_NAME = ""
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
-    from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.job_definition import (
         JobDefinition,
     )
@@ -111,7 +111,11 @@ if TYPE_CHECKING:
         RepositoryLoadData,
     )
     from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.event_api import EventHandlerFn
+    from dagster._core.event_api import (
+        AssetRecordsFilter,
+        EventHandlerFn,
+        RunStatusChangeRecordsFilter,
+    )
     from dagster._core.events import (
         AssetMaterialization,
         DagsterEvent,
@@ -143,6 +147,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+    from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
@@ -151,6 +156,7 @@ if TYPE_CHECKING:
         EventLogConnection,
         EventLogRecord,
         EventRecordsFilter,
+        EventRecordsResult,
     )
     from dagster._core.storage.partition_status_cache import (
         AssetPartitionStatus,
@@ -162,6 +168,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
@@ -277,9 +284,11 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 
     def register_instance(self, instance: T_DagsterInstance) -> None:
         check.invariant(
-            # Backcompat with custom subclasses that don't call super().__init__()
-            # in their own __init__ implementations
-            (not hasattr(self, "_instance_weakref") or self._instance_weakref is None),
+            (
+                # Backcompat with custom subclasses that don't call super().__init__()
+                # in their own __init__ implementations
+                not hasattr(self, "_instance_weakref") or self._instance_weakref is None
+            ),
             "Must only call initialize once",
         )
 
@@ -290,10 +299,12 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 @runtime_checkable
 class DynamicPartitionsStore(Protocol):
     @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        ...
 
     @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        ...
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -349,9 +360,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Stores TemporaryDirectory instances that were created for DagsterInstance.local_temp() calls
     # to be removed once the instance is garbage collected.
-    _TEMP_DIRS: "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]" = (
-        weakref.WeakKeyDictionary()
-    )
+    _TEMP_DIRS: (
+        "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]"
+    ) = weakref.WeakKeyDictionary()
 
     def __init__(
         self,
@@ -902,6 +913,10 @@ class DagsterInstance(DynamicPartitionsStore):
             "respect_materialization_data_versions", False
         )
 
+    @property
+    def auto_materialize_max_tick_retries(self) -> int:
+        return self.get_settings("auto_materialize").get("max_tick_retries", 3)
+
     # python logs
 
     @property
@@ -1159,7 +1174,7 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnapshot"],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet["AssetCheckHandle"]] = None,
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]] = None,
         op_selection: Optional[Sequence[str]] = None,
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
@@ -1299,9 +1314,10 @@ class DagsterInstance(DynamicPartitionsStore):
                     if asset_key:
                         # Logs and stores asset_materialization_planned event
                         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
-                        partition_range_start, partition_range_end = dagster_run.tags.get(
-                            ASSET_PARTITION_RANGE_START_TAG
-                        ), dagster_run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+                        partition_range_start, partition_range_end = (
+                            dagster_run.tags.get(ASSET_PARTITION_RANGE_START_TAG),
+                            dagster_run.tags.get(ASSET_PARTITION_RANGE_END_TAG),
+                        )
 
                         if partition_tag and (partition_range_start or partition_range_end):
                             raise DagsterInvariantViolationError(
@@ -1338,12 +1354,12 @@ class DagsterInstance(DynamicPartitionsStore):
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
-                    if check.not_none(output.properties).asset_check_handle:
-                        asset_check_handle = check.not_none(
-                            check.not_none(output.properties).asset_check_handle
+                    if check.not_none(output.properties).asset_check_key:
+                        asset_check_key = check.not_none(
+                            check.not_none(output.properties).asset_check_key
                         )
-                        target_asset_key = asset_check_handle.asset_key
-                        check_name = asset_check_handle.name
+                        target_asset_key = asset_check_key.asset_key
+                        check_name = asset_check_key.name
 
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
@@ -1356,6 +1372,7 @@ class DagsterInstance(DynamicPartitionsStore):
                                 target_asset_key,
                                 check_name=check_name,
                             ),
+                            step_key=step.key,
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
@@ -1374,13 +1391,13 @@ class DagsterInstance(DynamicPartitionsStore):
         job_snapshot: Optional["JobSnapshot"],
         parent_job_snapshot: Optional["JobSnapshot"],
         asset_selection: Optional[AbstractSet[AssetKey]],
-        asset_check_selection: Optional[AbstractSet["AssetCheckHandle"]],
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
         resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["ExternalJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
-        from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+        from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.definitions.utils import validate_tags
         from dagster._core.host_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
@@ -1456,11 +1473,13 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         check.opt_sequence_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-        check.opt_set_param(
-            asset_check_selection, "asset_check_selection", of_type=AssetCheckHandle
-        )
+        check.opt_set_param(asset_check_selection, "asset_check_selection", of_type=AssetCheckKey)
 
-        if asset_selection is not None or asset_check_selection is not None:
+        # asset_selection will always be None on an op job, but asset_check_selection may be
+        # None or []. This is because [] and None are different for asset checks: None means
+        # include all asset checks on selected assets, while [] means include no asset checks.
+        # In an op job (which has no asset checks), these two are equivalent.
+        if asset_selection is not None or asset_check_selection:
             check.invariant(
                 op_selection is None,
                 "Cannot pass op_selection with either of asset_selection or asset_check_selection",
@@ -1544,9 +1563,7 @@ class DagsterInstance(DynamicPartitionsStore):
             external_job.tags,
             (
                 # these can differ from external_job.tags if tags were added at launch time
-                parent_run.tags
-                if use_parent_run_tags
-                else {}
+                parent_run.tags if use_parent_run_tags else {}
             ),
             extra_tags or {},
             {
@@ -1558,10 +1575,10 @@ class DagsterInstance(DynamicPartitionsStore):
         run_config = run_config if run_config is not None else parent_run.run_config
 
         if strategy == ReexecutionStrategy.FROM_FAILURE:
-            check.invariant(
-                parent_run.status == DagsterRunStatus.FAILURE,
-                "Cannot reexecute from failure a run that is not failed",
-            )
+            if parent_run.status != DagsterRunStatus.FAILURE:
+                raise DagsterInvariantViolationError(
+                    "Cannot reexecute from failure a run that is not failed",
+                )
 
             (
                 step_keys_to_execute,
@@ -1903,6 +1920,106 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @public
     @traced
+    def fetch_materializations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of materialization records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
+
+    @public
+    @traced
+    def fetch_planned_materializations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of planned materialization records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_planned_materializations(
+            records_filter, limit, cursor, ascending
+        )
+
+    @public
+    @traced
+    def fetch_observations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of observation records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_observations(records_filter, limit, cursor, ascending)
+
+    @public
+    @traced
+    def fetch_run_status_changes(
+        self,
+        records_filter: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of run_status_event records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[DagsterEventType, RunStatusChangeRecordsFilter]]): the
+                filter by which to filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_run_status_changes(
+            records_filter, limit, cursor, ascending
+        )
+
+    @public
+    @traced
     def get_status_by_partition(
         self,
         asset_key: AssetKey,
@@ -2008,9 +2125,14 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_materialized_partitions(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ) -> Set[str]:
-        return self._event_storage.get_materialized_partitions(asset_key, after_cursor)
+        return self._event_storage.get_materialized_partitions(
+            asset_key, before_cursor=before_cursor, after_cursor=after_cursor
+        )
 
     @traced
     def get_latest_storage_id_by_partition(
@@ -2747,11 +2869,16 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.definitions.run_request import InstigatorType
 
         retention_settings = self.get_settings("retention")
-        tick_settings = (
-            retention_settings.get("schedule")
-            if instigator_type == InstigatorType.SCHEDULE
-            else retention_settings.get("sensor")
-        )
+
+        if instigator_type == InstigatorType.SCHEDULE:
+            tick_settings = retention_settings.get("schedule")
+        elif instigator_type == InstigatorType.SENSOR:
+            tick_settings = retention_settings.get("sensor")
+        elif instigator_type == InstigatorType.AUTO_MATERIALIZE:
+            tick_settings = retention_settings.get("auto_materialize")
+        else:
+            raise Exception(f"Unexpected instigator type {instigator_type}")
+
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
 
@@ -2771,8 +2898,8 @@ class DagsterInstance(DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.event_api import EventRecordsFilter
         from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         # When we cant don't know whether the requested key corresponds to a source or regular
         # asset, we need to retrieve both the latest observation and materialization for all assets.
@@ -2873,4 +3000,13 @@ class DagsterInstance(DynamicPartitionsStore):
                 event_specific_data=data_payload,
                 job_name=RUNLESS_JOB_NAME,
             ),
+        )
+
+    def get_asset_check_support(self) -> "AssetCheckInstanceSupport":
+        from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
+
+        return (
+            AssetCheckInstanceSupport.SUPPORTED
+            if self.event_log_storage.supports_asset_checks
+            else AssetCheckInstanceSupport.NEEDS_MIGRATION
         )

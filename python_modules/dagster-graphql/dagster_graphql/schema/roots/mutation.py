@@ -22,7 +22,9 @@ from dagster_graphql.implementation.execution.launch_execution import (
 
 from ...implementation.execution import (
     delete_pipeline_run,
+    report_runless_asset_events,
     terminate_pipeline_execution,
+    terminate_pipeline_execution_for_runs,
     wipe_assets,
 )
 from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
@@ -60,6 +62,7 @@ from ..inputs import (
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
+    GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
 )
 from ..partition_sets import GrapheneAddDynamicPartitionResult
@@ -247,6 +250,23 @@ class GrapheneTerminateRunResult(graphene.Union):
             GraphenePythonError,
         )
         name = "TerminateRunResult"
+
+
+class GrapheneTerminateRunsResult(graphene.ObjectType):
+    """Indicates the runs that successfully terminated and those that failed to terminate."""
+
+    terminateRunResults = non_null_list(GrapheneTerminateRunResult)
+
+    class Meta:
+        name = "TerminateRunsResult"
+
+
+class GrapheneTerminateRunsResultOrError(graphene.Union):
+    """The output from runs termination."""
+
+    class Meta:
+        types = (GrapheneTerminateRunsResult, GraphenePythonError)
+        name = "TerminateRunsResultOrError"
 
 
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
@@ -451,6 +471,33 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
         )
 
 
+class GrapheneTerminateRunsMutation(graphene.Mutation):
+    """Terminates a set of runs given their run IDs."""
+
+    Output = graphene.NonNull(GrapheneTerminateRunsResultOrError)
+
+    class Arguments:
+        runIds = non_null_list(graphene.String)
+        terminatePolicy = graphene.Argument(GrapheneTerminateRunPolicy)
+
+    class Meta:
+        name = "TerminateRunsMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.TERMINATE_PIPELINE_EXECUTION)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        runIds: Sequence[str],
+        terminatePolicy: Optional[GrapheneTerminateRunPolicy] = None,
+    ):
+        return terminate_pipeline_execution_for_runs(
+            graphene_info,
+            runIds,
+            terminatePolicy or GrapheneTerminateRunPolicy.SAFE_TERMINATE,
+        )
+
+
 class GrapheneReloadRepositoryLocationMutationResult(graphene.Union):
     """The output from reloading a code location server."""
 
@@ -629,6 +676,60 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
         )
 
 
+class GrapheneReportRunlessAssetEventsSuccess(graphene.ObjectType):
+    """Output indicating that runless asset events were reported."""
+
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "ReportRunlessAssetEventsSuccess"
+
+
+class GrapheneReportRunlessAssetEventsResult(graphene.Union):
+    """The output from reporting runless events."""
+
+    class Meta:
+        types = (
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReportRunlessAssetEventsSuccess,
+        )
+        name = "ReportRunlessAssetEventsResult"
+
+
+class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
+    """Reports runless events for an asset or a subset of its partitions."""
+
+    Output = graphene.NonNull(GrapheneReportRunlessAssetEventsResult)
+
+    class Arguments:
+        eventParams = graphene.Argument(graphene.NonNull(GrapheneReportRunlessAssetEventsParams))
+
+    class Meta:
+        name = "ReportRunlessAssetEventsMutation"
+
+    @capture_error
+    @check_permission(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
+    def mutate(
+        self, graphene_info: ResolveInfo, eventParams: GrapheneReportRunlessAssetEventsParams
+    ):
+        event_type = eventParams["eventType"].to_dagster_event_type()
+        asset_key = AssetKey.from_graphql_input(eventParams["assetKey"])
+        partition_keys = eventParams.get("partitionKeys", None)
+        description = eventParams.get("description", None)
+
+        reporting_user_tags = {**graphene_info.context.get_reporting_user_tags()}
+
+        return report_runless_asset_events(
+            graphene_info,
+            event_type=event_type,
+            asset_key=asset_key,
+            partition_keys=partition_keys,
+            description=description,
+            tags=reporting_user_tags,
+        )
+
+
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
     """Output indicating that telemetry was logged."""
 
@@ -767,12 +868,14 @@ class GrapheneMutation(graphene.ObjectType):
     scheduleDryRun = GrapheneScheduleDryRunMutation.Field()
     terminatePipelineExecution = GrapheneTerminateRunMutation.Field()
     terminateRun = GrapheneTerminateRunMutation.Field()
+    terminateRuns = GrapheneTerminateRunsMutation.Field()
     deletePipelineRun = GrapheneDeleteRunMutation.Field()
     deleteRun = GrapheneDeleteRunMutation.Field()
     reloadRepositoryLocation = GrapheneReloadRepositoryLocationMutation.Field()
     reloadWorkspace = GrapheneReloadWorkspaceMutation.Field()
     shutdownRepositoryLocation = GrapheneShutdownRepositoryLocationMutation.Field()
     wipeAssets = GrapheneAssetWipeMutation.Field()
+    reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
     cancelPartitionBackfill = GrapheneCancelBackfillMutation.Field()

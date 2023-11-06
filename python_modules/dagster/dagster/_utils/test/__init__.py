@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, Type, cast
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -328,3 +328,16 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
         if not self._sleep_interval:
             return claim_status
         return claim_status.with_sleep_interval(float(self._sleep_interval))
+
+
+def get_all_direct_subclasses_of_marker(marker_interface_cls: Type) -> List[Type]:
+    import dagster as dagster
+
+    return [
+        symbol
+        for symbol in dagster.__dict__.values()
+        if isinstance(symbol, type)
+        and issubclass(symbol, marker_interface_cls)
+        and marker_interface_cls
+        in symbol.__bases__  # ensure that the class is a direct subclass of marker_interface_cls (not a subclass of a subclass)
+    ]

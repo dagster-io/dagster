@@ -95,12 +95,15 @@ export function useTimeRangeFilter({
     setState(initialState || [null, null]);
   }, [initialState]);
 
-  const {timeRanges, timeRangesArray} = React.useMemo(() => calculateTimeRanges(timezone), [
-    timezone,
-    // Recalculate once an hour
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    Math.floor(Date.now() / (1000 * 60 * 60)),
-  ]);
+  const {timeRanges, timeRangesArray} = React.useMemo(
+    () => calculateTimeRanges(timezone),
+    [
+      timezone,
+      // Recalculate once an hour
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Math.floor(Date.now() / (1000 * 60 * 60)),
+    ],
+  );
 
   const onReset = () => {
     setState([null, null]);

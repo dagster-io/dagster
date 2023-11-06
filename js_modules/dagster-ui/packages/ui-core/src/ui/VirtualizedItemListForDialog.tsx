@@ -7,9 +7,10 @@ import {Container, Inner, Row} from './VirtualizedTable';
 interface Props<T> {
   items: T[];
   renderItem: (item: T) => React.ReactNode;
+  itemBorders?: boolean;
 }
 
-export function VirtualizedItemListForDialog<A>({items, renderItem}: Props<A>) {
+export function VirtualizedItemListForDialog<A>({items, renderItem, itemBorders = true}: Props<A>) {
   const container = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -32,7 +33,7 @@ export function VirtualizedItemListForDialog<A>({items, renderItem}: Props<A>) {
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center'}}
-                border={index < items.length - 1 ? 'bottom' : null}
+                border={itemBorders && index < items.length - 1 ? 'bottom' : null}
               >
                 {renderItem(assetKey)}
               </Box>

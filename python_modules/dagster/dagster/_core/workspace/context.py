@@ -136,6 +136,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
+    def get_viewer_tags(self) -> Dict[str, str]:
+        return {}
+
+    def get_reporting_user_tags(self) -> Dict[str, str]:
+        return {}
+
     def get_code_location(self, location_name: str) -> CodeLocation:
         location_entry = self.get_location_entry(location_name)
         if not location_entry:

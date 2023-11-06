@@ -36,10 +36,11 @@ setup(
     packages=find_packages(exclude=["dagster_datahub_tests*"]),
     include_package_data=True,
     install_requires=[
-        "acryl-datahub[datahub-rest, datahub-kafka]<=0.10.2",
+        "acryl-datahub[datahub-rest, datahub-kafka]",
         f"dagster{pin}",
         "packaging",
         "requests",
+        "pydantic>=1.10.0,<2.0.0",
     ],
     extras_require={},
     zip_safe=False,

@@ -33,7 +33,7 @@ export type SearchPrimaryQuery = {
                   __typename: 'Repository';
                   id: string;
                   name: string;
-                  assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
+                  assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
                   pipelines: Array<{
                     __typename: 'Pipeline';
                     id: string;
@@ -48,7 +48,11 @@ export type SearchPrimaryQuery = {
                     name: string;
                     pipelineName: string;
                   }>;
-                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
+                  allTopLevelResourceDetails: Array<{
+                    __typename: 'ResourceDetails';
+                    id: string;
+                    name: string;
+                  }>;
                 }>;
               }
             | null;

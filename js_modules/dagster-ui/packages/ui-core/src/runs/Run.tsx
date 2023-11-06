@@ -35,7 +35,6 @@ import {
   useComputeLogFileKeyForSelection,
   matchingComputeLogKeyFromStepKey,
 } from './useComputeLogFileKeyForSelection';
-import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
@@ -167,8 +166,6 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   onSetLogsFilter,
   onSetSelectionQuery,
 }) => {
-  const onLaunch = useJobReExecution(run);
-
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: LogType.structured},
@@ -190,16 +187,13 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   }, [runtimeGraph, selectionQuery]);
 
   const supportsCapturedLogs = useSupportsCapturedLogs();
-  const {
-    logCaptureInfo,
-    computeLogFileKey,
-    setComputeLogFileKey,
-  } = useComputeLogFileKeyForSelection({
-    stepKeys,
-    selectionStepKeys,
-    metadata,
-    defaultToFirstStep: false,
-  });
+  const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
+    useComputeLogFileKeyForSelection({
+      stepKeys,
+      selectionStepKeys,
+      metadata,
+      defaultToFirstStep: false,
+    });
 
   const logsFilterStepKeys = runtimeGraph
     ? logsFilter.logQuery
@@ -301,7 +295,6 @@ const RunWithData: React.FC<RunWithDataProps> = ({
                 </Tooltip>
                 <RunActionButtons
                   run={run}
-                  onLaunch={onLaunch}
                   graph={runtimeGraph}
                   metadata={metadata}
                   selection={{query: selectionQuery, keys: selectionStepKeys}}

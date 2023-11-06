@@ -3,6 +3,7 @@ import uuid
 import kubernetes
 import pytest
 from dagster import RetryRequested, job, op
+from dagster._core.test_utils import instance_for_test
 from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
@@ -229,6 +230,105 @@ def test_k8s_job_op_with_container_config(namespace, cluster_provider):
     job_name = get_k8s_job_name(run_id, with_container_config.name)
 
     assert "SHELL_FROM_CONTAINER_CONFIG" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_deep_merge(namespace, cluster_provider):
+    # Set run launcher config just to pull run_k8s_config when running the op - does not actually
+    # launch the run
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_k8s",
+                "class": "K8sRunLauncher",
+                "config": {
+                    "instance_config_map": "doesnt_matter",
+                    "service_account_name": "default",
+                    "load_incluster_config": False,
+                    "kubeconfig_file": cluster_provider.kubeconfig_file,
+                    "run_k8s_config": {
+                        "container_config": {
+                            "env": [
+                                {
+                                    "name": "FOO",
+                                    "value": "1",
+                                }
+                            ]
+                        }
+                    },
+                },
+            }
+        }
+    ) as instance:
+
+        @job
+        def with_config_job():
+            k8s_job_op()
+
+        # Shallow merge - only BAR is set
+
+        execute_result = with_config_job.execute_in_process(
+            instance=instance,
+            run_config={
+                "ops": {
+                    "k8s_job_op": {
+                        "config": {
+                            "image": "busybox",
+                            "container_config": {
+                                "command": ["/bin/sh", "-c"],
+                                "args": ['echo "FOO IS $FOO AND BAR IS $BAR"'],
+                                "env": [
+                                    {
+                                        "name": "BAR",
+                                        "value": "2",
+                                    }
+                                ],
+                            },
+                            "namespace": namespace,
+                            "load_incluster_config": False,
+                            "kubeconfig_file": cluster_provider.kubeconfig_file,
+                        }
+                    }
+                }
+            },
+        )
+        run_id = execute_result.dagster_run.run_id
+        job_name = get_k8s_job_name(run_id, k8s_job_op.name)
+
+        assert "FOO IS  AND BAR IS 2" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+        # now with deep merge, both are set
+
+        execute_result = with_config_job.execute_in_process(
+            instance=instance,
+            run_config={
+                "ops": {
+                    "k8s_job_op": {
+                        "config": {
+                            "image": "busybox",
+                            "container_config": {
+                                "command": ["/bin/sh", "-c"],
+                                "args": ['echo "FOO IS $FOO AND BAR IS $BAR"'],
+                                "env": [
+                                    {
+                                        "name": "BAR",
+                                        "value": "2",
+                                    }
+                                ],
+                            },
+                            "namespace": namespace,
+                            "load_incluster_config": False,
+                            "kubeconfig_file": cluster_provider.kubeconfig_file,
+                            "merge_behavior": "DEEP",
+                        }
+                    }
+                }
+            },
+        )
+        run_id = execute_result.dagster_run.run_id
+        job_name = get_k8s_job_name(run_id, k8s_job_op.name)
+
+        assert "FOO IS 1 AND BAR IS 2" in _get_pod_logs(cluster_provider, job_name, namespace)
 
 
 @pytest.mark.default

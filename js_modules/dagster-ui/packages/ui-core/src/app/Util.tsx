@@ -1,3 +1,4 @@
+import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
@@ -148,6 +149,57 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
+export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise<R>>(
+  fn: U,
+  hashFn?: (arg: T, ...rest: any[]) => any,
+): U & {
+  isCached: (arg: T, ...rest: any[]) => Promise<boolean>;
+} {
+  const lru = cache<string, R>({
+    dbName: 'indexDBAsyncMemoizeDB',
+    maxCount: 50,
+  });
+
+  async function genHashKey(arg: T, ...rest: any[]) {
+    const hash = hashFn ? hashFn(arg, ...rest) : arg;
+
+    const encoder = new TextEncoder();
+    // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
+    // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
+    if (crypto.subtle?.digest) {
+      const data = encoder.encode(hash.toString());
+      const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    }
+    return hash.toString();
+  }
+
+  const ret = (async (arg: T, ...rest: any[]) => {
+    return new Promise<R>(async (resolve) => {
+      const hashKey = await genHashKey(arg, ...rest);
+      if (await lru.has(hashKey)) {
+        const {value} = await lru.get(hashKey);
+        resolve(value);
+        return;
+      }
+
+      const result = await fn(arg, ...rest);
+      // Resolve the promise before storing the result in IndexedDB
+      resolve(result);
+      await lru.set(hashKey, result, {
+        // Some day in the year 2050...
+        expiry: new Date(9 ** 13),
+      });
+    });
+  }) as any;
+  ret.isCached = async (arg: T, ...rest: any) => {
+    const hashKey = await genHashKey(arg, ...rest);
+    return await lru.has(hashKey);
+  };
+  return ret;
+}
+
 // Simple memoization function for methods that take a single object argument.
 // Returns a memoized copy of the provided function which retrieves the result
 // from a cache after the first invocation with a given object.
@@ -200,10 +252,10 @@ export function colorHash(str: string) {
 // const textMetadata = metadataEntries.filter(gqlTypePredicate('TextMetadataEntry'));
 //
 // `textMetadata` will be of type `TextMetadataEntry[]`.
-export const gqlTypePredicate = <T extends string>(typename: T) => <N extends {__typename: string}>(
-  node: N,
-): node is Extract<N, {__typename: T}> => {
-  return node.__typename === typename;
-};
+export const gqlTypePredicate =
+  <T extends string>(typename: T) =>
+  <N extends {__typename: string}>(node: N): node is Extract<N, {__typename: T}> => {
+    return node.__typename === typename;
+  };
 
 export const COMMON_COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base'});

@@ -64,12 +64,15 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const {empty, perProvider} = React.useMemo(() => {
-    const perProvider = suggestionProviders.reduce((accum, provider) => {
-      const values = provider.values();
-      return provider.token
-        ? {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}}
-        : accum;
-    }, {} as {[token: string]: {fuse: Fuse<string>; all: string[]}});
+    const perProvider = suggestionProviders.reduce(
+      (accum, provider) => {
+        const values = provider.values();
+        return provider.token
+          ? {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}}
+          : accum;
+      },
+      {} as {[token: string]: {fuse: Fuse<string>; all: string[]}},
+    );
     const providerKeys = suggestionProviders
       .map((provider) => provider.token)
       .filter((token) => token) as string[];

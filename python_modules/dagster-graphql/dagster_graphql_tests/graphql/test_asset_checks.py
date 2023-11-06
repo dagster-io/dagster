@@ -17,51 +17,42 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import ERROR_FRAGMENT
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    infer_job_or_pipeline_selector,
+    infer_job_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
 
-GET_ASSET_CHECKS = """
-query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
-    assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
-        ... on AssetChecks {
-            checks {
-                name
-                assetKey {
-                    path
+GET_ASSET_CHECK_DETAILS_QUERY = """
+query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int) {
+    assetNodes(assetKeys: $assetKeys) {
+        assetKey {
+            path
+        }
+        assetChecksOrError(limit: $limit) {
+            ... on AssetChecks {
+                checks {
+                    name
+                    description
+                    canExecuteIndividually
                 }
-                description
-                canExecuteIndividually
             }
         }
     }
 }
 """
 
-GET_ASSET_CHECK_HISTORY = """
-query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
-    assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
-        ... on AssetChecks {
-            checks {
-                name
-                executions(limit: 10) {
-                    runId
-                    status
-                    evaluation {
-                        severity
-                        timestamp
-                        targetMaterialization {
-                            storageId
-                            runId
-                            timestamp
-                        }
-                        metadataEntries {
-                            label
-                        }
-                    }
+GET_ASSET_CHECK_NAMES_QUERY = """
+query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int) {
+    assetNodes(assetKeys: $assetKeys) {
+        assetKey {
+            path
+        }
+        assetChecksOrError(limit: $limit) {
+            ... on AssetChecks {
+                checks {
+                    name
                 }
             }
         }
@@ -70,17 +61,61 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
 """
 
 GET_ASSET_CHECK_HISTORY_WITH_ID = """
-query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
-    assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
-        ... on AssetChecks {
-            checks {
-                name
-                executions(limit: 10) {
-                    id
-                    status
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!, $limit: Int!, $cursor: String) {
+    assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: $limit, cursor: $cursor) {
+        id
+        status
+        runId
+    }
+}
+"""
+
+
+GET_ASSET_CHECK_HISTORY = """
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!) {
+    assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: 10) {
+        runId
+        status
+        evaluation {
+            severity
+            timestamp
+            targetMaterialization {
+                storageId
+                runId
+                timestamp
+            }
+            metadataEntries {
+                label
+            }
+        }
+    }
+}
+"""
+
+GET_LATEST_EXECUTION = """
+query GetLatestExecution($assetKey: AssetKeyInput!) {
+    assetNodes(assetKeys: [$assetKey]) {
+        assetChecksOrError {
+            ... on AssetChecks {
+                checks {
+                    name
+                    executionForLatestMaterialization {
+                        runId
+                        status
+                    }
                 }
             }
         }
+    }
+}
+"""
+
+GET_ASSET_CHECK_HISTORY_WITH_STEP_KEY = """
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!) {
+    assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: 10) {
+        runId
+        status
+        stepKey
     }
 }
 """
@@ -98,23 +133,10 @@ query GetLogsForRun($runId: ID!) {
 }
 """
 
-GET_LATEST_EXECUTION = """
-query GetLatestExecution($assetKey: AssetKeyInput!) {
-    assetChecksOrError(assetKey: $assetKey) {
-        ... on AssetChecks {
-            checks {
-                name
-                executionForLatestMaterialization {
-                    runId
-                    status
-                }
-            }
-        }
-    }
-}
-"""
 
-LAUNCH_PIPELINE_EXECUTION_MUTATION = ERROR_FRAGMENT + """
+LAUNCH_PIPELINE_EXECUTION_MUTATION = (
+    ERROR_FRAGMENT
+    + """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
@@ -171,6 +193,7 @@ mutation($executionParams: ExecutionParams!) {
   }
 }
 """
+)
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {
@@ -244,45 +267,135 @@ def _materialization_event(run_id: str, asset_key: AssetKey) -> EventLogEntry:
 class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
     def test_asset_check_definitions(self, graphql_context: WorkspaceRequestContext):
         res = execute_dagster_graphql(
-            graphql_context, GET_ASSET_CHECKS, variables={"assetKey": {"path": ["asset_1"]}}
+            graphql_context,
+            GET_ASSET_CHECK_DETAILS_QUERY,
+            variables={"assetKeys": [{"path": ["asset_1"]}]},
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "assetKey": {
-                            "path": ["asset_1"],
-                        },
-                        "description": "asset_1 check",
-                        "canExecuteIndividually": "CAN_EXECUTE",
-                    }
-                ]
-            }
+            "assetNodes": [
+                {
+                    "assetKey": {"path": ["asset_1"]},
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "description": "asset_1 check",
+                                "canExecuteIndividually": "CAN_EXECUTE",
+                            }
+                        ]
+                    },
+                }
+            ]
         }
 
-    def test_asset_check_executions_with_id(self, graphql_context: WorkspaceRequestContext):
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_DETAILS_QUERY,
+            variables={"assetKeys": {"path": ["check_in_op_asset"]}},
+        )
+        assert res.data == {
+            "assetNodes": [
+                {
+                    "assetKey": {"path": ["check_in_op_asset"]},
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "description": None,
+                                "canExecuteIndividually": "REQUIRES_MATERIALIZATION",
+                            }
+                        ]
+                    },
+                }
+            ]
+        }
+
+    def test_asset_check_asset_node_limit(self, graphql_context: WorkspaceRequestContext):
+        res = execute_dagster_graphql(graphql_context, GET_ASSET_CHECK_NAMES_QUERY)
+        with_checks = [
+            node for node in res.data["assetNodes"] if node["assetChecksOrError"] != {"checks": []}
+        ]
+        assert with_checks == [
+            {
+                "assetKey": {"path": ["asset_1"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["check_in_op_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["one"]},
+                "assetChecksOrError": {
+                    "checks": [{"name": "my_check"}, {"name": "my_other_check"}]
+                },
+            },
+        ]
+
+        res = execute_dagster_graphql(
+            graphql_context, GET_ASSET_CHECK_NAMES_QUERY, variables={"limit": 1}
+        )
+        with_checks = [
+            node for node in res.data["assetNodes"] if node["assetChecksOrError"] != {"checks": []}
+        ]
+        assert with_checks == [
+            {
+                "assetKey": {"path": ["asset_1"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["check_in_op_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["one"]},
+                "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+        ]
+
+    def test_asset_check_execution_cursoring(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
-        run = create_run_for_test(graphql_context.instance)
-
-        graphql_context.instance.event_log_storage.store_event(
-            _planned_event(
-                run.run_id,
-                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
+        run_ids = [create_run_for_test(graphql_context.instance).run_id for _ in range(10)]
+        for run_id in run_ids:
+            graphql_context.instance.event_log_storage.store_event(
+                _planned_event(
+                    run_id,
+                    AssetCheckEvaluationPlanned(
+                        asset_key=AssetKey(["asset_1"]), check_name="my_check"
+                    ),
+                )
             )
+
+        expected_limit = 6
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_ID,
+            variables={
+                "assetKey": {"path": ["asset_1"]},
+                "checkName": "my_check",
+                "limit": expected_limit,
+            },
         )
+        assert res.data
+        expected_run_ids = list(reversed(run_ids))[:expected_limit]
+        for expected_run_id, execution in zip(expected_run_ids, res.data["assetCheckExecutions"]):
+            assert execution["runId"] == expected_run_id
 
         res = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_CHECK_HISTORY_WITH_ID,
-            variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
+            variables={
+                "assetKey": {"path": ["asset_1"]},
+                "checkName": "my_check",
+                "limit": expected_limit,
+                "cursor": res.data["assetCheckExecutions"][-1]["id"],
+            },
         )
         assert res.data
-        assert res.data["assetChecksOrError"]["checks"][0]["executions"][0]["id"]
-        assert (
-            res.data["assetChecksOrError"]["checks"][0]["executions"][0]["status"] == "IN_PROGRESS"
-        )
+        expected_run_ids = list(reversed(run_ids))[expected_limit:]
+        for expected_run_id, execution in zip(expected_run_ids, res.data["assetCheckExecutions"]):
+            assert execution["runId"] == expected_run_id
 
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
@@ -302,20 +415,13 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executions": [
-                            {
-                                "runId": "foo",
-                                "status": "IN_PROGRESS",
-                                "evaluation": None,
-                            }
-                        ],
-                    }
-                ]
-            }
+            "assetCheckExecutions": [
+                {
+                    "runId": "foo",
+                    "status": "IN_PROGRESS",
+                    "evaluation": None,
+                }
+            ],
         }
 
         evaluation_timestamp = time.time()
@@ -326,7 +432,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={"foo": MetadataValue.text("bar")},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=42, run_id="bizbuz", timestamp=3.3
@@ -343,31 +449,24 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executions": [
-                            {
-                                "runId": "foo",
-                                "status": "SUCCEEDED",
-                                "evaluation": {
-                                    "timestamp": evaluation_timestamp,
-                                    "severity": "ERROR",
-                                    "targetMaterialization": {
-                                        "storageId": 42,
-                                        "runId": "bizbuz",
-                                        "timestamp": 3.3,
-                                    },
-                                    "metadataEntries": [
-                                        {"label": "foo"},
-                                    ],
-                                },
-                            }
+            "assetCheckExecutions": [
+                {
+                    "runId": "foo",
+                    "status": "SUCCEEDED",
+                    "evaluation": {
+                        "timestamp": evaluation_timestamp,
+                        "severity": "ERROR",
+                        "targetMaterialization": {
+                            "storageId": 42,
+                            "runId": "bizbuz",
+                            "timestamp": 3.3,
+                        },
+                        "metadataEntries": [
+                            {"label": "foo"},
                         ],
-                    }
-                ],
-            }
+                    },
+                }
+            ],
         }
 
     def test_asset_check_events(self, graphql_context: WorkspaceRequestContext):
@@ -387,7 +486,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={"foo": MetadataValue.text("bar")},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=42, run_id="bizbuz", timestamp=3.3
@@ -430,20 +529,13 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executions": [
-                            {
-                                "runId": run.run_id,
-                                "status": "IN_PROGRESS",
-                                "evaluation": None,
-                            }
-                        ],
-                    }
-                ]
-            }
+            "assetCheckExecutions": [
+                {
+                    "runId": run.run_id,
+                    "status": "IN_PROGRESS",
+                    "evaluation": None,
+                }
+            ],
         }
 
         graphql_context.instance.report_run_failed(run)
@@ -454,16 +546,9 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executions": [
-                            {"runId": run.run_id, "status": "EXECUTION_FAILED", "evaluation": None}
-                        ],
-                    }
-                ],
-            }
+            "assetCheckExecutions": [
+                {"runId": run.run_id, "status": "EXECUTION_FAILED", "evaluation": None}
+            ],
         }
 
     def test_latest_execution(self, graphql_context: WorkspaceRequestContext):
@@ -480,9 +565,15 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
             )
             assert res.data == {
-                "assetChecksOrError": {
-                    "checks": [{"name": "my_check", "executionForLatestMaterialization": None}],
-                }
+                "assetNodes": [
+                    {
+                        "assetChecksOrError": {
+                            "checks": [
+                                {"name": "my_check", "executionForLatestMaterialization": None}
+                            ]
+                        }
+                    }
+                ]
             }, "new materialization should clear latest execution"
             records = instance.get_asset_records([AssetKey(["asset_1"])])
             assert records
@@ -501,34 +592,42 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executionForLatestMaterialization": {
-                            "runId": run.run_id,
-                            "status": "IN_PROGRESS",
-                        },
+            "assetNodes": [
+                {
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "executionForLatestMaterialization": {
+                                    "runId": run.run_id,
+                                    "status": "IN_PROGRESS",
+                                },
+                            }
+                        ]
                     }
-                ]
-            }
+                }
+            ]
         }
         instance.report_run_failed(run)
         res = execute_dagster_graphql(
             graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executionForLatestMaterialization": {
-                            "runId": run.run_id,
-                            "status": "EXECUTION_FAILED",
-                        },
-                    }
-                ],
-            }
+            "assetNodes": [
+                {
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "executionForLatestMaterialization": {
+                                    "runId": run.run_id,
+                                    "status": "EXECUTION_FAILED",
+                                },
+                            }
+                        ]
+                    },
+                }
+            ]
         }
 
         materialization_record = new_materialization()
@@ -545,17 +644,21 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executionForLatestMaterialization": {
-                            "runId": run.run_id,
-                            "status": "IN_PROGRESS",
-                        },
-                    }
-                ],
-            }
+            "assetNodes": [
+                {
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "executionForLatestMaterialization": {
+                                    "runId": run.run_id,
+                                    "status": "IN_PROGRESS",
+                                },
+                            }
+                        ]
+                    },
+                }
+            ]
         }
         instance.event_log_storage.store_event(
             _evaluation_event(
@@ -563,7 +666,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=materialization_record.storage_id,
@@ -578,17 +681,21 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executionForLatestMaterialization": {
-                            "runId": run.run_id,
-                            "status": "SUCCEEDED",
-                        },
-                    }
-                ],
-            }
+            "assetNodes": [
+                {
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "executionForLatestMaterialization": {
+                                    "runId": run.run_id,
+                                    "status": "SUCCEEDED",
+                                },
+                            }
+                        ]
+                    },
+                }
+            ]
         }
 
         materialization_record = new_materialization()
@@ -607,7 +714,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 AssetCheckEvaluation(
                     asset_key=AssetKey(["asset_1"]),
                     check_name="my_check",
-                    success=True,
+                    passed=True,
                     metadata={},
                     target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
                         storage_id=materialization_record.storage_id,
@@ -622,17 +729,21 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executionForLatestMaterialization": {
-                            "runId": run.run_id,
-                            "status": "SUCCEEDED",
-                        },
-                    }
-                ],
-            }
+            "assetNodes": [
+                {
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "executionForLatestMaterialization": {
+                                    "runId": run.run_id,
+                                    "status": "SUCCEEDED",
+                                },
+                            }
+                        ]
+                    },
+                }
+            ]
         }
         instance.event_log_storage.store_event(
             _materialization_event(run.run_id, AssetKey(["asset_1"]))
@@ -641,23 +752,28 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             graphql_context, GET_LATEST_EXECUTION, variables={"assetKey": {"path": ["asset_1"]}}
         )
         assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
-                        "executionForLatestMaterialization": {
-                            "runId": run.run_id,
-                            "status": "SUCCEEDED",
-                        },
-                    }
-                ],
-            }
+            "assetNodes": [
+                {
+                    "assetChecksOrError": {
+                        "checks": [
+                            {
+                                "name": "my_check",
+                                "executionForLatestMaterialization": {
+                                    "runId": run.run_id,
+                                    "status": "SUCCEEDED",
+                                },
+                            }
+                        ]
+                    },
+                }
+            ]
         }
+
         new_materialization()
 
     def test_launch_subset_with_only_check(self, graphql_context: WorkspaceRequestContext):
         # materialize the asset and run the check first
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[{"path": ["asset_1"]}],
@@ -709,7 +825,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(materializations) == 1
 
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[],
@@ -761,7 +877,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 assert log.dagster_event.event_type != DagsterEventType.ASSET_MATERIALIZATION.value
 
     def test_launch_subset_asset_and_included_check(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[{"path": ["asset_1"]}],
@@ -814,7 +930,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 1
 
     def test_check_subset_error(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_check_selection=[
@@ -837,12 +953,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert (
             result.data["launchPipelineExecution"]["message"]
             == "dagster._core.errors.DagsterInvalidSubsetError: Asset checks provided in"
-            " asset_check_selection argument AssetCheckHandle(asset_key=AssetKey(['asset_1']),"
+            " asset_check_selection argument AssetCheckKey(asset_key=AssetKey(['asset_1']),"
             " name='non-existent-check') do not exist in parent asset group or job.\n"
         )
 
     def test_launch_subset_asset_no_check(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_or_pipeline_selector(
+        selector = infer_job_selector(
             graphql_context,
             "asset_check_job",
             asset_selection=[{"path": ["asset_1"]}],
@@ -880,3 +996,267 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
         assert len(materializations) == 1
+
+    def test_multi_asset(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_selector(
+            graphql_context,
+            "checked_multi_asset_job",
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # noqa: T201
+        assert run.is_success
+
+        check_evaluations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(check_evaluations) == 2
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 2
+
+    def test_multi_asset_without_check(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_selector(
+            graphql_context,
+            "checked_multi_asset_job",
+            asset_selection=[{"path": ["one"]}],
+            asset_check_selection=[],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # noqa: T201
+        assert run.is_success
+
+        check_evaluations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(check_evaluations) == 0
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 1
+
+        selector = infer_job_selector(
+            graphql_context,
+            "checked_multi_asset_job",
+            asset_selection=[{"path": ["two"]}],
+            asset_check_selection=[],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # noqa: T201
+        assert run.is_success
+
+        check_evaluations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(check_evaluations) == 0
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 1
+
+        selector = infer_job_selector(
+            graphql_context,
+            "checked_multi_asset_job",
+            asset_selection=[{"path": ["one"]}, {"path": ["two"]}],
+            asset_check_selection=[],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # noqa: T201
+        assert run.is_success
+
+        check_evaluations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(check_evaluations) == 0
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 2
+
+    def test_multi_asset_only_check(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_selector(
+            graphql_context,
+            "checked_multi_asset_job",
+            asset_selection=[],
+            asset_check_selection=[
+                {"assetKey": {"path": ["one"]}, "name": "my_check"},
+            ],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id, timeout=10000000000)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # noqa: T201
+        assert run.is_success
+
+        check_evaluations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        assert len(check_evaluations) == 1
+
+        materializations = [
+            log
+            for log in logs
+            if log.dagster_event
+            and log.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(materializations) == 0
+
+    def test_step_key(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_selector(
+            graphql_context,
+            "checked_multi_asset_job",
+            asset_selection=[],
+            asset_check_selection=[
+                {"assetKey": {"path": ["one"]}, "name": "my_check"},
+            ],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        print(result.data)  # noqa: T201
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+        run = poll_for_finished_run(graphql_context.instance, run_id, timeout=10000000000)
+
+        logs = graphql_context.instance.all_logs(run_id)
+        print(logs)  # noqa: T201
+        assert run.is_success
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_STEP_KEY,
+            variables={"assetKey": {"path": ["one"]}, "checkName": "my_check", "limit": 10},
+        )
+        print(result.data)  # noqa: T201
+        assert result.data == {
+            "assetCheckExecutions": [
+                {
+                    "runId": run_id,
+                    "status": "SUCCEEDED",
+                    "stepKey": "subsettable_checked_multi_asset",
+                }
+            ],
+        }

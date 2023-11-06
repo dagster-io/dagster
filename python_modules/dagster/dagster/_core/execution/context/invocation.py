@@ -99,7 +99,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._resources = self._exit_stack.enter_context(
             build_resources(
                 resources=self._resource_defs,
-                instance=instance,
+                instance=self._instance,
                 resource_config=resources_config,
             )
         )
@@ -447,6 +447,8 @@ class BoundOpExecutionContext(OpExecutionContext):
         self._partition_key = partition_key
         self._partition_key_range = partition_key_range
         self._assets_def = assets_def
+        self._requires_typed_event_stream = False
+        self._typed_event_stream_error_message = None
 
     @property
     def op_config(self) -> Any:
@@ -713,6 +715,20 @@ class BoundOpExecutionContext(OpExecutionContext):
 
         else:
             self._output_metadata[output_name] = metadata
+
+    # In this mode no conversion is done on returned values and missing but expected outputs are not
+    # allowed.
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._requires_typed_event_stream
+
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._typed_event_stream_error_message
+
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
+        self._requires_typed_event_stream = True
+        self._typed_event_stream_error_message = error_message
 
 
 def build_op_context(

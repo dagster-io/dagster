@@ -1,6 +1,7 @@
 import json
 import shlex
 from argparse import Namespace
+from contextlib import suppress
 from typing import (
     Any,
     Callable,
@@ -164,6 +165,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return dbt_compile_options
 
     def _get_cached_compile_dbt_cloud_job_run(self, compile_run_id: int) -> Tuple[int, int]:
+        # If the compile run is ongoing, allow it a grace period of 10 minutes to finish.
+        with suppress(Exception):
+            self._dbt_cloud.poll_run(run_id=compile_run_id, poll_timeout=600)
+
         compile_run = self._dbt_cloud.get_run(
             run_id=compile_run_id, include_related=["trigger", "run_steps"]
         )
@@ -532,9 +537,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                         + split_materialization_command[idx + 2 :]
                     )
 
-            job_commands[job_materialization_command_step] = (
-                f"{materialization_command} {' '.join(dbt_options)}".strip()
-            )
+            job_commands[
+                job_materialization_command_step
+            ] = f"{materialization_command} {' '.join(dbt_options)}".strip()
 
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(

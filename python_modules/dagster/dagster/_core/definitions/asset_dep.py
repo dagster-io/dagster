@@ -38,18 +38,18 @@ class AssetDep(
             partition keys to the same partition keys in upstream assets.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        upstream_asset = AssetSpec("upstream_asset")
-        downstream_asset = AssetSpec(
-            "downstream_asset",
-            deps=[
-                AssetDep(
-                    upstream_asset,
-                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
-                )
-            ]
-        )
+            upstream_asset = AssetSpec("upstream_asset")
+            downstream_asset = AssetSpec(
+                "downstream_asset",
+                deps=[
+                    AssetDep(
+                        upstream_asset,
+                        partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                    )
+                ]
+            )
     """
 
     def __new__(

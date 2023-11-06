@@ -1,15 +1,15 @@
 import {useQuery} from '@apollo/client';
 import {
   Box,
-  Spinner,
+  Caption,
   Colors,
   Icon,
-  Tag,
-  useViewport,
-  Select,
   MenuItem,
-  Caption,
+  Select,
+  Spinner,
+  Tag,
   TextInput,
+  useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -19,9 +19,9 @@ import styled from 'styled-components';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
-import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
-import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -218,14 +218,15 @@ type RowProps = {
   group: ReturnType<typeof groupAssets>[0];
 };
 function VirtualRow({height, start, group}: RowProps) {
-  const assetKeys = React.useMemo(() => group.assets.map((asset) => ({path: asset.key.path})), [
-    group.assets,
-  ]);
+  const assetKeys = React.useMemo(
+    () => group.assets.map((asset) => ({path: asset.key.path})),
+    [group.assets],
+  );
 
-  const {liveDataByNode} = useLiveDataForAssetKeys(assetKeys, true);
+  const {liveDataByNode} = useAssetsLiveData(assetKeys);
 
   const statuses = React.useMemo(() => {
-    type assetType = typeof group['assets'][0];
+    type assetType = (typeof group)['assets'][0];
     type StatusesType = {asset: assetType; status: ReturnType<typeof buildAssetNodeStatusContent>};
     const statuses = {
       successful: [] as StatusesType[],
@@ -240,13 +241,13 @@ function VirtualRow({height, start, group}: RowProps) {
     }
     Object.keys(liveDataByNode).forEach((key) => {
       const assetLiveData = liveDataByNode[key];
-      const asset = group.assets.find((asset) => toGraphId(asset.key) === key);
+      const asset = group.assets.find((asset) => tokenForAssetKey(asset.key) === key);
       if (!asset?.definition) {
         console.warn('Expected a definition for asset with key', key);
         return;
       }
       const status = buildAssetNodeStatusContent({
-        assetKey: {path: JSON.parse(key)},
+        assetKey: asset.key,
         definition: asset.definition,
         liveData: assetLiveData,
         expanded: true,
@@ -299,6 +300,7 @@ function VirtualRow({height, start, group}: RowProps) {
   const {containerProps, viewport} = useViewport();
 
   const isBatchStillLoading = assetKeys.length !== Object.keys(liveDataByNode).length;
+  const zeroOrBlank = isBatchStillLoading ? '' : '0';
 
   return (
     <Row $height={height} $start={start}>
@@ -357,7 +359,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -389,7 +391,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -409,7 +411,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -439,7 +441,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
       </RowGrid>
@@ -452,7 +454,7 @@ const RowGrid = styled(Box)`
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
   > * {
-    padding-top: 26px 0px;
+    vertical-align: middle;
   }
 `;
 

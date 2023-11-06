@@ -94,11 +94,13 @@ def _generate_pythonic_config_error_message(
         PYTHONIC_CONFIG_ERROR_VERBIAGE + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else "")
     ).format(invalid_type_str=invalid_type_name)
 
-    return ("""
+    return (
+        """
 Error defining Dagster config class{config_class}{field_name}.
 Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
-{PYTHONIC_CONFIG_ERROR_VERBIAGE}""").format(
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
+    ).format(
         config_class=f" {config_class!r}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
@@ -195,8 +197,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
             (
                 "Error defining config. Original value passed: {original_root}. "
                 "{stack_str}{current_value} "
-                "cannot be resolved.{reason_str}"
-                + CONFIG_ERROR_VERBIAGE
+                "cannot be resolved.{reason_str}" + CONFIG_ERROR_VERBIAGE
             ).format(
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
@@ -672,5 +673,5 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """
 
 
-class DagsterExternalExecutionError(DagsterError):
+class DagsterPipesExecutionError(DagsterError):
     """Indicates that an error occurred during the execution of an external process."""

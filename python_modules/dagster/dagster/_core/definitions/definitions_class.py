@@ -22,6 +22,7 @@ from dagster._core.definitions.asset_graph import InternalAssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -539,6 +540,14 @@ class Definitions:
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
+
+    def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        asset_key = AssetKey.from_coercible(key)
+        for assets_def in self.get_asset_graph().assets:
+            if asset_key in assets_def.keys:
+                return assets_def
+
+        raise DagsterInvariantViolationError(f"Could not find asset {asset_key}")
 
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:

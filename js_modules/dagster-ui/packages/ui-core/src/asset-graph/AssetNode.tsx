@@ -7,6 +7,7 @@ import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -22,12 +23,12 @@ import {AssetNodeFragment} from './types/AssetNode.types';
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
-  liveData?: LiveDataForNode;
   selected: boolean;
-}> = React.memo(({definition, selected, liveData}) => {
+}> = React.memo(({definition, selected}) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
+  const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
@@ -206,10 +207,10 @@ const AssetNodeChecksRow: React.FC<{
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
-  liveData?: LiveDataForNode;
   definition: AssetNodeFragment;
-}> = ({selected, definition, liveData}) => {
+}> = ({selected, definition}) => {
   const {isSource, assetKey} = definition;
+  const {liveData} = useAssetLiveData(assetKey);
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
@@ -285,7 +286,7 @@ const AssetInsetForHoverEffect = styled.div`
 
 const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
-  cursor: default;
+  cursor: pointer;
   padding: 4px;
 `;
 
@@ -330,7 +331,7 @@ const NameTooltipCSS: CSSObject = {
   fontSize: 16.8,
 };
 
-const NameTooltipStyle = JSON.stringify({
+export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
   background: Colors.Blue50,
   border: `1px solid ${Colors.Blue100}`,

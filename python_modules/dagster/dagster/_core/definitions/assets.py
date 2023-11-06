@@ -19,8 +19,9 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental_param, public
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -89,6 +90,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _backfill_policy: Optional[BackfillPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
+    _selected_asset_check_keys: AbstractSet[AssetCheckKey]
 
     def __init__(
         self,
@@ -109,6 +111,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
+        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -193,10 +196,35 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             group_name = group_names_by_key.get(key)
             self._group_names_by_key[key] = validate_group_name(group_name)
 
-        if selected_asset_keys is not None:
-            self._selected_asset_keys = selected_asset_keys
-        else:
+        all_check_keys = {spec.key for spec in (check_specs_by_output_name or {}).values()}
+
+        # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
+        if selected_asset_keys is None and selected_asset_check_keys is None:
+            # if no selections, include everything
             self._selected_asset_keys = all_asset_keys
+            self._selected_asset_check_keys = all_check_keys
+        else:
+            self._selected_asset_keys = selected_asset_keys or set()
+
+            if selected_asset_check_keys is None:
+                # if assets were selected but checks are None, then include all checks for selected
+                # assets
+                self._selected_asset_check_keys = {
+                    key for key in all_check_keys if key.asset_key in self._selected_asset_keys
+                }
+            else:
+                # otherwise, use the selected checks
+                self._selected_asset_check_keys = selected_asset_check_keys
+
+        self._check_specs_by_output_name = {
+            name: spec
+            for name, spec in (check_specs_by_output_name or {}).items()
+            if spec.key in self._selected_asset_check_keys
+        }
+        self._check_specs_by_key = {
+            spec.key: spec for spec in self._check_specs_by_output_name.values()
+        }
+
         self._can_subset = can_subset
 
         self._code_versions_by_key = {}
@@ -216,6 +244,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 output_def.metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+            # We construct description from three sources of truth here. This
+            # highly unfortunate. See commentary in @multi_asset's call to dagster_internal_init.
             description = (
                 self._descriptions_by_key.get(asset_key, output_def.description)
                 or node_def.description
@@ -253,19 +283,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._backfill_policy = check.opt_inst_param(
             backfill_policy, "backfill_policy", BackfillPolicy
         )
-
-        if selected_asset_keys is None:
-            self._check_specs_by_output_name = check_specs_by_output_name or {}
-        else:
-            self._check_specs_by_output_name = {
-                output_name: check_spec
-                for output_name, check_spec in (check_specs_by_output_name or {}).items()
-                if check_spec.asset_key in selected_asset_keys
-            }
-
-        self._check_specs_by_handle = {
-            spec.handle: spec for spec in self._check_specs_by_output_name.values()
-        }
 
         if self._partitions_def is None:
             # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
@@ -305,6 +322,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy],
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
+        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -323,6 +341,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=backfill_policy,
             descriptions_by_key=descriptions_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=selected_asset_check_keys,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -675,6 +694,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=None,
         )
 
     @public
@@ -794,8 +814,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
         return self._check_specs_by_output_name
 
-    def get_spec_for_check_handle(self, asset_check_handle: AssetCheckHandle) -> AssetCheckSpec:
-        return self._check_specs_by_handle[asset_check_handle]
+    def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
+        return self._check_specs_by_key[asset_check_key]
 
     @property
     def keys_by_output_name(self) -> Mapping[str, AssetKey]:
@@ -858,6 +878,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """
         return self._check_specs_by_output_name.values()
 
+    @property
+    def check_keys(self) -> AbstractSet[AssetCheckKey]:
+        """Returns the selected asset checks associated by this AssetsDefinition.
+
+        Returns:
+            AbstractSet[Tuple[AssetKey, str]]: The selected asset checks. An asset check is
+                identified by the asset key and the name of the check.
+        """
+        return self._selected_asset_check_keys
+
     def is_asset_executable(self, asset_key: AssetKey) -> bool:
         """Returns True if the asset key is materializable by this AssetsDefinition.
 
@@ -873,6 +903,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         return AssetExecutionType.is_executable(
+            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+        )
+
+    def asset_execution_type_for_asset(self, asset_key: AssetKey) -> AssetExecutionType:
+        from dagster._core.definitions.asset_spec import (
+            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+            AssetExecutionType,
+        )
+
+        return AssetExecutionType.str_to_enum(
             self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         )
 
@@ -984,9 +1024,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 replaced_freshness_policy = self.freshness_policies_by_key.get(key)
 
             if replaced_freshness_policy:
-                replaced_freshness_policies_by_key[output_asset_key_replacements.get(key, key)] = (
-                    replaced_freshness_policy
-                )
+                replaced_freshness_policies_by_key[
+                    output_asset_key_replacements.get(key, key)
+                ] = replaced_freshness_policy
 
         if auto_materialize_policy:
             auto_materialize_policy_conflicts = (
@@ -1090,12 +1130,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         return get_graph_subset(self.node_def, op_selection)
 
-    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
-        """Create a subset of this AssetsDefinition that will only materialize the assets in the
-        selected set.
+    def subset_for(
+        self,
+        selected_asset_keys: AbstractSet[AssetKey],
+        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+    ) -> "AssetsDefinition":
+        """Create a subset of this AssetsDefinition that will only materialize the assets and checks
+        in the selected set.
 
         Args:
             selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
+            selected_asset_check_keys (AbstractSet[AssetCheckKey]): The selected asset checks
         """
         from dagster._core.definitions.graph_definition import GraphDefinition
 
@@ -1106,10 +1151,23 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         # Set of assets within selected_asset_keys which are outputted by this AssetDefinition
         asset_subselection = selected_asset_keys & self.keys
+        if selected_asset_check_keys is None:
+            # filter to checks that target selected asset keys
+            asset_check_subselection = {
+                key for key in self.check_keys if key.asset_key in asset_subselection
+            }
+        else:
+            asset_check_subselection = selected_asset_check_keys & self.check_keys
+
         # Early escape if all assets in AssetsDefinition are selected
-        if asset_subselection == self.keys:
+        if asset_subselection == self.keys and asset_check_subselection == self.check_keys:
             return self
         elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
+            check.invariant(
+                selected_asset_check_keys == self.check_keys,
+                "Subsetting graph-backed assets with checks is not yet supported",
+            )
+
             subsetted_node = self._subset_graph_backed_asset(
                 asset_subselection,
             )
@@ -1155,7 +1213,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
         else:
             # multi_asset subsetting
-            replaced_attributes = dict(selected_asset_keys=asset_subselection)
+            replaced_attributes = {
+                "selected_asset_keys": asset_subselection,
+                "selected_asset_check_keys": asset_check_subselection,
+            }
             return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
     @public
@@ -1280,6 +1341,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=self._backfill_policy,
             descriptions_by_key=self._descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,
+            selected_asset_check_keys=self._selected_asset_check_keys,
         )
 
 

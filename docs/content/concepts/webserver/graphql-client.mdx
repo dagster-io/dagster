@@ -1,6 +1,6 @@
 ---
 title: GraphQL Python Client | Dagster
-description: Dagster provides an (experimental) Python Client to interact with its GraphQL API
+description: Dagster provides a Python client to interact with its GraphQL API
 ---
 
 # GraphQL Python Client
@@ -9,10 +9,10 @@ Dagster provides a GraphQL Python Client to interface with <Link href="/concepts
 
 ## Relevant APIs
 
-| Name                                                                               | Description                                                          |
-| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/> <Experimental/> | The client class to interact with Dagster's GraphQL API from Python. |
-| <PyObject module="dagster_graphql" object="DagsterGraphQLClientError"/>            | The exception that the client raises upon a response error.          |
+| Name                                                                    | Description                                                          |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/>      | The client class to interact with Dagster's GraphQL API from Python. |
+| <PyObject module="dagster_graphql" object="DagsterGraphQLClientError"/> | The exception that the client raises upon a response error.          |
 
 ## Overview
 
@@ -59,7 +59,7 @@ If you are using Dagster Cloud, you can configure your client against the Dagste
 
 ```python file=/concepts/webserver/graphql/client_example.py startafter=start_cloud_usage endbefore=end_cloud_usage
 url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
-user_token = (  # a User Token generated from the Cloud Settings page in Dagster Cloud.
+user_token = (  # a User Token generated from the Organization Settings page in Dagster Cloud.
     "your_token_here"
 )
 client = DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})

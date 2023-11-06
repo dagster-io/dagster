@@ -18,8 +18,8 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, experimental_param, public
-from dagster._core.definitions.data_version import DataVersion
+from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -481,6 +481,10 @@ class AssetObservation(
     def label(self) -> str:
         return " ".join(self.asset_key.path)
 
+    @property
+    def data_version(self) -> Optional[str]:
+        return self.tags.get(DATA_VERSION_TAG)
+
 
 UNDEFINED_ASSET_KEY_PATH = ["__undefined__"]
 
@@ -618,6 +622,10 @@ class AssetMaterialization(
         )
 
 
+@deprecated(
+    breaking_version="1.7",
+    additional_warn_text="Please use AssetCheckResult and @asset_check instead.",
+)
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},

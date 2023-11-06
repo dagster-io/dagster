@@ -8,6 +8,7 @@ import {
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
 import {useFeatureFlags} from '../app/Flags';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
 
 import LaunchpadSession from './LaunchpadSession';
@@ -39,14 +40,17 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
   const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
 
   const onCreateSession = () => {
-    onSave(applyCreateSession(data, initialDataForMode));
-  };
-
-  const onSaveSession = (changes: IExecutionSessionChanges) => {
-    onSave(applyChangesToSession(data, data.current, changes));
+    onSave((data) => applyCreateSession(data, initialDataForMode));
   };
 
   const currentSession = data.sessions[data.current]!;
+
+  const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(
+    currentSession,
+    (changes: IExecutionSessionChanges) => {
+      onSave((data) => applyChangesToSession(data, data.current, changes));
+    },
+  );
 
   return (
     <>

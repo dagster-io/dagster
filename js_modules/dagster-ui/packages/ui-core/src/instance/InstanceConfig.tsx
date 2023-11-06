@@ -88,12 +88,15 @@ export const InstanceConfig = React.memo(() => {
           Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
         </Subheading>
       </Box>
-      <StyledRawCodeMirror
-        value={config || ''}
-        options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
-        handlers={handlers}
-        theme={['instance-config']}
-      />
+      {/* Div wrapper on CodeMirror to allow entire page to scroll */}
+      <div>
+        <StyledRawCodeMirror
+          value={config || ''}
+          options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
+          handlers={handlers}
+          theme={['instance-config']}
+        />
+      </div>
     </>
   );
 });

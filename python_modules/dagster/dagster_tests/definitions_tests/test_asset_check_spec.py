@@ -7,7 +7,8 @@ def test_coerce_asset_key():
 
 def test_asset_def():
     @asset
-    def foo(): ...
+    def foo():
+        ...
 
     assert AssetCheckSpec(asset=foo, name="check1").asset_key == AssetKey("foo")
 

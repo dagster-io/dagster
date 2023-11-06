@@ -71,6 +71,15 @@ export async function showBackfillSuccessToast(
   backfillId: string,
   isAssetBackfill: boolean,
 ) {
+  const url = isAssetBackfill
+    ? `/overview/backfills/${backfillId}`
+    : runsPathWithFilters([
+        {
+          token: 'tag',
+          value: `dagster/backfill=${backfillId}`,
+        },
+      ]);
+  const [pathname, search] = url.split('?');
   await showSharedToaster({
     intent: 'success',
     message: (
@@ -80,14 +89,7 @@ export async function showBackfillSuccessToast(
     ),
     action: {
       text: 'View',
-      href: isAssetBackfill
-        ? `/overview/backfills/${backfillId}`
-        : runsPathWithFilters([
-            {
-              token: 'tag',
-              value: `dagster/backfill=${backfillId}`,
-            },
-          ]),
+      href: history.createHref({pathname, search}),
     },
   });
 }

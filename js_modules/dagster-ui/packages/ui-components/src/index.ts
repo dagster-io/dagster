@@ -50,8 +50,10 @@ export * from './components/styles';
 export * from './components/useSuggestionsForString';
 export * from './components/ErrorBoundary';
 export * from './components/useViewport';
+export * from './components/UnstyledButton';
 export * from './components/StyledRawCodeMirror';
 export * from './components/useDelayedState';
+export * from './components/ifPlural';
 
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />

@@ -742,6 +742,15 @@ class DagsterEvent(
         return cast(AssetMaterializationPlannedData, self.event_specific_data)
 
     @property
+    def asset_check_planned_data(self) -> "AssetCheckEvaluationPlanned":
+        _assert_type(
+            "asset_check_planned",
+            DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+            self.event_type,
+        )
+        return cast(AssetCheckEvaluationPlanned, self.event_specific_data)
+
+    @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
         _assert_type(
             "step_expectation_result_data",
@@ -756,6 +765,13 @@ class DagsterEvent(
             "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
         )
         return cast(StepMaterializationData, self.event_specific_data).materialization
+
+    @property
+    def asset_check_evaluation_data(self) -> AssetCheckEvaluation:
+        _assert_type(
+            "asset_check_evaluation", DagsterEventType.ASSET_CHECK_EVALUATION, self.event_type
+        )
+        return cast(AssetCheckEvaluation, self.event_specific_data)
 
     @property
     def job_failure_data(self) -> "JobFailureData":
@@ -987,6 +1003,22 @@ class DagsterEvent(
             step_context=step_context,
             event_specific_data=StepExpectationResultData(expectation_result),
             message=_msg(),
+        )
+
+    @staticmethod
+    def step_concurrency_blocked(
+        step_context: IStepContext, concurrency_key: str, initial=True
+    ) -> "DagsterEvent":
+        message = (
+            f"Step blocked by concurrency limit for key {concurrency_key}"
+            if initial
+            else f"Step still blocked by concurrency limit for key {concurrency_key}"
+        )
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ENGINE_EVENT,
+            step_context=step_context,
+            message=message,
+            event_specific_data=EngineEventData(metadata={"concurrency_key": concurrency_key}),
         )
 
     @staticmethod

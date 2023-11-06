@@ -33,8 +33,8 @@ import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForR
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
+import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
-import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
@@ -319,7 +319,7 @@ const RunRow: React.FC<{
   });
 
   const allTagsWithPinned = React.useMemo(() => {
-    const allTags: Omit<typeof run.tags[0], '__typename'>[] = [...run.tags];
+    const allTags: Omit<(typeof run.tags)[0], '__typename'>[] = [...run.tags];
     if ((isJob && run.mode !== 'default') || !isJob) {
       allTags.push({
         key: 'mode',
@@ -415,10 +415,10 @@ const RunRow: React.FC<{
       <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
           {isHiddenAssetGroupJob(run.pipelineName) ? (
-            <>
-              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+            <Box flex={{gap: 16}}>
               <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
-            </>
+              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+            </Box>
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
@@ -483,7 +483,11 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell repoAddress={repoAddressGuess} tags={run.tags || []} />
+          <CreatedByTagCell
+            repoAddress={repoAddressGuess}
+            tags={run.tags || []}
+            onAddTag={onAddTag}
+          />
         </td>
       )}
       <td>
@@ -535,7 +539,7 @@ const Row = styled.tr<{highlighted: boolean}>`
 function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode}) {
   return (
     <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 12}}>
         {top}
       </Box>
       {bottom ? (
@@ -543,7 +547,7 @@ function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNod
           margin={{top: 12}}
           padding={{left: 24, right: 12, top: 8}}
           border="top"
-          flex={{gap: 8}}
+          flex={{gap: 8, wrap: 'wrap'}}
         >
           {bottom}
         </Box>

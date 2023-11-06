@@ -64,9 +64,9 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    assets_by_partitions_def: Dict[Optional[PartitionsDefinition], List[AssetsDefinition]] = (
-        defaultdict(list)
-    )
+    assets_by_partitions_def: Dict[
+        Optional[PartitionsDefinition], List[AssetsDefinition]
+    ] = defaultdict(list)
     for assets_def in assets:
         assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
@@ -210,12 +210,19 @@ def build_assets_job(
             *(asset.node_def for asset in assets),
             *(asset_check.node_def for asset_check in asset_checks),
         ]
+        observable_source_assets_by_node_handle = {}
     else:
-        node_defs = [
-            asset.node_def
-            for asset in source_assets
-            if isinstance(asset, SourceAsset) and asset.is_observable and asset.node_def is not None
-        ]
+        node_defs = []
+        observable_source_assets_by_node_handle: Mapping[NodeHandle, SourceAsset] = {}
+        for asset in source_assets:
+            if (
+                isinstance(asset, SourceAsset)
+                and asset.is_observable
+                and asset.node_def is not None
+            ):
+                node_defs.append(asset.node_def)
+                node_handle = NodeHandle(asset.node_def.name, parent=None)
+                observable_source_assets_by_node_handle[node_handle] = asset
 
     graph = GraphDefinition(
         name=name,
@@ -233,6 +240,7 @@ def build_assets_job(
         source_assets=resolved_source_assets,
         resolved_asset_deps=resolved_asset_deps,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
+        observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
     )
 
     all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
@@ -267,113 +275,6 @@ def build_assets_job(
     )
 
 
-def build_source_asset_observation_job(
-    name: str,
-    source_assets: Sequence[SourceAsset],
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    description: Optional[str] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    executor_def: Optional[ExecutorDefinition] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    _asset_selection_data: Optional[AssetSelectionData] = None,
-) -> JobDefinition:
-    """Builds a job that observes the given source assets.
-
-    There are never any dependencies between the ops in the job.
-
-    Args:
-        name (str): The name of the job.
-        source_assets (Sequence[SourceAsset]): A list of source assets to observe.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): Resource defs to be included in
-            this job.
-        description (Optional[str]): A description of the job.
-
-    Examples:
-        .. code-block:: python
-
-            @asset
-            def asset1():
-                return 5
-
-            @asset
-            def asset2(asset1):
-                return my_upstream_asset + 1
-
-            my_assets_job = build_assets_job("my_assets_job", assets=[asset1, asset2])
-
-    Returns:
-        JobDefinition: A job that materializes the given assets.
-    """
-    check.str_param(name, "name")
-    check.iterable_param(source_assets, "source_assets", of_type=SourceAsset)
-    check.opt_str_param(description, "description")
-    check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
-
-    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
-
-    # figure out what partitions (if any) exist for this job
-    partitions_def = partitions_def or build_job_partitions_from_assets(source_assets)
-
-    # Keeping this for now (copied from `build_assets_job` though it's probably not needed
-    assets: Sequence[AssetsDefinition] = []
-    resolved_asset_deps = ResolvedAssetDependencies(assets, source_assets)
-    deps, assets_defs_by_node_handle, checks_defs_by_node_handle = build_node_deps(
-        assets, [], resolved_asset_deps
-    )
-    node_defs = list(filter(None, [asset.node_def for asset in [*source_assets]]))
-
-    graph = GraphDefinition(
-        name=name,
-        node_defs=node_defs,
-        dependencies=deps,
-        description=description,
-        input_mappings=None,
-        output_mappings=None,
-        config=None,
-    )
-
-    asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph_def=graph,
-        asset_checks_defs_by_node_handle=checks_defs_by_node_handle,
-        source_assets=source_assets,
-        resolved_asset_deps=resolved_asset_deps,
-        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
-    )
-
-    all_resource_defs = get_all_resource_defs(assets, source_assets, resource_defs)
-
-    if _asset_selection_data:
-        original_job = _asset_selection_data.parent_job_def
-        return graph.to_job(
-            resource_defs=all_resource_defs,
-            config=config,
-            tags=tags,
-            executor_def=executor_def,
-            partitions_def=partitions_def,
-            asset_layer=asset_layer,
-            _asset_selection_data=_asset_selection_data,
-            metadata=original_job.metadata,
-            logger_defs=original_job.loggers,
-            hooks=original_job.hook_defs,
-            op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
-            version_strategy=original_job.version_strategy,
-        )
-
-    return graph.to_job(
-        resource_defs=all_resource_defs,
-        config=config,
-        tags=tags,
-        executor_def=executor_def,
-        partitions_def=partitions_def,
-        asset_layer=asset_layer,
-        hooks=hooks,
-        _asset_selection_data=_asset_selection_data,
-    )
-
-
 def build_job_partitions_from_assets(
     assets: Iterable[Union[AssetsDefinition, SourceAsset]],
 ) -> Optional[PartitionsDefinition]:
@@ -382,9 +283,9 @@ def build_job_partitions_from_assets(
     if len(assets_with_partitions_defs) == 0:
         return None
 
-    first_asset_with_partitions_def: Union[AssetsDefinition, SourceAsset] = (
-        assets_with_partitions_defs[0]
-    )
+    first_asset_with_partitions_def: Union[
+        AssetsDefinition, SourceAsset
+    ] = assets_with_partitions_defs[0]
     for asset in assets_with_partitions_defs:
         if asset.partitions_def != first_asset_with_partitions_def.partitions_def:
             first_asset_key = _key_for_asset(asset).to_string()
@@ -581,7 +482,7 @@ def _attempt_resolve_cycles(
             ret.append(assets_def)
         else:
             for asset_keys in color_mapping.values():
-                ret.append(assets_def.subset_for(asset_keys))
+                ret.append(assets_def.subset_for(asset_keys, selected_asset_check_keys=None))
 
     return ret
 

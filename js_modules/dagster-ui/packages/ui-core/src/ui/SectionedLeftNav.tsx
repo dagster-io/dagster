@@ -315,16 +315,8 @@ interface CodeLocationNameRowProps {
 }
 
 const CodeLocationNameRow = (props: CodeLocationNameRowProps) => {
-  const {
-    height,
-    start,
-    expanded,
-    collapsible,
-    onToggle,
-    itemCount,
-    repoAddress,
-    showRepoLocation,
-  } = props;
+  const {height, start, expanded, collapsible, onToggle, itemCount, repoAddress, showRepoLocation} =
+    props;
 
   const codeLocationLabel = repoAddressAsHumanString(repoAddress);
   const empty = itemCount === 0;

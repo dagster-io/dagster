@@ -78,10 +78,8 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
 
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<PythonErrorFragment | null>(null);
-  const [
-    sensorExecutionData,
-    setSensorExecutionData,
-  ] = React.useState<DryRunInstigationTick | null>(null);
+  const [sensorExecutionData, setSensorExecutionData] =
+    React.useState<DryRunInstigationTick | null>(null);
 
   const sensorSelector = React.useMemo(
     () => ({

@@ -32,19 +32,13 @@ export type BackfillStatusesByAssetQuery = {
             error: {__typename: 'PythonError'; message: string; stack: Array<string>};
           }>;
         } | null;
-        partitionStatusCounts: Array<{
-          __typename: 'PartitionStatusCounts';
-          runStatus: Types.RunStatus;
-          count: number;
-        }>;
         assetBackfillData: {
           __typename: 'AssetBackfillData';
-          rootAssetTargetedPartitions: Array<string> | null;
-          rootAssetTargetedRanges: Array<{
-            __typename: 'PartitionKeyRange';
-            start: string;
-            end: string;
-          }> | null;
+          rootTargetedPartitions: {
+            __typename: 'AssetBackfillTargetPartitions';
+            partitionKeys: Array<string> | null;
+            ranges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
+          };
           assetBackfillStatuses: Array<
             | {
                 __typename: 'AssetPartitionsStatusCounts';
@@ -108,19 +102,13 @@ export type PartitionBackfillFragment = {
       error: {__typename: 'PythonError'; message: string; stack: Array<string>};
     }>;
   } | null;
-  partitionStatusCounts: Array<{
-    __typename: 'PartitionStatusCounts';
-    runStatus: Types.RunStatus;
-    count: number;
-  }>;
   assetBackfillData: {
     __typename: 'AssetBackfillData';
-    rootAssetTargetedPartitions: Array<string> | null;
-    rootAssetTargetedRanges: Array<{
-      __typename: 'PartitionKeyRange';
-      start: string;
-      end: string;
-    }> | null;
+    rootTargetedPartitions: {
+      __typename: 'AssetBackfillTargetPartitions';
+      partitionKeys: Array<string> | null;
+      ranges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
+    };
     assetBackfillStatuses: Array<
       | {
           __typename: 'AssetPartitionsStatusCounts';
@@ -149,4 +137,25 @@ export type PartitionBackfillFragment = {
       repositoryLocationName: string;
     };
   } | null;
+};
+
+export type BackfillPartitionsForAssetKeyQueryVariables = Types.Exact<{
+  backfillId: Types.Scalars['String'];
+  assetKey: Types.AssetKeyInput;
+}>;
+
+export type BackfillPartitionsForAssetKeyQuery = {
+  __typename: 'Query';
+  partitionBackfillOrError:
+    | {__typename: 'BackfillNotFoundError'}
+    | {
+        __typename: 'PartitionBackfill';
+        id: string;
+        partitionsTargetedForAssetKey: {
+          __typename: 'AssetBackfillTargetPartitions';
+          partitionKeys: Array<string> | null;
+          ranges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
+        } | null;
+      }
+    | {__typename: 'PythonError'};
 };

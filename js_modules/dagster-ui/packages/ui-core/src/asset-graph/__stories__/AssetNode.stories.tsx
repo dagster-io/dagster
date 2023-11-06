@@ -1,7 +1,9 @@
 import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 
+import {_setCacheEntryForTest} from '../../asset-data/AssetLiveDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';
+import {buildAssetKey} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNodeLink} from '../ForeignNode';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
@@ -14,8 +16,20 @@ export default {
 };
 
 export const LiveStates = () => {
-  const caseWithLiveData = (scenario: typeof Mocks.AssetNodeScenariosBase[0]) => {
-    const dimensions = getAssetNodeDimensions(scenario.definition);
+  const caseWithLiveData = (scenario: (typeof Mocks.AssetNodeScenariosBase)[0]) => {
+    const definitionCopy = {
+      ...scenario.definition,
+      assetKey: {
+        ...scenario.definition.assetKey,
+        path: [],
+      },
+    };
+    definitionCopy.assetKey.path = scenario.liveData
+      ? [scenario.liveData.stepKey]
+      : JSON.parse(scenario.definition.id);
+
+    const dimensions = getAssetNodeDimensions(definitionCopy);
+    _setCacheEntryForTest(definitionCopy.assetKey, scenario.liveData);
     return (
       <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
         <div
@@ -26,19 +40,11 @@ export const LiveStates = () => {
             overflowY: 'hidden',
           }}
         >
-          <AssetNode
-            definition={scenario.definition}
-            liveData={scenario.liveData}
-            selected={false}
-          />
+          <AssetNode definition={definitionCopy} selected={false} />
         </div>
         <div style={{position: 'relative', width: dimensions.width, height: 82}}>
           <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
-            <AssetNodeMinimal
-              definition={scenario.definition}
-              liveData={scenario.liveData}
-              selected={false}
-            />
+            <AssetNodeMinimal definition={definitionCopy} selected={false} />
           </div>
         </div>
         <code>
@@ -79,6 +85,7 @@ export const PartnerTags = () => {
   const caseWithComputeKind = (computeKind: string) => {
     const def = {...Mocks.AssetNodeFragmentBasic, computeKind};
     const liveData = Mocks.LiveDataForNodeMaterialized;
+    _setCacheEntryForTest(buildAssetKey({path: [liveData.stepKey]}), liveData);
     const dimensions = getAssetNodeDimensions(def);
 
     return (
@@ -87,7 +94,7 @@ export const PartnerTags = () => {
         <div
           style={{position: 'relative', width: 280, height: dimensions.height, overflowY: 'hidden'}}
         >
-          <AssetNode definition={def} selected={false} liveData={liveData} />
+          <AssetNode definition={def} selected={false} />
         </div>
       </Box>
     );

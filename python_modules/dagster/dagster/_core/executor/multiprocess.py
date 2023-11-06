@@ -225,6 +225,8 @@ class MultiprocessExecutor(Executor):
                     if not steps:
                         break
 
+                    yield from active_execution.concurrency_event_iterator(plan_context)
+
                     for step in steps:
                         step_context = plan_context.for_step(step)
                         term_events[step.key] = multiproc_ctx.Event()
@@ -319,8 +321,9 @@ class MultiprocessExecutor(Executor):
         if timer_result:
             yield DagsterEvent.engine_event(
                 plan_context,
-                "Multiprocess executor: parent process exiting after {duration} (pid: {pid})"
-                .format(duration=format_duration(timer_result.millis), pid=os.getpid()),
+                "Multiprocess executor: parent process exiting after {duration} (pid: {pid})".format(
+                    duration=format_duration(timer_result.millis), pid=os.getpid()
+                ),
                 event_specific_data=EngineEventData.multiprocess(os.getpid()),
             )
 

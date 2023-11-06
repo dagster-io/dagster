@@ -18,8 +18,14 @@ In Dagster, the `Definitions` object is located in the project’s top-level `__
 # __init__.py
 
 defs = Definitions(
-    assets=[dry_ingredients, wet_ingredients, chocolate_chips, cookie_dough, chocolate_chip_cookie_dough, chocolate_chip_cookies]
-)
+    assets=[
+        dry_ingredients,
+        wet_ingredients,
+        chocolate_chips,
+        cookie_dough,
+        chocolate_chip_cookie_dough,
+        chocolate_chip_cookies,
+])
 ```
 
 Note that assets aren’t the only type of definition in Dagster: there are also others like resources, schedules, and sensors. We’ll go into detail on each of these in later lessons, but for now, keep this in mind.
@@ -51,7 +57,7 @@ defs = Definitions(
 
 ---
 
-## Anatomy of the \_\_init\_\_.py file
+## Anatomy of the `__init__.py` file
 
 Let’s break down this file’s code line-by-line.
 

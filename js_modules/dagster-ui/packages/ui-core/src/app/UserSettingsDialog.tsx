@@ -20,7 +20,7 @@ import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
-type VisibleFlag = {key: string; flagType: FeatureFlagType};
+type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlagType};
 
 interface DialogProps {
   isOpen: boolean;
@@ -43,7 +43,7 @@ export const UserSettingsDialog: React.FC<DialogProps> = ({isOpen, onClose, visi
 
 interface DialogContentProps {
   onClose: OnCloseFn;
-  visibleFlags: {key: string; flagType: FeatureFlagType}[];
+  visibleFlags: {key: string; label?: React.ReactNode; flagType: FeatureFlagType}[];
 }
 
 /**
@@ -138,8 +138,9 @@ const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visib
             <Subheading>Experimental features</Subheading>
           </Box>
           <MetadataTable
-            rows={visibleFlags.map(({key, flagType}) => ({
+            rows={visibleFlags.map(({key, label, flagType}) => ({
               key,
+              label,
               value: (
                 <Checkbox
                   format="switch"

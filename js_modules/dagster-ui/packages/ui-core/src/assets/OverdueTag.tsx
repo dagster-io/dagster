@@ -7,6 +7,7 @@ import React from 'react';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
@@ -39,10 +40,11 @@ export const humanizedMinutesLateString = (minLate: number) =>
   dayjs.duration(minLate, 'minutes').humanize(false);
 
 export const OverdueTag: React.FC<{
-  liveData: LiveDataForNode | undefined;
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
-}> = ({liveData, policy, assetKey}) => {
+}> = ({policy, assetKey}) => {
+  const {liveData} = useAssetLiveData(assetKey);
+
   if (!liveData?.freshnessInfo) {
     return null;
   }
@@ -133,12 +135,8 @@ const OverdueLineagePopoverContent: React.FC<{
 
   const hasUpstreams = data.assetMaterializationUsedData.length > 0;
   const {currentLagMinutes, currentMinutesLate} = data.freshnessInfo;
-  const {
-    lastEvaluationTimestamp,
-    cronSchedule,
-    cronScheduleTimezone,
-    maximumLagMinutes,
-  } = data.freshnessPolicy;
+  const {lastEvaluationTimestamp, cronSchedule, cronScheduleTimezone, maximumLagMinutes} =
+    data.freshnessPolicy;
   const maxLagMinutesStr = humanizedMinutesLateString(maximumLagMinutes);
   const lagMinutesStr = humanizedMinutesLateString(currentLagMinutes || 0);
   const derivedStr = hasUpstreams ? ` is derived from source data that` : '';

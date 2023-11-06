@@ -28,6 +28,7 @@ from .core import (
 )
 from .dagster_dbt_translator import (
     DagsterDbtTranslator as DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings as DagsterDbtTranslatorSettings,
     KeyPrefixDagsterDbtTranslator as KeyPrefixDagsterDbtTranslator,
 )
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection

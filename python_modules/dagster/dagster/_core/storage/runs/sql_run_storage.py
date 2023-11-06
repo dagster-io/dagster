@@ -237,10 +237,6 @@ class SqlRunStorage(RunStorage):
 
         return query
 
-    @property
-    def supports_intersect(self) -> bool:
-        return True
-
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
 
@@ -627,7 +623,11 @@ class SqlRunStorage(RunStorage):
 
         row = self.fetchone(query)
 
-        return defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]]) if row else None  # type: ignore
+        return (
+            defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]])  # type: ignore
+            if row
+            else None
+        )
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():

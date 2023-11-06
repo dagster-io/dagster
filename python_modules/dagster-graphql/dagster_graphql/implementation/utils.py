@@ -22,7 +22,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -160,10 +160,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector
             else None
         ),
         asset_check_selection=(
-            [
-                AssetCheckHandle.from_graphql_input(asset_check)
-                for asset_check in asset_check_selection
-            ]
+            [AssetCheckKey.from_graphql_input(asset_check) for asset_check in asset_check_selection]
             if asset_check_selection is not None
             else None
         ),
@@ -257,3 +254,4 @@ class ExecutionMetadata(
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]
+AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]

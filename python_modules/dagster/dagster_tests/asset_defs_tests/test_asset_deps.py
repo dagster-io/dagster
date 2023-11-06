@@ -13,7 +13,7 @@ from dagster import (
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 ### Tests for AssetDep
@@ -533,4 +533,39 @@ def test_dep_via_deps_and_fn():
 
         @asset(deps=[the_upstream_asset])
         def depends_on_upstream_asset(the_upstream_asset):
+            return None
+
+
+def test_duplicate_deps():
+    @asset
+    def the_upstream_asset():
+        return None
+
+    @asset(deps=[the_upstream_asset, the_upstream_asset])
+    def the_downstream_asset():
+        return None
+
+    assert len(the_downstream_asset.input_names) == 1
+    assert the_downstream_asset.op.ins["the_upstream_asset"].dagster_type.is_nothing
+
+    res = materialize(
+        [the_downstream_asset, the_upstream_asset],
+        resources={"io_manager": TestingIOManager(), "fs_io_manager": FilesystemIOManager()},
+    )
+    assert res.success
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match=r"Cannot set a dependency on asset .* more than once"
+    ):
+
+        @asset(
+            deps=[
+                the_upstream_asset,
+                AssetDep(
+                    asset=the_upstream_asset,
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                ),
+            ]
+        )
+        def conflicting_deps():
             return None

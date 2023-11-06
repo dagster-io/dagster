@@ -7,17 +7,23 @@ import pytest
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
+    BackfillPolicy,
+    DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     FreshnessPolicy,
+    LastPartitionMapping,
+    PartitionMapping,
     PartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
-    materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
+
+pytest.importorskip("dbt.version", minversion="1.4")
+
 
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest = json.loads(manifest_path.read_bytes())
@@ -30,20 +36,11 @@ test_dagster_metadata_manifest_path = (
 test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
 
 
-def test_materialize(test_project_dir):
-    @dbt_assets(manifest=manifest)
-    def all_dbt_assets(context, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
-
-    assert materialize(
-        [all_dbt_assets], resources={"dbt": DbtCliResource(project_dir=test_project_dir)}
-    ).success
-
-
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
 def test_manifest_argument(manifest: DbtManifestParam):
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     assert my_dbt_assets.keys == {
         AssetKey.from_user_string(key)
@@ -144,6 +141,18 @@ def test_manifest_argument(manifest: DbtManifestParam):
                 "cereals",
             },
         ),
+        (
+            "*",
+            "tag:does-not-exist",
+            {
+                "sort_by_calories",
+                "cold_schema/sort_cold_cereals_by_calories",
+                "subdir_schema/least_caloric",
+                "sort_hot_cereals_by_calories",
+                "orders_snapshot",
+                "cereals",
+            },
+        ),
     ],
 )
 def test_selections(
@@ -154,7 +163,8 @@ def test_selections(
         select=select or "fqn:*",
         exclude=exclude,
     )
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
     assert my_dbt_assets.keys == expected_asset_keys
@@ -164,12 +174,24 @@ def test_selections(
     assert my_dbt_assets.op.tags.get("dagster-dbt/exclude") == exclude
 
 
+@pytest.mark.parametrize("name", [None, "custom"])
+def test_with_custom_name(name: Optional[str]) -> None:
+    @dbt_assets(manifest=manifest, name=name)
+    def my_dbt_assets():
+        ...
+
+    expected_name = name or "my_dbt_assets"
+
+    assert my_dbt_assets.op.name == expected_name
+
+
 @pytest.mark.parametrize(
     "partitions_def", [None, DailyPartitionsDefinition(start_date="2023-01-01")]
 )
 def test_partitions_def(partitions_def: Optional[PartitionsDefinition]) -> None:
     @dbt_assets(manifest=manifest, partitions_def=partitions_def)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     assert my_dbt_assets.partitions_def == partitions_def
 
@@ -177,12 +199,118 @@ def test_partitions_def(partitions_def: Optional[PartitionsDefinition]) -> None:
 @pytest.mark.parametrize("io_manager_key", [None, "my_io_manager_key"])
 def test_io_manager_key(io_manager_key: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, io_manager_key=io_manager_key)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     expected_io_manager_key = DEFAULT_IO_MANAGER_KEY if io_manager_key is None else io_manager_key
 
     for output_def in my_dbt_assets.node_def.output_defs:
         assert output_def.io_manager_key == expected_io_manager_key
+
+
+def test_backfill_policy():
+    backfill_policy = BackfillPolicy.single_run()
+
+    @dbt_assets(
+        manifest=manifest,
+        partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+        backfill_policy=backfill_policy,
+    )
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.backfill_policy == backfill_policy
+
+
+def test_op_tags():
+    @dbt_assets(manifest=manifest, op_tags={"a": "b", "c": "d"})
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/select": "fqn:*",
+    }
+
+    @dbt_assets(manifest=manifest, op_tags={"a": "b", "c": "d"}, select="+least_caloric")
+    def my_dbt_assets_with_select():
+        ...
+
+    assert my_dbt_assets_with_select.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/select": "+least_caloric",
+    }
+
+    @dbt_assets(manifest=manifest, op_tags={"a": "b", "c": "d"}, exclude="+least_caloric")
+    def my_dbt_assets_with_exclude():
+        ...
+
+    assert my_dbt_assets_with_exclude.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/exclude": "+least_caloric",
+        "dagster-dbt/select": "fqn:*",
+    }
+
+    @dbt_assets(
+        manifest=manifest,
+        op_tags={"a": "b", "c": "d"},
+        select="+least_caloric",
+        exclude="least_caloric",
+    )
+    def my_dbt_assets_with_select_and_exclude():
+        ...
+
+    assert my_dbt_assets_with_select_and_exclude.op.tags == {
+        "a": "b",
+        "c": "d",
+        "kind": "dbt",
+        "dagster-dbt/select": "+least_caloric",
+        "dagster-dbt/exclude": "least_caloric",
+    }
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "To specify a dbt selection, use the 'select' argument, not 'dagster-dbt/select'"
+            " with op_tags"
+        ),
+    ):
+
+        @dbt_assets(
+            manifest=manifest,
+            op_tags={
+                "a": "b",
+                "c": "d",
+                "dagster-dbt/select": "+least_caloric",
+            },
+        )
+        def select_tag():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "To specify a dbt exclusion, use the 'exclude' argument, not 'dagster-dbt/exclude'"
+            " with op_tags"
+        ),
+    ):
+
+        @dbt_assets(
+            manifest=manifest,
+            op_tags={
+                "a": "b",
+                "c": "d",
+                "dagster-dbt/exclude": "+least_caloric",
+            },
+        )
+        def exclude_tag():
+            ...
 
 
 def test_with_asset_key_replacements() -> None:
@@ -192,7 +320,8 @@ def test_with_asset_key_replacements() -> None:
             return AssetKey(["prefix", *super().get_asset_key(dbt_resource_props).path])
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     assert my_dbt_assets.keys_by_input_name == {}
     assert set(my_dbt_assets.keys_by_output_name.values()) == {
@@ -205,6 +334,59 @@ def test_with_asset_key_replacements() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    "partition_mapping",
+    [
+        None,
+        LastPartitionMapping(),
+        TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+    ],
+)
+def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) -> None:
+    expected_self_dependency_partition_mapping = TimeWindowPartitionMapping(
+        start_offset=-8, end_offset=-9
+    )
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_partition_mapping(
+            cls,
+            dbt_resource_props: Mapping[str, Any],
+            dbt_parent_resource_props: Mapping[str, Any],
+        ) -> Optional[PartitionMapping]:
+            is_self_dependency = dbt_resource_props == dbt_parent_resource_props
+            if is_self_dependency:
+                return expected_self_dependency_partition_mapping
+
+            return partition_mapping
+
+    @dbt_assets(
+        manifest=test_dagster_metadata_manifest,
+        dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
+        partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"),
+    )
+    def my_dbt_assets():
+        ...
+
+    dependencies_with_self_dependencies = {
+        # Self dependency enabled with `+meta.dagster.has_self_dependency`
+        AssetKey("customers"),
+    }
+    dependencies_without_self_dependencies = set(my_dbt_assets.dependency_keys).difference(
+        dependencies_with_self_dependencies
+    )
+
+    assert dependencies_without_self_dependencies
+    for input_asset_key in dependencies_without_self_dependencies:
+        assert my_dbt_assets.get_partition_mapping(input_asset_key) == partition_mapping
+
+    for self_dependency_asset_key in dependencies_with_self_dependencies:
+        assert (
+            my_dbt_assets.get_partition_mapping(self_dependency_asset_key)
+            == expected_self_dependency_partition_mapping
+        )
+
+
 def test_with_description_replacements() -> None:
     expected_description = "customized description"
 
@@ -214,7 +396,8 @@ def test_with_description_replacements() -> None:
             return expected_description
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     for description in my_dbt_assets.descriptions_by_key.values():
         assert description == expected_description
@@ -229,7 +412,8 @@ def test_with_metadata_replacements() -> None:
             return expected_metadata
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     for metadata in my_dbt_assets.metadata_by_key.values():
         assert metadata["customized"] == "metadata"
@@ -244,7 +428,8 @@ def test_with_group_replacements() -> None:
             return expected_group
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     for group in my_dbt_assets.group_names_by_key.values():
         assert group == expected_group
@@ -261,7 +446,8 @@ def test_with_freshness_policy_replacements() -> None:
             return expected_freshness_policy
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     for freshness_policy in my_dbt_assets.freshness_policies_by_key.values():
         assert freshness_policy == expected_freshness_policy
@@ -278,7 +464,8 @@ def test_with_auto_materialize_policy_replacements() -> None:
             return expected_auto_materialize_policy
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     for auto_materialize_policy in my_dbt_assets.auto_materialize_policies_by_key.values():
         assert auto_materialize_policy == expected_auto_materialize_policy
@@ -286,7 +473,8 @@ def test_with_auto_materialize_policy_replacements() -> None:
 
 def test_dbt_meta_auto_materialize_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     auto_materialize_policies = my_dbt_assets.auto_materialize_policies_by_key.values()
     assert auto_materialize_policies
@@ -297,7 +485,8 @@ def test_dbt_meta_auto_materialize_policy() -> None:
 
 def test_dbt_meta_freshness_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     freshness_policies = my_dbt_assets.freshness_policies_by_key.values()
     assert freshness_policies
@@ -310,7 +499,8 @@ def test_dbt_meta_freshness_policy() -> None:
 
 def test_dbt_meta_asset_key() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     # Assert that source asset keys are set properly.
     assert set(my_dbt_assets.keys_by_input_name.values()) == {
@@ -327,7 +517,8 @@ def test_dbt_meta_asset_key() -> None:
 
 def test_dbt_config_group() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     assert my_dbt_assets.group_names_by_key == {
         AssetKey(["customers"]): "default",
@@ -346,7 +537,8 @@ def test_dbt_config_group() -> None:
 
 def test_dbt_with_downstream_asset_via_definition():
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     @asset(deps=[my_dbt_assets])
     def downstream_of_dbt():
@@ -359,7 +551,8 @@ def test_dbt_with_downstream_asset_via_definition():
 
 def test_dbt_with_downstream_asset():
     @dbt_assets(manifest=test_dagster_metadata_manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     @asset(deps=[AssetKey("orders"), AssetKey(["customized", "staging", "payments"])])
     def downstream_of_dbt():

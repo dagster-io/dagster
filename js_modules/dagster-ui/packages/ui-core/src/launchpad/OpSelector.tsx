@@ -55,13 +55,8 @@ const SOLID_SELECTOR_QUERY = gql`
 `;
 
 export const OpSelector = (props: IOpSelectorProps) => {
-  const {
-    serverProvidedSubsetError,
-    onChange,
-    pipelineName,
-    repoAddress,
-    onFlattenGraphsChange,
-  } = props;
+  const {serverProvidedSubsetError, onChange, pipelineName, repoAddress, onFlattenGraphsChange} =
+    props;
   const [focused, setFocused] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 

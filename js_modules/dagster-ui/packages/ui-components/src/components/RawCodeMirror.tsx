@@ -21,7 +21,8 @@ interface Props {
 
 export const RawCodeMirror = (props: Props) => {
   const {value, options, handlers} = props;
-  const cm = React.useRef<CodeMirror.EditorFromTextArea | null>(null);
+  const target = React.useRef<HTMLDivElement>(null);
+  const cm = React.useRef<CodeMirror.Editor | null>(null);
 
   React.useEffect(() => {
     if (value !== cm.current?.getValue()) {
@@ -29,54 +30,44 @@ export const RawCodeMirror = (props: Props) => {
     }
   }, [value]);
 
-  const ref = React.useCallback(
-    (node: HTMLTextAreaElement | null) => {
-      if (!node) {
-        return;
-      }
+  React.useEffect(() => {
+    if (!target.current || cm.current) {
+      return;
+    }
 
-      if (cm.current) {
-        return;
-      }
+    cm.current = CodeMirror(target.current, {value, ...options});
 
-      cm.current = CodeMirror.fromTextArea(node, {
-        value,
-        ...options,
-      });
+    // Wait a moment for the DOM to settle, then call refresh to ensure that all
+    // CSS has finished loading. This allows CodeMirror to correctly align elements,
+    // including the cursor.
+    setTimeout(() => {
+      cm.current?.refresh();
+    }, REFRESH_DELAY_MSEC);
 
-      // Wait a moment for the DOM to settle, then call refresh to ensure that all
-      // CSS has finished loading. This allows CodeMirror to correctly align elements,
-      // including the cursor.
-      setTimeout(() => {
-        cm.current?.refresh();
-      }, REFRESH_DELAY_MSEC);
+    if (!handlers) {
+      return;
+    }
 
-      if (!handlers) {
-        return;
-      }
+    if (handlers.onChange) {
+      cm.current.on('change', handlers.onChange);
+    }
 
-      if (handlers.onChange) {
-        cm.current.on('change', handlers.onChange);
-      }
+    if (handlers.onBlur) {
+      cm.current.on('blur', handlers.onBlur);
+    }
 
-      if (handlers.onBlur) {
-        cm.current.on('blur', handlers.onBlur);
-      }
+    if (handlers.onCursorActivity) {
+      cm.current.on('cursorActivity', handlers.onCursorActivity);
+    }
 
-      if (handlers.onCursorActivity) {
-        cm.current.on('cursorActivity', handlers.onCursorActivity);
-      }
+    if (handlers.onKeyUp) {
+      cm.current.on('keyup', handlers.onKeyUp);
+    }
 
-      if (handlers.onKeyUp) {
-        cm.current.on('keyup', handlers.onKeyUp);
-      }
-
-      if (handlers.onReady) {
-        handlers.onReady(cm.current);
-      }
-    },
-    [value, options, handlers],
-  );
+    if (handlers.onReady) {
+      handlers.onReady(cm.current);
+    }
+  }, [handlers, options, value]);
 
   React.useEffect(() => {
     // Check current options and update if necessary.
@@ -90,5 +81,5 @@ export const RawCodeMirror = (props: Props) => {
     }
   }, [options]);
 
-  return <textarea ref={ref} />;
+  return <div style={{height: '100%', overflow: 'hidden'}} ref={target} />;
 };

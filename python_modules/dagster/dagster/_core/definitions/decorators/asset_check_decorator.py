@@ -106,7 +106,7 @@ def asset_check(
             @asset_check(asset=my_asset, description="Check that my asset has enough rows")
             def my_asset_has_enough_rows() -> AssetCheckResult:
                 num_rows = ...
-                return AssetCheckResult(success=num_rows > 5, metadata={"num_rows": num_rows})
+                return AssetCheckResult(passed=num_rows > 5, metadata={"num_rows": num_rows})
 
 
     Example with a DataFrame Output:
@@ -122,7 +122,7 @@ def asset_check(
             @asset_check(asset=my_asset, description="Check that my asset has enough rows")
             def my_asset_has_enough_rows(my_asset: DataFrame) -> AssetCheckResult:
                 num_rows = my_asset.shape[0]
-                return AssetCheckResult(success=num_rows > 5, metadata={"num_rows": num_rows})
+                return AssetCheckResult(passed=num_rows > 5, metadata={"num_rows": num_rows})
     """
 
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
@@ -174,7 +174,7 @@ def asset_check(
                 asset_keys_by_input_name={
                     input_tuples_by_asset_key[resolved_asset_key][0]: resolved_asset_key
                 },
-                asset_check_handles_by_output_name={op_def.output_defs[0].name: spec.handle},
+                asset_check_keys_by_output_name={op_def.output_defs[0].name: spec.key},
             ),
         )
 

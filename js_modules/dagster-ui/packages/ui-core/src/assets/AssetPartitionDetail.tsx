@@ -6,6 +6,7 @@ import {
   Group,
   Heading,
   Icon,
+  MiddleTruncate,
   Mono,
   Spinner,
   Subheading,
@@ -35,6 +36,8 @@ import {
   AssetPartitionLatestRunFragment,
   AssetPartitionDetailQuery,
   AssetPartitionDetailQueryVariables,
+  AssetPartitionStaleQuery,
+  AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 
@@ -46,22 +49,22 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
 
-  const {materializations, observations, ...rest} = React.useMemo(() => {
+  const stale = useQuery<AssetPartitionStaleQuery, AssetPartitionStaleQueryVariables>(
+    ASSET_PARTITION_STALE_QUERY,
+    {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
+  );
+  const {materializations, observations, hasLineage, latestRunForPartition} = React.useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         materializations: [],
         observations: [],
         hasLineage: false,
-        staleCauses: [],
-        staleStatus: StaleStatus.FRESH,
         latestRunForPartition: null,
       };
     }
 
     return {
       stepKey: stepKeyForAsset(result.data.assetNodeOrError),
-      staleStatus: result.data.assetNodeOrError.staleStatus,
-      staleCauses: result.data.assetNodeOrError.staleCauses,
       latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
       materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
         (a, b) => Number(b.timestamp) - Number(a.timestamp),
@@ -75,6 +78,19 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     };
   }, [result.data]);
 
+  const {staleStatus, staleCauses} = React.useMemo(() => {
+    if (stale.data?.assetNodeOrError?.__typename !== 'AssetNode') {
+      return {
+        staleCauses: [],
+        staleStatus: StaleStatus.FRESH,
+      };
+    }
+    return {
+      staleStatus: stale.data.assetNodeOrError.staleStatus,
+      staleCauses: stale.data.assetNodeOrError.staleCauses,
+    };
+  }, [stale.data]);
+
   const latest = materializations[0];
 
   if (result.loading || !result.data) {
@@ -83,7 +99,11 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
 
   return (
     <AssetPartitionDetail
-      {...rest}
+      hasLineage={hasLineage}
+      hasStaleLoadingState={stale.loading}
+      latestRunForPartition={latestRunForPartition}
+      staleStatus={staleStatus}
+      staleCauses={staleCauses}
       assetKey={props.assetKey}
       group={{
         latest: latest || null,
@@ -103,17 +123,6 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
       ... on AssetNode {
         id
         opNames
-        staleStatus(partition: $partitionKey)
-        staleCauses(partition: $partitionKey) {
-          key {
-            path
-          }
-          reason
-          category
-          dependency {
-            path
-          }
-        }
         latestRunForPartition(partition: $partitionKey) {
           id
           ...AssetPartitionLatestRunFragment
@@ -143,12 +152,34 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
   ${ASSET_OBSERVATION_FRAGMENT}
 `;
 
+export const ASSET_PARTITION_STALE_QUERY = gql`
+  query AssetPartitionStaleQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        staleStatus(partition: $partitionKey)
+        staleCauses(partition: $partitionKey) {
+          key {
+            path
+          }
+          reason
+          category
+          dependency {
+            path
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const AssetPartitionDetail: React.FC<{
   assetKey: AssetKey;
   group: AssetEventGroup;
   latestRunForPartition: AssetPartitionLatestRunFragment | null;
   hasLineage: boolean;
   hasLoadingState?: boolean;
+  hasStaleLoadingState?: boolean;
   stepKey?: string;
   staleCauses?: LiveDataForNode['staleCauses'];
   staleStatus?: LiveDataForNode['staleStatus'];
@@ -158,6 +189,7 @@ export const AssetPartitionDetail: React.FC<{
   group,
   hasLineage,
   hasLoadingState,
+  hasStaleLoadingState,
   latestRunForPartition,
   staleCauses,
   staleStatus,
@@ -199,21 +231,34 @@ export const AssetPartitionDetail: React.FC<{
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
         {partition ? (
-          <Box flex={{gap: 12, alignItems: 'center'}}>
-            <Heading>{partition}</Heading>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto auto',
+              gap: 12,
+              alignItems: 'center',
+            }}
+            data-tooltip={partition}
+            data-tooltip-style={PartitionHeadingTooltipStyle}
+          >
+            <Heading>
+              <MiddleTruncate text={partition} />
+            </Heading>
             {hasLoadingState ? (
               <Spinner purpose="body-text" />
             ) : latest ? (
               <Tag intent="success">Materialized</Tag>
             ) : undefined}
-            {staleCauses && staleStatus ? (
+            {hasStaleLoadingState ? (
+              <Spinner purpose="body-text" />
+            ) : staleCauses && staleStatus ? (
               <StaleReasonsTags
                 liveData={{staleCauses, staleStatus}}
                 assetKey={assetKey}
                 include="all"
               />
             ) : undefined}
-          </Box>
+          </div>
         ) : (
           <Heading color={Colors.Gray400}>No partition selected</Heading>
         )}
@@ -336,3 +381,11 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
     hasLoadingState
   />
 );
+
+const PartitionHeadingTooltipStyle = JSON.stringify({
+  background: Colors.Gray100,
+  border: `1px solid ${Colors.Gray200}`,
+  fontSize: '18px',
+  fontWeight: '600',
+  color: Colors.Dark,
+});

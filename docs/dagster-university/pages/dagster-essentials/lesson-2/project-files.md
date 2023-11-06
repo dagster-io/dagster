@@ -4,9 +4,11 @@ module: 'dagster_essentials'
 lesson: '3'
 ---
 
+# Project files
+
 Now that you’ve created the Dagster project, let’s talk a bit about the files it contains. The project you created in the previous section looks something like this:
 
-```
+```bash
 .
 ├── README.md
 ├── dagster_university/

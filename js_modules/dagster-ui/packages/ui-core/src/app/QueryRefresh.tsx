@@ -34,7 +34,7 @@ export interface QueryRefreshState {
  *
  */
 export function useQueryRefreshAtInterval(
-  queryResult: QueryResult<any, any>,
+  queryResult: Pick<QueryResult<any, any>, 'refetch' | 'loading' | 'networkStatus'>,
   intervalMs: number,
   enabled = true,
   customRefetch?: () => void,
@@ -115,9 +115,10 @@ export function useQueryRefreshAtInterval(
 
   // Expose the next fire time both as a unix timstamp and as a "seconds" interval
   // so the <QueryRefreshCountdown> can display the number easily.
-  const nextFireDelay = React.useMemo(() => (nextFireMs ? nextFireMs - Date.now() : -1), [
-    nextFireMs,
-  ]);
+  const nextFireDelay = React.useMemo(
+    () => (nextFireMs ? nextFireMs - Date.now() : -1),
+    [nextFireMs],
+  );
 
   // Memoize the returned object so components passed the entire QueryRefreshState
   // can be memoized / pure components.

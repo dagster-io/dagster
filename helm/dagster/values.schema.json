@@ -3001,6 +3001,9 @@
                 },
                 "schedule": {
                     "$ref": "#/definitions/TickRetention"
+                },
+                "autoMaterialize": {
+                    "$ref": "#/definitions/TickRetention"
                 }
             },
             "required": [

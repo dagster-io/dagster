@@ -48,7 +48,7 @@ describe('PipelineReference', () => {
       await waitFor(() => {
         const link = screen.getByRole('link', {name: /foobar/i});
         expect(link).toBeVisible();
-        expect(link.getAttribute('href')).toBe('/guess/jobs/foobar');
+        expect(link.getAttribute('href')).toBe('/guess/foobar');
       });
     });
 

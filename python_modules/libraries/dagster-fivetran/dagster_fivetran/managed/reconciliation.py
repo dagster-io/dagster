@@ -71,7 +71,9 @@ def diff_connectors(
         name = (
             config_conn.schema_name
             if config_conn
-            else curr_conn.schema_name if curr_conn else "Unknown"
+            else curr_conn.schema_name
+            if curr_conn
+            else "Unknown"
         )
         return ManagedElementDiff().with_nested(name, diff)
 

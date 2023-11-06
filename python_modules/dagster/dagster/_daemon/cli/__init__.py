@@ -51,6 +51,7 @@ def _get_heartbeat_tolerance():
     show_default=True,
     default="info",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    envvar="DAGSTER_DAEMON_LOG_LEVEL",
 )
 @click.option(
     "--instance-ref",

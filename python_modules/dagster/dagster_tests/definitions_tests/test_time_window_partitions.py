@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 from typing import Optional, Sequence, cast
 
@@ -792,6 +793,24 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
     assert len(subset) == case_str.count("+")
 
 
+def test_time_partitions_subset_identical_serialization():
+    # serialized subsets should be equal if the original subsets are equal
+    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    partition_keys = [
+        *[f"2015-02-{i:02d}" for i in range(1, 20)],
+        *[f"2016-03-{i:02d}" for i in range(1, 15)],
+        *[f"2017-04-{i:02d}" for i in range(1, 10)],
+        *[f"2018-05-{i:02d}" for i in range(1, 5)],
+        *[f"2018-06-{i:02d}" for i in range(1, 10)],
+        *[f"2019-07-{i:02d}" for i in range(1, 15)],
+        *[f"2020-08-{i:02d}" for i in range(1, 20)],
+    ]
+    serialized1 = partitions_def.subset_with_partition_keys(partition_keys).serialize()
+    random.shuffle(partition_keys)
+    serialized2 = partitions_def.subset_with_partition_keys(partition_keys).serialize()
+    assert serialized1 == serialized2
+
+
 @pytest.mark.parametrize(
     "initial, added",
     [
@@ -1035,9 +1054,7 @@ def test_get_first_partition_window():
         start_date="2023-01-01", end_offset=1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-01", "%Y-%m-%d")
-    ) == time_window(
-        "2023-01-01", "2023-01-02"
-    )
+    ) == time_window("2023-01-01", "2023-01-02")
 
     assert (
         DailyPartitionsDefinition(start_date="2023-02-15", end_offset=1).get_first_partition_window(
@@ -1050,17 +1067,13 @@ def test_get_first_partition_window():
         start_date="2023-01-01", end_offset=2
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-02", "%Y-%m-%d")
-    ) == time_window(
-        "2023-01-01", "2023-01-02"
-    )
+    ) == time_window("2023-01-01", "2023-01-02")
 
     assert MonthlyPartitionsDefinition(
         start_date="2023-01-01", end_offset=1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-15", "%Y-%m-%d")
-    ) == time_window(
-        "2023-01-01", "2023-02-01"
-    )
+    ) == time_window("2023-01-01", "2023-02-01")
 
     assert (
         DailyPartitionsDefinition(
@@ -1073,9 +1086,7 @@ def test_get_first_partition_window():
         start_date="2023-01-15", end_offset=-1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-17", "%Y-%m-%d")
-    ) == time_window(
-        "2023-01-15", "2023-01-16"
-    )
+    ) == time_window("2023-01-15", "2023-01-16")
 
     assert (
         DailyPartitionsDefinition(
@@ -1088,9 +1099,7 @@ def test_get_first_partition_window():
         start_date="2023-01-15", end_offset=-2
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-01-18", "%Y-%m-%d")
-    ) == time_window(
-        "2023-01-15", "2023-01-16"
-    )
+    ) == time_window("2023-01-15", "2023-01-16")
 
     assert (
         MonthlyPartitionsDefinition(
@@ -1110,17 +1119,13 @@ def test_get_first_partition_window():
         start_date="2023-01-15", end_offset=1
     ).get_first_partition_window(
         current_time=datetime(year=2023, month=1, day=15, hour=12, minute=0, second=0)
-    ) == time_window(
-        "2023-01-15", "2023-01-16"
-    )
+    ) == time_window("2023-01-15", "2023-01-16")
 
     assert DailyPartitionsDefinition(
         start_date="2023-01-15", end_offset=1
     ).get_first_partition_window(
         current_time=datetime(year=2023, month=1, day=14, hour=12, minute=0, second=0)
-    ) == time_window(
-        "2023-01-15", "2023-01-16"
-    )
+    ) == time_window("2023-01-15", "2023-01-16")
 
     assert (
         DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
@@ -1147,9 +1152,7 @@ def test_get_first_partition_window():
         start_date="2023-01-01", end_offset=-1
     ).get_first_partition_window(
         current_time=datetime.strptime("2023-03-01", "%Y-%m-%d")
-    ) == time_window(
-        "2023-01-01", "2023-02-01"
-    )
+    ) == time_window("2023-01-01", "2023-02-01")
 
 
 def test_invalid_cron_schedule():
@@ -1188,3 +1191,80 @@ def test_has_partition_key():
     )
     assert partitions_def.has_partition_key("2020-01-01")
     assert partitions_def.has_partition_key("2020-03-15")
+
+
+@pytest.mark.parametrize(
+    "partitions_def,first_partition_window,last_partition_window,number_of_partitions,fmt",
+    [
+        (
+            HourlyPartitionsDefinition(start_date="2022-01-01-00:00", end_date="2022-02-01-00:00"),
+            ["2022-01-01-00:00", "2022-01-01-01:00"],
+            ["2022-01-31-23:00", "2022-02-01-00:00"],
+            744,
+            "%Y-%m-%d-%H:%M",
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2022-01-01", end_date="2022-02-01"),
+            ["2022-01-01", "2022-01-02"],
+            ["2022-01-31", "2022-02-01"],
+            31,
+            "%Y-%m-%d",
+        ),
+        (
+            WeeklyPartitionsDefinition(start_date="2022-01-01", end_date="2022-02-01"),
+            ["2022-01-02", "2022-01-09"],  # 2022-01-02 is Sunday, weekly cron starts from Sunday
+            ["2022-01-23", "2022-01-30"],
+            4,
+            "%Y-%m-%d",
+        ),
+        (
+            MonthlyPartitionsDefinition(start_date="2022-01-01", end_date="2023-01-01"),
+            ["2022-01-01", "2022-02-01"],
+            ["2022-12-01", "2023-01-01"],
+            12,
+            "%Y-%m-%d",
+        ),
+    ],
+)
+def test_partition_with_end_date(
+    partitions_def: TimeWindowPartitionsDefinition,
+    first_partition_window: Sequence[str],
+    last_partition_window: Sequence[str],
+    number_of_partitions: int,
+    fmt: str,
+):
+    first_partition_window_ = TimeWindow(
+        start=pendulum.instance(datetime.strptime(first_partition_window[0], fmt), tz="UTC"),
+        end=pendulum.instance(datetime.strptime(first_partition_window[1], fmt), tz="UTC"),
+    )
+
+    last_partition_window_ = TimeWindow(
+        start=pendulum.instance(datetime.strptime(last_partition_window[0], fmt), tz="UTC"),
+        end=pendulum.instance(datetime.strptime(last_partition_window[1], fmt), tz="UTC"),
+    )
+
+    # get_last_partition_window
+    assert partitions_def.get_last_partition_window() == last_partition_window_
+    # get_next_partition_window
+    assert partitions_def.get_next_partition_window(partitions_def.start) == first_partition_window_
+    assert (
+        partitions_def.get_next_partition_window(last_partition_window_.start)
+        == last_partition_window_
+    )
+    assert not partitions_def.get_next_partition_window(last_partition_window_.end)
+    # get_partition_keys
+    assert len(partitions_def.get_partition_keys()) == number_of_partitions
+    assert partitions_def.get_partition_keys()[0] == first_partition_window[0]
+    assert partitions_def.get_partition_keys()[-1] == last_partition_window[0]
+    # get_next_partition_key
+    assert (
+        partitions_def.get_next_partition_key(first_partition_window[0])
+        == first_partition_window[1]
+    )
+    assert not partitions_def.get_next_partition_key(last_partition_window[0])
+    # get_last_partition_key
+    assert partitions_def.get_last_partition_key() == last_partition_window[0]
+    # has_partition_key
+    assert partitions_def.has_partition_key(first_partition_window[0])
+    assert partitions_def.has_partition_key(last_partition_window[0])
+    assert not partitions_def.has_partition_key(last_partition_window[1])

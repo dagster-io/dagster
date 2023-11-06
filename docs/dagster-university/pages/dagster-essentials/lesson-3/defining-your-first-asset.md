@@ -11,6 +11,7 @@ In this course, you’ll use data from [NYC OpenData](https://opendata.cityofnew
 Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yellow taxi trip data for March 2023 and save it to a location on your local machine.
 
 1. First, navigate to and open the `assets/trips.py` file in your Dagster project. This is where you’ll write your asset code.
+
 2. At the top of the `trips.py` file, confirm the following imports already exist:
 
    ```python

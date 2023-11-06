@@ -25,7 +25,8 @@ def failing_static_partitioned():
 
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
-def downstream_of_failing_partitioned(failing_static_partitioned): ...
+def downstream_of_failing_partitioned(failing_static_partitioned):
+    ...
 
 
 time_window_partitions = DailyPartitionsDefinition(start_date="2022-01-01")

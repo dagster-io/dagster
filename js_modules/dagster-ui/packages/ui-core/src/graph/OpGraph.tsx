@@ -8,7 +8,7 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {OpEdges} from './OpEdges';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
 import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
-import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
+import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {
   Edge,
@@ -199,7 +199,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
       <SVGViewport
         ref={this.viewportEl}
         key={jobName}
-        maxZoom={1.2}
+        maxZoom={DEFAULT_MAX_ZOOM}
         defaultZoom="zoom-to-fit"
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}

@@ -11,7 +11,13 @@ import {AssetFeatureContext} from '../AssetFeatureContext';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
 
-import {AssetCheckDetailModal, MigrationRequired, NoChecks} from './AssetCheckDetailModal';
+import {
+  AssetCheckDetailModal,
+  MigrationRequired,
+  NeedsUserCodeUpgrade,
+  AgentUpgradeRequired,
+  NoChecks,
+} from './AssetCheckDetailModal';
 import {
   EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
   EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
@@ -42,24 +48,42 @@ export const AssetChecks = ({
       return <LoadingSpinner purpose="page" />;
     }
     const assetNode = data.assetNodeOrError;
-    const result = data.assetChecksOrError!;
+    if (assetNode?.__typename !== 'AssetNode') {
+      return <span />;
+    }
+    const result = assetNode.assetChecksOrError;
     if (result.__typename === 'AssetCheckNeedsMigrationError') {
       return <MigrationRequired />;
+    }
+    if (result.__typename === 'AssetCheckNeedsUserCodeUpgrade') {
+      return <NeedsUserCodeUpgrade />;
+    }
+    if (result.__typename === 'AssetCheckNeedsAgentUpgradeError') {
+      return <AgentUpgradeRequired />;
     }
     const checks = result.checks;
     if (!checks.length) {
       return <NoChecks />;
     }
-    if (assetNode?.__typename !== 'AssetNode') {
-      return <span />;
-    }
-    return <VirtualizedAssetCheckTable assetNode={assetNode} rows={checks} />;
+    return (
+      <>
+        <AssetCheckDetailModal
+          assetKey={assetKey}
+          checkName={openCheck}
+          onClose={() => setOpenCheck(undefined)}
+        />
+        <VirtualizedAssetCheckTable assetNode={assetNode} rows={checks} />
+      </>
+    );
   }
 
   function executeAllButton() {
     const assetNode = data?.assetNodeOrError;
-    const checksOrError = data?.assetChecksOrError;
-    if (checksOrError?.__typename !== 'AssetChecks' || assetNode?.__typename !== 'AssetNode') {
+    if (assetNode?.__typename !== 'AssetNode') {
+      return <span />;
+    }
+    const checksOrError = assetNode.assetChecksOrError;
+    if (checksOrError?.__typename !== 'AssetChecks') {
       return <span />;
     }
     return <ExecuteChecksButton assetNode={assetNode} checks={checksOrError.checks} />;
@@ -69,13 +93,6 @@ export const AssetChecks = ({
 
   return (
     <div>
-      <AssetCheckDetailModal
-        assetKey={assetKey}
-        checkName={openCheck}
-        onClose={() => {
-          setOpenCheck(undefined);
-        }}
-      />
       <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
         <AssetChecksBanner />
       </Box>
@@ -115,16 +132,17 @@ export const ASSET_CHECKS_QUERY = gql`
       ... on AssetNode {
         id
         ...ExecuteChecksButtonAssetNodeFragment
-      }
-    }
-    assetChecksOrError(assetKey: $assetKey) {
-      ... on AssetCheckNeedsMigrationError {
-        message
-      }
-      ... on AssetChecks {
-        checks {
-          ...AssetCheckTableFragment
-          ...ExecuteChecksButtonCheckFragment
+
+        assetChecksOrError {
+          ... on AssetCheckNeedsMigrationError {
+            message
+          }
+          ... on AssetChecks {
+            checks {
+              ...AssetCheckTableFragment
+              ...ExecuteChecksButtonCheckFragment
+            }
+          }
         }
       }
     }

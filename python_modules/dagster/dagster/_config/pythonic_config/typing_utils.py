@@ -1,12 +1,18 @@
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, cast
 
-import pydantic
 from pydantic import Field
 from typing_extensions import Annotated, dataclass_transform, get_origin
 
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 
-from .inheritance_utils import safe_is_subclass
+from .type_check_utils import safe_is_subclass
+
+try:
+    # Pydantic 2.x
+    from pydantic.main import ModelMetaclass
+except ImportError:
+    # Pydantic 1.x
+    from pydantic._internal._model_construction import ModelMetaclass  # type: ignore
 
 if TYPE_CHECKING:
     from dagster._config.pythonic_config import PartialResource
@@ -51,7 +57,7 @@ class LateBoundTypesForResourceTypeChecking:
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-class BaseConfigMeta(pydantic.main.ModelMetaclass):
+class BaseConfigMeta(ModelMetaclass):  # type: ignore
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
         annotations = namespaces.get("__annotations__", {})
 

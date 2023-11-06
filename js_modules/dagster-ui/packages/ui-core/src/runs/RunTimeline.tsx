@@ -84,12 +84,15 @@ export const RunTimeline = (props: Props) => {
   const [_, end] = range;
   const includesTicks = now <= end;
 
-  const buckets = jobs.reduce((accum, job) => {
-    const {repoAddress} = job;
-    const repoKey = repoAddressAsURLString(repoAddress);
-    const jobsForRepo = accum[repoKey] || [];
-    return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {} as Record<string, TimelineJob[]>);
+  const buckets = jobs.reduce(
+    (accum, job) => {
+      const {repoAddress} = job;
+      const repoKey = repoAddressAsURLString(repoAddress);
+      const jobsForRepo = accum[repoKey] || [];
+      return {...accum, [repoKey]: [...jobsForRepo, job]};
+    },
+    {} as Record<string, TimelineJob[]>,
+  );
 
   const allKeys = Object.keys(buckets);
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
@@ -215,16 +218,8 @@ interface TimelineHeaderRowProps {
 }
 
 const TimelineHeaderRow = (props: TimelineHeaderRowProps) => {
-  const {
-    expanded,
-    onToggle,
-    onToggleAll,
-    repoAddress,
-    isDuplicateRepoName,
-    jobs,
-    height,
-    top,
-  } = props;
+  const {expanded, onToggle, onToggleAll, repoAddress, isDuplicateRepoName, jobs, height, top} =
+    props;
 
   return (
     <RepoRow
@@ -460,7 +455,9 @@ const DividerContainer = styled.div`
 const DividerLabels = styled.div`
   display: flex;
   align-items: center;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset 0 1px 0 ${Colors.KeylineGray},
+  box-shadow:
+    inset 1px 0 0 ${Colors.KeylineGray},
+    inset 0 1px 0 ${Colors.KeylineGray},
     inset -1px 0 0 ${Colors.KeylineGray};
   height: ${TIME_HEADER_HEIGHT}px;
   position: relative;
@@ -488,7 +485,9 @@ const DividerLines = styled.div`
   height: 100%;
   position: relative;
   width: 100%;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset -1px 0 0 ${Colors.KeylineGray};
+  box-shadow:
+    inset 1px 0 0 ${Colors.KeylineGray},
+    inset -1px 0 0 ${Colors.KeylineGray};
 `;
 
 const DividerLine = styled.div`
@@ -706,7 +705,9 @@ const RunChunk = styled.div<ChunkProps>`
   top: 2px;
   ${({$multiple}) => ($multiple ? `min-width: ${MIN_WIDTH_FOR_MULTIPLE}px` : null)};
 
-  transition: background-color 300ms linear, width 300ms ease-in-out;
+  transition:
+    background-color 300ms linear,
+    width 300ms ease-in-out;
 
   .chunk-popover-target {
     display: block;

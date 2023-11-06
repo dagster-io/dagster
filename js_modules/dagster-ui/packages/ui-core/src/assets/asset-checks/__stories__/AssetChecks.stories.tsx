@@ -14,17 +14,13 @@ import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoM
 import {ASSET_CHECK_DETAILS_QUERY} from '../AssetCheckDetailModal';
 import {ASSET_CHECKS_QUERY, AssetChecks} from '../AssetChecks';
 import {
-  TestAssetCheck,
   testAssetKey,
   testLatestMaterializationTimeStamp,
+  TestAssetCheck,
   TestAssetCheckWarning,
-  TestAssetCheckNoExecutions,
 } from '../__fixtures__/AssetChecks.fixtures';
-import {
-  AssetCheckDetailsQuery,
-  AssetCheckDetailsQueryVariables,
-} from '../types/AssetCheckDetailModal.types';
-import {AssetChecksQuery, AssetChecksQueryVariables} from '../types/AssetChecks.types';
+import {AssetCheckDetailsQueryVariables} from '../types/AssetCheckDetailModal.types';
+import {AssetChecksQueryVariables} from '../types/AssetChecks.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -51,13 +47,13 @@ export const MigrationRequired = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
+        buildQueryMock<any, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
-            assetChecksOrError: buildAssetCheckNeedsMigrationError(),
             assetNodeOrError: buildAssetNode({
               assetKey: buildAssetKey(testAssetKey),
+              assetChecksOrError: buildAssetCheckNeedsMigrationError(),
             }),
           },
         }),
@@ -70,15 +66,15 @@ export const NoChecks = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
+        buildQueryMock<any, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
-            assetChecksOrError: buildAssetChecks({
-              checks: [],
-            }) as any,
             assetNodeOrError: buildAssetNode({
               assetKey: buildAssetKey(testAssetKey),
+              assetChecksOrError: buildAssetChecks({
+                checks: [],
+              }),
             }),
           },
         }),
@@ -91,26 +87,26 @@ export const Default = () => {
   return (
     <Component
       mocks={[
-        buildQueryMock<AssetChecksQuery, AssetChecksQueryVariables>({
+        buildQueryMock<any, AssetChecksQueryVariables>({
           query: ASSET_CHECKS_QUERY,
           variables: {assetKey: testAssetKey},
           data: {
-            assetChecksOrError: buildAssetChecks({
-              checks: [
-                TestAssetCheck,
-                TestAssetCheckWarning,
-                TestAssetCheck,
-                TestAssetCheck,
-                TestAssetCheck,
-                TestAssetCheck,
-              ],
-            }) as any,
             assetNodeOrError: buildAssetNode({
               assetKey: buildAssetKey(testAssetKey),
+              assetChecksOrError: buildAssetChecks({
+                checks: [
+                  TestAssetCheck,
+                  TestAssetCheckWarning,
+                  TestAssetCheck,
+                  TestAssetCheck,
+                  TestAssetCheck,
+                  TestAssetCheck,
+                ],
+              }),
             }),
           },
         }),
-        buildQueryMock<AssetCheckDetailsQuery, AssetCheckDetailsQueryVariables>({
+        buildQueryMock<any, AssetCheckDetailsQueryVariables>({
           query: ASSET_CHECK_DETAILS_QUERY,
           variables: {
             assetKey: testAssetKey,
@@ -118,9 +114,7 @@ export const Default = () => {
             limit: 6,
           },
           data: {
-            assetChecksOrError: buildAssetChecks({
-              checks: [TestAssetCheckNoExecutions],
-            }) as any,
+            assetCheckExecutions: [TestAssetCheck.executionForLatestMaterialization],
           },
         }),
       ]}

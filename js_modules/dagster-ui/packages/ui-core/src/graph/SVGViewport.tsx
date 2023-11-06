@@ -39,6 +39,7 @@ interface SVGViewportState {
   y: number;
   scale: number;
   minScale: number;
+  isClickHeld: boolean;
 }
 
 interface Point {
@@ -50,6 +51,7 @@ export const DETAIL_ZOOM = 0.75;
 const DEFAULT_ZOOM = 0.75;
 const DEFAULT_MAX_AUTOCENTER_ZOOM = 1;
 const DEFAULT_MIN_ZOOM = 0.17;
+export const DEFAULT_MAX_ZOOM = 1.2;
 
 const BUTTON_INCREMENT = 0.05;
 
@@ -93,6 +95,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       lastY = offset.y;
     };
 
+    viewport.setState({isClickHeld: true});
     const onCancelClick = (e: MouseEvent) => {
       // If you press, drag, and release the mouse we don't want it to trigger a click
       // beneath your cursor. onClick's within the DAG should only fire if you did not
@@ -103,6 +106,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       }
     };
     const onUp = () => {
+      viewport.setState({isClickHeld: false});
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
       setTimeout(() => {
@@ -298,6 +302,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     y: 0,
     scale: DETAIL_ZOOM,
     minScale: 0,
+    isClickHeld: false,
   };
 
   resizeObserver: any | undefined;
@@ -433,7 +438,12 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 
   public zoomToSVGBox(box: IBounds, animate: boolean, newScale = this.state.scale) {
-    this.zoomToSVGCoords(box.x + box.width / 2, box.y + box.height / 2, animate, newScale);
+    this.zoomToSVGCoords(
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+      animate,
+      newScale === this.getMinZoom() ? this.getMaxZoom() : newScale,
+    );
   }
 
   public zoomToSVGCoords(x: number, y: number, animate: boolean, scale = this.state.scale) {
@@ -522,12 +532,14 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
       return;
     }
 
-    const dir = ({
-      ArrowLeft: 'left',
-      ArrowUp: 'up',
-      ArrowRight: 'right',
-      ArrowDown: 'down',
-    } as const)[e.code];
+    const dir = (
+      {
+        ArrowLeft: 'left',
+        ArrowUp: 'up',
+        ArrowRight: 'right',
+        ArrowDown: 'down',
+      } as const
+    )[e.code];
     if (!dir) {
       return;
     }
@@ -555,6 +567,9 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
 
     const div = document.createElement('div');
     document.getElementById('root')!.appendChild(div);
+
+    // TODO fix this!
+    // eslint-disable-next-line
     ReactDOM.render(
       <MemoryRouter>{this.props.children(this.state, unclippedViewport)}</MemoryRouter>,
       div,
@@ -576,7 +591,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
 
   render() {
     const {children, onClick, interactor} = this.props;
-    const {x, y, scale} = this.state;
+    const {x, y, scale, isClickHeld} = this.state;
     const dotsize = Math.max(7, 30 * scale);
 
     return (
@@ -585,6 +600,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         style={Object.assign({}, SVGViewportStyles, {
           backgroundPosition: `${x}px ${y}px`,
           backgroundSize: `${dotsize}px`,
+          cursor: isClickHeld ? 'grabbing' : 'grab',
         })}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}

@@ -26,7 +26,7 @@ from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import (
     Node,
     NodeHandle,
@@ -735,7 +735,7 @@ class JobDefinition(IHasInternalInit):
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> Self:
         check.invariant(
             not (op_selection and (asset_selection or asset_check_selection)),
@@ -754,10 +754,10 @@ class JobDefinition(IHasInternalInit):
     def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> Self:
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
-        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
         nonexistent_assets = [
             asset
@@ -777,12 +777,12 @@ class JobDefinition(IHasInternalInit):
             )
 
         # Test that selected asset checks exist
-        all_check_handles = self.asset_layer.node_output_handles_by_asset_check_handle.keys()
+        all_check_keys = self.asset_layer.node_output_handles_by_asset_check_key.keys()
 
         nonexistent_asset_checks = [
             asset_check
             for asset_check in asset_check_selection or set()
-            if asset_check not in all_check_handles
+            if asset_check not in all_check_keys
         ]
         nonexistent_asset_check_strings = [
             str(asset_check) for asset_check in nonexistent_asset_checks
@@ -792,28 +792,6 @@ class JobDefinition(IHasInternalInit):
                 "Asset checks provided in asset_check_selection argument"
                 f" {', '.join(nonexistent_asset_check_strings)} do not exist in parent asset group"
                 " or job."
-            )
-
-        # Test that selected asset checks can be run individually. Currently this is only supported
-        # on checks defined with @asset_check, which will have an AssetChecksDefinition.
-        all_check_handles_in_checks_defs = set()
-        for asset_checks_def in self.asset_layer.asset_checks_defs:
-            for spec in asset_checks_def.specs:
-                all_check_handles_in_checks_defs.add(spec.handle)
-
-        non_checks_defs_asset_checks = [
-            asset_check
-            for asset_check in asset_check_selection or set()
-            if asset_check not in all_check_handles_in_checks_defs
-        ]
-        non_checks_defs_asset_check_strings = [
-            asset_check.name for asset_check in non_checks_defs_asset_checks
-        ]
-        if non_checks_defs_asset_checks:
-            raise DagsterInvalidSubsetError(
-                f"Can't execute asset checks [{', '.join(non_checks_defs_asset_check_strings)}],"
-                " because they weren't defined with @asset_check or AssetChecksDefinition. To"
-                " execute these checks, materialize the asset."
             )
 
         asset_selection_data = AssetSelectionData(
@@ -1049,6 +1027,12 @@ class JobDefinition(IHasInternalInit):
         return self.asset_selection_data.asset_selection if self.asset_selection_data else None
 
     @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return (
+            self.asset_selection_data.asset_check_selection if self.asset_selection_data else None
+        )
+
+    @property
     def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return self.op_selection_data.resolved_op_selection if self.op_selection_data else None
 
@@ -1271,9 +1255,9 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         dep_asset_keys_by_node_output_handle={},
         partition_mappings_by_asset_dep={},
         asset_checks_defs_by_node_handle={},
-        node_output_handles_by_asset_check_handle={},
+        node_output_handles_by_asset_check_key={},
         check_names_by_asset_key_by_node_handle={},
-        check_handle_by_node_output_handle={},
+        check_key_by_node_output_handle={},
     )
 
 

@@ -9,7 +9,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -263,7 +263,7 @@ def get_external_pipeline_subset_result(
     job_name: str,
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
-    asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
@@ -364,8 +364,7 @@ def get_external_sensor_execution(
             with user_code_error_boundary(
                 SensorExecutionError,
                 lambda: (
-                    "Error occurred during the execution of evaluation_fn for sensor {sensor_name}"
-                    .format(sensor_name=sensor_def.name)
+                    f"Error occurred during the execution of evaluation_fn for sensor {sensor_def.name}"
                 ),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
@@ -554,11 +553,9 @@ def get_partition_set_execution_param_data(
             for key in partition_keys:
 
                 def _error_message_fn(partition_name: str):
-                    return (
-                        lambda: (
-                            "Error occurred during the partition config and tag generation for"
-                            f" '{partition_name}' in partitioned config on job '{job_def.name}'"
-                        )
+                    return lambda: (
+                        "Error occurred during the partition config and tag generation for"
+                        f" '{partition_name}' in partitioned config on job '{job_def.name}'"
                     )
 
                 with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):

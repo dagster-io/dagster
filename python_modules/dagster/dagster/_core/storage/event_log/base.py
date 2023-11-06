@@ -1,6 +1,4 @@
-import base64
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Iterable,
@@ -15,8 +13,17 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
+from dagster._core.event_api import (
+    AssetRecordsFilter,
+    EventHandlerFn,
+    EventLogCursor,
+    EventLogRecord,
+    EventRecordsFilter,
+    EventRecordsResult,
+    RunStatusChangeRecordsFilter,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.stats import (
     RunStepKeyStatsSnapshot,
@@ -27,7 +34,6 @@ from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
-from dagster._seven import json
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
@@ -40,52 +46,6 @@ class EventLogConnection(NamedTuple):
     records: Sequence[EventLogRecord]
     cursor: str
     has_more: bool
-
-
-class EventLogCursorType(Enum):
-    OFFSET = "OFFSET"
-    STORAGE_ID = "STORAGE_ID"
-
-
-class EventLogCursor(NamedTuple):
-    """Representation of an event record cursor, keeping track of the log query state."""
-
-    cursor_type: EventLogCursorType
-    value: int
-
-    def is_offset_cursor(self) -> bool:
-        return self.cursor_type == EventLogCursorType.OFFSET
-
-    def is_id_cursor(self) -> bool:
-        return self.cursor_type == EventLogCursorType.STORAGE_ID
-
-    def offset(self) -> int:
-        check.invariant(self.cursor_type == EventLogCursorType.OFFSET)
-        return max(0, int(self.value))
-
-    def storage_id(self) -> int:
-        check.invariant(self.cursor_type == EventLogCursorType.STORAGE_ID)
-        return int(self.value)
-
-    def __str__(self) -> str:
-        return self.to_string()
-
-    def to_string(self) -> str:
-        raw = json.dumps({"type": self.cursor_type.value, "value": self.value})
-        return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
-
-    @staticmethod
-    def parse(cursor_str: str) -> "EventLogCursor":
-        raw = json.loads(base64.b64decode(cursor_str).decode("utf-8"))
-        return EventLogCursor(EventLogCursorType(raw["type"]), raw["value"])
-
-    @staticmethod
-    def from_offset(offset: int) -> "EventLogCursor":
-        return EventLogCursor(EventLogCursorType.OFFSET, offset)
-
-    @staticmethod
-    def from_storage_id(storage_id: int) -> "EventLogCursor":
-        return EventLogCursor(EventLogCursorType.STORAGE_ID, storage_id)
 
 
 class AssetEntry(
@@ -375,7 +335,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_materialized_partitions(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ) -> Set[str]:
         pass
 
@@ -405,7 +368,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: AssetKey
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         pass
 
@@ -492,17 +455,59 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def supports_asset_checks(self):
         return True
 
-    def get_asset_check_executions(
+    @abstractmethod
+    def get_asset_check_execution_history(
         self,
-        asset_key: AssetKey,
-        check_name: str,
+        check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        """Get the executions for an asset check, sorted by recency. If materialization_event_storage_id
-        is set and include_planned is True, the returned Sequence will include executions that are planned
-        but do not have a target materialization yet (since we don't set the target until the check is executed).
-        """
+        """Get executions for one asset check, sorted by recency."""
+        pass
+
+    @abstractmethod
+    def get_latest_asset_check_execution_by_key(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
+        """Get the latest executions for a list of asset checks."""
+        pass
+
+    @abstractmethod
+    def fetch_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def fetch_observations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def fetch_planned_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def fetch_run_status_changes(
+        self,
+        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
         raise NotImplementedError()

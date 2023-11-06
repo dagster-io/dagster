@@ -1,5 +1,6 @@
 import random
 import string
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
@@ -58,7 +59,10 @@ from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServer
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
-from dagster._scheduler.scheduler import launch_scheduled_runs
+from dagster._scheduler.scheduler import (
+    launch_scheduled_runs,
+    launch_scheduled_runs_for_schedule_iterator,
+)
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils import DebugCrashFlags, find_free_port
@@ -762,6 +766,56 @@ def test_grpc_server_down(instance: DagsterInstance, executor: ThreadPoolExecuto
                 expected_failure_count=0,
             )
 
+        # Same thing happens if the code location can't be loaded in the middle of the tick
+        # evaluation and a DagsterCodeLocationLoadError is raised
+        server_down_ctx = stack.enter_context(
+            create_test_daemon_workspace_context(
+                GrpcServerTarget(
+                    host="localhost", port=port, socket=None, location_name="test_location"
+                ),
+                instance,
+            )
+        )
+
+        all_schedule_states = {
+            schedule_state.selector_id: schedule_state
+            for schedule_state in instance.all_instigator_state(
+                instigator_type=InstigatorType.SCHEDULE
+            )
+        }
+        schedule_state = all_schedule_states[external_schedule.selector_id]
+        for _trial in range(3):
+            list(
+                launch_scheduled_runs_for_schedule_iterator(
+                    server_down_ctx,
+                    get_default_daemon_logger("SchedulerDaemon"),
+                    external_schedule,
+                    schedule_state,
+                    threading.Lock(),
+                    pendulum.now("UTC"),
+                    max_catchup_runs=0,
+                    max_tick_retries=0,
+                    tick_retention_settings={},
+                    schedule_debug_crash_flags=None,
+                    log_verbose_checks=False,
+                    submit_threadpool_executor=None,
+                )
+            )
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                [],
+                "Unable to reach the user code server for schedule simple_schedule. Schedule"
+                " will resume execution once the server is available.",
+                expected_failure_count=0,
+            )
+
         # Server starts back up, tick now succeeds
         with _grpc_server_external_repo(port, instance) as external_repo:
             evaluate_schedules(server_up_ctx, executor, pendulum.now("UTC"))
@@ -905,9 +959,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         with pendulum.test(freeze_datetime):
             workspace_context._location_entry_dict[  # noqa: SLF001
                 "test_location"
-            ] = workspace_context._location_entry_dict[  # noqa: SLF001
-                "test_location"
-            ]._replace(
+            ] = workspace_context._location_entry_dict["test_location"]._replace(  # noqa: SLF001
                 code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
@@ -1964,7 +2016,10 @@ class TestSchedulerRun:
 
             assert bad_ticks[0].status == TickStatus.FAILURE
 
-            assert "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule" in bad_ticks[0].error.message  # type: ignore  # (possible none)
+            assert (
+                "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule"
+                in bad_ticks[0].error.message  # type: ignore  # (possible none)
+            )
 
             unloadable_ticks = scheduler_instance.get_ticks(
                 unloadable_origin.get_id(), "fake_selector"
@@ -2096,8 +2151,7 @@ class TestSchedulerRun:
 
             assert (
                 "Could not find repository invalid_repo_name in location test_location to run"
-                " schedule simple_schedule"
-                in caplog.text
+                " schedule simple_schedule" in caplog.text
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2198,8 +2252,7 @@ class TestSchedulerRun:
 
             assert (
                 "Schedule simple_schedule was started from a location missing_location that can no"
-                " longer be found in the workspace"
-                in caplog.text
+                " longer be found in the workspace" in caplog.text
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())

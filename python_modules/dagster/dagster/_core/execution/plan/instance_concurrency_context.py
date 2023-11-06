@@ -12,7 +12,9 @@ from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
 
-DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
+INITIAL_INTERVAL_VALUE = 1
+STEP_UP_BASE = 1.1
+MAX_CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 15
 
 
 class InstanceConcurrencyContext:
@@ -34,6 +36,7 @@ class InstanceConcurrencyContext:
         self._run_id = run_id
         self._global_concurrency_keys = None
         self._pending_timeouts = defaultdict(float)
+        self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
         self._claims = set()
 
@@ -54,6 +57,7 @@ class InstanceConcurrencyContext:
 
         for step_key in to_clear:
             del self._pending_timeouts[step_key]
+            del self._pending_claim_counts[step_key]
             self._pending_claims.remove(step_key)
 
         self._context_guard = False
@@ -89,12 +93,11 @@ class InstanceConcurrencyContext:
         )
 
         if not claim_status.is_claimed:
-            interval = (
-                claim_status.sleep_interval
-                if claim_status.sleep_interval
-                else DEFAULT_CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+            interval = _calculate_timeout_interval(
+                claim_status.sleep_interval, self._pending_claim_counts[step_key]
             )
             self._pending_timeouts[step_key] = time.time() + interval
+            self._pending_claim_counts[step_key] += 1
             return False
 
         if step_key in self._pending_claims:
@@ -122,3 +125,17 @@ class InstanceConcurrencyContext:
 
         self._instance.event_log_storage.free_concurrency_slot_for_step(self._run_id, step_key)
         self._claims.remove(step_key)
+
+
+def _calculate_timeout_interval(sleep_interval: Optional[float], pending_claim_count: int) -> float:
+    if sleep_interval is not None:
+        return sleep_interval
+
+    if pending_claim_count > 30:
+        # with the current values, we will always hit the max by the 30th claim attempt
+        return MAX_CONCURRENCY_CLAIM_BLOCKED_INTERVAL
+
+    # increase the step up value exponentially, up to a max of 15 seconds (starting from 0)
+    step_up_value = STEP_UP_BASE**pending_claim_count - 1
+    interval = INITIAL_INTERVAL_VALUE + step_up_value
+    return min(MAX_CONCURRENCY_CLAIM_BLOCKED_INTERVAL, interval)

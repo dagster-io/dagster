@@ -12,7 +12,6 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -40,6 +39,9 @@ from dagster._utils.cached_method import cached_method
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
+from .pydantic_compat_layer import (
+    model_fields,
 )
 
 try:
@@ -448,7 +450,10 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        out = self.__class__(**{**self._get_non_none_public_field_values(), **values})
+        to_populate = self.__class__._get_non_default_public_field_values_cls(  # noqa: SLF001
+            {**self._get_non_default_public_field_values(), **values}
+        )
+        out = self.__class__(**to_populate)
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
             resource_context=self._state__internal__.resource_context
         )
@@ -672,6 +677,34 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
             resources={"writer": WriterResource(prefix="a_prefix")},
         )
 
+    You can optionally use this class to model configuration only and vend an object
+    of a different type for use at runtime. This is useful for those who wish to
+    have a separate object that manages configuration and a separate object at runtime. Or
+    where you want to directly use a third-party class that you do not control.
+
+    To do this you override the `create_resource` methods to return a different object.
+
+    .. code-block:: python
+
+        class WriterResource(ConfigurableResource):
+            str: prefix
+
+            def create_resource(self, context: InitResourceContext) -> Writer:
+                # Writer is pre-existing class defined else
+                return Writer(self.prefix)
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def use_preexisting_writer_as_resource(writer: ResourceParam[Writer]):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[use_preexisting_writer_as_resource],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
     """
 
     def create_resource(self, context: InitResourceContext) -> TResValue:
@@ -714,7 +747,7 @@ class PartialResourceState(NamedTuple):
 
 class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
-    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
+    resource_cls: Type[Any]
 
     def __init__(
         self,
@@ -726,8 +759,11 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
+            to_populate = resource_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
+                {**data, **context.resource_config}
+            )
             instantiated = resource_cls(
-                **{**data, **context.resource_config}
+                **to_populate
             )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
@@ -767,7 +803,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
         )
 
 
@@ -849,9 +885,12 @@ class SeparatedResourceParams(NamedTuple):
     non_resources: Dict[str, Any]
 
 
-def _is_annotated_as_resource_type(annotation: Type) -> bool:
+def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> bool:
     """Determines if a field in a structured config class is annotated as a resource type or not."""
-    from .inheritance_utils import safe_is_subclass
+    from .type_check_utils import safe_is_subclass
+
+    if metadata and metadata[0] == "resource_dependency":
+        return True
 
     is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
         annotation, "__metadata__", None
@@ -862,21 +901,51 @@ def _is_annotated_as_resource_type(annotation: Type) -> bool:
     )
 
 
+class ResourceDataWithAnnotation(NamedTuple):
+    key: str
+    value: Any
+    annotation: Type
+    annotation_metadata: List[str]
+
+
 def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> SeparatedResourceParams:
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
-    keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
-    data_with_annotation: List[Tuple[str, Any, Type]] = [
+    fields_by_resolved_field_name = {
+        field.alias if field.alias else key: field for key, field in model_fields(cls).items()
+    }
+    data_with_annotation: List[ResourceDataWithAnnotation] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
-        (k, v, keys_by_alias[k].outer_type_)
-        for k, v in data.items()
-        if k in keys_by_alias
+        ResourceDataWithAnnotation(
+            key=field_name,
+            value=field_value,
+            annotation=fields_by_resolved_field_name[field_name].annotation,
+            annotation_metadata=fields_by_resolved_field_name[field_name].metadata,
+        )
+        for field_name, field_value in data.items()
+        if field_name in fields_by_resolved_field_name
     ]
+    # We need to grab metadata from the annotation in order to tell if
+    # this key was annotated with a typing.Annotated annotation (which we use for resource/resource deps),
+    # since Pydantic 2.0 strips that info out and sticks any Annotated metadata in the
+    # metadata field
     out = SeparatedResourceParams(
-        resources={k: v for k, v, t in data_with_annotation if _is_annotated_as_resource_type(t)},
+        resources={
+            d.key: d.value
+            for d in data_with_annotation
+            if _is_annotated_as_resource_type(
+                d.annotation,
+                d.annotation_metadata,
+            )
+        },
         non_resources={
-            k: v for k, v, t in data_with_annotation if not _is_annotated_as_resource_type(t)
+            d.key: d.value
+            for d in data_with_annotation
+            if not _is_annotated_as_resource_type(
+                d.annotation,
+                d.annotation_metadata,
+            )
         },
     )
     return out
@@ -941,7 +1010,7 @@ def validate_resource_annotated_function(fn) -> None:
         TResValue,
     )
 
-    from .inheritance_utils import safe_is_subclass
+    from .type_check_utils import safe_is_subclass
 
     malformed_params = [
         param

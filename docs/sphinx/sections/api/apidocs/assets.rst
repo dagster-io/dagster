@@ -9,6 +9,10 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 .. autoclass:: MaterializeResult
 
+.. autoclass:: AssetSpec
+
+.. autoclass:: AssetDep
+
 .. autoclass:: AssetIn
 
 .. autoclass:: SourceAsset

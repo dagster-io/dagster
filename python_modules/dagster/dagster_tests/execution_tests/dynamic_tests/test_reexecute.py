@@ -181,12 +181,10 @@ def dynamic_with_optional_output_job():
         for i in range(10):
             if (
                 # re-execution run skipped odd numbers
-                context.run.parent_run_id
-                and i % 2 == 0
+                context.run.parent_run_id and i % 2 == 0
             ) or (
                 # root run skipped even numbers
-                not context.run.parent_run_id
-                and i % 2 == 1
+                not context.run.parent_run_id and i % 2 == 1
             ):
                 yield DynamicOutput(value=i, mapping_key=str(i))
 

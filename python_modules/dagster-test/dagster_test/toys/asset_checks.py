@@ -7,6 +7,7 @@ from dagster import (
     AssetCheckSpec,
     AssetKey,
     AssetOut,
+    AssetSelection,
     DailyPartitionsDefinition,
     In,
     MetadataValue,
@@ -14,6 +15,7 @@ from dagster import (
     Output,
     asset,
     asset_check,
+    define_asset_job,
     graph_asset,
     multi_asset,
     op,
@@ -30,7 +32,7 @@ def checked_asset():
 def random_fail_check(checked_asset):
     random.seed(time.time())
     return AssetCheckResult(
-        success=random.choice([False, True]),
+        passed=random.choice([False, True]),
         metadata={"timestamp": MetadataValue.float(time.time())},
     )
 
@@ -42,7 +44,7 @@ def random_fail_check(checked_asset):
 def severe_random_fail_check():
     random.seed(time.time())
     return AssetCheckResult(
-        success=random.choice([False, True]),
+        passed=random.choice([False, True]),
         metadata={"timestamp": MetadataValue.float(time.time())},
         severity=AssetCheckSeverity.ERROR,
     )
@@ -53,7 +55,7 @@ def severe_random_fail_check():
 )
 def always_fail():
     return AssetCheckResult(
-        success=False,
+        passed=False,
         metadata={
             "foo": MetadataValue.text("bar"),
             "asset_key": MetadataValue.asset(checked_asset.key),
@@ -65,7 +67,7 @@ def always_fail():
 @asset_check(asset=checked_asset, description="A check that sleeps 30s then succeeds.")
 def slow_check():
     time.sleep(30)
-    return AssetCheckResult(success=True)
+    return AssetCheckResult(passed=True)
 
 
 @asset(
@@ -83,7 +85,7 @@ def slow_check():
 def asset_with_check_in_same_op():
     yield Output(1)
     random.seed(time.time())
-    yield AssetCheckResult(check_name="random_fail_check", success=random.choice([False, True]))
+    yield AssetCheckResult(check_name="random_fail_check", passed=random.choice([False, True]))
 
 
 @asset(group_name="asset_checks")
@@ -98,7 +100,7 @@ def exception_check():
     random.seed(time.time())
     if random.choice([False, True]):
         raise Exception("This check failed!")
-    return AssetCheckResult(success=True)
+    return AssetCheckResult(passed=True)
 
 
 @asset_check(
@@ -109,7 +111,7 @@ def severe_exception_check():
     random.seed(time.time())
     if random.choice([False, True]):
         raise Exception("This check failed!")
-    return AssetCheckResult(success=True)
+    return AssetCheckResult(passed=True)
 
 
 @asset(
@@ -129,7 +131,7 @@ def partitioned_asset(_):
 def random_fail_check_on_partitioned_asset():
     random.seed(time.time())
     return AssetCheckResult(
-        success=random.choice([False, True]),
+        passed=random.choice([False, True]),
     )
 
 
@@ -144,7 +146,7 @@ def random_fail_check_on_partitioned_asset():
 def multi_asset_1_and_2(context):
     if AssetKey("multi_asset_piece_1") in context.selected_asset_keys:
         yield Output(1, output_name="one")
-        yield AssetCheckResult(success=True, metadata={"foo": "bar"})
+        yield AssetCheckResult(passed=True, metadata={"foo": "bar"})
     if AssetKey("multi_asset_piece_2") in context.selected_asset_keys:
         yield Output(1, output_name="two")
 
@@ -158,7 +160,7 @@ def multi_asset_1_and_2(context):
 def asset_with_100_checks(_):
     yield Output(1)
     for i in range(100):
-        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+        yield AssetCheckResult(check_name=f"check_{i}", passed=random.random() > 0.2)
 
 
 @asset(
@@ -170,7 +172,7 @@ def asset_with_100_checks(_):
 def asset_with_1000_checks(_):
     yield Output(1)
     for i in range(1000):
-        yield AssetCheckResult(check_name=f"check_{i}", success=random.random() > 0.2)
+        yield AssetCheckResult(check_name=f"check_{i}", passed=random.random() > 0.2)
 
 
 @op
@@ -182,10 +184,10 @@ def create_staged_asset():
 def test_staged_asset(staged_asset):
     random.seed(time.time())
     result = AssetCheckResult(
-        success=random.choice([False, True]),
+        passed=random.choice([False, True]),
     )
     yield result
-    if not result.success:
+    if not result.passed:
         raise Exception("Raising an exception to block promotion.")
 
 
@@ -214,11 +216,11 @@ def test_1(staged_asset):
     time.sleep(1)
     result = AssetCheckResult(
         check_name="check_1",
-        success=True,
+        passed=True,
         metadata={"sample": "metadata"},
     )
     yield result
-    if not result.success:
+    if not result.passed:
         raise Exception("The check failed, so raising an error to block materializing.")
 
 
@@ -226,11 +228,11 @@ def test_1(staged_asset):
 def test_2(staged_asset):
     result = AssetCheckResult(
         check_name="check_2",
-        success=True,
+        passed=True,
         metadata={"sample": "metadata"},
     )
     yield result
-    if not result.success:
+    if not result.passed:
         raise Exception("The check failed, so raising an error to block materializing.")
 
 
@@ -238,7 +240,7 @@ def test_2(staged_asset):
 def test_3(staged_asset):
     yield AssetCheckResult(
         check_name="check_3",
-        success=False,
+        passed=False,
         severity=AssetCheckSeverity.WARN,
         metadata={"sample": "metadata"},
     )
@@ -294,11 +296,11 @@ def graph_multi_asset_check_1(staged_asset):
     result = AssetCheckResult(
         asset_key="graph_multi_asset_one",
         check_name="check_1",
-        success=True,
+        passed=True,
         metadata={"sample": "metadata"},
     )
     yield result
-    if not result.success:
+    if not result.passed:
         raise Exception("The check failed, so raising an error to block materializing.")
 
 
@@ -307,11 +309,11 @@ def graph_multi_asset_check_2(staged_asset):
     result = AssetCheckResult(
         asset_key="graph_multi_asset_one",
         check_name="check_2",
-        success=True,
+        passed=True,
         metadata={"sample": "metadata"},
     )
     yield result
-    if not result.success:
+    if not result.passed:
         raise Exception("The check failed, so raising an error to block materializing.")
 
 
@@ -320,7 +322,7 @@ def graph_multi_asset_check_3(staged_asset):
     yield AssetCheckResult(
         asset_key="graph_multi_asset_one",
         check_name="check_3",
-        success=False,
+        passed=False,
         severity=AssetCheckSeverity.WARN,
         metadata={"sample": "metadata"},
     )
@@ -331,11 +333,11 @@ def graph_multi_asset_2_check_1(staged_asset):
     result = AssetCheckResult(
         asset_key="graph_multi_asset_two",
         check_name="check_1",
-        success=False,
+        passed=False,
         metadata={"sample": "metadata"},
     )
     yield result
-    if not result.success:
+    if not result.passed:
         raise Exception("The check failed, so raising an error to block materializing.")
 
 
@@ -410,6 +412,12 @@ def downstream_asset():
     return 1
 
 
+just_checks_job = define_asset_job(
+    name="just_checks_job",
+    selection=AssetSelection.checks_for_assets(checked_asset),
+)
+
+
 def get_checks_and_assets():
     return [
         checked_asset,
@@ -430,4 +438,5 @@ def get_checks_and_assets():
         asset_with_1000_checks,
         many_tests_graph_asset,
         many_tests_graph_multi_asset,
+        just_checks_job,
     ]

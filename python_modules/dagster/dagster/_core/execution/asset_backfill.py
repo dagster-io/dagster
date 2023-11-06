@@ -19,6 +19,8 @@ from typing import (
     cast,
 )
 
+import pendulum
+
 from dagster import (
     PartitionKeyRange,
     _check as check,
@@ -175,15 +177,85 @@ class AssetBackfillData(NamedTuple):
 
         return True
 
-    def get_target_root_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
-        root_asset_keys = (
-            AssetSelection.keys(*self.target_subset.asset_keys)
-            .sources()
-            .resolve(self.target_subset.asset_graph)
-        )
-        return list(
-            self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
-        )
+    def get_target_root_asset_partitions(
+        self, instance_queryer: CachingInstanceQueryer
+    ) -> Iterable[AssetKeyPartitionKey]:
+        def _get_self_and_downstream_targeted_subset(
+            initial_subset: AssetGraphSubset,
+        ) -> AssetGraphSubset:
+            self_and_downstream = initial_subset
+            for asset_key in initial_subset.asset_keys:
+                self_and_downstream = self_and_downstream | (
+                    self.target_subset.asset_graph.bfs_filter_subsets(
+                        instance_queryer,
+                        lambda asset_key, _: asset_key in self.target_subset,
+                        initial_subset.filter_asset_keys({asset_key}),
+                        current_time=instance_queryer.evaluation_time,
+                    )
+                    & self.target_subset
+                )
+            return self_and_downstream
+
+        assets_with_no_parents_in_target_subset = {
+            asset_key
+            for asset_key in self.target_subset.asset_keys
+            if all(
+                parent not in self.target_subset.asset_keys
+                for parent in self.target_subset.asset_graph.get_parents(asset_key)
+                - {asset_key}  # Do not include an asset as its own parent
+            )
+        }
+
+        # The partitions that do not have any parents in the target subset
+        root_subset = self.target_subset.filter_asset_keys(assets_with_no_parents_in_target_subset)
+
+        # Partitions in root_subset and their downstreams within the target subset
+        root_and_downstream_partitions = _get_self_and_downstream_targeted_subset(root_subset)
+
+        # The result of the root_and_downstream_partitions on the previous iteration, used to
+        # determine when no new partitions are targeted so we can early exit
+        previous_root_and_downstream_partitions = None
+
+        while (
+            root_and_downstream_partitions != self.target_subset
+            and root_and_downstream_partitions
+            != previous_root_and_downstream_partitions  # Check against previous iteration result to exit if no new partitions are targeted
+        ):
+            # Find the asset graph subset is not yet targeted by the backfill
+            unreachable_targets = self.target_subset - root_and_downstream_partitions
+
+            # Find the root assets of the unreachable targets. Any targeted partition in these
+            # assets becomes part of the root subset
+            unreachable_target_root_subset = unreachable_targets.filter_asset_keys(
+                AssetSelection.keys(*unreachable_targets.asset_keys)
+                .sources()
+                .resolve(unreachable_targets.asset_graph)
+            )
+            root_subset = root_subset | unreachable_target_root_subset
+
+            # Track the previous value of root_and_downstream_partitions.
+            # If the values are the same, we know no new partitions have been targeted.
+            previous_root_and_downstream_partitions = root_and_downstream_partitions
+
+            # Update root_and_downstream_partitions to include downstreams of the new root subset
+            root_and_downstream_partitions = (
+                root_and_downstream_partitions
+                | _get_self_and_downstream_targeted_subset(unreachable_target_root_subset)
+            )
+
+        if root_and_downstream_partitions == previous_root_and_downstream_partitions:
+            raise DagsterInvariantViolationError(
+                "Unable to determine root partitions for backfill. The following asset partitions"
+                " are not targeted:"
+                f" \n\n{list((self.target_subset - root_and_downstream_partitions).iterate_asset_partitions())} \n\n"
+                " This is likely a system error. Please report this issue to the Dagster team."
+            )
+
+        return list(root_subset.iterate_asset_partitions())
+
+    def get_target_partitions_subset(self, asset_key: AssetKey) -> PartitionsSubset:
+        # Return the targeted partitions for the root partitioned asset keys
+        return self.target_subset.get_partitions_subset(asset_key)
 
     def get_target_root_partitions_subset(self) -> PartitionsSubset:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
@@ -246,13 +318,15 @@ class AssetBackfillData(NamedTuple):
         ) -> Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]:
             if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None:
                 materialized_subset = self.materialized_subset.get_partitions_subset(asset_key)
-                failed_partitions = set(
-                    self.failed_and_downstream_subset.get_partitions_subset(
-                        asset_key
-                    ).get_partition_keys()
-                )
-                requested_partitions = set(
-                    self.requested_subset.get_partitions_subset(asset_key).get_partition_keys()
+                failed_subset = self.failed_and_downstream_subset.get_partitions_subset(asset_key)
+                requested_subset = self.requested_subset.get_partitions_subset(asset_key)
+
+                # The failed subset includes partitions that failed and their downstream partitions.
+                # The downstream partitions are not included in the requested subset, so we determine
+                # the in progress subset by subtracting partitions that are failed and requested.
+                requested_and_failed_subset = failed_subset & requested_subset
+                in_progress_subset = requested_subset - (
+                    requested_and_failed_subset | materialized_subset
                 )
 
                 return PartitionedAssetBackfillStatus(
@@ -260,10 +334,8 @@ class AssetBackfillData(NamedTuple):
                     len(self.target_subset.get_partitions_subset(asset_key)),
                     {
                         AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
-                        AssetBackfillStatus.FAILED: len(failed_partitions),
-                        AssetBackfillStatus.IN_PROGRESS: len(requested_partitions) - (
-                            len(failed_partitions & requested_partitions) + len(materialized_subset)
-                        ),
+                        AssetBackfillStatus.FAILED: len(failed_subset - materialized_subset),
+                        AssetBackfillStatus.IN_PROGRESS: len(in_progress_subset),
                     },
                 )
             else:
@@ -422,7 +494,7 @@ class AssetBackfillData(NamedTuple):
 
         if all_partitions:
             target_subset = AssetGraphSubset.from_asset_keys(
-                asset_selection, asset_graph, dynamic_partitions_store
+                asset_selection, asset_graph, dynamic_partitions_store, backfill_start_time
             )
         elif partition_names is not None:
             partitioned_asset_keys = {
@@ -489,6 +561,23 @@ class AssetBackfillData(NamedTuple):
             ),
         }
         return json.dumps(storage_dict)
+
+
+def create_asset_backfill_data_from_asset_partitions(
+    asset_graph: ExternalAssetGraph,
+    asset_selection: Sequence[AssetKey],
+    partition_names: Sequence[str],
+    dynamic_partitions_store: DynamicPartitionsStore,
+) -> AssetBackfillData:
+    backfill_timestamp = pendulum.now("UTC").timestamp()
+    return AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=partition_names,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=dynamic_partitions_store,
+        all_partitions=False,
+        backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+    )
 
 
 def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) -> Sequence[str]:
@@ -629,10 +718,17 @@ def _submit_runs_and_update_backfill_in_chunks(
         instance.update_backfill(updated_backfill)
 
     if not mid_iteration_cancel_requested:
-        check.invariant(
-            submitted_partitions == asset_backfill_iteration_result.backfill_data.requested_subset,
-            "Did not submit run requests for all expected partitions",
-        )
+        if submitted_partitions != asset_backfill_iteration_result.backfill_data.requested_subset:
+            missing_partitions = list(
+                (
+                    asset_backfill_iteration_result.backfill_data.requested_subset
+                    - submitted_partitions
+                ).iterate_asset_partitions()
+            )
+            check.failed(
+                "Did not submit run requests for all expected partitions. \n\nPartitions not"
+                f" submitted: {missing_partitions}",
+            )
 
     yield backfill_data_with_submitted_runs
 
@@ -670,7 +766,7 @@ def execute_asset_backfill_iteration(
             else ""
         )
         if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
-            logger.error(
+            logger.warning(
                 f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
                 " partition in the asset graph. The backfill will resume once it is available"
                 f" again.\n{ex}. {unloadable_locations_error}"
@@ -1002,7 +1098,11 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
-        initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
+        initial_candidates.update(
+            asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
+        )
+
+        yield None
 
         next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
             event_type=DagsterEventType.ASSET_MATERIALIZATION
@@ -1056,6 +1156,7 @@ def execute_asset_backfill_iteration_inner(
             asset_partitions_to_request=visited,
             asset_graph=asset_graph,
             materialized_subset=updated_materialized_subset,
+            requested_subset=asset_backfill_data.requested_subset,
             target_subset=asset_backfill_data.target_subset,
             failed_and_downstream_subset=failed_and_downstream_subset,
             dynamic_partitions_store=instance_queryer,
@@ -1080,6 +1181,7 @@ def execute_asset_backfill_iteration_inner(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
             run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
+            dynamic_partitions_store=instance_queryer,
         )
     else:
         if not all(backfill_policy is None for backfill_policy in asset_backfill_policies):
@@ -1121,6 +1223,7 @@ def should_backfill_atomic_asset_partitions_unit(
     candidates_unit: Iterable[AssetKeyPartitionKey],
     asset_partitions_to_request: AbstractSet[AssetKeyPartitionKey],
     target_subset: AssetGraphSubset,
+    requested_subset: AssetGraphSubset,
     materialized_subset: AssetGraphSubset,
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
@@ -1135,6 +1238,7 @@ def should_backfill_atomic_asset_partitions_unit(
             candidate not in target_subset
             or candidate in failed_and_downstream_subset
             or candidate in materialized_subset
+            or candidate in requested_subset
         ):
             return False
 
@@ -1198,25 +1302,22 @@ def _get_failed_asset_partitions(
             planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
                 run_id=run.run_id
             )
-            check.invariant(
-                len(planned_asset_keys) == 1, "chunked backfill run should only have one asset key"
-            )
             completed_asset_keys = instance_queryer.get_current_materializations_for_run(
                 run_id=run.run_id
             )
             failed_asset_keys = planned_asset_keys - completed_asset_keys
 
             if failed_asset_keys:
-                asset_key = next(iter(failed_asset_keys))
                 partition_range = PartitionKeyRange(
                     start=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_START_TAG)),
                     end=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_END_TAG)),
                 )
-                result.extend(
-                    asset_graph.get_asset_partitions_in_range(
-                        asset_key, partition_range, instance_queryer
+                for asset_key in failed_asset_keys:
+                    result.extend(
+                        asset_graph.get_asset_partitions_in_range(
+                            asset_key, partition_range, instance_queryer
+                        )
                     )
-                )
         else:
             # a regular backfill run that run on a single partition
             partition_key = run.tags.get(PARTITION_NAME_TAG)

@@ -11,7 +11,7 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from .graphql_context_test_suite import (
     GraphQLContextVariant,
@@ -42,6 +42,44 @@ mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
       stack
     }
   }
+}
+"""
+
+RUNS_CANCELLATION_QUERY = """
+mutation TerminateRuns($runIds: [String!]!) {
+  terminateRuns(runIds: $runIds) {
+    __typename
+    ... on PythonError{
+      message
+    }
+    ... on TerminateRunsResult {
+      terminateRunResults {
+        ... on TerminateRunSuccess {
+            __typename
+            run {
+                runId
+            }
+        }
+        ... on RunNotFoundError {
+            __typename
+            runId
+        }
+        ... on TerminateRunFailure {
+            __typename
+            run {
+                runId
+            }
+            message
+        }
+      }
+    }
+  }
+}
+"""
+
+BULK_TERMINATION_PERMISSIONS_QUERY = """
+query canBulkTerminate {
+    canBulkTerminate
 }
 """
 
@@ -77,7 +115,7 @@ QueuedRunCoordinatorTestSuite: Any = make_graphql_context_test_suite(
 
 class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
     def test_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -108,8 +146,51 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
                 result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
             ), str(result.data)
 
+    def test_cancel_runs(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {"ops": {"loop": {"config": {"file": path}}}},
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            # just test existence
+            assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            run = graphql_context.instance.get_run_by_id(run_id)
+            assert run and run.status == DagsterRunStatus.QUEUED
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                RUNS_CANCELLATION_QUERY,
+                variables={"runIds": [run_id, "nonexistent_id"]},
+            )
+            assert result.data["terminateRuns"]["__typename"] == "TerminateRunsResult"
+            assert (
+                result.data["terminateRuns"]["terminateRunResults"][0]["__typename"]
+                == "TerminateRunSuccess"
+            )
+            assert (
+                result.data["terminateRuns"]["terminateRunResults"][1]["__typename"]
+                == "RunNotFoundError"
+            )
+            assert (
+                result.data["terminateRuns"]["terminateRunResults"][1]["runId"] == "nonexistent_id"
+            )
+
     def test_force_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -167,12 +248,40 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["terminatePipelineExecution"]["__typename"] == "UnauthorizedError"
+        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
+        assert "do not have permission" in result.data["terminatePipelineExecution"]["message"]
+
+    def test_cancel_runs_permission_failure(self, graphql_context: WorkspaceRequestContext):
+        run_id = create_run_for_test(graphql_context.instance).run_id
+        result = execute_dagster_graphql(
+            graphql_context, RUNS_CANCELLATION_QUERY, variables={"runIds": [run_id]}
+        )
+        assert not result.errors
+        assert result.data
+
+        # just test existence
+        assert result.data["terminateRuns"]["__typename"] == "TerminateRunsResult"
+        assert len(result.data["terminateRuns"]["terminateRunResults"]) == 1
+        assert (
+            result.data["terminateRuns"]["terminateRunResults"][0]["__typename"]
+            == "TerminateRunFailure"
+        )
+        assert (
+            "do not have permission"
+            in result.data["terminateRuns"]["terminateRunResults"][0]["message"]
+        )
+
+    def test_no_bulk_terminate_permission(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, BULK_TERMINATION_PERMISSIONS_QUERY)
+        assert not result.errors
+        assert result.data
+
+        assert result.data["canBulkTerminate"] is False
 
 
 class TestRunVariantTermination(RunTerminationTestSuite):
     def test_basic_termination(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -205,7 +314,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
     def test_force_termination(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -265,7 +374,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
     def test_terminate_failed(
         self, graphql_context: WorkspaceRequestContext, new_terminate_method, terminate_result
     ):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             old_terminate = graphql_context.instance.run_launcher.terminate
             graphql_context.instance.run_launcher.terminate = new_terminate_method
@@ -363,7 +472,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             )
 
     def test_backcompat_termination(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
+        selector = infer_job_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -396,3 +505,10 @@ class TestRunVariantTermination(RunTerminationTestSuite):
                 variables={"runId": run_id},
             )
             assert result.data["terminatePipelineExecution"]["run"]["runId"] == run_id
+
+    def test_has_bulk_terminate_permission(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, BULK_TERMINATION_PERMISSIONS_QUERY)
+        assert not result.errors
+        assert result.data
+
+        assert result.data["canBulkTerminate"] is True

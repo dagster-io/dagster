@@ -102,10 +102,7 @@ def validate_tags(
             str_val = None
             try:
                 str_val = seven.json.dumps(value)
-                err_reason = (
-                    'JSON encoding "{json}" of value "{val}" is not equivalent to original value'
-                    .format(json=str_val, val=value)
-                )
+                err_reason = f'JSON encoding "{str_val}" of value "{value}" is not equivalent to original value'
 
                 valid = seven.json.loads(str_val) == value
             except Exception:

@@ -32,8 +32,8 @@ export const useHourWindow = (
     [defaultValue, setHourWindow],
   );
 
-  return React.useMemo(() => [hourWindow, setHourWindowWithDefault], [
-    hourWindow,
-    setHourWindowWithDefault,
-  ]);
+  return React.useMemo(
+    () => [hourWindow, setHourWindowWithDefault],
+    [hourWindow, setHourWindowWithDefault],
+  );
 };
