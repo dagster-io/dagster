@@ -3,7 +3,11 @@ import calendar
 import pendulum
 import pytest
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
-from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
+from dagster._utils.schedules import (
+    _croniter_string_iterator,
+    cron_string_iterator,
+    reverse_cron_string_iterator,
+)
 
 
 def test_cron_iterator_always_advances():
@@ -547,9 +551,17 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
         orig_start_timestamp = to_timezone(times[i], "UTC").timestamp()
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
-        fresh_cron_iter = cron_string_iterator(
-            orig_start_timestamp, cron_string, execution_timezone, force_croniter=force_croniter
-        )
+
+        if force_croniter:
+            # Ensure that the croniter fallback would always produces the same results, even if we
+            # don't end up using it
+            fresh_cron_iter = _croniter_string_iterator(
+                orig_start_timestamp, cron_string, execution_timezone
+            )
+        else:
+            fresh_cron_iter = cron_string_iterator(
+                orig_start_timestamp, cron_string, execution_timezone
+            )
         prev_time = None
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
@@ -568,7 +580,16 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
         timestamp_interval = ((next_timestamp - 75) - orig_start_timestamp) / 100
 
         while start_timestamp < next_timestamp:
-            fresh_cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            if force_croniter:
+                # Ensure that the croniter fallback would always produces the same results, even if we
+                # don't end up using it
+                fresh_cron_iter = _croniter_string_iterator(
+                    start_timestamp, cron_string, execution_timezone
+                )
+            else:
+                fresh_cron_iter = cron_string_iterator(
+                    start_timestamp, cron_string, execution_timezone
+                )
 
             prev_time = None
             for j in range(i + 1, len(times)):
@@ -586,7 +607,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 @pytest.mark.parametrize("execution_timezone,cron_string,times", DST_PARAMS)
 @pytest.mark.parametrize(
     "force_croniter",
-    [False, True],
+    [True, False],
 )
 def test_reversed_dst_transition_advances(execution_timezone, cron_string, times, force_croniter):
     times = list(reversed(times))
@@ -595,9 +616,17 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
 
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
-        fresh_cron_iter = reverse_cron_string_iterator(
-            orig_start_timestamp, cron_string, execution_timezone, force_croniter=force_croniter
-        )
+
+        if force_croniter:
+            # Ensure that the croniter fallback would always produces the same results, even if we
+            # don't end up using it
+            fresh_cron_iter = _croniter_string_iterator(
+                orig_start_timestamp, cron_string, execution_timezone, ascending=False
+            )
+        else:
+            fresh_cron_iter = reverse_cron_string_iterator(
+                orig_start_timestamp, cron_string, execution_timezone
+            )
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
 
@@ -612,9 +641,16 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
         timestamp_interval = (orig_start_timestamp - (next_timestamp + 75)) / 100
 
         while start_timestamp > next_timestamp:
-            fresh_cron_iter = reverse_cron_string_iterator(
-                start_timestamp, cron_string, execution_timezone
-            )
+            if force_croniter:
+                # Ensure that the croniter fallback would always produces the same results, even if we
+                # don't end up using it
+                fresh_cron_iter = _croniter_string_iterator(
+                    start_timestamp, cron_string, execution_timezone, ascending=False
+                )
+            else:
+                fresh_cron_iter = reverse_cron_string_iterator(
+                    start_timestamp, cron_string, execution_timezone
+                )
 
             prev_time = None
             for j in range(i + 1, len(times)):

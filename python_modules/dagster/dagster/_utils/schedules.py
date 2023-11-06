@@ -378,9 +378,106 @@ def _find_schedule_time(
         raise Exception(f"Unexpected schedule type {schedule_type}")
 
 
-def _find_next_croniter_time(
-    cron_string, timezone_str: str, start_timestamp: float, ascending: bool
+def _get_dates_to_consider_after_ambigious_time(
+    cron_iter: CroniterShim,
+    next_date: datetime.datetime,
+    timezone_str: str,
+    repeats_every_hour: bool,
+    ascending: bool,
 ):
+    # Return a list of all times that need to be considered when the next date returned by
+    # croniter is ambigious (e.g. 2:30 AM during a fall DST transition). This is tricky because
+    # we need to make sure that we are emitting times in the correct order, so we return a sorted
+    # contiguous sequence of times that include all potentially ambigious times.
+    post_transition_time = create_pendulum_time(
+        next_date.year,
+        next_date.month,
+        next_date.day,
+        next_date.hour,
+        next_date.minute,
+        next_date.second,
+        next_date.microsecond,
+        tz=timezone_str,
+        dst_rule=pendulum.POST_TRANSITION,
+    )
+
+    dates_to_consider = [post_transition_time]
+
+    # Most schedules only need to consider the POST_TRANSITION time and can return here.
+    if not repeats_every_hour:
+        return [post_transition_time]
+
+    # hourly schedules are more complicated - they'll continue firing once an hour no
+    # matter what, including both PRE_TRANSITION and POST_TRANSITION times. So we need
+    # to make sure that every time in the ambigious timerange has both its PRE_TRANSITION
+    # and POST_TRANSITION times considered and returned.
+    pre_transition_time = create_pendulum_time(
+        next_date.year,
+        next_date.month,
+        next_date.day,
+        next_date.hour,
+        next_date.minute,
+        next_date.second,
+        next_date.microsecond,
+        tz=timezone_str,
+        dst_rule=pendulum.PRE_TRANSITION,
+    )
+    dates_to_consider.append(pre_transition_time)
+
+    # fill in any gaps between pre-transition time and post-transition time
+    curr_pre_transition_time = pre_transition_time
+    curr_post_transition_time = post_transition_time
+    while True:
+        if ascending:
+            # Time always advances because get_next() is called, so we will eventually break
+            # Stop once the current PRE_TRANSITION time exceeds the original POST_TRANSITION time
+            # (so we know we have moved forward across the whole range)
+            if curr_pre_transition_time.timestamp() >= post_transition_time.timestamp():
+                break
+            next_date = cron_iter.get_next(datetime.datetime)
+        else:
+            # Time always decreases because get_prev() is called, so we will eventually break
+            # Stop once the current POST_TRANSITION time has gone past the original PRE_TRANSITION
+            # time (so we know we have moved backward across the whole range)
+            if curr_post_transition_time.timestamp() <= pre_transition_time.timestamp():
+                break
+            next_date = cron_iter.get_prev(datetime.datetime)
+
+        # Make sure we add both the PRE_TRANSITION and POST_TRANSITION times to the
+        # list of dates to consider so every time emitted by the
+        # croniter instance is considered and returned from the calling iterator
+        curr_pre_transition_time = create_pendulum_time(
+            next_date.year,
+            next_date.month,
+            next_date.day,
+            next_date.hour,
+            next_date.minute,
+            next_date.second,
+            next_date.microsecond,
+            tz=timezone_str,
+            dst_rule=pendulum.PRE_TRANSITION,
+        )
+        dates_to_consider.append(curr_pre_transition_time)
+
+        curr_post_transition_time = create_pendulum_time(
+            next_date.year,
+            next_date.month,
+            next_date.day,
+            next_date.hour,
+            next_date.minute,
+            next_date.second,
+            next_date.microsecond,
+            tz=timezone_str,
+            dst_rule=pendulum.POST_TRANSITION,
+        )
+        dates_to_consider.append(curr_post_transition_time)
+
+    return sorted(dates_to_consider, key=lambda d: d.timestamp())
+
+
+def _timezone_aware_cron_iter(
+    cron_string, timezone_str: str, start_timestamp: float, ascending: bool
+) -> Iterator[PendulumDateTime]:
     """Use croniter to determine the next timestamp matching the passed in cron string
     that is past the passed in UTC timestamp. croniter can only be trusted to compute
     non-timezone aware cron intervals, so we first figure out the time corresponding to the
@@ -402,7 +499,9 @@ def _find_next_croniter_time(
     )
 
     # Go back an hour to ensure that we consider the full set of possible candidates (otherwise
-    # we might fail to properly consider a time that happens twice during a fall DST transition)
+    # we might fail to properly consider a time that happens twice during a fall DST transition).
+    # 1 hour is sufficient because that's the maximum amount of time that can be offset during a
+    # DST transition.
     if ascending:
         naive_time = naive_time - datetime.timedelta(hours=1)
     else:
@@ -417,7 +516,27 @@ def _find_next_croniter_time(
     cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
     repeats_every_hour = len(cron_parts[1]) == 1 and cron_parts[1][0] == "*"
 
+    # Chronological order of dates to return
+    dates_to_consider = []
+
     while True:
+        # Work through everything currently in dates_to_consider
+        if ascending:
+            for next_date_with_tz in dates_to_consider:
+                next_timestamp = next_date_with_tz.timestamp()
+                if next_timestamp > start_timestamp:
+                    start_timestamp = next_timestamp
+                    yield next_date_with_tz
+        else:
+            for next_date_with_tz in reversed(dates_to_consider):
+                next_timestamp = next_date_with_tz.timestamp()
+                if next_timestamp < start_timestamp:
+                    start_timestamp = next_timestamp
+                    yield next_date_with_tz
+
+        # Clear the list and generate new candidates using croniter
+        dates_to_consider = []
+
         if ascending:
             next_date = cron_iter.get_next(datetime.datetime)
         else:
@@ -458,96 +577,13 @@ def _find_next_croniter_time(
                     )
                 ]
         except pendulum.tz.exceptions.AmbiguousTime:  # type: ignore
-            # for a time that exists twice (e.g. 2:30 AM during a fall DST transition), most
-            # schedules pick the latter one (so that e.g. a daily schedule doesn't fire twice)
-            post_transition_time = create_pendulum_time(
-                next_date.year,
-                next_date.month,
-                next_date.day,
-                next_date.hour,
-                next_date.minute,
-                next_date.second,
-                next_date.microsecond,
-                tz=timezone_str,
-                dst_rule=pendulum.POST_TRANSITION,
+            dates_to_consider = _get_dates_to_consider_after_ambigious_time(
+                cron_iter=cron_iter,
+                next_date=next_date,
+                timezone_str=timezone_str,
+                repeats_every_hour=repeats_every_hour,
+                ascending=ascending,
             )
-
-            dates_to_consider = [post_transition_time]
-
-            # hourly schedules are more complicated - they'll continue firing once an hour no
-            # matter what. So we need to be careful here to make sure that we don't inadvertently
-            # skip times when we switch from a datetime without a timezone to a datetime with a
-            # timezone. We consider both times, as well as any times that match the cron string
-            # between those times, to make sure nothing gets skipped
-            if repeats_every_hour:
-                pre_transition_time = create_pendulum_time(
-                    next_date.year,
-                    next_date.month,
-                    next_date.day,
-                    next_date.hour,
-                    next_date.minute,
-                    next_date.second,
-                    next_date.microsecond,
-                    tz=timezone_str,
-                    dst_rule=pendulum.PRE_TRANSITION,
-                )
-                dates_to_consider.append(pre_transition_time)
-
-                # fill in any gaps between pre-transition time and post-transition time
-                curr_pre_transition_time = pre_transition_time
-                curr_post_transition_time = post_transition_time
-                while True:
-                    if ascending:
-                        if curr_pre_transition_time.timestamp() >= post_transition_time.timestamp():
-                            break
-                        next_date = cron_iter.get_next(datetime.datetime)
-                    else:
-                        if curr_post_transition_time.timestamp() <= pre_transition_time.timestamp():
-                            break
-                        next_date = cron_iter.get_prev(datetime.datetime)
-
-                    # Make sure we add both the PRE_TRANSITION and POST_TRANSITION times to the
-                    # list of dates to consider so that we consider every time emitted by the
-                    # croniter instance
-                    curr_pre_transition_time = create_pendulum_time(
-                        next_date.year,
-                        next_date.month,
-                        next_date.day,
-                        next_date.hour,
-                        next_date.minute,
-                        next_date.second,
-                        next_date.microsecond,
-                        tz=timezone_str,
-                        dst_rule=pendulum.PRE_TRANSITION,
-                    )
-                    dates_to_consider.append(curr_pre_transition_time)
-
-                    curr_post_transition_time = create_pendulum_time(
-                        next_date.year,
-                        next_date.month,
-                        next_date.day,
-                        next_date.hour,
-                        next_date.minute,
-                        next_date.second,
-                        next_date.microsecond,
-                        tz=timezone_str,
-                        dst_rule=pendulum.POST_TRANSITION,
-                    )
-                    dates_to_consider.append(curr_post_transition_time)
-
-                dates_to_consider = sorted(dates_to_consider, key=lambda d: d.timestamp())
-
-        # dates_to_consider is in chronological order - return the first
-        # one that is past the passed in start timestamp
-        # otherwise, continue on to the next croniter iteration
-        if ascending:
-            for next_date_with_tz in dates_to_consider:
-                if next_date_with_tz.timestamp() > start_timestamp:
-                    return next_date_with_tz
-        else:
-            for next_date_with_tz in reversed(dates_to_consider):
-                if next_date_with_tz.timestamp() < start_timestamp:
-                    return next_date_with_tz
 
 
 def cron_string_iterator(
@@ -556,7 +592,6 @@ def cron_string_iterator(
     execution_timezone: Optional[str],
     ascending: bool = True,
     start_offset: int = 0,
-    force_croniter: bool = False,
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
     # leap day special casing
@@ -622,7 +657,7 @@ def cron_string_iterator(
     if is_numeric[4]:
         expected_day_of_week = int(cron_parts[4][0])
 
-    if known_schedule_type and not force_croniter:
+    if known_schedule_type:
         start_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
 
         if start_offset == 0 and _exact_match(
@@ -684,46 +719,46 @@ def cron_string_iterator(
 
             yield next_date
     else:
-        start_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
-
-        next_date = _find_next_croniter_time(
-            cron_string, timezone_str, start_timestamp, ascending=not ascending
+        yield from _croniter_string_iterator(
+            start_timestamp, cron_string, timezone_str, ascending, start_offset
         )
 
-        check.invariant(start_offset <= 0)
-        for _ in range(-start_offset):
-            next_date = _find_next_croniter_time(
-                cron_string, timezone_str, next_date.timestamp(), ascending=not ascending
-            )
 
-        while True:
-            next_date = _find_next_croniter_time(
-                cron_string, timezone_str, next_date.timestamp(), ascending=ascending
-            )
+def _croniter_string_iterator(
+    start_timestamp: float,
+    cron_string: str,
+    timezone_str: str,
+    ascending: bool = True,
+    start_offset: int = 0,
+):
+    reverse_cron = _timezone_aware_cron_iter(
+        cron_string, timezone_str, start_timestamp, ascending=not ascending
+    )
+    next_date = None
+    check.invariant(start_offset <= 0)
+    for _ in range(-start_offset + 1):
+        next_date = next(reverse_cron)
 
-            if start_offset == 0:
-                if ascending:
-                    # Guard against _find_schedule_time returning unexpected results
-                    check.invariant(next_date.timestamp() >= start_timestamp)
-                else:
-                    check.invariant(next_date.timestamp() <= start_timestamp)
+    forward_cron = _timezone_aware_cron_iter(
+        cron_string, timezone_str, check.not_none(next_date).timestamp(), ascending=ascending
+    )
+    while True:
+        next_date = next(forward_cron)
 
-            yield next_date
+        if start_offset == 0:
+            if ascending:
+                # Guard against _find_schedule_time returning unexpected results
+                check.invariant(next_date.timestamp() >= start_timestamp)
+            else:
+                check.invariant(next_date.timestamp() <= start_timestamp)
+
+        yield next_date
 
 
 def reverse_cron_string_iterator(
-    end_timestamp: float,
-    cron_string: str,
-    execution_timezone: Optional[str],
-    force_croniter: bool = False,
+    end_timestamp: float, cron_string: str, execution_timezone: Optional[str]
 ) -> Iterator[datetime.datetime]:
-    yield from cron_string_iterator(
-        end_timestamp,
-        cron_string,
-        execution_timezone,
-        ascending=False,
-        force_croniter=force_croniter,
-    )
+    yield from cron_string_iterator(end_timestamp, cron_string, execution_timezone, ascending=False)
 
 
 def schedule_execution_time_iterator(
