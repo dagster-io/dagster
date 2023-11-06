@@ -1,12 +1,12 @@
+import asyncio
+
 import pytest
 from dagster import (
     ConfigurableResource,
     asset,
     op,
 )
-from dagster._core.errors import (
-    DagsterInvalidInvocationError,
-)
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.execution.context.invocation import build_op_context
 
 
@@ -411,3 +411,42 @@ def test_direct_asset_invocation_many_resource_args_context() -> None:
     )
     assert executed["yes"]
     executed.clear()
+
+
+def test_direct_invocation_output_metadata():
+    @asset
+    def my_asset(context):
+        context.add_output_metadata({"foo": "bar"})
+
+    @asset
+    def my_other_asset(context):
+        context.add_output_metadata({"baz": "qux"})
+
+    ctx = build_op_context()
+
+    my_asset(ctx)
+    assert ctx.get_output_metadata("result") == {"foo": "bar"}
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="attempted to log metadata for output 'result' more than once",
+    ):
+        my_other_asset(ctx)
+
+
+def test_async_assets_with_shared_context():
+    @asset
+    async def async_asset_one(context):
+        assert context.asset_key.to_user_string() == "async_asset_one"
+        await asyncio.sleep(0.01)
+        return "one"
+
+    @asset
+    async def async_asset_two(context):
+        assert context.asset_key.to_user_string() == "async_asset_two"
+        await asyncio.sleep(0.01)
+        return "two"
+
+    ctx = build_op_context()
+    assert asyncio.run(async_asset_one(ctx)) == "one"
+    assert asyncio.run(async_asset_two(ctx)) == "two"
