@@ -67,13 +67,6 @@ from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import do_run
-from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.exotic_partition_mapping_scenarios import (
-    multipartitioned_self_dependency,
-    one_asset_self_dependency,
-    root_assets_different_partitions_same_downstream,
-    two_assets_in_sequence_fan_in_partitions,
-    two_assets_in_sequence_fan_out_partitions,
-)
 from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.partition_scenarios import (
     hourly_to_daily_partitions,
     non_partitioned_after_partitioned,
@@ -84,6 +77,11 @@ from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.partition_
     two_assets_in_sequence_two_partitions,
     two_dynamic_assets,
     unpartitioned_after_dynamic_asset,
+)
+from dagster_tests.definitions_tests.auto_materialize_tests.updated_scenarios.asset_daemon_scenario_states import (
+    one_asset_self_dependency,
+    two_assets_in_sequence_fan_in_partitions,
+    two_assets_in_sequence_fan_out_partitions,
 )
 
 
@@ -123,12 +121,15 @@ scenarios = {
         },
     ),
     "two_assets_in_sequence_two_partitions": scenario(two_assets_in_sequence_two_partitions),
-    "two_assets_in_sequence_fan_in_partitions": scenario(two_assets_in_sequence_fan_in_partitions),
+    "two_assets_in_sequence_fan_in_partitions": scenario(
+        two_assets_in_sequence_fan_in_partitions.assets
+    ),
     "two_assets_in_sequence_fan_out_partitions": scenario(
-        two_assets_in_sequence_fan_out_partitions
+        two_assets_in_sequence_fan_out_partitions.assets
     ),
     "one_asset_self_dependency": scenario(
-        one_asset_self_dependency, create_pendulum_time(year=2020, month=1, day=7, hour=4)
+        one_asset_self_dependency.with_asset_properties().assets,
+        create_pendulum_time(year=2020, month=1, day=7, hour=4),
     ),
     "non_partitioned_after_partitioned": scenario(
         non_partitioned_after_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
@@ -168,27 +169,27 @@ scenarios = {
     [
         (
             "two_assets_in_sequence_fan_in_partitions",
-            ["a_1", "a_2"],
-            [("asset1", "a_1"), ("asset1", "a_2"), ("asset2", "a")],
+            ["1", "2"],
+            [("A", "1"), ("A", "2"), ("B", "1")],
         ),
         (
             "two_assets_in_sequence_fan_out_partitions",
-            ["a"],
-            [("asset1", "a"), ("asset2", "a_1"), ("asset2", "a_2"), ("asset2", "a_3")],
+            ["1"],
+            [("A", "1"), ("B", "1"), ("B", "2"), ("B", "3")],
         ),
         (
             "non_partitioned_after_partitioned",
             ["2022-01-01", "2022-01-02"],
-            [("asset1", "2022-01-01"), ("asset1", "2022-01-02"), ("asset2", None)],
+            [("A", "2022-01-01"), ("A", "2022-01-02"), ("B", None)],
         ),
         (
             "partitioned_after_non_partitioned",
             ["2022-01-01", "2022-01-02"],
             [
-                ("asset1", None),
-                ("asset2", None),
-                ("asset3", "2022-01-01"),
-                ("asset3", "2022-01-02"),
+                ("A", None),
+                ("B", None),
+                ("C", "2022-01-01"),
+                ("C", "2022-01-02"),
             ],
         ),
     ],

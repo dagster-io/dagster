@@ -7,7 +7,6 @@ from dagster import (
     DimensionPartitionMapping,
     IdentityPartitionMapping,
     MultiPartitionMapping,
-    StaticPartitionMapping,
     TimeWindowPartitionMapping,
 )
 from dagster._core.definitions.auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
@@ -29,15 +28,17 @@ from .asset_daemon_scenario_states import (
     hourly_to_daily,
     one_asset,
     one_asset_depends_on_two,
+    one_asset_self_dependency,
     one_partitions_def,
     self_partition_mapping,
     static_multipartitions_def,
     three_assets_in_sequence,
-    three_partitions_def,
     time_multipartitions_def,
     time_partitions_start_datetime,
     time_partitions_start_str,
     two_assets_in_sequence,
+    two_assets_in_sequence_fan_in_partitions,
+    two_assets_in_sequence_fan_out_partitions,
     two_partitions_def,
 )
 
@@ -395,19 +396,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_in_sequence_fan_in_partitions",
-        initial_state=two_assets_in_sequence.with_asset_properties(
-            keys=["A"], partitions_def=three_partitions_def
-        )
-        .with_asset_properties(
-            keys=["B"],
-            partitions_def=one_partitions_def,
-            deps=[
-                AssetDep(
-                    "A", partition_mapping=StaticPartitionMapping({"1": "1", "2": "1", "3": "1"})
-                )
-            ],
-        )
-        .with_all_eager(),
+        initial_state=two_assets_in_sequence_fan_in_partitions.with_all_eager(),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"], partition_key="3"))
         .with_runs(run_request(["A"], partition_key="2"))
@@ -428,15 +417,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="two_assets_in_sequence_fan_out_partitions",
-        initial_state=two_assets_in_sequence.with_asset_properties(
-            keys=["A"], partitions_def=one_partitions_def
-        )
-        .with_asset_properties(
-            keys=["B"],
-            partitions_def=three_partitions_def,
-            deps=[AssetDep("A", partition_mapping=StaticPartitionMapping({"1": ["1", "2", "3"]}))],
-        )
-        .with_all_eager(100),
+        initial_state=two_assets_in_sequence_fan_out_partitions.with_all_eager(100),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"], partition_key="1"))
         .with_not_started_runs()
@@ -458,11 +439,7 @@ partition_scenarios = [
     ),
     AssetDaemonScenario(
         id="one_asset_self_dependency",
-        initial_state=one_asset.with_asset_properties(
-            partitions_def=hourly_partitions_def,
-            deps=[AssetDep("A", partition_mapping=self_partition_mapping)],
-        )
-        .with_all_eager()
+        initial_state=one_asset_self_dependency.with_all_eager()
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(hours=2),
         execution_fn=lambda state: state.evaluate_tick()
