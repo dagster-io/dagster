@@ -4,8 +4,10 @@ from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
-    AutoMaterializeRuleEvaluation,
     DiscardOnMaxMaterializationsExceededRule,
+)
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )

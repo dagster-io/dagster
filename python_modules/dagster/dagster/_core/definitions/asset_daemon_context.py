@@ -39,11 +39,13 @@ from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_
 from .asset_daemon_cursor import AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import (
-    AutoMaterializeAssetEvaluation,
     AutoMaterializeRule,
-    AutoMaterializeRuleEvaluation,
     DiscardOnMaxMaterializationsExceededRule,
     RuleEvaluationContext,
+)
+from .auto_materialize_rule_evaluation import (
+    AutoMaterializeAssetEvaluation,
+    AutoMaterializeRuleEvaluation,
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key

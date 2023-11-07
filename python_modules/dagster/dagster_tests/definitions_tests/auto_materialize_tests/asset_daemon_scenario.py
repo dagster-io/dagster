@@ -34,9 +34,9 @@ from dagster._core.definitions.asset_daemon_context import (
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
-    AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
