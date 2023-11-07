@@ -5,6 +5,7 @@ from typing import Sequence
 import dagster._check as check
 import pytest
 from dagster import AssetKey, DagsterInstance, RunRequest
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import cleanup_test_instance
@@ -153,6 +154,125 @@ def test_error_loop_before_cursor_written(crash_location: str) -> None:
 
         runs = instance.get_runs()
         assert len(runs) == 3
+
+
+@pytest.mark.parametrize(
+    "crash_location",
+    [
+        "RUN_CREATED",  # exception after creating any run
+        "RUN_SUBMITTED",  # exception after submitting any run
+        "EXECUTION_PLAN_CREATED_1",  # exception after running code for 2nd run
+        "RUN_CREATED_1",  # exception after creating 2nd run
+        "RUN_SUBMITTED_1",  # exception after submitting 2nd run
+        "RUN_IDS_ADDED_TO_EVALUATIONS",  # exception after updating asset evaluations
+    ],
+)
+def test_error_loop_after_cursor_written(crash_location: str) -> None:
+    scenario = simple_daemon_scenario
+    current_time = scenario.initial_state.current_time
+    with get_daemon_instance() as instance:
+        last_cursor = None
+
+        # User code error retries but does not increment the retry count
+        debug_crash_flags = {crash_location: DagsterUserCodeUnreachableError("WHERE IS THE CODE")}
+
+        with pytest.raises(Exception, match="WHERE IS THE CODE"):
+            scenario.evaluate_daemon(instance, debug_crash_flags=debug_crash_flags)
+
+        ticks = _get_asset_daemon_ticks(instance)
+
+        assert len(ticks) == 1
+        assert ticks[-1].status == TickStatus.FAILURE
+        assert ticks[-1].timestamp == current_time.timestamp()
+        assert ticks[-1].tick_data.end_timestamp == current_time.timestamp()
+        assert ticks[-1].tick_data.auto_materialize_evaluation_id == 1
+
+        # failure count does not increase since it was a user code error
+        assert ticks[-1].tick_data.failure_count == 0
+
+        assert "WHERE IS THE CODE" in str(ticks[-1].tick_data.error)
+        assert "Auto-materialization will resume once the code server is available" in str(
+            ticks[-1].tick_data.error
+        )
+
+        # Run requests are still on the tick since they were stored there before the
+        # failure happened during run submission
+        _assert_run_requests_match(
+            simple_daemon_scenario_expected_run_requests, ticks[-1].tick_data.run_requests or []
+        )
+
+        cursor = _get_raw_cursor(instance)
+        # Same cursor due to the retry
+        assert cursor is not None
+        last_cursor = cursor
+
+        for trial_num in range(3):
+            scenario = scenario.with_initial_time_advanced(seconds=15)
+            current_time = scenario.initial_state.current_time
+            debug_crash_flags = {crash_location: Exception(f"Oops {trial_num}")}
+
+            with pytest.raises(Exception, match=f"Oops {trial_num}"):
+                scenario.evaluate_daemon(instance, debug_crash_flags=debug_crash_flags)
+
+            ticks = _get_asset_daemon_ticks(instance)
+
+            assert len(ticks) == trial_num + 2
+            assert ticks[-1].status == TickStatus.FAILURE
+            assert ticks[-1].timestamp == current_time.timestamp()
+            assert ticks[-1].tick_data.end_timestamp == current_time.timestamp()
+            assert ticks[-1].tick_data.auto_materialize_evaluation_id == 1
+
+            # failure count only increases if the cursor was written - otherwise
+            # each tick is considered a brand new retry
+            assert ticks[-1].tick_data.failure_count == trial_num + 1
+
+            assert f"Oops {trial_num}" in str(ticks[-1].tick_data.error)
+
+            # Run requests are still on the tick since they were stored there before the
+            # failure happened during run submission
+            _assert_run_requests_match(
+                simple_daemon_scenario_expected_run_requests, ticks[-1].tick_data.run_requests or []
+            )
+
+            # Same cursor due to the retry
+            retry_cursor = _get_raw_cursor(instance)
+            assert retry_cursor == last_cursor
+
+        # Next tick moves on to use the new cursor / evaluation ID since we have passed the maximum
+        # number of retries
+        scenario = scenario.with_initial_time_advanced(seconds=45)
+        current_time = scenario.initial_state.current_time
+        debug_crash_flags = {"RUN_IDS_ADDED_TO_EVALUATIONS": Exception("Oops new tick")}
+        with pytest.raises(Exception, match="Oops new tick"):
+            scenario.evaluate_daemon(instance, debug_crash_flags=debug_crash_flags)
+
+        ticks = _get_asset_daemon_ticks(instance)
+        print(ticks)
+        assert len(ticks) == 5
+        assert ticks[-1].status == TickStatus.FAILURE
+        assert ticks[-1].timestamp == current_time.timestamp()
+        assert ticks[-1].tick_data.end_timestamp == current_time.timestamp()
+        assert ticks[-1].tick_data.auto_materialize_evaluation_id == 2  # advances
+
+        assert "Oops new tick" in str(ticks[-1].tick_data.error)
+
+        assert ticks[-1].tick_data.failure_count == 1  # starts over
+
+        # Cursor has moved on
+        moved_on_cursor = _get_raw_cursor(instance)
+        assert moved_on_cursor != last_cursor
+
+        scenario = scenario.with_initial_time_advanced(seconds=45)
+        current_time = scenario.initial_state.current_time
+        # Next successful tick recovers
+        scenario.evaluate_daemon(instance, debug_crash_flags=debug_crash_flags)
+
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 6
+        assert ticks[-1].status != TickStatus.FAILURE
+        assert ticks[-1].timestamp == current_time.timestamp()
+        assert ticks[-1].tick_data.end_timestamp == current_time.timestamp()
+        assert ticks[-1].tick_data.auto_materialize_evaluation_id == 2  # finishes
 
 
 @pytest.mark.parametrize(

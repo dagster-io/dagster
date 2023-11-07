@@ -154,14 +154,14 @@ class AssetRuleEvaluationSpec(NamedTuple):
         )
 
 
-class AssetSpecWithPartitionsDef(
+class ExtendedAssetSpec(
     namedtuple(
         "AssetSpecWithPartitionsDef",
-        AssetSpec._fields + ("partitions_def",),
+        AssetSpec._fields + ("partitions_def", "config_schema"),
         defaults=(None,) * (1 + len(AssetSpec._fields)),
     )
 ):
-    ...
+    """An extension to the AssetSpec class that allows specifying additional fields."""
 
 
 class AssetDaemonScenarioState(NamedTuple):
@@ -178,7 +178,7 @@ class AssetDaemonScenarioState(NamedTuple):
         current_time (datetime): The current time of the scenario.
     """
 
-    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
+    asset_specs: Sequence[Union[AssetSpec, ExtendedAssetSpec]]
     current_time: datetime.datetime = pendulum.now()
     run_requests: Sequence[RunRequest] = []
     serialized_cursor: str = AssetDaemonCursor.empty().serialize()
@@ -212,6 +212,7 @@ class AssetDaemonScenarioState(NamedTuple):
             "auto_materialize_policy",
             "freshness_policy",
             "partitions_def",
+            "config_schema",
         }
         for spec in self.asset_specs:
             assets.append(
@@ -237,11 +238,9 @@ class AssetDaemonScenarioState(NamedTuple):
         new_asset_specs = []
         for spec in self.asset_specs:
             if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
-                if "partitions_def" in kwargs:
+                if "partitions_def" in kwargs or "config_schema" in kwargs:
                     # partitions_def is not a field on AssetSpec, so we need to do this hack
-                    new_asset_specs.append(
-                        AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
-                    )
+                    new_asset_specs.append(ExtendedAssetSpec(**{**spec._asdict(), **kwargs}))
                 else:
                     new_asset_specs.append(spec._replace(**kwargs))
             else:
