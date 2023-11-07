@@ -451,6 +451,44 @@ def test_run_status_sensor_invocation_resources() -> None:
     status_sensor_no_context(context)
 
 
+def test_run_status_sensor_invocation_resources_direct() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor(context, my_resource: MyResource):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert my_resource.a_str == "bar"
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor_no_context(my_resource: MyResource):
+        assert my_resource.a_str == "bar"
+
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    )
+
+    status_sensor(context, my_resource=MyResource(a_str="bar"))
+    status_sensor_no_context(context, my_resource=MyResource(a_str="bar"))
+
+
 def test_run_failure_sensor_invocation_resources() -> None:
     class MyResource(ConfigurableResource):
         a_str: str
