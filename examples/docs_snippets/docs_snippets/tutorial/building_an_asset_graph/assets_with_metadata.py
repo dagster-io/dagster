@@ -10,20 +10,13 @@ from io import BytesIO
 
 import matplotlib.pyplot as plt
 
-from dagster import (
-    AssetExecutionContext,
-    MetadataValue,
-    asset,
-    get_dagster_logger,
-)
+from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult
 
 # Add the imports above to the top of `assets.py`
 
 
 @asset(deps=[topstory_ids])
-def topstories(context: AssetExecutionContext) -> None:
-    logger = get_dagster_logger()
-
+def topstories(context: AssetExecutionContext) -> MaterializeResult:
     with open("data/topstory_ids.json", "r") as f:
         topstory_ids = json.load(f)
 
@@ -35,12 +28,12 @@ def topstories(context: AssetExecutionContext) -> None:
         results.append(item)
 
         if len(results) % 20 == 0:
-            logger.info(f"Got {len(results)} items so far.")
+            context.log.info(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
     df.to_csv("data/topstories.csv")
 
-    context.add_output_metadata(
+    return MaterializeResult(
         metadata={
             "num_records": len(df),  # Metadata can be any key-value pair
             "preview": MetadataValue.md(df.head().to_markdown()),
@@ -54,7 +47,7 @@ def topstories(context: AssetExecutionContext) -> None:
 
 # start_most_frequent_words_asset_with_metadata
 @asset(deps=[topstories])
-def most_frequent_words(context: AssetExecutionContext) -> None:
+def most_frequent_words() -> MaterializeResult:
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
 
     topstories = pd.read_csv("data/topstories.csv")
@@ -93,7 +86,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
         json.dump(top_words, f)
 
     # Attach the Markdown content as metadata to the asset
-    context.add_output_metadata(metadata={"plot": MetadataValue.md(md_content)})
+    return MaterializeResult(metadata={"plot": MetadataValue.md(md_content)})
 
 
 # end_most_frequent_words_asset_with_metadata
