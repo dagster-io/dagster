@@ -9,6 +9,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -73,9 +74,9 @@ def get_code_location_origin(
     """Hacky method to allow us to point a code location at a module-scoped attribute, even though
     the attribute is not defined until the scenario is run.
     """
-    attribute_name = (
-        f"_asset_daemon_target_{hashlib.md5(str(scenario_state.asset_specs).encode()).hexdigest()}"
-    )
+    # some of the properties of the asset specs are sets, which can be in any order, so we just sort
+    # the string representation as a hacky workaround
+    attribute_name = f"_asset_daemon_target_{hashlib.md5(str(sorted(str(scenario_state.asset_specs))).encode()).hexdigest()}"
     globals()[attribute_name] = Definitions(
         assets=scenario_state.assets, executor=in_process_executor
     )
@@ -183,9 +184,10 @@ class AssetDaemonScenarioState(NamedTuple):
     serialized_cursor: str = AssetDaemonCursor.empty().serialize()
     evaluations: Sequence[AutoMaterializeAssetEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
-    # this is set by the scenario runner
+    # these are set by the scenario runner
     scenario_instance: Optional[DagsterInstance] = None
     is_daemon: bool = False
+    debug_crash_flags: Optional[Mapping[str, Any]] = None
 
     @property
     def instance(self) -> DagsterInstance:
@@ -255,8 +257,10 @@ class AssetDaemonScenarioState(NamedTuple):
             )
         )
 
-    def with_current_time(self, time: str) -> "AssetDaemonScenarioState":
-        return self._replace(current_time=pendulum.parse(time))
+    def with_current_time(self, time: Union[str, datetime.datetime]) -> "AssetDaemonScenarioState":
+        if isinstance(time, str):
+            time = pendulum.parse(time)
+        return self._replace(current_time=time)
 
     def with_current_time_advanced(self, **kwargs) -> "AssetDaemonScenarioState":
         # hacky support for adding years
@@ -355,7 +359,7 @@ class AssetDaemonScenarioState(NamedTuple):
             list(
                 AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
                     workspace_context,
-                    {},
+                    self.debug_crash_flags or {},
                 )
             )
             new_cursor = AssetDaemonCursor.from_serialized(
@@ -563,8 +567,16 @@ class AssetDaemonScenario(NamedTuple):
             self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral())
         )
 
-    def evaluate_daemon(self, instance: DagsterInstance) -> "AssetDaemonScenarioState":
+    def evaluate_daemon(
+        self, instance: DagsterInstance, debug_crash_flags: Optional[Mapping[str, Any]] = None
+    ) -> "AssetDaemonScenarioState":
         self.initial_state.logger.setLevel(logging.DEBUG)
         return self.execution_fn(
-            self.initial_state._replace(scenario_instance=instance, is_daemon=True)
+            self.initial_state._replace(
+                scenario_instance=instance, is_daemon=True, debug_crash_flags=debug_crash_flags
+            )
         )
+
+    def with_initial_time_advanced(self, **kwargs) -> "AssetDaemonScenario":
+        """Returns a copy of this scenario with the initial time advanced by the given kwargs."""
+        return self._replace(initial_state=self.initial_state.with_current_time_advanced(**kwargs))

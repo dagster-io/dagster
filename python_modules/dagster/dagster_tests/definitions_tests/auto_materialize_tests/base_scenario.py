@@ -1,4 +1,3 @@
-import contextlib
 import datetime
 import itertools
 import json
@@ -19,7 +18,6 @@ from typing import (
     Union,
 )
 
-import dagster._check as check
 import mock
 import pendulum
 import pytest
@@ -78,8 +76,6 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._daemon.asset_daemon import AssetDaemon
-from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
 class RunSpec(NamedTuple):
@@ -430,106 +426,6 @@ class AssetReconciliationScenario(
             assert base_job is not None
 
         return run_requests, cursor, evaluations
-
-    def do_daemon_scenario(
-        self,
-        instance,
-        scenario_name,
-        debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
-    ):
-        assert bool(self.assets) != bool(
-            self.code_locations
-        ), "Must specify either assets or code_locations"
-
-        assert (
-            not self.active_backfill_targets
-        ), "setting active_backfill_targets not supported for daemon tests"
-
-        test_time = self.current_time or pendulum.now()
-
-        with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
-            if self.cursor_from is not None:
-                self.cursor_from.do_daemon_scenario(
-                    instance,
-                    scenario_name=scenario_name,
-                )
-
-        start = datetime.datetime.now()
-
-        def test_time_fn():
-            return (test_time + (datetime.datetime.now() - start)).timestamp()
-
-        for run in self.unevaluated_runs:
-            if self.between_runs_delta is not None:
-                test_time += self.between_runs_delta
-
-            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
-                assert not run.is_observation, "Observations not supported for daemon tests"
-                if self.assets:
-                    do_run(
-                        asset_keys=run.asset_keys,
-                        partition_key=run.partition_key,
-                        all_assets=self.assets,
-                        instance=instance,
-                        failed_asset_keys=run.failed_asset_keys,
-                    )
-                else:
-                    all_assets = [
-                        asset
-                        for assets in check.not_none(self.code_locations).values()
-                        for asset in assets
-                    ]
-                    do_run(
-                        asset_keys=run.asset_keys,
-                        partition_key=run.partition_key,
-                        all_assets=all_assets,  # This isn't quite right, it should be filtered to just the assets for the location
-                        instance=instance,
-                        failed_asset_keys=run.failed_asset_keys,
-                    )
-
-        if self.evaluation_delta is not None:
-            test_time += self.evaluation_delta
-        with pendulum.test(test_time):
-            assert scenario_name is not None, "scenario_name must be provided for daemon runs"
-
-            if self.code_locations:
-                target = InProcessTestWorkspaceLoadTarget(
-                    [
-                        self._get_code_location_origin(scenario_name, location_name)
-                        for location_name in self.code_locations.keys()
-                    ]
-                )
-            else:
-                target = InProcessTestWorkspaceLoadTarget(
-                    self._get_code_location_origin(scenario_name)
-                )
-
-            with create_test_daemon_workspace_context(
-                workspace_load_target=target,
-                instance=instance,
-            ) as workspace_context:
-                workspace = workspace_context.create_request_context()
-                assert (
-                    workspace.get_code_location_error("test_location") is None
-                ), workspace.get_code_location_error("test_location")
-
-                try:
-                    list(
-                        AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
-                            workspace_context, debug_crash_flags or {}
-                        )
-                    )
-
-                    if self.expected_error_message:
-                        raise Exception(
-                            f"Failed to raise expected error {self.expected_error_message}"
-                        )
-
-                except Exception:
-                    if not self.expected_error_message:
-                        raise
-
-                    assert self.expected_error_message in str(sys.exc_info())
 
 
 def do_run(
