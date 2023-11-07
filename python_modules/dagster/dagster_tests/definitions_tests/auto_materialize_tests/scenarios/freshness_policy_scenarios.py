@@ -5,8 +5,8 @@ from dagster import (
     DailyPartitionsDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.auto_materialize_rule import (
-    AutoMaterializeRule,
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
     TextRuleEvaluationData,
 )

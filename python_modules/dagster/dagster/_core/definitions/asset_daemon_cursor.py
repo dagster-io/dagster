@@ -16,7 +16,9 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeAssetEvaluation,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
