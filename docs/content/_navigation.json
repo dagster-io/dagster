@@ -877,6 +877,11 @@
             ]
           },
           {
+            "title": "Dagster Pipes + Databricks",
+            "path": "/guides/dagster-pipes/databricks"
+
+          },
+          {
             "title": "Details and customization",
             "path": "/guides/dagster-pipes/dagster-pipes-details-and-customization"
           }
