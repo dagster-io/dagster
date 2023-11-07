@@ -192,7 +192,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             <Icon size={24} name="zoom_in" />
           </IconButton>
           <Box
-            style={{width: 34}}
+            style={{width: 32}}
             padding={{vertical: 12}}
             background={Colors.White}
             data-zoom-control={true}
@@ -241,7 +241,7 @@ const IconButton = styled.button`
   background: ${Colors.White};
   border: 1px solid ${Colors.Gray300};
   cursor: pointer;
-  padding: 4px;
+  padding: 3px;
   position: relative;
 
   :focus {
