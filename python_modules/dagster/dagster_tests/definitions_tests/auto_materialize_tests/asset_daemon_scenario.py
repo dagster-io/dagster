@@ -426,8 +426,6 @@ class AssetDaemonScenarioState(NamedTuple):
             else TickStatus.SKIPPED
         )
 
-        print(latest_tick)
-        print(expected_requested_asset_partitions)
         assert latest_tick.requested_asset_materialization_count == len(
             expected_requested_asset_partitions
         )
