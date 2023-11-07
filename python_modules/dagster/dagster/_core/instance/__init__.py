@@ -33,6 +33,9 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._config import (
+    process_config,
+)
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
@@ -80,10 +83,11 @@ from dagster._utils.warnings import (
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    dagster_instance_config_schema,
     get_default_tick_retention_settings,
     get_tick_retention_settings,
 )
-from .ref import InstanceRef
+from .ref import SETTINGS_KEYS, InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -445,6 +449,13 @@ class DagsterInstance(DynamicPartitionsStore):
             self._run_launcher = None
 
         self._settings = check.opt_mapping_param(settings, "settings")
+        if not self._settings:
+            # initialize with default values
+            instance_config_schema = dagster_instance_config_schema()
+            settings_schema = {key: instance_config_schema[key] for key in SETTINGS_KEYS}
+            settings_config = process_config(settings_schema, {})
+            check.invariant(settings_config.success, str(settings_config.errors))
+            self._settings = settings_config.value
 
         self._secrets_loader = check.opt_inst_param(secrets_loader, "secrets_loader", SecretsLoader)
 
@@ -889,15 +900,15 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_retries_enabled(self) -> bool:
-        return self.get_settings("run_retries").get("enabled", False)
+        return self.get_settings("run_retries")["enabled"]
 
     @property
     def run_retries_max_retries(self) -> int:
-        return self.get_settings("run_retries").get("max_retries")
+        return self.get_settings("run_retries")["max_retries"]
 
     @property
     def auto_materialize_enabled(self) -> bool:
-        return self.get_settings("auto_materialize").get("enabled", True)
+        return self.get_settings("auto_materialize")["enabled"]
 
     @property
     def auto_materialize_minimum_interval_seconds(self) -> int:
@@ -909,13 +920,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def auto_materialize_respect_materialization_data_versions(self) -> bool:
-        return self.get_settings("auto_materialize").get(
-            "respect_materialization_data_versions", False
-        )
+        return self.get_settings("auto_materialize")["respect_materialization_data_versions"]
 
     @property
     def auto_materialize_max_tick_retries(self) -> int:
-        return self.get_settings("auto_materialize").get("max_tick_retries", 3)
+        return self.get_settings("auto_materialize")["max_tick_retries"]
 
     # python logs
 

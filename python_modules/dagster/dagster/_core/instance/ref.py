@@ -21,6 +21,19 @@ if TYPE_CHECKING:
     from dagster._core.storage.runs.base import RunStorage
     from dagster._core.storage.schedules.base import ScheduleStorage
 
+SETTINGS_KEYS = {
+    "telemetry",
+    "python_logs",
+    "run_monitoring",
+    "run_retries",
+    "code_servers",
+    "retention",
+    "sensors",
+    "schedules",
+    "nux",
+    "auto_materialize",
+}
+
 
 def compute_logs_directory(base: str) -> str:
     return os.path.join(base, "storage")
@@ -445,19 +458,7 @@ class InstanceRef(
             defaults["secrets"],
         )
 
-        settings_keys = {
-            "telemetry",
-            "python_logs",
-            "run_monitoring",
-            "run_retries",
-            "code_servers",
-            "retention",
-            "sensors",
-            "schedules",
-            "nux",
-            "auto_materialize",
-        }
-        settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
+        settings = {key: config_value.get(key) for key in SETTINGS_KEYS if config_value.get(key)}
 
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,  # type: ignore  # (possible none)

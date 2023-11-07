@@ -14,8 +14,10 @@ from dagster._config import (
     ScalarUnion,
     Selector,
     StringSource,
+    process_config,
     validate_config,
 )
+from dagster._config.source import BoolSource
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
@@ -115,7 +117,7 @@ def dagster_instance_config(
                 dagster_config_dict["storage"],
             )
 
-    dagster_config = validate_config(schema, dagster_config_dict)
+    dagster_config = process_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
             f"Errors whilst loading dagster instance config at {config_filename}.",
@@ -160,8 +162,8 @@ def configurable_class_schema() -> Mapping[str, Any]:
 def python_logs_config_schema() -> Field:
     return Field(
         {
-            "managed_python_loggers": Field(Array(str), is_required=False),
-            "python_log_level": Field(str, is_required=False),
+            "managed_python_loggers": Field(Array(StringSource), is_required=False),
+            "python_log_level": Field(StringSource, is_required=False),
             "dagster_handler_config": Field(
                 {
                     "handlers": Field(dict, is_required=False),
@@ -205,10 +207,10 @@ def _tick_retention_config_schema() -> Field:
             "purge_after_days": ScalarUnion(
                 scalar_type=int,
                 non_scalar_schema={
-                    "skipped": Field(int, is_required=False),
-                    "success": Field(int, is_required=False),
-                    "failure": Field(int, is_required=False),
-                    "started": Field(int, is_required=False),
+                    "skipped": Field(IntSource, is_required=False),
+                    "success": Field(IntSource, is_required=False),
+                    "failure": Field(IntSource, is_required=False),
+                    "started": Field(IntSource, is_required=False),
                 },
             )
         },
@@ -252,16 +254,16 @@ def get_tick_retention_settings(
 def sensors_daemon_config() -> Field:
     return Field(
         {
-            "use_threads": Field(Bool, is_required=False, default_value=False),
+            "use_threads": Field(BoolSource, is_required=False, default_value=False),
             "num_workers": Field(
-                int,
+                IntSource,
                 is_required=False,
                 description=(
                     "How many threads to use to process ticks from multiple sensors in parallel"
                 ),
             ),
             "num_submit_workers": Field(
-                int,
+                IntSource,
                 is_required=False,
                 description=(
                     "How many threads to use to submit runs from sensor ticks. Can be used to"
@@ -277,16 +279,16 @@ def sensors_daemon_config() -> Field:
 def schedules_daemon_config() -> Field:
     return Field(
         {
-            "use_threads": Field(Bool, is_required=False, default_value=False),
+            "use_threads": Field(BoolSource, is_required=False, default_value=False),
             "num_workers": Field(
-                int,
+                IntSource,
                 is_required=False,
                 description=(
                     "How many threads to use to process ticks from multiple schedules in parallel"
                 ),
             ),
             "num_submit_workers": Field(
-                int,
+                IntSource,
                 is_required=False,
                 description=(
                     "How many threads to use to submit runs from schedule ticks. Can be used to"
@@ -325,35 +327,35 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "run_coordinator": config_field_for_configurable_class(),
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field(
-            {"enabled": Field(Bool, is_required=False)},
+            {"enabled": Field(BoolSource, is_required=False)},
         ),
         "nux": Field(
-            {"enabled": Field(Bool, is_required=False)},
+            {"enabled": Field(BoolSource, is_required=False)},
         ),
         "instance_class": config_field_for_configurable_class(),
         "python_logs": python_logs_config_schema(),
         "run_monitoring": Field(
             {
-                "enabled": Field(Bool, is_required=False),
-                "start_timeout_seconds": Field(int, is_required=False),
-                "cancel_timeout_seconds": Field(int, is_required=False),
-                "max_resume_run_attempts": Field(int, is_required=False),
-                "poll_interval_seconds": Field(int, is_required=False),
-                "cancellation_thread_poll_interval_seconds": Field(int, is_required=False),
-                "free_slots_after_run_end_seconds": Field(int, is_required=False),
+                "enabled": Field(BoolSource, is_required=False),
+                "start_timeout_seconds": Field(IntSource, is_required=False),
+                "cancel_timeout_seconds": Field(IntSource, is_required=False),
+                "max_resume_run_attempts": Field(IntSource, is_required=False),
+                "poll_interval_seconds": Field(IntSource, is_required=False),
+                "cancellation_thread_poll_interval_seconds": Field(IntSource, is_required=False),
+                "free_slots_after_run_end_seconds": Field(IntSource, is_required=False),
             },
         ),
         "run_retries": Field(
             {
-                "enabled": Field(bool, is_required=False, default_value=False),
-                "max_retries": Field(int, is_required=False, default_value=0),
+                "enabled": Field(BoolSource, is_required=False, default_value=False),
+                "max_retries": Field(IntSource, is_required=False, default_value=0),
             }
         ),
         "code_servers": Field(
             {
-                "local_startup_timeout": Field(int, is_required=False),
-                "reload_timeout": Field(int, is_required=False),
-                "wait_for_local_processes_on_shutdown": Field(bool, is_required=False),
+                "local_startup_timeout": Field(IntSource, is_required=False),
+                "reload_timeout": Field(IntSource, is_required=False),
+                "wait_for_local_processes_on_shutdown": Field(BoolSource, is_required=False),
             },
             is_required=False,
         ),
@@ -363,10 +365,12 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "schedules": schedules_daemon_config(),
         "auto_materialize": Field(
             {
-                "enabled": Field(Bool, is_required=False),
-                "minimum_interval_seconds": Field(int, is_required=False),
+                "enabled": Field(Bool, is_required=False, default_value=False),
+                "minimum_interval_seconds": Field(IntSource, is_required=False),
                 "run_tags": Field(dict, is_required=False),
-                "respect_materialization_data_versions": Field(Bool, is_required=False),
+                "respect_materialization_data_versions": Field(
+                    BoolSource, is_required=False, default_value=False
+                ),
                 "max_tick_retries": Field(
                     IntSource,
                     default_value=3,
