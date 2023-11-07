@@ -18,6 +18,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {useFeatureFlags} from '../app/Flags';
+import {ShortcutHandler} from '../app/ShortcutHandler';
 import {AssetLiveDataRefresh} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
@@ -335,6 +336,29 @@ const AssetGraphExplorerWithData = ({
 
   const [showSidebar, setShowSidebar] = React.useState(true);
 
+  const toggleGroupsButton = flagDAGSidebar && allGroups.length > 1 && (
+    <ShortcutHandler
+      key="toggle-groups"
+      shortcutLabel="⌥E"
+      onShortcut={() => setExpandedGroups(expandedGroups.length === 0 ? allGroups : [])}
+      shortcutFilter={(e) => e.altKey && e.code === 'KeyE'}
+    >
+      {expandedGroups.length === 0 ? (
+        <Button
+          title="Expand all groups"
+          icon={<Icon name="unfold_more" />}
+          onClick={() => setExpandedGroups(allGroups)}
+        />
+      ) : (
+        <Button
+          title="Collapse all groups"
+          icon={<Icon name="unfold_less" />}
+          onClick={() => setExpandedGroups([])}
+        />
+      )}
+    </ShortcutHandler>
+  );
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -358,6 +382,7 @@ const AssetGraphExplorerWithData = ({
               graphWidth={layout.width}
               graphHeight={layout.height}
               graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel || flagDAGSidebar}
+              additionalToolbarElements={toggleGroupsButton}
               onClick={onClickBackground}
               onArrowKeyDown={onArrowKeyDown}
               onDoubleClick={(e) => {
@@ -512,23 +537,7 @@ const AssetGraphExplorerWithData = ({
               />
             </OptionsOverlay>
           )}
-          {flagDAGSidebar && allGroups.length > 1 && (
-            <div style={{position: 'absolute', bottom: 12, right: 50}}>
-              {expandedGroups.length === 0 ? (
-                <Button
-                  title="Expand all groups"
-                  icon={<Icon name="unfold_more" />}
-                  onClick={() => setExpandedGroups(allGroups)}
-                />
-              ) : (
-                <Button
-                  title="Collapse all groups"
-                  icon={<Icon name="unfold_less" />}
-                  onClick={() => setExpandedGroups([])}
-                />
-              )}
-            </div>
-          )}
+
           <TopbarWrapper style={{paddingLeft: showSidebar || !flagDAGSidebar ? 12 : 24}}>
             {showSidebar || !flagDAGSidebar ? undefined : (
               <Tooltip content="Show sidebar">

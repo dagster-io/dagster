@@ -22,6 +22,7 @@ interface SVGViewportProps {
   defaultZoom: 'zoom-to-fit' | 'zoom-to-fit-width';
   maxZoom: number;
   maxAutocenterZoom: number;
+  additionalToolbarElements?: React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onDoubleClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onArrowKeyDown?: (
@@ -227,10 +228,13 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             <Icon size={24} name="zoom_out" />
           </IconButton>
         </Box>
-        <Box flex={{direction: 'column', alignItems: 'center'}}>
-          <IconButton onClick={() => viewport.onExportToSVG()} style={{marginTop: 8}}>
-            <Icon size={24} name="download_for_offline" />
-          </IconButton>
+        <Box flex={{direction: 'column', alignItems: 'center', gap: 8}} margin={{top: 8}}>
+          {viewport.props.additionalToolbarElements}
+          <Box>
+            <IconButton onClick={() => viewport.onExportToSVG()}>
+              <Icon size={24} name="download_for_offline" />
+            </IconButton>
+          </Box>
         </Box>
       </ZoomSliderContainer>
     );
