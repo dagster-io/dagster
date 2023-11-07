@@ -411,7 +411,7 @@ class InputContext:
                 " with time windows.",
             )
 
-        time_windows = subset.get_included_time_windows()
+        time_windows = subset.included_time_windows
         if len(time_windows) != 1:
             check.failed(
                 "Tried to access asset_partitions_time_window, but there are "
@@ -674,7 +674,8 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     def serialize(self) -> str:
         raise NotImplementedError()
 
-    def get_partitions_def(self) -> "PartitionsDefinition":
+    @property
+    def partitions_def(self) -> "PartitionsDefinition":
         raise NotImplementedError()
 
     def __len__(self) -> int:

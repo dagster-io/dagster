@@ -469,7 +469,7 @@ def build_partition_statuses(
         graphene_ranges = []
         for r in ranges:
             partition_key_range = cast(
-                TimeWindowPartitionsDefinition, materialized_partitions_subset.get_partitions_def()
+                TimeWindowPartitionsDefinition, materialized_partitions_subset.partitions_def
             ).get_partition_key_range_for_time_window(r.time_window)
             graphene_ranges.append(
                 GrapheneTimePartitionRangeStatus(
@@ -520,7 +520,7 @@ def get_2d_run_length_encoded_partitions(
 
     partitions_defs = set(
         [
-            subset.get_partitions_def()
+            subset.partitions_def
             for subset in [
                 materialized_partitions_subset,
                 failed_partitions_subset,

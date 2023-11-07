@@ -865,20 +865,19 @@ def test_partition_subset_get_partition_keys_not_in_subset(
         assert partition_key in subset
     assert (
         subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
         )
         == expected_keys_not_in_subset
     )
     assert (
         cast(
-            TimeWindowPartitionsSubset,
-            partitions_def.deserialize_subset(subset.serialize()),
-        ).get_included_time_windows()
-        == subset.get_included_time_windows()
+            TimeWindowPartitionsSubset, partitions_def.deserialize_subset(subset.serialize())
+        ).included_time_windows
+        == subset.included_time_windows
     )
 
     expected_range_count = case_str.count("-+") + (1 if case_str[0] == "+" else 0)
-    assert len(subset.get_included_time_windows()) == expected_range_count, case_str
+    assert len(subset.included_time_windows) == expected_range_count, case_str
     assert len(subset) == case_str.count("+")
 
 
@@ -1015,9 +1014,7 @@ def test_partition_subset_with_partition_keys(
     expected_range_count = updated_subset_str.count("-+") + (
         1 if updated_subset_str[0] == "+" else 0
     )
-    assert (
-        len(updated_subset.get_included_time_windows()) == expected_range_count
-    ), updated_subset_str
+    assert len(updated_subset.included_time_windows) == expected_range_count, updated_subset_str
     assert len(updated_subset) == updated_subset_str.count("+")
 
 

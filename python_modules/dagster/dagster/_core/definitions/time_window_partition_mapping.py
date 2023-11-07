@@ -116,7 +116,7 @@ class TimeWindowPartitionMapping(
             check.failed("downstream_partitions_subset must be a BaseTimeWindowPartitionsSubset")
 
         return self._map_partitions(
-            downstream_partitions_subset.get_partitions_def(),
+            downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset,
             start_offset=self.start_offset,
@@ -137,7 +137,7 @@ class TimeWindowPartitionMapping(
         if not provided.
         """
         return self._map_partitions(
-            upstream_partitions_subset.get_partitions_def(),
+            upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
             end_offset=-self.start_offset,
@@ -202,7 +202,7 @@ class TimeWindowPartitionMapping(
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
 
         time_windows = []
-        for from_partition_time_window in from_partitions_subset.get_included_time_windows():
+        for from_partition_time_window in from_partitions_subset.included_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
 
             offsetted_start_dt = _offsetted_datetime(
@@ -365,7 +365,7 @@ class TimeWindowPartitionMapping(
                 TimeWindowPartitionsSubset(
                     partitions_def=to_partitions_def,
                     num_partitions=None,
-                    included_time_windows=from_partitions_subset.get_included_time_windows(),
+                    included_time_windows=from_partitions_subset.included_time_windows,
                 ),
                 [],
             )
@@ -379,7 +379,7 @@ class TimeWindowPartitionMapping(
             else:
                 required_but_nonexistent_partition_keys = [
                     pk
-                    for time_window in from_partitions_subset.get_included_time_windows()
+                    for time_window in from_partitions_subset.included_time_windows
                     for pk in to_partitions_def.get_partition_keys_in_time_window(
                         time_window=time_window
                     )

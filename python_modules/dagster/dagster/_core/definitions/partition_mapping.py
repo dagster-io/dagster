@@ -114,7 +114,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         if downstream_partitions_subset is None:
             check.failed("downstream asset is not partitioned")
 
-        if downstream_partitions_subset.get_partitions_def() == upstream_partitions_def:
+        if downstream_partitions_subset.partitions_def == upstream_partitions_def:
             return UpstreamPartitionsResult(downstream_partitions_subset, [])
 
         upstream_partition_keys = set(
@@ -141,7 +141,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         if upstream_partitions_subset is None:
             check.failed("upstream asset is not partitioned")
 
-        if upstream_partitions_subset.get_partitions_def() == downstream_partitions_def:
+        if upstream_partitions_subset.partitions_def == downstream_partitions_def:
             return upstream_partitions_subset
 
         upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())
@@ -218,10 +218,8 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        last_upstream_partition = (
-            upstream_partitions_subset.get_partitions_def().get_last_partition_key(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
+        last_upstream_partition = upstream_partitions_subset.partitions_def.get_last_partition_key(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
         if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
             return downstream_partitions_def.subset_with_all_partitions(
@@ -497,7 +495,7 @@ class BaseMultiPartitionMapping(ABC):
             check.failed("downstream asset is not partitioned")
 
         result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, downstream_partitions_subset.get_partitions_def()),
+            cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
             downstream_partitions_subset,
             cast(MultiPartitionsDefinition, upstream_partitions_def),
             a_upstream_of_b=False,
@@ -521,7 +519,7 @@ class BaseMultiPartitionMapping(ABC):
             check.failed("upstream asset is not partitioned")
 
         result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, upstream_partitions_subset.get_partitions_def()),
+            cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
             upstream_partitions_subset,
             cast(MultiPartitionsDefinition, downstream_partitions_def),
             a_upstream_of_b=True,
