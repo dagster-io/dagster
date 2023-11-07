@@ -2913,11 +2913,15 @@ class DagsterInstance(DynamicPartitionsStore):
                     asset_key=key,
                     asset_partitions=[partition_key] if partition_key else None,
                     before_cursor=before_cursor,
-                    after_cursor=after_cursor,
                 ),
                 limit=1,
             )
-            observation = next(iter(observations), None)
+
+            observation_cand = next(iter(observations), None)
+            if observation_cand and (
+                not after_cursor or observation_cand.storage_id > after_cursor
+            ):
+                observation = observation_cand
 
         materialization: Optional[EventLogRecord] = None
         if not is_source:
@@ -2927,11 +2931,14 @@ class DagsterInstance(DynamicPartitionsStore):
                     asset_key=key,
                     asset_partitions=[partition_key] if partition_key else None,
                     before_cursor=before_cursor,
-                    after_cursor=after_cursor,
                 ),
                 limit=1,
             )
-            materialization = next(iter(materializations), None)
+            materialization_cand = next(iter(materializations), None)
+            if materialization_cand and (
+                not after_cursor or materialization_cand.storage_id > after_cursor
+            ):
+                materialization = materialization_cand
 
         return materialization or observation
 
