@@ -327,10 +327,11 @@ class ReexecutionOptions(NamedTuple):
         from dagster._core.execution.plan.state import KnownExecutionState
 
         parent_run = check.not_none(instance.get_run_by_id(run_id))
-        check.invariant(
-            parent_run.status == DagsterRunStatus.FAILURE,
-            "Cannot reexecute from failure a run that is not failed",
-        )
+        if parent_run.status != DagsterRunStatus.FAILURE:
+            raise DagsterInvariantViolationError(
+                "Cannot reexecute from failure a run that is not failed"
+            )
+
         # Tried to thread through KnownExecutionState to execution plan creation, but little benefit.
         # It is recalculated later by the re-execution machinery.
         step_keys_to_execute, _ = KnownExecutionState.build_resume_retry_reexecution(

@@ -251,7 +251,7 @@ interface RunPreviewProps {
   solidSelection: string[] | null;
 }
 
-export const RunPreview: React.FC<RunPreviewProps> = (props) => {
+export const RunPreview = (props: RunPreviewProps) => {
   const {
     document,
     validation,
@@ -623,10 +623,13 @@ const RuntimeAndResourcesSection = styled.div`
   }
 `;
 
-const ErrorRow: React.FC<{
+const ErrorRow = ({
+  error,
+  onHighlight,
+}: {
   error: ValidationError | React.ReactNode;
   onHighlight: (path: string[]) => void;
-}> = ({error, onHighlight}) => {
+}) => {
   let message: React.ReactNode = null;
   let target: ValidationError | null = null;
   if (isValidationError(error)) {

@@ -25,7 +25,7 @@ interface AssetGroupRootParams {
   0: string;
 }
 
-export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
+export const AssetsGroupsGlobalGraphRoot = () => {
   const {0: path} = useParams<AssetGroupRootParams>();
   const {visibleRepos} = React.useContext(WorkspaceContext);
   const history = useHistory();

@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import itertools
+import json
 import logging
 import os
 import random
@@ -59,7 +60,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -94,6 +95,16 @@ class AssetEvaluationSpec(NamedTuple):
     num_requested: int = 0
     num_skipped: int = 0
     num_discarded: int = 0
+
+    @staticmethod
+    def empty(asset_key: str) -> "AssetEvaluationSpec":
+        return AssetEvaluationSpec(
+            asset_key=asset_key,
+            rule_evaluations=[],
+            num_requested=0,
+            num_skipped=0,
+            num_discarded=0,
+        )
 
     @staticmethod
     def from_single_rule(
@@ -582,10 +593,18 @@ def run(
     )
 
 
-def run_request(asset_keys: List[str], partition_key: Optional[str] = None) -> RunRequest:
+FAIL_TAG = "test/fail"
+
+
+def run_request(
+    asset_keys: Sequence[CoercibleToAssetKey],
+    partition_key: Optional[str] = None,
+    fail_keys: Optional[Sequence[str]] = None,
+) -> RunRequest:
     return RunRequest(
-        asset_selection=[AssetKey(key) for key in asset_keys],
+        asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
         partition_key=partition_key,
+        tags={FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {},
     )
 
 

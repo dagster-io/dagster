@@ -22,6 +22,10 @@
         "path": "/getting-started/project-file-reference"
       },
       {
+        "title": "Getting help",
+        "path": "/getting-started/getting-help"
+      },
+      {
         "title": "Telemetry",
         "path": "/getting-started/telemetry"
       }
@@ -557,7 +561,7 @@
                 ]
               },
               {
-                "title": "Branch deployments",
+                "title": "Branch deployments (CI)",
                 "path": "/dagster-cloud/managing-deployments/branch-deployments",
                 "children": [
                   {
@@ -871,6 +875,11 @@
                 "path": "/guides/dagster-pipes/subprocess/reference"
               }
             ]
+          },
+          {
+            "title": "Dagster Pipes + Databricks",
+            "path": "/guides/dagster-pipes/databricks"
+
           },
           {
             "title": "Details and customization",

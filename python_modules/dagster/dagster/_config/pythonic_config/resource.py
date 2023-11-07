@@ -450,7 +450,10 @@ class ConfigurableResourceFactory(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        out = self.__class__(**{**self._get_non_default_public_field_values(), **values})
+        to_populate = self.__class__._get_non_default_public_field_values_cls(  # noqa: SLF001
+            {**self._get_non_default_public_field_values(), **values}
+        )
+        out = self.__class__(**to_populate)
         out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
             resource_context=self._state__internal__.resource_context
         )
@@ -674,6 +677,34 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
             resources={"writer": WriterResource(prefix="a_prefix")},
         )
 
+    You can optionally use this class to model configuration only and vend an object
+    of a different type for use at runtime. This is useful for those who wish to
+    have a separate object that manages configuration and a separate object at runtime. Or
+    where you want to directly use a third-party class that you do not control.
+
+    To do this you override the `create_resource` methods to return a different object.
+
+    .. code-block:: python
+
+        class WriterResource(ConfigurableResource):
+            str: prefix
+
+            def create_resource(self, context: InitResourceContext) -> Writer:
+                # Writer is pre-existing class defined else
+                return Writer(self.prefix)
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def use_preexisting_writer_as_resource(writer: ResourceParam[Writer]):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[use_preexisting_writer_as_resource],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
     """
 
     def create_resource(self, context: InitResourceContext) -> TResValue:
@@ -716,7 +747,7 @@ class PartialResourceState(NamedTuple):
 
 class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
-    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
+    resource_cls: Type[Any]
 
     def __init__(
         self,
@@ -728,8 +759,11 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
+            to_populate = resource_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
+                {**data, **context.resource_config}
+            )
             instantiated = resource_cls(
-                **{**data, **context.resource_config}
+                **to_populate
             )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
@@ -769,7 +803,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
         )
 
 
@@ -947,8 +981,10 @@ def _call_resource_fn_with_default(
     else:
         result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
-    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
-        obj.resource_fn, contextlib.ContextDecorator
+    is_fn_generator = (
+        inspect.isgenerator(obj.resource_fn)
+        or isinstance(obj.resource_fn, contextlib.ContextDecorator)
+        or isinstance(result, contextlib.AbstractContextManager)
     )
     if is_fn_generator:
         return stack.enter_context(cast(contextlib.AbstractContextManager, result))

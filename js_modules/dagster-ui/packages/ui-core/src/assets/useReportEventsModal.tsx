@@ -75,13 +75,19 @@ export function useReportEventsModal(asset: Asset | null, onEventReported: () =>
   };
 }
 
-const ReportEventDialogBody: React.FC<{
+const ReportEventDialogBody = ({
+  asset,
+  repoAddress,
+  isOpen,
+  setIsOpen,
+  onEventReported,
+}: {
   asset: Asset;
   repoAddress: RepoAddress;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   onEventReported: () => void;
-}> = ({asset, repoAddress, isOpen, setIsOpen, onEventReported}) => {
+}) => {
   const [description, setDescription] = React.useState('');
   const {
     permissions: {canReportRunlessAssetEvents},

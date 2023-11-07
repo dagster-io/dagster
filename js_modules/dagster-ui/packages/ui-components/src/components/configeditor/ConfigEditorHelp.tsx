@@ -12,8 +12,8 @@ interface ConfigEditorHelpProps {
   allInnerTypes: TypeData[];
 }
 
-export const ConfigEditorHelp: React.FC<ConfigEditorHelpProps> = React.memo(
-  ({context, allInnerTypes}) => {
+export const ConfigEditorHelp = React.memo(
+  ({context, allInnerTypes}: ConfigEditorHelpProps) => {
     if (!context) {
       return <Container />;
     }

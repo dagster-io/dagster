@@ -20,7 +20,7 @@ export interface Props {
 const DEFAULT_TRUNCATION_THRESHOLD = 40;
 const TRUNCATION_BUFFER = 5;
 
-export const PipelineReference: React.FC<Props> = ({
+export const PipelineReference = ({
   pipelineName,
   pipelineHrefContext,
   isJob,
@@ -28,7 +28,7 @@ export const PipelineReference: React.FC<Props> = ({
   showIcon,
   truncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
   size = 'normal',
-}) => {
+}: Props) => {
   const truncatedName =
     truncationThreshold > 0 && pipelineName.length > truncationThreshold
       ? `${pipelineName.slice(0, truncationThreshold - TRUNCATION_BUFFER)}…`

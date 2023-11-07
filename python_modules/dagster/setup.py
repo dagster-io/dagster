@@ -86,7 +86,7 @@ setup(
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
-        "pendulum",
+        "pendulum<3",
         "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
         "python-dateutil",
         "python-dotenv",
@@ -106,7 +106,7 @@ setup(
         "docstring-parser",
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic >1.10.0,!= 1.10.7,<2.0.0",
+        "pydantic >1.10.0,!= 1.10.7",
         f"dagster-pipes{pin}",
     ],
     extras_require={

@@ -23,6 +23,7 @@ import attach_file from '../icon-svgs/attach_file.svg';
 import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
 import auto_observe from '../icon-svgs/auto-observe.svg';
 import backfill from '../icon-svgs/backfill.svg';
+import badge from '../icon-svgs/badge.svg';
 import bar_chart from '../icon-svgs/bar-chart.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
@@ -166,6 +167,7 @@ export const Icons = {
   asset_non_sda,
   asset_group,
   backfill,
+  badge,
   date,
   expectation,
   execute,

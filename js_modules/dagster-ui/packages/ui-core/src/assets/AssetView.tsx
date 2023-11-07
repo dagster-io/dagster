@@ -452,11 +452,15 @@ const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition
   );
 };
 
-const AssetViewPageHeaderTags: React.FC<{
+const AssetViewPageHeaderTags = ({
+  definition,
+  liveData,
+  onShowUpstream,
+}: {
   definition: AssetViewDefinitionNodeFragment | null;
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
-}> = ({definition, liveData, onShowUpstream}) => {
+}) => {
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;

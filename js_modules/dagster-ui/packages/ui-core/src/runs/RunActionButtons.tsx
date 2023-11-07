@@ -25,7 +25,7 @@ interface RunActionButtonsProps {
   metadata: IRunMetadataDict;
 }
 
-export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
+export const CancelRunButton = ({run}: {run: RunFragment}) => {
   const {id: runId, canTerminate} = run;
   const [showDialog, setShowDialog] = React.useState<boolean>(false);
   const closeDialog = React.useCallback(() => setShowDialog(false), []);
@@ -103,7 +103,7 @@ export const canRunAllSteps = (run: RunFragment) => doneStatuses.has(run.status)
 export const canRunFromFailure = (run: RunFragment) =>
   run.executionPlan && failedStatuses.has(run.status);
 
-export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
+export const RunActionButtons = (props: RunActionButtonsProps) => {
   const {metadata, graph, run} = props;
 
   const repoMatch = useRepositoryForRunWithParentSnapshot(run);
@@ -260,7 +260,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   );
 };
 
-const StepSelectionDescription: React.FC<{selection: StepSelection | null}> = ({selection}) => (
+const StepSelectionDescription = ({selection}: {selection: StepSelection | null}) => (
   <div style={{paddingLeft: '10px'}}>
     {(selection?.keys || []).map((step) => (
       <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>

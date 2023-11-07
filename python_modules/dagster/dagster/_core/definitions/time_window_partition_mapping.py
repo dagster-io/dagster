@@ -313,6 +313,9 @@ class TimeWindowPartitionMapping(
         This method covers a set of easy cases where these operations aren't required. It returns
         None if the mapping doesn't fit into any of these cases.
         """
+        if from_partitions_subset.is_empty:
+            return UpstreamPartitionsResult(to_partitions_def.empty_subset(), [])
+
         if start_offset != 0 or end_offset != 0:
             return None
 

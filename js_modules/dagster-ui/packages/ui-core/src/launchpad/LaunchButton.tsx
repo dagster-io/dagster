@@ -187,7 +187,7 @@ interface ButtonWithConfigurationProps {
 
 // Basic helper components
 
-const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
+const ButtonWithConfiguration = ({
   tooltip,
   icon,
   title,
@@ -197,7 +197,7 @@ const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
   onClick,
   joined,
   disabled,
-}) => {
+}: ButtonWithConfigurationProps) => {
   const confirm = useConfirmation();
 
   const onClickWithWarning = async () => {

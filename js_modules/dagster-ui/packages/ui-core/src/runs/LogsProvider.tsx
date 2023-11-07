@@ -265,7 +265,7 @@ interface LogsProviderProps {
   children: (result: LogsProviderLogs) => React.ReactChild;
 }
 
-const LogsProviderWithSubscription: React.FC<LogsProviderProps> = (props) => {
+const LogsProviderWithSubscription = (props: LogsProviderProps) => {
   const state = useLogsProviderWithSubscription(props.runId);
   return (
     <>
@@ -335,7 +335,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   );
 };
 
-export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
+export const LogsProvider = (props: LogsProviderProps) => {
   const {children, runId} = props;
   const {availability, disabled} = React.useContext(WebSocketContext);
 

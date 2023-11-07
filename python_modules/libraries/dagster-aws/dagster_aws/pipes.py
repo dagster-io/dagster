@@ -3,7 +3,7 @@ import os
 import random
 import string
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, Sequence
 
 import boto3
 import dagster._check as check
@@ -12,7 +12,7 @@ from dagster._core.pipes.client import (
     PipesContextInjector,
     PipesParams,
 )
-from dagster._core.pipes.utils import PipesBlobStoreMessageReader, PipesBlobStoreStdioReader
+from dagster._core.pipes.utils import PipesBlobStoreMessageReader, PipesLogReader
 
 if TYPE_CHECKING:
     from dagster_pipes import PipesContextData
@@ -58,16 +58,14 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from a specified S3
     bucket.
 
-    If `stdout_reader` or `stderr_reader` are passed, this reader will also start them when
-    `read_messages` is called. If they are not passed, then the reader performs no stdout/stderr
-    forwarding.
+    If `log_readers` is passed, this reader will also start the passed readers
+    when the first message is received from the external process.
 
     Args:
         interval (float): interval in seconds between attempts to download a chunk
         bucket (str): The S3 bucket to read from.
         client (WorkspaceClient): A boto3 client.
-        stdout_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stdout logs.
-        stderr_reader (Optional[PipesBlobStoreStdioReader]): A reader for reading stderr logs.
+        log_readers (Optional[Sequence[PipesLogReader]]): A set of readers for logs on S3.
     """
 
     def __init__(
@@ -76,11 +74,11 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         interval: float = 10,
         bucket: str,
         client: boto3.client,
-        stdout_reader: Optional[PipesBlobStoreStdioReader] = None,
-        stderr_reader: Optional[PipesBlobStoreStdioReader] = None,
+        log_readers: Optional[Sequence[PipesLogReader]] = None,
     ):
         super().__init__(
-            interval=interval, stdout_reader=stdout_reader, stderr_reader=stderr_reader
+            interval=interval,
+            log_readers=log_readers,
         )
         self.bucket = check.str_param(bucket, "bucket")
         self.client = client

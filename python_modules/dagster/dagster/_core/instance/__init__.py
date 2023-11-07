@@ -111,7 +111,11 @@ if TYPE_CHECKING:
         RepositoryLoadData,
     )
     from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.event_api import EventHandlerFn
+    from dagster._core.event_api import (
+        AssetRecordsFilter,
+        EventHandlerFn,
+        RunStatusChangeRecordsFilter,
+    )
     from dagster._core.events import (
         AssetMaterialization,
         DagsterEvent,
@@ -152,6 +156,7 @@ if TYPE_CHECKING:
         EventLogConnection,
         EventLogRecord,
         EventRecordsFilter,
+        EventRecordsResult,
     )
     from dagster._core.storage.partition_status_cache import (
         AssetPartitionStatus,
@@ -908,6 +913,10 @@ class DagsterInstance(DynamicPartitionsStore):
             "respect_materialization_data_versions", False
         )
 
+    @property
+    def auto_materialize_max_tick_retries(self) -> int:
+        return self.get_settings("auto_materialize").get("max_tick_retries", 3)
+
     # python logs
 
     @property
@@ -1566,10 +1575,10 @@ class DagsterInstance(DynamicPartitionsStore):
         run_config = run_config if run_config is not None else parent_run.run_config
 
         if strategy == ReexecutionStrategy.FROM_FAILURE:
-            check.invariant(
-                parent_run.status == DagsterRunStatus.FAILURE,
-                "Cannot reexecute from failure a run that is not failed",
-            )
+            if parent_run.status != DagsterRunStatus.FAILURE:
+                raise DagsterInvariantViolationError(
+                    "Cannot reexecute from failure a run that is not failed",
+                )
 
             (
                 step_keys_to_execute,
@@ -1908,6 +1917,106 @@ class DagsterInstance(DynamicPartitionsStore):
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+
+    @public
+    @traced
+    def fetch_materializations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of materialization records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
+
+    @public
+    @traced
+    def fetch_planned_materializations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of planned materialization records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_planned_materializations(
+            records_filter, limit, cursor, ascending
+        )
+
+    @public
+    @traced
+    def fetch_observations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of observation records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_observations(records_filter, limit, cursor, ascending)
+
+    @public
+    @traced
+    def fetch_run_status_changes(
+        self,
+        records_filter: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of run_status_event records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[DagsterEventType, RunStatusChangeRecordsFilter]]): the
+                filter by which to filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_run_status_changes(
+            records_filter, limit, cursor, ascending
+        )
 
     @public
     @traced
@@ -2789,8 +2898,8 @@ class DagsterInstance(DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.event_api import EventRecordsFilter
         from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         # When we cant don't know whether the requested key corresponds to a source or regular
         # asset, we need to retrieve both the latest observation and materialization for all assets.

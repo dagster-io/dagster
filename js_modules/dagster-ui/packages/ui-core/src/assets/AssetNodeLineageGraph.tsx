@@ -20,11 +20,15 @@ import {AssetKey, AssetViewParams} from './types';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 
-export const AssetNodeLineageGraph: React.FC<{
+export const AssetNodeLineageGraph = ({
+  assetKey,
+  assetGraphData,
+  params,
+}: {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   params: AssetViewParams;
-}> = ({assetKey, assetGraphData, params}) => {
+}) => {
   const assetGraphId = toGraphId(assetKey);
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);

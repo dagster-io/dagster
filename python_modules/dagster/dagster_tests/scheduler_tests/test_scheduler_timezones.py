@@ -350,30 +350,32 @@ def test_hourly_dst_fall_back(
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
     # DST has now happened, 4 hours later it is 3:30AM CST
-    # Should be 3 runs: 1AM CDT, 2AM CST, 3AM CST
+    # Should be 4 runs: 1AM CDT, 2AM CDT, 2AM CST, 3AM CST
     freeze_datetime = freeze_datetime.add(hours=1)
     with pendulum.test(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         wait_for_all_runs_to_start(instance)
 
-        assert instance.get_runs_count() == 3
+        assert instance.get_runs_count() == 4
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 3
+        assert len(ticks) == 4
 
         expected_datetimes_utc = [
             create_pendulum_time(2019, 11, 3, 9, 0, 0, tz="UTC"),
             create_pendulum_time(2019, 11, 3, 8, 0, 0, tz="UTC"),
+            create_pendulum_time(2019, 11, 3, 7, 0, 0, tz="UTC"),
             create_pendulum_time(2019, 11, 3, 6, 0, 0, tz="UTC"),
         ]
 
         expected_ct_times = [
             "2019-11-03T03:00:00-06:00",  # 3 AM CST
             "2019-11-03T02:00:00-06:00",  # 2 AM CST
-            "2019-11-03T01:00:00-05:00",  # 1 AM CST
+            "2019-11-03T01:00:00-06:00",  # 1 AM CST
+            "2019-11-03T01:00:00-05:00",  # 1 AM CDT
         ]
 
-        for i in range(3):
+        for i in range(4):
             assert (
                 to_timezone(expected_datetimes_utc[i], "US/Central").isoformat()
                 == expected_ct_times[i]
@@ -395,9 +397,9 @@ def test_hourly_dst_fall_back(
 
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 3
+        assert instance.get_runs_count() == 4
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 3
+        assert len(ticks) == 4
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())

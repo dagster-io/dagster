@@ -47,7 +47,7 @@ type Props = {
   jobName: string;
 };
 
-export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
+export const EvaluateScheduleDialog = (props: Props) => {
   return (
     <Dialog
       {...props}
@@ -64,7 +64,7 @@ export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
   );
 };
 
-const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}) => {
+const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
   const [_selectedTimestamp, setSelectedTimestamp] = React.useState<{ts: number; label: string}>();
   const {data} = useQuery<GetScheduleQuery, GetScheduleQueryVariables>(GET_SCHEDULE_QUERY, {
     variables: {
@@ -222,12 +222,17 @@ export const GET_SCHEDULE_QUERY = gql`
   }
 `;
 
-const EvaluateScheduleContent: React.FC<{
+const EvaluateScheduleContent = ({
+  repoAddress,
+  name,
+  timestamp,
+  jobName,
+}: {
   repoAddress: RepoAddress;
   name: string;
   timestamp: number;
   jobName: string;
-}> = ({repoAddress, name, timestamp, jobName}) => {
+}) => {
   const {
     timezone: [userTimezone],
   } = React.useContext(TimeContext);

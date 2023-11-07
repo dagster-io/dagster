@@ -17,13 +17,13 @@ export type NonIdealStateProps = React.DetailedHTMLProps<
   shrinkable?: boolean;
 };
 
-export const NonIdealState: React.FC<NonIdealStateProps> = ({
+export const NonIdealState = ({
   title,
   description,
   icon,
   action,
   shrinkable,
-}) => {
+}: NonIdealStateProps) => {
   const singleContentElement = [title, description, action].filter(Boolean).length === 1;
 
   return (

@@ -1033,7 +1033,7 @@ dagsterDaemon:
     tag: ~
     pullPolicy: Always
 
-  heartbeatTolerance: 300
+  heartbeatTolerance: 1800
 
   runCoordinator:
     # Whether or not to enable the run queue (or some other custom run coordinator). See
@@ -1076,7 +1076,7 @@ dagsterDaemon:
   # will either fail the run or attempt to resume the run with a new run worker.
   runMonitoring:
     enabled: true
-    # Timeout for runs to start (avoids runs hanging in STARTED)
+    # Timeout for runs to start (avoids runs hanging in STARTING)
     startTimeoutSeconds: 300
     # Timeout for runs to cancel (avoids runs hanging in CANCELING)
     # cancelTimeoutSeconds: 300

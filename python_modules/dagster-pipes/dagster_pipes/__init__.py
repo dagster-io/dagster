@@ -12,6 +12,7 @@ from contextlib import ExitStack, contextmanager
 from io import StringIO
 from queue import Queue
 from threading import Event, Thread
+from traceback import TracebackException
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -32,6 +33,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    final,
     get_args,
 )
 
@@ -63,6 +65,14 @@ def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMes
 
 # Can't use a constant for TypedDict key so this value is repeated in `ExtMessage` defn.
 PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
+
+
+class PipesOpenedData(TypedDict):
+    """Payload generated on startup of the external-side `PipesMessageWriter` containing arbitrary
+    information about the external process.
+    """
+
+    extras: Mapping[str, Any]
 
 
 class PipesMessage(TypedDict):
@@ -143,6 +153,19 @@ PipesMetadataType = Literal[
     "asset",
     "null",
 ]
+
+
+class PipesException(TypedDict):
+    message: str
+    stack: Sequence[str]
+    # class name of Exception object in python, left as optional for flexibility
+    name: Optional[str]
+    # https://docs.python.org/3/library/exceptions.html#exception-context
+    # exception that explicitly led to this exception
+    cause: Optional["PipesException"]
+    # exception that being handled when this exception was raised
+    context: Optional["PipesException"]
+
 
 # ########################
 # ##### UTIL
@@ -399,6 +422,16 @@ class _PipesLoggerHandler(logging.Handler):
         )
 
 
+def _pipes_exc_from_tb(tb: TracebackException):
+    return PipesException(
+        message="".join(list(tb.format_exception_only())),
+        stack=tb.stack.format(),
+        name=tb.exc_type.__name__ if tb.exc_type is not None else None,
+        cause=_pipes_exc_from_tb(tb.__cause__) if tb.__cause__ else None,
+        context=_pipes_exc_from_tb(tb.__context__) if tb.__context__ else None,
+    )
+
+
 # ########################
 # ##### IO - BASE
 # ########################
@@ -442,6 +475,26 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
         Yields:
             PipesMessageWriterChannel: Channel for writing messagse back to Dagster.
         """
+
+    @final
+    def get_opened_payload(self) -> PipesOpenedData:
+        """Return a payload containing information about the external process to be passed back to
+        the the orchestration process. This should contain information that cannot be known before
+        the external process is launched.
+
+        This method should not be overridden by users. Instead, users should
+        override `get_opened_extras` to inject custom data.
+        """
+        return {"extras": self.get_opened_extras()}
+
+    def get_opened_extras(self) -> PipesExtras:
+        """Return arbitary reader-specific information to be passed back to the orchestration
+        process under the `extras` key of the initialization payload.
+
+        Returns:
+            PipesExtras: A dict of arbitrary data to be passed back to the orchestration process.
+        """
+        return {}
 
 
 class PipesMessageWriterChannel(ABC, Generic[T_MessageChannel]):
@@ -533,23 +586,25 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:
         thread = None
-        is_task_complete = Event()
+        is_session_closed = Event()
         try:
-            thread = Thread(target=self._upload_loop, args=(is_task_complete,), daemon=True)
+            thread = Thread(target=self._upload_loop, args=(is_session_closed,), daemon=True)
             thread.start()
             yield
         finally:
-            is_task_complete.set()
+            is_session_closed.set()
             if thread:
                 thread.join(timeout=60)
 
-    def _upload_loop(self, is_task_complete: Event) -> None:
+    def _upload_loop(self, is_session_closed: Event) -> None:
         start_or_last_upload = datetime.datetime.now()
         while True:
             now = datetime.datetime.now()
-            if self._buffer.empty() and is_task_complete.is_set():
+            if self._buffer.empty() and is_session_closed.is_set():
                 break
-            elif is_task_complete.is_set() or (now - start_or_last_upload).seconds > self._interval:
+            elif (
+                is_session_closed.is_set() or (now - start_or_last_upload).seconds > self._interval
+            ):
                 payload = "\n".join([json.dumps(message) for message in self.flush_messages()])
                 if len(payload) > 0:
                     self.upload_messages_chunk(StringIO(payload), self._counter)
@@ -794,6 +849,48 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
             interval=self.interval,
         )
 
+    def get_opened_extras(self) -> PipesExtras:
+        # Extract the cluster log location from the SparkSession. This requires
+        # digging into the databricks `clusterUsageTags` config. This is set
+        # automatically by Databricks in the spark session that is created
+        # prior to job execution. Here are some sparse docs on cluster log
+        # delivery:
+        #   https://docs.databricks.com/en/clusters/configure.html#cluster-log-delivery
+        #
+        # It is not clear whether official docs exist for the config set in
+        # `spark.databricks.clusterUsageTags`, but you can see the full spark config for a job by
+        # selecting the "Spark UI" tab and then "Environment" on the job details page in the
+        # Databricks UI.
+        try:
+            from py4j.protocol import Py4JJavaError
+            from pyspark.sql import SparkSession
+        except ImportError as e:
+            raise DagsterPipesError(
+                "`PipesDbfsMessageWriter` requires pyspark and py4j to be available for import."
+            ) from e
+
+        spark = SparkSession.getActiveSession()
+        if spark is None:
+            raise DagsterPipesError(
+                "`PipesDbfsMessageWriter` expects an active `SparkSession` pre-configured by Databricks. Did not detect an active spark session."
+            )
+        try:
+            if spark.conf.get("spark.databricks.clusterUsageTags.clusterLogDeliveryEnabled"):
+                cluster_log_destination = spark.conf.get(
+                    "spark.databricks.clusterUsageTags.clusterLogDestination"
+                )
+                cluster_id = spark.conf.get("spark.databricks.clusterUsageTags.clusterId")
+                return {"cluster_driver_log_root": f"{cluster_log_destination}/{cluster_id}/driver"}
+            else:
+                return {}
+        except Py4JJavaError as e:
+            warnings.warn(
+                "A Py4JJavaError was thrown while reading the spark config to extract cluster logging information."
+                f" Log forwarding disabled. Error:\n  {e}",
+                category=DagsterPipesWarning,
+            )
+            return {}
+
 
 # ########################
 # ##### CONTEXT
@@ -888,7 +985,8 @@ class PipesContext:
         self._io_stack = ExitStack()
         self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
         self._message_channel = self._io_stack.enter_context(message_writer.open(messages_params))
-        self._message_channel.write_message(_make_message("opened", {}))
+        opened_payload = message_writer.get_opened_payload()
+        self._message_channel.write_message(_make_message("opened", opened_payload))
         self._logger = _PipesLogger(self)
         self._materialized_assets: Set[str] = set()
         self._closed: bool = False
@@ -897,15 +995,25 @@ class PipesContext:
         return self
 
     def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
-        self.close()
+        # expected to all be present or absent together
+        # https://docs.python.org/3/reference/datamodel.html#object.__exit__
+        if exc_type and exc_value and traceback:
+            exc = _pipes_exc_from_tb(TracebackException(exc_type, exc_value, traceback))
+        else:
+            exc = None
+        self.close(exc)
 
-    def close(self) -> None:
+    def close(
+        self,
+        exc: Optional[PipesException] = None,
+    ) -> None:
         """Close the pipes connection. This will flush all buffered messages to the orchestration
         process and cause any further attempt to write a message to raise an error. This method is
         idempotent-- subsequent calls after the first have no effect.
         """
         if not self._closed:
-            self._message_channel.write_message(_make_message("closed", {}))
+            payload = {"exception": exc} if exc else {}
+            self._message_channel.write_message(_make_message("closed", payload))
             self._io_stack.close()
             self._closed = True
 

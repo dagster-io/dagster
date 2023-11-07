@@ -3,8 +3,14 @@ from unittest.mock import MagicMock
 
 import pendulum
 import pytest
-from dagster import DagsterInstance, DailyPartitionsDefinition, WeeklyPartitionsDefinition, asset
-from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster import (
+    BackfillPolicy,
+    DagsterInstance,
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+    asset,
+)
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.storage.tags import (
@@ -483,3 +489,38 @@ def test_backfill_run_contains_more_than_one_asset():
     assert counts[3].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
     assert counts[3].partitions_counts_by_status[AssetBackfillStatus.IN_PROGRESS] == 0
     assert counts[3].num_targeted_partitions == downstream_num_of_partitions
+
+
+def test_dynamic_partitions():
+    @asset(
+        backfill_policy=BackfillPolicy.single_run(),
+        partitions_def=DynamicPartitionsDefinition(name="apple"),
+    )
+    def asset1() -> None:
+        ...
+
+    assets_by_repo_name = {"repo": [asset1]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("apple", ["foo", "bar"])
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        asset_selection=[asset1.key],
+        dynamic_partitions_store=instance,
+        partition_names=["foo", "bar"],
+        backfill_start_time=pendulum.now("UTC"),
+        all_partitions=False,
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert result.backfill_data != backfill_data
+    assert len(result.run_requests) == 1
+    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "foo"
+    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"

@@ -31,11 +31,15 @@ type ObserveAssetsState =
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
-export const LaunchAssetObservationButton: React.FC<{
+export const LaunchAssetObservationButton = ({
+  scope,
+  preferredJobName,
+  intent = 'none',
+}: {
   scope: AssetsInScope;
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({scope, preferredJobName, intent = 'none'}) => {
+}) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 

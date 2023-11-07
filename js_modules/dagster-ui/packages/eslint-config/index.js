@@ -86,6 +86,19 @@ module.exports = {
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',
     'react/display-name': 'off',
+    '@typescript-eslint/ban-types': [
+      'error',
+      {
+        types: {
+          'React.FC':
+            'Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177',
+          'React.FunctionComponent':
+            'Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177',
+          'React.FunctionalComponent':
+            'Preact specific, useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177',
+        },
+      },
+    ],
     '@typescript-eslint/no-unused-vars': [
       'error',
       {

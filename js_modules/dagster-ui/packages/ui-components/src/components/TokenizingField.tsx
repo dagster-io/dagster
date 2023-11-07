@@ -116,7 +116,7 @@ const isEqual = (a: TokenizingFieldValue, b?: TokenizingFieldValue) =>
  *  to build the tree of autocompletions.
  *
  *  The input also allows for freeform typing (`value` items with no token value) */
-export const TokenizingField: React.FC<TokenizingFieldProps> = ({
+export const TokenizingField = ({
   suggestionProviders,
   suggestionProvidersFilter,
   values: externalValues,
@@ -131,7 +131,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   className,
   fullwidth,
   suggestionRenderer,
-}) => {
+}: TokenizingFieldProps) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>('');

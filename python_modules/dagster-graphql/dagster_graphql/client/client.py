@@ -220,7 +220,7 @@ class DagsterGraphQLClient:
         job_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
         tags: Optional[Dict[str, Any]] = None,
         op_selection: Optional[Sequence[str]] = None,
     ) -> str:
@@ -234,7 +234,7 @@ class DagsterGraphQLClient:
             repository_name (Optional[str]): The name of the repository where the job is located.
                 If omitted, the client will try to infer the repository from the available options
                 on the Dagster deployment. Defaults to None.
-            run_config (Optional[Dict[str, Any]]): This is the run config to execute the job with.
+            run_config (Optional[Union[RunConfig, Mapping[str, Any]]]): This is the run config to execute the job with.
                 Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
                 an arbitrary object for run config. However, it must conform to the constraints of the config
                 schema for this job. If it does not, the client will throw a DagsterGraphQLClientError with a message of

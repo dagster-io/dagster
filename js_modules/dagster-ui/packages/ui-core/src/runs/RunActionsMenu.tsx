@@ -306,10 +306,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
   );
 });
 
-export const RunBulkActionsMenu: React.FC<{
+interface RunBulkActionsMenuProps {
   selected: RunTableRunFragment[];
   clearSelection: () => void;
-}> = React.memo(({selected, clearSelection}) => {
+}
+
+export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) => {
+  const {selected, clearSelection} = props;
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [visibleDialog, setVisibleDialog] = React.useState<

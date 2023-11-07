@@ -11,12 +11,17 @@ import {AssetLatestInfoRunFragment} from '../asset-data/types/AssetLiveDataProvi
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 
-export const FailedRunSinceMaterializationBanner: React.FC<{
+export const FailedRunSinceMaterializationBanner = ({
+  run,
+  stepKey,
+  border,
+  padding = {vertical: 16, left: 24, right: 12},
+}: {
   run: AssetLatestInfoRunFragment | null;
   padding?: DirectionalSpacing;
   border?: BorderSide | BorderSetting;
   stepKey?: string;
-}> = ({run, stepKey, border, padding = {vertical: 16, left: 24, right: 12}}) => {
+}) => {
   const stepLogs = useStepLogs({runId: run?.id, stepKeys: stepKey ? [stepKey] : []});
 
   return (

@@ -14,6 +14,13 @@ export type PartitionDefinitionForLaunchAssetFragment = {
   }>;
 };
 
+export type BackfillPolicyForLaunchAssetFragment = {
+  __typename: 'BackfillPolicy';
+  maxPartitionsPerRun: number | null;
+  description: string;
+  policyType: Types.BackfillPolicyType;
+};
+
 export type LaunchAssetExecutionAssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
@@ -35,12 +42,25 @@ export type LaunchAssetExecutionAssetNodeFragment = {
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
+  backfillPolicy: {
+    __typename: 'BackfillPolicy';
+    maxPartitionsPerRun: number | null;
+    description: string;
+    policyType: Types.BackfillPolicyType;
+  } | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  assetChecks: Array<{
-    __typename: 'AssetCheck';
-    name: string;
-    canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-  }>;
+  assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+    | {__typename: 'AssetCheckNeedsMigrationError'}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+    | {
+        __typename: 'AssetChecks';
+        checks: Array<{
+          __typename: 'AssetCheck';
+          name: string;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+        }>;
+      };
   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   repository: {
     __typename: 'Repository';
@@ -630,12 +650,25 @@ export type LaunchAssetLoaderQuery = {
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
+    backfillPolicy: {
+      __typename: 'BackfillPolicy';
+      maxPartitionsPerRun: number | null;
+      description: string;
+      policyType: Types.BackfillPolicyType;
+    } | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    assetChecks: Array<{
-      __typename: 'AssetCheck';
-      name: string;
-      canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-    }>;
+    assetChecksOrError:
+      | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+      | {__typename: 'AssetCheckNeedsMigrationError'}
+      | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+      | {
+          __typename: 'AssetChecks';
+          checks: Array<{
+            __typename: 'AssetCheck';
+            name: string;
+            canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+          }>;
+        };
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     repository: {
       __typename: 'Repository';

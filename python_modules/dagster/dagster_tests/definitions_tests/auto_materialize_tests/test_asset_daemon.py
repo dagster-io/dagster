@@ -1,11 +1,6 @@
-import multiprocessing
-from typing import TYPE_CHECKING
-
 import pendulum
 import pytest
 from dagster import AssetKey
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.scheduler.instigation import (
     InstigatorType,
@@ -14,9 +9,6 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import (
-    cleanup_test_instance,
-)
 from dagster._daemon.asset_daemon import (
     FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
     FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
@@ -24,7 +16,6 @@ from dagster._daemon.asset_daemon import (
     get_current_evaluation_id,
     set_auto_materialize_paused,
 )
-from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
 from .scenarios.auto_materialize_policy_scenarios import (
     auto_materialize_policy_scenarios,
@@ -33,8 +24,20 @@ from .scenarios.auto_observe_scenarios import auto_observe_scenarios
 from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
 from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 
-if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
+
+def _assert_run_requests_match(
+    expected_run_requests,
+    run_requests,
+):
+    def sort_run_request_key_fn(run_request):
+        return (min(run_request.asset_selection), run_request.partition_key)
+
+    sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
+    sorted_expected_run_requests = sorted(expected_run_requests, key=sort_run_request_key_fn)
+
+    for run_request, expected_run_request in zip(sorted_run_requests, sorted_expected_run_requests):
+        assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
+        assert run_request.partition_key == expected_run_request.partition_key
 
 
 @pytest.fixture
@@ -58,17 +61,7 @@ def test_reconcile_with_external_asset_graph(scenario_item, instance):
 
     assert len(run_requests) == len(scenario.expected_run_requests), run_requests
 
-    def sort_run_request_key_fn(run_request):
-        return (min(run_request.asset_selection), run_request.partition_key)
-
-    sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
-    sorted_expected_run_requests = sorted(
-        scenario.expected_run_requests, key=sort_run_request_key_fn
-    )
-
-    for run_request, expected_run_request in zip(sorted_run_requests, sorted_expected_run_requests):
-        assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
-        assert run_request.partition_key == expected_run_request.partition_key
+    _assert_run_requests_match(scenario.expected_run_requests, run_requests)
 
 
 daemon_scenarios = {
@@ -85,7 +78,10 @@ def daemon_paused_instance():
             "run_launcher": {
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
-            }
+            },
+            "auto_materialize": {
+                "max_tick_retries": 2,
+            },
         }
     ) as the_instance:
         yield the_instance
@@ -158,112 +154,6 @@ def test_daemon_ticks(daemon_paused_instance):
         assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
         assert ticks[0].tick_data.auto_materialize_evaluation_id == 2
         assert ticks[0].tick_data.run_requests == []
-
-
-def test_error_daemon_tick(daemon_not_paused_instance):
-    freeze_datetime = pendulum.now("UTC")
-    with pendulum.test(freeze_datetime):
-        error_asset_scenario = daemon_scenarios["error_asset_scenario"]
-        error_asset_scenario.do_daemon_scenario(
-            daemon_not_paused_instance, scenario_name="error_asset_scenario"
-        )
-
-        ticks = daemon_not_paused_instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-        )
-
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.FAILURE
-        assert ticks[0].timestamp == freeze_datetime.timestamp()
-        assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-        assert ticks[0].tick_data.run_requests == []
-        assert error_asset_scenario.expected_error_message in str(ticks[0].tick_data.error)
-
-
-spawn_ctx = multiprocessing.get_context("spawn")
-
-
-def _test_asset_daemon_in_subprocess(
-    scenario_name,
-    instance_ref: InstanceRef,
-    execution_datetime: "DateTime",
-    debug_crash_flags: SingleInstigatorDebugCrashFlags,
-) -> None:
-    scenario = daemon_scenarios[scenario_name]
-    with DagsterInstance.from_ref(instance_ref) as instance:
-        try:
-            with pendulum.test(execution_datetime):
-                scenario.do_daemon_scenario(
-                    instance, scenario_name=scenario_name, debug_crash_flags=debug_crash_flags
-                )
-        finally:
-            cleanup_test_instance(instance)
-
-
-def test_asset_daemon_failure_recovery(daemon_not_paused_instance):
-    # Verifies that if we crash after creating run requests, the tick can retry and continue
-    # on without issue
-    instance = daemon_not_paused_instance
-    freeze_datetime = pendulum.now("UTC")
-    scenario = daemon_scenarios["auto_materialize_policy_lazy_freshness_missing"]
-
-    # Run a tick where the daemon crashes after run requests are created
-    asset_daemon_process = spawn_ctx.Process(
-        target=_test_asset_daemon_in_subprocess,
-        args=[
-            "auto_materialize_policy_lazy_freshness_missing",
-            instance.get_ref(),
-            freeze_datetime,
-            {"RUN_REQUESTS_CREATED": get_terminate_signal()},
-        ],
-    )
-    asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
-
-    ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-    )
-
-    assert len(ticks) == 1
-    assert ticks[0]
-    assert ticks[0].status == TickStatus.STARTED
-    assert ticks[0].timestamp == freeze_datetime.timestamp()
-    assert not ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-    assert not len(ticks[0].tick_data.run_ids)
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-
-    freeze_datetime = pendulum.now("UTC").add(seconds=1)
-
-    # Run another tick with no crash, daemon continues on and succeeds
-    asset_daemon_process = spawn_ctx.Process(
-        target=_test_asset_daemon_in_subprocess,
-        args=[
-            "auto_materialize_policy_lazy_freshness_missing",
-            instance.get_ref(),
-            freeze_datetime,
-            None,  # No crash this time
-        ],
-    )
-    asset_daemon_process.start()
-    asset_daemon_process.join(timeout=60)
-
-    ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-    )
-
-    assert len(ticks) == 2
-
-    assert ticks[0]
-    assert ticks[0].status == TickStatus.SUCCESS
-    assert ticks[0].timestamp == freeze_datetime.timestamp()
-    assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-    assert len(ticks[0].tick_data.run_ids) == 1
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
-    assert ticks[0].tick_data.run_requests == scenario.expected_run_requests
 
 
 @pytest.fixture
@@ -458,7 +348,9 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
             [spec.num_requested for spec in scenario.expected_evaluations]
         )
         assert tick.requested_asset_keys == {
-            AssetKey.from_coercible(spec.asset_key) for spec in scenario.expected_evaluations
+            AssetKey.from_coercible(spec.asset_key)
+            for spec in scenario.expected_evaluations
+            if spec.num_requested > 0
         }
 
 

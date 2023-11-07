@@ -9,11 +9,15 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {UnderlyingOpsAssetNodeFragment} from './types/UnderlyingOpsOrGraph.types';
 
-export const UnderlyingOpsOrGraph: React.FC<{
+export const UnderlyingOpsOrGraph = ({
+  assetNode,
+  repoAddress,
+  minimal,
+}: {
   assetNode: UnderlyingOpsAssetNodeFragment;
   repoAddress: RepoAddress;
   minimal?: boolean;
-}> = ({assetNode, repoAddress, minimal}) => {
+}) => {
   const {assetKey, graphName, opNames, jobNames} = assetNode;
   const opCount = opNames.length;
 

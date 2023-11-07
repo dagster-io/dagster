@@ -6,9 +6,7 @@ import {withMiddleTruncation} from '../app/Util';
 
 import {ASSET_LINK_NAME_MAX_LENGTH} from './layout';
 
-export const AssetNodeLink: React.FC<{
-  assetKey: {path: string[]};
-}> = React.memo(({assetKey}) => {
+export const AssetNodeLink = React.memo(({assetKey}: {assetKey: {path: string[]}}) => {
   const label = assetKey.path[assetKey.path.length - 1]!;
   return (
     <AssetNodeLinkContainer>

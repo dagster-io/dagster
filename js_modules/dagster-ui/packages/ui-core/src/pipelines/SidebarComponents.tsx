@@ -12,7 +12,7 @@ interface ISidebarSectionProps {
   collapsedByDefault?: boolean;
 }
 
-export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
+export const SidebarSection = (props: ISidebarSectionProps) => {
   const {title, collapsedByDefault, children} = props;
   const [open, setOpen] = useStateWithStorage<boolean>(`sidebar-${title}`, (storedValue) =>
     storedValue === true || storedValue === false ? storedValue : !collapsedByDefault,

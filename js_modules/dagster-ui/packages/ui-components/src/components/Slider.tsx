@@ -2,26 +2,28 @@
 import {
   Slider as BlueprintSlider,
   MultiSlider as BlueprintMultiSlider,
-  SliderProps,
-  MultiSliderProps,
+  SliderProps as BlueprintSliderProps,
+  MultiSliderProps as BlueprintMultiSliderProps,
 } from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {Colors} from './Colors';
 
-export const Slider: React.FC<SliderProps & {fillColor?: string}> = ({
-  fillColor = Colors.Gray600,
-  ...rest
-}) => {
+interface SliderProps extends BlueprintSliderProps {
+  fillColor?: string;
+}
+
+export const Slider = ({fillColor = Colors.Gray600, ...rest}: SliderProps) => {
   return <StyledSlider {...rest} intent="none" $fillColor={fillColor} />;
 };
 
-export const MultiSlider: React.FC<
-  MultiSliderProps & {fillColor?: string; children: React.ReactNode}
-> & {
-  Handle: typeof BlueprintMultiSlider.Handle;
-} = ({fillColor = Colors.Gray600, ...rest}) => {
+interface MultiSliderProps extends BlueprintMultiSliderProps {
+  fillColor?: string;
+  children: React.ReactNode;
+}
+
+export const MultiSlider = ({fillColor = Colors.Gray600, ...rest}: MultiSliderProps) => {
   return <StyledMultiSlider {...rest} intent="none" $fillColor={fillColor} />;
 };
 

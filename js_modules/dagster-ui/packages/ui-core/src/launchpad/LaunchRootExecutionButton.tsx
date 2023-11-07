@@ -20,7 +20,7 @@ interface LaunchRootExecutionButtonProps {
 
 export const NO_LAUNCH_PERMISSION_MESSAGE = 'You do not have permission to launch this job';
 
-export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
+export const LaunchRootExecutionButton = (props: LaunchRootExecutionButtonProps) => {
   const {hasLaunchPermission} = props;
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();

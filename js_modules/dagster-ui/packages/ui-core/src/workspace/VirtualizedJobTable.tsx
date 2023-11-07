@@ -13,7 +13,7 @@ interface Props {
   jobs: Job[];
 }
 
-export const VirtualizedJobTable: React.FC<Props> = ({repoAddress, jobs}) => {
+export const VirtualizedJobTable = ({repoAddress, jobs}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({

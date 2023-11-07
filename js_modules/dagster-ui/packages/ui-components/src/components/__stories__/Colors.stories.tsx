@@ -8,7 +8,7 @@ import rgbHex from 'rgb-hex';
 import {Box} from '../Box';
 import {Colors} from '../Colors';
 
-const ColorExample: React.FC<{name: string; color: string}> = ({color, name}) => (
+const ColorExample = ({color, name}: {name: string; color: string}) => (
   <Box background={color} padding={12} style={{width: 120}}>
     {name}
   </Box>

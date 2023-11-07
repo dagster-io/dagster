@@ -42,6 +42,7 @@ from .conversion_utils import _convert_pydantic_field, safe_is_subclass
 from .pydantic_compat_layer import (
     USING_PYDANTIC_2,
     ModelFieldCompat,
+    PydanticUndefined,
     model_config,
     model_fields,
 )
@@ -57,6 +58,11 @@ except ImportError:
 
 
 INTERNAL_MARKER = "__internal__"
+
+
+def _is_field_internal(name: str) -> bool:
+    return name.endswith(INTERNAL_MARKER)
+
 
 # ensure that this ends with the internal marker so we can do a single check
 assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
@@ -100,7 +106,7 @@ class MakeConfigCacheable(BaseModel):
         # config schema. Pydantic will normally raise an error if you try to set an attribute
         # that is not part of the schema.
 
-        if self._is_field_internal(name):
+        if _is_field_internal(name):
             object.__setattr__(self, name, value)
             return
 
@@ -143,9 +149,6 @@ class MakeConfigCacheable(BaseModel):
                     ) from e
             else:
                 raise
-
-    def _is_field_internal(self, name: str) -> bool:
-        return name.endswith(INTERNAL_MARKER)
 
 
 T = TypeVar("T")
@@ -234,11 +237,16 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                     discriminator_key: discriminated_value,
                 }
             else:
-                modified_data[key] = value
+                if field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
+                    modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
+                        value
+                    )
+                else:
+                    modified_data[key] = value
 
         for key, field in model_fields(self).items():
             if field.is_required() and key not in modified_data:
-                modified_data[key] = None
+                modified_data[key] = field.default if field.default != PydanticUndefined else None
 
         super().__init__(**modified_data)
         if USING_PYDANTIC_2:
@@ -257,7 +265,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             for k, v in public_fields.items()
         }
 
-    def _get_non_default_public_field_values(self) -> Mapping[str, Any]:
+    @classmethod
+    def _get_non_default_public_field_values_cls(cls, items: Dict[str, Any]) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
         ignoring any private fields, and any defaulted fields which are equal to the default value.
 
@@ -265,13 +274,17 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         meaning any nested config objects will be returned as config objects, not dictionaries.
         """
         output = {}
-        for key, value in self.__dict__.items():
-            if self._is_field_internal(key):
+        for key, value in items.items():
+            if _is_field_internal(key):
                 continue
-            field = model_fields(self).get(key)
+            field = model_fields(cls).get(key)
 
             if field:
-                if not is_literal(field.annotation) and value == field.default:
+                if (
+                    not is_literal(field.annotation)
+                    and not safe_is_subclass(field.annotation, Enum)
+                    and value == field.default
+                ):
                     continue
 
                 resolved_field_name = field.alias or key
@@ -279,6 +292,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             else:
                 output[key] = value
         return output
+
+    def _get_non_default_public_field_values(self) -> Mapping[str, Any]:
+        return self.__class__._get_non_default_public_field_values_cls(dict(self))  # noqa: SLF001
 
     @classmethod
     def to_config_schema(cls) -> DefinitionConfigSchema:

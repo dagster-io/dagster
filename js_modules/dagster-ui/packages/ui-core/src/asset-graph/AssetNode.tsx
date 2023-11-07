@@ -21,10 +21,12 @@ import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
-export const AssetNode: React.FC<{
+interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
-}> = React.memo(({definition, selected}) => {
+}
+
+export const AssetNode = React.memo(({definition, selected}: Props) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
@@ -76,10 +78,12 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-const AssetTopTags: React.FC<{
+interface AssetTopTagsProps {
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
-}> = ({definition, liveData}) => (
+}
+
+const AssetTopTags = ({definition, liveData}: AssetTopTagsProps) => (
   <Box flex={{gap: 4}} padding={{left: 4}} style={{height: 24}}>
     <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="upstream" />
   </Box>
@@ -104,7 +108,7 @@ interface StatusRowProps {
   liveData: LiveDataForNode | undefined;
 }
 
-const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) => {
+const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
   const {content, background} = buildAssetNodeStatusContent({
     assetKey: definition.assetKey,
     definition,
@@ -157,10 +161,13 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
 ];
 
-const AssetNodeChecksRow: React.FC<{
+const AssetNodeChecksRow = ({
+  definition,
+  liveData,
+}: {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
-}> = ({definition, liveData}) => {
+}) => {
   if (!liveData || !liveData.assetChecks.length) {
     return <span />;
   }
@@ -205,10 +212,13 @@ const AssetNodeChecksRow: React.FC<{
   );
 };
 
-export const AssetNodeMinimal: React.FC<{
+export const AssetNodeMinimal = ({
+  selected,
+  definition,
+}: {
   selected: boolean;
   definition: AssetNodeFragment;
-}> = ({selected, definition}) => {
+}) => {
   const {isSource, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});

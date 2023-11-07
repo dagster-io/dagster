@@ -11,6 +11,7 @@ import {
   AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
   RunStatus,
+  buildAssetChecks,
   buildAssetNode,
   buildAutoMaterializePolicy,
   buildAutoMaterializeRule,
@@ -71,9 +72,10 @@ const buildSidebarQueryMock = (
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset1"]',
         description: null,
+        backfillPolicy: null,
         configField: null,
         metadataEntries: [],
-        assetChecks: [],
+        assetChecksOrError: buildAssetChecks({checks: []}),
         jobNames: ['test_job'],
         autoMaterializePolicy: null,
         freshnessPolicy: null,
@@ -231,10 +233,13 @@ const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetE
   },
 });
 
-const TestContainer: React.FC<{
+const TestContainer = ({
+  children,
+  mocks,
+}: {
   mocks?: MockedResponse<Record<string, any>>[];
   children: React.ReactNode;
-}> = ({children, mocks}) => (
+}) => (
   <MockedProvider
     cache={createAppCache()}
     mocks={

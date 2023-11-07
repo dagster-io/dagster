@@ -202,7 +202,7 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
         last = upstream_partitions_def.get_last_partition_key(
-            current_time=None, dynamic_partitions_store=dynamic_partitions_store
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
 
         upstream_subset = upstream_partitions_def.empty_subset()
@@ -218,7 +218,15 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
+        last_upstream_partition = upstream_partitions_subset.partitions_def.get_last_partition_key(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+        if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
+            return downstream_partitions_def.subset_with_all_partitions(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+        else:
+            return downstream_partitions_def.empty_subset()
 
 
 @whitelist_for_serdes
@@ -448,7 +456,9 @@ class BaseMultiPartitionMapping(ABC):
                     ]
                 ),
                 *[
-                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys()
+                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys(
+                        dynamic_partitions_store=dynamic_partitions_store, current_time=current_time
+                    )
                     for dim_name in unmapped_b_dim_names
                 ],
             ):

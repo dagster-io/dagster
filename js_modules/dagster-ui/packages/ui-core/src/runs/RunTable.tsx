@@ -249,17 +249,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
   ${RUN_TAGS_FRAGMENT}
 `;
 
-const RunRow: React.FC<{
-  run: RunTableRunFragment;
-  canTerminateOrDelete: boolean;
-  onAddTag?: (token: RunFilterToken) => void;
-  checked?: boolean;
-  onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
-  additionalColumns?: React.ReactNode[];
-  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
-  isHighlighted?: boolean;
-  hideCreatedBy?: boolean;
-}> = ({
+const RunRow = ({
   run,
   canTerminateOrDelete,
   onAddTag,
@@ -269,6 +259,16 @@ const RunRow: React.FC<{
   additionalActionsForRun,
   isHighlighted,
   hideCreatedBy,
+}: {
+  run: RunTableRunFragment;
+  canTerminateOrDelete: boolean;
+  onAddTag?: (token: RunFilterToken) => void;
+  checked?: boolean;
+  onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
+  additionalColumns?: React.ReactNode[];
+  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
+  isHighlighted?: boolean;
+  hideCreatedBy?: boolean;
 }) => {
   const {pipelineName} = run;
   const repo = useRepositoryForRunWithoutSnapshot(run);

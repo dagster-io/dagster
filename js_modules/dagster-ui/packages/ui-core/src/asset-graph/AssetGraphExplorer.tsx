@@ -30,15 +30,10 @@ import {
   RightInfoPanel,
   RightInfoPanelContent,
 } from '../pipelines/GraphExplorer';
-import {
-  EmptyDAGNotice,
-  EntirelyFilteredDAGNotice,
-  LargeDAGNotice,
-  LoadingNotice,
-} from '../pipelines/GraphNotices';
+import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
-import {Loading, LoadingSpinner} from '../ui/Loading';
+import {Loading} from '../ui/Loading';
 
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
@@ -70,20 +65,9 @@ interface Props {
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
 
-export const AssetGraphExplorer: React.FC<Props> = (props) => {
-  const {
-    fetchResult,
-    assetGraphData,
-    fullAssetGraphData,
-    graphQueryItems,
-    allAssetKeys,
-    applyingEmptyDefault,
-    isCalculating,
-  } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
-
-  if (isCalculating) {
-    return <LoadingSpinner purpose="page" />;
-  }
+export const AssetGraphExplorer = (props: Props) => {
+  const {fetchResult, assetGraphData, fullAssetGraphData, graphQueryItems, allAssetKeys} =
+    useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -110,7 +94,6 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
             fullAssetGraphData={fullAssetGraphData}
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
-            applyingEmptyDefault={applyingEmptyDefault}
             {...props}
           />
         );
@@ -119,15 +102,14 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   );
 };
 
-type WithDataProps = {
+interface WithDataProps extends Props {
   allAssetKeys: AssetKey[];
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
-  applyingEmptyDefault: boolean;
-} & Props;
+}
 
-const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
+const AssetGraphExplorerWithData = ({
   options,
   setOptions,
   explorerPath,
@@ -136,11 +118,10 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   assetGraphData,
   fullAssetGraphData,
   graphQueryItems,
-  applyingEmptyDefault,
   fetchOptions,
   fetchOptionFilters,
   allAssetKeys,
-}) => {
+}: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const {layout, loading, async} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
@@ -155,9 +136,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
 
   const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
-  const allDefinitionsForMaterialize = applyingEmptyDefault
-    ? graphQueryItems.map((a) => a.node)
-    : Object.values(assetGraphData.nodes).map((a) => a.definition);
+  const allDefinitionsForMaterialize = Object.values(assetGraphData.nodes).map((a) => a.definition);
 
   const onSelectNode = React.useCallback(
     async (
@@ -301,8 +280,6 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
         <ErrorBoundary region="graph">
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
-          ) : applyingEmptyDefault ? (
-            <LargeDAGNotice nodeType="asset" anchorLeft="40px" />
           ) : Object.keys(assetGraphData.nodes).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="asset" />
           ) : undefined}

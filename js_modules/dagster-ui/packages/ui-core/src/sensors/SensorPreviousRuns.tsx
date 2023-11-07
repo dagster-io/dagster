@@ -16,12 +16,16 @@ import {
 
 const RUNS_LIMIT = 20;
 
-export const SensorPreviousRuns: React.FC<{
+export const SensorPreviousRuns = ({
+  sensor,
+  highlightedIds,
+  tabs,
+}: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   tabs?: React.ReactElement;
   highlightedIds?: string[];
-}> = ({sensor, highlightedIds, tabs}) => {
+}) => {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     PreviousRunsForSensorQuery,
     PreviousRunsForSensorQueryVariables

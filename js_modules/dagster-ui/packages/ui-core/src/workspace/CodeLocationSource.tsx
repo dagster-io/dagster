@@ -6,7 +6,7 @@ interface Metadata {
   value: string;
 }
 
-export const CodeLocationSource: React.FC<{metadata: Metadata[]}> = ({metadata}) => {
+export const CodeLocationSource = ({metadata}: {metadata: Metadata[]}) => {
   const metadataWithURL = metadata.find(({key}) => key === 'url');
   if (!metadataWithURL) {
     return <div>{'\u2013'}</div>;

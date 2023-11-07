@@ -14,7 +14,7 @@ interface IOpTypeSignature {
   definition: OpTypeSignatureFragment;
 }
 
-export const OpTypeSignature: React.FC<IOpTypeSignature> = (props) => {
+export const OpTypeSignature = (props: IOpTypeSignature) => {
   const {inputDefinitions, outputDefinitions} = props.definition;
 
   const inputSide = inputDefinitions.map((input, i) => (

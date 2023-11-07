@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import dagster._check as check
 import graphene
@@ -22,6 +22,11 @@ from dagster_graphql.schema.util import non_null_list
 
 from .asset_key import GrapheneAssetKey
 from .util import ResolveInfo
+
+if TYPE_CHECKING:
+    from ..implementation.asset_checks_loader import (
+        AssetChecksExecutionForLatestMaterializationLoader,
+    )
 
 GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
     AssetCheckExecutionResolvedStatus
@@ -127,11 +132,6 @@ class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
-    executions = graphene.Field(
-        non_null_list(GrapheneAssetCheckExecution),
-        limit=graphene.NonNull(graphene.Int),
-        cursor=graphene.String(),
-    )
     executionForLatestMaterialization = graphene.Field(GrapheneAssetCheckExecution)
     canExecuteIndividually = graphene.NonNull(GrapheneAssetCheckCanExecuteIndividually)
 
@@ -142,9 +142,11 @@ class GrapheneAssetCheck(graphene.ObjectType):
         self,
         asset_check: ExternalAssetCheck,
         can_execute_individually,
+        execution_loader: "AssetChecksExecutionForLatestMaterializationLoader",
     ):
         self._asset_check = asset_check
         self._can_execute_individually = can_execute_individually
+        self._execution_loader = execution_loader
 
     def resolve_assetKey(self, _):
         return self._asset_check.asset_key
@@ -155,26 +157,11 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_description(self, _) -> Optional[str]:
         return self._asset_check.description
 
-    def resolve_executions(
-        self, graphene_info: ResolveInfo, **kwargs
-    ) -> List[GrapheneAssetCheckExecution]:
-        from dagster_graphql.implementation.fetch_asset_checks import (
-            fetch_executions,
-        )
-
-        return fetch_executions(
-            graphene_info.context.instance, self._asset_check, kwargs["limit"], kwargs.get("cursor")
-        )
-
     def resolve_executionForLatestMaterialization(
-        self, graphene_info: ResolveInfo
+        self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetCheckExecution]:
-        from dagster_graphql.implementation.fetch_asset_checks import (
-            fetch_execution_for_latest_materialization,
-        )
-
-        return fetch_execution_for_latest_materialization(
-            graphene_info.context.instance, self._asset_check
+        return self._execution_loader.get_execution_for_latest_materialization(
+            self._asset_check.key
         )
 
     def resolve_canExecuteIndividually(self, _) -> GrapheneAssetCheckCanExecuteIndividually:
@@ -210,6 +197,14 @@ class GrapheneAssetCheckNeedsUserCodeUpgrade(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
         name = "AssetCheckNeedsUserCodeUpgrade"
+
+
+AssetChecksOrErrorUnion = Union[
+    GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
+    GrapheneAssetChecks,
+]
 
 
 class GrapheneAssetChecksOrError(graphene.Union):

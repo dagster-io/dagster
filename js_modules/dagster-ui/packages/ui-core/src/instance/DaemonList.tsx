@@ -44,7 +44,7 @@ interface Props {
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn = true}) => {
+export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) => {
   const automaterialize = useAutomaterializeDaemonStatus();
   const assetDaemon = daemonStatuses?.filter((daemon) => daemon.daemonType === 'ASSET')[0];
   const nonAssetDaemons = daemonStatuses?.filter((daemon) => daemon.daemonType !== 'ASSET');

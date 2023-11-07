@@ -1178,9 +1178,7 @@ def test_external_time_window_valid_partition_key():
 
     external_partitions_def = external_time_window_partitions_definition_from_def(hourly_partition)
     assert (
-        external_partitions_def.get_partitions_definition().is_valid_partition_key(
-            "2023-03-11-15:00"
-        )
+        external_partitions_def.get_partitions_definition().has_partition_key("2023-03-11-15:00")
         is True
     )
     assert (

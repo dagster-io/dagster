@@ -9,12 +9,15 @@ import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
 
-export const PartitionHealthSummary: React.FC<{
+interface Props {
   assetKey: AssetKey;
   showAssetKey?: boolean;
   data: PartitionHealthData[];
   selections?: PartitionDimensionSelection[];
-}> = React.memo(({showAssetKey, assetKey, data, selections}) => {
+}
+
+export const PartitionHealthSummary = React.memo((props: Props) => {
+  const {showAssetKey, assetKey, data, selections} = props;
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 
   if (!assetData) {

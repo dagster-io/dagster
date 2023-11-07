@@ -39,7 +39,7 @@ import {RunFragment} from './types/RunFragments.types';
 
 type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
 
-export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
+export const RunConfigDialog = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
   const {runConfigYaml} = run;
   const {flagInstanceConcurrencyLimits} = useFeatureFlags();
   const [visibleDialog, setVisibleDialog] = React.useState<VisibleDialog>(null);

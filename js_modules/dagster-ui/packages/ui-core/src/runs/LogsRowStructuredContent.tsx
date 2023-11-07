@@ -34,7 +34,7 @@ interface IStructuredContentProps {
   metadata: IRunMetadataDict;
 }
 
-export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node, metadata}) => {
+export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentProps) => {
   const location = useLocation();
   const eventType = node.eventType as string;
   switch (node.__typename) {
@@ -263,14 +263,20 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
 
 // Structured Content Renderers
 
-const DefaultContent: React.FC<{
+const DefaultContent = ({
+  message,
+  eventType,
+  eventColor,
+  eventIntent,
+  children,
+}: {
   message: string;
   eventType?: string;
   eventColor?: string;
   eventIntent?: Intent;
   metadataEntries?: MetadataEntryFragment[];
   children?: React.ReactElement;
-}> = ({message, eventType, eventColor, eventIntent, children}) => {
+}) => {
   return (
     <>
       <EventTypeColumn>
@@ -301,13 +307,19 @@ const DefaultContent: React.FC<{
   );
 };
 
-const FailureContent: React.FC<{
+const FailureContent = ({
+  message,
+  error,
+  errorSource,
+  eventType,
+  metadataEntries,
+}: {
   message?: string;
   eventType: string;
   error?: PythonErrorFragment | null;
   errorSource?: ErrorSource | null;
   metadataEntries?: MetadataEntryFragment[];
-}> = ({message, error, errorSource, eventType, metadataEntries}) => {
+}) => {
   let contextMessage = null;
   let errorMessage = null;
   let errorStack = null;
@@ -367,10 +379,13 @@ const FailureContent: React.FC<{
   );
 };
 
-const StepUpForRetryContent: React.FC<{
+const StepUpForRetryContent = ({
+  message,
+  error,
+}: {
   message?: string;
   error?: PythonErrorFragment | null;
-}> = ({message, error}) => {
+}) => {
   let contextMessage = null;
   let errorCause = null;
   let errorMessage = null;
@@ -427,10 +442,13 @@ const StepUpForRetryContent: React.FC<{
   );
 };
 
-const AssetCheckEvaluationContent: React.FC<{
+const AssetCheckEvaluationContent = ({
+  node,
+  eventType,
+}: {
   node: LogsRowStructuredFragment_AssetCheckEvaluationEvent_;
   eventType: string;
-}> = ({node, eventType}) => {
+}) => {
   const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;
 
   const checkLink = assetDetailsPathForAssetCheck({assetKey, name: checkName});
@@ -457,13 +475,19 @@ const AssetCheckEvaluationContent: React.FC<{
   );
 };
 
-const AssetMetadataContent: React.FC<{
+const AssetMetadataContent = ({
+  message,
+  assetKey,
+  metadataEntries,
+  eventType,
+  timestamp,
+}: {
   message: string;
   assetKey: AssetKey | null;
   metadataEntries: MetadataEntryFragment[];
   eventType: string;
   timestamp: string;
-}> = ({message, assetKey, metadataEntries, eventType, timestamp}) => {
+}) => {
   if (!assetKey) {
     return (
       <DefaultContent message={message} eventType={eventType}>

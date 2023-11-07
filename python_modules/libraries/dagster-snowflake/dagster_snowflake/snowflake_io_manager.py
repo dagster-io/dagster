@@ -46,15 +46,22 @@ def build_snowflake_io_manager(
             from dagster import Definitions
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_prefix"]
+                metadata={"schema": "my_schema"} # will be used as the schema in snowflake
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_second_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
             snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
 
             defs = Definitions(
-                assets=[my_table],
+                assets=[my_table, my_second_table],
                 resources={
                     "io_manager": snowflake_io_manager.configured({
                         "database": "my_database",
@@ -65,11 +72,11 @@ def build_snowflake_io_manager(
             )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-        the IO Manager. For assets, the schema will be determined from the asset key,
+        the IO Manager. The schema can be specified by including a "schema" entry in output metadata.
+        If this is not set, then for assets, the schema will be determined from the asset key,
         as shown in the above example. The final prefix before the asset name will be used as the schema. For example,
         if the asset ``my_table`` had the key prefix ``["snowflake", "my_schema"]``, the schema ``my_schema`` will be
-        used. For ops, the schema can be specified by including a ``schema`` entry in output metadata. If ``schema`` is not provided
-        via config or on the asset/op, ``public`` will be used for the schema.
+        used. If none of these is provided, ``public`` will be used for the schema.
 
         .. code-block:: python
 
