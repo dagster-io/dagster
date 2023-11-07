@@ -86,7 +86,7 @@ setup(
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
-        "pendulum<3",
+        "pendulum>=0.7.0,<3",
         "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
         "python-dateutil",
         "python-dotenv",
