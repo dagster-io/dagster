@@ -12,7 +12,7 @@ from .asset_daemon_scenario_states import (
     diamond,
     one_asset,
     one_asset_depends_on_two,
-    time_partitions_start,
+    time_partitions_start_str,
     two_assets_depend_on_one,
     two_assets_in_sequence,
 )
@@ -263,7 +263,7 @@ freshness_policy_scenarios = [
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
             freshness_policy=freshness_30m,
         )
-        .with_current_time(time_partitions_start)
+        .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs()

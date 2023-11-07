@@ -10,7 +10,7 @@ from .asset_daemon_scenario_states import (
     hourly_partitions_def,
     one_asset,
     one_asset_depends_on_two,
-    time_partitions_start,
+    time_partitions_start_str,
 )
 
 
@@ -61,7 +61,7 @@ cron_scenarios = [
             partitions_def=hourly_partitions_def,
             auto_materialize_policy=get_cron_policy(basic_hourly_cron_rule),
         )
-        .with_current_time(time_partitions_start)
+        .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1, minutes=5),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A"], hour_partition_key(state.current_time)))
@@ -187,7 +187,7 @@ cron_scenarios = [
                 basic_hourly_cron_rule, max_materializations_per_minute=100
             ),
         )
-        .with_current_time(time_partitions_start),
+        .with_current_time(time_partitions_start_str),
         execution_fn=lambda state: state.evaluate_tick()
         # no partitions exist yet
         .assert_requested_runs()
@@ -346,7 +346,7 @@ cron_scenarios = [
             ),
             partitions_def=hourly_partitions_def,
         )
-        .with_current_time(time_partitions_start)
+        .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(hours=1),
         execution_fn=lambda state: state.evaluate_tick()
         .evaluate_tick()

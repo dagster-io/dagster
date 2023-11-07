@@ -67,7 +67,7 @@ from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import do_run
-from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.exotic_partition_mapping_scenarios import (
+from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
     multipartitioned_self_dependency,
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,

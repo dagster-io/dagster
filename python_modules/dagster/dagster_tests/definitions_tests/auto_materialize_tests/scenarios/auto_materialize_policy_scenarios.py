@@ -27,11 +27,11 @@ from ..base_scenario import (
     single_asset_run,
     with_auto_materialize_policy,
 )
-from .basic_scenarios import diamond
-from .exotic_partition_mapping_scenarios import (
+from .asset_graphs import (
     one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
     one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
 )
+from .basic_scenarios import diamond
 from .freshness_policy_scenarios import (
     daily_to_unpartitioned,
 )
