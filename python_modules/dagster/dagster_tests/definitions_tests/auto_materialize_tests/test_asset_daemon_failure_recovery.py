@@ -247,7 +247,6 @@ def test_error_loop_after_cursor_written(crash_location: str) -> None:
             scenario.evaluate_daemon(instance, debug_crash_flags=debug_crash_flags)
 
         ticks = _get_asset_daemon_ticks(instance)
-        print(ticks)
         assert len(ticks) == 5
         assert ticks[-1].status == TickStatus.FAILURE
         assert ticks[-1].timestamp == current_time.timestamp()
