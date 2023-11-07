@@ -22,11 +22,12 @@ from dagster_tests.definitions_tests.auto_materialize_tests.asset_daemon_scenari
     AssetDaemonScenario,
 )
 
-from .test_scenarios import all_scenarios
 from .updated_scenarios.asset_daemon_scenario_states import (
     two_assets_in_sequence,
     two_partitions_def,
 )
+from .updated_scenarios.basic_scenarios import basic_scenarios
+from .updated_scenarios.partition_scenarios import partition_scenarios
 
 
 @contextmanager
@@ -47,8 +48,8 @@ def get_daemon_instance(
         yield instance
 
 
-# take an arbitrary 10% of the scenarios to run end-to-end against the daemon
-daemon_scenarios = [scenario for i, scenario in enumerate(all_scenarios) if i % 10 == 0]
+# just run over a subset of the total scenarios
+daemon_scenarios = [*basic_scenarios, *partition_scenarios]
 
 
 @pytest.mark.parametrize(
