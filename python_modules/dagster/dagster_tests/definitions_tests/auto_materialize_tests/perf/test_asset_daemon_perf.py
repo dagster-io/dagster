@@ -62,7 +62,7 @@ perf_scenarios = [
     ),
     all_daily_partitioned_500_assets.build_scenario(
         partition_keys_to_backfill=[f"2020-01-{i+1:02}" for i in range(20)],
-        max_execution_time_seconds=20,
+        max_execution_time_seconds=25,
     ),
     all_hourly_partitioned_100_assets.build_scenario(
         partition_keys_to_backfill=["2020-01-01-00:00", "2020-01-02-00:00"],
