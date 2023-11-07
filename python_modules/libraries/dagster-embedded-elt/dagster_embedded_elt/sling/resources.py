@@ -161,7 +161,7 @@ class SlingResource(ConfigurableResource):
         target_object: str,
         mode: SlingMode = SlingMode.FULL_REFRESH,
         primary_key: Optional[List[str]] = None,
-        update_key: Optional[List[str]] = None,
+        update_key: Optional[str] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
@@ -205,7 +205,7 @@ class SlingResource(ConfigurableResource):
         target_object: str,
         mode: SlingMode,
         primary_key: Optional[List[str]] = None,
-        update_key: Optional[List[str]] = None,
+        update_key: Optional[str] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
@@ -221,7 +221,7 @@ class SlingResource(ConfigurableResource):
                 name, e.g. TABLE1, SCHEMA1.TABLE2. For file targets, the target object is a path or an url to a file.
             mode (SlingMode): The Sling mode to use when syncing, i.e. incremental, full-refresh
                 See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
-            primary_key (str): For incremental syncs, a primary key is used during merge statements to update
+            primary_key (List[str]): For incremental syncs, a primary key is used during merge statements to update
                 existing rows.
             update_key (str): For incremental syncs, an update key is used to stream records after max(update_key)
             source_options (Dict[str, Any]): Other source options to pass to Sling,
