@@ -27,6 +27,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     LastPartitionMapping,
     Nothing,
+    Output,
     PartitionKeyRange,
     PartitionsDefinition,
     RunRequest,
@@ -53,7 +54,9 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.host_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.host_representation.external_data import (
+    external_asset_nodes_from_defs,
+)
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -1392,6 +1395,36 @@ def test_asset_backfill_unpartitioned_downstream_of_partitioned():
         foo.key: foo_partitions_def.empty_subset().with_partition_key_range(partition_key_range),
         foo_child.key: foo_partitions_def.empty_subset().with_partition_key_range(
             partition_key_range
+        ),
+    }
+
+    run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
+
+
+def test_asset_backfill_success_on_optional_outputs():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(output_required=False, partitions_def=DailyPartitionsDefinition("2023-10-01"))
+    def optional_output_asset():
+        if False:
+            yield Output(1, "result")
+
+    assets_by_repo_name = {"repo": [optional_output_asset]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    partition_keys = ["2023-10-01", "2023-10-02"]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=partition_keys,
+        asset_selection=[optional_output_asset.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 10, 8, 0, 0, 0),
+    )
+
+    assert asset_backfill_data.target_subset.partitions_subsets_by_asset_key == {
+        optional_output_asset.key: optional_output_asset.partitions_def.empty_subset().with_partition_keys(
+            partition_keys
         ),
     }
 

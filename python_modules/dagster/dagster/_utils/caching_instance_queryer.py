@@ -29,6 +29,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
@@ -41,7 +42,11 @@ from dagster._core.storage.dagster_run import (
     DagsterRun,
     RunRecord,
 )
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
+)
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -352,6 +357,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     def run_has_tag(self, run_id: str, tag_key: str, tag_value: str) -> bool:
         return cast(DagsterRun, self._get_run_by_id(run_id)).tags.get(tag_key) == tag_value
+
+    def get_run_partitions(self, run_id: str) -> Optional[Union[str, PartitionKeyRange]]:
+        tags = cast(DagsterRun, self._get_run_by_id(run_id)).tags
+        if tags.get(PARTITION_NAME_TAG):
+            return tags[PARTITION_NAME_TAG]
+        elif tags.get(ASSET_PARTITION_RANGE_START_TAG) and tags.get(ASSET_PARTITION_RANGE_END_TAG):
+            return PartitionKeyRange(
+                start=tags[ASSET_PARTITION_RANGE_START_TAG], end=tags[ASSET_PARTITION_RANGE_END_TAG]
+            )
+        else:
+            return None
 
     @cached_method
     def _get_planned_materializations_for_run_from_events(

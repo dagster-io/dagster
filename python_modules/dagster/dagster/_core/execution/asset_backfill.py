@@ -37,7 +37,10 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.selector import JobSubsetSelector, PartitionsByAssetSelector
+from dagster._core.definitions.selector import (
+    JobSubsetSelector,
+    PartitionsByAssetSelector,
+)
 from dagster._core.errors import (
     DagsterAssetBackfillDataLoadError,
     DagsterBackfillFailedError,
@@ -1057,6 +1060,55 @@ def get_asset_backfill_iteration_materialized_partitions(
     yield updated_materialized_subset
 
 
+def get_asset_backfill_run_success_but_not_materialized_partitions(
+    backfill_id: str,
+    asset_backfill_data: AssetBackfillData,
+    asset_graph: ExternalAssetGraph,
+    instance_queryer: CachingInstanceQueryer,
+) -> AssetGraphSubset:
+    run_success_but_not_materialized_partitions = AssetGraphSubset(asset_graph)
+
+    successful_run_ids = [
+        record.run_id
+        for record in instance_queryer.instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.RUN_SUCCESS,
+                after_cursor=asset_backfill_data.latest_storage_id,
+            )
+        )
+    ]
+
+    successful_backfill_run_ids = [
+        run_id
+        for run_id in successful_run_ids
+        if instance_queryer.run_has_tag(run_id, BACKFILL_ID_TAG, backfill_id)
+    ]
+
+    for run_id in successful_backfill_run_ids:
+        planned_asset_keys = instance_queryer.get_planned_materializations_for_run(run_id)
+        materialized_asset_keys = instance_queryer.get_current_materializations_for_run(
+            run_id=run_id
+        )
+        unmaterialized_assets = materialized_asset_keys - planned_asset_keys
+
+        run_partitions = instance_queryer.get_run_partitions(run_id)
+        if isinstance(run_partitions, PartitionKeyRange):
+            for asset_key in unmaterialized_assets:
+                run_success_but_not_materialized_partitions |= {
+                    *asset_graph.get_asset_partitions_in_range(
+                        asset_key, run_partitions, instance_queryer
+                    )
+                }
+        else:
+            partition_key = run_partitions
+            for asset_key in unmaterialized_assets:
+                run_success_but_not_materialized_partitions |= {
+                    AssetKeyPartitionKey(asset_key, partition_key)
+                }
+
+    return run_success_but_not_materialized_partitions
+
+
 def _get_failed_and_downstream_asset_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
@@ -1108,6 +1160,7 @@ def execute_asset_backfill_iteration_inner(
 
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
+        run_success_but_not_materialized_subset = AssetGraphSubset(asset_graph)
     else:
         target_parent_asset_keys = {
             parent
@@ -1147,13 +1200,22 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
+        run_success_but_not_materialized_subset = (
+            get_asset_backfill_run_success_but_not_materialized_partitions(
+                backfill_id, asset_backfill_data, asset_graph, instance_queryer
+            )
+        )
+
+        yield None
+
     asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions(
         instance_queryer,
         lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
             candidates_unit=unit,
             asset_partitions_to_request=visited,
             asset_graph=asset_graph,
-            materialized_subset=updated_materialized_subset,
+            materialized_subset=updated_materialized_subset
+            | run_success_but_not_materialized_subset,
             requested_subset=asset_backfill_data.requested_subset,
             target_subset=asset_backfill_data.target_subset,
             failed_and_downstream_subset=failed_and_downstream_subset,
@@ -1284,7 +1346,11 @@ def _get_failed_asset_partitions(
     runs = instance_queryer.instance.get_runs(
         filters=RunsFilter(
             tags={BACKFILL_ID_TAG: backfill_id},
-            statuses=[DagsterRunStatus.CANCELED, DagsterRunStatus.FAILURE],
+            statuses=[
+                DagsterRunStatus.CANCELED,
+                DagsterRunStatus.FAILURE,
+                DagsterRunStatus.SUCCESS,
+            ],
         )
     )
 
