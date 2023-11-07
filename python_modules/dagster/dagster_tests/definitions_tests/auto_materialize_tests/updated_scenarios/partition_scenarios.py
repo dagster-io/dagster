@@ -16,6 +16,7 @@ from ..base_scenario import (
 )
 from .asset_daemon_scenario_states import (
     daily_partitions_def,
+    dynamic_partitions_def,
     hourly_partitions_def,
     one_asset,
     one_asset_depends_on_two,
@@ -128,6 +129,28 @@ partition_scenarios = [
         )
         .evaluate_tick()
         .assert_requested_runs(run_request(asset_keys=["B"], partition_key="1")),
+    ),
+    AssetDaemonScenario(
+        id="unpartitioned_to_dynamic_partitions",
+        initial_state=two_assets_in_sequence.with_asset_properties(
+            keys=["B"], partitions_def=dynamic_partitions_def
+        ).with_all_eager(10),
+        execution_fn=lambda state: state.with_runs(run_request("A"))
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_dynamic_partitions("dynamic", ["1"])
+        .with_runs(run_request("A"))
+        .evaluate_tick()
+        .assert_requested_runs(run_request("B", partition_key="1"))
+        .with_dynamic_partitions("dynamic", ["2", "3", "4"])
+        .with_runs(run_request("A"))
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("B", partition_key="1"),
+            run_request("B", partition_key="2"),
+            run_request("B", partition_key="3"),
+            run_request("B", partition_key="4"),
+        ),
     ),
     AssetDaemonScenario(
         id="one_asset_daily_partitions_never_materialized",

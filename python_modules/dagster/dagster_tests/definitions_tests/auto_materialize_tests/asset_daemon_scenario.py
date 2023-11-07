@@ -291,6 +291,14 @@ class AssetDaemonScenarioState(NamedTuple):
             ]
         )
 
+    def with_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> "AssetDaemonScenarioState":
+        self.instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name, partition_keys=partition_keys
+        )
+        return self
+
     def _evaluate_tick_fast(
         self,
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
