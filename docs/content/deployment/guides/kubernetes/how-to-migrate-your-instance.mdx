@@ -1,24 +1,42 @@
 ---
-title: How to Migrate | Dagster
+title: "Migrating a Dagster instance while upgrading | Dagster Docs"
 description: We walk through how to migrate your Dagster instance using a Kubernetes Job from the Helm chart.
 ---
 
-# How to Migrate Your Instance
-
-## Overview
+# Migrating a Dagster instance while upgrading
 
 When upgrading your Dagster version, you may also need to migrate your Dagster instance. Migrations will only be required if you are upgrading your minor version.
 
-Here, we walk you through the migration process in a Kubernetes environment.
+In this guide, we'll walk you through the migration process in a Kubernetes environment.
 
-## Walkthrough
+---
 
-For simplicity, we assume that you have only installed one release of the Dagster Helm chart in your Kubernetes cluster. All commands should be run in the proper namespace.
+## Prerequisites
 
-1. Before running the migration, check the [migration document](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md) for any additional steps you may need to take as part of the migration.
-2. Make sure you backup the data in your PostgreSQL database!
-3. Run `helm upgrade` with your desired Dagster chart version and Helm values.
-4. Scale down the Dagster webserver and daemon deployments. We do not want any ongoing job runs to be writing to the database as the migration is happening. As we scale down the Deployments, we note each Deployment's replica count to scale each back up after the migration is complete.
+Before you get started, complete the following:
+
+- **Check the [Dagster migration guide](/migration).** Use the guide to verify any additional steps you may need to take to upgrade your Dagster version.
+- **Back up your PostgreSQL database.**
+
+---
+
+## Step 1: Upgrade the Helm chart
+
+<Note>
+  <strong>Heads up!</strong> This guide assumes only one release of the Dagster
+  Helm chart is installed in your Kubernetes cluster. All commands should be run
+  in the proper namespace.
+</Note>
+
+First, run [`helm upgrade`](https://helm.sh/docs/helm/helm_upgrade/) with your desired Dagster chart version and Helm values.
+
+---
+
+## Step 2: Scale down Dagster
+
+Next, you'll scale down the Dagster webserver and daemon deployments. This ensures that there aren't any ongoing job runs writing to the database as the migration happens.
+
+As you scale down the deployments, note each deployment's replica count. You'll use this to scale each one back up after the migration is complete.
 
 ```shell
 # Get the names of Dagster's webserver and daemon deployments created by Helm
@@ -38,7 +56,17 @@ kubectl scale deploy $WEBSERVER_DEPLOYMENT_NAME --replicas=0
 kubectl scale deploy $DAEMON_DEPLOYMENT_NAME --replicas=0
 ```
 
-5. Run a Kubernetes Job with the `dagster instance migrate` command. You can check if the migration succeeded by inspecting the the resulting Pod of the Job.
+---
+
+## Step 3: Migrate the Dagster instance
+
+Next, run a Kubernetes Job with the `dagster instance migrate` command:
+
+```shell
+dagster instance migrate
+```
+
+Check if the migration succeeded by inspecting the resulting Pod of the Job:
 
 ```shell
 # Run `helm list` and save your Dagster Helm release name
@@ -59,9 +87,36 @@ helm template $HELM_DAGSTER_RELEASE_NAME dagster/dagster \
     | kubectl apply -f -
 ```
 
-6. Scale the webserver and daemon deployments back up.
+---
+
+## Step 4: Scale Dagster back up
+
+Lastly, use the following commands to scale the Dagster webserver and daemon deployments back up:
 
 ```shell
 kubectl scale deploy $WEBSERVER_DEPLOYMENT_NAME --replicas=$WEBSERVER_DEPLOYMENT_REPLICA_COUNT
 kubectl scale deploy $DAEMON_DEPLOYMENT_NAME --replicas=$DAEMON_DEPLOYMENT_REPLICA_COUNT
 ```
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Deploying with Helm"
+    href="/deployment/guides/kubernetes/deploying-with-helm"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying with Celery using Helm"
+    href="/deployment/guides/kubernetes/deploying-with-helm-advanced"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Customizing Kubernetes deployments"
+    href="/deployment/guides/kubernetes/customizing-your-deployment"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="All deployment guides"
+    href="/deployment/guides/kubernetes"
+  ></ArticleListItem>
+</ArticleList>
