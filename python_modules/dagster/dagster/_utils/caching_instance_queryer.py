@@ -374,8 +374,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return run_record.dagster_run
         return None
 
-    def run_has_tag(self, run_id: str, tag_key: str, tag_value: str) -> bool:
-        return cast(DagsterRun, self._get_run_by_id(run_id)).tags.get(tag_key) == tag_value
+    def run_has_tag(self, run_id: str, tag_key: str, tag_value: Optional[str]) -> bool:
+        run_tags = cast(DagsterRun, self._get_run_by_id(run_id)).tags
+        if tag_value is None:
+            return tag_key in run_tags
+        else:
+            return run_tags.get(tag_key) == tag_value
 
     @cached_method
     def _get_planned_materializations_for_run_from_events(

@@ -593,11 +593,14 @@ def run(
 
 
 def run_request(
-    asset_keys: Sequence[CoercibleToAssetKey], partition_key: Optional[str] = None
+    asset_keys: Sequence[CoercibleToAssetKey],
+    partition_key: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> RunRequest:
     return RunRequest(
         asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
         partition_key=partition_key,
+        tags=tags,
     )
 
 

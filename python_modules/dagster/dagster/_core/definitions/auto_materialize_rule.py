@@ -341,14 +341,21 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
-    def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
+    def materialize_on_parent_updated(
+        ignore_updates: Optional["LatestMaterializationHasRunTag"] = None
+    ) -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.
 
         Note: For time-partitioned or dynamic-partitioned assets downstream of an unpartitioned
         asset, this rule will only fire for the most recent partition of the downstream.
+
+        Args:
+            ignore_updates (Optional[LatestMaterializationHasRunTag]): Filter to apply to updated
+                parents. If a parent was updated but matches the filter criteria, then it won't
+                count as updated for the sake of this rule.
         """
-        return MaterializeOnParentUpdatedRule()
+        return MaterializeOnParentUpdatedRule(ignore_updates=ignore_updates)
 
     @public
     @staticmethod
@@ -565,8 +572,42 @@ class MaterializeOnCronRule(
 
 
 @whitelist_for_serdes
+class LatestMaterializationHasRunTag(NamedTuple):
+    run_tag_key: str
+    run_tag_value: Optional[str] = None
+
+    def matches(
+        self, context: RuleEvaluationContext, asset_partition: AssetKeyPartitionKey
+    ) -> bool:
+        if asset_partition in context.will_materialize_mapping.get(
+            asset_partition.asset_key, set()
+        ):
+            return True
+
+        materialization_record = (
+            context.instance_queryer.get_latest_materialization_or_observation_record(
+                asset_partition, after_cursor=context.cursor.latest_storage_id
+            )
+        )
+        if materialization_record is None:
+            check.failed(
+                f"LatestMaterializationHasRunTag was invoked for asset partition {asset_partition},"
+                " which was not updated since previous tick. It should only be invoked for asset"
+                " partitions updated since the previous tick."
+            )
+
+        return context.instance_queryer.run_has_tag(
+            materialization_record.run_id, self.run_tag_key, self.run_tag_value
+        )
+
+
+@whitelist_for_serdes
 class MaterializeOnParentUpdatedRule(
-    AutoMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
+    AutoMaterializeRule,
+    NamedTuple(
+        "_MaterializeOnParentUpdatedRule",
+        [("ignore_updates", Optional[LatestMaterializationHasRunTag])],
+    ),
 ):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
@@ -608,7 +649,11 @@ class MaterializeOnParentUpdatedRule(
                 # rematerializations from causing a chain of materializations to be kicked off
                 ignored_parent_keys={context.asset_key},
             )
-            updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
+            updated_parents = {
+                parent.asset_key
+                for parent in updated_parent_asset_partitions
+                if self.ignore_updates is None or not self.ignore_updates.matches(context, parent)
+            }
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
 
             if updated_parents or will_update_parents:
