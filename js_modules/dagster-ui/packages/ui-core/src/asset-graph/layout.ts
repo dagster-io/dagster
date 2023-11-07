@@ -41,7 +41,6 @@ const MARGIN = 100;
 
 export type LayoutAssetGraphOptions = {
   horizontalDAGs: boolean;
-  tightTree: boolean;
   longestPath: boolean;
 };
 
@@ -51,11 +50,7 @@ export const layoutAssetGraph = (
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
-  const ranker = opts.tightTree
-    ? 'tight-tree'
-    : opts.longestPath
-    ? 'longest-path'
-    : 'network-simplex';
+  const ranker = opts.longestPath ? 'longest-path' : 'tight-tree';
 
   g.setGraph(
     opts.horizontalDAGs
