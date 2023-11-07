@@ -69,8 +69,6 @@ class RuleEvaluationContext:
     cursor: "AssetDaemonCursor"
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
-    # Tracks which asset partitions are already slated for materialization in this tick. The asset
-    # keys in the values match the asset key in the corresponding key.
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: AbstractSet[AssetKeyPartitionKey]
@@ -140,7 +138,7 @@ class RuleEvaluationContext:
         Many rules depend on the state of the asset's parents, so this function is useful for
         finding asset partitions that should be re-evaluated.
         """
-        updated_parents = self.get_asset_partitions_with_updated_parents_since_previous_tick()
+        updated_parents = self.get_asset_partitions_with_updated_parents()
         will_update_parents = set(self.get_will_update_parent_mapping().keys())
         return self.candidates & (updated_parents | will_update_parents)
 
@@ -200,9 +198,7 @@ class RuleEvaluationContext:
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
-    def get_asset_partitions_with_updated_parents_since_previous_tick(
-        self
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    def get_asset_partitions_with_updated_parents(self) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions for the current key which have parents that updated
         since the last tick.
         """
@@ -631,9 +627,8 @@ class MaterializeOnParentUpdatedRule(
 
         # the set of asset partitions whose parents have been updated since last tick, or will be
         # requested this tick.
-        has_or_will_update = (
-            context.get_asset_partitions_with_updated_parents_since_previous_tick()
-            | set(will_update_parents_by_asset_partition.keys())
+        has_or_will_update = context.get_asset_partitions_with_updated_parents() | set(
+            will_update_parents_by_asset_partition.keys()
         )
         for asset_partition in has_or_will_update:
             parent_asset_partitions = context.asset_graph.get_parents_partitions(
