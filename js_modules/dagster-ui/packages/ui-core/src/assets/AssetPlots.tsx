@@ -13,12 +13,7 @@ interface Props {
   setParams: (params: AssetViewParams) => void;
 }
 
-export const AssetPlots: React.FC<Props> = ({
-  assetKey,
-  assetHasDefinedPartitions,
-  params,
-  setParams,
-}) => {
+export const AssetPlots = ({assetKey, assetHasDefinedPartitions, params, setParams}: Props) => {
   const {materializations, observations, loadedPartitionKeys, loading, xAxis} =
     useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
 

@@ -5,20 +5,30 @@ import styled from 'styled-components';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
+import {AssetKeyInput} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
+import {RunlessEventTag} from './RunlessEventTag';
 import {AssetEventGroup} from './groupByPartition';
+import {isRunlessEvent} from './isRunlessEvent';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 
-export const AssetEventList: React.FC<{
+export const AssetEventList = ({
+  groups,
+  focused,
+  setFocused,
+  xAxis,
+  assetKey,
+}: {
   xAxis: 'time' | 'partition';
   groups: AssetEventGroup[];
+  assetKey: AssetKeyInput;
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
-}> = ({groups, focused, setFocused, xAxis}) => {
+}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const focusedRowRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -71,7 +81,7 @@ export const AssetEventList: React.FC<{
                 {xAxis === 'partition' ? (
                   <AssetEventListPartitionRow group={group} />
                 ) : (
-                  <AssetEventListEventRow group={group} />
+                  <AssetEventListEventRow group={group} assetKey={assetKey} />
                 )}
               </Box>
             </AssetListRow>
@@ -109,7 +119,7 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
     `}
 `;
 
-const AssetEventListPartitionRow: React.FC<{group: AssetEventGroup}> = ({group}) => {
+const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
   const {partition, latest, timestamp} = group;
   return (
     <>
@@ -133,7 +143,13 @@ const AssetEventListPartitionRow: React.FC<{group: AssetEventGroup}> = ({group})
   );
 };
 
-const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => {
+const AssetEventListEventRow = ({
+  group,
+  assetKey,
+}: {
+  group: AssetEventGroup;
+  assetKey: AssetKeyInput;
+}) => {
   const {latest, partition, timestamp} = group;
   const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : null;
 
@@ -149,10 +165,11 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
       </Box>
       <Box flex={{gap: 4, direction: 'row'}}>
         {partition && <Tag>{partition}</Tag>}
-        {latest && run && (
+        {latest && run ? (
           <Tag>
             <AssetRunLink
               runId={run.id}
+              assetKey={assetKey}
               event={{stepKey: latest.stepKey, timestamp: latest.timestamp}}
             >
               <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
@@ -161,7 +178,9 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
               </Box>
             </AssetRunLink>
           </Tag>
-        )}
+        ) : latest && isRunlessEvent(latest) ? (
+          <RunlessEventTag tags={latest.tags} />
+        ) : undefined}
       </Box>
     </>
   );

@@ -103,7 +103,8 @@ class _Graph:
 
 
 @overload
-def graph(compose_fn: Callable) -> GraphDefinition: ...
+def graph(compose_fn: Callable) -> GraphDefinition:
+    ...
 
 
 @overload
@@ -117,7 +118,8 @@ def graph(
     out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = ...,
-) -> _Graph: ...
+) -> _Graph:
+    ...
 
 
 def graph(

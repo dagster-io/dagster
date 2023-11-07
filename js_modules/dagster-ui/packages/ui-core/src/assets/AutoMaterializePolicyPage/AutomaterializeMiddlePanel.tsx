@@ -3,11 +3,7 @@ import {Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
-import {
-  AutoMaterializeAssetEvaluationRecord,
-  AutoMaterializeDecisionType,
-  AutoMaterializeRule,
-} from '../../graphql/types';
+import {AutoMaterializeDecisionType, AutoMaterializeRule} from '../../graphql/types';
 import {AssetKey} from '../types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
@@ -19,6 +15,7 @@ import {
   GetEvaluationsQuery,
   GetEvaluationsQueryVariables,
   RuleWithEvaluationsFragment,
+  AutoMaterializeEvaluationRecordItemFragment,
 } from './types/GetEvaluationsQuery.types';
 
 interface Props {
@@ -139,7 +136,7 @@ export const AutomaterializeMiddlePanelWithData = ({
   assetHasDefinedPartitions,
 }: {
   currentRules: AutoMaterializeRule[];
-  selectedEvaluation: NoConditionsMetEvaluation | AutoMaterializeAssetEvaluationRecord;
+  selectedEvaluation: NoConditionsMetEvaluation | AutoMaterializeEvaluationRecordItemFragment;
   assetHasDefinedPartitions: boolean;
 }) => {
   const runIds =

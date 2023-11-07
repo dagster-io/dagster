@@ -57,4 +57,22 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Disable Asset Graph caching',
     flagType: FeatureFlag.flagDisableDAGCache,
   },
+  {
+    key: 'Experimental longest path DAG algorithm (Faster)',
+    flagType: FeatureFlag.flagLongestPathDag,
+    label: (
+      <Box flex={{direction: 'column'}}>
+        Experimental longest path asset graph algorithm (Faster).
+        <div>
+          <a
+            href="https://github.com/dagster-io/dagster/discussions/17240"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Learn more
+          </a>
+        </div>
+      </Box>
+    ),
+  },
 ];

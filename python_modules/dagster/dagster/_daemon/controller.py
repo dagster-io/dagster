@@ -31,7 +31,7 @@ from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
-DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
+DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 1800
 
 # Default interval at which daemons run
 DEFAULT_DAEMON_INTERVAL_SECONDS = 30
@@ -44,7 +44,7 @@ DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS = 300
 
 THREAD_CHECK_INTERVAL = 5
 
-HEARTBEAT_CHECK_INTERVAL = 15
+HEARTBEAT_CHECK_INTERVAL = 60
 
 RELOAD_WORKSPACE_INTERVAL = 60
 
@@ -254,18 +254,18 @@ class DagsterDaemonController(AbstractContextManager):
             raise Exception("Stopped dagster-daemon process due to threads no longer running")
 
     def check_daemon_heartbeats(self) -> None:
-        failed_daemons = [
+        no_heartbeat_daemons = [
             daemon_type
             for daemon_type, is_daemon_healthy in self._daemon_heartbeat_health().items()
             if not is_daemon_healthy
         ]
 
-        if failed_daemons:
-            self._logger.error(
-                "Stopping dagster-daemon process since the following threads are no longer sending"
-                f" heartbeats: {failed_daemons}"
+        if no_heartbeat_daemons:
+            self._logger.warning(
+                "The following threads have not sent heartbeats in more than"
+                f" {self._heartbeat_tolerance_seconds} seconds: {no_heartbeat_daemons}."
+                " They may be running more slowly than expected or hanging."
             )
-            raise Exception("Stopped dagster-daemon process due to thread heartbeat failure")
 
     def check_daemon_loop(self) -> None:
         start_time = time.time()

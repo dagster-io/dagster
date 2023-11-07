@@ -25,6 +25,21 @@ from .scenarios.multi_code_location_scenarios import multi_code_location_scenari
 from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 
+def _assert_run_requests_match(
+    expected_run_requests,
+    run_requests,
+):
+    def sort_run_request_key_fn(run_request):
+        return (min(run_request.asset_selection), run_request.partition_key)
+
+    sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
+    sorted_expected_run_requests = sorted(expected_run_requests, key=sort_run_request_key_fn)
+
+    for run_request, expected_run_request in zip(sorted_run_requests, sorted_expected_run_requests):
+        assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
+        assert run_request.partition_key == expected_run_request.partition_key
+
+
 @pytest.fixture
 def instance():
     with instance_for_test() as the_instance:
@@ -46,17 +61,7 @@ def test_reconcile_with_external_asset_graph(scenario_item, instance):
 
     assert len(run_requests) == len(scenario.expected_run_requests), run_requests
 
-    def sort_run_request_key_fn(run_request):
-        return (min(run_request.asset_selection), run_request.partition_key)
-
-    sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
-    sorted_expected_run_requests = sorted(
-        scenario.expected_run_requests, key=sort_run_request_key_fn
-    )
-
-    for run_request, expected_run_request in zip(sorted_run_requests, sorted_expected_run_requests):
-        assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
-        assert run_request.partition_key == expected_run_request.partition_key
+    _assert_run_requests_match(scenario.expected_run_requests, run_requests)
 
 
 daemon_scenarios = {
@@ -73,7 +78,10 @@ def daemon_paused_instance():
             "run_launcher": {
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
-            }
+            },
+            "auto_materialize": {
+                "max_tick_retries": 2,
+            },
         }
     ) as the_instance:
         yield the_instance
@@ -124,6 +132,8 @@ def test_daemon_ticks(daemon_paused_instance):
         assert ticks[0].timestamp == freeze_datetime.timestamp()
         assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
         assert len(ticks[0].tick_data.run_ids) == 1
+        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+        assert ticks[0].tick_data.run_requests == scenario.expected_run_requests
 
     freeze_datetime = pendulum.now("UTC").add(seconds=40)
     with pendulum.test(freeze_datetime):
@@ -142,26 +152,8 @@ def test_daemon_ticks(daemon_paused_instance):
         assert ticks[0].status == TickStatus.SKIPPED
         assert ticks[0].timestamp == freeze_datetime.timestamp()
         assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-
-
-def test_error_daemon_tick(daemon_not_paused_instance):
-    freeze_datetime = pendulum.now("UTC")
-    with pendulum.test(freeze_datetime):
-        error_asset_scenario = daemon_scenarios["error_asset_scenario"]
-        error_asset_scenario.do_daemon_scenario(
-            daemon_not_paused_instance, scenario_name="error_asset_scenario"
-        )
-
-        ticks = daemon_not_paused_instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-        )
-
-        assert len(ticks) == 1
-        assert ticks[0].status == TickStatus.FAILURE
-        assert ticks[0].timestamp == freeze_datetime.timestamp()
-        assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-        assert error_asset_scenario.expected_error_message in str(ticks[0].tick_data.error)
+        assert ticks[0].tick_data.auto_materialize_evaluation_id == 2
+        assert ticks[0].tick_data.run_requests == []
 
 
 @pytest.fixture
@@ -345,6 +337,21 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
         assert run.asset_selection is not None
         assert set(run.asset_selection) == set(expected_run_request.asset_selection)
         assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
+
+    ticks = daemon_not_paused_instance.get_ticks(
+        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    )
+    tick = ticks[0]
+    if tick.status == TickStatus.SUCCESS and scenario.expected_evaluations:
+        assert tick.requested_asset_materialization_count == sum(
+            [spec.num_requested for spec in scenario.expected_evaluations]
+        )
+        assert tick.requested_asset_keys == {
+            AssetKey.from_coercible(spec.asset_key)
+            for spec in scenario.expected_evaluations
+            if spec.num_requested > 0
+        }
 
 
 def test_daemon_run_tags():

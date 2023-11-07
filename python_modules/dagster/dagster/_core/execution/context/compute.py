@@ -1,4 +1,6 @@
 from abc import ABC, ABCMeta, abstractmethod
+from contextlib import contextmanager
+from contextvars import ContextVar
 from inspect import _empty as EmptyAnnotation
 from typing import (
     AbstractSet,
@@ -48,6 +50,7 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._utils.cached_method import cached_method
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.warnings import (
     deprecation_warning,
@@ -308,6 +311,40 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         return self._step_execution_context.partition_key
 
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
+        """Returns a list of the partition keys for the current run.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``partition_keys`` to get all of the partitions being materialized
+        by the backfill.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(partitions_def=partitions_def)
+                def an_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_keys)
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+        """
+        key_range = self.partition_key_range
+        partitions_def = self.assets_def.partitions_def
+        if partitions_def is None:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_keys for a non-partitioned run"
+            )
+
+        return partitions_def.get_partition_keys_in_range(
+            key_range,
+            dynamic_partitions_store=self.instance,
+        )
+
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
@@ -531,10 +568,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 "Cannot call `context.asset_key` in a multi_asset with more than one asset. Use"
                 " `context.asset_key_for_output` instead."
             )
-        # pass in the output name to handle the case when a multi_asset has a single AssetOut
-        return self.asset_key_for_output(
-            output_name=next(iter(self.assets_def.keys_by_output_name.keys()))
-        )
+        return next(iter(self.assets_def.keys_by_output_name.values()))
 
     @public
     @property
@@ -1303,15 +1337,34 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
         self._step_execution_context.set_requires_typed_event_stream(error_message=error_message)
 
+    @staticmethod
+    def get() -> "OpExecutionContext":
+        ctx = _current_asset_execution_context.get()
+        if ctx is None:
+            raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
+        return ctx.get_op_execution_context()
+
 
 class AssetExecutionContext(OpExecutionContext):
     def __init__(self, step_execution_context: StepExecutionContext):
         super().__init__(step_execution_context=step_execution_context)
 
+    @staticmethod
+    def get() -> "AssetExecutionContext":
+        ctx = _current_asset_execution_context.get()
+        if ctx is None:
+            raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
+        return ctx
 
-def build_execution_context(
+    @cached_method
+    def get_op_execution_context(self) -> "OpExecutionContext":
+        return OpExecutionContext(self._step_execution_context)
+
+
+@contextmanager
+def enter_execution_context(
     step_context: StepExecutionContext,
-) -> Union[OpExecutionContext, AssetExecutionContext]:
+) -> Iterator[Union[OpExecutionContext, AssetExecutionContext]]:
     """Get the correct context based on the type of step (op or asset) and the user provided context
     type annotation. Follows these rules.
 
@@ -1322,6 +1375,10 @@ def build_execution_context(
     op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
     op            OpExecutionContext        OpExecutionContext
     op            None                      OpExecutionContext
+    asset_check   AssetExecutionContext     AssetExecutionContext
+    asset_check   OpExecutionContext        OpExecutionContext
+    asset_check   None                      AssetExecutionContext
+
     For ops in graph-backed assets
     step type     annotation                result
     op            AssetExecutionContext     AssetExecutionContext
@@ -1329,7 +1386,8 @@ def build_execution_context(
     op            None                      OpExecutionContext
     """
     is_sda_step = step_context.is_sda_step
-    is_op_in_graph_asset = is_sda_step and step_context.is_op_in_graph
+    is_op_in_graph_asset = step_context.is_in_graph_asset
+    is_asset_check = step_context.is_asset_check_step
     context_annotation = EmptyAnnotation
     compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
     compute_fn = (
@@ -1343,7 +1401,12 @@ def build_execution_context(
 
     # It would be nice to do this check at definition time, rather than at run time, but we don't
     # know if the op is part of an op job or a graph-backed asset until we have the step execution context
-    if context_annotation is AssetExecutionContext and not is_sda_step:
+    if (
+        context_annotation is AssetExecutionContext
+        and not is_sda_step
+        and not is_asset_check
+        and not is_op_in_graph_asset
+    ):
         # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
         # cannot be annotated with AssetExecutionContext
         raise DagsterInvalidDefinitionError(
@@ -1352,14 +1415,30 @@ def build_execution_context(
             " OpExecutionContext, or left blank."
         )
 
-    if context_annotation is EmptyAnnotation:
-        # if no type hint has been given, default to:
-        # * AssetExecutionContext for sda steps, not in graph-backed assets
-        # * OpExecutionContext for non sda steps
-        # * OpExecutionContext for ops in graph-backed assets
-        if is_op_in_graph_asset or not is_sda_step:
-            return OpExecutionContext(step_context)
-        return AssetExecutionContext(step_context)
-    if context_annotation is AssetExecutionContext:
-        return AssetExecutionContext(step_context)
-    return OpExecutionContext(step_context)
+    # Structured assuming upcoming changes to make AssetExecutionContext contain an OpExecutionContext
+    asset_ctx = AssetExecutionContext(step_context)
+    asset_token = _current_asset_execution_context.set(asset_ctx)
+
+    try:
+        if context_annotation is EmptyAnnotation:
+            # if no type hint has been given, default to:
+            # * AssetExecutionContext for sda steps not in graph-backed assets, and asset_checks
+            # * OpExecutionContext for non sda steps
+            # * OpExecutionContext for ops in graph-backed assets
+            if is_asset_check:
+                yield asset_ctx
+            elif is_op_in_graph_asset or not is_sda_step:
+                yield asset_ctx.get_op_execution_context()
+            else:
+                yield asset_ctx
+        elif context_annotation is AssetExecutionContext:
+            yield asset_ctx
+        else:
+            yield asset_ctx.get_op_execution_context()
+    finally:
+        _current_asset_execution_context.reset(asset_token)
+
+
+_current_asset_execution_context: ContextVar[Optional[AssetExecutionContext]] = ContextVar(
+    "_current_asset_execution_context", default=None
+)

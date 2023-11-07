@@ -9,18 +9,22 @@
     "post-build": "cd ../../python_modules/dagster-webserver/dagster_webserver && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagster-ui/packages/app-oss/build ./webapp/ && mkdir -p webapp/build/vendor && cp -r graphql-playground ./webapp/build/vendor && cp ../../../js_modules/dagster-ui/packages/app-oss/csp-header.txt ./webapp/build",
     "lint": "yarn workspace @dagster-io/app-oss lint && yarn workspace @dagster-io/ui-core lint && yarn workspace @dagster-io/ui-components lint",
     "start": "yarn workspace @dagster-io/app-oss start",
-    "ts": "yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-components ts"
+    "ts": "yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-components ts",
+    "postinstall": "patch-package"
   },
   "workspaces": {
     "packages": [
       "packages/*"
     ]
   },
-  "packageManager": "yarn@3.3.0",
+  "packageManager": "yarn@3.6.4",
   "dependencies": {
-    "graphql.macro": "^1.4.2"
+    "graphql.macro": "^1.4.2",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0"
   },
   "devDependencies": {
+    "@types/dagre": "^0",
     "file-loader": "^6.2.0"
   }
 }

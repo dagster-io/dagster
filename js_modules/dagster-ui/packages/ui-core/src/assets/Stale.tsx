@@ -22,10 +22,10 @@ import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus'>;
 
-export const isAssetMissing = (liveData?: StaleDataForNode) =>
+export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
 
-export const isAssetStale = (liveData?: StaleDataForNode) =>
+export const isAssetStale = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.STALE;
 
 const LABELS = {
@@ -41,11 +41,15 @@ const LABELS = {
   },
 };
 
-export const StaleReasonsLabel: React.FC<{
+export const StaleReasonsLabel = ({
+  liveData,
+  include,
+  assetKey,
+}: {
   assetKey: AssetKeyInput;
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
-}> = ({liveData, include, assetKey}) => {
+}) => {
   if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
     return null;
   }
@@ -64,12 +68,17 @@ export const StaleReasonsLabel: React.FC<{
   );
 };
 
-export const StaleReasonsTags: React.FC<{
+export const StaleReasonsTags = ({
+  liveData,
+  include,
+  assetKey,
+  onClick,
+}: {
   assetKey: AssetKeyInput;
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
   onClick?: () => void;
-}> = ({liveData, include, assetKey, onClick}) => {
+}) => {
   if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
     return null;
   }
@@ -120,9 +129,7 @@ function groupedCauses(
   return groupBy(all, (cause) => cause.label);
 }
 
-const StaleCausesPopoverSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({
-  causes,
-}) => (
+const StaleCausesPopoverSummary = ({causes}: {causes: LiveDataForNode['staleCauses']}) => (
   <Box style={{width: '300px'}}>
     <Box padding={12} border="bottom" style={{fontWeight: 600}}>
       Changes since last materialization:
@@ -140,9 +147,12 @@ const StaleCausesPopoverSummary: React.FC<{causes: LiveDataForNode['staleCauses'
   </Box>
 );
 
-const StaleReason: React.FC<{reason: string; dependency: AssetNodeKeyFragment | null}> = ({
+const StaleReason = ({
   reason,
   dependency,
+}: {
+  reason: string;
+  dependency: AssetNodeKeyFragment | null;
 }) => {
   if (!dependency) {
     return <Caption>{` ${reason}`}</Caption>;

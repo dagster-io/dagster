@@ -357,38 +357,38 @@ def get_task_kwargs_from_current_task(
     cluster,
     task,
 ):
-    enis = []
-    subnets = []
-    for attachment in task["attachments"]:
-        if attachment["type"] == "ElasticNetworkInterface":
-            for detail in attachment["details"]:
-                if detail["name"] == "subnetId":
-                    subnets.append(detail["value"])
-                if detail["name"] == "networkInterfaceId":
-                    enis.append(ec2.NetworkInterface(detail["value"]))
-
-    public_ip = False
-    security_groups = []
-    for eni in enis:
-        if (eni.association_attribute or {}).get("PublicIp"):
-            public_ip = True
-        for group in eni.groups:
-            security_groups.append(group["GroupId"])
-
-    run_task_kwargs = {
-        "cluster": cluster,
-        "networkConfiguration": {
-            "awsvpcConfiguration": {
-                "subnets": subnets,
-                "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
-                "securityGroups": security_groups,
-            },
-        },
-    }
+    run_task_kwargs = {"cluster": cluster}
 
     if not task.get("capacityProviderStrategy"):
         run_task_kwargs["launchType"] = task.get("launchType") or "FARGATE"
     else:
         run_task_kwargs["capacityProviderStrategy"] = task.get("capacityProviderStrategy")
+
+    if run_task_kwargs["launchType"] != "EXTERNAL":
+        enis = []
+        subnets = []
+        for attachment in task["attachments"]:
+            if attachment["type"] == "ElasticNetworkInterface":
+                for detail in attachment["details"]:
+                    if detail["name"] == "subnetId":
+                        subnets.append(detail["value"])
+                    if detail["name"] == "networkInterfaceId":
+                        enis.append(ec2.NetworkInterface(detail["value"]))
+
+        public_ip = False
+        security_groups = []
+
+        for eni in enis:
+            if (eni.association_attribute or {}).get("PublicIp"):
+                public_ip = True
+            for group in eni.groups:
+                security_groups.append(group["GroupId"])
+
+        aws_vpc_config = {
+            "subnets": subnets,
+            "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
+            "securityGroups": security_groups,
+        }
+        run_task_kwargs["networkConfiguration"] = {"awsvpcConfiguration": aws_vpc_config}
 
     return run_task_kwargs

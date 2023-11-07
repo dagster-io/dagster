@@ -18,7 +18,8 @@ DAGSTER_META_KEY = "dagster_meta"
 
 class IDagsterMeta(Protocol):
     @property
-    def dagster_meta(self) -> "DagsterLoggingMetadata": ...
+    def dagster_meta(self) -> "DagsterLoggingMetadata":
+        ...
 
 
 # The type-checker complains here that DagsterLogRecord does not implement the `dagster_meta`

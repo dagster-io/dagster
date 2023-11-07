@@ -26,7 +26,7 @@ interface Props {
   size?: 'small' | 'large';
 }
 
-export const SensorSwitch: React.FC<Props> = (props) => {
+export const SensorSwitch = (props: Props) => {
   const {repoAddress, sensor, size = 'large'} = props;
   const {
     permissions: {canStartSensor, canStopSensor},

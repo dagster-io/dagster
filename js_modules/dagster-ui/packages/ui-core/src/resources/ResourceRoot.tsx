@@ -80,7 +80,7 @@ const SectionHeader = (props: {children: React.ReactNode}) => {
   );
 };
 
-export const ResourceRoot: React.FC<Props> = (props) => {
+export const ResourceRoot = (props: Props) => {
   useTrackPageView();
 
   const {repoAddress} = props;
@@ -162,7 +162,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           return (
             <div style={{height: '100%', display: 'flex'}}>
               <SplitPanelContainer
-                identifier="explorer"
+                identifier="resource-explorer"
                 firstInitialPercent={50}
                 firstMinSize={400}
                 first={
@@ -222,10 +222,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
   );
 };
 
-const ResourceConfig: React.FC<{
+const ResourceConfig = (props: {
   resourceDetails: ResourceDetailsFragment;
   repoAddress: RepoAddress;
-}> = (props) => {
+}) => {
   const {resourceDetails, repoAddress} = props;
 
   const configuredValues = Object.fromEntries(
@@ -342,11 +342,11 @@ const ResourceConfig: React.FC<{
   );
 };
 
-const ResourceUses: React.FC<{
+const ResourceUses = (props: {
   resourceDetails: ResourceDetailsFragment;
   repoAddress: RepoAddress;
   numUses: number;
-}> = (props) => {
+}) => {
   const {resourceDetails, repoAddress, numUses} = props;
 
   if (numUses === 0) {
@@ -558,11 +558,7 @@ const ResourceUses: React.FC<{
   );
 };
 
-const ResourceEntry: React.FC<{
-  name: string;
-  url?: string;
-  description?: string;
-}> = (props) => {
+const ResourceEntry = (props: {name: string; url?: string; description?: string}) => {
   const {url, name, description} = props;
 
   return (

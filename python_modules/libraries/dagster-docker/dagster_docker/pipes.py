@@ -48,7 +48,17 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
             self._handler, "Can only consume logs within context manager scope."
         )
         for log_line in container.logs(stdout=True, stderr=True, stream=True, follow=True):
-            extract_message_or_forward_to_stdout(handler, log_line)
+            if isinstance(log_line, bytes):
+                log_entry = log_line.decode("utf-8")
+            elif isinstance(log_line, str):
+                log_entry = log_line
+            else:
+                continue
+
+            extract_message_or_forward_to_stdout(handler, log_entry)
+
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages by extracting them from docker logs directly."
 
 
 @experimental
@@ -92,16 +102,20 @@ class _PipesDockerClient(PipesClient):
             or PipesDockerLogsMessageReader()
         )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def run(
         self,
         *,
         context: OpExecutionContext,
         image: str,
-        command: Union[str, Sequence[str]],
+        extras: Optional[PipesExtras] = None,
+        command: Optional[Union[str, Sequence[str]]] = None,
         env: Optional[Mapping[str, str]] = None,
         registry: Optional[Mapping[str, str]] = None,
         container_kwargs: Optional[Mapping[str, Any]] = None,
-        extras: Optional[PipesExtras] = None,
     ) -> PipesClientCompletedInvocation:
         """Create a docker container and run it to completion, enriched with the pipes protocol.
 
@@ -180,7 +194,7 @@ class _PipesDockerClient(PipesClient):
         self,
         client,
         image: str,
-        command: Union[str, Sequence[str]],
+        command: Optional[Union[str, Sequence[str]]],
         env: Optional[Mapping[str, str]],
         container_kwargs: Optional[Mapping[str, Any]],
         open_pipes_session_env: Mapping[str, str],

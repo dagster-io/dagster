@@ -24,6 +24,7 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
     asset,
+    asset_sensor,
     build_freshness_policy_sensor_context,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
@@ -343,7 +344,8 @@ def test_multi_asset_sensor_invocation_resources() -> None:
 def test_multi_asset_sensor_with_source_assets() -> None:
     # upstream_asset1 exists in another repository
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"))
-    def upstream_asset1(): ...
+    def upstream_asset1():
+        ...
 
     upstream_asset1_source = SourceAsset(
         key=upstream_asset1.key,
@@ -351,7 +353,8 @@ def test_multi_asset_sensor_with_source_assets() -> None:
     )
 
     @asset()
-    def downstream_asset(upstream_asset1): ...
+    def downstream_asset(upstream_asset1):
+        ...
 
     @multi_asset_sensor(
         monitored_assets=[
@@ -446,6 +449,44 @@ def test_run_status_sensor_invocation_resources() -> None:
 
     status_sensor(context)
     status_sensor_no_context(context)
+
+
+def test_run_status_sensor_invocation_resources_direct() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor(context, my_resource: MyResource):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert my_resource.a_str == "bar"
+
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
+    def status_sensor_no_context(my_resource: MyResource):
+        assert my_resource.a_str == "bar"
+
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    )
+
+    status_sensor(context, my_resource=MyResource(a_str="bar"))
+    status_sensor_no_context(context, my_resource=MyResource(a_str="bar"))
 
 
 def test_run_failure_sensor_invocation_resources() -> None:
@@ -963,8 +1004,7 @@ def test_partitions_multi_asset_sensor_context():
         assert sensor_data.run_requests[0].partition_key == "2022-08-01"
         assert sensor_data.run_requests[0].tags["dagster/partition"] == "2022-08-01"
         assert (
-            ctx.cursor
-            == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 4, {}],'
+            ctx.cursor == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 4, {}],'
             ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 5, {}]}'
         )
 
@@ -1031,6 +1071,45 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
         after_cursor_partitions_asset_sensor(ctx)
         materialize([july_asset], partition_key="2022-07-05", instance=instance)
         after_cursor_partitions_asset_sensor(ctx)
+
+
+def test_multi_asset_sensor_can_start_from_asset_sensor_cursor():
+    @asset
+    def my_asset():
+        return Output(99)
+
+    @job
+    def my_job():
+        pass
+
+    @asset_sensor(asset_key=my_asset.key, job=my_job)
+    def my_asset_sensor(context):
+        return RunRequest(run_key=context.cursor, run_config={})
+
+    @multi_asset_sensor(monitored_assets=[my_asset.key])
+    def my_multi_asset_sensor(context):
+        ctx.advance_all_cursors()
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            instance=instance,
+        )
+        materialize([my_asset], instance=instance)
+        my_asset_sensor.evaluate_tick(ctx)
+
+        assert ctx.cursor == "3"
+
+        # simulate changing a @asset_sensor to a @multi_asset_sensor with the same name and
+        # therefore inheriting the same cursor.
+        ctx = build_multi_asset_sensor_context(
+            monitored_assets=[my_asset.key],
+            instance=instance,
+            repository_def=my_repo,
+            cursor=ctx.cursor,
+        )
+        my_multi_asset_sensor(ctx)
+
+        assert ctx.cursor == "{\"AssetKey(['my_asset'])\": [null, 3, {}]}"
 
 
 def test_multi_asset_sensor_all_partitions_materialized():
@@ -1587,9 +1666,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
                 my_asset.key
             ].event_log_entry.dagster_event.materialization.metadata[
                 "evaluated"
-            ] == MetadataValue.bool(
-                True
-            )
+            ] == MetadataValue.bool(True)
 
     @repository
     def my_repo():

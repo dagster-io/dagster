@@ -44,7 +44,7 @@ interface SidebarOpDefinitionProps {
 
 const DEFAULT_INVOCATIONS_SHOWN = 20;
 
-export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) => {
+export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
   const {definition, getInvocations, showingSubgraph, onClickInvocation, repoAddress} = props;
 
   const Plugin = pluginForMetadata(definition.metadata);
@@ -265,10 +265,13 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
   ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 
-const InvocationList: React.FC<{
+const InvocationList = ({
+  invocations,
+  onClickInvocation,
+}: {
   invocations: SidebarOpInvocationInfo[];
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
-}> = ({invocations, onClickInvocation}) => {
+}) => {
   const [showAll, setShowAll] = React.useState<boolean>(false);
   const visible = invocations.filter((i) => !isHiddenAssetGroupJob(i.pipelineName || ''));
   const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);

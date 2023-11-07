@@ -92,7 +92,7 @@ interface DependencyHeaderRowProps {
   style?: React.CSSProperties;
 }
 
-export const DependencyHeaderRow: React.FC<DependencyHeaderRowProps> = ({label, ...rest}) => (
+export const DependencyHeaderRow = ({label, ...rest}: DependencyHeaderRowProps) => (
   <tr>
     <DependencyHeaderCell {...rest}>{label}</DependencyHeaderCell>
   </tr>

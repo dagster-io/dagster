@@ -303,7 +303,7 @@ def get_manifest_and_translator_from_dbt_assets(
     check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
     dbt_assets_def = dbt_assets[0]
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
-    first_asset_key = next(iter(dbt_assets_def.keys))
+    first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
     manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(MANIFEST_METADATA_KEY)
     if manifest_wrapper is None:
@@ -646,7 +646,9 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
-    from .dagster_dbt_translator import DbtManifestWrapper
+    from .dagster_dbt_translator import DbtManifestWrapper, validate_translator
+
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
@@ -752,3 +754,10 @@ def get_asset_deps(
         fqns_by_output_name,
         metadata_by_output_name,
     )
+
+
+def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    has_self_dependency = dagster_metadata.get("has_self_dependency", False)
+
+    return has_self_dependency

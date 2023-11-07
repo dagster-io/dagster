@@ -1,7 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
-from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy
+from dagster import (
+    AssetKey,
+    AutoMaterializePolicy,
+    FreshnessPolicy,
+    PartitionMapping,
+    _check as check,
+)
 from dagster._annotations import public
 from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
@@ -109,6 +115,37 @@ class DagsterDbtTranslator:
                         return asset_key
         """
         return default_asset_key_fn(dbt_resource_props)
+
+    @classmethod
+    @public
+    def get_partition_mapping(
+        cls,
+        dbt_resource_props: Mapping[str, Any],
+        dbt_parent_resource_props: Mapping[str, Any],
+    ) -> Optional[PartitionMapping]:
+        """A function that takes two dictionaries: the first, representing properties of a dbt
+        resource; and the second, representing the properties of a parent dependency to the first
+        dbt resource. The function returns the Dagster partition mapping for the dbt dependency.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        This method can be overridden to provide a custom partition mapping for a dbt dependency.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]):
+                A dictionary representing the dbt child resource.
+            dbt_parent_resource_props (Mapping[str, Any]):
+                A dictionary representing the dbt parent resource, in relationship to the child.
+
+        Returns:
+            Optional[PartitionMapping]:
+                The Dagster partition mapping for the dbt resource. If None is returned, the
+                default partition mapping will be used.
+        """
+        return None
 
     @classmethod
     @public
@@ -368,3 +405,29 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
 @dataclass
 class DbtManifestWrapper:
     manifest: Mapping[str, Any]
+
+
+def validate_translator(dagster_dbt_translator: DagsterDbtTranslator) -> DagsterDbtTranslator:
+    return check.inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )
+
+
+def validate_opt_translator(
+    dagster_dbt_translator: Optional[DagsterDbtTranslator],
+) -> Optional[DagsterDbtTranslator]:
+    return check.opt_inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )

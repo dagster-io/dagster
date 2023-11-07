@@ -29,6 +29,7 @@ import {FolderNodeNonAssetType, StatusCaseDot, getDisplayName} from './util';
 
 export const Node = ({
   graphData,
+  fullAssetGraphData,
   node,
   level,
   toggleOpen,
@@ -41,6 +42,7 @@ export const Node = ({
   viewType,
 }: {
   graphData: GraphData;
+  fullAssetGraphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
   toggleOpen: () => void;
@@ -104,12 +106,15 @@ export const Node = ({
 
   const {onClick, loading, launchpadElement} = useMaterializationAction();
 
+  const showArrow =
+    !isAssetNode || (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
+
   return (
     <>
       {launchpadElement}
       <UpstreamDownstreamDialog
         title="Parent assets"
-        graphData={graphData}
+        graphData={fullAssetGraphData}
         assetKeys={upstream}
         isOpen={showParents}
         setIsOpen={setShowParents}
@@ -117,22 +122,23 @@ export const Node = ({
       />
       <Box ref={elementRef} onClick={selectThisNode} padding={{left: 8}}>
         <BoxWrapper level={level}>
-          <Box padding={{right: 12}} flex={{direction: 'row', gap: 2, alignItems: 'center'}}>
-            {!isAssetNode ||
-            (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length) ? (
+          <Box padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
+            {showArrow ? (
               <div
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleOpen();
                 }}
-                style={{cursor: 'pointer'}}
+                style={{cursor: 'pointer', width: 18}}
               >
                 <Icon
                   name="arrow_drop_down"
                   style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
                 />
               </div>
-            ) : null}
+            ) : (
+              <div style={{width: 18}} />
+            )}
             <GrayOnHoverBox
               flex={{
                 direction: 'row',
@@ -321,7 +327,7 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
         <Box
           padding={{left: 8}}
           margin={{left: 8}}
-          border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+          border={i < level - 1 ? {side: 'left', width: 1, color: Colors.KeylineGray} : undefined}
           style={{position: 'relative'}}
         >
           {sofar}
@@ -351,8 +357,8 @@ const GrayOnHoverBox = styled(Box)`
   }
 `;
 
-function StatusDot({node}: {node: GraphNode}) {
-  const liveData = useAssetLiveData(node.assetKey);
+function StatusDot({node}: {node: Pick<GraphNode, 'assetKey' | 'definition'>}) {
+  const {liveData} = useAssetLiveData(node.assetKey);
   if (!liveData) {
     return <StatusCaseDot statusCase={StatusCase.LOADING} />;
   }

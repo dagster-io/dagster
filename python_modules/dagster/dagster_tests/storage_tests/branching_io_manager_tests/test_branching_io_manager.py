@@ -10,7 +10,12 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
-from .utils import AssetBasedInMemoryIOManager, DefinitionsRunner
+from .utils import (
+    LOG,
+    AssetBasedInMemoryIOManager,
+    ConfigurableAssetBasedInMemoryIOManager,
+    DefinitionsRunner,
+)
 
 
 @asset
@@ -76,6 +81,38 @@ def test_write_staging_label():
         ),
     ) as staging_runner:
         assert staging_runner.materialize_all_assets().success
+
+        all_mat_log_records = staging_runner.get_all_asset_materialization_event_records("now_time")
+        assert all_mat_log_records
+
+        assert len(all_mat_log_records) == 1
+        asset_mat = all_mat_log_records[0].event_log_entry.asset_materialization
+
+        assert asset_mat
+        assert get_branch_name_from_materialization(asset_mat) == "dev"
+
+
+def test_setup_teardown() -> None:
+    with DefinitionsRunner.ephemeral(
+        Definitions(
+            assets=[now_time],
+            resources={
+                "io_manager": BranchingIOManager(
+                    parent_io_manager=ConfigurableAssetBasedInMemoryIOManager(name="parent"),
+                    branch_io_manager=ConfigurableAssetBasedInMemoryIOManager(name="branch"),
+                )
+            },
+        ),
+    ) as staging_runner:
+        LOG.clear()
+        assert staging_runner.materialize_all_assets().success
+        assert len(LOG) == 4
+        assert LOG == [
+            "setup_for_execution parent",
+            "setup_for_execution branch",
+            "teardown_after_execution branch",
+            "teardown_after_execution parent",
+        ]
 
         all_mat_log_records = staging_runner.get_all_asset_materialization_event_records("now_time")
         assert all_mat_log_records
@@ -197,8 +234,7 @@ def test_basic_workflow():
 
         assert (
             # staging_after_iteration_runner.load_asset_value("now_time_plus_N")
-            result
-            == now_time_prod_value_1 + 17
+            result == now_time_prod_value_1 + 17
         )
 
         # we were able to do this without having an materializations in staging of the root asset

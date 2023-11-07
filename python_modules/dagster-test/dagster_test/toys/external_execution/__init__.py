@@ -38,7 +38,9 @@ def number_x(
     config: NumberConfig,
 ) -> None:
     extras = {**get_common_extras(context), "multiplier": config.multiplier}
-    pipes_subprocess_client.run(command_for_asset("number_x"), context=context, extras=extras)
+    pipes_subprocess_client.run(
+        command=command_for_asset("number_x"), context=context, extras=extras
+    )
 
 
 @asset
@@ -48,7 +50,7 @@ def number_y(
     config: NumberConfig,
 ):
     pipes_subprocess_client.run(
-        command_for_asset("number_y"),
+        command=command_for_asset("number_y"),
         context=context,
         extras=get_common_extras(context),
         env={"NUMBER_Y": "4"},
@@ -60,7 +62,7 @@ def number_sum(
     context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
 ) -> None:
     pipes_subprocess_client.run(
-        command_for_asset("number_sum"), context=context, extras=get_common_extras(context)
+        command=command_for_asset("number_sum"), context=context, extras=get_common_extras(context)
     )
 
 

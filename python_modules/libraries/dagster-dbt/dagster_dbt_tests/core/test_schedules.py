@@ -53,7 +53,8 @@ def test_dbt_build_schedule(
     execution_timezone: Optional[str],
 ) -> None:
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(): ...
+    def my_dbt_assets():
+        ...
 
     test_daily_schedule = build_schedule_from_dbt_selection(
         [my_dbt_assets],

@@ -30,7 +30,7 @@ interface IconProps {
   fillColor: string;
 }
 
-const StarIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, disabled}) => (
+const StarIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) => (
   <svg width="24px" height="24px" viewBox="-3 -3 24 24">
     <path
       className="interaction-focus-outline"
@@ -65,7 +65,7 @@ const StarIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, disab
   </svg>
 );
 
-const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, disabled}) => (
+const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) => (
   <svg width="36px" height="24px" viewBox="-3 -3 42 28">
     <defs>
       <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="innerShadow">
@@ -103,7 +103,7 @@ const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, dis
   </svg>
 );
 
-const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, disabled}) => (
+const CheckIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) => (
   <svg width="24px" height="24px" viewBox="-3 -3 24 24">
     <path
       d="M16,0 C17.1,0 18,0.9 18,2 L18,2 L18,16 C18,17.1 17.1,18 16,18 L16,18 L2,18 C0.9,18 0,17.1 0,16 L0,16 L0,2 C0,0.9 0.9,0 2,0 L2,0 Z"
@@ -178,9 +178,16 @@ const Base = ({
   ...rest
 }: Props) => {
   const uid = useRef(id || uniqueId());
-  const Component: React.FC<IconProps> = {star: StarIcon, check: CheckIcon, switch: SwitchIcon}[
-    format
-  ];
+  const Component = React.useMemo(() => {
+    switch (format) {
+      case 'star':
+        return StarIcon;
+      case 'check':
+        return CheckIcon;
+      case 'switch':
+        return SwitchIcon;
+    }
+  }, [format]);
 
   return (
     <label htmlFor={uid.current} className={className} onClick={onClick}>

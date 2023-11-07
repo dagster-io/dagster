@@ -162,6 +162,16 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abc.abstractmethod
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        """Get all policy evaluations for a given evaluation ID.
+
+        Args:
+            evaluation_id (int): The evaluation ID to query.
+        """
+
+    @abc.abstractmethod
     def purge_asset_evaluations(self, before: float) -> None:
         """Wipe evaluations before a certain timestamp.
 

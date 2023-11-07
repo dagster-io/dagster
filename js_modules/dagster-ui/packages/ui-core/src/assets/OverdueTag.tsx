@@ -39,11 +39,14 @@ export function isAssetOverdue(liveData?: LiveDataForNode): liveData is LiveData
 export const humanizedMinutesLateString = (minLate: number) =>
   dayjs.duration(minLate, 'minutes').humanize(false);
 
-export const OverdueTag: React.FC<{
+export const OverdueTag = ({
+  policy,
+  assetKey,
+}: {
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
-}> = ({policy, assetKey}) => {
-  const liveData = useAssetLiveData(assetKey);
+}) => {
+  const {liveData} = useAssetLiveData(assetKey);
 
   if (!liveData?.freshnessInfo) {
     return null;
@@ -89,9 +92,13 @@ type OverdueLineagePopoverProps = {
   liveData: LiveDataForNode;
 };
 
-export const OverdueLineagePopover: React.FC<
-  OverdueLineagePopoverProps & {children: React.ReactNode}
-> = ({children, assetKey, liveData}) => {
+export const OverdueLineagePopover = ({
+  children,
+  assetKey,
+  liveData,
+}: OverdueLineagePopoverProps & {
+  children: React.ReactNode;
+}) => {
   return (
     <Popover
       position="top"
@@ -109,10 +116,13 @@ export const OverdueLineagePopover: React.FC<
   );
 };
 
-const OverdueLineagePopoverContent: React.FC<{
+const OverdueLineagePopoverContent = ({
+  assetKey,
+  timestamp,
+}: {
   assetKey: AssetKeyInput;
   timestamp: string;
-}> = ({assetKey, timestamp}) => {
+}) => {
   const result = useQuery<OverduePopoverQuery, OverduePopoverQueryVariables>(
     OVERDUE_POPOVER_QUERY,
     {variables: {assetKey: {path: assetKey.path}, timestamp}},

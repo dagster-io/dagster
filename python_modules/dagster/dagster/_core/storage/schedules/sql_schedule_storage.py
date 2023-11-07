@@ -471,20 +471,38 @@ class SqlScheduleStorage(ScheduleStorage):
             return
 
         with self.connect() as conn:
-            bulk_insert = AssetDaemonAssetEvaluationsTable.insert().values(
-                [
-                    {
-                        "evaluation_id": evaluation_id,
-                        "asset_key": evaluation.asset_key.to_string(),
-                        "asset_evaluation_body": serialize_value(evaluation),
-                        "num_requested": evaluation.num_requested,
-                        "num_skipped": evaluation.num_skipped,
-                        "num_discarded": evaluation.num_discarded,
-                    }
-                    for evaluation in asset_evaluations
-                ]
-            )
-            conn.execute(bulk_insert)
+            for evaluation in asset_evaluations:
+                insert_stmt = AssetDaemonAssetEvaluationsTable.insert().values(
+                    [
+                        {
+                            "evaluation_id": evaluation_id,
+                            "asset_key": evaluation.asset_key.to_string(),
+                            "asset_evaluation_body": serialize_value(evaluation),
+                            "num_requested": evaluation.num_requested,
+                            "num_skipped": evaluation.num_skipped,
+                            "num_discarded": evaluation.num_discarded,
+                        }
+                    ]
+                )
+                try:
+                    conn.execute(insert_stmt)
+                except db_exc.IntegrityError:
+                    conn.execute(
+                        AssetDaemonAssetEvaluationsTable.update()
+                        .where(
+                            db.and_(
+                                AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id,
+                                AssetDaemonAssetEvaluationsTable.c.asset_key
+                                == evaluation.asset_key.to_string(),
+                            )
+                        )
+                        .values(
+                            asset_evaluation_body=serialize_value(evaluation),
+                            num_requested=evaluation.num_requested,
+                            num_skipped=evaluation.num_skipped,
+                            num_discarded=evaluation.num_discarded,
+                        )
+                    )
 
     def get_auto_materialize_asset_evaluations(
         self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
@@ -497,6 +515,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
                         AssetDaemonAssetEvaluationsTable.c.evaluation_id,
                         AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                        AssetDaemonAssetEvaluationsTable.c.asset_key,
                     ]
                 )
                 .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
@@ -505,6 +524,23 @@ class SqlScheduleStorage(ScheduleStorage):
 
             if cursor:
                 query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
+
+            rows = db_fetch_mappings(conn, query)
+            return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
+
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        with self.connect() as conn:
+            query = db_select(
+                [
+                    AssetDaemonAssetEvaluationsTable.c.id,
+                    AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
+                    AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+                    AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+                    AssetDaemonAssetEvaluationsTable.c.asset_key,
+                ]
+            ).where(AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id)
 
             rows = db_fetch_mappings(conn, query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]

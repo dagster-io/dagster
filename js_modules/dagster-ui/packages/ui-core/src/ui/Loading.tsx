@@ -74,7 +74,7 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
   return <>{children(data as TData)}</>;
 };
 
-export const LoadingSpinner: React.FC<{purpose: 'page' | 'section'}> = ({purpose}) => {
+export const LoadingSpinner = ({purpose}: {purpose: 'page' | 'section'}) => {
   const isPage = purpose === 'page';
   return (
     <Box

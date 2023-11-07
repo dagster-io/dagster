@@ -1,3 +1,4 @@
+import asyncio
 from typing import Generator, Tuple
 
 import pytest
@@ -17,7 +18,9 @@ from dagster import (
     materialize,
     multi_asset,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
+from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 
@@ -47,17 +50,32 @@ def test_materialize_result_asset():
             metadata={"one": 1},
         )
 
+    # core execution
     with pytest.raises(
         DagsterInvariantViolationError,
         match="Asset key random not found in AssetsDefinition",
     ):
         materialize([ret_mismatch])
 
+    # direct invocation
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Asset key random not found in AssetsDefinition",
+    ):
+        ret_mismatch(build_asset_context())
+
+    # tuple
     @asset
     def ret_two():
         return MaterializeResult(metadata={"one": 1}), MaterializeResult(metadata={"two": 2})
 
-    materialize([ret_two])
+    # core execution
+    result = materialize([ret_two])
+    assert result.success
+
+    # direct invocation
+    direct_results = ret_two()
+    assert len(direct_results) == 2
 
 
 def test_return_materialization_with_asset_checks():
@@ -71,14 +89,19 @@ def test_return_materialization_with_asset_checks():
                 ]
             )
 
+        # core execution
         materialize([ret_checks], instance=instance)
-        asset_check_executions = instance.event_log_storage.get_asset_check_executions(
-            asset_key=ret_checks.key,
-            check_name="foo_check",
+        asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
+            AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
             limit=1,
         )
         assert len(asset_check_executions) == 1
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+        # direct invocation
+        context = build_asset_context()
+        direct_results = ret_checks(context)
+        assert direct_results
 
 
 def test_multi_asset():
@@ -88,7 +111,11 @@ def test_multi_asset():
             asset_key="two", metadata={"baz": "qux"}
         )
 
-    materialize([outs_multi_asset])
+    assert materialize([outs_multi_asset]).success
+
+    res = outs_multi_asset()
+    assert res[0].metadata["foo"] == "bar"
+    assert res[1].metadata["baz"] == "qux"
 
     @multi_asset(specs=[AssetSpec(["prefix", "one"]), AssetSpec(["prefix", "two"])])
     def specs_multi_asset():
@@ -96,7 +123,11 @@ def test_multi_asset():
             asset_key=["prefix", "one"], metadata={"foo": "bar"}
         ), MaterializeResult(asset_key=["prefix", "two"], metadata={"baz": "qux"})
 
-    materialize([specs_multi_asset])
+    assert materialize([specs_multi_asset]).success
+
+    res = specs_multi_asset()
+    assert res[0].metadata["foo"] == "bar"
+    assert res[1].metadata["baz"] == "qux"
 
 
 def test_return_materialization_multi_asset():
@@ -122,6 +153,9 @@ def test_return_materialization_multi_asset():
     assert "two" in mats[1].metadata
     assert mats[1].tags
 
+    direct_results = list(multi())
+    assert len(direct_results) == 2
+
     #
     # missing a non optional out
     #
@@ -140,6 +174,12 @@ def test_return_materialization_multi_asset():
         ),
     ):
         _exec_asset(missing)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Invocation of op "missing" did not return an output for non-optional output "two"',
+    ):
+        list(missing())
 
     #
     # missing asset_key
@@ -161,6 +201,15 @@ def test_return_materialization_multi_asset():
         ),
     ):
         _exec_asset(no_key)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
+            " asset_key, options are:"
+        ),
+    ):
+        list(no_key())
 
     #
     # return tuple success
@@ -185,6 +234,9 @@ def test_return_materialization_multi_asset():
     assert mats[0].tags
     assert "two" in mats[1].metadata
     assert mats[1].tags
+
+    res = ret_multi()
+    assert len(res) == 2
 
     #
     # return list error
@@ -211,6 +263,15 @@ def test_return_materialization_multi_asset():
         ),
     ):
         _exec_asset(ret_list)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "When using multiple outputs, either yield each output, or return a tuple containing a"
+            " value for each output."
+        ),
+    ):
+        ret_list()
 
 
 def test_materialize_result_output_typing():
@@ -258,6 +319,67 @@ def test_materialize_result_output_typing():
         resources={"io_manager": TestingIOManager()},
     ).success
 
+    @asset(
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="with_checks"),
+            AssetCheckSpec(name="check_two", asset="with_checks"),
+        ]
+    )
+    def with_checks(context: AssetExecutionContext) -> MaterializeResult:
+        return MaterializeResult(
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_one",
+                    passed=True,
+                ),
+                AssetCheckResult(
+                    check_name="check_two",
+                    passed=True,
+                ),
+            ]
+        )
+
+    assert materialize(
+        [with_checks],
+        resources={"io_manager": TestingIOManager()},
+    ).success
+
+    @multi_asset(
+        specs=[
+            AssetSpec("asset_one"),
+            AssetSpec("asset_two"),
+        ],
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="asset_one"),
+            AssetCheckSpec(name="check_two", asset="asset_two"),
+        ],
+    )
+    def multi_checks(context: AssetExecutionContext) -> Tuple[MaterializeResult, MaterializeResult]:
+        return MaterializeResult(
+            asset_key="asset_one",
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_one",
+                    passed=True,
+                    asset_key="asset_one",
+                ),
+            ],
+        ), MaterializeResult(
+            asset_key="asset_two",
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_two",
+                    passed=True,
+                    asset_key="asset_two",
+                ),
+            ],
+        )
+
+    assert materialize(
+        [multi_checks],
+        resources={"io_manager": TestingIOManager()},
+    ).success
+
 
 @pytest.mark.skip(
     "Generator return types are interpreted as Any. See"
@@ -279,41 +401,17 @@ def test_generator_return_type_annotation():
     materialize([generator_asset], resources={"io_manager": TestingIOManager()})
 
 
-def test_direct_invocation_materialize_result():
-    @asset
-    def my_asset() -> MaterializeResult:
-        return MaterializeResult(metadata={"foo": "bar"})
-
-    res = my_asset()
-    assert res.metadata["foo"] == "bar"
-
-    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def specs_multi_asset():
-        return MaterializeResult(asset_key="one", metadata={"foo": "bar"}), MaterializeResult(
-            asset_key="two", metadata={"baz": "qux"}
-        )
-
-    res = specs_multi_asset()
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
-
-    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
-    def outs_multi_asset():
-        return MaterializeResult(asset_key="one", metadata={"foo": "bar"}), MaterializeResult(
-            asset_key="two", metadata={"baz": "qux"}
-        )
-
-    res = outs_multi_asset()
-    assert res[0].metadata["foo"] == "bar"
-    assert res[1].metadata["baz"] == "qux"
-
-
-def test_direct_invocation_for_generators():
+def test_materialize_result_generators():
     @asset
     def generator_asset() -> Generator[MaterializeResult, None, None]:
         yield MaterializeResult(metadata={"foo": "bar"})
 
+    res = _exec_asset(generator_asset)
+    assert len(res) == 1
+    assert res[0].metadata["foo"].value == "bar"
+
     res = list(generator_asset())
+    assert len(res) == 1
     assert res[0].metadata["foo"] == "bar"
 
     @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
@@ -321,7 +419,13 @@ def test_direct_invocation_for_generators():
         yield MaterializeResult(asset_key="one", metadata={"foo": "bar"})
         yield MaterializeResult(asset_key="two", metadata={"baz": "qux"})
 
+    res = _exec_asset(generator_specs_multi_asset)
+    assert len(res) == 2
+    assert res[0].metadata["foo"].value == "bar"
+    assert res[1].metadata["baz"].value == "qux"
+
     res = list(generator_specs_multi_asset())
+    assert len(res) == 2
     assert res[0].metadata["foo"] == "bar"
     assert res[1].metadata["baz"] == "qux"
 
@@ -330,11 +434,52 @@ def test_direct_invocation_for_generators():
         yield MaterializeResult(asset_key="one", metadata={"foo": "bar"})
         yield MaterializeResult(asset_key="two", metadata={"baz": "qux"})
 
+    res = _exec_asset(generator_outs_multi_asset)
+    assert len(res) == 2
+    assert res[0].metadata["foo"].value == "bar"
+    assert res[1].metadata["baz"].value == "qux"
+
     res = list(generator_outs_multi_asset())
+    assert len(res) == 2
     assert res[0].metadata["foo"] == "bar"
     assert res[1].metadata["baz"] == "qux"
 
-    # need to test async generator case and coroutine see op_invocation.py:_type_check_output_wrapper for all cases
+    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    async def async_specs_multi_asset():
+        return MaterializeResult(asset_key="one", metadata={"foo": "bar"}), MaterializeResult(
+            asset_key="two", metadata={"baz": "qux"}
+        )
+
+    res = _exec_asset(async_specs_multi_asset)
+    assert len(res) == 2
+    assert res[0].metadata["foo"].value == "bar"
+    assert res[1].metadata["baz"].value == "qux"
+
+    res = asyncio.run(async_specs_multi_asset())
+    assert len(res) == 2
+    assert res[0].metadata["foo"] == "bar"
+    assert res[1].metadata["baz"] == "qux"
+
+    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    async def async_gen_specs_multi_asset():
+        yield MaterializeResult(asset_key="one", metadata={"foo": "bar"})
+        yield MaterializeResult(asset_key="two", metadata={"baz": "qux"})
+
+    res = _exec_asset(async_gen_specs_multi_asset)
+    assert len(res) == 2
+    assert res[0].metadata["foo"].value == "bar"
+    assert res[1].metadata["baz"].value == "qux"
+
+    async def _run_async_gen():
+        results = []
+        async for result in async_gen_specs_multi_asset():
+            results.append(result)
+        return results
+
+    res = asyncio.run(_run_async_gen())
+    assert len(res) == 2
+    assert res[0].metadata["foo"] == "bar"
+    assert res[1].metadata["baz"] == "qux"
 
 
 def test_materialize_result_with_partitions():

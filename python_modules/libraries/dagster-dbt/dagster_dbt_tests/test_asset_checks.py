@@ -1,17 +1,22 @@
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pytest
-from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, materialize
+from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, AssetSelection, materialize
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dbt.version import __version__ as dbt_version
+from packaging import version
+from pytest_mock import MockerFixture
 
 pytest.importorskip("dbt.version", minversion="1.4")
+
+is_dbt_1_4 = version.parse("1.4.0") <= version.parse(dbt_version) < version.parse("1.5.0")
 
 
 test_asset_checks_dbt_project_dir = (
@@ -27,7 +32,8 @@ dagster_dbt_translator_with_checks = DagsterDbtTranslator(
 
 def test_with_asset_checks() -> None:
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets_no_checks(): ...
+    def my_dbt_assets_no_checks():
+        ...
 
     [load_my_dbt_assets_no_checks] = load_assets_from_dbt_manifest(manifest=manifest)
 
@@ -40,7 +46,8 @@ def test_with_asset_checks() -> None:
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator_with_checks,
     )
-    def my_dbt_assets_with_checks(): ...
+    def my_dbt_assets_with_checks():
+        ...
 
     [load_my_dbt_assets_with_checks] = load_assets_from_dbt_manifest(
         manifest=manifest_path,
@@ -71,7 +78,8 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 
             super().__init__()
 
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator): ...
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        ...
 
     class CustomDagsterDbtTranslatorWithPassThrough(DagsterDbtTranslator):
         def __init__(self, test_arg: str, *args, **kwargs):
@@ -110,7 +118,41 @@ def test_enable_asset_checks_with_custom_translator() -> None:
         ],
     ],
 )
-def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
+@pytest.mark.parametrize(
+    "selection",
+    [
+        None,
+        pytest.param(
+            AssetSelection.keys(AssetKey(["customers"])),
+            marks=pytest.mark.xfail(
+                is_dbt_1_4,
+                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+            ),
+        ),
+        pytest.param(
+            AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+            marks=pytest.mark.xfail(
+                is_dbt_1_4,
+                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+            ),
+        ),
+        AssetSelection.keys(AssetKey(["customers"]))
+        - AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+    ],
+    ids=[
+        "no selection",
+        "select customers with checks",
+        "select customers without checks",
+        "select only checks for customers",
+    ],
+)
+def test_asset_check_execution(
+    mocker: MockerFixture, dbt_commands: List[List[str]], selection: Optional[AssetSelection]
+) -> None:
+    mock_context = mocker.MagicMock()
+    mock_context.assets_def = None
+    mock_context.has_assets_def = True
+
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
@@ -123,6 +165,7 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
         resources={
             "dbt": dbt,
         },
+        selection=selection,
     )
 
     assert result.success
@@ -134,6 +177,8 @@ def test_asset_check_execution(dbt_commands: List[List[str]]) -> None:
             dbt_command,
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator_with_checks,
+            context=mock_context,
+            target_path=Path("target"),
         )
 
         events += list(dbt_cli_invocation.stream())

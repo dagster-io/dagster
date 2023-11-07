@@ -4,10 +4,10 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {MISSING_LIVE_DATA, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
-import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {MISSING_LIVE_DATA, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
 import {PartitionCountLabels, partitionCountString} from '../assets/AssetNodePartitionCounts';
@@ -167,6 +167,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 </Box>
               ) : liveData?.lastMaterialization ? (
                 <AssetRunLink
+                  assetKey={{path}}
                   runId={liveData.lastMaterialization.runId}
                   event={{
                     stepKey: liveData.stepKey,
@@ -204,10 +205,13 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   );
 };
 
-export const VirtualizedAssetCatalogHeader: React.FC<{
+export const VirtualizedAssetCatalogHeader = ({
+  headerCheckbox,
+  view,
+}: {
   headerCheckbox: React.ReactNode;
   view: AssetViewType;
-}> = ({headerCheckbox, view}) => {
+}) => {
   return (
     <Box
       background={Colors.White}
@@ -232,9 +236,7 @@ export const VirtualizedAssetCatalogHeader: React.FC<{
   );
 };
 
-export const VirtualizedAssetHeader: React.FC<{
-  nameLabel: React.ReactNode;
-}> = ({nameLabel}) => {
+export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}) => {
   return (
     <Box
       border="top-and-bottom"
@@ -263,11 +265,11 @@ const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
 const LIVE_QUERY_DELAY = 250;
 
 /**
- * This hook maps through to `useLiveDataForAssetKeys` for the `asset` case and a per-row
+ * This hook maps through to `AssetLiveDataProvider` for the `asset` case and a per-row
  * query for the latest materialization for the `asset_non_sda` case.
  *
  * It uses internal state and `skip` to implement a debounce that prevents a ton of queries
- * as the user scans past rows. (The best way to skip the useLiveDataForAssetKeys work is
+ * as the user scans past rows. (The best way to skip the AssetLiveDataProvider work is
  * to pass it an empty array of asset keys.)
  */
 export function useLiveDataOrLatestMaterializationDebounced(
@@ -277,7 +279,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
   const debouncedKey = (debouncedKeys[0] || '') as AssetKeyInput;
 
-  const {liveDataByNode} = useLiveDataForAssetKeys(type === 'asset' ? debouncedKeys : []);
+  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : []);
 
   const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
     SINGLE_NON_SDA_ASSET_QUERY,
@@ -298,7 +300,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   }, [type, path]);
 
   if (type === 'asset') {
-    return liveDataByNode[toGraphId({path})]!;
+    return liveDataByNode[tokenForAssetKey({path})]!;
   }
 
   if (type === 'asset_non_sda') {

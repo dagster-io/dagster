@@ -2,10 +2,11 @@ import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {LaunchpadHooksContext} from '../../launchpad/LaunchpadHooksContext';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
-type SetFilterValue<T> = {
+export type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
@@ -22,6 +23,7 @@ type Args<TValue> = {
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
   menuWidth?: number | string;
+  closeOnSelect?: boolean;
 };
 
 export type StaticSetFilter<TValue> = FilterObject & {
@@ -33,7 +35,7 @@ export function useStaticSetFilter<TValue>({
   name,
   icon,
   getKey,
-  allValues,
+  allValues: _unsortedValues,
   renderLabel,
   renderActiveStateLabel,
   initialState,
@@ -42,7 +44,18 @@ export function useStaticSetFilter<TValue>({
   menuWidth,
   allowMultipleSelections = true,
   matchType = 'any-of',
+  closeOnSelect = false,
 }: Args<TValue>): StaticSetFilter<TValue> {
+  const {StaticFilterSorter} = React.useContext(LaunchpadHooksContext);
+
+  const allValues = React.useMemo(() => {
+    const sorter = StaticFilterSorter?.[name];
+    if (sorter) {
+      return _unsortedValues.sort(sorter);
+    }
+    return _unsortedValues;
+  }, [StaticFilterSorter, name, _unsortedValues]);
+
   const [state, setState] = React.useState(() => new Set(initialState || []));
 
   React.useEffect(() => {
@@ -93,7 +106,7 @@ export function useStaticSetFilter<TValue>({
             value,
           }));
       },
-      onSelect: ({value}) => {
+      onSelect: ({value, close}) => {
         let newState = new Set(filterObjRef.current.state);
         if (newState.has(value)) {
           newState.delete(value);
@@ -105,6 +118,9 @@ export function useStaticSetFilter<TValue>({
           }
         }
         setState(newState);
+        if (closeOnSelect) {
+          close();
+        }
       },
 
       activeJSX: (

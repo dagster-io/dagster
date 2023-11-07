@@ -87,7 +87,7 @@ const useSidebarOpQuery = (
   };
 };
 
-export const SidebarOp: React.FC<SidebarOpProps> = ({
+export const SidebarOp = ({
   handleID,
   explorerPath,
   getInvocations,
@@ -96,7 +96,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
   onClickOp,
   repoAddress,
   isGraph,
-}) => {
+}: SidebarOpProps) => {
   const {error, solidContainer, isLoading} = useSidebarOpQuery(
     explorerPath.pipelineName,
     handleID,

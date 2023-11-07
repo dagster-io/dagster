@@ -196,6 +196,10 @@ class SensorEvaluationContext:
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
 
+    @property
+    def sensor_name(self) -> str:
+        return check.not_none(self._sensor_name, "Only valid when sensor name provided")
+
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.
 
@@ -1160,6 +1164,7 @@ def get_sensor_context_from_args_or_kwargs(
 def get_or_create_sensor_context(
     fn: Callable,
     *args: Any,
+    context_type: Type = SensorEvaluationContext,
     **kwargs: Any,
 ) -> SensorEvaluationContext:
     """Based on the passed resource function and the arguments passed to it, returns the
@@ -1169,12 +1174,7 @@ def get_or_create_sensor_context(
     function requires a context parameter but none is passed.
     """
     context = (
-        get_sensor_context_from_args_or_kwargs(
-            fn,
-            args,
-            kwargs,
-            context_type=SensorEvaluationContext,
-        )
+        get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
         or build_sensor_context()
     )
     resource_args_from_kwargs = {}
@@ -1218,7 +1218,8 @@ def _run_requests_with_base_asset_jobs(
         base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name, asset_selection=list(asset_keys)  # type: ignore  # (possible none)
+                job_name=base_job.name,  # type: ignore  # (possible none)
+                asset_selection=list(asset_keys),
             )
         )
 

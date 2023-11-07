@@ -4,13 +4,17 @@ import pytest
 from dagster import (
     __version__ as dagster_version,
     graph,
+    job,
+    op,
 )
 from dagster._core.test_utils import environ, remove_none_recursively
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
+from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
     DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
     USER_DEFINED_K8S_CONFIG_KEY,
+    K8sConfigMergeBehavior,
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
@@ -549,6 +553,50 @@ def test_construct_dagster_k8s_job_with_user_defined_service_account_name():
 
     service_account_name = job["spec"]["template"]["spec"]["service_account_name"]
     assert service_account_name == "this-should-take-precedence"
+
+
+def test_construct_dagster_k8s_job_with_deep_merge():
+    @job(
+        tags={
+            USER_DEFINED_K8S_CONFIG_KEY: {
+                "pod_template_spec_metadata": {
+                    "labels": {"foo_label": "bar_value"},
+                },
+            }
+        }
+    )
+    def user_defined_deep_merge_job():
+        pass
+
+    job_user_defined_k8s_config = get_user_defined_k8s_config(user_defined_deep_merge_job.tags)
+    assert job_user_defined_k8s_config.merge_behavior == K8sConfigMergeBehavior.SHALLOW
+
+    @op(
+        tags={
+            USER_DEFINED_K8S_CONFIG_KEY: {
+                "pod_template_spec_metadata": {
+                    "labels": {"baz_label": "quux_value"},
+                },
+                "merge_behavior": K8sConfigMergeBehavior.DEEP.value,
+            }
+        }
+    )
+    def user_defined_deep_merge_op():
+        pass
+
+    op_user_defined_k8s_config = get_user_defined_k8s_config(user_defined_deep_merge_op.tags)
+    assert op_user_defined_k8s_config.merge_behavior == K8sConfigMergeBehavior.DEEP
+
+    merged_k8s_config = (
+        K8sContainerContext(run_k8s_config=job_user_defined_k8s_config)
+        .merge(K8sContainerContext(run_k8s_config=op_user_defined_k8s_config))
+        .run_k8s_config
+    )
+
+    assert merged_k8s_config.pod_template_spec_metadata["labels"] == {
+        "foo_label": "bar_value",
+        "baz_label": "quux_value",
+    }
 
 
 def test_construct_dagster_k8s_job_with_ttl_snake_case():

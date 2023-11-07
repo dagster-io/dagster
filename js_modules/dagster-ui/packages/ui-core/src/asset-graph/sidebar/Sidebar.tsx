@@ -80,7 +80,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       null | {id: string; path: string} | {id: string}
     >(null);
 
-    const [viewType, setViewType] = React.useState<'tree' | 'group'>('tree');
+    const [viewType, setViewType] = React.useState<'tree' | 'group'>('group');
 
     const rootNodes = React.useMemo(
       () =>
@@ -278,7 +278,16 @@ export const AssetGraphExplorerSidebar = React.memo(
             ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
             : -1;
         } else {
-          return renderedNodes.findIndex((node) => nodePathKey(node) === nodePathKey(selectedNode));
+          return renderedNodes.findIndex((node) => {
+            // If you select a node via the search dropdown or from the graph directly then
+            // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+            // will always have a path so we need to explicitly check if the id's match
+            if (!('path' in selectedNode)) {
+              return node.id === selectedNode.id;
+            } else {
+              return nodePathKey(node) === nodePathKey(selectedNode);
+            }
+          });
         }
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -306,6 +315,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             gridTemplateColumns: '1fr auto',
             gap: '6px',
             padding: '12px 24px',
+            paddingRight: 12,
             borderBottom: `1px solid ${Colors.KeylineGray}`,
           }}
         >
@@ -313,8 +323,8 @@ export const AssetGraphExplorerSidebar = React.memo(
             <ButtonGroup
               activeItems={new Set([viewType])}
               buttons={[
-                {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
                 {id: 'group', label: 'Group view', icon: 'asset_group'},
+                {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
               ]}
               onClick={(id: 'tree' | 'group') => {
                 setViewType(id);
@@ -325,7 +335,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
           </Tooltip>
         </div>
-        <Box padding={{vertical: 8, horizontal: 24}}>
+        <Box padding={{vertical: 8, left: 24, right: 12}}>
           <SearchFilter
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
@@ -357,6 +367,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                         viewType={viewType}
                         isOpen={openNodes.has(nodePathKey(node))}
                         graphData={graphData}
+                        fullAssetGraphData={fullAssetGraphData}
                         node={row}
                         level={node.level}
                         isSelected={

@@ -13,12 +13,12 @@ export interface AssetPartitionListProps {
   focusedDimensionKey?: string;
   setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
 }
-export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
+export const AssetPartitionList = ({
   focusedDimensionKey,
   setFocusedDimensionKey,
   statusForPartition,
   partitions,
-}) => {
+}: AssetPartitionListProps) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({

@@ -718,7 +718,7 @@ def manage_graphql_context(context_variant):
         with context_variant.environment_mgr(
             instance, context_variant.read_only
         ) as workspace_process_context:
-            yield workspace_process_context.create_request_context()
+            yield workspace_process_context
 
 
 class _GraphQLContextTestSuite(ABC):
@@ -796,7 +796,7 @@ def make_graphql_context_test_suite(context_variants):
             instance = class_scoped_graphql_context.instance
             instance.wipe()
             instance.wipe_all_schedules()
-            yield class_scoped_graphql_context
+            yield class_scoped_graphql_context.create_request_context()
             # ensure that any runs launched by the test are cleaned up
             # Since launcher is lazy loaded, we don't need to do anyting if it's None
             if instance._run_launcher:  # noqa: SLF001

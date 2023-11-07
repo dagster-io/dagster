@@ -4,13 +4,13 @@ import {Link} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
-export const AssetLink: React.FC<{
+export const AssetLink = (props: {
   path: string[];
   icon?: 'asset' | 'asset_non_sda' | 'folder';
   textStyle?: 'break-word' | 'middle-truncate';
   url?: string;
   isGroup?: boolean;
-}> = (props) => {
+}) => {
   const {path, icon, url, isGroup, textStyle = 'break-word'} = props;
   const linkUrl = url ? url : assetDetailsPathForKey({path});
   const assetPath =

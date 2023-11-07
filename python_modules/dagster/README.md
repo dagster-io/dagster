@@ -3,7 +3,6 @@
   <a target="_blank" href="https://dagster.io" style="background:none">
     <img alt="dagster logo" src=".github/dagster-readme-header.svg" width="auto" height="100%">
   </a>
-<p style="text-align: center;">Remember to <a target="_blank" href="https://github.com/dagster-io/dagster">star the Dagster GitHub repo</a> for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
@@ -71,7 +70,7 @@ Dagster is built to be used at every stage of the data development lifecycle - l
 
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
-Dagster is available on PyPI and officially supports Python 3.8+.
+Dagster is available on PyPI and officially supports Python 3.8, Python 3.9, Python 3.10, and Python 3.11.
 
 ```bash
 pip install dagster dagster-webserver

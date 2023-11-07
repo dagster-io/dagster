@@ -7,12 +7,17 @@ import {ClearButton} from '../ui/ClearButton';
 
 import {partitionsToText, spanTextToSelectionsOrError} from './SpanRepresentation';
 
-export const DimensionRangeInput: React.FC<{
+export const DimensionRangeInput = ({
+  value,
+  onChange,
+  partitionKeys,
+  isTimeseries,
+}: {
   value: string[];
   onChange: (partitionNames: string[]) => void;
   partitionKeys: string[];
   isTimeseries: boolean;
-}> = ({value, onChange, partitionKeys, isTimeseries}) => {
+}) => {
   const [valueString, setValueString] = React.useState('');
   const partitionNameJSON = React.useMemo(() => JSON.stringify(partitionKeys), [partitionKeys]);
 

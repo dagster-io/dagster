@@ -48,11 +48,13 @@ import {RunTableRunFragment} from './types/RunTable.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 
-export const RunActionsMenu: React.FC<{
+interface Props {
   run: RunTableRunFragment;
   additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
   onAddTag?: (token: RunFilterToken) => void;
-}> = React.memo(({run, onAddTag, additionalActionsForRun}) => {
+}
+
+export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRun}: Props) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags'
@@ -304,10 +306,13 @@ export const RunActionsMenu: React.FC<{
   );
 });
 
-export const RunBulkActionsMenu: React.FC<{
+interface RunBulkActionsMenuProps {
   selected: RunTableRunFragment[];
   clearSelection: () => void;
-}> = React.memo(({selected, clearSelection}) => {
+}
+
+export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) => {
+  const {selected, clearSelection} = props;
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -467,7 +472,7 @@ const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
-const PIPELINE_ENVIRONMENT_QUERY = gql`
+export const PIPELINE_ENVIRONMENT_QUERY = gql`
   query PipelineEnvironmentQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {

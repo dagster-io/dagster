@@ -1,4 +1,3 @@
-import atexit
 import base64
 import datetime
 import json
@@ -11,7 +10,9 @@ import zlib
 from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
 from io import StringIO
-from threading import Event, Lock, Thread
+from queue import Queue
+from threading import Event, Thread
+from traceback import TracebackException
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -25,12 +26,14 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     TextIO,
     Type,
     TypedDict,
     TypeVar,
     Union,
     cast,
+    final,
     get_args,
 )
 
@@ -49,30 +52,31 @@ PipesExtras = Mapping[str, Any]
 PipesParams = Mapping[str, Any]
 
 
-_ENV_KEY_PREFIX = "DAGSTER_PIPES_"
-
-
-def _param_name_to_env_key(key: str) -> str:
-    return f"{_ENV_KEY_PREFIX}{key.upper()}"
-
-
-# ##### PARAMETERS
-
-IS_DAGSTER_PIPES_PROCESS = "IS_DAGSTER_PIPED_PROCESS"
-
-DAGSTER_PIPES_BOOTSTRAP_PARAM_NAMES = {
-    k: _param_name_to_env_key(k) for k in (IS_DAGSTER_PIPES_PROCESS, "context", "messages")
-}
-
-
 # ##### MESSAGE
+
+
+def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMessage":
+    return {
+        PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
+        "method": method,
+        "params": params,
+    }
+
 
 # Can't use a constant for TypedDict key so this value is repeated in `ExtMessage` defn.
 PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
 
 
+class PipesOpenedData(TypedDict):
+    """Payload generated on startup of the external-side `PipesMessageWriter` containing arbitrary
+    information about the external process.
+    """
+
+    extras: Mapping[str, Any]
+
+
 class PipesMessage(TypedDict):
-    """A message sent from the orchestration process to the external process."""
+    """A message sent from the external process to the orchestration process."""
 
     __dagster_pipes_version: str
     method: str
@@ -150,6 +154,19 @@ PipesMetadataType = Literal[
     "null",
 ]
 
+
+class PipesException(TypedDict):
+    message: str
+    stack: Sequence[str]
+    # class name of Exception object in python, left as optional for flexibility
+    name: Optional[str]
+    # https://docs.python.org/3/library/exceptions.html#exception-context
+    # exception that explicitly led to this exception
+    cause: Optional["PipesException"]
+    # exception that being handled when this exception was raised
+    context: Optional["PipesException"]
+
+
 # ########################
 # ##### UTIL
 # ########################
@@ -188,19 +205,28 @@ def _resolve_optionally_passed_asset_key(
     asset_key: Optional[str],
     method: str,
 ) -> str:
-    asset_keys = _assert_defined_asset_property(data["asset_keys"], method)
     asset_key = _assert_opt_param_type(asset_key, str, method, "asset_key")
-    if asset_key and asset_key not in asset_keys:
-        raise DagsterPipesError(
-            f"Invalid asset key. Expected one of `{asset_keys}`, got `{asset_key}`."
-        )
-    if not asset_key:
-        if len(asset_keys) != 1:
+
+    defined_asset_keys = data["asset_keys"]
+    if defined_asset_keys:
+        if asset_key and asset_key not in defined_asset_keys:
             raise DagsterPipesError(
-                f"Calling `{method}` without passing an asset key is undefined. Current step"
-                " targets multiple assets."
+                f"Invalid asset key. Expected one of `{defined_asset_keys}`, got `{asset_key}`."
             )
-        asset_key = asset_keys[0]
+        if not asset_key:
+            if len(defined_asset_keys) != 1:
+                raise DagsterPipesError(
+                    f"Calling `{method}` without passing an asset key is undefined. Current step"
+                    " targets multiple assets."
+                )
+            asset_key = defined_asset_keys[0]
+
+    if not asset_key:
+        raise DagsterPipesError(
+            f"Calling `{method}` without passing an asset key is undefined. Current step"
+            " does not target a specific asset."
+        )
+
     return asset_key
 
 
@@ -328,8 +354,8 @@ def _normalize_param_metadata(
     return new_metadata
 
 
-def _param_from_env_var(key: str) -> Any:
-    raw_value = os.environ.get(_param_name_to_env_var(key))
+def _param_from_env_var(env_var: str) -> Any:
+    raw_value = os.environ.get(env_var)
     return decode_env_var(raw_value) if raw_value is not None else None
 
 
@@ -364,18 +390,6 @@ def decode_env_var(value: str) -> Any:
     return json.loads(decompressed.decode("utf-8"))
 
 
-def _param_name_to_env_var(param_name: str) -> str:
-    return f"{_ENV_KEY_PREFIX}{param_name.upper()}"
-
-
-def _env_var_to_param_name(env_var: str) -> str:
-    return env_var[len(_ENV_KEY_PREFIX) :].lower()
-
-
-def is_dagster_pipes_process() -> bool:
-    return _param_from_env_var(IS_DAGSTER_PIPES_PROCESS)
-
-
 def _emit_orchestration_inactive_warning() -> None:
     warnings.warn(
         "This process was not launched by a Dagster orchestration process. All calls to the"
@@ -406,6 +420,16 @@ class _PipesLoggerHandler(logging.Handler):
         self._context._write_message(  # noqa: SLF001
             "log", {"message": record.getMessage(), "level": record.levelname}
         )
+
+
+def _pipes_exc_from_tb(tb: TracebackException):
+    return PipesException(
+        message="".join(list(tb.format_exception_only())),
+        stack=tb.stack.format(),
+        name=tb.exc_type.__name__ if tb.exc_type is not None else None,
+        cause=_pipes_exc_from_tb(tb.__cause__) if tb.__cause__ else None,
+        context=_pipes_exc_from_tb(tb.__context__) if tb.__context__ else None,
+    )
 
 
 # ########################
@@ -452,6 +476,26 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
             PipesMessageWriterChannel: Channel for writing messagse back to Dagster.
         """
 
+    @final
+    def get_opened_payload(self) -> PipesOpenedData:
+        """Return a payload containing information about the external process to be passed back to
+        the the orchestration process. This should contain information that cannot be known before
+        the external process is launched.
+
+        This method should not be overridden by users. Instead, users should
+        override `get_opened_extras` to inject custom data.
+        """
+        return {"extras": self.get_opened_extras()}
+
+    def get_opened_extras(self) -> PipesExtras:
+        """Return arbitary reader-specific information to be passed back to the orchestration
+        process under the `extras` key of the initialization payload.
+
+        Returns:
+            PipesExtras: A dict of arbitrary data to be passed back to the orchestration process.
+        """
+        return {}
+
 
 class PipesMessageWriterChannel(ABC, Generic[T_MessageChannel]):
     """Object that writes messages back to the Dagster orchestration process."""
@@ -470,6 +514,12 @@ class PipesParamsLoader(ABC):
     message reader. These params are used to respectively bootstrap the
     :py:class:`PipesContextLoader` and :py:class:`PipesMessageWriter`.
     """
+
+    @abstractmethod
+    def is_dagster_pipes_process(self) -> bool:
+        """Whether or not this process has been provided with provided with information to create
+        a PipesContext or should instead return a mock.
+        """
 
     @abstractmethod
     def load_context_params(self) -> PipesParams:
@@ -508,7 +558,8 @@ class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterCha
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel: ...
+    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel:
+        ...
 
 
 class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
@@ -516,48 +567,49 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
 
     def __init__(self, *, interval: float = 10):
         self._interval = interval
-        self._lock = Lock()
-        self._buffer = []
+        self._buffer: Queue[PipesMessage] = Queue()
         self._counter = 1
 
     def write_message(self, message: PipesMessage) -> None:
-        with self._lock:
-            self._buffer.append(message)
+        self._buffer.put(message)
 
     def flush_messages(self) -> Sequence[PipesMessage]:
-        with self._lock:
-            messages = list(self._buffer)
-            self._buffer.clear()
-            return messages
+        items = []
+        while not self._buffer.empty():
+            items.append(self._buffer.get())
+        return items
 
     @abstractmethod
-    def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
+    def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
+        ...
 
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:
         thread = None
-        is_task_complete = Event()
+        is_session_closed = Event()
         try:
-            thread = Thread(target=self._upload_loop, args=(is_task_complete,), daemon=True)
+            thread = Thread(target=self._upload_loop, args=(is_session_closed,), daemon=True)
             thread.start()
             yield
         finally:
-            is_task_complete.set()
+            is_session_closed.set()
             if thread:
                 thread.join(timeout=60)
 
-    def _upload_loop(self, is_task_complete: Event) -> None:
+    def _upload_loop(self, is_session_closed: Event) -> None:
         start_or_last_upload = datetime.datetime.now()
         while True:
-            num_pending = len(self._buffer)
             now = datetime.datetime.now()
-            if num_pending == 0 and is_task_complete.is_set():
+            if self._buffer.empty() and is_session_closed.is_set():
                 break
-            elif is_task_complete.is_set() or (now - start_or_last_upload).seconds > self._interval:
+            elif (
+                is_session_closed.is_set() or (now - start_or_last_upload).seconds > self._interval
+            ):
                 payload = "\n".join([json.dumps(message) for message in self.flush_messages()])
-                self.upload_messages_chunk(StringIO(payload), self._counter)
-                start_or_last_upload = now
-                self._counter += 1
+                if len(payload) > 0:
+                    self.upload_messages_chunk(StringIO(payload), self._counter)
+                    start_or_last_upload = now
+                    self._counter += 1
             time.sleep(1)
 
 
@@ -670,19 +722,45 @@ class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
         self._stream.writelines((json.dumps(message), "\n"))
 
 
+DAGSTER_PIPES_CONTEXT_ENV_VAR = "DAGSTER_PIPES_CONTEXT"
+DAGSTER_PIPES_MESSAGES_ENV_VAR = "DAGSTER_PIPES_MESSAGES"
+
+
 class PipesEnvVarParamsLoader(PipesParamsLoader):
     """Params loader that extracts params from environment variables."""
 
+    def is_dagster_pipes_process(self) -> bool:
+        # use the presence of DAGSTER_PIPES_CONTEXT to discern if we are in a pipes process
+        return DAGSTER_PIPES_CONTEXT_ENV_VAR in os.environ
+
     def load_context_params(self) -> PipesParams:
-        return _param_from_env_var("context")
+        return _param_from_env_var(DAGSTER_PIPES_CONTEXT_ENV_VAR)
 
     def load_messages_params(self) -> PipesParams:
-        return _param_from_env_var("messages")
+        return _param_from_env_var(DAGSTER_PIPES_MESSAGES_ENV_VAR)
 
 
 # ########################
 # ##### IO - S3
 # ########################
+
+
+class PipesS3ContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on S3.
+
+    Args:
+        client (Any): A boto3.client("s3") object.
+    """
+
+    def __init__(self, client: Any):
+        self._client = client
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key = _assert_env_param_type(params, "key", str, self.__class__)
+        obj = self._client.get_object(Bucket=bucket, Key=key)
+        yield json.loads(obj["Body"].read().decode("utf-8"))
 
 
 class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
@@ -771,13 +849,55 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
             interval=self.interval,
         )
 
+    def get_opened_extras(self) -> PipesExtras:
+        # Extract the cluster log location from the SparkSession. This requires
+        # digging into the databricks `clusterUsageTags` config. This is set
+        # automatically by Databricks in the spark session that is created
+        # prior to job execution. Here are some sparse docs on cluster log
+        # delivery:
+        #   https://docs.databricks.com/en/clusters/configure.html#cluster-log-delivery
+        #
+        # It is not clear whether official docs exist for the config set in
+        # `spark.databricks.clusterUsageTags`, but you can see the full spark config for a job by
+        # selecting the "Spark UI" tab and then "Environment" on the job details page in the
+        # Databricks UI.
+        try:
+            from py4j.protocol import Py4JJavaError
+            from pyspark.sql import SparkSession
+        except ImportError as e:
+            raise DagsterPipesError(
+                "`PipesDbfsMessageWriter` requires pyspark and py4j to be available for import."
+            ) from e
+
+        spark = SparkSession.getActiveSession()
+        if spark is None:
+            raise DagsterPipesError(
+                "`PipesDbfsMessageWriter` expects an active `SparkSession` pre-configured by Databricks. Did not detect an active spark session."
+            )
+        try:
+            if spark.conf.get("spark.databricks.clusterUsageTags.clusterLogDeliveryEnabled"):
+                cluster_log_destination = spark.conf.get(
+                    "spark.databricks.clusterUsageTags.clusterLogDestination"
+                )
+                cluster_id = spark.conf.get("spark.databricks.clusterUsageTags.clusterId")
+                return {"cluster_driver_log_root": f"{cluster_log_destination}/{cluster_id}/driver"}
+            else:
+                return {}
+        except Py4JJavaError as e:
+            warnings.warn(
+                "A Py4JJavaError was thrown while reading the spark config to extract cluster logging information."
+                f" Log forwarding disabled. Error:\n  {e}",
+                category=DagsterPipesWarning,
+            )
+            return {}
+
 
 # ########################
 # ##### CONTEXT
 # ########################
 
 
-def init_dagster_pipes(
+def open_dagster_pipes(
     *,
     context_loader: Optional[PipesContextLoader] = None,
     message_writer: Optional[PipesMessageWriter] = None,
@@ -791,8 +911,7 @@ def init_dagster_pipes(
 
     If the process was not launched by Dagster, this function will emit a warning and return a
     `MagicMock` object. This should make all operations on the context no-ops and prevent your code
-    from crashing. However, it is recommended to instead check :py:func:`is_dagster_pipes_process()`
-    to handle the case where the process is not launched by Dagster.
+    from crashing.
 
     Args:
         context_loader (Optional[PipesContextLoader]): The context loader to use. Defaults to
@@ -808,17 +927,11 @@ def init_dagster_pipes(
     if PipesContext.is_initialized():
         return PipesContext.get()
 
-    if is_dagster_pipes_process():
-        params_loader = params_loader or PipesEnvVarParamsLoader()
-        context_params = params_loader.load_context_params()
-        messages_params = params_loader.load_messages_params()
+    params_loader = params_loader or PipesEnvVarParamsLoader()
+    if params_loader.is_dagster_pipes_process():
         context_loader = context_loader or PipesDefaultContextLoader()
         message_writer = message_writer or PipesDefaultMessageWriter()
-        stack = ExitStack()
-        context_data = stack.enter_context(context_loader.load_context(context_params))
-        message_channel = stack.enter_context(message_writer.open(messages_params))
-        atexit.register(stack.__exit__, None, None, None)
-        context = PipesContext(context_data, message_channel)
+        context = PipesContext(params_loader, context_loader, message_writer)
     else:
         _emit_orchestration_inactive_warning()
         context = _get_mock()
@@ -835,8 +948,8 @@ class PipesContext:
     be streamed back to Dagster.
 
     This class should not be directly instantiated by the user. Instead it should be initialized by
-    calling :py:func:`init_dagster_pipes()`, which will return the singleton instance of this class.
-    After `init_dagster_pipes()` has been called, the singleton instance can also be retrieved by
+    calling :py:func:`open_dagster_pipes()`, which will return the singleton instance of this class.
+    After `open_dagster_pipes()` has been called, the singleton instance can also be retrieved by
     calling :py:func:`PipesContext.get`.
     """
 
@@ -857,28 +970,62 @@ class PipesContext:
         """Get the singleton instance of the context. Raises an error if the context has not been initialized."""
         if cls._instance is None:
             raise Exception(
-                "ExtContext has not been initialized. You must call `init_dagster_pipes()`."
+                "PipesContext has not been initialized. You must call `open_dagster_pipes()`."
             )
         return cls._instance
 
     def __init__(
         self,
-        data: PipesContextData,
-        message_channel: PipesMessageWriterChannel,
+        params_loader: PipesParamsLoader,
+        context_loader: PipesContextLoader,
+        message_writer: PipesMessageWriter,
     ) -> None:
-        self._data = data
-        self._message_channel = message_channel
+        context_params = params_loader.load_context_params()
+        messages_params = params_loader.load_messages_params()
+        self._io_stack = ExitStack()
+        self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
+        self._message_channel = self._io_stack.enter_context(message_writer.open(messages_params))
+        opened_payload = message_writer.get_opened_payload()
+        self._message_channel.write_message(_make_message("opened", opened_payload))
         self._logger = _PipesLogger(self)
-        self._materialized_assets: set[str] = set()
+        self._materialized_assets: Set[str] = set()
+        self._closed: bool = False
+
+    def __enter__(self) -> "PipesContext":
+        return self
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+        # expected to all be present or absent together
+        # https://docs.python.org/3/reference/datamodel.html#object.__exit__
+        if exc_type and exc_value and traceback:
+            exc = _pipes_exc_from_tb(TracebackException(exc_type, exc_value, traceback))
+        else:
+            exc = None
+        self.close(exc)
+
+    def close(
+        self,
+        exc: Optional[PipesException] = None,
+    ) -> None:
+        """Close the pipes connection. This will flush all buffered messages to the orchestration
+        process and cause any further attempt to write a message to raise an error. This method is
+        idempotent-- subsequent calls after the first have no effect.
+        """
+        if not self._closed:
+            payload = {"exception": exc} if exc else {}
+            self._message_channel.write_message(_make_message("closed", payload))
+            self._io_stack.close()
+            self._closed = True
+
+    @property
+    def is_closed(self) -> bool:
+        """bool: Whether the context has been closed."""
+        return self._closed
 
     def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
-        message = PipesMessage(
-            {
-                PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
-                "method": method,
-                "params": params,
-            }
-        )
+        if self._closed:
+            raise DagsterPipesError("Cannot send message after pipes context is closed.")
+        message = _make_message(method, params)
         self._message_channel.write_message(message)
 
     # ########################

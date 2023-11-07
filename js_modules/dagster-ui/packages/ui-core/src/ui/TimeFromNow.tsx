@@ -8,7 +8,7 @@ import {Timestamp} from '../app/time/Timestamp';
 dayjs.extend(relativeTime);
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
-export const TimeFromNow: React.FC<{unixTimestamp: number}> = React.memo(({unixTimestamp}) => {
+export const TimeFromNow = React.memo(({unixTimestamp}: {unixTimestamp: number}) => {
   return (
     <Tooltip
       placement="top"

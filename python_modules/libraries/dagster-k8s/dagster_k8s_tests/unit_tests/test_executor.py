@@ -684,7 +684,7 @@ def test_step_raw_k8s_config_inheritance(
         step_handler_context
     )
 
-    raw_k8s_config = container_context.get_run_user_defined_k8s_config()
+    raw_k8s_config = container_context.run_k8s_config
 
     assert raw_k8s_config.container_config["resources"] == OTHER_RESOURCE_TAGS
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"

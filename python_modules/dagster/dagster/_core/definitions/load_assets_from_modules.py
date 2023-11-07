@@ -3,7 +3,18 @@ import os
 import pkgutil
 from importlib import import_module
 from types import ModuleType
-from typing import Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -21,18 +32,13 @@ from .events import (
 from .source_asset import SourceAsset
 
 
-def _find_assets_in_module(
-    module: ModuleType,
-) -> Generator[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], None, None]:
-    """Finds assets in the given module and adds them to the given sets of assets and source assets."""
+def find_objects_in_module_of_types(module: ModuleType, types) -> Iterator:
+    """Yields objects of the given type(s)."""
     for attr in dir(module):
         value = getattr(module, attr)
-        if isinstance(value, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)):
+        if isinstance(value, types):
             yield value
-        elif isinstance(value, list) and all(
-            isinstance(el, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition))
-            for el in value
-        ):
+        elif isinstance(value, list) and all(isinstance(el, types) for el in value):
             yield from value
 
 
@@ -60,7 +66,10 @@ def assets_from_modules(
     cacheable_assets: List[CacheableAssetsDefinition] = []
     assets: Dict[AssetKey, AssetsDefinition] = {}
     for module in modules:
-        for asset in _find_assets_in_module(module):
+        for asset in find_objects_in_module_of_types(
+            module, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+        ):
+            asset = cast(Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], asset)
             if id(asset) not in asset_ids:
                 asset_ids.add(id(asset))
                 if isinstance(asset, CacheableAssetsDefinition):
@@ -197,6 +206,7 @@ def load_assets_from_current_module(
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         backfill_policy=backfill_policy,
+        source_key_prefix=source_key_prefix,
     )
 
 
@@ -218,7 +228,7 @@ def assets_from_package_module(
             defined in the given modules.
     """
     return assets_from_modules(
-        _find_modules_in_package(package_module), extra_source_assets=extra_source_assets
+        find_modules_in_package(package_module), extra_source_assets=extra_source_assets
     )
 
 
@@ -324,17 +334,18 @@ def load_assets_from_package_name(
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         backfill_policy=backfill_policy,
+        source_key_prefix=source_key_prefix,
     )
 
 
-def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
+def find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
     yield package_module
     package_path = package_module.__file__
     if package_path:
         for _, modname, is_pkg in pkgutil.walk_packages([os.path.dirname(package_path)]):
             submodule = import_module(f"{package_module.__name__}.{modname}")
             if is_pkg:
-                yield from _find_modules_in_package(submodule)
+                yield from find_modules_in_package(submodule)
             else:
                 yield submodule
     else:
@@ -452,7 +463,9 @@ def assets_with_attributes(
         assets_defs = [
             asset.with_attributes(
                 group_names_by_key=(
-                    {asset_key: group_name for asset_key in asset.keys} if group_name else None
+                    {asset_key: group_name for asset_key in asset.keys}
+                    if group_name is not None
+                    else None
                 ),
                 freshness_policy=freshness_policy,
                 auto_materialize_policy=auto_materialize_policy,

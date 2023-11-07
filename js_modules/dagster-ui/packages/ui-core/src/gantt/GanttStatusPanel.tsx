@@ -25,7 +25,7 @@ interface GanttStatusPanelProps {
   onDoubleClickStep?: (step: string) => void;
 }
 
-export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
+export const GanttStatusPanel = ({
   runId,
   nowMs,
   graph,
@@ -34,7 +34,7 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   onClickStep,
   onDoubleClickStep,
   onHighlightStep,
-}) => {
+}: GanttStatusPanelProps) => {
   const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
     const keys = Object.keys(metadata.steps);
     const preparing = [];
@@ -137,7 +137,15 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   );
 };
 
-const StepItem: React.FC<{
+const StepItem = ({
+  nowMs,
+  name,
+  selected,
+  metadata,
+  onClick,
+  onHover,
+  onDoubleClick,
+}: {
   name: string;
   selected: boolean;
   metadata: IRunMetadataDict;
@@ -145,7 +153,7 @@ const StepItem: React.FC<{
   onClick?: (step: string, evt: React.MouseEvent<any>) => void;
   onHover?: (name: string | null) => void;
   onDoubleClick?: (name: string) => void;
-}> = ({nowMs, name, selected, metadata, onClick, onHover, onDoubleClick}) => {
+}) => {
   const step = metadata.steps[name];
   const end = (step && step.end) ?? nowMs;
   return (

@@ -39,10 +39,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 from ..context.compute import OpExecutionContext
 
 
-class NoAnnotationSentinel:
-    pass
-
-
 def create_op_compute_wrapper(
     op_def: OpDefinition,
 ) -> Callable[[OpExecutionContext, Mapping[str, InputDefinition]], Any]:
@@ -118,14 +114,13 @@ def invoke_compute_fn(
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
         if issubclass(config_arg_cls, Config):
-            args_to_pass["config"] = config_arg_cls(**context.op_config)
+            to_pass = config_arg_cls._get_non_default_public_field_values_cls(context.op_config)  # noqa: SLF001
+            args_to_pass["config"] = config_arg_cls(**to_pass)
         else:
             args_to_pass["config"] = context.op_config
     if resource_args:
         for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = context.resources._original_resource_dict[  # noqa: SLF001
-                resource_name
-            ]
+            args_to_pass[arg_name] = context.resources._original_resource_dict[resource_name]  # noqa: SLF001
 
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
@@ -221,11 +216,14 @@ def _get_annotation_for_output_position(
     position: int, op_def: OpDefinition, output_defs: Sequence[OutputDefinition]
 ) -> Any:
     if op_def.is_from_decorator():
-        if len(output_defs) > 1 and op_def.get_output_annotation() != inspect.Parameter.empty:
-            return get_args(op_def.get_output_annotation())[position]
+        if len(output_defs) > 1:
+            annotation_subitems = get_args(op_def.get_output_annotation())
+            if len(annotation_subitems) == len(output_defs):
+                return annotation_subitems[position]
         else:
             return op_def.get_output_annotation()
-    return NoAnnotationSentinel()
+
+    return inspect.Parameter.empty
 
 
 def _check_output_object_name(

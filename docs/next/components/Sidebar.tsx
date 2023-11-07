@@ -193,7 +193,7 @@ const RecursiveNavigation = ({
     itemOrSection === currentSection ||
     itemOrSection.path === asPathWithoutAnchor ||
     (itemOrSection.children &&
-      itemOrSection.children.find((item) => item.path === asPathWithoutAnchor));
+      itemOrSection.children.find((item) => asPathWithoutAnchor.startsWith(item.path)));
 
   const expanded = Boolean(navKeysToExpanded[navKey]);
 
@@ -214,7 +214,7 @@ const RecursiveNavigation = ({
   return (
     <div
       className={cx({
-        'mt-0 ml-1 space-y-0': lvl >= 2,
+        'mt-0 space-y-0': lvl >= 2,
       })}
       role="group"
       aria-labelledby={`${lvl + 1}-level-nav`}

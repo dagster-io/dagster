@@ -9,6 +9,7 @@
    sections/api/apidocs/config
    sections/api/apidocs/errors
    sections/api/apidocs/execution
+   sections/api/apidocs/external-assets
    sections/api/apidocs/graphs
    sections/api/apidocs/hooks
    sections/api/apidocs/internals
@@ -43,6 +44,7 @@
    sections/api/apidocs/libraries/dagster-duckdb-pandas
    sections/api/apidocs/libraries/dagster-duckdb-pyspark
    sections/api/apidocs/libraries/dagster-duckdb-polars
+   sections/api/apidocs/libraries/dagster-embedded-elt
    sections/api/apidocs/libraries/dagster-fivetran
    sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-gcp

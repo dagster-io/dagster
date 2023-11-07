@@ -6,18 +6,16 @@ import {
   Tag,
   Heading,
   FontFamily,
-  ButtonLink,
   Icon,
-  Colors,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {InstigationStatus, InstigationType, SensorType} from '../graphql/types';
-import {TickTag} from '../instigation/InstigationTick';
+import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorDryRunDialog} from '../ticks/SensorDryRunDialog';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
 
 import {EditCursorDialog} from './EditCursorDialog';
@@ -49,12 +47,17 @@ export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   return `~${minIntervalSeconds / 86400} days`;
 };
 
-export const SensorDetails: React.FC<{
+export const SensorDetails = ({
+  sensor,
+  repoAddress,
+  daemonHealth,
+  refreshState,
+}: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
   refreshState: QueryRefreshState;
-}> = ({sensor, repoAddress, daemonHealth, refreshState}) => {
+}) => {
   const {
     name,
     sensorState: {status, ticks},
@@ -142,7 +145,7 @@ export const SensorDetails: React.FC<{
                     style={{marginTop: '-2px'}}
                   >
                     <TimestampDisplay timestamp={latestTick.timestamp} />
-                    <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
+                    <TickStatusTag tick={latestTick} />
                   </Box>
                 </>
               ) : (
@@ -159,28 +162,6 @@ export const SensorDetails: React.FC<{
             </tr>
           ) : null}
           <tr>
-            <td>Cursor</td>
-            <td>
-              <Box flex={{direction: 'row', gap: 8}}>
-                <span style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-                  {cursor ? cursor : 'None'}
-                </span>
-                <ButtonLink onClick={() => setCursorEditing(true)} style={{fontSize: '12px'}}>
-                  <Box flex={{direction: 'row', alignItems: 'flex-end', gap: 4}}>
-                    <Icon name="edit" color={Colors.Blue500} size={12} />
-                    <span>Edit</span>
-                  </Box>
-                </ButtonLink>
-              </Box>
-              <EditCursorDialog
-                isOpen={isCursorEditing}
-                sensorSelector={sensorSelector}
-                cursor={cursor ? cursor : ''}
-                onClose={() => setCursorEditing(false)}
-              />
-            </td>
-          </tr>
-          <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
           </tr>
@@ -192,6 +173,29 @@ export const SensorDetails: React.FC<{
               </td>
             </tr>
           ) : null}
+          <tr>
+            <td>
+              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
+                Cursor
+              </Box>
+            </td>
+            <td>
+              <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+                <span style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+                  {cursor ? cursor : 'None'}
+                </span>
+                <Button icon={<Icon name="edit" />} onClick={() => setCursorEditing(true)}>
+                  Edit
+                </Button>
+              </Box>
+              <EditCursorDialog
+                isOpen={isCursorEditing}
+                sensorSelector={sensorSelector}
+                cursor={cursor ? cursor : ''}
+                onClose={() => setCursorEditing(false)}
+              />
+            </td>
+          </tr>
         </tbody>
       </MetadataTableWIP>
     </>

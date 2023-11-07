@@ -1886,7 +1886,8 @@ def test_transitive_io_manager_dep_not_provided():
 
 def test_resolve_dependency_in_group():
     @asset(key_prefix="abc")
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset
     def asset2(context, asset1):
@@ -1899,7 +1900,8 @@ def test_resolve_dependency_in_group():
 
 def test_resolve_dependency_fail_across_groups():
     @asset(key_prefix="abc", group_name="other")
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset
     def asset2(asset1):
@@ -1918,7 +1920,8 @@ def test_resolve_dependency_fail_across_groups():
 
 def test_resolve_dependency_multi_asset_different_groups():
     @asset(key_prefix="abc", group_name="a")
-    def upstream(): ...
+    def upstream():
+        ...
 
     @op(out={"ns1": Out(), "ns2": Out()})
     def op1(upstream):
@@ -1944,19 +1947,24 @@ def test_resolve_dependency_multi_asset_different_groups():
 
 def test_get_base_asset_jobs_multiple_partitions_defs():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
-    def daily_asset(): ...
+    def daily_asset():
+        ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
-    def daily_asset2(): ...
+    def daily_asset2():
+        ...
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-05-05"))
-    def daily_asset_different_start_date(): ...
+    def daily_asset_different_start_date():
+        ...
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2021-05-05-00:00"))
-    def hourly_asset(): ...
+    def hourly_asset():
+        ...
 
     @asset
-    def unpartitioned_asset(): ...
+    def unpartitioned_asset():
+        ...
 
     jobs = get_base_asset_jobs(
         assets=[
@@ -1988,20 +1996,24 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
 
 @ignore_warning("Function `observable_source_asset` is experimental")
 def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
-    class B: ...
+    class B:
+        ...
 
     partitions_a = StaticPartitionsDefinition(["a1"])
 
     @observable_source_asset(partitions_def=partitions_a)
-    def asset_a(): ...
+    def asset_a():
+        ...
 
     partitions_b = StaticPartitionsDefinition(["b1"])
 
     @observable_source_asset(partitions_def=partitions_b)
-    def asset_b(): ...
+    def asset_b():
+        ...
 
     @asset(partitions_def=partitions_b)
-    def asset_x(asset_b: B): ...
+    def asset_x(asset_b: B):
+        ...
 
     jobs = get_base_asset_jobs(
         assets=[
@@ -2086,7 +2098,8 @@ def test_selection_multi_component():
     source_asset = SourceAsset(["apple", "banana"])
 
     @asset(key_prefix="abc")
-    def asset1(): ...
+    def asset1():
+        ...
 
     assert Definitions(
         assets=[source_asset, asset1], jobs=[define_asset_job("something", selection="abc/asset1")]

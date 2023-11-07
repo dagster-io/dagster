@@ -20,11 +20,15 @@ import {
   ReloadRepositoryLocationButton,
 } from './ReloadRepositoryLocationButton';
 
-export const RepositoryLink: React.FC<{
+export const RepositoryLink = ({
+  repoAddress,
+  showIcon = false,
+  showRefresh = true,
+}: {
   repoAddress: RepoAddress;
   showIcon?: boolean;
   showRefresh?: boolean;
-}> = ({repoAddress, showIcon = false, showRefresh = true}) => {
+}) => {
   const {location} = repoAddress;
   const repoString = repoAddressAsHumanString(repoAddress);
 

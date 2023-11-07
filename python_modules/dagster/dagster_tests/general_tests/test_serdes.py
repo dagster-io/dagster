@@ -284,8 +284,7 @@ def test_incorrect_order():
                 return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple WrongOrder: "
+        str(exc_info.value) == "For namedtuple WrongOrder: "
         "Params to __new__ must match the order of field declaration "
         "in the namedtuple. Declared field number 1 in the namedtuple "
         'is "field_one". Parameter 1 in __new__ method is "field_two".'
@@ -301,8 +300,7 @@ def test_missing_one_parameter():
                 return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -321,8 +319,7 @@ def test_missing_many_parameters():
                 return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple MissingFieldsInNew: "
+        str(exc_info.value) == "For namedtuple MissingFieldsInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -349,8 +346,7 @@ def test_extra_parameters_must_have_defaults():
                 return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert (
-        str(exc_info.value)
-        == "For namedtuple OldFieldsWithoutDefaults: "
+        str(exc_info.value) == "For namedtuple OldFieldsWithoutDefaults: "
         'Parameter "field_one" is a parameter to the __new__ '
         "method but is not a field in this namedtuple. "
         "The only reason why this should exist is that "

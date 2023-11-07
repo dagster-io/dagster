@@ -5,7 +5,7 @@ import dagster._check as check
 from dagster._config import ALL_CONFIG_BUILTINS
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
-from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_job_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 from .repo import csv_hello_world_ops_config
@@ -109,7 +109,7 @@ def find_errors(result: GqlResult, field_stack_to_find: Sequence[str], reason: s
 def execute_config_graphql(
     context: WorkspaceRequestContext, job_name: str, run_config
 ) -> GqlResult:
-    selector = infer_pipeline_selector(context, job_name)
+    selector = infer_job_selector(context, job_name)
     return execute_dagster_graphql(
         context,
         CONFIG_VALIDATION_QUERY,
@@ -529,7 +529,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert valid_data["pipelineName"] == "config_with_map"
 
         # Sanity check GraphQL result for types
-        selector = infer_pipeline_selector(graphql_context, "config_with_map")
+        selector = infer_job_selector(graphql_context, "config_with_map")
         result = execute_dagster_graphql(
             graphql_context,
             ALL_CONFIG_TYPES_QUERY,
@@ -614,7 +614,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert last_entry["mapKey"] == "test"
 
     def test_smoke_test_config_type_system(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_pipeline_selector(graphql_context, "more_complicated_nested_config")
+        selector = infer_job_selector(graphql_context, "more_complicated_nested_config")
         result = execute_dagster_graphql(
             graphql_context,
             ALL_CONFIG_TYPES_QUERY,

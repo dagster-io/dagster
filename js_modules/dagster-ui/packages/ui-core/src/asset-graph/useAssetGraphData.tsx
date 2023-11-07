@@ -71,14 +71,12 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [fullGraphQueryItems],
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys, applyingEmptyDefault} = React.useMemo(() => {
+  const {assetGraphData, graphAssetKeys, allAssetKeys} = React.useMemo(() => {
     if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
         assetGraphData: null,
-        fullAssetGraphData: null,
-        applyingEmptyDefault: false,
       };
     }
 
@@ -86,7 +84,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
+    const {all} = filterByQuery(graphQueryItems, opsQuery);
 
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
@@ -99,7 +97,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
       graphQueryItems,
-      applyingEmptyDefault,
     };
   }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
 
@@ -110,7 +107,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
-    applyingEmptyDefault,
   };
 }
 

@@ -116,6 +116,7 @@ from dagster._core.definitions.asset_check_spec import (
     AssetCheckSeverity as AssetCheckSeverity,
     AssetCheckSpec as AssetCheckSpec,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition as AssetChecksDefinition
 from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
@@ -199,6 +200,10 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
+from dagster._core.definitions.external_asset import (
+    external_asset_from_spec as external_asset_from_spec,
+    external_assets_from_specs as external_assets_from_specs,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy_sensor_definition import (
     FreshnessPolicySensorContext as FreshnessPolicySensorContext,
@@ -214,6 +219,12 @@ from dagster._core.definitions.input import (
     InputMapping as InputMapping,
 )
 from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
+from dagster._core.definitions.load_asset_checks_from_modules import (
+    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
+    load_asset_checks_from_modules as load_asset_checks_from_modules,
+    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
+    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
+)
 from dagster._core.definitions.load_assets_from_modules import (
     load_assets_from_current_module as load_assets_from_current_module,
     load_assets_from_modules as load_assets_from_modules,
@@ -411,9 +422,12 @@ from dagster._core.errors import (
     raise_execution_interrupts as raise_execution_interrupts,
 )
 from dagster._core.event_api import (
+    AssetRecordsFilter as AssetRecordsFilter,
     EventLogRecord as EventLogRecord,
     EventRecordsFilter as EventRecordsFilter,
+    EventRecordsResult as EventRecordsResult,
     RunShardedEventsCursor as RunShardedEventsCursor,
+    RunStatusChangeRecordsFilter as RunStatusChangeRecordsFilter,
 )
 from dagster._core.events import (
     DagsterEvent as DagsterEvent,
@@ -488,6 +502,7 @@ from dagster._core.pipes.utils import (
     PipesEnvContextInjector as PipesEnvContextInjector,
     PipesFileContextInjector as PipesFileContextInjector,
     PipesFileMessageReader as PipesFileMessageReader,
+    PipesLogReader as PipesLogReader,
     PipesTempFileContextInjector as PipesTempFileContextInjector,
     PipesTempFileMessageReader as PipesTempFileMessageReader,
     open_pipes_session as open_pipes_session,
@@ -569,7 +584,10 @@ from dagster._utils.alert import (
 )
 from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
-from dagster._utils.warnings import ExperimentalWarning as ExperimentalWarning
+from dagster._utils.warnings import (
+    ConfigArgumentWarning as ConfigArgumentWarning,
+    ExperimentalWarning as ExperimentalWarning,
+)
 from dagster.version import __version__ as __version__
 
 # ruff: isort: split

@@ -152,15 +152,32 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
 export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise<R>>(
   fn: U,
   hashFn?: (arg: T, ...rest: any[]) => any,
-): U {
+): U & {
+  isCached: (arg: T, ...rest: any[]) => Promise<boolean>;
+} {
   const lru = cache<string, R>({
     dbName: 'indexDBAsyncMemoizeDB',
     maxCount: 50,
   });
-  return (async (arg: T, ...rest: any[]) => {
-    const hashKey = hashFn ? hashFn(arg, ...rest) : arg;
 
+  async function genHashKey(arg: T, ...rest: any[]) {
+    const hash = hashFn ? hashFn(arg, ...rest) : arg;
+
+    const encoder = new TextEncoder();
+    // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
+    // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
+    if (crypto.subtle?.digest) {
+      const data = encoder.encode(hash.toString());
+      const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    }
+    return hash.toString();
+  }
+
+  const ret = (async (arg: T, ...rest: any[]) => {
     return new Promise<R>(async (resolve) => {
+      const hashKey = await genHashKey(arg, ...rest);
       if (await lru.has(hashKey)) {
         const {value} = await lru.get(hashKey);
         resolve(value);
@@ -176,6 +193,11 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
       });
     });
   }) as any;
+  ret.isCached = async (arg: T, ...rest: any) => {
+    const hashKey = await genHashKey(arg, ...rest);
+    return await lru.has(hashKey);
+  };
+  return ret;
 }
 
 // Simple memoization function for methods that take a single object argument.

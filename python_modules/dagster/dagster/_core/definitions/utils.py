@@ -102,10 +102,7 @@ def validate_tags(
             str_val = None
             try:
                 str_val = seven.json.dumps(value)
-                err_reason = (
-                    'JSON encoding "{json}" of value "{val}" is not equivalent to original value'
-                    .format(json=str_val, val=value)
-                )
+                err_reason = f'JSON encoding "{str_val}" of value "{value}" is not equivalent to original value'
 
                 valid = seven.json.loads(str_val) == value
             except Exception:
@@ -132,6 +129,11 @@ def validate_group_name(group_name: Optional[str]) -> str:
     if group_name:
         check_valid_chars(group_name)
         return group_name
+    elif group_name == "":
+        raise DagsterInvalidDefinitionError(
+            "Empty asset group name was provided, which is not permitted."
+            "Set group_name=None to use the default group_name or set non-empty string"
+        )
     return DEFAULT_GROUP_NAME
 
 

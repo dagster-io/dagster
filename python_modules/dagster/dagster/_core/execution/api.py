@@ -135,7 +135,11 @@ def execute_run_iterator(
             ),
         )
 
-    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
+    if (
+        dagster_run.resolved_op_selection
+        or dagster_run.asset_selection
+        or dagster_run.asset_check_selection
+    ):
         # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
@@ -146,6 +150,7 @@ def execute_run_iterator(
                 else None
             ),
             asset_selection=dagster_run.asset_selection,
+            asset_check_selection=dagster_run.asset_check_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
@@ -219,7 +224,11 @@ def execute_run(
             dagster_run.job_name, dagster_run.run_id, dagster_run.status
         ),
     )
-    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
+    if (
+        dagster_run.resolved_op_selection
+        or dagster_run.asset_selection
+        or dagster_run.asset_check_selection
+    ):
         # when `execute_run` is directly called, the sub job hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
@@ -230,6 +239,7 @@ def execute_run(
                 else None
             ),
             asset_selection=dagster_run.asset_selection,
+            asset_check_selection=dagster_run.asset_check_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
@@ -317,10 +327,11 @@ class ReexecutionOptions(NamedTuple):
         from dagster._core.execution.plan.state import KnownExecutionState
 
         parent_run = check.not_none(instance.get_run_by_id(run_id))
-        check.invariant(
-            parent_run.status == DagsterRunStatus.FAILURE,
-            "Cannot reexecute from failure a run that is not failed",
-        )
+        if parent_run.status != DagsterRunStatus.FAILURE:
+            raise DagsterInvariantViolationError(
+                "Cannot reexecute from failure a run that is not failed"
+            )
+
         # Tried to thread through KnownExecutionState to execution plan creation, but little benefit.
         # It is recalculated later by the re-execution machinery.
         step_keys_to_execute, _ = KnownExecutionState.build_resume_retry_reexecution(
@@ -669,6 +680,7 @@ def _get_execution_plan_from_run(
         and execution_plan_snapshot.can_reconstruct_plan
         and job.resolved_op_selection == dagster_run.resolved_op_selection
         and job.asset_selection == dagster_run.asset_selection
+        and job.asset_check_selection == dagster_run.asset_check_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(
             dagster_run.job_name,

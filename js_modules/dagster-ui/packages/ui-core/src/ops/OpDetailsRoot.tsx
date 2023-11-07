@@ -20,7 +20,7 @@ interface UsedSolidDetailsProps {
   repoAddress: RepoAddress;
 }
 
-export const UsedSolidDetails: React.FC<UsedSolidDetailsProps> = (props) => {
+export const UsedSolidDetails = (props: UsedSolidDetailsProps) => {
   const {name, onClickInvocation, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
@@ -91,6 +91,6 @@ const USED_SOLID_DETAILS_QUERY = gql`
 `;
 
 export const OpDetailScrollContainer = styled.div`
-  overflow: scroll;
+  overflow-y: scroll;
   flex: 1;
 `;

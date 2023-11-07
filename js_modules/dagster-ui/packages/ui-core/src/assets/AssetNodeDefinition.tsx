@@ -42,12 +42,17 @@ import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {Version} from './Version';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
-export const AssetNodeDefinition: React.FC<{
+export const AssetNodeDefinition = ({
+  assetNode,
+  upstream,
+  downstream,
+  dependsOnSelf,
+}: {
   assetNode: AssetNodeDefinitionFragment;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
   dependsOnSelf: boolean;
-}> = ({assetNode, upstream, downstream, dependsOnSelf}) => {
+}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
 
   const configType = assetNode.configField?.configType;
@@ -95,6 +100,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
+
           {assetNode.freshnessPolicy && (
             <>
               <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
@@ -127,6 +133,21 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
+
+          {assetNode.backfillPolicy && (
+            <>
+              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
+                <Subheading>Backfill policy</Subheading>
+              </Box>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                flex={{gap: 12, alignItems: 'flex-start'}}
+              >
+                <Body style={{flex: 1}}>{assetNode.backfillPolicy.description}</Body>
+              </Box>
+            </>
+          )}
+
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border="top-and-bottom"
@@ -277,10 +298,13 @@ export const AssetNodeDefinition: React.FC<{
   );
 };
 
-const DescriptionAnnotations: React.FC<{
+const DescriptionAnnotations = ({
+  assetNode,
+  repoAddress,
+}: {
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
-}> = ({assetNode, repoAddress}) => (
+}) => (
   <Box flex={{alignItems: 'center', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
       .filter((jobName) => !isHiddenAssetGroupJob(jobName))
@@ -298,7 +322,7 @@ const DescriptionAnnotations: React.FC<{
     {assetNode.isSource ? (
       <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
     ) : !assetNode.isExecutable ? (
-      <Caption style={{lineHeight: '16px'}}>Non-executable Asset</Caption>
+      <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
 );
@@ -326,7 +350,9 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       cronSchedule
       cronScheduleTimezone
     }
-
+    backfillPolicy {
+      description
+    }
     partitionDefinition {
       description
     }

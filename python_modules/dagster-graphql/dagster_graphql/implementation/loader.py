@@ -252,9 +252,9 @@ class CrossRepoAssetDependedByLoader:
         ] = defaultdict(lambda: defaultdict(list))
 
         # A mapping containing all derived (non-source) assets and their location
-        map_derived_asset_to_location: Dict[AssetKey, Tuple[str, str]] = (
-            {}
-        )  # key is asset key, value is tuple (location_name, repo_name)
+        map_derived_asset_to_location: Dict[
+            AssetKey, Tuple[str, str]
+        ] = {}  # key is asset key, value is tuple (location_name, repo_name)
 
         for location in self._context.code_locations:
             repositories = location.get_repositories()

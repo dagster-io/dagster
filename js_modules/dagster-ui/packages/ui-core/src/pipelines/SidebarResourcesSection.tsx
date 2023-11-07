@@ -11,10 +11,13 @@ import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.t
 
 const NO_DESCRIPTION = '';
 
-export const SidebarResourcesSection: React.FC<{
+export const SidebarResourcesSection = ({
+  mode,
+  showModeName,
+}: {
   mode: SidebarResourcesSectionFragment;
   showModeName?: boolean;
-}> = ({mode, showModeName}) => {
+}) => {
   return (
     <SectionItemContainer key={mode.name}>
       {showModeName && (

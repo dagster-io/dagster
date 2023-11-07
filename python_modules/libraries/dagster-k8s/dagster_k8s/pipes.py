@@ -1,3 +1,4 @@
+import os
 import random
 import string
 from contextlib import contextmanager
@@ -80,6 +81,9 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
             for log_line in log_chunk.split("\n"):
                 extract_message_or_forward_to_stdout(handler, log_line)
 
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages by extracting them from kubernetes pod logs directly."
+
 
 @experimental
 class _PipesK8sClient(PipesClient):
@@ -98,6 +102,17 @@ class _PipesK8sClient(PipesClient):
             context into the k8s container process. Defaults to :py:class:`PipesEnvContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the k8s container process. Defaults to :py:class:`PipesK8sPodLogsMessageReader`.
+        load_incluster_config (Optional[bool]): Whether this client is expected to be running from inside
+            a kubernetes cluster and should load config using ``kubernetes.config.load_incluster_config``.
+            Otherwise ``kubernetes.config.load_kube_config`` is used with the kubeconfig_file argument.
+            Default: None
+        kubeconfig_file (Optional[str]): The value to pass as the config_file argument to
+            ``kubernetes.config.load_kube_config``.
+            Default: None.
+        kube_context (Optional[str]): The value to pass as the context argument to
+            ``kubernetes.config.load_kube_config``.
+            Default: None.
+
     """
 
     def __init__(
@@ -105,6 +120,9 @@ class _PipesK8sClient(PipesClient):
         env: Optional[Mapping[str, str]] = None,
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
+        load_incluster_config: Optional[bool] = None,
+        kubeconfig_file: Optional[str] = None,
+        kube_context: Optional[str] = None,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.context_injector = (
@@ -115,23 +133,61 @@ class _PipesK8sClient(PipesClient):
             )
             or PipesEnvContextInjector()
         )
-
         self.message_reader = (
             check.opt_inst_param(message_reader, "message_reader", PipesMessageReader)
             or PipesK8sPodLogsMessageReader()
         )
 
+        if load_incluster_config:
+            check.invariant(
+                self.kube_context is None and self.kubeconfig_file is None,
+                "kubeconfig_file and kube_context should not be set when load_incluster_config is"
+                " True ",
+            )
+
+        self.load_incluster_config = check.opt_bool_param(
+            load_incluster_config, "load_incluster_config"
+        )
+        self.kubeconfig_file = check.opt_str_param(kubeconfig_file, "kubeconfig_file")
+        self.kube_context = check.opt_str_param(kube_context, "kube_context")
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def _load_k8s_config(self):
+        # when nothing is specified
+        if (
+            self.load_incluster_config is None
+            and self.kubeconfig_file is None
+            and self.kube_context is None
+        ):
+            # check for env var that is always set by kubernetes and if present use in cluster
+            if os.getenv("KUBERNETES_SERVICE_HOST"):
+                kubernetes.config.load_incluster_config()
+            # otherwise do default load
+            else:
+                kubernetes.config.load_kube_config()
+
+        elif self.load_incluster_config:
+            kubernetes.config.load_incluster_config()
+        else:
+            kubernetes.config.load_kube_config(
+                config_file=self.kubeconfig_file,
+                context=self.kube_context,
+            )
+
     def run(
         self,
         *,
         context: OpExecutionContext,
+        extras: Optional[PipesExtras] = None,
         image: Optional[str] = None,
         command: Optional[Union[str, Sequence[str]]] = None,
         namespace: Optional[str] = None,
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
-        extras: Optional[PipesExtras] = None,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
@@ -164,6 +220,7 @@ class _PipesK8sClient(PipesClient):
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
                 process.
         """
+        self._load_k8s_config()
         client = DagsterKubernetesClient.production_client()
 
         with open_pipes_session(

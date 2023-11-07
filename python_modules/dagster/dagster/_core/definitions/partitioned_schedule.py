@@ -48,15 +48,16 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
         partitions_def = _check_valid_schedule_partitions_def(partitions_def)
         time_partitions_def = check.not_none(get_time_partitions_def(partitions_def))
 
-        return ScheduleDefinition(
-            job=resolved_job,
+        return schedule(
             name=self.name,
-            execution_fn=_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags),
-            execution_timezone=time_partitions_def.timezone,
             cron_schedule=time_partitions_def.get_cron_schedule(
                 self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
             ),
-        )
+            job=resolved_job,
+            default_status=self.default_status,
+            execution_timezone=time_partitions_def.timezone,
+            description=self.description,
+        )(_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags))
 
 
 def build_schedule_from_partitioned_job(

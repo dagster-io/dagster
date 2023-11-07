@@ -7,10 +7,7 @@ import styled from 'styled-components';
  * It uses Blueprint CSS but not the Slider component, because that renders twice and
  * forces a DOM layout to determine it's size (I think for tick marks, which we aren't using)
  */
-export const ZoomSlider: React.FC<{
-  value: number;
-  onChange: (v: number) => void;
-}> = React.memo((props) => {
+export const ZoomSlider = React.memo((props: {value: number; onChange: (v: number) => void}) => {
   return (
     <ZoomSliderContainer
       $fillColor={Colors.Gray600}

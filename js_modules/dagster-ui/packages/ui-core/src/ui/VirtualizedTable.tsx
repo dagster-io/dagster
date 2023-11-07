@@ -2,11 +2,17 @@ import {Box, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
+export const HeaderCell = ({
+  children,
+  style,
+}: {
+  children?: React.ReactNode;
+  style?: React.CSSProperties;
+}) => (
   <CellBox
     padding={{vertical: 8, horizontal: 12}}
     border="right"
-    style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}
+    style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', ...(style || {})}}
   >
     {children}
   </CellBox>
@@ -70,4 +76,17 @@ export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   right: 0;
   top: 0;
   overflow: hidden;
+`;
+
+type DynamicRowContainerProps = {$start: number};
+
+export const DynamicRowContainer = styled.div.attrs<DynamicRowContainerProps>(({$start}) => ({
+  style: {
+    transform: `translateY(${$start}px)`,
+  },
+}))<DynamicRowContainerProps>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 `;

@@ -22,7 +22,7 @@ import {
   ConfigForRunQueryVariables,
 } from './types/LaunchpadSetupFromRunRoot.types';
 
-export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
+export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {
     permissions: {canLaunchPipelineExecution},
@@ -56,7 +56,7 @@ interface Props {
  * values, then redirect to the launchpad. The newly created session will be the open launchpad
  * config tab.
  */
-const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
+const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
   const {pipelinePath, repoAddress, runId} = props;
 
   const explorerPath = explorerPathFromString(pipelinePath);
@@ -101,7 +101,7 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
         newSession.solidSelection = [solidSelection];
       }
 
-      onSave(applyCreateSession(storageData, newSession));
+      onSave((storageData) => applyCreateSession(storageData, newSession));
     }
   }, [run, storageData, onSave]);
 

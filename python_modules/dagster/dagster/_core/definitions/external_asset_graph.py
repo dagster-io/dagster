@@ -20,7 +20,7 @@ from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import DependencyGraph
 from dagster._core.workspace.workspace import IWorkspace
 
-from .asset_graph import AssetGraph
+from .asset_graph import AssetGraph, AssetKeyOrCheckKey
 from .backfill_policy import BackfillPolicy
 from .events import AssetKey
 from .freshness_policy import FreshnessPolicy
@@ -28,7 +28,10 @@ from .partition import PartitionsDefinition
 from .partition_mapping import PartitionMapping
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external_data import ExternalAssetNode
+    from dagster._core.host_representation.external_data import (
+        ExternalAssetCheck,
+        ExternalAssetNode,
+    )
 
 
 class ExternalAssetGraph(AssetGraph):
@@ -42,12 +45,14 @@ class ExternalAssetGraph(AssetGraph):
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
-        required_multi_asset_sets_by_key: Mapping[AssetKey, AbstractSet[AssetKey]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
+        required_assets_and_checks_by_key: Mapping[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -58,10 +63,10 @@ class ExternalAssetGraph(AssetGraph):
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policies_by_key=backfill_policies_by_key,
-            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
+            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._materialization_job_names_by_key = job_names_by_key
@@ -83,14 +88,20 @@ class ExternalAssetGraph(AssetGraph):
             for code_location in code_locations
             for repo in code_location.get_repositories().values()
         )
-        repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]] = [
-            (repo.handle, external_asset_node)
-            for repo in repos
-            for external_asset_node in repo.get_external_asset_nodes()
-        ]
+        repo_handle_external_asset_nodes: Sequence[
+            Tuple[RepositoryHandle, "ExternalAssetNode"]
+        ] = []
+        asset_checks: Sequence["ExternalAssetCheck"] = []
+
+        for repo in repos:
+            for external_asset_node in repo.get_external_asset_nodes():
+                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
+
+            asset_checks.extend(repo.get_external_asset_checks())
 
         return cls.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes
+            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
+            external_asset_checks=asset_checks,
         )
 
     @classmethod
@@ -98,16 +109,18 @@ class ExternalAssetGraph(AssetGraph):
         cls, external_repository: ExternalRepository
     ) -> "ExternalAssetGraph":
         return cls.from_repository_handles_and_external_asset_nodes(
-            [
+            repo_handle_external_asset_nodes=[
                 (external_repository.handle, asset_node)
                 for asset_node in external_repository.get_external_asset_nodes()
-            ]
+            ],
+            external_asset_checks=external_repository.get_external_asset_checks(),
         )
 
     @classmethod
     def from_repository_handles_and_external_asset_nodes(
         cls,
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
+        external_asset_checks: Sequence["ExternalAssetCheck"],
     ) -> "ExternalAssetGraph":
         upstream: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         source_asset_keys: Set[AssetKey] = set()
@@ -119,7 +132,7 @@ class ExternalAssetGraph(AssetGraph):
         freshness_policies_by_key = {}
         auto_materialize_policies_by_key = {}
         backfill_policies_by_key = {}
-        asset_keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKey]] = defaultdict(set)
+        keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKeyOrCheckKey]] = defaultdict(set)
         repo_handles_by_key = {
             node.asset_key: repo_handle
             for repo_handle, node in repo_handle_external_asset_nodes
@@ -148,9 +161,9 @@ class ExternalAssetGraph(AssetGraph):
                 # We need to set this even if the node is a regular asset in another code location.
                 # `is_observable` will only ever be consulted in the source asset context.
                 is_observable_by_key[node.asset_key] = node.is_observable
-                auto_observe_interval_minutes_by_key[node.asset_key] = (
-                    node.auto_observe_interval_minutes
-                )
+                auto_observe_interval_minutes_by_key[
+                    node.asset_key
+                ] = node.auto_observe_interval_minutes
 
                 if node.asset_key in all_non_source_keys:
                     # one location's source is another location's non-source
@@ -175,8 +188,12 @@ class ExternalAssetGraph(AssetGraph):
             backfill_policies_by_key[node.asset_key] = node.backfill_policy
 
             if node.atomic_execution_unit_id is not None:
-                asset_keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(
-                    node.asset_key
+                keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(node.asset_key)
+
+        for asset_check in external_asset_checks:
+            if asset_check.atomic_execution_unit_id is not None:
+                keys_by_atomic_execution_unit_id[asset_check.atomic_execution_unit_id].add(
+                    asset_check.key
                 )
 
         downstream: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
@@ -184,11 +201,13 @@ class ExternalAssetGraph(AssetGraph):
             for upstream_key in upstream_keys:
                 downstream[upstream_key].add(asset_key)
 
-        required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-        for asset_keys in asset_keys_by_atomic_execution_unit_id.values():
-            if len(asset_keys) > 1:
-                for asset_key in asset_keys:
-                    required_multi_asset_sets_by_key[asset_key] = asset_keys
+        required_assets_and_checks_by_key: Dict[
+            AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]
+        ] = {}
+        for keys in keys_by_atomic_execution_unit_id.values():
+            if len(keys) > 1:
+                for key in keys:
+                    required_assets_and_checks_by_key[key] = keys
 
         return cls(
             asset_dep_graph={"upstream": upstream, "downstream": downstream},
@@ -199,12 +218,12 @@ class ExternalAssetGraph(AssetGraph):
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policies_by_key=backfill_policies_by_key,
-            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
             auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
+            required_assets_and_checks_by_key=required_assets_and_checks_by_key,
         )
 
     @property
@@ -259,9 +278,7 @@ class ExternalAssetGraph(AssetGraph):
                 if external_partition_set_data.external_partitions_data is None:
                     partitions_def = None
                 else:
-                    partitions_def = (
-                        external_partition_set_data.external_partitions_data.get_partitions_definition()
-                    )
+                    partitions_def = external_partition_set_data.external_partitions_data.get_partitions_definition()
                 partitions_def_by_job_name[external_partition_set_data.job_name] = partitions_def
             # add any jobs that don't have a partitions def
             for external_job in external_repo.get_all_external_jobs():

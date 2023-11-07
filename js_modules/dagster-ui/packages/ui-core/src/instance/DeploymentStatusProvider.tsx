@@ -22,7 +22,7 @@ interface Props {
   include: Set<DeploymentStatusType>;
 }
 
-export const DeploymentStatusProvider: React.FC<Props> = (props) => {
+export const DeploymentStatusProvider = (props: Props) => {
   const {children, include} = props;
 
   const codeLocations = useCodeLocationsStatus(!include.has('code-locations'));

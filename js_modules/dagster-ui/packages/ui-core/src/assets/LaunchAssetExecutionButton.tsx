@@ -19,9 +19,7 @@ import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
-  LiveData,
   sortAssetKeys,
-  toGraphId,
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
@@ -35,18 +33,19 @@ import {RepoAddress} from '../workspace/types';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
+import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetMissing, isAssetStale} from './Stale';
+import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
 import {AssetKey} from './types';
 import {
+  LaunchAssetCheckUpstreamQuery,
+  LaunchAssetCheckUpstreamQueryVariables,
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
-  LaunchAssetCheckUpstreamQuery,
-  LaunchAssetCheckUpstreamQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
 
 export type LaunchAssetsChoosePartitionsTarget =
@@ -114,7 +113,7 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): LaunchOption[] {
+function optionsForButton(scope: AssetsInScope): LaunchOption[] {
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
@@ -141,20 +140,6 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
         : `Materialize${isAnyPartitioned(executable) ? '…' : ''}`,
   });
 
-  if (liveDataForStale) {
-    const missingOrStale = executable.filter(
-      (a) =>
-        isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
-        isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
-    );
-
-    options.push({
-      assetKeys: missingOrStale.map((a) => a.assetKey),
-      label: `Materialize changed and missing${countOrBlank(missingOrStale)}`,
-      icon: <Icon name="changes_present" />,
-    });
-  }
-
   return options;
 }
 
@@ -166,22 +151,34 @@ export function executionDisabledMessageForAssets(
     : assets.every((a) => a.isSource)
     ? 'Source assets cannot be materialized'
     : assets.every((a) => !a.isExecutable)
-    ? 'Non-executable assets cannot be materialized'
+    ? 'External assets cannot be materialized'
     : null;
 }
 
-export const LaunchAssetExecutionButton: React.FC<{
+export const LaunchAssetExecutionButton = ({
+  scope,
+  preferredJobName,
+  additionalDropdownOptions,
+  intent = 'primary',
+}: {
   scope: AssetsInScope;
-  liveDataForStale?: LiveData; // For "stale" dropdown options
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
+  additionalDropdownOptions?: {
+    label: string;
+    icon?: JSX.Element;
+    onClick: () => void;
+  }[];
+}) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
   const {MaterializeButton} = useLaunchPadHooks();
 
-  const options = optionsForButton(scope, liveDataForStale);
+  const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
+    React.useState<boolean>(false);
+
+  const options = optionsForButton(scope);
   const firstOption = options[0]!;
   if (!firstOption) {
     return <span />;
@@ -207,6 +204,16 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   return (
     <>
+      <CalculateChangedAndMissingDialog
+        isOpen={!!showCalculatingChangedAndMissingDialog}
+        onClose={() => {
+          setShowCalculatingChangedAndMissingDialog(false);
+        }}
+        assets={inScope}
+        onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {
+          onClick(assets, e);
+        }}
+      />
       <Box flex={{alignItems: 'center'}}>
         <Tooltip
           content="Shift+click to add configuration"
@@ -244,6 +251,13 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
+              {inScope.length && 'all' in scope ? (
+                <MenuItem
+                  text="Materialize changed and missing"
+                  icon="changes_present"
+                  onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
+                />
+              ) : null}
               <MenuItem
                 text="Open launchpad"
                 icon={<Icon name="open_in_new" />}
@@ -251,6 +265,14 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick(firstOption.assetKeys, e, true);
                 }}
               />
+              {additionalDropdownOptions?.map((option) => (
+                <MenuItem
+                  key={option.label}
+                  text={option.label}
+                  icon={option.icon}
+                  onClick={option.onClick}
+                />
+              ))}
             </Menu>
           }
         >
@@ -289,7 +311,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
+      variables: {assetKeys: assetKeys.map(asAssetKeyInput)},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {
@@ -373,7 +395,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
               LaunchAssetLoaderQueryVariables
             >({
               query: LAUNCH_ASSET_LOADER_QUERY,
-              variables: {assetKeys: state.assets.map(({assetKey}) => ({path: assetKey.path}))},
+              variables: {assetKeys: state.assets.map(asAssetKeyInput)},
             });
             const assets = result.data.assetNodes;
             const next = await stateForLaunchingAssets(client, assets, false, preferredJobName);
@@ -412,7 +434,7 @@ async function stateForLaunchingAssets(
   if (assets.some((x) => !x.isExecutable)) {
     return {
       type: 'error',
-      error: 'One or more non-executable assets are selected.',
+      error: 'One or more external assets are selected.',
     };
   }
 
@@ -502,6 +524,12 @@ async function stateForLaunchingAssets(
       sessionPresets: {
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
+        assetChecksAvailable: assets.flatMap((a) =>
+          a.assetChecksOrError.__typename === 'AssetChecks'
+            ? a.assetChecksOrError.checks.map((check) => ({...check, assetKey: a.assetKey}))
+            : [],
+        ),
+        includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
         base: partitionSetName
           ? {partitionsSetName: partitionSetName, partitionName: null, tags: []}
@@ -600,7 +628,10 @@ async function upstreamAssetsWithNoMaterializations(
 export function executionParamsForAssetJob(
   repoAddress: RepoAddress,
   jobName: string,
-  assets: {assetKey: AssetKey; opNames: string[]}[],
+  assets: Pick<
+    LaunchAssetExecutionAssetNodeFragment,
+    'assetKey' | 'opNames' | 'assetChecksOrError'
+  >[],
   tags: {key: string; value: string}[],
 ): LaunchPipelineExecutionMutationVariables['executionParams'] {
   return {
@@ -613,9 +644,8 @@ export function executionParamsForAssetJob(
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
       pipelineName: jobName,
-      assetSelection: assets.map((asset) => ({
-        path: asset.assetKey.path,
-      })),
+      assetSelection: assets.map(asAssetKeyInput),
+      assetCheckSelection: getAssetCheckHandleInputs(assets),
     },
   };
 }
@@ -658,6 +688,14 @@ const PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT = gql`
   }
 `;
 
+const BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT = gql`
+  fragment BackfillPolicyForLaunchAssetFragment on BackfillPolicy {
+    maxPartitionsPerRun
+    description
+    policyType
+  }
+`;
+
 const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
@@ -668,11 +706,22 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     partitionDefinition {
       ...PartitionDefinitionForLaunchAssetFragment
     }
+    backfillPolicy {
+      ...BackfillPolicyForLaunchAssetFragment
+    }
     isObservable
     isExecutable
     isSource
     assetKey {
       path
+    }
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          canExecuteIndividually
+        }
+      }
     }
     dependencyKeys {
       path
@@ -693,6 +742,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT}
+  ${BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_LOADER_QUERY = gql`

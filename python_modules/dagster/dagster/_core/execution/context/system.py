@@ -917,6 +917,25 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 return True
         return False
 
+    @property
+    def is_in_graph_asset(self) -> bool:
+        """If the step is an op in a graph-backed asset returns True. Checks by first confirming the
+        step is in a graph, then checking that the node corresponds to an AssetsDefinitions in the asset layer.
+        """
+        return (
+            self.is_op_in_graph
+            and self.job_def.asset_layer.assets_defs_by_node_handle.get(self.node_handle)
+            is not None
+        )
+
+    @property
+    def is_asset_check_step(self) -> bool:
+        """Whether this step corresponds to an asset check."""
+        node_handle = self.node_handle
+        return (
+            self.job_def.asset_layer.asset_checks_defs_by_node_handle.get(node_handle) is not None
+        )
+
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
         self._data_version_cache[asset_key] = data_version
 
@@ -1041,10 +1060,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         # TODO: this needs to account for observations also
         event_type = DagsterEventType.ASSET_MATERIALIZATION
-        tags_by_partition = (
-            self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
-                key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
-            )
+        tags_by_partition = self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
+            key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
         )
         partition_data_versions = [
             pair[1][DATA_VERSION_TAG]
@@ -1271,6 +1288,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             output_capture=self._output_capture,
             known_state=self._known_state,
         )
+
+    def output_observes_source_asset(self, output_name: str) -> bool:
+        """Returns True if this step observes a source asset."""
+        asset_layer = self.job_def.asset_layer
+        if asset_layer is None:
+            return False
+        asset_key = asset_layer.asset_key_for_output(self.node_handle, output_name)
+        if asset_key is None:
+            return False
+        return asset_layer.is_observable_for_asset(asset_key)
 
 
 class TypeCheckContext:

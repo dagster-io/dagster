@@ -1,15 +1,15 @@
 import {useQuery} from '@apollo/client';
 import {
   Box,
-  Spinner,
+  Caption,
   Colors,
   Icon,
-  Tag,
-  useViewport,
-  Select,
   MenuItem,
-  Caption,
+  Select,
+  Spinner,
+  Tag,
   TextInput,
+  useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -37,8 +37,8 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
-  Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
-  TabButton: React.FC<{selected: 'timeline' | 'assets'}>;
+  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
@@ -300,6 +300,7 @@ function VirtualRow({height, start, group}: RowProps) {
   const {containerProps, viewport} = useViewport();
 
   const isBatchStillLoading = assetKeys.length !== Object.keys(liveDataByNode).length;
+  const zeroOrBlank = isBatchStillLoading ? '' : '0';
 
   return (
     <Row $height={height} $start={start}>
@@ -358,7 +359,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -390,7 +391,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -410,7 +411,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
         <Cell>
@@ -440,7 +441,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
       </RowGrid>
@@ -453,7 +454,7 @@ const RowGrid = styled(Box)`
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
   > * {
-    padding-top: 26px 0px;
+    vertical-align: middle;
   }
 `;
 

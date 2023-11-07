@@ -15,6 +15,7 @@ import {
   getCommonJob,
   LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
+import {asAssetKeyInput} from './asInput';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
@@ -30,11 +31,15 @@ type ObserveAssetsState =
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
-export const LaunchAssetObservationButton: React.FC<{
+export const LaunchAssetObservationButton = ({
+  scope,
+  preferredJobName,
+  intent = 'none',
+}: {
   scope: AssetsInScope;
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({scope, preferredJobName, intent = 'none'}) => {
+}) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
@@ -73,7 +78,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: scopeAssets.map((a) => ({path: a.assetKey.path}))},
+      variables: {assetKeys: scopeAssets.map(asAssetKeyInput)},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {

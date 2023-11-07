@@ -77,7 +77,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const JobMetadata: React.FC<Props> = (props) => {
+export const JobMetadata = (props: Props) => {
   const {pipelineName, repoAddress} = props;
   const metadata = useJobNavMetadata(repoAddress, pipelineName);
 
@@ -97,10 +97,13 @@ export const JobMetadata: React.FC<Props> = (props) => {
   );
 };
 
-const JobScheduleOrSensorTag: React.FC<{
+const JobScheduleOrSensorTag = ({
+  job,
+  repoAddress,
+}: {
   job: JobMetadataFragment;
   repoAddress: RepoAddress;
-}> = ({job, repoAddress}) => {
+}) => {
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
       return job.schedules;
@@ -134,7 +137,7 @@ function getRelatedAssets(metadata: JobMetadata) {
   );
 }
 
-const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) => {
+const RelatedAssetsTag = ({relatedAssets}: {relatedAssets: string[]}) => {
   const [open, setOpen] = React.useState(false);
 
   if (relatedAssets.length === 0) {

@@ -74,11 +74,11 @@ export function getPipelineSnapshotLink(pipelineName: string, snapshotId: string
   })}`;
 }
 
-export const PipelineSnapshotLink: React.FC<{
+export const PipelineSnapshotLink = (props: {
   pipelineName: string;
   snapshotId: string;
   size: 'small' | 'normal';
-}> = (props) => {
+}) => {
   const snapshotLink = getPipelineSnapshotLink(props.pipelineName, props.snapshotId);
 
   return (

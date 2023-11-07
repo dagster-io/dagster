@@ -334,8 +334,17 @@ def _key_for_result(result: MaterializeResult, context: "BoundOpExecutionContext
         return next(iter(context.assets_def.keys))
 
     raise DagsterInvariantViolationError(
-        "Unable to resolve unset asset_key for MaterializeResult, set explicitly when constructing."
+        "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
+        f" asset_key, options are: {context.assets_def.keys}"
     )
+
+
+def _output_name_for_result_obj(
+    event: MaterializeResult,
+    context: "BoundOpExecutionContext",
+):
+    asset_key = _key_for_result(event, context)
+    return context.assets_def.get_output_name_for_asset_key(asset_key)
 
 
 def _handle_gen_event(
@@ -351,8 +360,7 @@ def _handle_gen_event(
     ):
         return event
     elif isinstance(event, MaterializeResult):
-        asset_key = _key_for_result(event, context)
-        output_name = context.assets_def.get_output_name_for_asset_key(asset_key)
+        output_name = _output_name_for_result_obj(event, context)
         outputs_seen.add(output_name)
         return event
     else:
@@ -439,8 +447,8 @@ def _type_check_output_wrapper(
                         yield Output(output_name=output_def.name, value=None)
                     else:
                         raise DagsterInvariantViolationError(
-                            f"Invocation of {op_def.node_type_str} '{context.alias}' did not"
-                            f" return an output for non-optional output '{output_def.name}'"
+                            f'Invocation of {op_def.node_type_str} "{context.alias}" did not'
+                            f' return an output for non-optional output "{output_def.name}"'
                         )
 
         return type_check_gen(result)
@@ -458,6 +466,9 @@ def _type_check_function_output(
     for event in validate_and_coerce_op_result_to_iterator(result, context, op_def.output_defs):
         if isinstance(event, (Output, DynamicOutput)):
             _type_check_output(output_defs_by_name[event.output_name], event, context)
+        elif isinstance(event, (MaterializeResult)):
+            # ensure result objects are contextually valid
+            _output_name_for_result_obj(event, context)
 
     return result
 

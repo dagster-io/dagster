@@ -57,7 +57,7 @@ from .sensor_definition import (
     SensorType,
     SkipReason,
     get_context_param_name,
-    get_sensor_context_from_args_or_kwargs,
+    get_or_create_sensor_context,
     validate_and_get_resource_dict,
 )
 from .target import ExecutableDefinition
@@ -246,6 +246,32 @@ class RunStatusSensorContext:
         self._exit_stack.close()
         self._logger = None
 
+    def merge_resources(self, resources_dict: Mapping[str, Any]) -> "RunStatusSensorContext":
+        """Merge the specified resources into this context.
+
+        This method is intended to be used by the Dagster framework, and should not be called by user code.
+
+        Args:
+            resources_dict (Mapping[str, Any]): The resources to replace in the context.
+        """
+        check.invariant(
+            self._resources is None, "Cannot merge resources in context that has been initialized."
+        )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+        return RunStatusSensorContext(
+            sensor_name=self._sensor_name,
+            dagster_run=self._dagster_run,
+            dagster_event=self._dagster_event,
+            instance=self._instance,
+            logger=self._logger,
+            partition_key=self._partition_key,
+            resource_defs={
+                **(self._resource_defs or {}),
+                **wrap_resources_for_execution(resources_dict),
+            },
+        )
+
 
 class RunFailureSensorContext(RunStatusSensorContext):
     """The ``context`` object available to a decorated function of ``run_failure_sensor``.
@@ -340,7 +366,8 @@ def build_run_status_sensor_context(
 @overload
 def run_failure_sensor(
     name: RunFailureSensorEvaluationFn,
-) -> SensorDefinition: ...
+) -> SensorDefinition:
+    ...
 
 
 @overload
@@ -376,7 +403,11 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]: ...
+) -> Callable[
+    [RunFailureSensorEvaluationFn],
+    SensorDefinition,
+]:
+    ...
 
 
 @deprecated_param(
@@ -416,7 +447,13 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
+) -> Union[
+    SensorDefinition,
+    Callable[
+        [RunFailureSensorEvaluationFn],
+        SensorDefinition,
+    ],
+]:
     """Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
 
@@ -818,11 +855,11 @@ class RunStatusSensorDefinition(SensorDefinition):
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
         context_param_name = get_context_param_name(self._run_status_sensor_fn)
-        context = get_sensor_context_from_args_or_kwargs(
+        context = get_or_create_sensor_context(
             self._run_status_sensor_fn,
-            args,
-            kwargs,
+            *args,
             context_type=RunStatusSensorContext,
+            **kwargs,
         )
         context_param = {context_param_name: context} if context_param_name and context else {}
 
@@ -876,7 +913,10 @@ def run_status_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
-) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
+) -> Callable[
+    [RunStatusSensorEvaluationFunction],
+    RunStatusSensorDefinition,
+]:
     """Creates a sensor that reacts to a given status of job execution, where the decorated
     function will be run when a job is at the given status.
 

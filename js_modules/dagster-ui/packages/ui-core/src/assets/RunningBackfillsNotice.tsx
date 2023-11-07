@@ -8,9 +8,7 @@ import {
   RunningBackfillsNoticeQueryVariables,
 } from './types/RunningBackfillsNotice.types';
 
-export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
-  partitionSetName,
-}) => {
+export const RunningBackfillsNotice = ({partitionSetName}: {partitionSetName: string}) => {
   const {data} = useQuery<RunningBackfillsNoticeQuery, RunningBackfillsNoticeQueryVariables>(
     RUNNING_BACKFILLS_NOTICE_QUERY,
   );

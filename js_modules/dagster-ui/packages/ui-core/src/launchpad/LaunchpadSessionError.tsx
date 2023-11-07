@@ -8,7 +8,7 @@ import * as React from 'react';
 
 import {SessionSettingsBar} from './SessionSettingsBar';
 
-export const LaunchpadSessionError: React.FC<NonIdealStateProps> = (props) => (
+export const LaunchpadSessionError = (props: NonIdealStateProps) => (
   <SplitPanelContainer
     axis="vertical"
     identifier="execution"

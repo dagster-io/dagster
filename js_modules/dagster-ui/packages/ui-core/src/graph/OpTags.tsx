@@ -393,13 +393,16 @@ function coerceToStandardLabel(label: string) {
   return label.replace(/[ _-]/g, '').toLowerCase();
 }
 
-export const AssetComputeKindTag: React.FC<{
+export const AssetComputeKindTag = ({
+  definition,
+  ...rest
+}: {
   definition: {computeKind: string | null};
   style: React.CSSProperties;
   reduceColor?: boolean;
   reduceText?: boolean;
   reversed?: boolean;
-}> = ({definition, ...rest}) => {
+}) => {
   if (!definition.computeKind) {
     return null;
   }

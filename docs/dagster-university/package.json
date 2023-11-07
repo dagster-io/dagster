@@ -16,7 +16,7 @@
     "@markdoc/markdoc": "latest",
     "@markdoc/next.js": "latest",
     "fast-glob": "^3.2.5",
-    "next": "latest",
+    "next": "^13.5.4",
     "prismjs": "latest",
     "react": "latest",
     "react-dom": "latest",
@@ -45,5 +45,5 @@
     "tailwindcss": "^3.3.3",
     "typescript": "latest"
   },
-  "packageManager": "yarn@3.6.3"
+  "packageManager": "yarn@3.6.4"
 }

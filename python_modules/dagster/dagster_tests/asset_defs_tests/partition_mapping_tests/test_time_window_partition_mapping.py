@@ -1,13 +1,11 @@
 from datetime import datetime, timezone
 from typing import Optional, Sequence
 
-import pendulum
 import pytest
 from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
-    TimeWindow,
     TimeWindowPartitionMapping,
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
@@ -246,6 +244,47 @@ def test_daily_to_daily_lag():
     ).partitions_subset.get_partition_keys() == ["2021-05-05", "2021-05-06"]
 
 
+def test_exotic_cron_schedule_lag():
+    # every 4 hours
+    downstream_partitions_def = upstream_partitions_def = TimeWindowPartitionsDefinition(
+        start="2021-05-05_00", cron_schedule="0 */4 * * *", fmt="%Y-%m-%d_%H"
+    )
+    mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    # single partition key
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2021-05-06_04"]), upstream_partitions_def
+    ).partitions_subset.get_partition_keys() == ["2021-05-06_00"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2021-05-06_00"]), downstream_partitions_def
+    ).get_partition_keys() == ["2021-05-06_04"]
+
+    # first partition key
+    assert (
+        mapping.get_upstream_mapped_partitions_result_for_partitions(
+            subset_with_keys(downstream_partitions_def, ["2021-05-05_00"]), upstream_partitions_def
+        ).partitions_subset.get_partition_keys()
+        == []
+    )
+
+    # range of partition keys
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-07_04", "2021-05-07_12"),
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == ["2021-05-07_00", "2021-05-07_04", "2021-05-07_08"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-07_04", "2021-05-07_12"),
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2021-05-07_08", "2021-05-07_12", "2021-05-07_16"]
+
+    # range overlaps start
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-05_00", "2021-05-05_08"),
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == ["2021-05-05_00", "2021-05-05_04"]
+
+
 def test_daily_to_daily_lag_different_start_date():
     upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
     downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
@@ -333,13 +372,6 @@ def test_daily_to_daily_many_to_one():
             ["2022-12-30"],
             datetime(2022, 12, 31, 1),
         ),
-        (
-            DailyPartitionsDefinition(start_date="2022-01-01"),
-            DailyPartitionsDefinition(start_date="2021-01-01"),
-            ["2022-12-30", "2022-12-31", "2023-01-01", "2023-01-02"],
-            ["2022-12-30", "2022-12-31", "2023-01-01"],
-            datetime(2023, 1, 2, 1),
-        ),
     ],
 )
 def test_get_downstream_with_current_time(
@@ -399,7 +431,7 @@ def test_get_downstream_with_current_time(
             DailyPartitionsDefinition(start_date="2021-05-05", timezone="US/Central"),
             HourlyPartitionsDefinition(start_date="2021-05-05-00:00", timezone="US/Central"),
             [],
-            ["2021-05-05-23:00"],
+            ["2021-05-05-22:00"],
             datetime(2021, 5, 6, 4, tzinfo=timezone.utc),  # 2021-05-05-23:00 in US/Central
             ["2021-05-05"],
         ),
@@ -466,83 +498,6 @@ def test_get_upstream_with_current_time(
     assert (
         upstream_partitions_result.required_but_nonexistent_partition_keys == invalid_upstream_keys
     )
-
-
-@pytest.mark.parametrize(
-    "partitions_def,first_partition_window,last_partition_window,number_of_partitions,fmt",
-    [
-        (
-            HourlyPartitionsDefinition(start_date="2022-01-01-00:00", end_date="2022-02-01-00:00"),
-            ["2022-01-01-00:00", "2022-01-01-01:00"],
-            ["2022-01-31-23:00", "2022-02-01-00:00"],
-            744,
-            "%Y-%m-%d-%H:%M",
-        ),
-        (
-            DailyPartitionsDefinition(start_date="2022-01-01", end_date="2022-02-01"),
-            ["2022-01-01", "2022-01-02"],
-            ["2022-01-31", "2022-02-01"],
-            31,
-            "%Y-%m-%d",
-        ),
-        (
-            WeeklyPartitionsDefinition(start_date="2022-01-01", end_date="2022-02-01"),
-            ["2022-01-02", "2022-01-09"],  # 2022-01-02 is Sunday, weekly cron starts from Sunday
-            ["2022-01-23", "2022-01-30"],
-            4,
-            "%Y-%m-%d",
-        ),
-        (
-            MonthlyPartitionsDefinition(start_date="2022-01-01", end_date="2023-01-01"),
-            ["2022-01-01", "2022-02-01"],
-            ["2022-12-01", "2023-01-01"],
-            12,
-            "%Y-%m-%d",
-        ),
-    ],
-)
-def test_partition_with_end_date(
-    partitions_def: TimeWindowPartitionsDefinition,
-    first_partition_window: Sequence[str],
-    last_partition_window: Sequence[str],
-    number_of_partitions: int,
-    fmt: str,
-):
-    first_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(first_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(first_partition_window[1], fmt), tz="UTC"),
-    )
-
-    last_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(last_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(last_partition_window[1], fmt), tz="UTC"),
-    )
-
-    # get_last_partition_window
-    assert partitions_def.get_last_partition_window() == last_partition_window_
-    # get_next_partition_window
-    assert partitions_def.get_next_partition_window(partitions_def.start) == first_partition_window_
-    assert (
-        partitions_def.get_next_partition_window(last_partition_window_.start)
-        == last_partition_window_
-    )
-    assert not partitions_def.get_next_partition_window(last_partition_window_.end)
-    # get_partition_keys
-    assert len(partitions_def.get_partition_keys()) == number_of_partitions
-    assert partitions_def.get_partition_keys()[0] == first_partition_window[0]
-    assert partitions_def.get_partition_keys()[-1] == last_partition_window[0]
-    # get_next_partition_key
-    assert (
-        partitions_def.get_next_partition_key(first_partition_window[0])
-        == first_partition_window[1]
-    )
-    assert not partitions_def.get_next_partition_key(last_partition_window[0])
-    # get_last_partition_key
-    assert partitions_def.get_last_partition_key() == last_partition_window[0]
-    # has_partition_key
-    assert partitions_def.has_partition_key(first_partition_window[0])
-    assert partitions_def.has_partition_key(last_partition_window[0])
-    assert not partitions_def.has_partition_key(last_partition_window[1])
 
 
 def test_different_start_time_partitions_defs():

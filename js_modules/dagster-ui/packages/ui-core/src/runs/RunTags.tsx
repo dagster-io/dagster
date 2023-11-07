@@ -21,12 +21,15 @@ const canAddTagToFilter = (key: string) => {
   return key !== DagsterTag.SolidSelection && key !== DagsterTag.OpSelection && key !== 'mode';
 };
 
-export const RunTags: React.FC<{
+interface Props {
   tags: TagType[];
   mode?: string | null;
   onAddTag?: (token: RunFilterToken) => void;
   onToggleTagPin?: (key: string) => void;
-}> = React.memo(({tags, onAddTag, onToggleTagPin, mode}) => {
+}
+
+export const RunTags = React.memo((props: Props) => {
+  const {tags, onAddTag, onToggleTagPin, mode} = props;
   const copy = useCopyToClipboard();
 
   const copyAction = React.useMemo(

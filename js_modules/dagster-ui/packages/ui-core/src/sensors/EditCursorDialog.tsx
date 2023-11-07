@@ -24,12 +24,17 @@ import {
   SetSensorCursorMutationVariables,
 } from './types/EditCursorDialog.types';
 
-export const EditCursorDialog: React.FC<{
+export const EditCursorDialog = ({
+  isOpen,
+  sensorSelector,
+  cursor,
+  onClose,
+}: {
   isOpen: boolean;
   cursor: string;
   sensorSelector: SensorSelector;
   onClose: () => void;
-}> = ({isOpen, sensorSelector, cursor, onClose}) => {
+}) => {
   const [cursorValue, setCursorValue] = React.useState(cursor);
   const [isSaving, setIsSaving] = React.useState(false);
   const [requestSet] = useMutation<SetSensorCursorMutation, SetSensorCursorMutationVariables>(

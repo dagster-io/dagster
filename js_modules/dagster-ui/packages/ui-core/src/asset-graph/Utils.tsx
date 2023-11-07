@@ -2,10 +2,6 @@ import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
-import {RunStatus, StaleStatus} from '../graphql/types';
-
-import {AssetNodeKeyFragment} from './types/AssetNode.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {
   AssetGraphLiveQuery,
   AssetLatestInfoFragment,
@@ -14,7 +10,12 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-} from './types/useLiveDataForAssetKeys.types';
+  AssetCheckLiveFragment,
+} from '../asset-data/types/AssetLiveDataProvider.types';
+import {RunStatus, StaleStatus} from '../graphql/types';
+
+import {AssetNodeKeyFragment} from './types/AssetNode.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
@@ -141,7 +142,7 @@ export interface LiveDataForNode {
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
   staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
-  assetChecks: AssetGraphLiveQuery['assetNodes'][0]['assetChecks'];
+  assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
@@ -210,7 +211,10 @@ export const buildLiveDataForNode = (
         ? latestRunForAsset.status
         : null,
     lastObservation,
-    assetChecks: assetNode.assetChecks,
+    assetChecks:
+      assetNode.assetChecksOrError.__typename === 'AssetChecks'
+        ? assetNode.assetChecksOrError.checks
+        : [],
     staleStatus: assetNode.staleStatus,
     staleCauses: assetNode.staleCauses,
     stepKey: stepKeyForAsset(assetNode),

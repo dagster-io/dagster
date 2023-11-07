@@ -33,8 +33,7 @@ def test_schedules_list(gen_schedule_args):
 
             assert result.exit_code == 0
             assert (
-                result.output
-                == "Repository bar\n"
+                result.output == "Repository bar\n"
                 "**************\n"
                 "Schedule: foo_schedule [STOPPED]\n"
                 "Cron Schedule: * * * * *\n"

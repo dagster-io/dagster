@@ -1,7 +1,12 @@
 While you can use your existing production agent, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
 
-<details>
-  <summary><strong>AMAZON ECS AGENTS</strong></summary>
+<TabGroup>
+<TabItem name="Select agent type">
+
+Using the tabs, select your agent type to view instructions.
+
+</TabItem>
+<TabItem name="Amazon ECS">
 
 1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-cloud/deployment/agents#amazon-ecs) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
@@ -32,10 +37,8 @@ While you can use your existing production agent, we recommend creating a dedica
    height={420}
    />
 
-</details>
-
-<details>
-  <summary><strong>DOCKER AGENTS</strong></summary>
+</TabItem>
+<TabItem name="Docker">
 
 1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-cloud/deployment/agents/docker) for instructions.
 2. After the agent is set up, modify the `dagster.yaml` file as follows:
@@ -67,10 +70,8 @@ While you can use your existing production agent, we recommend creating a dedica
          ttl_seconds: 7200 #2 hours
    ```
 
-</details>
-
-<details>
-  <summary><strong>KUBERNETES AGENTS</strong></summary>
+</TabItem>
+<TabItem name="Kubernetes">
 
 1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for instructions.
 
@@ -86,4 +87,5 @@ While you can use your existing production agent, we recommend creating a dedica
        ttlSeconds: 7200
    ```
 
-</details>
+</TabItem>
+</TabGroup>

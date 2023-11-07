@@ -9,6 +9,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
+import {asAssetKeyInput, asAssetCheckHandleInput} from '../assets/asInput';
 import {AssetKey} from '../assets/types';
 import {ExecutionParams, RunStatus} from '../graphql/types';
 
@@ -35,7 +36,7 @@ export function assetKeysForRun(run: {
 
 export function linkToRunEvent(
   run: {id: string},
-  event: {timestamp?: string; stepKey: string | null},
+  event: {timestamp?: string | number; stepKey: string | null},
 ) {
   return `/runs/${run.id}?${qs.stringify({
     focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
@@ -161,11 +162,10 @@ export function getReexecutionParamsForSelection(input: {
       repositoryName,
       pipelineName: run.pipelineName,
       solidSelection: run.solidSelection,
-      assetSelection: run.assetSelection
-        ? run.assetSelection.map((asset_key) => ({
-            path: asset_key.path,
-          }))
-        : null,
+      assetSelection: run.assetSelection ? run.assetSelection.map(asAssetKeyInput) : [],
+      assetCheckSelection: run.assetCheckSelection
+        ? run.assetCheckSelection.map(asAssetCheckHandleInput)
+        : [],
     },
   };
 
@@ -231,6 +231,9 @@ export const TERMINATE_MUTATION = gql`
           ... on RunNotFoundError {
             message
           }
+          ... on UnauthorizedError {
+            message
+          }
           ... on TerminateRunFailure {
             message
           }
@@ -287,7 +290,7 @@ interface RunTimeProps {
   run: RunTimeFragment;
 }
 
-export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
+export const RunTime = React.memo(({run}: RunTimeProps) => {
   const {startTime, updateTime} = run;
 
   return (
@@ -301,7 +304,7 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   );
 });
 
-export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
+export const RunStateSummary = React.memo(({run}: RunTimeProps) => {
   // kind of a hack, but we manually set the start time to the end time in the graphql resolver
   // for this case, so check for start/end time equality for the failed to start condition
   const failedToStart =

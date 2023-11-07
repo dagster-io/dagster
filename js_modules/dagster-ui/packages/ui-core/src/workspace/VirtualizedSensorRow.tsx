@@ -5,14 +5,15 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {SensorTargetList} from '../sensors/SensorTargetList';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
@@ -92,6 +93,8 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     return {disabled: false};
   }, [sensorState]);
 
+  const tick = sensorData?.sensorState.ticks[0];
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
@@ -154,12 +157,9 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           )}
         </RowCell>
         <RowCell>
-          {sensorData?.sensorState.ticks[0] ? (
+          {tick ? (
             <div>
-              <TickTag
-                tick={sensorData.sensorState.ticks[0]}
-                instigationType={InstigationType.SENSOR}
-              />
+              <TickStatusTag tick={tick} />
             </div>
           ) : (
             <LoadingOrNone queryResult={queryResult} />

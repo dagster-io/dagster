@@ -18,11 +18,11 @@ interface ITypeExplorerContainerProps {
   repoAddress?: RepoAddress;
 }
 
-export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
+export const TypeExplorerContainer = ({
   explorerPath,
   typeName,
   repoAddress,
-}) => {
+}: ITypeExplorerContainerProps) => {
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery<TypeExplorerContainerQuery, TypeExplorerContainerQueryVariables>(
     TYPE_EXPLORER_CONTAINER_QUERY,

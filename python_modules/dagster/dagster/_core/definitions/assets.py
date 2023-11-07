@@ -21,6 +21,7 @@ import dagster._check as check
 from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -195,10 +196,35 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             group_name = group_names_by_key.get(key)
             self._group_names_by_key[key] = validate_group_name(group_name)
 
-        if selected_asset_keys is not None:
-            self._selected_asset_keys = selected_asset_keys
-        else:
+        all_check_keys = {spec.key for spec in (check_specs_by_output_name or {}).values()}
+
+        # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
+        if selected_asset_keys is None and selected_asset_check_keys is None:
+            # if no selections, include everything
             self._selected_asset_keys = all_asset_keys
+            self._selected_asset_check_keys = all_check_keys
+        else:
+            self._selected_asset_keys = selected_asset_keys or set()
+
+            if selected_asset_check_keys is None:
+                # if assets were selected but checks are None, then include all checks for selected
+                # assets
+                self._selected_asset_check_keys = {
+                    key for key in all_check_keys if key.asset_key in self._selected_asset_keys
+                }
+            else:
+                # otherwise, use the selected checks
+                self._selected_asset_check_keys = selected_asset_check_keys
+
+        self._check_specs_by_output_name = {
+            name: spec
+            for name, spec in (check_specs_by_output_name or {}).items()
+            if spec.key in self._selected_asset_check_keys
+        }
+        self._check_specs_by_key = {
+            spec.key: spec for spec in self._check_specs_by_output_name.values()
+        }
+
         self._can_subset = can_subset
 
         self._code_versions_by_key = {}
@@ -257,23 +283,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._backfill_policy = check.opt_inst_param(
             backfill_policy, "backfill_policy", BackfillPolicy
         )
-
-        if selected_asset_check_keys is None:
-            self._check_specs_by_output_name = check_specs_by_output_name or {}
-        else:
-            self._check_specs_by_output_name = {
-                output_name: check_spec
-                for output_name, check_spec in (check_specs_by_output_name or {}).items()
-                if check_spec.key in selected_asset_check_keys
-            }
-
-        self._check_specs_by_handle = {
-            spec.key: spec for spec in self._check_specs_by_output_name.values()
-        }
-        if selected_asset_check_keys is not None:
-            self._selected_asset_check_keys = selected_asset_check_keys
-        else:
-            self._selected_asset_check_keys = self._check_specs_by_handle.keys()
 
         if self._partitions_def is None:
             # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
@@ -610,7 +619,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             "Cannot use both group_name and group_names_by_output_name",
         )
 
-        if group_name:
+        if group_name is not None:
             group_names_by_key = {
                 asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()
             }
@@ -806,7 +815,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._check_specs_by_output_name
 
     def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
-        return self._check_specs_by_handle[asset_check_key]
+        return self._check_specs_by_key[asset_check_key]
 
     @property
     def keys_by_output_name(self) -> Mapping[str, AssetKey]:
@@ -894,6 +903,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         return AssetExecutionType.is_executable(
+            self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+        )
+
+    def asset_execution_type_for_asset(self, asset_key: AssetKey) -> AssetExecutionType:
+        from dagster._core.definitions.asset_spec import (
+            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+            AssetExecutionType,
+        )
+
+        return AssetExecutionType.str_to_enum(
             self._metadata_by_key.get(asset_key, {}).get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         )
 
@@ -1005,9 +1024,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 replaced_freshness_policy = self.freshness_policies_by_key.get(key)
 
             if replaced_freshness_policy:
-                replaced_freshness_policies_by_key[output_asset_key_replacements.get(key, key)] = (
-                    replaced_freshness_policy
-                )
+                replaced_freshness_policies_by_key[
+                    output_asset_key_replacements.get(key, key)
+                ] = replaced_freshness_policy
 
         if auto_materialize_policy:
             auto_materialize_policy_conflicts = (

@@ -151,6 +151,15 @@ def test_static_partitions_subset():
     assert "bar" in with_some_partitions
 
 
+def test_static_partitions_subset_identical_serialization():
+    # serialized subsets should be equal if the original subsets are equal
+    partitions = StaticPartitionsDefinition([str(i) for i in range(1000)])
+    subset = [str(i) for i in range(500)]
+    serialized1 = partitions.subset_with_partition_keys(subset).serialize()
+    serialized2 = partitions.subset_with_partition_keys(reversed(subset)).serialize()
+    assert serialized1 == serialized2
+
+
 def test_static_partitions_invalid_chars():
     with pytest.raises(DagsterInvalidDefinitionError):
         StaticPartitionsDefinition(["foo...bar"])

@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogFooter,
   Icon,
+  MiddleTruncate,
   Tag,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -22,11 +23,15 @@ import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
 const renderItemAssetKey = (assetKey: AssetKey) => (
-  <Link to={assetDetailsPathForKey(assetKey)}>{displayNameForAssetKey(assetKey)}</Link>
+  <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
+    <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
+  </Link>
 );
 
 const renderItemAssetCheck = (assetCheck: Check) => (
-  <Link to={assetDetailsPathForAssetCheck(assetCheck)}>{labelForAssetCheck(assetCheck)}</Link>
+  <Link to={assetDetailsPathForAssetCheck(assetCheck)} style={{display: 'block', width: '100%'}}>
+    <MiddleTruncate text={labelForAssetCheck(assetCheck)} />
+  </Link>
 );
 
 const labelForAssetCheck = (check: Check) => {
@@ -34,7 +39,7 @@ const labelForAssetCheck = (check: Check) => {
 };
 
 function useShowMoreDialog<T>(
-  modalTitle: string,
+  dialogTitle: string,
   items: T[] | null,
   renderItem: (item: T) => React.ReactNode,
 ) {
@@ -43,16 +48,16 @@ function useShowMoreDialog<T>(
   const dialog =
     !!items && items.length > 1 ? (
       <Dialog
-        title={modalTitle}
+        title={dialogTitle}
         onClose={() => setShowMore(false)}
-        style={{minWidth: '400px', maxWidth: '80vw', maxHeight: '70vh'}}
+        style={{minWidth: '400px', width: '50vw', maxWidth: '800px', maxHeight: '70vh'}}
         isOpen={showMore}
       >
-        <div style={{height: '340px', overflow: 'hidden'}}>
+        <div style={{height: '500px', overflow: 'hidden'}}>
           <VirtualizedItemListForDialog items={items} renderItem={renderItem} />
         </div>
         <DialogFooter topBorder>
-          <Button autoFocus onClick={() => setShowMore(false)}>
+          <Button intent="primary" autoFocus onClick={() => setShowMore(false)}>
             Done
           </Button>
         </DialogFooter>
@@ -62,12 +67,15 @@ function useShowMoreDialog<T>(
   return {dialog, showMore, setShowMore};
 }
 
-export const AssetKeyTagCollection: React.FC<{
+interface AssetKeyTagCollectionProps {
   assetKeys: AssetKey[] | null;
-  modalTitle?: string;
+  dialogTitle?: string;
   useTags?: boolean;
-}> = React.memo(({assetKeys, useTags, modalTitle = 'Assets in run'}) => {
-  const {setShowMore, dialog} = useShowMoreDialog(modalTitle, assetKeys, renderItemAssetKey);
+}
+
+export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
+  const {assetKeys, useTags, dialogTitle = 'Assets in run'} = props;
+  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetKeys, renderItemAssetKey);
 
   if (!assetKeys || !assetKeys.length) {
     return null;
@@ -149,12 +157,15 @@ export const AssetKeyTagCollection: React.FC<{
 
 type Check = {name: string; assetKey: AssetKey};
 
-export const AssetCheckTagCollection: React.FC<{
+interface AssetCheckTagCollectionProps {
   assetChecks: Check[] | null;
-  modalTitle?: string;
+  dialogTitle?: string;
   useTags?: boolean;
-}> = React.memo(({assetChecks, useTags, modalTitle = 'Asset checks in run'}) => {
-  const {setShowMore, dialog} = useShowMoreDialog(modalTitle, assetChecks, renderItemAssetCheck);
+}
+
+export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
+  const {assetChecks, useTags, dialogTitle = 'Asset checks in run'} = props;
+  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetChecks, renderItemAssetCheck);
 
   if (!assetChecks || !assetChecks.length) {
     return null;

@@ -22,6 +22,10 @@
         "path": "/getting-started/project-file-reference"
       },
       {
+        "title": "Getting help",
+        "path": "/getting-started/getting-help"
+      },
+      {
         "title": "Telemetry",
         "path": "/getting-started/telemetry"
       }
@@ -105,6 +109,10 @@
           {
             "title": "Asset checks (Experimental)",
             "path": "/concepts/assets/asset-checks"
+          },
+          {
+            "title": "External assets (Experimental)",
+            "path": "/concepts/assets/external-assets"
           }
         ]
       },
@@ -507,7 +515,7 @@
                   },
                   {
                     "title": "PingOne",
-                    "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+                    "path": "/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
                   }
                 ]
               }
@@ -553,7 +561,7 @@
                 ]
               },
               {
-                "title": "Branch deployments",
+                "title": "Branch deployments (CI)",
                 "path": "/dagster-cloud/managing-deployments/branch-deployments",
                 "children": [
                   {
@@ -569,6 +577,26 @@
                     "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "title": "Insights",
+            "path": "/dagster-cloud/insights",
+            "children": [
+              {
+                "title": "Integrating external metrics",
+                "path": "/dagster-cloud/insights/integrating-external-metrics",
+                "children": [
+                  {
+                    "title": "Snowflake + dbt",
+                    "path": "/dagster-cloud/insights/integrating-snowflake-and-dbt"
+                  }
+                ]
+              },
+              {
+                "title": "Exporting metrics",
+                "path": "/dagster-cloud/insights/exporting-insights-metrics"
               }
             ]
           },
@@ -674,6 +702,10 @@
             "path": "/integrations/duckdb/reference"
           }
         ]
+      },
+      {
+        "title": "Embedded ELT",
+        "path": "/integrations/embedded-elt"
       },
       {
         "title": "Fivetran",
@@ -819,6 +851,39 @@
           {
             "title": "Re-executing jobs",
             "path": "/guides/dagster/re-execution"
+          }
+        ]
+      },
+      {
+        "title": "Dagster Pipes (Experimental)",
+        "path": "/guides/dagster-pipes",
+        "children": [
+          {
+            "title": "Dagster Pipes tutorial",
+            "path": "/guides/dagster-pipes/subprocess",
+            "children": [
+              {
+                "title": "Part 1: Define a Dagster asset",
+                "path": "/guides/dagster-pipes/subprocess/create-subprocess-asset"
+              },
+              {
+                "title": "Part 2: Modify external code",
+                "path": "/guides/dagster-pipes/subprocess/modify-external-code"
+              },
+              {
+                "title": "Dagster Pipes + subprocess reference",
+                "path": "/guides/dagster-pipes/subprocess/reference"
+              }
+            ]
+          },
+          {
+            "title": "Dagster Pipes + Databricks",
+            "path": "/guides/dagster-pipes/databricks"
+
+          },
+          {
+            "title": "Details and customization",
+            "path": "/guides/dagster-pipes/dagster-pipes-details-and-customization"
           }
         ]
       },
@@ -981,6 +1046,10 @@
           {
             "title": "Asset checks (Experimental)",
             "path": "/_apidocs/asset-checks"
+          },
+          {
+            "title": "External Assets (Experimental)",
+            "path": "/_apidocs/external-assets"
           },
           {
             "title": "Job versioning & memoization (Deprecated)",

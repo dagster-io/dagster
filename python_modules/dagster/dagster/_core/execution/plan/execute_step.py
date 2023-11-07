@@ -25,6 +25,7 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -56,6 +57,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.execution.plan.compute import execute_core_compute
@@ -461,13 +463,14 @@ def core_dagster_event_sequence_for_step(
     else:
         core_gen = step_context.op_def.compute_fn
 
-    with time_execution_scope() as timer_result:
-        user_event_sequence = check.generator(
-            execute_core_compute(
-                step_context,
-                inputs,
-                core_gen,
-            )
+    with time_execution_scope() as timer_result, enter_execution_context(
+        step_context
+    ) as compute_context:
+        user_event_sequence = execute_core_compute(
+            step_context,
+            inputs,
+            core_gen,
+            compute_context,
         )
 
         # It is important for this loop to be indented within the
@@ -534,12 +537,17 @@ def _type_check_and_store_output(
         yield evt
 
 
-def _asset_key_and_partitions_for_output(
+def _materializing_asset_key_and_partitions_for_output(
     output_context: OutputContext,
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
     output_asset_info = output_context.asset_info
 
-    if output_asset_info:
+    if (
+        output_asset_info
+        and not output_context.step_context.job_def.asset_layer.is_observable_for_asset(
+            output_asset_info.key
+        )
+    ):
         if not output_asset_info.is_required:
             output_context.log.warning(
                 f"Materializing unexpected asset key: {output_asset_info.key}."
@@ -695,10 +703,12 @@ def _store_output(
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
 
-    # don't store asset check outputs
-    if step_context.step.step_output_named(
-        step_output_handle.output_name
-    ).properties.asset_check_key:
+    # don't store asset check outputs or asset observation outputs
+    step_output = step_context.step.step_output_named(step_output_handle.output_name)
+    asset_key = step_output.properties.asset_key
+    if step_output.properties.asset_check_key or (
+        step_context.output_observes_source_asset(step_output_handle.output_name)
+    ):
 
         def _no_op() -> Iterator[DagsterEvent]:
             yield from ()
@@ -777,17 +787,40 @@ def _store_output(
 
         yield DagsterEvent.asset_materialization(step_context, materialization)
 
-    asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
+    asset_key, partitions = _materializing_asset_key_and_partitions_for_output(output_context)
     if asset_key:
-        for materialization in _get_output_asset_materializations(
-            asset_key,
-            partitions,
-            output,
-            output_def,
-            manager_metadata,
-            step_context,
-        ):
-            yield DagsterEvent.asset_materialization(step_context, materialization)
+        asset_layer = step_context.job_def.asset_layer
+        execution_type = (
+            asset_layer.assets_def_for_asset(asset_key).asset_execution_type_for_asset(asset_key)
+            if asset_layer.has_assets_def_for_asset(asset_key)
+            else AssetExecutionType.MATERIALIZATION
+        )
+
+        check.invariant(
+            execution_type != AssetExecutionType.UNEXECUTABLE,
+            "There should never be unexecutable assets here",
+        )
+
+        check.invariant(
+            execution_type in {AssetExecutionType.MATERIALIZATION, AssetExecutionType.OBSERVATION},
+            f"Unexpected asset execution type {execution_type}",
+        )
+
+        yield from (
+            (
+                DagsterEvent.asset_materialization(step_context, materialization)
+                for materialization in _get_output_asset_materializations(
+                    asset_key,
+                    partitions,
+                    output,
+                    output_def,
+                    manager_metadata,
+                    step_context,
+                )
+            )
+            if execution_type == AssetExecutionType.MATERIALIZATION
+            else ()
+        )
 
     yield DagsterEvent.handled_output(
         step_context,

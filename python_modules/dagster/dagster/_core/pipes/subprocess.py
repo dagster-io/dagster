@@ -1,3 +1,4 @@
+import os
 from subprocess import Popen
 from typing import Mapping, Optional, Sequence, Union
 
@@ -64,13 +65,17 @@ class _PipesSubprocess(PipesClient):
             or PipesTempFileMessageReader()
         )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @public
     def run(
         self,
-        command: Union[str, Sequence[str]],
         *,
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
+        command: Union[str, Sequence[str]],
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> PipesClientCompletedInvocation:
@@ -97,9 +102,10 @@ class _PipesSubprocess(PipesClient):
                 command,
                 cwd=cwd or self.cwd,
                 env={
-                    **pipes_session.get_bootstrap_env_vars(),
+                    **os.environ,
                     **self.env,
                     **(env or {}),
+                    **pipes_session.get_bootstrap_env_vars(),
                 },
             )
             process.wait()

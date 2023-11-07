@@ -33,8 +33,8 @@ import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForR
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
+import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
-import {RunCreatedByCell} from './RunCreatedByCell';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
@@ -249,17 +249,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
   ${RUN_TAGS_FRAGMENT}
 `;
 
-const RunRow: React.FC<{
-  run: RunTableRunFragment;
-  canTerminateOrDelete: boolean;
-  onAddTag?: (token: RunFilterToken) => void;
-  checked?: boolean;
-  onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
-  additionalColumns?: React.ReactNode[];
-  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
-  isHighlighted?: boolean;
-  hideCreatedBy?: boolean;
-}> = ({
+const RunRow = ({
   run,
   canTerminateOrDelete,
   onAddTag,
@@ -269,6 +259,16 @@ const RunRow: React.FC<{
   additionalActionsForRun,
   isHighlighted,
   hideCreatedBy,
+}: {
+  run: RunTableRunFragment;
+  canTerminateOrDelete: boolean;
+  onAddTag?: (token: RunFilterToken) => void;
+  checked?: boolean;
+  onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
+  additionalColumns?: React.ReactNode[];
+  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
+  isHighlighted?: boolean;
+  hideCreatedBy?: boolean;
 }) => {
   const {pipelineName} = run;
   const repo = useRepositoryForRunWithoutSnapshot(run);
@@ -415,10 +415,10 @@ const RunRow: React.FC<{
       <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
           {isHiddenAssetGroupJob(run.pipelineName) ? (
-            <>
-              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+            <Box flex={{gap: 16}}>
               <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
-            </>
+              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+            </Box>
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
@@ -483,7 +483,11 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell repoAddress={repoAddressGuess} tags={run.tags || []} />
+          <CreatedByTagCell
+            repoAddress={repoAddressGuess}
+            tags={run.tags || []}
+            onAddTag={onAddTag}
+          />
         </td>
       )}
       <td>

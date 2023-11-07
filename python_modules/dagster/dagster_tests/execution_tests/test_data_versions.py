@@ -67,7 +67,8 @@ from dagster_tests.core_tests.instance_tests.test_instance_data_versions import 
 
 def test_single_asset():
     @asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     instance = DagsterInstance.ephemeral()
     mat1, mat2 = materialize_twice([asset1], asset1, instance)
@@ -76,7 +77,8 @@ def test_single_asset():
 
 def test_single_versioned_asset():
     @asset(code_version="abc")
-    def asset1(): ...
+    def asset1():
+        ...
 
     instance = DagsterInstance.ephemeral()
     mat1, mat2 = materialize_twice([asset1], asset1, instance)
@@ -87,7 +89,8 @@ def test_source_asset_non_versioned_asset():
     source1 = SourceAsset("source1")
 
     @asset
-    def asset1(source1): ...
+    def asset1(source1):
+        ...
 
     instance = DagsterInstance.ephemeral()
     mat1, mat2 = materialize_twice([source1, asset1], asset1, instance)
@@ -98,7 +101,8 @@ def test_source_asset_versioned_asset():
     source1 = SourceAsset("source1")
 
     @asset(code_version="abc")
-    def asset1(source1): ...
+    def asset1(source1):
+        ...
 
     instance = DagsterInstance.ephemeral()
 
@@ -110,7 +114,8 @@ def test_source_asset_non_versioned_asset_deps():
     source1 = SourceAsset("source1")
 
     @asset(deps=[source1])
-    def asset1(): ...
+    def asset1():
+        ...
 
     instance = DagsterInstance.ephemeral()
 
@@ -122,10 +127,12 @@ def test_versioned_after_unversioned():
     source1 = SourceAsset("source1")
 
     @asset
-    def asset1(source1): ...
+    def asset1(source1):
+        ...
 
     @asset(code_version="abc")
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     all_assets = [source1, asset1, asset2]
     instance = DagsterInstance.ephemeral()
@@ -144,10 +151,12 @@ def test_versioned_after_versioned():
     source1 = SourceAsset("source1")
 
     @asset(code_version="abc")
-    def asset1(source1): ...
+    def asset1(source1):
+        ...
 
     @asset(code_version="xyz")
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     all_assets = [source1, asset1, asset2]
     instance = DagsterInstance.ephemeral()
@@ -164,10 +173,12 @@ def test_unversioned_after_versioned():
     source1 = SourceAsset("source1")
 
     @asset(code_version="abc")
-    def asset1(source1): ...
+    def asset1(source1):
+        ...
 
     @asset
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     all_assets = [source1, asset1, asset2]
     instance = DagsterInstance.ephemeral()
@@ -257,10 +268,12 @@ def test_stale_status_general() -> None:
         return DataVersion(str(x))
 
     @asset(code_version="abc")
-    def asset1(source1): ...
+    def asset1(source1):
+        ...
 
     @asset(code_version="xyz")
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     all_assets = [source1, asset1, asset2]
     with instance_for_test() as instance:
@@ -317,7 +330,8 @@ def test_stale_status_general() -> None:
 
         # Simulate updating an asset with a new code version
         @asset(name="asset1", code_version="def")
-        def asset1_v2(source1): ...
+        def asset1_v2(source1):
+            ...
 
         all_assets_v2 = [source1, asset1_v2, asset2]
 
@@ -340,10 +354,12 @@ def test_stale_status_general() -> None:
         ]
 
         @asset
-        def asset3(): ...
+        def asset3():
+            ...
 
         @asset(name="asset2", code_version="xyz")
-        def asset2_v2(asset3): ...
+        def asset2_v2(asset3):
+            ...
 
         all_assets_v3 = [source1, asset1_v2, asset2_v2, asset3]
 
@@ -367,10 +383,12 @@ def test_stale_status_general() -> None:
 
 def test_stale_status_no_code_versions() -> None:
     @asset
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     all_assets = [asset1, asset2]
     with instance_for_test() as instance:
@@ -407,10 +425,12 @@ def test_stale_status_no_code_versions() -> None:
 
 def test_stale_status_redundant_upstream_materialization() -> None:
     @asset(code_version="abc")
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     all_assets = [asset1, asset2]
     with instance_for_test() as instance:
@@ -440,10 +460,12 @@ def test_stale_status_dependency_partitions_count_over_threshold() -> None:
         return {key: randint(0, 100) for key in keys}
 
     @asset
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     @asset
-    def asset3(asset1): ...
+    def asset3(asset1):
+        ...
 
     all_assets = [asset1, asset2, asset3]
     with instance_for_test() as instance:
@@ -483,10 +505,12 @@ def test_stale_status_partitions_disabled_code_versions() -> None:
     partitions_def = StaticPartitionsDefinition(["foo"])
 
     @asset(code_version="1", partitions_def=partitions_def)
-    def asset1(): ...
+    def asset1():
+        ...
 
     @asset(code_version="1", partitions_def=partitions_def)
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     all_assets = [asset1, asset2]
     with instance_for_test() as instance:
@@ -497,7 +521,8 @@ def test_stale_status_partitions_disabled_code_versions() -> None:
         assert status_resolver.get_status(asset2.key, "foo") == StaleStatus.FRESH
 
         @asset(code_version="2", partitions_def=partitions_def)
-        def asset1(): ...
+        def asset1():
+            ...
 
         all_assets = [asset1, asset2]
         status_resolver = get_stale_status_resolver(instance, all_assets)
@@ -516,10 +541,12 @@ def test_stale_status_partitions_enabled() -> None:
         return Output(config.value, data_version=DataVersion(str(config.value)))
 
     @asset(partitions_def=partitions_def)
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     @asset
-    def asset3(asset1): ...
+    def asset3(asset1):
+        ...
 
     all_assets = [asset1, asset2, asset3]
     with instance_for_test() as instance:
@@ -576,7 +603,8 @@ def test_stale_status_many_to_one_partitions() -> None:
         return Output(1, data_version=DataVersion(str(config.value)))
 
     @asset(code_version="1")
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     @asset(partitions_def=partitions_def, code_version="1")
     def asset3(asset2):
@@ -796,13 +824,16 @@ def test_stale_status_root_causes_general() -> None:
         return DataVersion(str(x))
 
     @asset(code_version="1")
-    def asset1(source1): ...
+    def asset1(source1):
+        ...
 
     @asset(code_version="1")
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     @asset(code_version="1")
-    def asset3(asset2): ...
+    def asset3(asset2):
+        ...
 
     with instance_for_test() as instance:
         all_assets = [source1, asset1, asset2, asset3]
@@ -814,7 +845,8 @@ def test_stale_status_root_causes_general() -> None:
 
         # Simulate updating an asset with a new code version
         @asset(name="asset1", code_version="2")
-        def asset1_v2(source1): ...
+        def asset1_v2(source1):
+            ...
 
         all_assets = [source1, asset1_v2, asset2, asset3]
         status_resolver = get_stale_status_resolver(instance, all_assets)
@@ -851,7 +883,8 @@ def test_stale_status_root_causes_general() -> None:
 
         # Simulate updating an asset with a new code version
         @asset(name="asset3", code_version="2")
-        def asset3_v2(asset2): ...
+        def asset3_v2(asset2):
+            ...
 
         all_assets = [source1, asset1_v2, asset2, asset3_v2]
         status_resolver = get_stale_status_resolver(instance, all_assets)
@@ -872,13 +905,16 @@ def test_stale_status_root_causes_dedup() -> None:
         return Output(x, data_version=DataVersion(str(x)))
 
     @asset
-    def asset2(asset1): ...
+    def asset2(asset1):
+        ...
 
     @asset
-    def asset3(asset1): ...
+    def asset3(asset1):
+        ...
 
     @asset
-    def asset4(asset2, asset3): ...
+    def asset4(asset2, asset3):
+        ...
 
     with instance_for_test() as instance:
         all_assets = [asset1, asset2, asset3, asset4]
@@ -893,7 +929,8 @@ def test_stale_status_root_causes_dedup() -> None:
 
         # Test dedup from updated code version
         @asset(name="asset1", code_version="2")
-        def asset1_v2(): ...
+        def asset1_v2():
+            ...
 
         all_assets = [asset1_v2, asset2, asset3, asset4]
         status_resolver = get_stale_status_resolver(instance, all_assets)

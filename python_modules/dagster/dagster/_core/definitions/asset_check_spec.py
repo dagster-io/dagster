@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -27,7 +31,7 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-@experimental
+@experimental(emit_runtime_warning=False)
 @whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
 class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
@@ -44,6 +48,9 @@ class AssetCheckKey(NamedTuple):
             name=graphql_input["name"],
         )
 
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
+        return self._replace(asset_key=self.asset_key.with_prefix(prefix))
+
 
 @experimental
 class AssetCheckSpec(
@@ -56,7 +63,7 @@ class AssetCheckSpec(
         ],
     )
 ):
-    """Defines information about an check, except how to execute it.
+    """Defines information about an asset check, except how to execute it.
 
     AssetCheckSpec is often used as an argument to decorators that decorator a function that can
     execute multiple checks - e.g. `@asset`, and `@multi_asset`. It defines one of the checks that
@@ -92,3 +99,6 @@ class AssetCheckSpec(
     @property
     def key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.name)
+
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckSpec":
+        return self._replace(asset_key=self.asset_key.with_prefix(prefix))

@@ -30,7 +30,7 @@ type RowType =
 const UNGROUPED_NAME = 'UNGROUPED';
 const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-state';
 
-export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}) => {
+export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const repoKey = repoAddressAsHumanString(repoAddress);
   const {expandedKeys, onToggle} = useAssetGroupExpansionState(
@@ -117,7 +117,15 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
   );
 };
 
-const GroupNameRow: React.FC<{
+const GroupNameRow = ({
+  repoAddress,
+  groupName,
+  assetCount,
+  expanded,
+  height,
+  start,
+  onToggle,
+}: {
   repoAddress: RepoAddress;
   groupName: string;
   assetCount: number;
@@ -125,7 +133,7 @@ const GroupNameRow: React.FC<{
   height: number;
   start: number;
   onToggle: (groupName: string) => void;
-}> = ({repoAddress, groupName, assetCount, expanded, height, start, onToggle}) => {
+}) => {
   return (
     <ClickableRow
       $height={height}

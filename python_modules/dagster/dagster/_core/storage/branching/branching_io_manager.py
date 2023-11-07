@@ -1,6 +1,10 @@
 from typing import Any, Optional
 
 from dagster import InputContext, OutputContext
+from dagster._config.pythonic_config import (
+    ConfigurableIOManager,
+    ResourceDependency,
+)
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.event_api import EventRecordsFilter
@@ -31,7 +35,7 @@ def latest_materialization_log_entry(
     return event_records[0].event_log_entry if event_records else None
 
 
-class BranchingIOManager(IOManager):
+class BranchingIOManager(ConfigurableIOManager):
     """A branching I/O manager composes two I/O managers.
 
     1) The parent I/O manager, typically your production environment.
@@ -52,52 +56,52 @@ class BranchingIOManager(IOManager):
     in more flexible software layer over arbitrary storage systems.
     """
 
-    def __init__(
-        self,
-        *,
-        parent_io_manager: IOManager,
-        branch_io_manager: IOManager,
-        branch_name: str = "dev",
-        branch_metadata_key: str = "io_manager_branch",
-    ):
-        self.parent_io_manager = parent_io_manager
-        self.branch_io_manager = branch_io_manager
-        self.branch_name = branch_name
-        self.branch_metadata_key = branch_metadata_key
+    parent_io_manager: ResourceDependency[IOManager]
+    branch_io_manager: ResourceDependency[IOManager]
+
+    branch_name: str = "dev"
+    branch_metadata_key: str = "io_manager_branch"
 
     def load_input(self, context: InputContext) -> Any:
-        event_log_entry = latest_materialization_log_entry(
-            instance=context.instance,
-            asset_key=context.asset_key,
-            partition_key=context.partition_key if context.has_partition_key else None,
-        )
-        if (
-            event_log_entry
-            and event_log_entry.asset_materialization
-            and get_text_metadata_value(
-                event_log_entry.asset_materialization, self.branch_metadata_key
-            )
-            == self.branch_name
-        ):
-            context.log.info(
-                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'
-                f' "{self.branch_name}"'
-            )
+        if not context.has_asset_key:
+            # we are dealing with an op input
+            # just load it with the branch manager
             return self.branch_io_manager.load_input(context)
+        else:
+            # we are dealing with an asset input
+            event_log_entry = latest_materialization_log_entry(
+                instance=context.instance,
+                asset_key=context.asset_key,
+                partition_key=context.partition_key if context.has_partition_key else None,
+            )
+            if (
+                event_log_entry
+                and event_log_entry.asset_materialization
+                and get_text_metadata_value(
+                    event_log_entry.asset_materialization, self.branch_metadata_key
+                )
+                == self.branch_name
+            ):
+                context.log.info(
+                    f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'
+                    f' "{self.branch_name}"'
+                )
+                return self.branch_io_manager.load_input(context)
 
-        context.log.info(
-            f'Branching Manager Loading "{context.asset_key.to_user_string()}" from parent'
-        )
-        return self.parent_io_manager.load_input(context)
+            context.log.info(
+                f'Branching Manager Loading "{context.asset_key.to_user_string()}" from parent'
+            )
+            return self.parent_io_manager.load_input(context)
 
     def handle_output(self, context: OutputContext, obj: Any) -> None:
         # always write to the branch manager
         self.branch_io_manager.handle_output(context, obj)
 
-        # mark the asset materialization with the branch name
-        context.add_output_metadata({self.branch_metadata_key: self.branch_name})
-
-        context.log.info(
-            f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch'
-            f' "{self.branch_name}"'
-        )
+        if context.has_asset_key:
+            # we are dealing with an asset output (not an op output)
+            # mark the asset materialization with the branch name
+            context.add_output_metadata({self.branch_metadata_key: self.branch_name})
+            context.log.info(
+                f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch'
+                f' "{self.branch_name}"'
+            )

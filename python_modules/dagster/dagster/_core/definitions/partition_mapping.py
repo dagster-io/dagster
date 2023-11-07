@@ -202,7 +202,7 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
         last = upstream_partitions_def.get_last_partition_key(
-            current_time=None, dynamic_partitions_store=dynamic_partitions_store
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
 
         upstream_subset = upstream_partitions_def.empty_subset()
@@ -218,7 +218,15 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
+        last_upstream_partition = upstream_partitions_subset.partitions_def.get_last_partition_key(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+        if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
+            return downstream_partitions_def.subset_with_all_partitions(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+        else:
+            return downstream_partitions_def.empty_subset()
 
 
 @whitelist_for_serdes
@@ -287,7 +295,8 @@ class BaseMultiPartitionMapping(ABC):
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-    ) -> Sequence[DimensionDependency]: ...
+    ) -> Sequence[DimensionDependency]:
+        ...
 
     def get_partitions_def(
         self, partitions_def: PartitionsDefinition, dimension_name: Optional[str]
@@ -326,9 +335,9 @@ class BaseMultiPartitionMapping(ABC):
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
         # partition keys in b_partitions_def that are dependencies of that partition
-        dep_b_keys_by_a_dim_and_key: Dict[Optional[str], Dict[Optional[str], List[str]]] = (
-            defaultdict(lambda: defaultdict(list))
-        )
+        dep_b_keys_by_a_dim_and_key: Dict[
+            Optional[str], Dict[Optional[str], List[str]]
+        ] = defaultdict(lambda: defaultdict(list))
         required_but_nonexistent_upstream_partitions = set()
 
         b_dimension_partitions_def_by_name: Dict[Optional[str], PartitionsDefinition] = (
@@ -447,7 +456,9 @@ class BaseMultiPartitionMapping(ABC):
                     ]
                 ),
                 *[
-                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys()
+                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys(
+                        dynamic_partitions_store=dynamic_partitions_store, current_time=current_time
+                    )
                     for dim_name in unmapped_b_dim_names
                 ],
             ):

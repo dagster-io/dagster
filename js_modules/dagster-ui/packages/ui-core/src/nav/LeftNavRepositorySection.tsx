@@ -9,11 +9,15 @@ import {RepoAddress} from '../workspace/types';
 import {RepoNavItem} from './RepoNavItem';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
-const LoadedRepositorySection: React.FC<{
+const LoadedRepositorySection = ({
+  allRepos,
+  visibleRepos,
+  toggleVisible,
+}: {
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
   toggleVisible: (repoAddresses: RepoAddress[]) => void;
-}> = ({allRepos, visibleRepos, toggleVisible}) => {
+}) => {
   const listContent = () => {
     if (visibleRepos.length) {
       return (

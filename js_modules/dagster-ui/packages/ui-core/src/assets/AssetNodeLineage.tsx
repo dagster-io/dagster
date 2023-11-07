@@ -10,7 +10,7 @@ import {
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {GraphData, LiveData} from '../asset-graph/Utils';
+import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
@@ -18,22 +18,20 @@ import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetLineageScope, AssetViewParams} from './types';
 
-export const AssetNodeLineage: React.FC<{
+export const AssetNodeLineage = ({
+  params,
+  setParams,
+  assetKey,
+  assetGraphData,
+  graphQueryItems,
+  requestedDepth,
+}: {
   params: AssetViewParams;
   setParams: (params: AssetViewParams) => void;
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
-}> = ({
-  params,
-  setParams,
-  assetKey,
-  liveDataByNode,
-  assetGraphData,
-  graphQueryItems,
-  requestedDepth,
 }) => {
   const maxDistances = React.useMemo(
     () => calculateGraphDistances(graphQueryItems, assetKey),
@@ -76,7 +74,6 @@ export const AssetNodeLineage: React.FC<{
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
             intent="none"
-            liveDataForStale={liveDataByNode}
             scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
           />
         ) : (
@@ -109,11 +106,15 @@ const DepthHidesAssetsNotice = styled.div`
   z-index: 2;
 `;
 
-const LineageDepthControl: React.FC<{
+const LineageDepthControl = ({
+  value,
+  max,
+  onChange,
+}: {
   value: number;
   max: number;
   onChange: (v: number) => void;
-}> = ({value, max, onChange}) => {
+}) => {
   const [text, setText] = React.useState(`${value}`);
   React.useEffect(() => {
     setText(`${value}`);

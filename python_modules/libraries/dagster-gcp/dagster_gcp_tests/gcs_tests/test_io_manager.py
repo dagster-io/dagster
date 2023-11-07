@@ -247,10 +247,12 @@ def test_asset_io_manager(gcs_bucket):
 
 def test_nothing(gcs_bucket):
     @asset
-    def asset1() -> None: ...
+    def asset1() -> None:
+        ...
 
     @asset(deps=[asset1])
-    def asset2() -> None: ...
+    def asset2() -> None:
+        ...
 
     result = materialize(
         with_resources(
@@ -323,10 +325,12 @@ def test_asset_pythonic_io_manager(gcs_bucket):
 
 def test_nothing_pythonic_io_manager(gcs_bucket):
     @asset
-    def asset1() -> None: ...
+    def asset1() -> None:
+        ...
 
     @asset(deps=[asset1])
-    def asset2() -> None: ...
+    def asset2() -> None:
+        ...
 
     result = materialize(
         with_resources(

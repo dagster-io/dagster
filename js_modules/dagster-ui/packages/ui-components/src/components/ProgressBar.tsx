@@ -5,10 +5,11 @@ import styled from 'styled-components';
 
 import {Colors} from './Colors';
 
-export const ProgressBar: React.FC<ProgressBarProps & {fillColor?: string}> = ({
-  fillColor = Colors.Gray600,
-  ...rest
-}) => {
+interface Props extends ProgressBarProps {
+  fillColor?: string;
+}
+
+export const ProgressBar = ({fillColor = Colors.Gray600, ...rest}: Props) => {
   return (
     <StyledProgressBar
       {...rest}
