@@ -5,6 +5,7 @@ import re
 from abc import abstractmethod, abstractproperty
 from datetime import datetime
 from enum import Enum
+from functools import cached_property
 from typing import (
     AbstractSet,
     Any,
@@ -27,7 +28,6 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._utils.cached_method import cached_method
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -1669,8 +1669,7 @@ class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
             included_partition_keys=new_partitions,
         )
 
-    @property
-    @cached_method
+    @cached_property
     def included_time_windows(self) -> Sequence[TimeWindow]:
         result_time_windows, _ = self._add_partitions_to_time_windows(
             initial_windows=[],
@@ -1683,8 +1682,7 @@ class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
     def partitions_def(self) -> TimeWindowPartitionsDefinition:
         return self._partitions_def
 
-    @property
-    @cached_method
+    @cached_property
     def num_partitions(self) -> int:
         return len(self._included_partition_keys)
 
@@ -1769,36 +1767,21 @@ class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
             included_partition_keys=self._included_partition_keys,
         )
 
-    def resolve(self) -> "TimeWindowPartitionsSubset":
-        return TimeWindowPartitionsSubset(
-            partitions_def=self._partitions_def,
-            num_partitions=self.num_partitions,
-            included_time_windows=self.included_time_windows,
-        )
-
 
 class TimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
-        num_partitions: Optional[int] = None,
-        included_time_windows: Sequence[TimeWindow] = [],
+        num_partitions: Optional[int],
+        included_time_windows: Sequence[TimeWindow],
     ):
-        check.opt_int_param(num_partitions, "num_partitions")
         self._partitions_def = check.inst_param(
             partitions_def, "partitions_def", TimeWindowPartitionsDefinition
         )
-        self._num_partitions = (
-            num_partitions
-            if num_partitions
-            else self._num_partitions_from_time_windows(partitions_def, included_time_windows)
-        )
+        self._num_partitions = check.opt_int_param(num_partitions, "num_partitions")
         self._included_time_windows = check.sequence_param(
             included_time_windows, "included_time_windows", of_type=TimeWindow
         )
-
-    def get_included_time_windows(self) -> Sequence[TimeWindow]:
-        return self._included_time_windows
 
     @property
     def partitions_def(self) -> TimeWindowPartitionsDefinition:
@@ -1824,13 +1807,15 @@ class TimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         Args:
             dt_cron_schedule (str): A cron schedule that dt is on one of the ticks of.
         """
-        if self._included_time_windows is not None:
-            return self._included_time_windows[-1].end <= dt
+        return self._included_time_windows[-1].end <= dt
 
-        return False
-
-    @property
+    @cached_property
     def num_partitions(self) -> int:
+        if self._num_partitions is None:
+            return sum(
+                len(self._partitions_def.get_partition_keys_in_time_window(time_window))
+                for time_window in self.included_time_windows
+            )
         return self._num_partitions
 
     @property
@@ -1861,7 +1846,7 @@ class TimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
 
         return TimeWindowPartitionsSubset(
             self._partitions_def,
-            num_partitions=self._num_partitions + added_partitions,
+            num_partitions=self.num_partitions + added_partitions,
             included_time_windows=result_windows,
         )
 
