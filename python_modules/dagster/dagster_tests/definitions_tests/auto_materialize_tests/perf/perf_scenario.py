@@ -4,6 +4,7 @@ import tarfile
 import tempfile
 import warnings
 from contextlib import contextmanager
+from datetime import datetime
 from typing import List, NamedTuple, Optional, Sequence
 
 from dagster import (
@@ -57,6 +58,7 @@ class PerfScenario(NamedTuple):
     defs: Definitions
     activity_history: ActivityHistory
     max_execution_time_seconds: int
+    current_time: Optional[datetime] = None
 
     def save_instance_snapshot(self) -> None:
         """Executes the specified runs for the given asset graph, writing the resulting instance to

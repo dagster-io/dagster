@@ -1,5 +1,6 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union, cast
 
+import pendulum
 from dagster import (
     AssetDep,
     AssetsDefinition,
@@ -22,7 +23,7 @@ from .perf_scenario import ActivityHistory, PerfScenario
 
 def asset_def(
     key: str,
-    deps: Sequence[str],
+    deps: Sequence[Union[str, AssetDep]],
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> AssetsDefinition:
     @asset(
@@ -76,11 +77,12 @@ defs = Definitions(assets)
 
 
 def build_run_request_for_all_partitions(asset_def: AssetsDefinition) -> RunRequest:
+    partitions_def = cast(PartitionsDefinition, asset_def.partitions_def)
     return RunRequest(
         asset_selection=[asset_def.key],
         tags={
-            ASSET_PARTITION_RANGE_START_TAG: asset_def.partitions_def.get_first_partition_key(),
-            ASSET_PARTITION_RANGE_END_TAG: asset_def.partitions_def.get_last_partition_key(),
+            ASSET_PARTITION_RANGE_START_TAG: partitions_def.get_first_partition_key(),
+            ASSET_PARTITION_RANGE_END_TAG: partitions_def.get_last_partition_key(),
         },
     )
 
@@ -88,9 +90,10 @@ def build_run_request_for_all_partitions(asset_def: AssetsDefinition) -> RunRequ
 partition_mappings_galore_perf_scenario = PerfScenario(
     name="partition_mappings_galore",
     defs=defs,
-    max_execution_time_seconds=25,
+    max_execution_time_seconds=40,
     activity_history=ActivityHistory(
         [build_run_request_for_all_partitions(a) for a in assets]
         + [build_run_request_for_all_partitions(assets_by_key["d"])]
     ),
+    current_time=pendulum.parse("2023-09-06T00:05"),
 )

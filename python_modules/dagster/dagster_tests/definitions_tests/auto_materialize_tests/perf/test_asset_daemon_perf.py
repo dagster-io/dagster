@@ -98,6 +98,7 @@ def test_auto_materialize_perf(scenario: PerfScenario):
             observe_run_tags=None,
             respect_materialization_data_versions=True,
             logger=logging.getLogger("dagster.amp"),
+            evaluation_time=scenario.current_time,
         ).evaluate()
 
         end = time.time()
