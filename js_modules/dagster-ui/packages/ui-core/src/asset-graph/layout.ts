@@ -204,7 +204,7 @@ export const layoutAssetGraph = (
     }
     for (const group of Object.values(groups)) {
       if (group.expanded) {
-        group.bounds = padBounds(group.bounds, {x: 15, top: 85, bottom: 10});
+        group.bounds = padBounds(group.bounds, {x: 15, top: 65, bottom: -15});
       }
     }
   }

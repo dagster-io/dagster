@@ -145,7 +145,7 @@ const AssetGraphExplorerWithData = ({
   }, [assetGraphData]);
 
   const [expandedGroups, setExpandedGroups] = useQueryPersistedState<string[]>({
-    encode: (arr) => ({expanded: arr.join(',')}),
+    encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
     decode: (qs) => (qs.expanded || '').split(',').filter(Boolean),
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');
