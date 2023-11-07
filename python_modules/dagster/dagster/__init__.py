@@ -131,6 +131,7 @@ from dagster._core.definitions.auto_materialize_policy import (
 )
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule as AutoMaterializeRule,
+    LatestMaterializationHasRunTag as LatestMaterializationHasRunTag,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
