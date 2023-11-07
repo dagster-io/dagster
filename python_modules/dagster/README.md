@@ -70,7 +70,7 @@ Dagster is built to be used at every stage of the data development lifecycle - l
 
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
-Dagster is available on PyPI and officially supports Python 3.8+.
+Dagster is available on PyPI and officially supports Python 3.8, Python 3.9, Python 3.10, and Python 3.11.
 
 ```bash
 pip install dagster dagster-webserver
