@@ -369,6 +369,7 @@
               },
               {
                 "title": "Deploying with Helm",
+                "path": "/deployment/guides/kubernetes",
                 "children": [
                   {
                     "title": "Helm",
@@ -380,11 +381,11 @@
                   },
                   {
                     "title": "Customzing deployments",
-                    "path": "/deployment/guides/kubernetes"
+                    "path": "/deployment/guides/kubernetes/customizing-your-deployment"
                   },
                   {
                     "title": "Migrating instances while upgrading",
-                    "path": "/deployment/guides/kubernetes"
+                    "path": "/deployment/guides/kubernetes/how-to-migrate-your-instance"
                   }
                 ]
               },
