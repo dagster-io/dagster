@@ -27,7 +27,7 @@ class CroniterShim(_croniter):
 def _exact_match(
     cron_expression: str,
     schedule_type: ScheduleType,
-    minute: Optional[int],
+    minutes: Optional[Sequence[int]],
     hour: Optional[int],
     day: Optional[int],
     day_of_week: Optional[int],
@@ -45,7 +45,8 @@ def _exact_match(
     return (
         dt.timestamp()
         == _find_schedule_time(
-            minute,
+            cron_expression,
+            minutes,
             hour,
             day,
             day_of_week,
@@ -133,17 +134,20 @@ MINUTES_PER_HOUR = 60
 
 
 def _find_hourly_schedule_time(
-    minute: int,
+    minutes: Sequence[int],
     pendulum_date: PendulumDateTime,
     ascending: bool,
     already_on_boundary: bool,
 ) -> PendulumDateTime:
     if ascending:
         # short-circuit if minutes and seconds are already correct
-        if already_on_boundary or (
-            pendulum_date.minute == minute
-            and pendulum_date.second == 0
-            and pendulum_date.microsecond == 0
+        if len(minutes) == 1 and (
+            already_on_boundary
+            or (
+                pendulum_date.minute == minutes[0]
+                and pendulum_date.second == 0
+                and pendulum_date.microsecond == 0
+            )
         ):
             return pendulum_date.add(hours=1)
 
@@ -155,21 +159,33 @@ def _find_hourly_schedule_time(
             + (SECONDS_PER_MINUTE - new_timestamp % SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
         )
 
-        # advance minutes to correct place
         current_minute = (new_timestamp // SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
 
-        new_timestamp = new_timestamp + SECONDS_PER_MINUTE * (
-            (minute - current_minute) % MINUTES_PER_HOUR
-        )
+        final_timestamp = None
 
-        # move forward an hour if we haven't moved forwards yet
-        if new_timestamp <= pendulum_date.timestamp():
-            new_timestamp = new_timestamp + SECONDS_PER_MINUTE * MINUTES_PER_HOUR
+        for minute in minutes:
+            new_timestamp_cand = new_timestamp + SECONDS_PER_MINUTE * (
+                (minute - current_minute) % MINUTES_PER_HOUR
+            )
+
+            # move forward an hour if we haven't moved forwards yet
+            if new_timestamp_cand <= pendulum_date.timestamp():
+                new_timestamp_cand = new_timestamp_cand + SECONDS_PER_MINUTE * MINUTES_PER_HOUR
+
+            final_timestamp = (
+                new_timestamp_cand
+                if not final_timestamp
+                else min(final_timestamp, new_timestamp_cand)
+            )
+
     else:
-        if already_on_boundary or (
-            pendulum_date.minute == minute
-            and pendulum_date.second == 0
-            and pendulum_date.microsecond == 0
+        if len(minutes) == 1 and (
+            already_on_boundary
+            or (
+                pendulum_date.minute == minutes[0]
+                and pendulum_date.second == 0
+                and pendulum_date.microsecond == 0
+            )
         ):
             return pendulum_date.subtract(hours=1)
 
@@ -181,15 +197,24 @@ def _find_hourly_schedule_time(
         # move minutes back to correct place
         current_minute = (new_timestamp // SECONDS_PER_MINUTE) % SECONDS_PER_MINUTE
 
-        new_timestamp = new_timestamp - SECONDS_PER_MINUTE * (
-            (current_minute - minute) % MINUTES_PER_HOUR
-        )
+        final_timestamp = None
 
-        # move back an hour if we haven't moved backwards yet
-        if new_timestamp >= pendulum_date.timestamp():
-            new_timestamp = new_timestamp - SECONDS_PER_MINUTE * MINUTES_PER_HOUR
+        for minute in minutes:
+            new_timestamp_cand = new_timestamp - SECONDS_PER_MINUTE * (
+                (current_minute - minute) % MINUTES_PER_HOUR
+            )
 
-    return pendulum.from_timestamp(new_timestamp, tz=pendulum_date.timezone_name)
+            # move back an hour if we haven't moved backwards yet
+            if new_timestamp_cand >= pendulum_date.timestamp():
+                new_timestamp_cand = new_timestamp_cand - SECONDS_PER_MINUTE * MINUTES_PER_HOUR
+
+            final_timestamp = (
+                new_timestamp_cand
+                if not final_timestamp
+                else max(final_timestamp, new_timestamp_cand)
+            )
+
+    return pendulum.from_timestamp(final_timestamp, tz=pendulum_date.timezone_name)
 
 
 def _find_daily_schedule_time(
@@ -333,7 +358,8 @@ def _find_monthly_schedule_time(
 
 
 def _find_schedule_time(
-    minute: Optional[int],
+    cron_string: str,
+    minutes: Optional[Sequence[int]],
     hour: Optional[int],
     day_of_month: Optional[int],
     day_of_week: Optional[int],
@@ -346,19 +372,23 @@ def _find_schedule_time(
 ) -> PendulumDateTime:
     if schedule_type == ScheduleType.HOURLY:
         return _find_hourly_schedule_time(
-            check.not_none(minute), pendulum_date, ascending, already_on_boundary
+            check.not_none(minutes), pendulum_date, ascending, already_on_boundary
         )
     elif schedule_type == ScheduleType.DAILY:
+        minutes = check.not_none(minutes)
+        check.invariant(len(minutes) == 1)
         return _find_daily_schedule_time(
-            check.not_none(minute),
+            minutes[0],
             check.not_none(hour),
             pendulum_date,
             ascending,
             already_on_boundary,
         )
     elif schedule_type == ScheduleType.WEEKLY:
+        minutes = check.not_none(minutes)
+        check.invariant(len(minutes) == 1)
         return _find_weekly_schedule_time(
-            check.not_none(minute),
+            minutes[0],
             check.not_none(hour),
             check.not_none(day_of_week),
             pendulum_date,
@@ -366,8 +396,10 @@ def _find_schedule_time(
             already_on_boundary,
         )
     elif schedule_type == ScheduleType.MONTHLY:
+        minutes = check.not_none(minutes)
+        check.invariant(len(minutes) == 1)
         return _find_monthly_schedule_time(
-            check.not_none(minute),
+            minutes[0],
             check.not_none(hour),
             check.not_none(day_of_month),
             pendulum_date,
@@ -622,10 +654,14 @@ def cron_string_iterator(
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
+    all_numeric_minutes = len(cron_parts[0]) > 0 and all(
+        cron_part != "*" for cron_part in cron_parts[0]
+    )
+
     known_schedule_type: Optional[ScheduleType] = None
 
     expected_hour = None
-    expected_minute = None
+    expected_minutes = None
     expected_day = None
     expected_day_of_week = None
 
@@ -642,14 +678,14 @@ def cron_string_iterator(
             known_schedule_type = ScheduleType.WEEKLY
         elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
             known_schedule_type = ScheduleType.DAILY
-        elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
+        elif all_numeric_minutes and all(is_wildcard[1:]):  # hourly
             known_schedule_type = ScheduleType.HOURLY
 
     if is_numeric[1]:
         expected_hour = int(cron_parts[1][0])
 
-    if is_numeric[0]:
-        expected_minute = int(cron_parts[0][0])
+    if all_numeric_minutes:
+        expected_minutes = [int(cron_part) for cron_part in cron_parts[0]]
 
     if is_numeric[2]:
         expected_day = int(cron_parts[2][0])
@@ -663,7 +699,7 @@ def cron_string_iterator(
         if start_offset == 0 and _exact_match(
             cron_string,
             known_schedule_type,
-            expected_minute,
+            expected_minutes,
             expected_hour,
             expected_day,
             expected_day_of_week,
@@ -676,7 +712,8 @@ def cron_string_iterator(
             yield start_datetime
         else:
             next_date = _find_schedule_time(
-                expected_minute,
+                cron_string,
+                expected_minutes,
                 expected_hour,
                 expected_day,
                 expected_day_of_week,
@@ -688,7 +725,8 @@ def cron_string_iterator(
             check.invariant(start_offset <= 0)
             for _ in range(-start_offset):
                 next_date = _find_schedule_time(
-                    expected_minute,
+                    cron_string,
+                    expected_minutes,
                     expected_hour,
                     expected_day,
                     expected_day_of_week,
@@ -700,7 +738,8 @@ def cron_string_iterator(
 
         while True:
             next_date = _find_schedule_time(
-                expected_minute,
+                cron_string,
+                expected_minutes,
                 expected_hour,
                 expected_day,
                 expected_day_of_week,
