@@ -214,7 +214,7 @@ const RecursiveNavigation = ({
   return (
     <div
       className={cx({
-        'mt-0 ml-1 space-y-0': lvl >= 2,
+        'mt-0 space-y-0': lvl >= 2,
       })}
       role="group"
       aria-labelledby={`${lvl + 1}-level-nav`}

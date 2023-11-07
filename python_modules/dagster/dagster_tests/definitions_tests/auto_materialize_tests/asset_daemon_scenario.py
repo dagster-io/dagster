@@ -27,11 +27,14 @@ from dagster import (
     AssetSpec,
     AutoMaterializePolicy,
     DagsterInstance,
+    DagsterRunStatus,
     Definitions,
+    MultiPartitionKey,
     RunRequest,
+    RunsFilter,
     asset,
+    materialize,
 )
-from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
 )
@@ -46,7 +49,6 @@ from dagster._core.definitions.auto_materialize_rule import (
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -91,6 +93,11 @@ def day_partition_key(time: datetime.datetime, delta: int = 0) -> str:
 def hour_partition_key(time: datetime.datetime, delta: int = 0) -> str:
     """Returns the partition key of a day partition delta days from the initial time."""
     return (time + datetime.timedelta(hours=delta - 1)).strftime("%Y-%m-%d-%H:00")
+
+
+def multi_partition_key(**kwargs) -> MultiPartitionKey:
+    """Returns a MultiPartitionKey based off of the given kwargs."""
+    return MultiPartitionKey(kwargs)
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
@@ -166,7 +173,7 @@ class AssetDaemonScenarioState(NamedTuple):
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
     current_time: datetime.datetime = pendulum.now()
     run_requests: Sequence[RunRequest] = []
-    cursor: AssetDaemonCursor = AssetDaemonCursor.empty()
+    serialized_cursor: str = AssetDaemonCursor.empty().serialize()
     evaluations: Sequence[AutoMaterializeAssetEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
     # this is set by the scenario runner
@@ -308,7 +315,7 @@ class AssetDaemonScenarioState(NamedTuple):
             instance=self.instance,
             materialize_run_tags={},
             observe_run_tags={},
-            cursor=self.cursor,
+            cursor=AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph),
             auto_observe=True,
             respect_materialization_data_versions=False,
             logger=self.logger,
@@ -378,7 +385,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
         return self._replace(
             run_requests=new_run_requests,
-            cursor=new_cursor,
+            serialized_cursor=new_cursor.serialize(),
             evaluations=new_evaluations,
         )
 

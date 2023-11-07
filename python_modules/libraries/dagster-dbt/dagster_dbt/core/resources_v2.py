@@ -799,17 +799,16 @@ class DbtCliResource(ConfigurableResource):
                 def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
                     dbt_cli_invocation = dbt.cli(["run"], context=context)
 
-                    for dbt_event in dbt_cli_invocation.stream_raw_events():
-                        for dagster_event in dbt_event.to_default_asset_events(manifest=dbt_cli_invocation.manifest):
-                            if isinstance(dagster_event, Output):
-                                context.add_output_metadata(
-                                    metadata={
-                                        "my_custom_metadata": "my_custom_metadata_value",
-                                    },
-                                    output_name=dagster_event.output_name,
-                                )
+                    for dagster_event in dbt_cli_invocation.stream():
+                        if isinstance(dagster_event, Output):
+                            context.add_output_metadata(
+                                metadata={
+                                    "my_custom_metadata": "my_custom_metadata_value",
+                                },
+                                output_name=dagster_event.output_name,
+                            )
 
-                            yield dagster_event
+                        yield dagster_event
 
             Suppressing exceptions from a dbt CLI command when a non-zero exit code is returned:
 
