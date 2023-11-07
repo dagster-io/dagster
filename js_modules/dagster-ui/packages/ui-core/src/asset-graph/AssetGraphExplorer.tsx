@@ -331,7 +331,7 @@ const AssetGraphExplorerWithData = ({
   );
 
   const allowGroupsOnlyZoomLevel =
-    flagDAGSidebar || !!(layout && Object.keys(layout.groups).length);
+    !flagDAGSidebar && !!(layout && Object.keys(layout.groups).length);
 
   const [showSidebar, setShowSidebar] = React.useState(true);
 
@@ -357,7 +357,7 @@ const AssetGraphExplorerWithData = ({
               interactor={SVGViewport.Interactors.PanAndZoom}
               graphWidth={layout.width}
               graphHeight={layout.height}
-              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
+              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel || flagDAGSidebar}
               onClick={onClickBackground}
               onArrowKeyDown={onArrowKeyDown}
               onDoubleClick={(e) => {
@@ -406,9 +406,7 @@ const AssetGraphExplorerWithData = ({
                     }
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
                     baseColor={
-                      flagDAGSidebar
-                        ? Colors.KeylineGray
-                        : allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
+                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
                         ? Colors.Gray400
                         : Colors.KeylineGray
                     }

@@ -239,9 +239,9 @@ export const AssetNodeMinimal = ({
             $background={background}
             $border={border}
           >
-            <div style={{top: '50%', position: 'absolute', transform: 'translate(8px, -16px)'}}>
+            <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-            </div>
+            </AssetNodeSpinnerContainer>
             <MinimalName style={{fontSize: 30}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 14})}
             </MinimalName>
@@ -354,6 +354,12 @@ const AssetName = styled.div<{$isSource: boolean}>`
   background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
+`;
+
+const AssetNodeSpinnerContainer = styled.div`
+  top: 50%;
+  position: absolute;
+  transform: translate(8px, -16px);
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`

@@ -58,7 +58,7 @@ export const CollapsedGroupNode = ({
       }}
     >
       <CollapsedGroupNodeBox $minimal={minimal}>
-        <Box padding={{vertical: 8, left: 12, right: 8}} flex={{direction: 'row'}}>
+        <Box padding={{vertical: 8, left: 12, right: 8}} flex={{}}>
           <GroupNodeNameAndRepo group={group} minimal={minimal} />
           <Box padding={{vertical: 4}}>
             <Icon name="unfold_more" />

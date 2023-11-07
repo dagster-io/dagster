@@ -30,20 +30,22 @@ export const ExpandedGroupNode = ({
           </Box>
         )}
       </GroupNodeHeaderBox>
-      <GroupOutline
-        $minimal={minimal}
-        style={{inset: 0, top: 60, position: 'absolute', background: Colors.White}}
-      />
+      <GroupOutline $minimal={minimal} />
     </div>
   );
 };
 
 const GroupOutline = styled.div<{$minimal: boolean}>`
+  inset: 0;
+  top: 60px;
+  position: absolute;
+  background: ${Colors.White};
   width: 100%;
   border-radius: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   pointer-events: none;
+
   border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
 `;
 
