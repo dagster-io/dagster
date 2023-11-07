@@ -462,7 +462,9 @@ class _Asset:
             partitions_def=self.partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=wrapped_resource_defs,
-            group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
+            group_names_by_key=(
+                {out_asset_key: self.group_name} if self.group_name is not None else None
+            ),
             freshness_policies_by_key=(
                 {out_asset_key: self.freshness_policy} if self.freshness_policy else None
             ),

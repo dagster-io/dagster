@@ -463,7 +463,9 @@ def assets_with_attributes(
         assets_defs = [
             asset.with_attributes(
                 group_names_by_key=(
-                    {asset_key: group_name for asset_key in asset.keys} if group_name else None
+                    {asset_key: group_name for asset_key in asset.keys}
+                    if group_name is not None
+                    else None
                 ),
                 freshness_policy=freshness_policy,
                 auto_materialize_policy=auto_materialize_policy,
