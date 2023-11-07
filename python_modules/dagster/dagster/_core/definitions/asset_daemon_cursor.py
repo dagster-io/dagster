@@ -59,6 +59,7 @@ class AssetDaemonCursor(NamedTuple):
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
     latest_evaluation_by_asset_key: Mapping[AssetKey, AutoMaterializeAssetEvaluation]
+    latest_evaluation_timestamp: Optional[float]
 
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
         return asset_key in self.handled_root_asset_keys
@@ -93,6 +94,7 @@ class AssetDaemonCursor(NamedTuple):
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         observe_request_timestamp: float,
         evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        evaluation_time: datetime.datetime,
     ) -> "AssetDaemonCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
@@ -151,7 +153,10 @@ class AssetDaemonCursor(NamedTuple):
             )
 
         latest_evaluation_by_asset_key = {
-            evaluation.asset_key: evaluation for evaluation in evaluations
+            evaluation.asset_key: evaluation
+            for evaluation in evaluations
+            # don't bother storing empty evaluations on the cursor
+            if not evaluation.is_empty
         }
 
         return AssetDaemonCursor(
@@ -161,6 +166,7 @@ class AssetDaemonCursor(NamedTuple):
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
             latest_evaluation_by_asset_key=latest_evaluation_by_asset_key,
+            latest_evaluation_timestamp=evaluation_time.timestamp(),
         )
 
     @classmethod
@@ -172,6 +178,7 @@ class AssetDaemonCursor(NamedTuple):
             evaluation_id=0,
             last_observe_request_timestamp_by_asset_key={},
             latest_evaluation_by_asset_key={},
+            latest_evaluation_timestamp=None,
         )
 
     @classmethod
@@ -189,6 +196,7 @@ class AssetDaemonCursor(NamedTuple):
             evaluation_id = data[3] if len(data) == 4 else 0
             serialized_last_observe_request_timestamp_by_asset_key = {}
             serialized_latest_evaluation_by_asset_key = {}
+            latest_evaluation_timestamp = 0
         else:
             latest_storage_id = data["latest_storage_id"]
             serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
@@ -202,6 +210,7 @@ class AssetDaemonCursor(NamedTuple):
             serialized_latest_evaluation_by_asset_key = data.get(
                 "latest_evaluation_by_asset_key", {}
             )
+            latest_evaluation_timestamp = data.get("latest_evaluation_timestamp", 0)
 
         handled_root_partitions_by_asset_key = {}
         for (
@@ -256,6 +265,7 @@ class AssetDaemonCursor(NamedTuple):
                 for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
             },
             latest_evaluation_by_asset_key=latest_evaluation_by_asset_key,
+            latest_evaluation_timestamp=latest_evaluation_timestamp,
         )
 
     @classmethod
@@ -290,6 +300,7 @@ class AssetDaemonCursor(NamedTuple):
                     key.to_user_string(): serialize_value(evaluation)
                     for key, evaluation in self.latest_evaluation_by_asset_key.items()
                 },
+                "latest_evaluation_timestamp": self.latest_evaluation_timestamp,
             }
         )
         return serialized

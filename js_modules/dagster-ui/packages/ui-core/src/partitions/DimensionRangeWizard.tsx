@@ -26,16 +26,7 @@ import {CreatePartitionDialog} from './CreatePartitionDialog';
 import {DimensionRangeInput} from './DimensionRangeInput';
 import {PartitionStatusHealthSource, PartitionStatus} from './PartitionStatus';
 
-export const DimensionRangeWizard: React.FC<{
-  selected: string[];
-  setSelected: (selected: string[]) => void;
-  partitionKeys: string[];
-  health: PartitionStatusHealthSource;
-  dimensionType: PartitionDefinitionType;
-  partitionDefinitionName?: string | null;
-  repoAddress?: RepoAddress;
-  refetch?: () => Promise<void>;
-}> = ({
+export const DimensionRangeWizard = ({
   selected,
   setSelected,
   partitionKeys,
@@ -44,6 +35,15 @@ export const DimensionRangeWizard: React.FC<{
   partitionDefinitionName,
   repoAddress,
   refetch,
+}: {
+  selected: string[];
+  setSelected: (selected: string[]) => void;
+  partitionKeys: string[];
+  health: PartitionStatusHealthSource;
+  dimensionType: PartitionDefinitionType;
+  partitionDefinitionName?: string | null;
+  repoAddress?: RepoAddress;
+  refetch?: () => Promise<void>;
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
   const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
@@ -126,20 +126,20 @@ export const DimensionRangeWizard: React.FC<{
   );
 };
 
-const OrdinalPartitionSelector: React.FC<{
-  allPartitions: string[];
-  selectedPartitions: string[];
-  setSelectedPartitions: (tags: string[]) => void;
-  health: PartitionStatusHealthSource;
-  setShowCreatePartition: (show: boolean) => void;
-  isDynamic: boolean;
-}> = ({
+const OrdinalPartitionSelector = ({
   allPartitions,
   selectedPartitions,
   setSelectedPartitions,
   setShowCreatePartition,
   isDynamic,
   health,
+}: {
+  allPartitions: string[];
+  selectedPartitions: string[];
+  setSelectedPartitions: (tags: string[]) => void;
+  health: PartitionStatusHealthSource;
+  setShowCreatePartition: (show: boolean) => void;
+  isDynamic: boolean;
 }) => {
   const dotForPartitionKey = React.useCallback(
     (partitionKey: string) => {

@@ -22,7 +22,7 @@ type Props = {
   rows: AssetCheckTableFragment[];
 };
 
-export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetNode, rows}: Props) => {
+export const VirtualizedAssetCheckTable = ({assetNode, rows}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 
@@ -87,7 +87,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <div>
-            <AssetCheckStatusTag execution={row.executionForLatestMaterialization} />
+            <AssetCheckStatusTag execution={execution} />
           </div>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>

@@ -25,7 +25,7 @@ interface Props {
   onSetFilter: (level: LogLevel, enabled: boolean) => void;
 }
 
-export const LogFilterSelect: React.FC<Props> = ({options, onSetFilter}) => {
+export const LogFilterSelect = ({options, onSetFilter}: Props) => {
   const [showMenu, setShowMenu] = React.useState(false);
 
   const levels = Object.keys(options);

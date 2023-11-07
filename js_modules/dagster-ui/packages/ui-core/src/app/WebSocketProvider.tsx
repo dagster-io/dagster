@@ -43,7 +43,7 @@ interface Props {
   websocketClient: SubscriptionClient;
 }
 
-export const WebSocketProvider: React.FC<Props> = (props) => {
+export const WebSocketProvider = (props: Props) => {
   const {children, websocketClient} = props;
   const [status, setStatus] = React.useState(websocketClient.status);
   const {flagDisableWebsockets: disabled} = useFeatureFlags();
@@ -133,7 +133,7 @@ const Circle = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.6);
 `;
 
-export const WebSocketStatus: React.FC = (props) => (
+export const WebSocketStatus = (props: React.ComponentProps<typeof Circle>) => (
   <WebSocketContext.Consumer>
     {({status}) =>
       ({

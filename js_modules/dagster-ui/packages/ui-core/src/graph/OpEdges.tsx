@@ -104,12 +104,17 @@ export const OpEdges = React.memo(
 
 OpEdges.displayName = 'OpEdges';
 
-const DynamicMarker: React.FC<{
+const DynamicMarker = ({
+  x,
+  y,
+  direction,
+  color,
+}: {
   x: number;
   y: number;
   direction: 'output' | 'collect';
   color: string;
-}> = ({x, y, direction, color}) => (
+}) => (
   <g
     fill={color}
     transform={`translate(${x - 35}, ${y})${

@@ -4,21 +4,23 @@ import React from 'react';
 import {buildSVGPath} from './Utils';
 import {AssetLayoutEdge} from './layout';
 
-export const AssetEdges: React.FC<{
+interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
   selected: string[] | null;
   highlighted: string | null;
   strokeWidth?: number;
   baseColor?: string;
   viewportRect: {top: number; left: number; right: number; bottom: number};
-}> = ({
+}
+
+export const AssetEdges = ({
   edges,
   selected,
   highlighted,
   strokeWidth = 4,
   baseColor = Colors.KeylineGray,
   viewportRect,
-}) => {
+}: AssetEdgesProps) => {
   // Note: we render the highlighted edges twice, but it's so that the first item with
   // all the edges in it can remain memoized.
 
@@ -52,12 +54,14 @@ export const AssetEdges: React.FC<{
   );
 };
 
-const AssetEdgeSet: React.FC<{
+interface AssetEdgeSetProps {
   edges: AssetLayoutEdge[];
   color: string;
   strokeWidth: number;
   viewportRect: {top: number; left: number; right: number; bottom: number};
-}> = React.memo(({edges, color, strokeWidth}) => (
+}
+
+const AssetEdgeSet = React.memo(({edges, color, strokeWidth}: AssetEdgeSetProps) => (
   <>
     <defs>
       <marker

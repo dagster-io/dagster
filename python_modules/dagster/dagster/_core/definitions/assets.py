@@ -619,7 +619,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             "Cannot use both group_name and group_names_by_output_name",
         )
 
-        if group_name:
+        if group_name is not None:
             group_names_by_key = {
                 asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()
             }

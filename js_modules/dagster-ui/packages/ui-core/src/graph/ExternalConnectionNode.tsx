@@ -21,7 +21,7 @@ interface ExternalConnectionNodeProps {
   onDoubleClickLabel: () => void;
 }
 
-export const ExternalConnectionNode: React.FC<ExternalConnectionNodeProps> = ({
+export const ExternalConnectionNode = ({
   layout,
   target,
   edges,
@@ -31,7 +31,7 @@ export const ExternalConnectionNode: React.FC<ExternalConnectionNodeProps> = ({
   highlightedEdges,
   onHighlightEdges,
   onDoubleClickLabel,
-}) => {
+}: ExternalConnectionNodeProps) => {
   const textProps = {width: 0, size: minified ? 24 : 12, text: label};
   const textSize = SVGMonospaceText.intrinsicSizeForProps(textProps);
   const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));

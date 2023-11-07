@@ -22,3 +22,5 @@ Dagster allows you to define and execute checks on your software-defined assets.
 .. autofunction:: load_asset_checks_from_package_module
 
 .. autofunction:: load_asset_checks_from_package_name
+
+.. autoclass:: AssetChecksDefinition

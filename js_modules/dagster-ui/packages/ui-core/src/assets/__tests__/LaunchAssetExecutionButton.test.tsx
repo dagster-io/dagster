@@ -17,14 +17,10 @@ import {
 import {
   ASSET_DAILY,
   ASSET_DAILY_PARTITION_KEYS,
+  ASSET_DAILY_PARTITION_KEYS_MISSING,
   ASSET_WEEKLY,
   ASSET_WEEKLY_ROOT,
-  buildConfigPartitionSelectionLatestPartitionMock,
-  buildExpectedLaunchBackfillMutation,
-  buildExpectedLaunchSingleRunMutation,
-  buildLaunchAssetLoaderMock,
   LaunchAssetCheckUpstreamWeeklyRootMock,
-  buildLaunchAssetWarningsMock,
   LaunchAssetLoaderResourceJob7Mock,
   LaunchAssetLoaderResourceJob8Mock,
   LaunchAssetLoaderResourceMyAssetJobMock,
@@ -32,8 +28,13 @@ import {
   UNPARTITIONED_ASSET,
   UNPARTITIONED_ASSET_OTHER_REPO,
   UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
-  UNPARTITIONED_SOURCE_ASSET,
   UNPARTITIONED_NON_EXECUTABLE_ASSET,
+  UNPARTITIONED_SOURCE_ASSET,
+  buildConfigPartitionSelectionLatestPartitionMock,
+  buildExpectedLaunchBackfillMutation,
+  buildExpectedLaunchSingleRunMutation,
+  buildLaunchAssetLoaderMock,
+  buildLaunchAssetWarningsMock,
 } from '../__fixtures__/LaunchAssetExecutionButton.fixtures';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -272,16 +273,34 @@ describe('LaunchAssetExecutionButton', () => {
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
 
-      const launchButton = await screen.findByTestId('launch-button');
+      // verify that the executed mutation is correct
+      await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
+    });
 
-      // verify that the missing only checkbox updates the number of runs
-      expect(launchButton.textContent).toEqual('Launch 1148-run backfill');
-      await userEvent.click(screen.getByTestId('missing-only-checkbox'));
-      expect(launchButton.textContent).toEqual('Launch 1046-run backfill');
+    it('should launch backfills with only missing partitions if requested', async () => {
+      const launchMock = buildExpectedLaunchBackfillMutation({
+        selector: {
+          partitionSetName: 'my_asset_job_partition_set',
+          repositorySelector: {repositoryLocationName: 'test.py', repositoryName: 'repo'},
+        },
+        assetSelection: [{path: ['asset_daily']}],
+        partitionNames: ASSET_DAILY_PARTITION_KEYS_MISSING,
+        fromFailure: false,
+        tags: [],
+      });
+      renderButton({
+        scope: {all: [ASSET_DAILY]},
+        preferredJobName: 'my_asset_job',
+        launchMock,
+      });
+      await clickMaterializeButton();
+      await screen.findByTestId('choose-partitions-dialog');
+
+      // verify that checking "missing only" triggers the mutation with fewer partitions
       await userEvent.click(screen.getByTestId('missing-only-checkbox'));
 
       // verify that the executed mutation is correct
-      await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
+      await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
     });
 
     it('should launch single runs via the hidden job if no job is in context', async () => {
@@ -342,7 +361,7 @@ describe('LaunchAssetExecutionButton', () => {
         const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
         await waitFor(async () => expect(rangesAsTags).toBeEnabled());
 
-        await expectLaunchExecutesMutationAndCloses('Launch 1148-run backfill', launchMock);
+        await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
       });
 
       it('should launch a single run if you choose to pass the partition range using tags', async () => {
@@ -440,6 +459,30 @@ describe('LaunchAssetExecutionButton', () => {
       expect(screen.queryByTestId('ranges-as-tags-true-radio')).toBeNull();
 
       await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchMutationMock);
+    });
+
+    it('should offer a preview showing the exact ranges to be launched', async () => {
+      const LaunchMutationMock = buildExpectedLaunchBackfillMutation({
+        selector: undefined,
+        assetSelection: [{path: ['asset_daily']}, {path: ['asset_weekly']}],
+        partitionNames: ASSET_DAILY_PARTITION_KEYS,
+        fromFailure: false,
+        tags: [],
+      });
+
+      renderButton({
+        scope: {all: [ASSET_DAILY, ASSET_WEEKLY]},
+        launchMock: LaunchMutationMock,
+      });
+
+      await clickMaterializeButton();
+
+      const preview = await screen.findByTestId('backfill-preview-button');
+      await preview.click();
+
+      // Expect the modal to be displayed. We have separate test coverage for
+      // for the content of this modal
+      await screen.findByTestId('backfill-preview-modal-content');
     });
 
     it('should offer to materialize all partitions if roots have different partition defintions ("pureAll" case)', async () => {

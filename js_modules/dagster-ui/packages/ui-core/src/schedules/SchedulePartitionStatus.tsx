@@ -42,10 +42,13 @@ const calculateDisplayStatus = (partition: SchedulePartitionStatusResultFragment
   }
 };
 
-export const SchedulePartitionStatus: React.FC<{
+interface Props {
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
-}> = React.memo(({repoAddress, schedule}) => {
+}
+
+export const SchedulePartitionStatus = React.memo((props: Props) => {
+  const {repoAddress, schedule} = props;
   const repo = useRepository(repoAddress);
   const {name: scheduleName, partitionSet, pipelineName} = schedule;
 
@@ -115,10 +118,13 @@ export const SchedulePartitionStatus: React.FC<{
   );
 });
 
-const RetrievedSchedulePartitionStatus: React.FC<{
+const RetrievedSchedulePartitionStatus = ({
+  schedule,
+  partitionURL,
+}: {
   schedule: SchedulePartitionStatusFragment;
   partitionURL: string;
-}> = ({schedule, partitionURL}) => {
+}) => {
   const {partitionSet} = schedule;
 
   if (!partitionSet || partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses') {

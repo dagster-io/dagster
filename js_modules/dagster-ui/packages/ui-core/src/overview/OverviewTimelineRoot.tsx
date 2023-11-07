@@ -29,8 +29,8 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
 };
 
 type Props = {
-  Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
-  TabButton: React.FC<{selected: 'timeline' | 'assets'}>;
+  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();

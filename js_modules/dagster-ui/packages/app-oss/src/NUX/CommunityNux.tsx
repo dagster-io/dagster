@@ -44,7 +44,7 @@ export const CommunityNux = () => {
 // Wait 1 second before trying to show Nux
 const TIMEOUT = 1000;
 
-const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
+const CommunityNuxImpl = ({dismiss}: {dismiss: () => void}) => {
   const [shouldShowNux, setShouldShowNux] = React.useState(false);
   React.useEffect(() => {
     const timeout = setTimeout(() => {
@@ -77,10 +77,12 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
   );
 };
 
-const Form: React.FC<{
+interface FormProps {
   dismiss: () => void;
   submit: (email: string, newsletter: boolean) => void;
-}> = ({dismiss, submit}) => {
+}
+
+const Form = ({dismiss, submit}: FormProps) => {
   const [email, setEmail] = React.useState('');
   const [newsletter, setNewsLetter] = React.useState(false);
   const validEmail = isEmail(email);
@@ -169,11 +171,13 @@ const Form: React.FC<{
   );
 };
 
-const RecaptchaIFrame: React.FC<{
+interface RecaptchaIFrameProps {
   newsletter: boolean;
   email: string;
   dismiss: () => void;
-}> = ({dismiss, newsletter, email}) => {
+}
+
+const RecaptchaIFrame = ({dismiss, newsletter, email}: RecaptchaIFrameProps) => {
   const [iframeLoaded, setIframeLoaded] = React.useState(false);
   const [width, setWidth] = React.useState(680);
   const [height, setHeight] = React.useState(462);

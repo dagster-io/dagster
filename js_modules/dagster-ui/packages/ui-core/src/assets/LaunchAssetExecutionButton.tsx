@@ -39,13 +39,13 @@ import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
 import {AssetKey} from './types';
 import {
+  LaunchAssetCheckUpstreamQuery,
+  LaunchAssetCheckUpstreamQueryVariables,
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
-  LaunchAssetCheckUpstreamQuery,
-  LaunchAssetCheckUpstreamQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
 
 export type LaunchAssetsChoosePartitionsTarget =
@@ -155,7 +155,12 @@ export function executionDisabledMessageForAssets(
     : null;
 }
 
-export const LaunchAssetExecutionButton: React.FC<{
+export const LaunchAssetExecutionButton = ({
+  scope,
+  preferredJobName,
+  additionalDropdownOptions,
+  intent = 'primary',
+}: {
   scope: AssetsInScope;
   intent?: 'primary' | 'none';
   preferredJobName?: string;
@@ -164,7 +169,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     icon?: JSX.Element;
     onClick: () => void;
   }[];
-}> = ({scope, preferredJobName, additionalDropdownOptions, intent = 'primary'}) => {
+}) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -520,7 +525,9 @@ async function stateForLaunchingAssets(
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
         assetChecksAvailable: assets.flatMap((a) =>
-          a.assetChecks.map((check) => ({...check, assetKey: a.assetKey})),
+          a.assetChecksOrError.__typename === 'AssetChecks'
+            ? a.assetChecksOrError.checks.map((check) => ({...check, assetKey: a.assetKey}))
+            : [],
         ),
         includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
@@ -621,7 +628,10 @@ async function upstreamAssetsWithNoMaterializations(
 export function executionParamsForAssetJob(
   repoAddress: RepoAddress,
   jobName: string,
-  assets: {assetKey: AssetKey; opNames: string[]; assetChecks: {name: string}[]}[],
+  assets: Pick<
+    LaunchAssetExecutionAssetNodeFragment,
+    'assetKey' | 'opNames' | 'assetChecksOrError'
+  >[],
   tags: {key: string; value: string}[],
 ): LaunchPipelineExecutionMutationVariables['executionParams'] {
   return {
@@ -678,6 +688,14 @@ const PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT = gql`
   }
 `;
 
+const BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT = gql`
+  fragment BackfillPolicyForLaunchAssetFragment on BackfillPolicy {
+    maxPartitionsPerRun
+    description
+    policyType
+  }
+`;
+
 const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
@@ -688,15 +706,22 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     partitionDefinition {
       ...PartitionDefinitionForLaunchAssetFragment
     }
+    backfillPolicy {
+      ...BackfillPolicyForLaunchAssetFragment
+    }
     isObservable
     isExecutable
     isSource
     assetKey {
       path
     }
-    assetChecks {
-      name
-      canExecuteIndividually
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          canExecuteIndividually
+        }
+      }
     }
     dependencyKeys {
       path
@@ -717,6 +742,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${PARTITION_DEFINITION_FOR_LAUNCH_ASSET_FRAGMENT}
+  ${BACKFILL_POLICY_FOR_LAUNCH_ASSET_FRAGMENT}
 `;
 
 export const LAUNCH_ASSET_LOADER_QUERY = gql`

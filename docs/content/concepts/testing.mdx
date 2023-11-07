@@ -354,7 +354,7 @@ def test_asset_requires_config():
 
 If your asset requires resources, you can specify them as arguments when invoking the asset directly.
 
-Consider the following asset, which requires a resource `foo`.
+Consider the following asset, which requires a resource `bar`.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
 from dagster import asset, ConfigurableResource, build_op_context, with_resources

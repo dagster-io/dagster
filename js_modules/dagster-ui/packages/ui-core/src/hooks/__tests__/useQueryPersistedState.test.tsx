@@ -5,7 +5,7 @@ import {MemoryRouter, Route} from 'react-router-dom';
 
 import {useQueryPersistedState} from '../useQueryPersistedState';
 
-const Test: React.FC<{options: Parameters<typeof useQueryPersistedState>[0]}> = ({options}) => {
+const Test = ({options}: {options: Parameters<typeof useQueryPersistedState>[0]}) => {
   const [query, setQuery] = useQueryPersistedState(options);
   return <div onClick={() => setQuery('Navigated')}>{`[${query}]`}</div>;
 };

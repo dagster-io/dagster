@@ -116,6 +116,7 @@ from dagster._core.definitions.asset_check_spec import (
     AssetCheckSeverity as AssetCheckSeverity,
     AssetCheckSpec as AssetCheckSpec,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition as AssetChecksDefinition
 from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
@@ -421,9 +422,12 @@ from dagster._core.errors import (
     raise_execution_interrupts as raise_execution_interrupts,
 )
 from dagster._core.event_api import (
+    AssetRecordsFilter as AssetRecordsFilter,
     EventLogRecord as EventLogRecord,
     EventRecordsFilter as EventRecordsFilter,
+    EventRecordsResult as EventRecordsResult,
     RunShardedEventsCursor as RunShardedEventsCursor,
+    RunStatusChangeRecordsFilter as RunStatusChangeRecordsFilter,
 )
 from dagster._core.events import (
     DagsterEvent as DagsterEvent,
@@ -580,7 +584,10 @@ from dagster._utils.alert import (
 )
 from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
-from dagster._utils.warnings import ExperimentalWarning as ExperimentalWarning
+from dagster._utils.warnings import (
+    ConfigArgumentWarning as ConfigArgumentWarning,
+    ExperimentalWarning as ExperimentalWarning,
+)
 from dagster.version import __version__ as __version__
 
 # ruff: isort: split

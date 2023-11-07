@@ -16,10 +16,13 @@ import {
 } from './SidebarResourcesSection';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 
-export const SidebarContainerOverview: React.FC<{
+export const SidebarContainerOverview = ({
+  container,
+  repoAddress,
+}: {
   container: SidebarRootContainerFragment;
   repoAddress?: RepoAddress;
-}> = ({container, repoAddress}) => {
+}) => {
   const {options} = useRepositoryOptions();
 
   // Determine if the pipeline or job snapshot is tied to a legacy pipeline. This is annoying

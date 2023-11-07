@@ -320,9 +320,7 @@ export const OverviewSchedulesRoot = () => {
   );
 };
 
-const UnloadableSchedulesAlert: React.FC<{
-  count: number;
-}> = ({count}) => {
+const UnloadableSchedulesAlert = ({count}: {count: number}) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   if (!count) {
@@ -369,7 +367,7 @@ const UnloadableSchedulesAlert: React.FC<{
   );
 };
 
-const UnloadableScheduleDialog: React.FC = () => {
+const UnloadableScheduleDialog = () => {
   const {data} = useQuery<UnloadableSchedulesQuery, UnloadableSchedulesQueryVariables>(
     UNLOADABLE_SCHEDULES_QUERY,
   );

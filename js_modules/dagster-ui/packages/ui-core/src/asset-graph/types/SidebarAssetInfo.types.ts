@@ -127,6 +127,7 @@ export type SidebarAssetFragment = {
       description: string;
     }>;
   } | null;
+  backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   op: {
@@ -142,11 +143,18 @@ export type SidebarAssetFragment = {
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
-  assetChecks: Array<{
-    __typename: 'AssetCheck';
-    name: string;
-    canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-  }>;
+  assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+    | {__typename: 'AssetCheckNeedsMigrationError'}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+    | {
+        __typename: 'AssetChecks';
+        checks: Array<{
+          __typename: 'AssetCheck';
+          name: string;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+        }>;
+      };
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -15697,6 +15705,7 @@ export type SidebarAssetQuery = {
             description: string;
           }>;
         } | null;
+        backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
         op: {
@@ -15712,11 +15721,18 @@ export type SidebarAssetQuery = {
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
         };
         requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
-        assetChecks: Array<{
-          __typename: 'AssetCheck';
-          name: string;
-          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
-        }>;
+        assetChecksOrError:
+          | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+          | {__typename: 'AssetCheckNeedsMigrationError'}
+          | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+          | {
+              __typename: 'AssetChecks';
+              checks: Array<{
+                __typename: 'AssetCheck';
+                name: string;
+                canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+              }>;
+            };
         configField: {
           __typename: 'ConfigTypeField';
           name: string;

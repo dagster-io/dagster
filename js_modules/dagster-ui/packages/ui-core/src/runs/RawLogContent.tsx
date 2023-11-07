@@ -7,13 +7,16 @@ const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';
 const SCROLLER_LINK_TIMEOUT_MS = 3000;
 
-export const RawLogContent: React.FC<{
+interface Props {
   logData: string | null;
   isLoading: boolean;
   isVisible: boolean;
   downloadUrl?: string | null;
   location?: string;
-}> = React.memo(({logData, location, isLoading, isVisible, downloadUrl}) => {
+}
+
+export const RawLogContent = React.memo((props: Props) => {
+  const {logData, location, isLoading, isVisible, downloadUrl} = props;
   const contentContainer = React.useRef<ScrollContainer | null>(null);
   const timer = React.useRef<number>();
   const [showScrollToTop, setShowScrollToTop] = React.useState(false);

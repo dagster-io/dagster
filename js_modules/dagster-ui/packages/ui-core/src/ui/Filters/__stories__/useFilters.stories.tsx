@@ -14,7 +14,7 @@ export default {
   component: FilterDropdown,
 } as Meta;
 
-const TestComponent: React.FC = () => {
+const TestComponent = () => {
   const userFilter = useStaticSetFilter({
     name: 'User',
     icon: 'account_circle',

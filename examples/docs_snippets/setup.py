@@ -24,6 +24,7 @@ setup(
         "dagster-celery",
         "dagster-dbt",
         "dagster-dask",
+        "dagster-databricks",
         "dagster-duckdb",
         "dagster-duckdb-pandas",
         "dagster-embedded-elt",

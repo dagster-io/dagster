@@ -111,7 +111,7 @@ export interface AppProviderProps {
   };
 }
 
-export const AppProvider: React.FC<AppProviderProps> = (props) => {
+export const AppProvider = (props: AppProviderProps) => {
   const {appCache, config} = props;
   const {
     apolloLinks,

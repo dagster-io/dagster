@@ -7,7 +7,7 @@ type Props = React.ComponentPropsWithRef<typeof Box> & {
   daemonHealth: DaemonHealthFragment | undefined;
 };
 
-export const SchedulerInfo: React.FC<Props> = ({daemonHealth, ...boxProps}) => {
+export const SchedulerInfo = ({daemonHealth, ...boxProps}: Props) => {
   let healthy = undefined;
 
   if (daemonHealth) {

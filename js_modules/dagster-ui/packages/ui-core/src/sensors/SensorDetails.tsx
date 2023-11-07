@@ -47,12 +47,17 @@ export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   return `~${minIntervalSeconds / 86400} days`;
 };
 
-export const SensorDetails: React.FC<{
+export const SensorDetails = ({
+  sensor,
+  repoAddress,
+  daemonHealth,
+  refreshState,
+}: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
   refreshState: QueryRefreshState;
-}> = ({sensor, repoAddress, daemonHealth, refreshState}) => {
+}) => {
   const {
     name,
     sensorState: {status, ticks},

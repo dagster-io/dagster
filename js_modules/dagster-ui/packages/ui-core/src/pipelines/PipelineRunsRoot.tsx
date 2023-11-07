@@ -58,7 +58,7 @@ interface Props {
   repoAddress?: RepoAddress;
 }
 
-export const PipelineRunsRoot: React.FC<Props> = (props) => {
+export const PipelineRunsRoot = (props: Props) => {
   useTrackPageView();
 
   const {pipelinePath} = useParams<{pipelinePath: string}>();

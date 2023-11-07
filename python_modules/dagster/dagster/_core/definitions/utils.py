@@ -129,6 +129,11 @@ def validate_group_name(group_name: Optional[str]) -> str:
     if group_name:
         check_valid_chars(group_name)
         return group_name
+    elif group_name == "":
+        raise DagsterInvalidDefinitionError(
+            "Empty asset group name was provided, which is not permitted."
+            "Set group_name=None to use the default group_name or set non-empty string"
+        )
     return DEFAULT_GROUP_NAME
 
 

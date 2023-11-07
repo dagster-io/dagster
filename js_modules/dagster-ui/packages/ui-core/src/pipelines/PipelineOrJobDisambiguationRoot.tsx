@@ -10,7 +10,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelineOrJobDisambiguationRoot: React.FC<Props> = (props) => {
+export const PipelineOrJobDisambiguationRoot = (props: Props) => {
   const {repoAddress} = props;
   const location = useLocation();
   const {pipelinePath} = useParams<{pipelinePath: string}>();

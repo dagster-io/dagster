@@ -604,6 +604,7 @@ def test_partition_range_single_run():
             partitions_def.time_window_for_partition_key(key_range.start).start,
             partitions_def.time_window_for_partition_key(key_range.end).end,
         )
+        assert context.partition_keys == partitions_def.get_partition_keys_in_range(key_range)
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])
     def downstream_asset(context) -> None:

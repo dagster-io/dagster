@@ -41,11 +41,11 @@ def get_tables(instance):
         return db.inspect(conn).get_table_names()
 
 
-def _reconstruct_from_file(backcompat_conn_string, path, _username="root", _password="test"):
-    parse_result = urlparse(backcompat_conn_string)
+def _reconstruct_from_file(conn_string, path, _username="root", _password="test"):
+    parse_result = urlparse(conn_string)
     hostname = parse_result.hostname
     port = parse_result.port
-    engine = db.create_engine(backcompat_conn_string)
+    engine = db.create_engine(conn_string)
     with engine.connect() as conn:
         with conn.begin():
             conn.execute(db.text("drop schema test;"))
@@ -58,9 +58,9 @@ def _reconstruct_from_file(backcompat_conn_string, path, _username="root", _pass
     return hostname, port
 
 
-def test_0_13_17_mysql_convert_float_cols(backcompat_conn_string):
+def test_0_13_17_mysql_convert_float_cols(conn_string):
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         file_relative_path(__file__, "snapshot_0_13_18_start_end_timestamp.sql"),
     )
 
@@ -90,9 +90,9 @@ def test_0_13_17_mysql_convert_float_cols(backcompat_conn_string):
         assert int(record.end_time) == 1643788834
 
 
-def test_instigators_table_backcompat(backcompat_conn_string):
+def test_instigators_table_backcompat(conn_string):
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         file_relative_path(__file__, "snapshot_0_14_6_instigators_table.sql"),
     )
 
@@ -113,9 +113,9 @@ def test_instigators_table_backcompat(backcompat_conn_string):
         assert instance.schedule_storage.has_instigators_table()
 
 
-def test_asset_observation_backcompat(backcompat_conn_string):
+def test_asset_observation_backcompat(conn_string):
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         file_relative_path(__file__, "snapshot_0_11_16_pre_add_asset_key_index_cols.sql"),
     )
 
@@ -145,13 +145,13 @@ def test_asset_observation_backcompat(backcompat_conn_string):
             assert storage.has_asset_key(AssetKey(["a"]))
 
 
-def test_jobs_selector_id_migration(backcompat_conn_string):
+def test_jobs_selector_id_migration(conn_string):
     import sqlalchemy as db
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
     from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
     )
 
@@ -205,12 +205,12 @@ def test_jobs_selector_id_migration(backcompat_conn_string):
             assert migrated_tick_count == legacy_tick_count
 
 
-def test_add_bulk_actions_columns(backcompat_conn_string):
+def test_add_bulk_actions_columns(conn_string):
     new_columns = {"selector_id", "action_type"}
     new_indexes = {"idx_bulk_actions_action_type", "idx_bulk_actions_selector_id"}
 
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         # use an old snapshot, it has the bulk actions table but not the new columns
         file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
     )
@@ -232,9 +232,9 @@ def test_add_bulk_actions_columns(backcompat_conn_string):
             assert new_indexes <= get_indexes(instance, "bulk_actions")
 
 
-def test_add_kvs_table(backcompat_conn_string):
+def test_add_kvs_table(conn_string):
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         # use an old snapshot
         file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
     )
@@ -255,7 +255,7 @@ def test_add_kvs_table(backcompat_conn_string):
             assert "idx_kvs_keys_unique" in get_indexes(instance, "kvs")
 
 
-def test_add_asset_event_tags_table(backcompat_conn_string):
+def test_add_asset_event_tags_table(conn_string):
     @op
     def yields_materialization_w_tags(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
@@ -266,7 +266,7 @@ def test_add_asset_event_tags_table(backcompat_conn_string):
         yields_materialization_w_tags()
 
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         # use an old snapshot
         file_relative_path(__file__, "snapshot_1_0_12_pre_add_asset_event_tags_table.sql"),
     )
@@ -330,11 +330,11 @@ def test_add_asset_event_tags_table(backcompat_conn_string):
             assert "idx_asset_event_tags_event_id" in indexes
 
 
-def test_add_cached_status_data_column(backcompat_conn_string):
+def test_add_cached_status_data_column(conn_string):
     new_columns = {"cached_status_data"}
 
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         # use an old snapshot, it has the bulk actions table but not the new columns
         file_relative_path(__file__, "snapshot_1_0_17_add_cached_status_data_column.sql"),
     )
@@ -354,9 +354,9 @@ def test_add_cached_status_data_column(backcompat_conn_string):
             assert new_columns <= get_columns(instance, "asset_keys")
 
 
-def test_add_dynamic_partitions_table(backcompat_conn_string):
+def test_add_dynamic_partitions_table(conn_string):
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         file_relative_path(__file__, "snapshot_1_0_17_add_cached_status_data_column.sql"),
     )
 
@@ -392,7 +392,7 @@ def _get_table_row_count(run_storage, table, with_non_null_id=False):
     return row_count
 
 
-def test_add_primary_keys(backcompat_conn_string):
+def test_add_primary_keys(conn_string):
     from dagster._core.storage.runs.schema import (
         DaemonHeartbeatsTable,
         InstanceInfo,
@@ -400,7 +400,7 @@ def test_add_primary_keys(backcompat_conn_string):
     )
 
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key.sql"),
     )
 
@@ -460,9 +460,9 @@ def test_add_primary_keys(backcompat_conn_string):
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
 
 
-def test_bigint_migration(backcompat_conn_string):
+def test_bigint_migration(conn_string):
     hostname, port = _reconstruct_from_file(
-        backcompat_conn_string,
+        conn_string,
         file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key.sql"),
     )
 

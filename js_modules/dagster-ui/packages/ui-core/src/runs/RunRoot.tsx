@@ -121,7 +121,7 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
+const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
   const {data, runId} = props;
 
   if (!data || !data.pipelineRunOrError) {

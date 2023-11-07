@@ -677,6 +677,34 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
             resources={"writer": WriterResource(prefix="a_prefix")},
         )
 
+    You can optionally use this class to model configuration only and vend an object
+    of a different type for use at runtime. This is useful for those who wish to
+    have a separate object that manages configuration and a separate object at runtime. Or
+    where you want to directly use a third-party class that you do not control.
+
+    To do this you override the `create_resource` methods to return a different object.
+
+    .. code-block:: python
+
+        class WriterResource(ConfigurableResource):
+            str: prefix
+
+            def create_resource(self, context: InitResourceContext) -> Writer:
+                # Writer is pre-existing class defined else
+                return Writer(self.prefix)
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def use_preexisting_writer_as_resource(writer: ResourceParam[Writer]):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[use_preexisting_writer_as_resource],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
     """
 
     def create_resource(self, context: InitResourceContext) -> TResValue:
@@ -953,8 +981,10 @@ def _call_resource_fn_with_default(
     else:
         result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
-    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
-        obj.resource_fn, contextlib.ContextDecorator
+    is_fn_generator = (
+        inspect.isgenerator(obj.resource_fn)
+        or isinstance(obj.resource_fn, contextlib.ContextDecorator)
+        or isinstance(result, contextlib.AbstractContextManager)
     )
     if is_fn_generator:
         return stack.enter_context(cast(contextlib.AbstractContextManager, result))

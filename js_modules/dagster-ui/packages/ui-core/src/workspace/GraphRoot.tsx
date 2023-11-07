@@ -25,7 +25,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const GraphRoot: React.FC<Props> = (props) => {
+export const GraphRoot = (props: Props) => {
   useTrackPageView();
 
   const {repoAddress} = props;
@@ -55,7 +55,7 @@ export const GraphRoot: React.FC<Props> = (props) => {
   );
 };
 
-const GraphExplorerRoot: React.FC<Props> = (props) => {
+const GraphExplorerRoot = (props: Props) => {
   const {repoAddress} = props;
   const params = useParams();
 

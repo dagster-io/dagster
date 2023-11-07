@@ -28,7 +28,7 @@ interface DialogProps {
   visibleFlags: VisibleFlag[];
 }
 
-export const UserSettingsDialog: React.FC<DialogProps> = ({isOpen, onClose, visibleFlags}) => {
+export const UserSettingsDialog = ({isOpen, onClose, visibleFlags}: DialogProps) => {
   return (
     <Dialog
       title="User settings"
@@ -50,7 +50,7 @@ interface DialogContentProps {
  * Separate the content from the `Dialog` so that we don't prepare its state before
  * we want to render it.
  */
-const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visibleFlags}) => {
+const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
   const [flags, setFlags] = React.useState<FeatureFlagType[]>(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 

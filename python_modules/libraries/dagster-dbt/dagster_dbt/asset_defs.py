@@ -248,7 +248,7 @@ def _stream_event_iterator(
     ],
     kwargs: Dict[str, Any],
     manifest_json: Mapping[str, Any],
-) -> Iterator[Union[AssetObservation, Output, AssetCheckResult]]:
+) -> Iterator[Union[AssetObservation, AssetMaterialization, Output, AssetCheckResult]]:
     """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
     emitted.
     """
@@ -282,6 +282,7 @@ def _stream_event_iterator(
             args=["build" if use_build_command else "run", *build_command_args_from_flags(kwargs)],
             manifest=manifest_json,
             dagster_dbt_translator=CustomDagsterDbtTranslator(),
+            context=context,
         )
         yield from cli_output.stream()
 

@@ -16,9 +16,11 @@ import {
   AssetGraphSidebarQueryVariables,
 } from './types/AssetGraphJobSidebar.types';
 
-export const AssetGraphJobSidebar: React.FC<{
+interface Props {
   pipelineSelector: PipelineSelector;
-}> = ({pipelineSelector}) => {
+}
+
+export const AssetGraphJobSidebar = ({pipelineSelector}: Props) => {
   const queryResult = useQuery<AssetGraphSidebarQuery, AssetGraphSidebarQueryVariables>(
     ASSET_GRAPH_JOB_SIDEBAR,
     {

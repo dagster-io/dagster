@@ -41,12 +41,7 @@ type Props = {
   isOpen: boolean;
 };
 
-export const TickDetailsDialog: React.FC<Props> = ({
-  timestamp,
-  isOpen,
-  instigationSelector,
-  onClose,
-}) => {
+export const TickDetailsDialog = ({timestamp, isOpen, instigationSelector, onClose}: Props) => {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} style={{width: '90vw'}}>
       <TickDetailsDialogImpl timestamp={timestamp} instigationSelector={instigationSelector} />

@@ -71,7 +71,7 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
-export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlaceholder}) => {
+export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) => {
   const location = useLocation();
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch();

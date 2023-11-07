@@ -3,7 +3,6 @@ import inspect
 from typing import (
     Any,
     AsyncIterator,
-    Callable,
     Iterator,
     List,
     Mapping,
@@ -31,9 +30,15 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import MaterializeResult
-from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterExecutionStepExecutionError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.compute import build_execution_context
+from dagster._core.execution.context.compute import (
+    AssetExecutionContext,
+    OpExecutionContext,
+)
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
@@ -57,7 +62,10 @@ OpOutputUnion: TypeAlias = Union[
 
 
 def create_step_outputs(
-    node: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
+    node: Node,
+    handle: NodeHandle,
+    resolved_run_config: ResolvedRunConfig,
+    asset_layer: AssetLayer,
 ) -> Sequence[StepOutput]:
     check.inst_param(node, "node", Node)
     check.inst_param(handle, "handle", NodeHandle)
@@ -143,12 +151,12 @@ def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
 
 
 def _yield_compute_results(
-    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: Callable
+    step_context: StepExecutionContext,
+    inputs: Mapping[str, Any],
+    compute_fn: OpComputeFunction,
+    compute_context: Union[OpExecutionContext, AssetExecutionContext],
 ) -> Iterator[OpOutputUnion]:
-    check.inst_param(step_context, "step_context", StepExecutionContext)
-
-    context = build_execution_context(step_context)
-    user_event_generator = compute_fn(context, inputs)
+    user_event_generator = compute_fn(compute_context, inputs)
 
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
@@ -181,27 +189,27 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if context.has_events():
-            yield from context.consume_events()
+        if compute_context.has_events():
+            yield from compute_context.consume_events()
         yield _validate_event(event, step_context)
 
-    if context.has_events():
-        yield from context.consume_events()
+    if compute_context.has_events():
+        yield from compute_context.consume_events()
 
 
 def execute_core_compute(
-    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: OpComputeFunction
+    step_context: StepExecutionContext,
+    inputs: Mapping[str, Any],
+    compute_fn: OpComputeFunction,
+    compute_context: Union[OpExecutionContext, AssetExecutionContext],
 ) -> Iterator[OpOutputUnion]:
     """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.
     """
-    check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.mapping_param(inputs, "inputs", key_type=str)
-
     step = step_context.step
 
     emitted_result_names = set()
-    for step_output in _yield_compute_results(step_context, inputs, compute_fn):
+    for step_output in _yield_compute_results(step_context, inputs, compute_fn, compute_context):
         yield step_output
         if isinstance(step_output, (DynamicOutput, Output)):
             emitted_result_names.add(step_output.output_name)

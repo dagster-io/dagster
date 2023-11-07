@@ -27,14 +27,13 @@ from ..base_scenario import (
     single_asset_run,
     with_auto_materialize_policy,
 )
-from .basic_scenarios import diamond
-from .exotic_partition_mapping_scenarios import (
+from .asset_graphs import (
     one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
     one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
 )
+from .basic_scenarios import diamond
 from .freshness_policy_scenarios import (
     daily_to_unpartitioned,
-    overlapping_freshness_inf,
 )
 from .partition_scenarios import (
     hourly_partitions_def,
@@ -63,6 +62,10 @@ single_lazy_asset_with_freshness_policy = [
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
     )
+]
+overlapping_freshness_inf = diamond + [
+    asset_def("asset5", ["asset3"], freshness_policy=FreshnessPolicy(maximum_lag_minutes=30)),
+    asset_def("asset6", ["asset4"], freshness_policy=FreshnessPolicy(maximum_lag_minutes=99999999)),
 ]
 vee = [
     asset_def("A"),
@@ -175,11 +178,7 @@ one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated = (
 
 # auto materialization policies
 auto_materialize_policy_scenarios = {
-    "auto_materialize_policy_lazy_missing": AssetReconciliationScenario(
-        assets=single_lazy_asset,
-        unevaluated_runs=[],
-        expected_run_requests=[],
-    ),
+    # need to keep this around temporarily as test_asset_daemon.py relies on it
     "auto_materialize_policy_lazy_freshness_missing": AssetReconciliationScenario(
         assets=single_lazy_asset_with_freshness_policy,
         unevaluated_runs=[],
@@ -198,18 +197,6 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["asset2", "asset3", "asset4", "asset5", "asset6"])
         ],
-    ),
-    "auto_materialize_policy_lazy_with_freshness_policies": AssetReconciliationScenario(
-        assets=with_auto_materialize_policy(
-            overlapping_freshness_inf, AutoMaterializePolicy.lazy()
-        ),
-        cursor_from=AssetReconciliationScenario(
-            assets=overlapping_freshness_inf,
-            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
-        ),
-        # change at the top, should be immediately propagated as all assets have eager reconciliation
-        unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[],
     ),
     "auto_materialize_policy_with_default_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
@@ -245,7 +232,6 @@ auto_materialize_policy_scenarios = {
                 )
             ],
             expected_evaluations=[
-                AssetEvaluationSpec.empty("daily"),
                 AssetEvaluationSpec(
                     asset_key="hourly",
                     rule_evaluations=[
@@ -332,7 +318,6 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-04:00"),
         ],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -377,7 +362,6 @@ auto_materialize_policy_scenarios = {
             run_request(["hourly"], partition_key="2013-01-05-00:00"),
         ],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("daily"),
             AssetEvaluationSpec(
                 asset_key="hourly",
                 rule_evaluations=[
@@ -412,8 +396,6 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
-            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -570,7 +552,6 @@ auto_materialize_policy_scenarios = {
                 ],
                 expected_run_requests=[],
                 expected_evaluations=[
-                    AssetEvaluationSpec.empty("C"),
                     AssetEvaluationSpec(
                         asset_key="D",
                         rule_evaluations=[
@@ -857,8 +838,6 @@ auto_materialize_policy_scenarios = {
         current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
         expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
-            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[
@@ -932,8 +911,6 @@ auto_materialize_policy_scenarios = {
             run_request(["asset3"], "2023-01-01-03:00"),
         ],
         expected_evaluations=[
-            AssetEvaluationSpec.empty("asset1"),
-            AssetEvaluationSpec.empty("asset2"),
             AssetEvaluationSpec(
                 asset_key="asset3",
                 rule_evaluations=[

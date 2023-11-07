@@ -54,7 +54,7 @@ type Props = {
   jobName: string;
 };
 
-export const SensorDryRunDialog: React.FC<Props> = (props) => {
+export const SensorDryRunDialog = (props: Props) => {
   const {isOpen, onClose, name} = props;
   return (
     <Dialog
@@ -69,7 +69,7 @@ export const SensorDryRunDialog: React.FC<Props> = (props) => {
   );
 };
 
-const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClose, jobName}) => {
+const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );

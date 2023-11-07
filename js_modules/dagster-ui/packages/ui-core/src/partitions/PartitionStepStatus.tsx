@@ -90,14 +90,21 @@ const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) =
   return [minUnix, maxUnix] as const;
 };
 
-export const PartitionPerAssetStatus: React.FC<
-  Omit<PartitionStepStatusBaseProps, 'partitionNames'> & {
-    assetHealth: PartitionHealthData[];
-    assetQueryItems: GraphQueryItem[];
-    rangeDimensionIdx: number;
-    rangeDimension: PartitionHealthDimension;
-  }
-> = ({assetHealth, rangeDimension, rangeDimensionIdx, assetQueryItems, ...rest}) => {
+interface PartitionPerAssetStatusProps
+  extends Omit<PartitionStepStatusBaseProps, 'partitionNames'> {
+  assetHealth: PartitionHealthData[];
+  assetQueryItems: GraphQueryItem[];
+  rangeDimensionIdx: number;
+  rangeDimension: PartitionHealthDimension;
+}
+
+export const PartitionPerAssetStatus = ({
+  assetHealth,
+  rangeDimension,
+  rangeDimensionIdx,
+  assetQueryItems,
+  ...rest
+}: PartitionPerAssetStatusProps) => {
   const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
   for (const a of assetHealth) {
     if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
@@ -157,12 +164,18 @@ const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]): Statu
     : 'MISSING';
 };
 
-export const PartitionPerOpStatus: React.FC<
-  PartitionStepStatusBaseProps & {
-    repoAddress: RepoAddress;
-    partitions: PartitionRuns[];
-  }
-> = ({repoAddress, pipelineName, partitions, partitionNames, ...rest}) => {
+interface PartitionPerOpStatusProps extends PartitionStepStatusBaseProps {
+  repoAddress: RepoAddress;
+  partitions: PartitionRuns[];
+}
+
+export const PartitionPerOpStatus = ({
+  repoAddress,
+  pipelineName,
+  partitions,
+  partitionNames,
+  ...rest
+}: PartitionPerOpStatusProps) => {
   // Retrieve the pipeline's structure
   const repositorySelector = repoAddressToSelector(repoAddress);
   const pipelineSelector = {...repositorySelector, pipelineName};
@@ -198,12 +211,12 @@ export const PartitionPerOpStatus: React.FC<
   );
 };
 
-const PartitionStepStatus: React.FC<
-  PartitionStepStatusBaseProps & {
-    data: MatrixData;
-    showLatestRun: boolean;
-  }
-> = (props) => {
+interface PartitionStepStatusProps extends PartitionStepStatusBaseProps {
+  data: MatrixData;
+  showLatestRun: boolean;
+}
+
+const PartitionStepStatus = (props: PartitionStepStatusProps) => {
   const {viewport, containerProps} = useViewport();
   const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
   const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
@@ -419,7 +432,15 @@ const TOOLTIP_STYLE = JSON.stringify({
   left: 10,
 });
 
-const PartitionSquare: React.FC<{
+const PartitionSquare = ({
+  step,
+  runs,
+  runsLoaded,
+  hovered,
+  setHovered,
+  setFocused,
+  partitionName,
+}: {
   step?: MatrixStep;
   runs: PartitionMatrixStepRunFragment[];
   runsLoaded: boolean;
@@ -429,7 +450,7 @@ const PartitionSquare: React.FC<{
   partitionName: string;
   setHovered: (hovered: PartitionRunSelection | null) => void;
   setFocused: (hovered: PartitionRunSelection | null) => void;
-}> = ({step, runs, runsLoaded, hovered, setHovered, setFocused, partitionName}) => {
+}) => {
   const [opened, setOpened] = React.useState(false);
   let squareStatus;
 

@@ -12,7 +12,7 @@ interface Props {
   resources: ResourceEntryFragment[];
 }
 
-export const VirtualizedResourceTable: React.FC<Props> = ({repoAddress, resources}) => {
+export const VirtualizedResourceTable = ({repoAddress, resources}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({

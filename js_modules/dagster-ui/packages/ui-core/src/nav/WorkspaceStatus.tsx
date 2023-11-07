@@ -5,7 +5,7 @@ import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
 import {WarningTooltip} from './WarningTooltip';
 
-export const WorkspaceStatus: React.FC<{placeholder: boolean}> = React.memo(({placeholder}) => {
+export const WorkspaceStatus = React.memo(({placeholder}: {placeholder: boolean}) => {
   const {codeLocations} = React.useContext(DeploymentStatusContext);
 
   if (!codeLocations) {

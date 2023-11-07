@@ -78,11 +78,11 @@ interface AssetCatalogTableProps {
   groupSelector?: AssetGroupSelector;
 }
 
-export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
+export const AssetsCatalogTable = ({
   prefixPath,
   setPrefixPath,
   groupSelector,
-}) => {
+}: AssetCatalogTableProps) => {
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
   const [searchGroups, setSearchGroups] = useQueryPersistedState<AssetGroupSelector[]>({

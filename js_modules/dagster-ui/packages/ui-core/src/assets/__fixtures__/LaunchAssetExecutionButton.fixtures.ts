@@ -1,4 +1,5 @@
 import {MockedResponse} from '@apollo/client/testing';
+import without from 'lodash/without';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
@@ -7,6 +8,7 @@ import {
   LaunchBackfillParams,
   PartitionDefinitionType,
   PartitionRangeStatus,
+  buildAssetChecks,
   buildDaemonHealth,
   buildDaemonStatus,
   buildDimensionDefinitionType,
@@ -239,6 +241,49 @@ export const buildLaunchAssetWarningsMock = (
   },
 });
 
+export const PartitionHealthAssetDailyMaterializedRanges = [
+  {
+    status: PartitionRangeStatus.MATERIALIZED,
+    startTime: 1662940800.0,
+    endTime: 1663027200.0,
+    startKey: '2022-09-12',
+    endKey: '2022-09-12',
+    __typename: 'TimePartitionRangeStatus' as const,
+  },
+  {
+    status: PartitionRangeStatus.MATERIALIZED,
+    startTime: 1663027200.0,
+    endTime: 1667088000.0,
+    startKey: '2022-09-13',
+    endKey: '2022-10-29',
+    __typename: 'TimePartitionRangeStatus' as const,
+  },
+  {
+    status: PartitionRangeStatus.MATERIALIZED,
+    startTime: 1668816000.0,
+    endTime: 1670803200.0,
+    startKey: '2022-11-19',
+    endKey: '2022-12-11',
+    __typename: 'TimePartitionRangeStatus' as const,
+  },
+  {
+    status: PartitionRangeStatus.MATERIALIZED,
+    startTime: 1671494400.0,
+    endTime: 1674086400.0,
+    startKey: '2022-12-20',
+    endKey: '2023-01-18',
+    __typename: 'TimePartitionRangeStatus' as const,
+  },
+  {
+    status: PartitionRangeStatus.MATERIALIZED,
+    startTime: 1676851200.0,
+    endTime: 1676937600.0,
+    startKey: '2023-02-20',
+    endKey: '2023-02-20',
+    __typename: 'TimePartitionRangeStatus' as const,
+  },
+];
+
 export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery> = {
   request: {
     query: PARTITION_HEALTH_QUERY,
@@ -262,48 +307,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
           },
         ],
         assetPartitionStatuses: {
-          ranges: [
-            {
-              status: PartitionRangeStatus.MATERIALIZED,
-              startTime: 1662940800.0,
-              endTime: 1663027200.0,
-              startKey: '2022-09-12',
-              endKey: '2022-09-12',
-              __typename: 'TimePartitionRangeStatus',
-            },
-            {
-              status: PartitionRangeStatus.MATERIALIZED,
-              startTime: 1663027200.0,
-              endTime: 1667088000.0,
-              startKey: '2022-09-13',
-              endKey: '2022-10-29',
-              __typename: 'TimePartitionRangeStatus',
-            },
-            {
-              status: PartitionRangeStatus.MATERIALIZED,
-              startTime: 1668816000.0,
-              endTime: 1670803200.0,
-              startKey: '2022-11-19',
-              endKey: '2022-12-11',
-              __typename: 'TimePartitionRangeStatus',
-            },
-            {
-              status: PartitionRangeStatus.MATERIALIZED,
-              startTime: 1671494400.0,
-              endTime: 1674086400.0,
-              startKey: '2022-12-20',
-              endKey: '2023-01-18',
-              __typename: 'TimePartitionRangeStatus',
-            },
-            {
-              status: PartitionRangeStatus.MATERIALIZED,
-              startTime: 1676851200.0,
-              endTime: 1676937600.0,
-              startKey: '2023-02-20',
-              endKey: '2023-02-20',
-              __typename: 'TimePartitionRangeStatus',
-            },
-          ],
+          ranges: PartitionHealthAssetDailyMaterializedRanges,
           __typename: 'TimePartitionStatuses',
         },
         __typename: 'AssetNode',
@@ -311,6 +315,13 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
     },
   },
 };
+
+export const ASSET_DAILY_PARTITION_KEYS_MISSING = without(
+  ASSET_DAILY_PARTITION_KEYS,
+  ...PartitionHealthAssetDailyMaterializedRanges.flatMap((r) =>
+    generateDailyTimePartitions(new Date(r.startTime * 1000 - 1), new Date(r.endTime * 1000 - 1)),
+  ),
+);
 
 export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery> = {
   request: {
@@ -646,7 +657,8 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         {
           ...ASSET_DAILY,
           requiredResources: [],
-          assetChecks: [],
+          assetChecksOrError: buildAssetChecks({checks: []}),
+          backfillPolicy: null,
           partitionDefinition: {
             name: 'Foo',
             type: PartitionDefinitionType.TIME_WINDOW,
@@ -673,7 +685,8 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         {
           ...ASSET_WEEKLY,
           requiredResources: [],
-          assetChecks: [],
+          assetChecksOrError: buildAssetChecks({checks: []}),
+          backfillPolicy: null,
           partitionDefinition: {
             name: 'Foo',
             type: PartitionDefinitionType.TIME_WINDOW,
@@ -795,7 +808,8 @@ type LaunchAssetLoaderQueryAssetNode = LaunchAssetLoaderQuery['assetNodes'][0];
 const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_DAILY,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
   partitionDefinition: {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
@@ -823,7 +837,8 @@ const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
   partitionDefinition: {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
@@ -862,7 +877,8 @@ const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...ASSET_WEEKLY_ROOT,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
   partitionDefinition: {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
@@ -890,7 +906,8 @@ const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
   partitionDefinition: null,
   configField: {
     name: 'config',
@@ -911,7 +928,8 @@ const UNPARTITIONED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
 const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET_OTHER_REPO,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
   partitionDefinition: null,
   configField: {
     name: 'config',
@@ -933,7 +951,8 @@ const UNPARTITIONED_ASSET_OTHER_REPO_LOADER_RESULT: LaunchAssetLoaderQueryAssetN
 const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   ...UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
   requiredResources: [],
-  assetChecks: [],
+  assetChecksOrError: buildAssetChecks({checks: []}),
+  backfillPolicy: null,
   partitionDefinition: null,
   configField: {
     name: 'config',

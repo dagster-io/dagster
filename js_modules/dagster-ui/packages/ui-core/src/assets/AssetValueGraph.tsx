@@ -17,14 +17,14 @@ export interface AssetValueGraphData {
   }[];
 }
 
-export const AssetValueGraph: React.FC<{
+export const AssetValueGraph = (props: {
   label: string;
   width: string;
   yAxisLabel?: string;
   data: AssetValueGraphData;
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
-}> = (props) => {
+}) => {
   // Note: To get partitions on the X axis, we pass the partition names in as the `labels`,
   // and pass the partition index as the x value. This prevents ChartJS from auto-coercing
   // ISO date partition names to dates and then re-formatting the labels away from 2020-01-01.

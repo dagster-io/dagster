@@ -41,6 +41,7 @@ export type RunFilterTokenType =
   | 'id'
   | 'status'
   | 'pipeline'
+  | 'partition'
   | 'job'
   | 'snapshotId'
   | 'tag'
@@ -215,8 +216,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const [fetchScheduleValues, scheduleValues] = useTagDataFilterValues(DagsterTag.ScheduleName);
   const [fetchUserValues, userValues] = useTagDataFilterValues(DagsterTag.User);
   const [fetchBackfillValues, backfillValues] = useTagDataFilterValues(DagsterTag.Backfill);
+  const [fetchPartitionValues, partitionValues] = useTagDataFilterValues(DagsterTag.Partition);
 
   const isBackfillsFilterEnabled = !enabledFilters || enabledFilters?.includes('backfill');
+  const isPartitionsFilterEnabled = !enabledFilters || enabledFilters?.includes('partition');
 
   const onFocus = React.useCallback(() => {
     fetchTagKeys();
@@ -226,12 +229,14 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     if (isBackfillsFilterEnabled) {
       fetchBackfillValues();
     }
+    fetchPartitionValues();
   }, [
     fetchBackfillValues,
     fetchScheduleValues,
     fetchSensorValues,
     fetchTagKeys,
     fetchUserValues,
+    fetchPartitionValues,
     isBackfillsFilterEnabled,
   ]);
 
@@ -396,11 +401,49 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
   });
 
+  const partitionsFilter = useStaticSetFilter({
+    name: 'Partition',
+    icon: 'partition',
+    allValues: partitionValues,
+    allowMultipleSelections: false,
+    initialState: React.useMemo(() => {
+      return new Set(
+        tokens
+          .filter(
+            ({token, value}) => token === 'tag' && value.split('=')[0] === DagsterTag.Partition,
+          )
+          .map(({value}) => tagValueToFilterObject(value)),
+      );
+    }, [tokens]),
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="job" />
+        <TruncatedTextWithFullTextOnHover text={value.value!} />
+      </Box>
+    ),
+    getStringValue: ({value}) => value!,
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter(({token, value}) => {
+          if (token !== 'tag') {
+            return true;
+          }
+          return value.split('=')[0] !== DagsterTag.Partition;
+        }),
+        ...Array.from(values).map((value) => ({
+          token: 'tag' as const,
+          value: `${value.type}=${value.value}`,
+        })),
+      ]);
+    },
+  });
+
   const {button, activeFiltersJsx} = useFilters({
     filters: [
       !enabledFilters || enabledFilters?.includes('status') ? statusFilter : null,
       useStaticSetFilter({
         name: 'Launched by',
+        allowMultipleSelections: false,
         icon: 'add_circle',
         allValues: createdByValues,
         renderLabel: ({value}) => {
@@ -484,6 +527,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       isJobFilterEnabled ? jobFilter : null,
       isPipelineFilterEnabled ? pipelinesFilter : null,
       isBackfillsFilterEnabled ? backfillsFilter : null,
+      isPartitionsFilterEnabled ? partitionsFilter : null,
       useSuggestionFilter({
         name: 'Tag',
         icon: 'tag',

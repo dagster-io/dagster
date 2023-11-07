@@ -56,7 +56,7 @@ interface Props {
  * - Locale timezones: other timezones for the user's locale, if possible.
  * - Everything else
  */
-export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
+export const TimezoneSelect = ({trigger}: Props) => {
   const {
     timezone: [timezone, setTimezone],
   } = React.useContext(TimeContext);

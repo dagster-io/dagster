@@ -16,7 +16,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelineNav: React.FC<Props> = (props) => {
+export const PipelineNav = (props: Props) => {
   const {repoAddress} = props;
   const permissions = usePermissionsForLocation(repoAddress.location);
 

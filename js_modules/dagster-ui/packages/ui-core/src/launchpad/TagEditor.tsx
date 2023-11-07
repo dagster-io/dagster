@@ -32,13 +32,13 @@ interface ITagContainerProps {
   actions?: TagAction[];
 }
 
-export const TagEditor: React.FC<ITagEditorProps> = ({
+export const TagEditor = ({
   tagsFromDefinition = [],
   tagsFromSession = [],
   open,
   onChange,
   onRequestClose,
-}) => {
+}: ITagEditorProps) => {
   const [editState, setEditState] = React.useState(() =>
     tagsFromSession.length ? tagsFromSession : [{key: '', value: ''}],
   );
