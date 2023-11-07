@@ -879,7 +879,10 @@
           {
             "title": "Dagster Pipes + Databricks",
             "path": "/guides/dagster-pipes/databricks"
-
+          },
+          {
+            "title": "Dagster Pipes + Kubernetes",
+            "path": "/guides/dagster-pipes/kubernetes"
           },
           {
             "title": "Details and customization",
