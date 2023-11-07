@@ -61,7 +61,6 @@ from dagster._daemon.asset_daemon import (
     FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
     FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
     AssetDaemon,
-    get_auto_materialize_paused,
     get_current_evaluation_id,
 )
 
@@ -439,9 +438,6 @@ class AssetDaemonScenarioState(NamedTuple):
         """Asserts that the set of runs requested by the previously-evaluated tick is identical to
         the set of runs specified in the expected_run_requests argument.
         """
-        if self.is_daemon and get_auto_materialize_paused(self.instance):
-            assert len(self.run_requests) == 0
-            return self
 
         def sort_run_request_key_fn(run_request) -> Tuple[AssetKey, Optional[str]]:
             return (min(run_request.asset_selection), run_request.partition_key)
@@ -495,10 +491,6 @@ class AssetDaemonScenarioState(NamedTuple):
         """
         asset_key = AssetKey.from_coercible(key)
         actual_evaluation = next((e for e in self.evaluations if e.asset_key == asset_key), None)
-
-        if self.is_daemon and get_auto_materialize_paused(self.instance):
-            assert actual_evaluation is None
-            return self
 
         if actual_evaluation is None:
             try:
