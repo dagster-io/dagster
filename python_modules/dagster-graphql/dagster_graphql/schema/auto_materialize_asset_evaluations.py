@@ -4,7 +4,7 @@ from typing import Optional, Sequence, Tuple
 import dagster._check as check
 import graphene
 from dagster import PartitionsDefinition
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,

@@ -21,7 +21,7 @@ from .asset_graph import AssetGraph
 if TYPE_CHECKING:
     from dagster._core.definitions.data_time import CachingDataTimeResolver
 
-    from .auto_materialize_rule import RuleEvaluationResults, TextRuleEvaluationData
+    from .auto_materialize_rule_evaluation import RuleEvaluationResults, TextRuleEvaluationData
 
 
 def get_execution_period_for_policy(
@@ -69,7 +69,7 @@ def get_execution_period_and_evaluation_data_for_policies(
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
-    from .auto_materialize_rule import TextRuleEvaluationData
+    from .auto_materialize_rule_evaluation import TextRuleEvaluationData
 
     merged_period = None
     contains_local = False

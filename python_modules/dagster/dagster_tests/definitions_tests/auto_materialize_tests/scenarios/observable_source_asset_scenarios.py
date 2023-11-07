@@ -1,8 +1,8 @@
 import datetime
 
 from dagster import PartitionKeyRange
-from dagster._core.definitions.auto_materialize_rule import (
-    AutoMaterializeRule,
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
 )
