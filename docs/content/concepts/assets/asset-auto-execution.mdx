@@ -20,12 +20,13 @@ To enable assets to be automatically materialized, you need to first flip a togg
 
 You can set up an asset to be auto-materialized by assigning it an <PyObject object="AutoMaterializePolicy" />. Each policy consists of a set of `AutoMaterializeRules`, each representing individual reasons that an asset should be materialized or not at a given point in time. If there's at least one rule determining that the asset should be materialized, and no rules determining that it should be skipped, a run will be launched to materialize that asset.
 
-It is recommended to start with the built-in <PyObject object="AutoMaterializePolicy.eager" /> and further customize from there if necessary. This policy consists of all of the supported rules, other than `skip_on_not_all_parents_updated`. The supported rules are currently:
+It is recommended to start with the built-in <PyObject object="AutoMaterializePolicy.eager" /> and further customize from there if necessary. This policy consists of all of the supported rules, other than `materialize_on_cron` and `skip_on_not_all_parents_updated`. The supported rules are currently:
 
 | Name                                                                                     | Description                                                                                                                                                              |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | <PyObject object="AutoMaterializeRule" method="materialize_on_parent_updated" />         | Materialize an asset partition if one of its parents has been updated more recently than it has.                                                                         |
 | <PyObject object="AutoMaterializeRule" method="materialize_on_missing" />                | Materialize an asset partition if it has never been materialized before.                                                                                                 |
+| <PyObject object="AutoMaterializeRule" method="materialize_on_cron" />                   | Materialize an asset partition if it has not been materialized since the latest tick of a given cron schedule.                                                           |
 | <PyObject object="AutoMaterializeRule" method="materialize_on_required_for_freshness" /> | Materialize an asset if it is required to satisfy a <PyObject object="FreshnessPolicy" /> of this asset or one of its downstream assets.                                 |
 | <PyObject object="AutoMaterializeRule" method="skip_on_parent_missing" />                | Skip materializing an asset partition if one of its parent asset partitions has never been materialized (for regular assets) or observed (for observable source assets). |
 | <PyObject object="AutoMaterializeRule" method="skip_on_parent_outdated" />               | Skip materializing an asset partition if any of its parents has not incorporated the latest data from its ancestors.                                                     |
@@ -117,6 +118,27 @@ allow_missing_parents_policy = AutoMaterializePolicy.eager().without_rules(
 
 
 @asset(auto_materialize_policy=allow_missing_parents_policy)
+def asset1(upstream1, upstream2):
+    ...
+```
+
+#### Auto-materialize on a regular cadence
+
+By default, the eager policy will only materialize an asset if it's missing or one of its parents update. This means that an unpartitioned root asset will only get auto-materialized a single time. In some cases, it's desirable to recompute these assets on a regular basis. To enable this, the `materialize_on_cron` rule can be added to a given policy.
+
+```python file=/concepts/assets/auto_materialize_on_cron.py
+from dagster import AutoMaterializePolicy, AutoMaterializeRule, asset
+
+materialize_on_cron_policy = AutoMaterializePolicy.eager().with_rules(
+    # try to materialize this asset if it hasn't been materialized since the last cron tick
+    AutoMaterializeRule.materialize_on_cron("0 9 * * *", timezone="US/Central"),
+    # to make sure assets in the middle of the graph wait for all their parents to be materialized,
+    # the skip_on_not_all_parents_updated rule is added
+    AutoMaterializeRule.skip_on_not_all_parents_updated(),
+)
+
+
+@asset(auto_materialize_policy=materialize_on_cron_policy)
 def asset1(upstream1, upstream2):
     ...
 ```
