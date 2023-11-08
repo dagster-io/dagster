@@ -351,8 +351,11 @@ class DatabricksJobRunner:
             nodes = new_cluster.pop("nodes")
 
             if "driver_instance_pool_id" in nodes:
-                check.invariant("instance_pool_id" in nodes, "Usage of `driver_instance_pool_id` requires that `instance_pool_id` be specified"
-                " for worker nodes")
+                check.invariant(
+                    "instance_pool_id" in nodes,
+                    "Usage of `driver_instance_pool_id` requires that `instance_pool_id` be specified"
+                    " for worker nodes",
+                )
 
             if "instance_pool_id" in nodes:
                 new_cluster["instance_pool_id"] = nodes["instance_pool_id"]
@@ -442,9 +445,13 @@ class DatabricksJobRunner:
             **notification_settings,
         ).bind()["run_id"]
 
-    def _get_job_health_settings(self, run_config: Mapping[str, Any]) -> Optional[list[jobs.JobsHealthRule]]:
+    def _get_job_health_settings(
+        self, run_config: Mapping[str, Any]
+    ) -> Optional[list[jobs.JobsHealthRule]]:
         if "job_health_settings" in run_config:
-            job_health_settings = [jobs.JobsHealthRule.from_dict(h) for h in run_config["job_health_settings"]]
+            job_health_settings = [
+                jobs.JobsHealthRule.from_dict(h) for h in run_config["job_health_settings"]
+            ]
         else:
             job_health_settings = None
         return job_health_settings

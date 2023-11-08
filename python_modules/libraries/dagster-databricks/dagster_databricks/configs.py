@@ -465,8 +465,14 @@ def _define_new_cluster() -> Field:
         ),
         is_required=False,
     )
-    enable_local_disk_encryption = Field(bool, is_required=False, description="Whether to encrypt cluster local disks")
-    runtime_engine = Field(Enum("RuntimeEngine", [EnumValue("PHOTON"), EnumValue("STANDARD")]), is_required=False, description="Decides which runtime engine to be use, e.g. Standard vs. Photon. If unspecified, the runtime engine is inferred from spark_version.")
+    enable_local_disk_encryption = Field(
+        bool, is_required=False, description="Whether to encrypt cluster local disks"
+    )
+    runtime_engine = Field(
+        Enum("RuntimeEngine", [EnumValue("PHOTON"), EnumValue("STANDARD")]),
+        is_required=False,
+        description="Decides which runtime engine to be use, e.g. Standard vs. Photon. If unspecified, the runtime engine is inferred from spark_version.",
+    )
     policy_id = Field(
         String,
         description="The ID of the cluster policy used to create the cluster if applicable",
@@ -670,14 +676,14 @@ def _define_notification_settings() -> Dict[str, Field]:
 
 def _define_webhook_notification_settings() -> Field:
     webhook_id_field = Field(
-            [
-                Shape(
-                    {
-                        "id": Field(String, is_required=False),
-                    }
-                )
-            ],
-        is_required=False
+        [
+            Shape(
+                {
+                    "id": Field(String, is_required=False),
+                }
+            )
+        ],
+        is_required=False,
     )
     return Field(
         Shape(
