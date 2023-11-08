@@ -730,12 +730,18 @@ class MyIOManager(ConfigurableIOManager):
             table_name = context.metadata["table"]
             schema = context.metadata["schema"]
             write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+        else:
+            raise Exception(
+                f"op {context.op_def.name} doesn't have schema and metadata set"
+            )
 
     def load_input(self, context: InputContext):
         if context.upstream_output and context.upstream_output.metadata:
             table_name = context.upstream_output.metadata["table"]
             schema = context.upstream_output.metadata["schema"]
             return read_dataframe_from_table(name=table_name, schema=schema)
+        else:
+            raise Exception("Upstream output doesn't have schema and metadata set")
 ```
 
 ### Per-input loading in assets
