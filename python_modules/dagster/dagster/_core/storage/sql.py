@@ -1,5 +1,7 @@
+import re
 import threading
 from functools import lru_cache
+from string import Template
 from typing import Any, Optional, Tuple, Union
 
 import sqlalchemy as db
@@ -207,3 +209,49 @@ def add_precision_to_mysql_FLOAT(_element, _compiler, **_kw) -> str:
 
 class MySQLCompatabilityTypes:
     UniqueText = db.String(512)
+
+class SqlQuery:
+    """Class to parse SQL Query strings.
+    """
+
+    def __init__(self, query, **bindings):
+        self.query: str = query
+        self.bindings = bindings
+
+    def parse_bindings(self) -> str:
+        """Substitute parameters (e.g. $my_asset) with values.
+        """
+        replacements = {}
+        for key, value in self.bindings.items():
+            if isinstance(value, SqlQuery):
+                replacements[key] = f"({value.parse_bindings()})"
+            else:
+                raise TypeError(
+                    f"Replacement {key} of type {type(value)} is not accepted"
+                )
+
+        query_str = Template(self.query).safe_substitute(replacements)
+        remaining_params = re.search(r"\$([a-zA-z_0-9]+)", query_str)
+        if remaining_params is not None:
+            raise ValueError(
+                f"There are unparsed parameters remaining in the query: "
+                f"{remaining_params.group()}"
+            )
+
+        return query_str
+
+    @classmethod
+    def from_file(cls, filename, **bindings):
+        """Instantiate class using SQL file from an absolute path.
+        """
+        with open(filename, "r", encoding="utf-8") as f:
+            query = f.read()
+
+        return cls(query, **bindings)
+
+    @classmethod
+    def from_relative_path(cls, dunderfile, relative_path, **bindings):
+        """Instantiate class using SQL file from a relative path.
+        """
+        filename = file_relative_path(dunderfile, relative_path)
+        return cls.from_file(filename, **bindings)
