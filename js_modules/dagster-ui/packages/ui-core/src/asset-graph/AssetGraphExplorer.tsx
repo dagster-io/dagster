@@ -46,6 +46,7 @@ import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ExpandedGroupNode} from './ExpandedGroupNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
+import {TryTheFeatureFlagNotice} from './TryTheFeatureFlagNotice';
 import {
   GraphData,
   graphHasCycles,
@@ -136,7 +137,7 @@ const AssetGraphExplorerWithData = ({
   allAssetKeys,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
-  const {flagHorizontalDAGs, flagDAGSidebar} = useFeatureFlags();
+  const {flagDAGSidebar} = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -367,6 +368,7 @@ const AssetGraphExplorerWithData = ({
       firstMinSize={400}
       first={
         <ErrorBoundary region="graph">
+          {!flagDAGSidebar ? <TryTheFeatureFlagNotice /> : undefined}
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
           ) : Object.keys(assetGraphData.nodes).length === 0 ? (
@@ -377,7 +379,7 @@ const AssetGraphExplorerWithData = ({
           ) : (
             <SVGViewport
               ref={(r) => (viewportEl.current = r || undefined)}
-              defaultZoom={flagHorizontalDAGs ? 'zoom-to-fit-width' : 'zoom-to-fit'}
+              defaultZoom={flagDAGSidebar ? 'zoom-to-fit-width' : 'zoom-to-fit'}
               interactor={SVGViewport.Interactors.PanAndZoom}
               graphWidth={layout.width}
               graphHeight={layout.height}
