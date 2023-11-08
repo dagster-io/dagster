@@ -367,13 +367,25 @@ class DagsterGrpcClient:
                 "serialized_external_repository_chunk": res.serialized_external_repository_chunk,
             }
 
-    def external_schedule_execution(
-        self, external_schedule_execution_args, timeout=DEFAULT_SCHEDULE_GRPC_TIMEOUT
-    ):
+    def external_schedule_execution(self, external_schedule_execution_args):
         check.inst_param(
             external_schedule_execution_args,
             "external_schedule_execution_args",
             ExternalScheduleExecutionArgs,
+        )
+
+        # The timeout for the schedule can be defined in one of three ways.
+        #   1. By the default grpc timeout
+        #   2. By the DEFAULT_SCHEDULE_GRPC_TIMEOUT environment variable
+        #   3. By the client.
+        # The DEFAULT_SCHEDULE_GRPC_TIMEOUT constant takes the maximum of (1) and
+        # (2), while
+        # the client may pass a timeout argument via the
+        # `sensor_execution_args` object. If the timeout is passed from the client, we use that value irrespective of what the other timeout values may be set to.
+        timeout = (
+            external_schedule_execution_args.timeout
+            if external_schedule_execution_args.timeout is not None
+            else DEFAULT_SCHEDULE_GRPC_TIMEOUT
         )
 
         chunks = list(
@@ -389,11 +401,24 @@ class DagsterGrpcClient:
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
 
-    def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_SENSOR_GRPC_TIMEOUT):
+    def external_sensor_execution(self, sensor_execution_args):
         check.inst_param(
             sensor_execution_args,
             "sensor_execution_args",
             SensorExecutionArgs,
+        )
+        # The timeout for the sensor can be defined in one of three ways.
+        #   1. By the default grpc timeout
+        #   2. By the DEFAULT_SENSOR_GRPC_TIMEOUT environment variable
+        #   3. By the client.
+        # The DEFAULT_SENSOR_GRPC_TIMEOUT constant takes the maximum of (1) and
+        # (2), while
+        # the client may pass a timeout argument via the
+        # `sensor_execution_args` object. If the timeout is passed from the client, we use that value irrespective of what the other timeout values may be set to.
+        timeout = (
+            sensor_execution_args.timeout
+            if sensor_execution_args.timeout is not None
+            else DEFAULT_SENSOR_GRPC_TIMEOUT
         )
 
         custom_timeout_message = (
