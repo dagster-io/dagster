@@ -330,7 +330,9 @@ from dagster._core.definitions.resource_definition import (
     make_values_resource as make_values_resource,
     resource as resource,
 )
-from dagster._core.definitions.result import MaterializeResult as MaterializeResult
+from dagster._core.definitions.result import (
+    MaterializeResult as MaterializeResult,
+)
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,

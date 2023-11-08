@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 
@@ -12,9 +12,9 @@ from .events import (
 from .metadata import MetadataUserInput
 
 
-class MaterializeResult(
+class AssetResult(
     NamedTuple(
-        "_MaterializeResult",
+        "_AssetResult",
         [
             ("asset_key", PublicAttr[Optional[AssetKey]]),
             ("metadata", PublicAttr[Optional[MetadataUserInput]]),
@@ -23,14 +23,7 @@ class MaterializeResult(
         ],
     )
 ):
-    """An object representing a successful materialization of an asset. These can be returned from
-    @asset and @multi_asset decorated functions to pass metadata or specify specific assets were
-    materialized.
-
-    Attributes:
-        asset_key (Optional[AssetKey]): Optional in @asset, required in @multi_asset to discern which asset this refers to.
-        metadata (Optional[MetadataUserInput]): Metadata to record with the corresponding AssetMaterialization event.
-    """
+    """Base class for MaterializeResult and ObserveResult."""
 
     def __new__(
         cls,
@@ -62,3 +55,34 @@ class MaterializeResult(
                 return check_result
 
         check.failed(f"Could not find check result named {check_name}")
+
+
+class MaterializeResult(AssetResult):
+    """An object representing a successful materialization of an asset. These can be returned from
+    @asset and @multi_asset decorated functions to pass metadata or specify specific assets were
+    materialized.
+
+    Attributes:
+        asset_key (Optional[AssetKey]): Optional in @asset, required in @multi_asset to discern which asset this refers to.
+        metadata (Optional[MetadataUserInput]): Metadata to record with the corresponding AssetMaterialization event.
+        check_results (Optional[Sequence[AssetCheckResult]]): Check results to record with the
+            corresponding AssetMaterialization event.
+        data_version (Optional[DataVersion]): The data version of the asset that was observed.
+    """
+
+
+@experimental
+class ObserveResult(AssetResult):
+    """An object representing a successful observation of an asset. These can be returned from
+    @asset and @multi_asset decorated functions to pass metadata or specify that specific assets were
+    observed. The @asset or @multi_asset must specify
+    "dagster/asset_execution_type": "OBSERVATION" in its metadata for this to
+    work.
+
+    Attributes:
+        asset_key (Optional[AssetKey]): Optional in @asset, required in @multi_asset to discern which asset this refers to.
+        metadata (Optional[MetadataUserInput]): Metadata to record with the corresponding AssetMaterialization event.
+        check_results (Optional[Sequence[AssetCheckResult]]): Check results to record with the
+            corresponding AssetObservation event.
+        data_version (Optional[DataVersion]): The data version of the asset that was observed.
+    """

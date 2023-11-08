@@ -47,7 +47,7 @@ from .hook_definition import HookDefinition
 from .inference import infer_output_props
 from .input import In, InputDefinition
 from .output import Out, OutputDefinition
-from .result import MaterializeResult
+from .result import MaterializeResult, ObserveResult
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -574,4 +574,4 @@ def _validate_context_type_hint(fn):
 
 def _is_result_object_type(ttype):
     # Is this type special result object type
-    return ttype in (MaterializeResult, AssetCheckResult)
+    return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)
