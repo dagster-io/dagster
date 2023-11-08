@@ -12,8 +12,7 @@ from duckdb import DuckDBPyConnection
 
 
 class DuckDBSqlTypeHandler(DbTypeHandler[SqlQuery]):
-    """Posts SQL queries to DuckDB and constructs SQL queries.
-    Uses INSERT INTO statements and SELECT statements.
+    """Executes SQL INSERT INTO queries in DuckDB and constructs SQL SELECT queries.
 
     To use this type handler, return it from the ``type_handlers` method of an I/O manager that inherits from ``DuckDBIOManager``.
 
