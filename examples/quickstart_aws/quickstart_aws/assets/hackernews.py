@@ -76,15 +76,21 @@ def hackernews_topstories_word_cloud(
     # Save the image to a buffer and embed the image into Markdown content for quick view
     buffer = BytesIO()
     plt.savefig(buffer, format="png")
+    buffer.seek(0) # set the pointer to the beginning
     image_data = base64.b64encode(buffer.getvalue())
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
     # Also, upload the image to S3
     bucket_name = os.environ.get("S3_BUCKET")
     bucket_location = s3.get_client().get_bucket_location(Bucket=bucket_name)["LocationConstraint"]
+    endpoint_url = os.environ.get("AWS_ENDPOINT_URL_S3")
     file_name = "hackernews_topstories_word_cloud.png"
     s3.get_client().upload_fileobj(buffer, bucket_name, file_name)
-    s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{file_name}"
+    if endpoint_url:
+        s3_path = f"{endpoint_url}/{bucket_name}/{file_name}"
+    else:
+        s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{file_name}"
+
     context.add_output_metadata(
         {
             # Attach the Markdown content and s3 file path as metadata to the asset
