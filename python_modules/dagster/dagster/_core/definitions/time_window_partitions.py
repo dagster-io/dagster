@@ -5,6 +5,7 @@ import re
 from abc import abstractmethod, abstractproperty
 from datetime import datetime, timedelta
 from enum import Enum
+from functools import cached_property
 from typing import (
     AbstractSet,
     Any,
@@ -39,6 +40,10 @@ from dagster._seven.compat.pendulum import (
     to_timezone,
 )
 from dagster._serdes.serdes import FieldSerializer, deserialize_value, serialize_value
+from dagster._serdes.serdes import (
+    FieldSerializer,
+    NamedTupleSerializer,
+)
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
@@ -1568,17 +1573,13 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         if not first_tw or not last_tw:
             check.failed("No partitions found")
 
-<<<<<<< HEAD
         last_tw_end_timestamp = last_tw.end.timestamp()
         first_tw_start_timestamp = first_tw.start.timestamp()
 
-=======
->>>>>>> b029208a84 (switch to using asdict)
         if len(self.included_time_windows) == 0:
             return [TimeWindow(first_tw.start, last_tw.end)]
 
         time_windows = []
-<<<<<<< HEAD
         if first_tw_start_timestamp < self.included_time_windows[0].start.timestamp():
             time_windows.append(TimeWindow(first_tw.start, self.included_time_windows[0].start))
 
@@ -1587,16 +1588,6 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
                 break
             if self.included_time_windows[i].end.timestamp() < last_tw_end_timestamp:
                 if self.included_time_windows[i + 1].start.timestamp() <= last_tw_end_timestamp:
-=======
-        if first_tw.start < self.included_time_windows[0].start:
-            time_windows.append(TimeWindow(first_tw.start, self.included_time_windows[0].start))
-
-        for i in range(len(self.included_time_windows) - 1):
-            if self.included_time_windows[i].start >= last_tw.end:
-                break
-            if self.included_time_windows[i].end < last_tw.end:
-                if self.included_time_windows[i + 1].start <= last_tw.end:
->>>>>>> b029208a84 (switch to using asdict)
                     time_windows.append(
                         TimeWindow(
                             self.included_time_windows[i].end,
@@ -1611,11 +1602,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
                         )
                     )
 
-<<<<<<< HEAD
         if last_tw_end_timestamp > self.included_time_windows[-1].end.timestamp():
-=======
-        if last_tw.end > self.included_time_windows[-1].end:
->>>>>>> b029208a84 (switch to using asdict)
             time_windows.append(TimeWindow(self.included_time_windows[-1].end, last_tw.end))
 
         return time_windows
@@ -1816,13 +1803,8 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         ).time_window_for_partition_key(partition_key)
 
         return any(
-<<<<<<< HEAD
             time_window.start.timestamp() >= included_time_window.start.timestamp()
             and time_window.start.timestamp() < included_time_window.end.timestamp()
-=======
-            time_window.start >= included_time_window.start
-            and time_window.start < included_time_window.end
->>>>>>> b029208a84 (switch to using asdict)
             for included_time_window in self.included_time_windows
         )
 
@@ -1962,26 +1944,25 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges()})"
 
 
-class TimeWindowPartitionsDefinitionSerializer(FieldSerializer):
-    """Serializes a TimeWindowPartitionsDefinition by converting it to a SerializableTimeWindowPartitionsDefinition."""
-
-    def pack(self, partitions_def: TimeWindowPartitionsDefinition, **_kwargs) -> str:
-        return serialize_value(partitions_def.to_serializable_time_window_partitions_def())
-
-    def unpack(
-        self,
-        serialized_time_window_partitions_def: str,
-        **_kwargs,
-    ) -> TimeWindowPartitionsDefinition:
-        return deserialize_value(
-            serialized_time_window_partitions_def, SerializableTimeWindowPartitionsDefinition
-        ).to_time_window_partitions_def()
+class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
+    # TimeWindowPartitionsSubsets have custom logic to delay calculating num_partitions until it
+    # is needed to improve performance. When serializing, we want to serialize the number of
+    # partitions, so we force calculatation.
+    def before_pack(self, value: "TimeWindowPartitionsSubset") -> "TimeWindowPartitionsSubset":
+        if value._asdict()["num_partitions"] is None:
+            return TimeWindowPartitionsSubset(
+                partitions_def=value.partitions_def,
+                num_partitions=value.num_partitions,
+                included_time_windows=value.included_time_windows,
+            )
+        return value
 
 
 @whitelist_for_serdes(
-    field_serializers={"partitions_def": TimeWindowPartitionsDefinitionSerializer}
+    serializer=TimeWindowPartitionsSubsetSerializer,
 )
 class TimeWindowPartitionsSubset(
+    BaseTimeWindowPartitionsSubset,
     NamedTuple(
         "_TimeWindowPartitionsSubset",
         [
@@ -1990,11 +1971,11 @@ class TimeWindowPartitionsSubset(
             ("included_time_windows", Sequence[TimeWindow]),
         ],
     ),
-    BaseTimeWindowPartitionsSubset,
 ):
     """A PartitionsSubset for a TimeWindowPartitionsDefinition, which internally represents the
     included partitions using TimeWindows.
     """
+
     def __new__(
         cls,
         partitions_def: TimeWindowPartitionsDefinition,

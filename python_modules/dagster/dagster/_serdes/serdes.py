@@ -516,7 +516,7 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
     ) -> Dict[str, JsonSerializableValue]:
         packed: Dict[str, JsonSerializableValue] = {}
         packed["__class__"] = self.get_storage_name()
-        for key, inner_value in value._asdict().items():
+        for key, inner_value in self.before_pack(value)._asdict().items():
             if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
             storage_key = self.storage_field_names.get(key, key)
@@ -537,6 +537,10 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
             packed[key] = default
         packed = self.after_pack(**packed)
         return packed
+
+    # Hook: Modify the contents of the named tuple before packing
+    def before_pack(self, value: T_NamedTuple) -> T_NamedTuple:
+        return value
 
     # Hook: Modify the contents of the packed, json-serializable dict before it is converted to a
     # string.
