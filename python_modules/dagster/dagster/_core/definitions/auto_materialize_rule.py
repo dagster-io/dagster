@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import functools
 from abc import ABC, abstractmethod, abstractproperty
@@ -114,6 +115,11 @@ class RuleEvaluationContext:
         return self.previous_tick_evaluation.get_evaluated_asset_partitions(
             asset_graph=self.asset_graph
         )
+
+    def with_candidates(
+        self, candidates: AbstractSet[AssetKeyPartitionKey]
+    ) -> "RuleEvaluationContext":
+        return dataclasses.replace(self, candidates=candidates)
 
     def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
         """Returns the results that were calculated for a given rule on the previous tick."""
