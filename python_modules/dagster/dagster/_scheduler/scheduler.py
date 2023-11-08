@@ -137,7 +137,7 @@ def execute_scheduler_iteration_loop(
     threadpool_executor = None
 
     with ExitStack() as stack:
-        settings = workspace_process_context.instance.get_settings("schedules")
+        settings = workspace_process_context.instance.get_scheduler_settings()
         if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
                 InheritContextThreadPoolExecutor(
