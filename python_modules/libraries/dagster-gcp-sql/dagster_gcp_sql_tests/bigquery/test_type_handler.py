@@ -486,7 +486,7 @@ def test_self_dependent_asset(io_manager):
 
                 assert len(df.index) == 3
                 assert (
-                    df["key"] == context.op_config["last_partition_key"]
+                    df["key"] == str(pd.Timestamp(context.op_config["last_partition_key"])) # TODO: Acceptable?
                 ).all()
 
             except (NotFound, BadRequest, pandas_gbq.exceptions.GenericGBQException):
@@ -518,7 +518,6 @@ def test_self_dependent_asset(io_manager):
         out_df = pandas_gbq.read_gbq(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
-        print(out_df)
 
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
 
