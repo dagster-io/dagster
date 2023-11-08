@@ -69,6 +69,7 @@ class DuckDBSqlTypeHandler(DbTypeHandler[SqlQuery]):
     ) -> None:
         """Create and execute an insert values query from the parsed query.
         """
+        # TODO: functionality to copy to S3?
         query_str = query.parse_bindings()
         table_name = f"{table_slice.schema}.{table_slice.table}"
 
