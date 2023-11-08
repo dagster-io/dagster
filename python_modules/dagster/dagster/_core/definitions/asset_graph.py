@@ -573,12 +573,12 @@ class AssetGraph:
 
         queued_subsets_by_asset_key: Dict[AssetKey, Optional[PartitionsSubset]] = {
             initial_asset_key: (
-                initial_subset.get_partitions_subset(initial_asset_key)
+                initial_subset.get_partitions_subset(initial_asset_key, self)
                 if self.get_partitions_def(initial_asset_key)
                 else None
             ),
         }
-        result = AssetGraphSubset(self)
+        result = AssetGraphSubset()
 
         while len(queue) > 0:
             asset_key = queue.popleft()
@@ -586,7 +586,6 @@ class AssetGraph:
 
             if condition_fn(asset_key, partitions_subset):
                 result |= AssetGraphSubset(
-                    self,
                     non_partitioned_asset_keys={asset_key} if partitions_subset is None else set(),
                     partitions_subsets_by_asset_key=(
                         {asset_key: partitions_subset} if partitions_subset is not None else {}

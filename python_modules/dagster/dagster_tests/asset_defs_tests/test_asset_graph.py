@@ -60,9 +60,12 @@ def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
 
 
 @pytest.fixture(
-    name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_external_asset_graph]
+    name="asset_graph_from_assets",
+    params=[AssetGraph.from_assets, to_external_asset_graph],
 )
-def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], AssetGraph]:
+def asset_graph_from_assets_fixture(
+    request,
+) -> Callable[[List[AssetsDefinition]], AssetGraph]:
     return request.param
 
 
@@ -86,7 +89,12 @@ def test_basics(asset_graph_from_assets):
     assets = [asset0, asset1, asset2, asset3]
     asset_graph = asset_graph_from_assets(assets)
 
-    assert asset_graph.all_asset_keys == {asset0.key, asset1.key, asset2.key, asset3.key}
+    assert asset_graph.all_asset_keys == {
+        asset0.key,
+        asset1.key,
+        asset2.key,
+        asset3.key,
+    }
     assert not asset_graph.is_partitioned(asset0.key)
     assert asset_graph.is_partitioned(asset1.key)
     assert asset_graph.have_same_partitioning(asset1.key, asset2.key)
@@ -99,7 +107,9 @@ def test_basics(asset_graph_from_assets):
     assert asset_graph.get_code_version(asset1.key) is None
 
 
-def test_get_children_partitions_unpartitioned_parent_partitioned_child(asset_graph_from_assets):
+def test_get_children_partitions_unpartitioned_parent_partitioned_child(
+    asset_graph_from_assets,
+):
     @asset
     def parent():
         ...
@@ -117,7 +127,9 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(asset_gr
         )
 
 
-def test_get_parent_partitions_unpartitioned_child_partitioned_parent(asset_graph_from_assets):
+def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
+    asset_graph_from_assets,
+):
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
     def parent():
         ...
@@ -133,7 +145,10 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(asset_grap
         assert asset_graph.get_parents_partitions(
             instance, current_time, child.key
         ).parent_partitions == set(
-            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
+            [
+                AssetKeyPartitionKey(parent.key, "a"),
+                AssetKeyPartitionKey(parent.key, "b"),
+            ]
         )
 
 
@@ -293,7 +308,8 @@ def test_required_multi_asset_sets_non_subsettable_multi_asset(asset_graph_from_
 
 def test_required_multi_asset_sets_subsettable_multi_asset(asset_graph_from_assets):
     @multi_asset(
-        outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)}, can_subset=True
+        outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)},
+        can_subset=True,
     )
     def subsettable_multi_asset():
         ...
@@ -402,10 +418,9 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets):
         ["2022-01-02", "2022-01-03"]
     )
     initial_asset1_subset = AssetGraphSubset(
-        asset_graph, partitions_subsets_by_asset_key={asset1.key: initial_partitions_subset}
+        partitions_subsets_by_asset_key={asset1.key: initial_partitions_subset}
     )
     corresponding_asset3_subset = AssetGraphSubset(
-        asset_graph,
         partitions_subsets_by_asset_key={
             asset3.key: asset3.partitions_def.empty_subset().with_partition_key_range(
                 asset3.partitions_def,
@@ -427,12 +442,15 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets):
     def include_none(asset_key, partitions_subset):
         return False
 
-    assert asset_graph.bfs_filter_subsets(
-        dynamic_partitions_store=MagicMock(),
-        initial_subset=initial_asset1_subset,
-        condition_fn=include_none,
-        current_time=pendulum.now("UTC"),
-    ) == AssetGraphSubset(asset_graph)
+    assert (
+        asset_graph.bfs_filter_subsets(
+            dynamic_partitions_store=MagicMock(),
+            initial_subset=initial_asset1_subset,
+            condition_fn=include_none,
+            current_time=pendulum.now("UTC"),
+        )
+        == AssetGraphSubset()
+    )
 
     def exclude_asset3(asset_key, partitions_subset):
         return asset_key is not asset3.key
@@ -451,7 +469,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets):
         return asset_key is not asset2.key
 
     initial_asset0_subset = AssetGraphSubset(
-        asset_graph, partitions_subsets_by_asset_key={asset0.key: initial_partitions_subset}
+        partitions_subsets_by_asset_key={asset0.key: initial_partitions_subset}
     )
     assert (
         asset_graph.bfs_filter_subsets(
@@ -503,7 +521,6 @@ def test_bfs_filter_asset_subsets_different_mappings(asset_graph_from_assets):
         ["2022-01-01", "2022-01-02"]
     )
     expected_asset_graph_subset = AssetGraphSubset(
-        asset_graph,
         partitions_subsets_by_asset_key={
             asset0.key: initial_subset,
             asset1.key: initial_subset,
@@ -516,7 +533,6 @@ def test_bfs_filter_asset_subsets_different_mappings(asset_graph_from_assets):
         asset_graph.bfs_filter_subsets(
             dynamic_partitions_store=MagicMock(),
             initial_subset=AssetGraphSubset(
-                asset_graph,
                 partitions_subsets_by_asset_key={asset0.key: initial_subset},
             ),
             condition_fn=include_all,
@@ -545,12 +561,7 @@ def test_asset_graph_subset_contains(asset_graph_from_assets) -> None:
     def unpartitioned2():
         ...
 
-    asset_graph = asset_graph_from_assets(
-        [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
-    )
-
     asset_graph_subset = AssetGraphSubset(
-        asset_graph,
         partitions_subsets_by_asset_key={
             partitioned1.key: daily_partitions_def.subset_with_partition_keys(["2022-01-01"]),
             partitioned2.key: daily_partitions_def.empty_subset(),
@@ -588,12 +599,7 @@ def test_asset_graph_difference(asset_graph_from_assets):
     def unpartitioned2():
         ...
 
-    asset_graph = asset_graph_from_assets(
-        [partitioned1, partitioned2, unpartitioned1, unpartitioned2]
-    )
-
     subset1 = AssetGraphSubset(
-        asset_graph,
         partitions_subsets_by_asset_key={
             partitioned1.key: daily_partitions_def.subset_with_partition_keys(
                 ["2022-01-01", "2022-01-02", "2022-01-03"]
@@ -606,7 +612,6 @@ def test_asset_graph_difference(asset_graph_from_assets):
     )
 
     subset2 = AssetGraphSubset(
-        asset_graph,
         partitions_subsets_by_asset_key={
             partitioned1.key: daily_partitions_def.subset_with_partition_keys(
                 ["2022-01-02", "2022-01-03", "2022-01-04"]
@@ -621,7 +626,6 @@ def test_asset_graph_difference(asset_graph_from_assets):
     assert len(list((subset1 - subset1).iterate_asset_partitions())) == 0
     assert len(list((subset2 - subset2).iterate_asset_partitions())) == 0
     assert subset1 - subset2 == AssetGraphSubset(
-        asset_graph,
         partitions_subsets_by_asset_key={
             partitioned1.key: daily_partitions_def.subset_with_partition_keys(["2022-01-01"]),
             partitioned2.key: daily_partitions_def.empty_subset(),
@@ -629,7 +633,6 @@ def test_asset_graph_difference(asset_graph_from_assets):
         non_partitioned_asset_keys=set(),
     )
     assert subset2 - subset1 == AssetGraphSubset(
-        asset_graph,
         partitions_subsets_by_asset_key={
             partitioned1.key: daily_partitions_def.subset_with_partition_keys(["2022-01-04"]),
             partitioned2.key: daily_partitions_def.subset_with_partition_keys(
@@ -691,7 +694,6 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets):
         )
 
     ag1_storage_dict = AssetGraphSubset(
-        get_ag1(),
         partitions_subsets_by_asset_key={
             AssetKey("partitioned1"): daily_partitions_def.subset_with_partition_keys(
                 ["2022-01-01", "2022-01-02", "2022-01-03"]
@@ -700,8 +702,11 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets):
                 ["2022-01-01", "2022-01-02", "2022-01-03"]
             ),
         },
-        non_partitioned_asset_keys={AssetKey("unpartitioned1"), AssetKey("unpartitioned2")},
-    ).to_storage_dict(None)
+        non_partitioned_asset_keys={
+            AssetKey("unpartitioned1"),
+            AssetKey("unpartitioned2"),
+        },
+    ).to_storage_dict(dynamic_partitions_store=None, asset_graph=get_ag1())
 
     asset_graph2 = get_ag2()
     assert not AssetGraphSubset.can_deserialize(ag1_storage_dict, asset_graph2)
@@ -715,7 +720,6 @@ def test_asset_graph_partial_deserialization(asset_graph_from_assets):
         ag1_storage_dict, asset_graph=asset_graph2, allow_partial=True
     )
     assert ag2_subset == AssetGraphSubset(
-        asset_graph2,
         partitions_subsets_by_asset_key={
             AssetKey("partitioned1"): daily_partitions_def.subset_with_partition_keys(
                 ["2022-01-01", "2022-01-02", "2022-01-03"]
@@ -765,7 +769,8 @@ def test_required_assets_and_checks_by_key_multi_asset(asset_graph_from_assets):
     bar_check = AssetCheckSpec(name="bar", asset="asset1")
 
     @multi_asset(
-        outs={"asset0": AssetOut(), "asset1": AssetOut()}, check_specs=[foo_check, bar_check]
+        outs={"asset0": AssetOut(), "asset1": AssetOut()},
+        check_specs=[foo_check, bar_check],
     )
     def asset_fn():
         ...
@@ -782,15 +787,26 @@ def test_required_assets_and_checks_by_key_multi_asset(asset_graph_from_assets):
 
     asset_graph = asset_graph_from_assets([asset_fn, subsettable_asset_fn])
 
-    grouped_keys = [AssetKey(["asset0"]), AssetKey(["asset1"]), foo_check.key, bar_check.key]
+    grouped_keys = [
+        AssetKey(["asset0"]),
+        AssetKey(["asset1"]),
+        foo_check.key,
+        bar_check.key,
+    ]
     for key in grouped_keys:
         assert asset_graph.get_required_asset_and_check_keys(key) == set(grouped_keys)
 
-    for key in [AssetKey(["subsettable_asset0"]), AssetKey(["subsettable_asset1"]), biz_check.key]:
+    for key in [
+        AssetKey(["subsettable_asset0"]),
+        AssetKey(["subsettable_asset1"]),
+        biz_check.key,
+    ]:
         assert asset_graph.get_required_asset_and_check_keys(key) == set()
 
 
-def test_required_assets_and_checks_by_key_multi_asset_single_asset(asset_graph_from_assets):
+def test_required_assets_and_checks_by_key_multi_asset_single_asset(
+    asset_graph_from_assets,
+):
     foo_check = AssetCheckSpec(name="foo", asset="asset0")
     bar_check = AssetCheckSpec(name="bar", asset="asset0")
 

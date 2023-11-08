@@ -307,18 +307,18 @@ class AssetReconciliationScenario(
             for i, target in enumerate(self.active_backfill_targets or []):
                 if isinstance(target, Mapping):
                     target_subset = AssetGraphSubset(
-                        asset_graph=repo.asset_graph,
+                        # asset_graph=repo.asset_graph,
                         partitions_subsets_by_asset_key=target,
                         non_partitioned_asset_keys=set(),
                     )
                 else:
                     target_subset = AssetGraphSubset(
-                        asset_graph=repo.asset_graph,
+                        # asset_graph=repo.asset_graph,
                         partitions_subsets_by_asset_key={},
                         non_partitioned_asset_keys=target,
                     )
                 empty_subset = AssetGraphSubset(
-                    asset_graph=repo.asset_graph,
+                    # asset_graph=repo.asset_graph,
                     partitions_subsets_by_asset_key={},
                     non_partitioned_asset_keys=set(),
                 )
@@ -338,7 +338,7 @@ class AssetReconciliationScenario(
                     tags={},
                     backfill_timestamp=test_time.timestamp(),
                     serialized_asset_backfill_data=asset_backfill_data.serialize(
-                        dynamic_partitions_store=instance
+                        dynamic_partitions_store=instance, asset_graph=repo.asset_graph
                     ),
                 )
                 instance.add_backfill(backfill)
