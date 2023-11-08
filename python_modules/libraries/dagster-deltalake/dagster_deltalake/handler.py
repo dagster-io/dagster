@@ -138,7 +138,7 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
 
     def to_arrow(self, obj: ArrowTypes) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
         if isinstance(obj, pa.Table):
-            return obj.to_reader()
+            return obj.to_reader(), {}
         return obj, {}
 
     @property
