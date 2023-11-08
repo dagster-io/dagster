@@ -10,8 +10,10 @@ from alembic.config import Config
 from alembic.runtime.environment import EnvironmentContext
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from pandas import Timestamp
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.compiler import compiles
+from sqlescapy import sqlescape
 from typing_extensions import TypeAlias
 
 from dagster._utils import file_relative_path
@@ -225,6 +227,17 @@ class SqlQuery:
         for key, value in self.bindings.items():
             if isinstance(value, SqlQuery):
                 replacements[key] = f"({value.parse_bindings()})"
+            elif isinstance(value, str):
+                try:
+                    replacements[key] = f"'{Timestamp(value)}'"
+                except ValueError:
+                    replacements[key] = f"'{sqlescape(value)}'"
+            elif isinstance(value, Timestamp):
+                replacements[key] = f"'{value}'"
+            elif isinstance(value, (int, float, bool)):
+                replacements[key] = str(value)
+            elif value is None:
+                replacements[key] = "null"
             else:
                 raise TypeError(
                     f"Replacement {key} of type {type(value)} is not accepted"
