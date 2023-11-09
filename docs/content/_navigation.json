@@ -14,10 +14,6 @@
         "path": "/getting-started/install"
       },
       {
-        "title": "Project files",
-        "path": "/getting-started/project-file-reference"
-      },
-      {
         "title": "Getting help",
         "path": "/getting-started/getting-help"
       },
@@ -782,6 +778,10 @@
           {
             "title": "Creating a new project",
             "path": "/guides/create-new-project"
+          },
+          {
+            "title": "Understanding Dagster project files",
+            "path": "/guides/understanding-dagster-project-files"
           },
           {
             "title": "Running Dagster locally",
