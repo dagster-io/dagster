@@ -1909,6 +1909,7 @@ class DagsterInstance(DynamicPartitionsStore):
         event_records_filter: "EventRecordsFilter",
         limit: Optional[int] = None,
         ascending: bool = False,
+        force_use_index_connection: bool = False,
     ) -> Sequence["EventLogRecord"]:
         """Return a list of event records stored in the event log storage.
 
@@ -1922,7 +1923,9 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
-        return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+        return self._event_storage.get_event_records(
+            event_records_filter, limit, ascending, force_use_index_connection
+        )
 
     @public
     @traced

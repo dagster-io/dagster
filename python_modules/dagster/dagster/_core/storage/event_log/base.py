@@ -233,6 +233,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
+        force_use_index_connection: bool = False,
     ) -> Sequence[EventLogRecord]:
         pass
 

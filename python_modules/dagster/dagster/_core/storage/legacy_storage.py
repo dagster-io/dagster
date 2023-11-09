@@ -449,6 +449,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
+        force_use_index_connection: bool = False,
     ) -> Iterable[EventLogRecord]:
         # type ignored because `get_event_records` does not accept None. Unclear which type
         # annotation is wrong.
@@ -456,6 +457,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             event_records_filter,  # type: ignore
             limit,
             ascending,
+            force_use_index_connection,
         )
 
     def fetch_materializations(

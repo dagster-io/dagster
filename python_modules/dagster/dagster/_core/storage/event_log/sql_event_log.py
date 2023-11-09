@@ -914,6 +914,7 @@ class SqlEventLogStorage(EventLogStorage):
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
+        force_use_index_connection: bool = False,
     ) -> Sequence[EventLogRecord]:
         return self._get_event_records(
             event_records_filter=event_records_filter, limit=limit, ascending=ascending

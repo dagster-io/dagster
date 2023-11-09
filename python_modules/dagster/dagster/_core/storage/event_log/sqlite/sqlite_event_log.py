@@ -278,6 +278,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
+        force_use_index_connection: bool = False,
     ) -> Sequence[EventLogRecord]:
         """Overridden method to enable cross-run event queries in sqlite.
 
@@ -289,7 +290,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.bool_param(ascending, "ascending")
 
         is_asset_query = event_records_filter and event_records_filter.event_type in ASSET_EVENTS
-        if is_asset_query:
+        if is_asset_query or force_use_index_connection:
             # asset materializations, observations and materialization planned events
             # get mirrored into the index shard, so no custom run shard-aware cursor logic needed
             return super(SqliteEventLogStorage, self).get_event_records(
