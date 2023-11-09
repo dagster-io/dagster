@@ -1313,8 +1313,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
         return hashlib.md5(
-            (json.dumps(sorted(self.keys))).encode("utf-8"),
-            usedforsecurity=False
+            (json.dumps(sorted(self.keys))).encode("utf-8"), usedforsecurity=False
         ).hexdigest()
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":

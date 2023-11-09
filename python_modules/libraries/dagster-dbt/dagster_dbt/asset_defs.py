@@ -433,8 +433,7 @@ def _dbt_nodes_to_assets(
             op_name += (
                 "_"
                 + hashlib.md5(
-                    select.encode() + exclude.encode(),
-                    usedforsecurity=False
+                    select.encode() + exclude.encode(), usedforsecurity=False
                 ).hexdigest()[-5:]
             )
 
