@@ -14,10 +14,6 @@
         "path": "/getting-started/install"
       },
       {
-        "title": "Create a new project",
-        "path": "/getting-started/create-new-project"
-      },
-      {
         "title": "Project files",
         "path": "/getting-started/project-file-reference"
       },
@@ -783,6 +779,10 @@
       {
         "title": "Development environment",
         "children": [
+          {
+            "title": "Creating a new project",
+            "path": "/guides/create-new-project"
+          },
           {
             "title": "Running Dagster locally",
             "path": "/guides/running-dagster-locally"
