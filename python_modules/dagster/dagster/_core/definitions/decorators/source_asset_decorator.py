@@ -18,7 +18,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
-    MetadataUserInput,
+    RawMetadataMapping,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -37,7 +37,7 @@ def observable_source_asset(
     key: Optional[CoercibleToAssetKey] = None,
     name: Optional[str] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    metadata: Optional[MetadataUserInput] = None,
+    metadata: Optional[RawMetadataMapping] = None,
     io_manager_key: Optional[str] = None,
     io_manager_def: Optional[object] = None,
     description: Optional[str] = None,
@@ -58,7 +58,7 @@ def observable_source_asset(
     key: Optional[CoercibleToAssetKey] = None,
     name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    metadata: Optional[MetadataUserInput] = None,
+    metadata: Optional[RawMetadataMapping] = None,
     io_manager_key: Optional[str] = None,
     io_manager_def: Optional[object] = None,
     description: Optional[str] = None,
@@ -128,7 +128,7 @@ class _ObservableSourceAsset:
         key: Optional[CoercibleToAssetKey] = None,
         name: Optional[str] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         io_manager_key: Optional[str] = None,
         io_manager_def: Optional[object] = None,
         description: Optional[str] = None,
