@@ -734,7 +734,7 @@ class TimeWindowPartitionsDefinition(
 
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
-        return TimePartitionKeyPartitionsSubset
+        return PartitionKeysTimeWindowPartitionsSubset
 
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
@@ -1380,12 +1380,16 @@ def weekly_partitioned_config(
 
 
 class BaseTimeWindowPartitionsSubset(PartitionsSubset):
+    """A base class that represents PartitionSubsets for TimeWindowPartitionsDefinitions.
+    Contains shared logic for time window partitions subsets, such as building time windows
+    from partition keys.
+    """
+
     # Every time we change the serialization format, we should increment the version number.
     # This will ensure that we can gracefully degrade when deserializing old data.
     SERIALIZATION_VERSION = 1
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def included_time_windows(self) -> Sequence[TimeWindow]:
         ...
 
@@ -1647,7 +1651,11 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         )
 
 
-class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
+class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
+    """A PartitionsSubset for a TimeWindowPartitionsDefinition, which internally represents the
+    included partitions using strings.
+    """
+
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
@@ -1664,7 +1672,7 @@ class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
         self, partition_keys: Iterable[str]
     ) -> "BaseTimeWindowPartitionsSubset":
         new_partitions = {*(self._included_partition_keys or []), *partition_keys}
-        return TimePartitionKeyPartitionsSubset(
+        return PartitionKeysTimeWindowPartitionsSubset(
             self._partitions_def,
             included_partition_keys=new_partitions,
         )
@@ -1742,10 +1750,10 @@ class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
 
     def __eq__(self, other):
         return (
-            isinstance(other, TimePartitionKeyPartitionsSubset)
+            isinstance(other, PartitionKeysTimeWindowPartitionsSubset)
             and self.partitions_def == other.partitions_def
             and self._included_partition_keys == other._included_partition_keys
-        ) or super(TimePartitionKeyPartitionsSubset, self).__eq__(other)
+        ) or super(PartitionKeysTimeWindowPartitionsSubset, self).__eq__(other)
 
     @classmethod
     def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
@@ -1762,13 +1770,17 @@ class TimePartitionKeyPartitionsSubset(BaseTimeWindowPartitionsSubset):
             "num_partitions would become inaccurate if the partitions_defs had different cron"
             " schedules",
         )
-        return TimePartitionKeyPartitionsSubset(
+        return PartitionKeysTimeWindowPartitionsSubset(
             partitions_def=partitions_def,
             included_partition_keys=self._included_partition_keys,
         )
 
 
 class TimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
+    """A PartitionsSubset for a TimeWindowPartitionsDefinition, which internally represents the
+    included partitions using TimeWindows.
+    """
+
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
