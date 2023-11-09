@@ -514,9 +514,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             # This is not ideal, as the triggered run for the dbt Cloud job will still have both
             # `--select` options when displayed in the UI, but parsing the command line argument
             # to remove the initial select using argparse.
-            if len(context.selected_output_names) != len(
-                assets_definition_cacheable_data.keys_by_output_name or {}
-            ):
+            if context.is_subset:
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
                     for output_name in context.selected_output_names
