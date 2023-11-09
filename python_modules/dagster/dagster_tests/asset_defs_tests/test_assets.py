@@ -1202,6 +1202,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"out_1": Out(is_required=False), "out_2": Out(is_required=False)})
     def op_1(context):
         assert context.selected_output_names == selected_output_names_op_1
+        assert (num_materializations != 3) == context.is_subset
         if "out_1" in context.selected_output_names:
             yield Output(1, output_name="out_1")
         if "out_2" in context.selected_output_names:
@@ -1210,6 +1211,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"add_one_1": Out(is_required=False), "add_one_2": Out(is_required=False)})
     def add_one(context, x):
         assert context.selected_output_names == selected_output_names_op_2
+        assert (num_materializations != 3) == context.is_subset
         if "add_one_1" in context.selected_output_names:
             yield Output(x, output_name="add_one_1")
         if "add_one_2" in context.selected_output_names:
