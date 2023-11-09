@@ -122,9 +122,9 @@ def asset1(upstream1, upstream2):
     ...
 ```
 
-#### Auto-materialize on a regular cadence
+#### Auto-materialize root assets on a regular cadence
 
-By default, the eager policy will only materialize an asset if it's missing or one of its parents update. This means that an unpartitioned root asset will only get auto-materialized a single time. In some cases, it's desirable to recompute these assets on a regular basis. To enable this, the `materialize_on_cron` rule can be added to a given policy.
+By default, the eager policy will only materialize an asset if it's missing or one of its parents update. This means that an unpartitioned root asset will only get auto-materialized a single time, as it has no parents which can update. In some cases, it's desirable to recompute these assets on a regular basis. To enable this, the `materialize_on_cron` rule can be added to a given policy.
 
 ```python file=/concepts/assets/auto_materialize_on_cron.py
 from dagster import AutoMaterializePolicy, AutoMaterializeRule, asset
@@ -132,14 +132,11 @@ from dagster import AutoMaterializePolicy, AutoMaterializeRule, asset
 materialize_on_cron_policy = AutoMaterializePolicy.eager().with_rules(
     # try to materialize this asset if it hasn't been materialized since the last cron tick
     AutoMaterializeRule.materialize_on_cron("0 9 * * *", timezone="US/Central"),
-    # to make sure assets in the middle of the graph wait for all their parents to be materialized,
-    # the skip_on_not_all_parents_updated rule is added
-    AutoMaterializeRule.skip_on_not_all_parents_updated(),
 )
 
 
 @asset(auto_materialize_policy=materialize_on_cron_policy)
-def asset1(upstream1, upstream2):
+def root_asset():
     ...
 ```
 
