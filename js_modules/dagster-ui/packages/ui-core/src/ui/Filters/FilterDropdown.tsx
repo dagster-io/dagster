@@ -126,7 +126,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               setFocusedItemIndex(-1);
             }}
             text={
-              <Box flex={{direction: 'row', gap: 12}}>
+              <Box flex={{direction: 'row', gap: 4}}>
                 <Icon name={filter.icon} />
                 {filter.name}
               </Box>
