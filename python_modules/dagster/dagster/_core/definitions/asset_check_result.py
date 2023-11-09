@@ -30,6 +30,7 @@ class AssetCheckResult(
             ("check_name", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("severity", PublicAttr[AssetCheckSeverity]),
+            ("targets_future_materialization", PublicAttr[bool]),
         ],
     )
 ):
@@ -48,7 +49,9 @@ class AssetCheckResult(
             list, and one of the data classes returned by a MetadataValue static method.
         severity (AssetCheckSeverity):
             Severity of the check. Defaults to ERROR.
-
+        targets_future_materialization (bool):
+            Whether the check targets a future materialization instead of the most recent. Defaults
+            to False.
     """
 
     def __new__(
@@ -59,6 +62,7 @@ class AssetCheckResult(
         check_name: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
+        targets_future_materialization: bool = False,
     ):
         normalized_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -70,6 +74,9 @@ class AssetCheckResult(
             passed=check.bool_param(passed, "passed"),
             metadata=normalized_metadata,
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
+            targets_future_materialization=check.bool_param(
+                targets_future_materialization, "targets_future_materialization"
+            ),
         )
 
     def to_asset_check_evaluation(
