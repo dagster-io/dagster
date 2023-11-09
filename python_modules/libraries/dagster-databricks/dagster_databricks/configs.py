@@ -9,7 +9,7 @@ See:
 - https://docs.databricks.com/dev-tools/api/latest/clusters.html
 - https://docs.databricks.com/dev-tools/api/latest/libraries.html
 """
-from typing import Dict, Union
+from typing import Any, Dict
 
 from dagster import (
     Array,
@@ -368,9 +368,23 @@ def _define_nodes() -> Field:
         ),
         is_required=False,
     )
+    driver_instance_pool_id = Field(
+        String,
+        description=(
+            "The optional ID of the instance pool to use for launching the driver node. If not"
+            " specified, the driver node will be launched in the same instance pool as the workers"
+            " (specified by the instance_pool_id configuration value)."
+        ),
+    )
 
     return Field(
-        Selector({"node_types": _define_node_types(), "instance_pool_id": instance_pool_id}),
+        Selector(
+            {
+                "node_types": _define_node_types(),
+                "instance_pool_id": instance_pool_id,
+                "driver_instance_pool_id": driver_instance_pool_id,
+            }
+        ),
         description=(
             "The nodes used in the cluster. Either the node types or an instance pool "
             "can be specified."
@@ -451,6 +465,14 @@ def _define_new_cluster() -> Field:
         ),
         is_required=False,
     )
+    enable_local_disk_encryption = Field(
+        bool, is_required=False, description="Whether to encrypt cluster local disks"
+    )
+    runtime_engine = Field(
+        Enum("RuntimeEngine", [EnumValue("PHOTON"), EnumValue("STANDARD")]),
+        is_required=False,
+        description="Decides which runtime engine to be use, e.g. Standard vs. Photon. If unspecified, the runtime engine is inferred from spark_version.",
+    )
     policy_id = Field(
         String,
         description="The ID of the cluster policy used to create the cluster if applicable",
@@ -471,6 +493,9 @@ def _define_new_cluster() -> Field:
                 "init_scripts": init_scripts,
                 "spark_env_vars": spark_env_vars,
                 "enable_elastic_disk": enable_elastic_disk,
+                "docker_image": _define_docker_image_conf(),
+                "enable_local_disk_encryption": enable_local_disk_encryption,
+                "runtime_engine": runtime_engine,
                 "policy_id": policy_id,
             }
         )
@@ -625,7 +650,110 @@ def _define_libraries() -> Field:
     )
 
 
-def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
+def _define_email_notifications() -> Dict[str, Field]:
+    no_alert_for_skipped_runs = Field(bool, is_required=False)
+    on_duration_warning_threshold_exceeded = Field([str], is_required=False)
+    on_failure = Field([str], is_required=False)
+    on_start = Field([str], is_required=False)
+    on_success = Field([str], is_required=False)
+    return {
+        "no_alert_for_skipped_runs": no_alert_for_skipped_runs,
+        "on_duration_warning_threshold_exceeded": on_duration_warning_threshold_exceeded,
+        "on_failure": on_failure,
+        "on_start": on_start,
+        "on_success": on_success,
+    }
+
+
+def _define_notification_settings() -> Dict[str, Field]:
+    no_alert_for_canceled_runs = Field(bool, is_required=False)
+    no_alert_for_skipped_runs = Field(bool, is_required=False)
+    return {
+        "no_alert_for_canceled_runs": no_alert_for_canceled_runs,
+        "no_alert_for_skipped_runs": no_alert_for_skipped_runs,
+    }
+
+
+def _define_webhook_notification_settings() -> Field:
+    webhook_id_field = Field(
+        [Shape({"id": Field(String, is_required=False)})],
+        is_required=False,
+    )
+    return Field(
+        Shape(
+            {
+                "on_duration_warning_threshold_exceeded": webhook_id_field,
+                "on_failure": webhook_id_field,
+                "on_start": webhook_id_field,
+                "on_success": webhook_id_field,
+            }
+        ),
+        is_required=False,
+        description="Optional webhooks to trigger at different stages of job execution",
+    )
+
+
+def _define_docker_image_conf() -> Field:
+    docker_basic_auth = Shape(
+        {
+            "password": Field(String),
+            "username": Field(String),
+        }
+    )
+    basic_auth = Field(
+        docker_basic_auth,
+        description=(
+            "Authentication information for pulling down docker image. Leave unconfigured if the"
+            " image is stored in AWS ECR you have an instance profile configured which already has"
+            " permissions to pull the image from the configured URL"
+        ),
+        is_required=False,
+    )
+    url = Field(str, description="Image URL")
+    return Field(
+        Shape({"basic_auth": basic_auth, "url": url}),
+        description="Optional Docker image to use as base image for the cluster",
+        is_required=False,
+    )
+
+
+def _define_job_health_settings():
+    jobs_health_rule = Shape(
+        {
+            "metric": Field(
+                Enum("JobsHealthMetric", [EnumValue("RUN_DURATION_SECONDS")]),
+                is_required=True,
+                description=(
+                    "Specifies the health metric that is being evaluated for a particular health"
+                    " rule"
+                ),
+            ),
+            "op": Field(
+                Enum("JobsHealthOperator", [EnumValue("GREATER_THAN")]),
+                is_required=True,
+                description=(
+                    "Specifies the operator used to compare the health metric value with the"
+                    " specified threshold"
+                ),
+            ),
+            "value": Field(
+                Int,
+                is_required=True,
+                description=(
+                    "Specifies the threshold value that the health metric should obey to satisfy"
+                    " the health rule."
+                ),
+            ),
+        }
+    )
+    return Field(
+        [jobs_health_rule],
+        is_required=False,
+        description="An optional set of health rules that can be defined for this job",
+    )
+
+
+def _define_submit_run_fields() -> Dict[str, Any]:
     run_name = Field(
         String,
         description="An optional name for the run. The default value is Untitled",
@@ -668,6 +796,10 @@ def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
         "install_default_libraries": install_default_libraries,
         "timeout_seconds": timeout_seconds,
         "idempotency_token": idempotency_token,
+        "email_notifications": _define_email_notifications(),
+        "notification_settings": _define_notification_settings(),
+        "webhook_notifications": _define_webhook_notification_settings(),
+        "job_health_settings": _define_job_health_settings(),
     }
 
 
@@ -885,7 +1017,7 @@ def define_databricks_secrets_config() -> Field:
 
 def _define_accessor() -> Selector:
     return Selector(
-        {"group_name": str, "user_name": str},
+        {"group_name": Field(str), "user_name": Field(str)},
         description="Group or User that shall access the target.",
     )
 

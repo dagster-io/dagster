@@ -33,6 +33,8 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
+    expandedGroups: string[];
+    setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
   }) => {
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar

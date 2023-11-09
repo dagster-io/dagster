@@ -64,6 +64,7 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
     nodes: Object.keys(graphData.nodes).sort(),
+    expandedGroups: graphData.expandedGroups,
   })}`;
 };
 
@@ -174,9 +175,14 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   };
 }
 
-export function useAssetLayout(graphData: GraphData) {
+export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const flags = useFeatureFlags();
+
+  const graphData = React.useMemo(
+    () => ({..._graphData, expandedGroups}),
+    [expandedGroups, _graphData],
+  );
 
   const opts = React.useMemo(
     () => ({

@@ -36,10 +36,10 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagHorizontalDAGs,
   },
   {
-    key: 'New asset lineage sidebar',
+    key: 'New asset lineage sidebar and grouped asset graph',
     label: (
       <Box flex={{direction: 'column'}}>
-        New asset lineage sidebar,
+        New asset lineage sidebar and grouped asset graph,
         <div>
           <a
             href="https://github.com/dagster-io/dagster/discussions/16657"
