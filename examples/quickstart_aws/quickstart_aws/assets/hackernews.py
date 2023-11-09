@@ -5,12 +5,13 @@ from io import BytesIO, StringIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult, Output
+from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 from dagster_aws.s3 import S3Resource
 
 HACKERNEWS_TOPSTORY_IDS_CSV = "hackernews_topstory_ids.csv"
 HACKERNEWS_TOPSTORIES_CSV = "hackernews_topstories.csv"
 BAR_CHART_FILE_NAME = "hackernews_topstories_bar_chart.png"
+
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstory_ids(s3: S3Resource) -> None:
@@ -29,11 +30,7 @@ def hackernews_topstory_ids(s3: S3Resource) -> None:
     )
 
 
-@asset(
-    deps=[hackernews_topstory_ids],
-    group_name="hackernews",
-    compute_kind="HackerNews API"
-)
+@asset(deps=[hackernews_topstory_ids], group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstories(
     context: AssetExecutionContext,
     s3: S3Resource,
@@ -42,7 +39,6 @@ def hackernews_topstories(
 
     API Docs: https://github.com/HackerNews/API#items
     """
-
     # read the top 500 story ids from an S3 bucket
     bucket_name = os.environ.get("S3_BUCKET")
     hackernews_topstory_ids = s3.get_client().get_object(
@@ -64,7 +60,7 @@ def hackernews_topstories(
         Bucket=os.environ.get("S3_BUCKET"),
         Key=HACKERNEWS_TOPSTORIES_CSV,
     )
-    
+
     return MaterializeResult(
         # Dagster supports attaching arbitrary metadata to asset materializations. This metadata will be
         # shown in the run logs and also be displayed on the "Activity" tab of the "Asset Details" page in the UI.
@@ -77,12 +73,10 @@ def hackernews_topstories(
     )
 
 
-@asset(
-    deps=[hackernews_topstories],
-    group_name="hackernews",
-    compute_kind="Plot"
-)
-def most_frequent_words(s3: S3Resource,) -> MaterializeResult:
+@asset(deps=[hackernews_topstories], group_name="hackernews", compute_kind="Plot")
+def most_frequent_words(
+    s3: S3Resource,
+) -> MaterializeResult:
     """Exploratory analysis: Generate a bar chart from the current top 500 HackerNews top stories.
     Embed the plot into a Markdown metadata for quick view.
     """
@@ -91,13 +85,17 @@ def most_frequent_words(s3: S3Resource,) -> MaterializeResult:
     # read the topstories CSV from an S3 bucket
     bucket_name = os.environ.get("S3_BUCKET")
     topstories = pd.read_csv(
-        StringIO(s3.get_client().get_object(Bucket=bucket_name, Key=HACKERNEWS_TOPSTORIES_CSV)["Body"].read())
+        StringIO(
+            s3.get_client()
+            .get_object(Bucket=bucket_name, Key=HACKERNEWS_TOPSTORIES_CSV)["Body"]
+            .read()
+        )
     )
 
     # loop through the titles and count the frequency of each word
     word_counts = {}
     for raw_title in topstories["title"]:
-        title = raw_title.lower() # type: ignore
+        title = raw_title.lower()  # type: ignore
         for word in title.split():
             cleaned_word = word.strip(".,-!?:;()[]'\"-")
             if cleaned_word not in stopwords and len(cleaned_word) > 0:
@@ -111,7 +109,7 @@ def most_frequent_words(s3: S3Resource,) -> MaterializeResult:
 
     # Make a bar chart of the top 25 words
     plt.figure(figsize=(10, 6))
-    plt.bar(list(top_words.keys()), list(top_words.values())) # type: ignore
+    plt.bar(list(top_words.keys()), list(top_words.values()))  # type: ignore
     plt.xticks(rotation=45, ha="right")
     plt.title("Top 25 Words in Hacker News Titles")
     plt.tight_layout()
@@ -126,7 +124,7 @@ def most_frequent_words(s3: S3Resource,) -> MaterializeResult:
     bucket_name = os.environ.get("S3_BUCKET")
     bucket_location = s3.get_client().get_bucket_location(Bucket=bucket_name)["LocationConstraint"]
     s3.get_client().upload_fileobj(buffer, bucket_name, BAR_CHART_FILE_NAME)
-    s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{file_name}"
+    s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{BAR_CHART_FILE_NAME}"
 
     return MaterializeResult(
         metadata={
