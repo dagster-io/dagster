@@ -66,6 +66,8 @@ from .utils import DEFAULT_GROUP_NAME, validate_group_name
 if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
 
+ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
+
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
@@ -299,7 +301,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )
 
         _validate_self_deps(
-            input_keys=self._keys_by_input_name.values(),
+            input_keys=[
+                key
+                # filter out the special inputs which are used for cases when a multi-asset is
+                # subsetted, as these are not the same as self-dependencies and are never loaded
+                # in the same step that their corresponding output is produced
+                for input_name, key in self._keys_by_input_name.items()
+                if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
+            ],
             output_keys=self._selected_asset_keys,
             partition_mappings=self._partition_mappings,
             partitions_def=self._partitions_def,
