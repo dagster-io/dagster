@@ -135,9 +135,9 @@ def test_time_window_partitioned_asset(io_manager, bq_client):
             value = context.op_config["value"]
 
             return SqlQuery(
-                "SELECT $partition AS TIME, $value AS A, 4 AS B UNION ALL "
-                "SELECT $partition AS TIME, $value AS A, 5 AS B UNION ALL "
-                "SELECT $partition AS TIME, $value AS A, 6 AS B",
+                "SELECT '$partition' AS TIME, '$value' AS A, 4 AS B UNION ALL "
+                "SELECT '$partition' AS TIME, '$value' AS A, 5 AS B UNION ALL "
+                "SELECT '$partition' AS TIME, '$value' AS A, 6 AS B",
                 partition=partition, value=value
             )
 
@@ -213,9 +213,9 @@ def test_static_partitioned_asset(io_manager, bq_client):
             value = context.op_config["value"]
 
             return SqlQuery(
-                "SELECT $partition AS COLOR, $value AS A, 4 AS B UNION ALL "
-                "SELECT $partition AS COLOR, $value AS A, 5 AS B UNION ALL "
-                "SELECT $partition AS COLOR, $value AS A, 6 AS B",
+                "SELECT '$partition' AS COLOR, '$value' AS A, 4 AS B UNION ALL "
+                "SELECT '$partition' AS COLOR, '$value' AS A, 5 AS B UNION ALL "
+                "SELECT '$partition' AS COLOR, '$value' AS A, 6 AS B",
                 partition=partition, value=value
             )
 
@@ -297,9 +297,9 @@ def test_multi_partitioned_asset(io_manager, bq_client):
             value = context.op_config["value"]
 
             return SqlQuery(
-                "SELECT $partition_color AS COLOR, $partition_time AS TIME, $value AS A, 4 AS B UNION ALL "
-                "SELECT $partition_color AS COLOR, $partition_time AS TIME, $value AS A, 5 AS B UNION ALL "
-                "SELECT $partition_color AS COLOR, $partition_time AS TIME, $value AS A, 6 AS B",
+                "SELECT '$partition_color' AS COLOR, '$partition_time' AS TIME, '$value' AS A, 4 AS B UNION ALL "
+                "SELECT '$partition_color' AS COLOR, '$partition_time' AS TIME, '$value' AS A, 5 AS B UNION ALL "
+                "SELECT '$partition_color' AS COLOR, '$partition_time' AS TIME, '$value' AS A, 6 AS B",
                 partition_color=partition_color, partition_time=partition_time, value=value
             )
 
@@ -385,9 +385,9 @@ def test_dynamic_partitioned_asset(io_manager, bq_client):
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
             return SqlQuery(
-                "SELECT $partition AS fruit, $value AS A UNION ALL "
-                "SELECT $partition AS fruit, $value AS A UNION ALL "
-                "SELECT $partition AS fruit, $value AS A",
+                "SELECT '$partition' AS fruit, '$value' AS A UNION ALL "
+                "SELECT '$partition' AS fruit, '$value' AS A UNION ALL "
+                "SELECT '$partition' AS fruit, '$value' AS A",
                 partition=partition, value=value
             )
 
@@ -494,9 +494,9 @@ def test_self_dependent_asset(io_manager):
 
             value = context.op_config["value"]
             return SqlQuery(
-                "SELECT $key AS key, $value AS A UNION ALL "
-                "SELECT $key AS key, $value AS A UNION ALL "
-                "SELECT $key AS key, $value AS A",
+                "SELECT '$key' AS key, '$value' AS A UNION ALL "
+                "SELECT '$key' AS key, '$value' AS A UNION ALL "
+                "SELECT '$key' AS key, '$value' AS A",
                 key=key, value=value
             )
 
@@ -535,5 +535,4 @@ def test_self_dependent_asset(io_manager):
         out_df = pandas_gbq.read_gbq(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
-        print(out_df)
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]

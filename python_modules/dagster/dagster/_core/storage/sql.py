@@ -229,11 +229,11 @@ class SqlQuery:
                 replacements[key] = f"({value.parse_bindings()})"
             elif isinstance(value, str):
                 try:
-                    replacements[key] = f"'{Timestamp(value)}'"
+                    replacements[key] = f"{Timestamp(value)}"
                 except ValueError:
-                    replacements[key] = f"'{sqlescape(value)}'"
+                    replacements[key] = f"{sqlescape(value)}"
             elif isinstance(value, Timestamp):
-                replacements[key] = f"'{value}'"
+                replacements[key] = f"{value}"
             elif isinstance(value, (int, float, bool)):
                 replacements[key] = str(value)
             elif value is None:

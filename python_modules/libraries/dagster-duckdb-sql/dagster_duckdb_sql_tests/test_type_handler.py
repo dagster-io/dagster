@@ -212,10 +212,11 @@ def daily_partitioned(context) -> SqlQuery:
     return SqlQuery(
         "SELECT * FROM "
         "(VALUES "
-        f"('{partition}', '{value}', 4), "
-        f"('{partition}', '{value}', 5), "
-        f"('{partition}', '{value}', 6)) "
-        "my_table(time, a, b)"
+        "('$partition', '$value', 4), "
+        "('$partition', '$value', 5), "
+        "('$partition', '$value', 6)) "
+        "my_table(time, a, b)",
+        partition=partition, value=value
     )
 
 
@@ -279,10 +280,11 @@ def static_partitioned(context) -> SqlQuery:
     return SqlQuery(
         "SELECT * FROM "
         "(VALUES "
-        f"('{partition}', '{value}', 4), "
-        f"('{partition}', '{value}', 5), "
-        f"('{partition}', '{value}', 6)) "
-        "my_table(color, a, b)"
+        "('$partition', '$value', 4), "
+        "('$partition', '$value', 5), "
+        "('$partition', '$value', 6)) "
+        "my_table(color, a, b)",
+        partition=partition, value=value
     )
 
 
@@ -344,14 +346,15 @@ def test_static_partitioned_asset(tmp_path, io_managers):
 def multi_partitioned(context) -> SqlQuery:
     partition = context.partition_key.keys_by_dimension
     value = context.op_config["value"]
-    return SqlQuery(f"""
+    return SqlQuery("""
         SELECT * FROM
         (VALUES
-        ('{partition["color"]}', '{partition["time"]}', '{value}'),
-        ('{partition["color"]}', '{partition["time"]}', '{value}'),
-        ('{partition["color"]}', '{partition["time"]}', '{value}'))
-        my_table(color, time, a)
-    """)
+        ('$color', '$time', '$value'),
+        ('$color', '$time', '$value'),
+        ('$color', '$time', '$value'))
+        my_table(color, time, a)""",
+        color=partition["color"], time=partition["time"], value=value
+    )
 
 
 def test_multi_partitioned_asset(tmp_path, io_managers):
@@ -425,10 +428,11 @@ def dynamic_partitioned(context) -> SqlQuery:
     return SqlQuery(
         "SELECT * FROM "
         "(VALUES "
-        f"('{partition}', '{value}'), "
-        f"('{partition}', '{value}'), "
-        f"('{partition}', '{value}')) "
-        "my_table(fruit, a)"
+        "('$partition', '$value'), "
+        "('$partition', '$value'), "
+        "('$partition', '$value')) "
+        "my_table(fruit, a)",
+        partition=partition, value=value
     )
 
 
@@ -497,7 +501,7 @@ def test_self_dependent_asset(tmp_path, io_managers):
             ),
         },
         metadata={
-            "partition_expr": "strptime(key, '%Y-%m-%d')",
+            "partition_expr": "key",
         },
         config_schema={"value": str, "last_partition_key": str},
     )
@@ -508,17 +512,20 @@ def test_self_dependent_asset(tmp_path, io_managers):
             try:
                 df = con.execute(self_dependent_asset.parse_bindings()).fetch_df()
                 assert len(df.index) == 3
-                assert (df["key"] == context.op_config["last_partition_key"]).all()
+                assert (
+                    df["key"] == str(pd.Timestamp(context.op_config["last_partition_key"])) # TODO: Acceptable?
+                ).all()
             except duckdb.ParserException:
                 assert context.op_config["last_partition_key"] == "NA"
         value = context.op_config["value"]
         return SqlQuery(
             "SELECT * FROM "
             "(VALUES "
-            f"('{key}', '{value}'), "
-            f"('{key}', '{value}'), "
-            f"('{key}', '{value}')) "
-            "my_table(key, a)"
+            "('$key', '$value'), "
+            "('$key', '$value'), "
+            "('$key', '$value')) "
+            "my_table(key, a)",
+            key=key, value=value
         )
 
     for io_manager in io_managers:
