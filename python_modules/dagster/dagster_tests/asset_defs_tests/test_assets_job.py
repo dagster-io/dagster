@@ -1202,7 +1202,7 @@ def test_internal_asset_deps_assets():
     outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)}, can_subset=True
 )
 def ab(context, foo):
-    assert (context.selected_output_names != {"a", "b"}) == context.is_subsetted
+    assert (context.selected_output_names != {"a", "b"}) == context.is_subset
 
     if "a" in context.selected_output_names:
         yield Output(foo + 1, "a")
@@ -2233,7 +2233,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         can_subset=allow_subset,
     )
     def abc_(context, start):
-        assert (context.selected_output_names != {"a", "b", "c"}) == context.is_subsetted
+        assert (context.selected_output_names != {"a", "b", "c"}) == context.is_subset
 
         a = (start + 1) if start else None
         b = 1
@@ -2270,7 +2270,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         can_subset=allow_subset,
     )
     def def_(context, a, b, c):
-        assert (context.selected_output_names != {"d", "e", "f"}) == context.is_subsetted
+        assert (context.selected_output_names != {"d", "e", "f"}) == context.is_subset
 
         d = (a + b) if a and b else None
         e = (c + 1) if c else None
@@ -2609,7 +2609,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     def foo(context, x, y):
         assert (
             context.selected_output_names != {"a", "b", "c", "d", "e", "f", "g", "h"}
-        ) == context.is_subsetted
+        ) == context.is_subset
 
         a = b = c = d = e = f = g = h = None
         if "a" in context.selected_output_names:

@@ -625,13 +625,13 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return asset_checks_def
 
     @property
-    def is_subsetted(self):
+    def is_subset(self):
         """Whether the current AssetsDefinition is subsetted. Note that this can be True inside a
         a graph asset for an op that's not subsetted, if the graph asset is subsetted elsewhere.
         """
         if not self.has_assets_def:
             return False
-        return self.assets_def.is_subsetted
+        return self.assets_def.is_subset
 
     @public
     @property

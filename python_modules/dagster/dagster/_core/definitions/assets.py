@@ -91,7 +91,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
-    _is_subsetted: bool
+    _is_subset: bool
 
     def __init__(
         self,
@@ -113,7 +113,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
-        is_subsetted: bool = False,
+        is_subset: bool = False,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -305,7 +305,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             partitions_def=self._partitions_def,
         )
 
-        self._is_subsetted = check.bool_param(is_subsetted, "is_subsetted")
+        self._is_subset = check.bool_param(is_subset, "is_subset")
 
     @staticmethod
     def dagster_internal_init(
@@ -327,7 +327,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
-        is_subsetted: bool,
+        is_subset: bool,
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -347,7 +347,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             descriptions_by_key=descriptions_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys,
-            is_subsetted=is_subsetted,
+            is_subset=is_subset,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -702,7 +702,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,
-            is_subsetted=False,
+            is_subset=False,
         )
 
     @public
@@ -967,7 +967,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
-        is_subsetted: bool = False,
+        is_subset: bool = False,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -1112,7 +1112,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             descriptions_by_key=replaced_descriptions_by_key,
-            is_subsetted=is_subsetted,
+            is_subset=is_subset,
         )
 
         return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
@@ -1218,7 +1218,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 node_def=subsetted_node,
                 asset_deps=subsetted_asset_deps,
                 selected_asset_keys=selected_asset_keys & self.keys,
-                is_subsetted=True,
+                is_subset=True,
             )
 
             return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
@@ -1227,13 +1227,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             replaced_attributes = {
                 "selected_asset_keys": asset_subselection,
                 "selected_asset_check_keys": asset_check_subselection,
-                "is_subsetted": True,
+                "is_subset": True,
             }
             return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
     @property
-    def is_subsetted(self) -> bool:
-        return self._is_subsetted
+    def is_subset(self) -> bool:
+        return self._is_subset
 
     @public
     def to_source_assets(self) -> Sequence[SourceAsset]:
