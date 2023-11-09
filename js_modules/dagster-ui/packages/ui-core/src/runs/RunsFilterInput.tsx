@@ -218,6 +218,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const [fetchBackfillValues, backfillValues] = useTagDataFilterValues(DagsterTag.Backfill);
   const [fetchPartitionValues, partitionValues] = useTagDataFilterValues(DagsterTag.Partition);
 
+  const isIDFilterEnabled = !enabledFilters || enabledFilters?.includes('id');
   const isStatusFilterEnabled = !enabledFilters || enabledFilters?.includes('status');
   const isBackfillsFilterEnabled = !enabledFilters || enabledFilters?.includes('backfill');
   const isPartitionsFilterEnabled = !enabledFilters || enabledFilters?.includes('partition');
@@ -285,9 +286,6 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       })),
     };
   }, [isJobFilterEnabled, options]);
-
-  const isPipelineFilterEnabled =
-    !enabledFilters || (enabledFilters?.includes('job') && pipelines.length);
 
   const jobFilter = useStaticSetFilter({
     name: 'Job',
@@ -592,13 +590,59 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     matchType: 'all-of',
   });
 
+  const ID_EMPTY = 'Type or paste 36-character ID';
+  const ID_TOO_SHORT = 'Invalid Run ID';
+
+  const idFilter = useSuggestionFilter({
+    name: 'Run ID',
+    icon: 'id',
+    initialSuggestions: [{final: true, value: ID_EMPTY}],
+    state: React.useMemo(() => {
+      return tokens.filter(({token}) => token === 'id').map((token) => token.value);
+    }, [tokens]),
+    freeformSearchResult: (query) => {
+      return /^([a-f0-9-]{36})$/.test(query.trim()) ? {value: query.trim(), final: true} : null;
+    },
+    setState: (nextState) => {
+      onChange([
+        ...tokens.filter(({token}) => token !== 'id'),
+        ...nextState
+          .filter((value) => value !== ID_EMPTY && value !== ID_TOO_SHORT)
+          .map((value) => {
+            return {token: 'id' as const, value};
+          }),
+      ]);
+    },
+    getStringValue: (value) => value,
+    getKey: (value) => value,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="id" />
+        <TruncatedTextWithFullTextOnHover text={value} />
+      </Box>
+    ),
+    onSuggestionClicked: async (value) => {
+      return [{value}];
+    },
+    renderActiveStateLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="id" />
+        <TruncatedTextWithFullTextOnHover text={value} />
+        {value}
+      </Box>
+    ),
+    isMatch: (value, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'any-of',
+  });
+
   const {button, activeFiltersJsx} = useFilters({
     filters: [
       isStatusFilterEnabled ? statusFilter : null,
       launchedByFilter,
       createdDateFilter,
       isJobFilterEnabled ? jobFilter : null,
-      isPipelineFilterEnabled ? pipelinesFilter : null,
+      isJobFilterEnabled && pipelines.length > 0 ? pipelinesFilter : null,
+      isIDFilterEnabled ? idFilter : null,
       isBackfillsFilterEnabled ? backfillsFilter : null,
       isPartitionsFilterEnabled ? partitionsFilter : null,
       tagFilter,
