@@ -66,6 +66,89 @@ RawMetadataMapping: TypeAlias = Mapping[str, RawMetadataValue]
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
 
 
+@experimental
+class MetadataByPartition(
+    NamedTuple("_MetadataByPartition", [("data", Mapping[str, MetadataMapping])])
+):
+    def __new__(
+        cls,
+        data: Mapping[str, RawMetadataMapping],
+    ):
+        check.dict_param(
+            data,
+            "data",
+            key_type=str,
+            value_type=dict,
+        )
+        return super(MetadataByPartition, cls).__new__(
+            cls,
+            data={partition: normalize_metadata(metadata) for partition, metadata in data.items()},
+        )
+
+
+# This is used when a `MetadataByPartition` object needs to be stored as a flat `MetadataMapping`
+# object for serialization purposes.
+def flatten_metadata_by_partition(
+    metadata_by_partition: MetadataByPartition,
+) -> MetadataMapping:
+    return {
+        f"{partition_key}/{inner_key}": val
+        for partition_key, metadata in metadata_by_partition.data.items()
+        for inner_key, val in metadata.items()
+    }
+
+
+# Used when storing metadata without a partition key specified in a structure that keys metadata by
+# partition. This value is never persisted, it is just used to streamline logic that operates on
+# either sets of partition keys or no partition key.
+NO_PARTITION_MARKER_KEY = "__NO_PARTITION_MARKER_KEY__"
+
+
+def merge_metadata(
+    metadata_1: Union[MetadataMapping, MetadataByPartition], metadata_2: MetadataMapping
+) -> Union[MetadataMapping, MetadataByPartition]:
+    """Merge two metadata dicts, either of which may be a `MetadataByPartition` object. The second
+    argument is merged into the first. Merging a MetadataByPartition dict into a regular metadata
+    dictionary is illegal; merging a regular metadata dictionary into a MetadataByPartition dict
+    will merge the metadata dictionary into each sub-dictionary in the MetadataByPartition dict.
+
+    Args:
+        metadata_1 (Union[MetadataMapping, MetadataByPartition]): The first metadata dict.
+        metadata_2 (MetadataMapping): The second metadata dict.
+
+    Returns:
+        MetadataMapping: The merged metadata dict.
+    """
+    if isinstance(metadata_1, MetadataByPartition) and isinstance(metadata_2, MetadataByPartition):
+        new_data = {}
+        all_keys = set(metadata_1.data.keys()).union(set(metadata_2.data.keys()))
+        for partition_key in all_keys:
+            new_data[partition_key] = {
+                **metadata_1.data.get(partition_key, {}),
+                **metadata_2.data.get(partition_key, {}),
+            }
+        return MetadataByPartition(new_data)
+    elif isinstance(metadata_1, MetadataByPartition) and isinstance(metadata_2, dict):
+        return MetadataByPartition(
+            {
+                partition_key: {
+                    **metadata_1.data.get(partition_key, {}),
+                    **metadata_2,
+                }
+                for partition_key in metadata_1.data.keys()
+            }
+        )
+    elif isinstance(metadata_1, dict) and isinstance(metadata_2, MetadataByPartition):
+        check.failed("Cannot merge a MetadataByPartition into a dict")
+    elif isinstance(metadata_1, dict) and isinstance(metadata_2, dict):
+        return {
+            **metadata_1,
+            **metadata_2,
+        }
+    else:
+        check.failed("Unexpected metadata types")
+
+
 # ########################
 # ##### NORMALIZATION
 # ########################

@@ -1314,7 +1314,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
         )
 
-    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
+    def set_data_version(
+        self, asset_key: AssetKey, data_version: DataVersion, partition_key: Optional[str] = None
+    ) -> None:
         """Set the data version for an asset being materialized by the currently executing step.
         This is useful for external execution situations where it is not possible to return
         an `Output`.
@@ -1322,8 +1324,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         Args:
             asset_key (AssetKey): Key of the asset for which to set the data version.
             data_version (DataVersion): The data version to set.
+            partition_key (Optional[str]): Key of the partition for which to set the data version.
         """
-        self._step_execution_context.set_data_version(asset_key, data_version)
+        self._step_execution_context.set_data_version(asset_key, data_version, partition_key)
 
     @property
     def asset_check_spec(self) -> AssetCheckSpec:

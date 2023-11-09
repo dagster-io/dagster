@@ -110,7 +110,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             for (
                 partition_key,
                 data_version,
-            ) in observe_fn_return_value.data_versions_by_partition.items():
+            ) in observe_fn_return_value.data.items():
                 context.log_event(
                     AssetObservation(
                         asset_key=source_asset.key,

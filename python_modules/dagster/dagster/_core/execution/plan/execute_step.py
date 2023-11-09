@@ -1,4 +1,5 @@
 import inspect
+from copy import copy
 from typing import (
     AbstractSet,
     Any,
@@ -21,7 +22,6 @@ from dagster._core.definitions import (
     AssetObservation,
     ExpectationResult,
     Output,
-    OutputDefinition,
     TypeCheck,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
@@ -40,7 +40,11 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import (
+    NO_PARTITION_MARKER_KEY,
+    MetadataByPartition,
     MetadataValue,
+    flatten_metadata_by_partition,
+    merge_metadata,
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -71,7 +75,6 @@ from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
 from dagster._utils.warnings import (
     disable_dagster_warnings,
-    experimental_warning,
 )
 
 from .compute import OpOutputUnion
@@ -226,15 +229,14 @@ def _step_output_error_checked_user_event_sequence(
 
             step_context.observe_output(output.output_name)
 
-            metadata = step_context.get_output_metadata(output.output_name)
+            context_metadata = step_context.get_output_metadata(output.output_name)
             with disable_dagster_warnings():
                 output = Output(
                     value=output.value,
                     output_name=output.output_name,
-                    metadata={
-                        **output.metadata,
-                        **normalize_metadata(metadata or {}),
-                    },
+                    metadata=merge_metadata(
+                        output.metadata, normalize_metadata(context_metadata or {})
+                    ),
                     data_version=output.data_version,
                 )
         else:
@@ -249,13 +251,15 @@ def _step_output_error_checked_user_event_sequence(
                     f'"{output.mapping_key}" multiple times.'
                 )
             step_context.observe_output(output.output_name, output.mapping_key)
-            metadata = step_context.get_output_metadata(
+            context_metadata = step_context.get_output_metadata(
                 output.output_name, mapping_key=output.mapping_key
             )
             output = DynamicOutput(
                 value=output.value,
                 output_name=output.output_name,
-                metadata={**output.metadata, **normalize_metadata(metadata or {})},
+                metadata=merge_metadata(
+                    output.metadata, normalize_metadata(context_metadata or {})
+                ),
                 mapping_key=output.mapping_key,
             )
 
@@ -359,6 +363,17 @@ def _type_checked_event_sequence_for_input(
         )
 
 
+# This is substituted as the metadata for a `StepOutput` event when the output represents multiple
+# partitions of a partitioned asset. Without this substitution, this field could be very
+# large, since it might contain metadata for thousands of partitions. The per-partition metadata
+# will always be accessible on the corresponding `AssetMaterialization` or `AssetObservation` events
+# generated from the output. This substitution is _not_ made for multi-partition output that does
+# not correspond to an asset.
+STEP_OUTPUT_MULTIPLE_PARTITION_METADATA = {
+    "info": MetadataValue.text("<metadata for multiple partitions>")
+}
+
+
 def _type_check_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
@@ -386,6 +401,18 @@ def _type_check_output(
     ):
         type_check = do_type_check(type_check_context, dagster_type, output.value)
 
+    # MetadataByPartition is dropped from StepOutput events for SDA steps, since the metadata will
+    # be available on the corresponding AssetMaterialization or AssetObservation events. It is
+    # flattened for non-SDA steps.
+    if isinstance(output.metadata, MetadataByPartition):
+        metadata = (
+            copy(STEP_OUTPUT_MULTIPLE_PARTITION_METADATA)
+            if step_context.is_sda_step
+            else flatten_metadata_by_partition(output.metadata)
+        )
+    else:
+        metadata = output.metadata
+
     yield DagsterEvent.step_output_event(
         step_context=step_context,
         step_output_data=StepOutputData(
@@ -397,7 +424,7 @@ def _type_check_output(
                 metadata=type_check.metadata if type_check else {},
             ),
             version=version,
-            metadata=output.metadata,
+            metadata=metadata,
         ),
     )
 
@@ -564,17 +591,15 @@ def _get_output_asset_materializations(
     asset_key: AssetKey,
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
-    output_def: OutputDefinition,
-    io_manager_metadata: Mapping[str, MetadataValue],
+    output_context: OutputContext,
     step_context: StepExecutionContext,
 ) -> Iterator[AssetMaterialization]:
-    all_metadata = {**output.metadata, **io_manager_metadata}
-
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
 
-    tags: Dict[str, str]
+    partitions = asset_partitions or {NO_PARTITION_MARKER_KEY}
+    tags_by_partition: Dict[str, Dict[str, str]] = {}
     if (
         step_context.is_external_input_asset_version_info_loaded
         and asset_key in step_context.job_def.asset_layer.asset_keys
@@ -587,49 +612,50 @@ def _get_output_asset_materializations(
             if step_context.has_data_version(asset_key)
             else None
         )
-        user_provided_data_version = output.data_version or cached_data_version
-        data_version = (
-            compute_logical_data_version(
-                code_version,
-                {k: meta["data_version"] for k, meta in input_provenance_data.items()},
-            )
-            if user_provided_data_version is None
-            else user_provided_data_version
-        )
-        tags = _build_data_version_tags(
-            data_version,
+        logical_data_version = compute_logical_data_version(
             code_version,
-            input_provenance_data,
-            user_provided_data_version is not None,
+            {k: meta["data_version"] for k, meta in input_provenance_data.items()},
         )
-        if not step_context.has_data_version(asset_key):
-            data_version = DataVersion(tags[DATA_VERSION_TAG])
-            step_context.set_data_version(asset_key, data_version)
-    else:
-        tags = {}
+        provenance_tags = _build_provenance_tags(code_version, input_provenance_data)
+        for partition in partitions:
+            output_data_version = output.data_version_for_partition(partition)
+            data_version_tags = _build_data_version_tags(
+                output_data_version, cached_data_version, logical_data_version
+            )
+            tags = {
+                **provenance_tags,
+                **data_version_tags,
+            }
+            if not step_context.has_data_version(asset_key, partition):
+                data_version = DataVersion(tags[DATA_VERSION_TAG])
+                step_context.set_data_version(asset_key, data_version)
+            tags_by_partition[partition] = tags
 
     backfill_id = step_context.get_tag(BACKFILL_ID_TAG)
     if backfill_id:
-        tags[BACKFILL_ID_TAG] = backfill_id
+        for partition in partitions:
+            tags_by_partition[partition][BACKFILL_ID_TAG] = backfill_id
 
-    if asset_partitions:
-        for partition in asset_partitions:
-            with disable_dagster_warnings():
-                tags.update(
-                    get_tags_from_multi_partition_key(partition)
-                    if isinstance(partition, MultiPartitionKey)
-                    else {}
-                )
-
-                yield AssetMaterialization(
-                    asset_key=asset_key,
-                    partition=partition,
-                    metadata=all_metadata,
-                    tags=tags,
-                )
-    else:
+    for partition in partitions:
+        tags = tags_by_partition.get(partition, {})
         with disable_dagster_warnings():
-            yield AssetMaterialization(asset_key=asset_key, metadata=all_metadata, tags=tags)
+            tags.update(
+                get_tags_from_multi_partition_key(partition)
+                if isinstance(partition, MultiPartitionKey)
+                else {}
+            )
+            metadata = {
+                **output_context.get_logged_metadata(partition),
+                **output.metadata_for_partition(partition),
+            }
+            partition_key = None if partition == NO_PARTITION_MARKER_KEY else partition
+
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                partition=partition_key,
+                metadata=metadata,
+                tags=tags,
+            )
 
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
@@ -672,11 +698,9 @@ def _get_input_provenance_data(
     return input_provenance
 
 
-def _build_data_version_tags(
-    data_version: DataVersion,
+def _build_provenance_tags(
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
-    data_version_is_user_provided: bool,
 ) -> Dict[str, str]:
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG] = code_version
@@ -685,8 +709,19 @@ def _build_data_version_tags(
         tags[get_input_event_pointer_tag(key)] = (
             str(meta["storage_id"]) if meta["storage_id"] else NULL_EVENT_POINTER
         )
+    return tags
+
+
+def _build_data_version_tags(
+    output_data_version: Optional[DataVersion],
+    cached_data_version: Optional[DataVersion],
+    logical_data_version: DataVersion,
+) -> Dict[str, str]:
+    tags: Dict[str, str] = {}
+    user_provided_data_version = output_data_version or cached_data_version
+    data_version = user_provided_data_version or logical_data_version
     tags[DATA_VERSION_TAG] = data_version.value
-    if data_version_is_user_provided:
+    if user_provided_data_version is not None:
         tags[DATA_VERSION_IS_USER_PROVIDED_TAG] = "true"
     return tags
 
@@ -701,7 +736,6 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_metadata: Dict[str, MetadataValue] = {}
 
     # don't store asset check outputs or asset observation outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
@@ -744,14 +778,10 @@ def _store_output(
         for event in output_context.consume_events():
             yield event
 
-        manager_metadata = {**manager_metadata, **output_context.consume_logged_metadata()}
         if isinstance(elt, DagsterEvent):
             yield elt
         elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
-        elif isinstance(elt, dict):  # should remove this?
-            experimental_warning("Yielding metadata from an IOManager's handle_output() function")
-            manager_metadata = {**manager_metadata, **normalize_metadata(elt)}
         else:
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
@@ -762,9 +792,9 @@ def _store_output(
     for event in output_context.consume_events():
         yield event
 
-    manager_metadata = {**manager_metadata, **output_context.consume_logged_metadata()}
     # do not alter explicitly created AssetMaterializations
     for mgr_materialization in manager_materializations:
+        manager_metadata = output_context.get_logged_metadata(mgr_materialization.partition)
         if mgr_materialization.metadata and manager_metadata:
             raise DagsterInvariantViolationError(
                 f"When handling output '{output_context.name}' of"
@@ -813,8 +843,7 @@ def _store_output(
                     asset_key,
                     partitions,
                     output,
-                    output_def,
-                    manager_metadata,
+                    output_context,
                     step_context,
                 )
             )
@@ -822,6 +851,7 @@ def _store_output(
             else ()
         )
 
+    manager_metadata = output_context.get_logged_metadata()
     yield DagsterEvent.handled_output(
         step_context,
         output_name=step_output_handle.output_name,
