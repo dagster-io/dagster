@@ -16,10 +16,6 @@
       {
         "title": "Getting help",
         "path": "/getting-started/getting-help"
-      },
-      {
-        "title": "Telemetry",
-        "path": "/getting-started/telemetry"
       }
     ]
   },
@@ -782,6 +778,10 @@
           {
             "title": "Understanding Dagster project files",
             "path": "/guides/understanding-dagster-project-files"
+          },
+          {
+            "title": "Opting in or out of Dagster telemetry",
+            "path": "/guides/opting-in-out-dagster-telemetry"
           },
           {
             "title": "Running Dagster locally",
