@@ -74,7 +74,7 @@ class TimeWindowPartitionsDefinition(
         ],
     ),
 ):
-    r"""A set of partitions where each partitions corresponds to a time window.
+    r"""A set of partitions where each partition corresponds to a time window.
 
     The provided cron_schedule determines the bounds of the time windows. E.g. a cron_schedule of
     "0 0 \\* \\* \\*" will result in daily partitions that start at midnight and end at midnight of the
