@@ -218,8 +218,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const [fetchBackfillValues, backfillValues] = useTagDataFilterValues(DagsterTag.Backfill);
   const [fetchPartitionValues, partitionValues] = useTagDataFilterValues(DagsterTag.Partition);
 
+  const isStatusFilterEnabled = !enabledFilters || enabledFilters?.includes('status');
   const isBackfillsFilterEnabled = !enabledFilters || enabledFilters?.includes('backfill');
   const isPartitionsFilterEnabled = !enabledFilters || enabledFilters?.includes('partition');
+  const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
 
   const onFocus = React.useCallback(() => {
     fetchTagKeys();
@@ -249,8 +251,6 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     ],
     [sensorValues, scheduleValues, userValues],
   );
-
-  const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
 
   const {pipelines, jobs} = React.useMemo(() => {
     const pipelineNames = [];
@@ -438,173 +438,176 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
   });
 
+  const launchedByFilter = useStaticSetFilter({
+    name: 'Launched by',
+    allowMultipleSelections: false,
+    icon: 'add_circle',
+    allValues: createdByValues,
+    renderLabel: ({value}) => {
+      let icon;
+      let labelValue = value.value;
+      if (value.type === DagsterTag.SensorName) {
+        icon = <Icon name="sensors" />;
+      } else if (value.type === DagsterTag.ScheduleName) {
+        icon = <Icon name="schedule" />;
+      } else if (value.type === DagsterTag.User) {
+        return <UserDisplay email={value.value!} isFilter />;
+      } else if (value.type === DagsterTag.Automaterialize) {
+        icon = <Icon name="auto_materialize_policy" />;
+        labelValue = 'Auto-materialize policy';
+      }
+      return (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          {icon}
+          <TruncatedTextWithFullTextOnHover text={labelValue!} />
+        </Box>
+      );
+    },
+    getStringValue: (x) => {
+      if (x.type === DagsterTag.Automaterialize) {
+        return 'Auto-materialize policy';
+      }
+      return x.value!;
+    },
+    initialState: React.useMemo(() => {
+      return new Set(
+        tokens
+          .filter(
+            ({token, value}) =>
+              token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag),
+          )
+          .map(({value}) => tagValueToFilterObject(value)),
+      );
+    }, [tokens]),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter((token) => {
+          if (token.token !== 'tag') {
+            return true;
+          }
+          return !CREATED_BY_TAGS.includes(token.value.split('=')[0] as DagsterTag);
+        }),
+        ...Array.from(values).map((value) => ({
+          token: 'tag' as const,
+          value: `${value.type}=${value.value}`,
+        })),
+      ]);
+    },
+  });
+
+  const createdDateFilter = useTimeRangeFilter({
+    name: 'Created date',
+    icon: 'date',
+    initialState: React.useMemo(() => {
+      const before = tokens.find((token) => token.token === 'created_date_before');
+      const after = tokens.find((token) => token.token === 'created_date_after');
+      return [
+        after ? parseInt(after.value) * 1000 : null,
+        before ? parseInt(before.value) * 1000 : null,
+      ] as TimeRangeState;
+    }, [tokens]),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter(
+          (token) => !['created_date_before', 'created_date_after'].includes(token.token ?? ''),
+        ),
+        ...([
+          values[0] != null ? {token: 'created_date_after', value: `${values[0] / 1000}`} : null,
+          values[1] != null ? {token: 'created_date_before', value: `${values[1] / 1000}`} : null,
+        ].filter((x) => x) as RunFilterToken[]),
+      ]);
+    },
+  });
+
+  const tagFilter = useSuggestionFilter({
+    name: 'Tag',
+    icon: 'tag',
+    initialSuggestions: tagSuggestions,
+
+    freeformSearchResult: React.useCallback(
+      (
+        query: string,
+        path: {
+          value: string;
+          key?: string | undefined;
+        }[],
+      ) => {
+        return {
+          ...tagSuggestionValueObject(path[0] ? path[0].value : '', query),
+          final: !!path.length,
+        };
+      },
+      [],
+    ),
+
+    state: React.useMemo(() => {
+      return tokens
+        .filter(({token, value}) => {
+          if (token !== 'tag') {
+            return false;
+          }
+          return !tagsToExclude.includes(value.split('=')[0] as DagsterTag);
+        })
+        .map((token) => {
+          const [key, value] = token.value.split('=');
+          return tagSuggestionValueObject(key!, value!).value;
+        });
+    }, [tokens]),
+
+    setState: (nextState) => {
+      onChange([
+        ...tokens.filter(({token, value}) => {
+          if (token !== 'tag') {
+            return true;
+          }
+          return tagsToExclude.includes(value.split('=')[0] as DagsterTag);
+        }),
+        ...nextState.map(({key, value}) => {
+          return {
+            token: 'tag' as const,
+            value: `${key}=${value}`,
+          };
+        }),
+      ]);
+    },
+    onSuggestionClicked: async ({value}) => {
+      return await fetchTagValues(value);
+    },
+    getStringValue: ({key, value}) => `${key}=${value}`,
+    getKey: ({key, value}) => `${key}: ${value}`,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="tag" />
+        <TruncatedTextWithFullTextOnHover text={value.value} />
+      </Box>
+    ),
+    renderActiveStateLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="tag" />
+        <TruncatedTextWithFullTextOnHover text={`${value.key}=${value.value}`} />
+        {value.key}={value.value}
+      </Box>
+    ),
+    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'all-of',
+  });
+
   const {button, activeFiltersJsx} = useFilters({
     filters: [
-      !enabledFilters || enabledFilters?.includes('status') ? statusFilter : null,
-      useStaticSetFilter({
-        name: 'Launched by',
-        allowMultipleSelections: false,
-        icon: 'add_circle',
-        allValues: createdByValues,
-        renderLabel: ({value}) => {
-          let icon;
-          let labelValue = value.value;
-          if (value.type === DagsterTag.SensorName) {
-            icon = <Icon name="sensors" />;
-          } else if (value.type === DagsterTag.ScheduleName) {
-            icon = <Icon name="schedule" />;
-          } else if (value.type === DagsterTag.User) {
-            return <UserDisplay email={value.value!} isFilter />;
-          } else if (value.type === DagsterTag.Automaterialize) {
-            icon = <Icon name="auto_materialize_policy" />;
-            labelValue = 'Auto-materialize policy';
-          }
-          return (
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              {icon}
-              <TruncatedTextWithFullTextOnHover text={labelValue!} />
-            </Box>
-          );
-        },
-        getStringValue: (x) => {
-          if (x.type === DagsterTag.Automaterialize) {
-            return 'Auto-materialize policy';
-          }
-          return x.value!;
-        },
-        initialState: React.useMemo(() => {
-          return new Set(
-            tokens
-              .filter(
-                ({token, value}) =>
-                  token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag),
-              )
-              .map(({value}) => tagValueToFilterObject(value)),
-          );
-        }, [tokens]),
-        onStateChanged: (values) => {
-          onChange([
-            ...tokens.filter((token) => {
-              if (token.token !== 'tag') {
-                return true;
-              }
-              return !CREATED_BY_TAGS.includes(token.value.split('=')[0] as DagsterTag);
-            }),
-            ...Array.from(values).map((value) => ({
-              token: 'tag' as const,
-              value: `${value.type}=${value.value}`,
-            })),
-          ]);
-        },
-      }),
-      useTimeRangeFilter({
-        name: 'Created date',
-        icon: 'date',
-        initialState: React.useMemo(() => {
-          const before = tokens.find((token) => token.token === 'created_date_before');
-          const after = tokens.find((token) => token.token === 'created_date_after');
-          return [
-            after ? parseInt(after.value) * 1000 : null,
-            before ? parseInt(before.value) * 1000 : null,
-          ] as TimeRangeState;
-        }, [tokens]),
-        onStateChanged: (values) => {
-          onChange([
-            ...tokens.filter(
-              (token) => !['created_date_before', 'created_date_after'].includes(token.token ?? ''),
-            ),
-            ...([
-              values[0] != null
-                ? {token: 'created_date_after', value: `${values[0] / 1000}`}
-                : null,
-              values[1] != null
-                ? {token: 'created_date_before', value: `${values[1] / 1000}`}
-                : null,
-            ].filter((x) => x) as RunFilterToken[]),
-          ]);
-        },
-      }),
+      isStatusFilterEnabled ? statusFilter : null,
+      launchedByFilter,
+      createdDateFilter,
       isJobFilterEnabled ? jobFilter : null,
       isPipelineFilterEnabled ? pipelinesFilter : null,
       isBackfillsFilterEnabled ? backfillsFilter : null,
       isPartitionsFilterEnabled ? partitionsFilter : null,
-      useSuggestionFilter({
-        name: 'Tag',
-        icon: 'tag',
-        initialSuggestions: tagSuggestions,
-
-        freeformSearchResult: React.useCallback(
-          (
-            query: string,
-            path: {
-              value: string;
-              key?: string | undefined;
-            }[],
-          ) => {
-            return {
-              ...tagSuggestionValueObject(path[0] ? path[0].value : '', query),
-              final: !!path.length,
-            };
-          },
-          [],
-        ),
-
-        state: React.useMemo(() => {
-          return tokens
-            .filter(({token, value}) => {
-              if (token !== 'tag') {
-                return false;
-              }
-              return !tagsToExclude.includes(value.split('=')[0] as DagsterTag);
-            })
-            .map((token) => {
-              const [key, value] = token.value.split('=');
-              return tagSuggestionValueObject(key!, value!).value;
-            });
-        }, [tokens]),
-
-        setState: (nextState) => {
-          onChange([
-            ...tokens.filter(({token, value}) => {
-              if (token !== 'tag') {
-                return true;
-              }
-              return tagsToExclude.includes(value.split('=')[0] as DagsterTag);
-            }),
-            ...nextState.map(({key, value}) => {
-              return {
-                token: 'tag' as const,
-                value: `${key}=${value}`,
-              };
-            }),
-          ]);
-        },
-        onSuggestionClicked: async ({value}) => {
-          return await fetchTagValues(value);
-        },
-        getStringValue: ({key, value}) => `${key}=${value}`,
-        getKey: ({key, value}) => `${key}: ${value}`,
-        renderLabel: ({value}) => (
-          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            <Icon name="tag" />
-            <TruncatedTextWithFullTextOnHover text={value.value} />
-          </Box>
-        ),
-        renderActiveStateLabel: ({value}) => (
-          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            <Icon name="tag" />
-            <TruncatedTextWithFullTextOnHover text={`${value.key}=${value.value}`} />
-            {value.key}={value.value}
-          </Box>
-        ),
-        isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
-        matchType: 'all-of',
-      }),
+      tagFilter,
     ].filter((x) => x) as FilterObject[],
   });
 
   return {button: <span onClick={onFocus}>{button}</span>, activeFiltersJsx};
 };
+
 export function useTagDataFilterValues(tagKey?: DagsterTag) {
   const [fetch, {data}] = useLazyQuery<RunTagValuesQuery, RunTagValuesQueryVariables>(
     RUN_TAG_VALUES_QUERY,
