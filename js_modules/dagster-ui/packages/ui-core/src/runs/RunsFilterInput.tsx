@@ -596,7 +596,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const idFilter = useSuggestionFilter({
     name: 'Run ID',
     icon: 'id',
-    initialSuggestions: [{final: true, value: ID_EMPTY}],
+    initialSuggestions: [],
+    getNoSuggestionsPlaceholder: (query) => (!query ? ID_EMPTY : ID_TOO_SHORT),
     state: React.useMemo(() => {
       return tokens.filter(({token}) => token === 'id').map((token) => token.value);
     }, [tokens]),
@@ -606,11 +607,9 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     setState: (nextState) => {
       onChange([
         ...tokens.filter(({token}) => token !== 'id'),
-        ...nextState
-          .filter((value) => value !== ID_EMPTY && value !== ID_TOO_SHORT)
-          .map((value) => {
-            return {token: 'id' as const, value};
-          }),
+        ...nextState.map((value) => {
+          return {token: 'id' as const, value};
+        }),
       ]);
     },
     getStringValue: (value) => value,

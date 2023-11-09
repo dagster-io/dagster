@@ -266,7 +266,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               </Inner>
             </Container>
           ) : (
-            <Box padding={{vertical: 12, horizontal: 16}}>No results</Box>
+            <Box padding={{vertical: 12, horizontal: 12}} style={{color: Colors.Gray500}}>
+              {selectedFilter?.getNoResultsPlaceholder?.(search) || 'No results'}
+            </Box>
           )}
         </DropdownMenuContainer>
       </Menu>

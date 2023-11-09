@@ -20,9 +20,11 @@ type Args<TValue> = {
 
   state: TValue[]; // Active suggestions
   setState: (state: TValue[]) => void;
-  initialSuggestions: SuggestionFilterSuggestion<TValue>[];
 
+  initialSuggestions: SuggestionFilterSuggestion<TValue>[];
+  getNoSuggestionsPlaceholder?: (query: string) => string;
   onSuggestionClicked: (value: TValue) => Promise<SuggestionFilterSuggestion<TValue>[]> | void;
+
   getStringValue: (value: TValue) => string;
   getKey: (value: TValue) => string;
   renderLabel: ({value, isActive}: {value: TValue; isActive: boolean}) => JSX.Element;
@@ -44,6 +46,7 @@ export function useSuggestionFilter<TValue>({
   setState,
   initialSuggestions,
   onSuggestionClicked,
+  getNoSuggestionsPlaceholder,
   getStringValue,
   getKey,
   renderLabel,
@@ -71,6 +74,7 @@ export function useSuggestionFilter<TValue>({
         setSuggestionPath([]);
       },
       isLoadingFilters: nextSuggestionsLoading,
+      getNoResultsPlaceholder: getNoSuggestionsPlaceholder,
       getResults: (query: string) => {
         let results;
         let hasExactMatch = false;
@@ -175,6 +179,7 @@ export function useSuggestionFilter<TValue>({
       state,
       nextSuggestionsLoading,
       getStringValue,
+      getNoSuggestionsPlaceholder,
       renderActiveStateLabel,
       renderLabel,
       matchType,
