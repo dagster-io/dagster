@@ -12,6 +12,8 @@ HACKERNEWS_TOPSTORY_IDS_CSV = "hackernews_topstory_ids.csv"
 HACKERNEWS_TOPSTORIES_CSV = "hackernews_topstories.csv"
 BAR_CHART_FILE_NAME = "hackernews_topstories_bar_chart.png"
 
+S3_BUCKET = os.environ.get("S3_BUCKET")
+
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstory_ids(s3: S3Resource) -> None:
@@ -25,7 +27,7 @@ def hackernews_topstory_ids(s3: S3Resource) -> None:
     # write the top 500 story ids to an S3 bucket
     s3.get_client().put_object(
         Body=str(top_500_newstories),
-        Bucket=os.environ.get("S3_BUCKET"),
+        Bucket=S3_BUCKET,
         Key=HACKERNEWS_TOPSTORY_IDS_CSV,
     )
 
@@ -40,9 +42,8 @@ def hackernews_topstories(
     API Docs: https://github.com/HackerNews/API#items
     """
     # read the top 500 story ids from an S3 bucket
-    bucket_name = os.environ.get("S3_BUCKET")
     hackernews_topstory_ids = s3.get_client().get_object(
-        Bucket=bucket_name, Key=HACKERNEWS_TOPSTORY_IDS_CSV
+        Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORY_IDS_CSV
     )
 
     results = []
@@ -54,10 +55,12 @@ def hackernews_topstories(
 
     df = pd.DataFrame(results)
 
+    object_body = df.to_csv(index=False)
+
     # write the dataframe to an S3 bucket
     s3.get_client().put_object(
-        Body=df.to_csv(index=False),
-        Bucket=os.environ.get("S3_BUCKET"),
+        Body=object_body,
+        Bucket=S3_BUCKET,
         Key=HACKERNEWS_TOPSTORIES_CSV,
     )
 
@@ -83,11 +86,10 @@ def most_frequent_words(
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
 
     # read the topstories CSV from an S3 bucket
-    bucket_name = os.environ.get("S3_BUCKET")
     topstories = pd.read_csv(
         StringIO(
             s3.get_client()
-            .get_object(Bucket=bucket_name, Key=HACKERNEWS_TOPSTORIES_CSV)["Body"]
+            .get_object(Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORIES_CSV)["Body"]
             .read()
         )
     )
@@ -121,10 +123,10 @@ def most_frequent_words(
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
     # Also, upload the image to S3
-    bucket_name = os.environ.get("S3_BUCKET")
-    bucket_location = s3.get_client().get_bucket_location(Bucket=bucket_name)["LocationConstraint"]
-    s3.get_client().upload_fileobj(buffer, bucket_name, BAR_CHART_FILE_NAME)
-    s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{BAR_CHART_FILE_NAME}"
+
+    bucket_location = s3.get_client().get_bucket_location(Bucket=S3_BUCKET)["LocationConstraint"]
+    s3.get_client().upload_fileobj(buffer, S3_BUCKET, BAR_CHART_FILE_NAME)
+    s3_path = f"https://s3.{bucket_location}.amazonaws.com/{S3_BUCKET}/{BAR_CHART_FILE_NAME}"
 
     return MaterializeResult(
         metadata={
