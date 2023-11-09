@@ -6,7 +6,11 @@
     "isDefaultOpen": true,
     "children": [
       {
-        "title": "Hello Dagster",
+        "title": "Overview",
+        "path": "/getting-started/overview"
+      },
+      {
+        "title": "Quickstart",
         "path": "/getting-started/hello-dagster"
       },
       {
@@ -769,7 +773,7 @@
     "path": "/guides",
     "children": [
       {
-        "title": "Development environment",
+        "title": "Development",
         "children": [
           {
             "title": "Creating a new project",
