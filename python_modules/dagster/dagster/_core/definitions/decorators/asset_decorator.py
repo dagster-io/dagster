@@ -26,7 +26,7 @@ from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
@@ -1012,7 +1012,7 @@ def graph_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    metadata: Optional[MetadataUserInput] = ...,
+    metadata: Optional[RawMetadataMapping] = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
@@ -1033,7 +1033,7 @@ def graph_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    metadata: Optional[MetadataUserInput] = None,
+    metadata: Optional[RawMetadataMapping] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -1076,7 +1076,7 @@ def graph_asset(
             not provided, the name "default" is used.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
-        metadata (Optional[MetadataUserInput]): Dictionary of metadata to be associated with
+        metadata (Optional[RawMetadataMapping]): Dictionary of metadata to be associated with
             the asset.
         freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
             intended to be updated with respect to its root data.
@@ -1148,7 +1148,7 @@ def graph_asset_no_defaults(
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
     group_name: Optional[str],
     partitions_def: Optional[PartitionsDefinition],
-    metadata: Optional[MetadataUserInput],
+    metadata: Optional[RawMetadataMapping],
     freshness_policy: Optional[FreshnessPolicy],
     auto_materialize_policy: Optional[AutoMaterializePolicy],
     backfill_policy: Optional[BackfillPolicy],

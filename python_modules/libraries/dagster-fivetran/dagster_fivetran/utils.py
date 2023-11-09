@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster import AssetMaterialization, MetadataValue
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 from dagster_fivetran.types import FivetranOutput
@@ -20,7 +20,7 @@ def get_fivetran_logs_url(connector_details: Mapping[str, Any]) -> str:
 
 def metadata_for_table(
     table_data: Mapping[str, Any], connector_url: str, include_column_info: bool = False
-) -> MetadataUserInput:
+) -> RawMetadataMapping:
     metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
     if table_data.get("columns"):
         columns = check.dict_elem(table_data, "columns")

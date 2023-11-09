@@ -31,7 +31,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
@@ -51,7 +51,7 @@ def _build_fivetran_assets(
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]] = None,
     table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
@@ -138,7 +138,7 @@ def build_fivetran_assets(
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]] = None,
     group_name: Optional[str] = None,
     infer_missing_tables: bool = False,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -162,7 +162,7 @@ def build_fivetran_assets(
         io_manager_key (Optional[str]): The io_manager to be used to handle each of these assets.
         asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
             If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
-        metadata_by_table_name (Optional[Mapping[str, MetadataUserInput]]): A mapping from destination
+        metadata_by_table_name (Optional[Mapping[str, RawMetadataMapping]]): A mapping from destination
             table name to user-supplied metadata that should be associated with the asset for that table.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
@@ -242,7 +242,7 @@ class FivetranConnectionMetadata(
         table_to_asset_key_fn: Callable[[str], AssetKey],
         io_manager_key: Optional[str] = None,
     ) -> AssetsDefinitionCacheableData:
-        schema_table_meta: Dict[str, MetadataUserInput] = {}
+        schema_table_meta: Dict[str, RawMetadataMapping] = {}
         if "schemas" in self.schemas:
             schemas_inner = cast(Dict[str, Any], self.schemas["schemas"])
             for schema in schemas_inner.values():
@@ -299,7 +299,7 @@ def _build_fivetran_assets_from_metadata(
         ),
         asset_key_prefix=list(assets_defn_meta.key_prefix or []),
         metadata_by_table_name=cast(
-            Dict[str, MetadataUserInput], assets_defn_meta.metadata_by_output_name
+            Dict[str, RawMetadataMapping], assets_defn_meta.metadata_by_output_name
         ),
         io_manager_key=io_manager_key,
         table_to_asset_key_map=assets_defn_meta.keys_by_output_name,

@@ -36,7 +36,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.execution.context.init import build_init_resource_context
 
 from dagster_dbt.asset_utils import (
@@ -424,7 +424,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             },
         )
 
-    def _build_dbt_cloud_assets_metadata(self, dbt_metadata: Dict[str, Any]) -> MetadataUserInput:
+    def _build_dbt_cloud_assets_metadata(self, dbt_metadata: Dict[str, Any]) -> RawMetadataMapping:
         metadata = {
             "dbt Cloud Job": MetadataValue.url(
                 self._dbt_cloud.build_url_for_job(
@@ -627,7 +627,7 @@ def load_assets_from_dbt_cloud_job(
             config applied to dbt models, i.e.:
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).

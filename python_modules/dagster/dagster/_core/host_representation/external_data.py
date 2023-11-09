@@ -67,8 +67,8 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataMapping,
-    MetadataUserInput,
     MetadataValue,
+    RawMetadataMapping,
     TextMetadataValue,
     normalize_metadata,
 )
@@ -1476,7 +1476,7 @@ def external_asset_nodes_from_defs(
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
-    metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
+    metadata_by_asset_key: Dict[AssetKey, RawMetadataMapping] = dict()
     auto_materialize_policy_by_asset_key: Dict[AssetKey, AutoMaterializePolicy] = dict()
     backfill_policy_by_asset_key: Dict[AssetKey, Optional[BackfillPolicy]] = dict()
 

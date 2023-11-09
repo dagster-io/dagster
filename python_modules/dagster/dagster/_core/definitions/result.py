@@ -9,7 +9,7 @@ from .events import (
     AssetKey,
     CoercibleToAssetKey,
 )
-from .metadata import MetadataUserInput
+from .metadata import RawMetadataMapping
 
 
 @experimental
@@ -18,7 +18,7 @@ class MaterializeResult(
         "_MaterializeResult",
         [
             ("asset_key", PublicAttr[Optional[AssetKey]]),
-            ("metadata", PublicAttr[Optional[MetadataUserInput]]),
+            ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
             ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
             ("data_version", PublicAttr[Optional[DataVersion]]),
         ],
@@ -30,14 +30,14 @@ class MaterializeResult(
 
     Attributes:
         asset_key (Optional[AssetKey]): Optional in @asset, required in @multi_asset to discern which asset this refers to.
-        metadata (Optional[MetadataUserInput]): Metadata to record with the corresponding AssetMaterialization event.
+        metadata (Optional[RawMetadataMapping]): Metadata to record with the corresponding AssetMaterialization event.
     """
 
     def __new__(
         cls,
         *,  # enforce kwargs
         asset_key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         check_results: Optional[Sequence[AssetCheckResult]] = None,
         data_version: Optional[DataVersion] = None,
     ):

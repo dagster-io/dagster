@@ -12,7 +12,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
-    MetadataUserInput,
+    RawMetadataMapping,
     normalize_metadata,
 )
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
@@ -332,7 +332,7 @@ class Out(
             ("description", PublicAttr[Optional[str]]),
             ("is_required", PublicAttr[bool]),
             ("io_manager_key", PublicAttr[str]),
-            ("metadata", PublicAttr[Optional[MetadataUserInput]]),
+            ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
             ("code_version", PublicAttr[Optional[str]]),
         ],
     )

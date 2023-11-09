@@ -61,9 +61,10 @@ RawMetadataValue = Union[
 ]
 
 MetadataMapping: TypeAlias = Mapping[str, "MetadataValue"]
-MetadataUserInput: TypeAlias = Mapping[str, RawMetadataValue]
+RawMetadataMapping: TypeAlias = Mapping[str, RawMetadataValue]
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
+
 
 # ########################
 # ##### NORMALIZATION

@@ -11,7 +11,7 @@ from .events import (
     CoercibleToAssetKey,
 )
 from .freshness_policy import FreshnessPolicy
-from .metadata import MetadataUserInput
+from .metadata import RawMetadataMapping
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -93,7 +93,7 @@ class AssetSpec(
         *,
         deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         description: Optional[str] = None,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         skippable: bool = False,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,

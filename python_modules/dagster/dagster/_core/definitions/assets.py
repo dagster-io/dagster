@@ -433,7 +433,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 outputs, and values are the group name. Cannot be used with the group_name argument.
             descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
                 associated with each of the output asstes for this graph.
-            metadata_by_output_name (Optional[Mapping[str, Optional[MetadataUserInput]]]): Defines metadata to
+            metadata_by_output_name (Optional[Mapping[str, Optional[RawMetadataMapping]]]): Defines metadata to
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
@@ -524,7 +524,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 outputs, and values are the group name. Cannot be used with the group_name argument.
             descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
                 associated with each of the output asstes for this graph.
-            metadata_by_output_name (Optional[Mapping[str, Optional[MetadataUserInput]]]): Defines metadata to
+            metadata_by_output_name (Optional[Mapping[str, Optional[RawMetadataMapping]]]): Defines metadata to
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
