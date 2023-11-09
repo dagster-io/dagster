@@ -336,7 +336,7 @@ def get_external_sensor_execution(
     last_completion_timestamp: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
-    first_tick_after_start: Optional[bool],
+    last_start_timestamp: Optional[float],
 ):
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
@@ -361,7 +361,7 @@ def get_external_sensor_execution(
             repository_def=repo_def,
             sensor_name=sensor_name,
             resources=resources_to_build,
-            first_tick_after_start=bool(first_tick_after_start),
+            last_start_time=last_start_timestamp,
         ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,

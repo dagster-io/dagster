@@ -582,7 +582,7 @@ class SensorExecutionArgs(
             ("last_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
             ("cursor", Optional[str]),
-            ("first_tick_after_start", Optional[bool]),
+            ("last_start_time", Optional[float]),
         ],
     )
 ):
@@ -594,7 +594,7 @@ class SensorExecutionArgs(
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
-        first_tick_after_start: Optional[bool] = False,
+        last_start_time: Optional[float],
     ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
@@ -608,9 +608,7 @@ class SensorExecutionArgs(
             ),
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
             cursor=check.opt_str_param(cursor, "cursor"),
-            first_tick_after_start=check.opt_bool_param(
-                first_tick_after_start, "first_tick_after_start"
-            ),
+            last_start_time=check.opt_float_param(last_start_time, "last_start_time"),
         )
 
 

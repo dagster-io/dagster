@@ -171,7 +171,9 @@ class SensorLaunchContext:
                 self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
             )
             last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
-            last_sensor_start_timestamp = state.instigator_data.last_sensor_start_timestamp if state.instigator_data else None  # type: ignore  # (possible none)
+            last_sensor_start_timestamp = (
+                state.instigator_data.last_sensor_start_timestamp if state.instigator_data else None  # type: ignore  # (possible none)
+            )
             if self._tick.run_keys and should_update_cursor_and_last_run_key:
                 last_run_key = self._tick.run_keys[-1]
 
@@ -659,7 +661,7 @@ def _evaluate_sensor(
         instigator_data.last_tick_timestamp if instigator_data else None,
         instigator_data.last_run_key if instigator_data else None,
         instigator_data.cursor if instigator_data else None,
-        instigator_data.first_tick_after_start if instigator_data else None,
+        instigator_data.last_sensor_start_timestamp if instigator_data else None,
     )
 
     yield

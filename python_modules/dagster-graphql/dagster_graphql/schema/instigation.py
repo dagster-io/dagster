@@ -368,6 +368,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     cursor=self._cursor,
                     last_completion_time=None,
                     last_run_key=None,
+                    last_start_time=None,
                 )
             except Exception:
                 sensor_data = serializable_error_info_from_exc_info(sys.exc_info())

@@ -89,8 +89,7 @@ class SensorInstigatorData(
             # the last time a tick was initiated, used to prevent issuing multiple threads from
             # evaluating ticks within the minimum interval
             ("last_tick_start_timestamp", Optional[float]),
-            # the last time the sensor was started, used to add a flag to the sensor context for
-            # the first tick after a sensor start
+            # the last time the sensor was started
             ("last_sensor_start_timestamp", Optional[float]),
         ],
     )
@@ -123,13 +122,6 @@ class SensorInstigatorData(
             self.cursor,
             self.last_tick_start_timestamp,
             start_time,
-        )
-
-    @property
-    def first_tick_after_start(self) -> bool:
-        return bool(
-            self.last_sensor_start_timestamp
-            and self.last_sensor_start_timestamp > (self.last_tick_timestamp or 0)
         )
 
 
