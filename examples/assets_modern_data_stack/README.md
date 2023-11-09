@@ -1,4 +1,4 @@
-# Dagster + Modern Data Stack starter kit
+# Dagster + Modern Data Stack starter kit [UNMAINTAINED]
 
 This starter kit shows how to build the Dagster's [Software-Defined Assets](https://docs.dagster.io/concepts/assets/software-defined-assets) alongside Modern Data Stack tools (specifically, [Airbyte](https://github.com/airbytehq/airbyte) and [dbt](https://github.com/dbt-labs/dbt-core)).
 

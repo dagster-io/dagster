@@ -1,4 +1,6 @@
-# Fully Featured Project Example
+# Fully Featured Project Example [UNMAINTAINED]
+
+If you're interested in seeing an up-to-date and maintained example of a Dagster project, see our [Dagster Open Platform](https://github.com/dagster-io/dagster-open-platform)
 
 This is meant to be a full "realistic" demo of Dagster, that takes advantage of many of its features, including:
 
