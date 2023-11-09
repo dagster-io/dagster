@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
 )
 
 import pytz
@@ -34,6 +35,7 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
@@ -56,6 +58,138 @@ if TYPE_CHECKING:
         AutoMaterializeAssetEvaluation,
     )
 
+AssetPartitionsOrWrapper = Union[AbstractSet[AssetKeyPartitionKey], "PartitionsSubsetWrapper"]
+
+
+class PartitionsSubsetWrapper(NamedTuple):
+    """Convenience class for dealing with both unpartitioned and partitioned assets. Allows set
+    operations to be taken on sets which contain all partitions of an asset without having to
+    generate the full set of partitions.
+    """
+
+    is_all: bool
+    asset_key: AssetKey
+    instance_queryer: CachingInstanceQueryer
+    subset: Optional[PartitionsSubset] = None
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self.instance_queryer.asset_graph.get_partitions_def(self.asset_key)
+
+    @property
+    def partitions_subset(self) -> PartitionsSubset:
+        partitions_def = check.not_none(self.partitions_def)
+        if self.subset:
+            return self.subset
+        elif self.is_all:
+            return partitions_def.subset_with_all_partitions(
+                self.instance_queryer.evaluation_time, self.instance_queryer
+            )
+        else:
+            return partitions_def.empty_subset()
+
+    @property
+    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        if self.partitions_def:
+            partition_keys = (
+                self.partitions_def.get_partition_keys(
+                    self.instance_queryer.evaluation_time, self.instance_queryer
+                )
+                if self.is_all
+                else self.partitions_subset.get_partition_keys(
+                    self.instance_queryer.evaluation_time
+                )
+            )
+            return {
+                AssetKeyPartitionKey(asset_key=self.asset_key, partition_key=partition_key)
+                for partition_key in partition_keys
+            }
+        else:
+            return {AssetKeyPartitionKey(self.asset_key)} if self.is_all else set()
+
+    @staticmethod
+    def empty(
+        asset_key: AssetKey, instance_queryer: CachingInstanceQueryer
+    ) -> "PartitionsSubsetWrapper":
+        return PartitionsSubsetWrapper(
+            is_all=False, asset_key=asset_key, instance_queryer=instance_queryer
+        )
+
+    @staticmethod
+    def all(
+        asset_key: AssetKey, instance_queryer: CachingInstanceQueryer
+    ) -> "PartitionsSubsetWrapper":
+        return PartitionsSubsetWrapper(
+            is_all=True, asset_key=asset_key, instance_queryer=instance_queryer
+        )
+
+    @staticmethod
+    def from_asset_partitions(
+        asset_key: AssetKey,
+        instance_queryer: CachingInstanceQueryer,
+        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    ) -> "PartitionsSubsetWrapper":
+        partitions_def = instance_queryer.asset_graph.get_partitions_def(asset_key)
+        if partitions_def:
+            return PartitionsSubsetWrapper(
+                is_all=False,
+                asset_key=asset_key,
+                instance_queryer=instance_queryer,
+                subset=partitions_def.subset_with_partition_keys(
+                    ap.partition_key for ap in asset_partitions if ap.partition_key is not None
+                ),
+            )
+        else:
+            return PartitionsSubsetWrapper(
+                is_all=len(asset_partitions) > 0,
+                asset_key=asset_key,
+                instance_queryer=instance_queryer,
+            )
+
+    def coerce_to_wrapper(self, other: AssetPartitionsOrWrapper) -> "PartitionsSubsetWrapper":
+        if isinstance(other, PartitionsSubsetWrapper):
+            return other
+        return PartitionsSubsetWrapper.from_asset_partitions(
+            self.asset_key, self.instance_queryer, other
+        )
+
+    def __contains__(self, elt: AssetKeyPartitionKey) -> bool:
+        if self.is_all:
+            return True
+        return elt in self.asset_partitions
+
+    def __and__(self, other: AssetPartitionsOrWrapper) -> "PartitionsSubsetWrapper":
+        other = self.coerce_to_wrapper(other)
+        if self.is_all:
+            return other
+        elif other.is_all:
+            return self
+        elif self.partitions_def:
+            return self._replace(subset=self.partitions_subset & other.partitions_subset)
+        else:
+            return self._replace(is_all=self.is_all & other.is_all)
+
+    def __or__(self, other: AssetPartitionsOrWrapper) -> "PartitionsSubsetWrapper":
+        other = self.coerce_to_wrapper(other)
+        if self.is_all:
+            return self
+        elif other.is_all:
+            return other
+        elif self.partitions_def:
+            return self._replace(subset=self.partitions_subset | other.partitions_subset)
+        else:
+            return self._replace(is_all=self.is_all | other.is_all)
+
+    def __sub__(self, other: AssetPartitionsOrWrapper) -> "PartitionsSubsetWrapper":
+        other = self.coerce_to_wrapper(other)
+        if self.partitions_def:
+            if other.is_all:
+                return self._replace(is_all=False, subset=None)
+            else:
+                return self._replace(subset=self.partitions_subset - other.partitions_subset)
+        else:
+            return self._replace(is_all=self.is_all and not other.is_all)
+
 
 @dataclass(frozen=True)
 class RuleEvaluationContext:
@@ -67,7 +201,7 @@ class RuleEvaluationContext:
     # keys in the values match the asset key in the corresponding key.
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
-    candidates: AbstractSet[AssetKeyPartitionKey]
+    candidates: PartitionsSubsetWrapper
     daemon_context: "AssetDaemonContext"
 
     @property
@@ -106,9 +240,7 @@ class RuleEvaluationContext:
             asset_graph=self.asset_graph
         )
 
-    def with_candidates(
-        self, candidates: AbstractSet[AssetKeyPartitionKey]
-    ) -> "RuleEvaluationContext":
+    def with_candidates(self, candidates: PartitionsSubsetWrapper) -> "RuleEvaluationContext":
         return dataclasses.replace(self, candidates=candidates)
 
     def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
@@ -121,7 +253,7 @@ class RuleEvaluationContext:
 
     def get_candidates_not_evaluated_by_rule_on_previous_tick(
         self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> PartitionsSubsetWrapper:
         """Returns the set of candidates that were not evaluated by the rule that is currently being
         evaluated on the previous tick.
 
@@ -132,7 +264,7 @@ class RuleEvaluationContext:
 
     def get_candidates_with_updated_or_will_update_parents(
         self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> PartitionsSubsetWrapper:
         """Returns the set of candidate asset partitions whose parents have been updated since the
         last tick or will be requested on this tick.
 
@@ -695,7 +827,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
             context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.asset_partitions:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
@@ -741,7 +873,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
             context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.asset_partitions:
             missing_parent_asset_keys = set()
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
@@ -808,7 +940,7 @@ class SkipOnNotAllParentsUpdatedRule(
             context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.asset_partitions:
             parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -880,7 +1012,7 @@ class SkipOnRequiredButNonexistentParentsRule(
         asset_partitions_by_evaluation_data = defaultdict(set)
 
         candidates_to_evaluate = context.get_candidates_not_evaluated_by_rule_on_previous_tick()
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.asset_partitions:
             nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -926,12 +1058,14 @@ class SkipOnBackfillInProgressRule(
         if self.all_partitions:
             backfill_in_progress_candidates = {
                 candidate
-                for candidate in context.candidates
+                for candidate in context.candidates.asset_partitions
                 if candidate.asset_key in backfilling_subset.asset_keys
             }
         else:
             backfill_in_progress_candidates = {
-                candidate for candidate in context.candidates if candidate in backfilling_subset
+                candidate
+                for candidate in context.candidates.asset_partitions
+                if candidate in backfilling_subset
             }
 
         if backfill_in_progress_candidates:
@@ -956,7 +1090,7 @@ class DiscardOnMaxMaterializationsExceededRule(
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
             sorted(
-                context.candidates,
+                context.candidates.asset_partitions,
                 key=lambda x: sort_key_for_asset_partition(context.asset_graph, x),
             )[self.limit :]
         )

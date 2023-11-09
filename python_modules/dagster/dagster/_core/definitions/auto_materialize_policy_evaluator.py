@@ -8,6 +8,7 @@ from dagster._core.definitions.partition import PartitionsSubset
 
 from .auto_materialize_rule import (
     DiscardOnMaxMaterializationsExceededRule,
+    PartitionsSubsetWrapper,
     RuleEvaluationContext,
     RuleEvaluationResults,
 )
@@ -30,7 +31,7 @@ class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
     condition: "AutoMaterializeCondition"
-    true: AbstractSet[AssetKeyPartitionKey]
+    true: PartitionsSubsetWrapper
     results: RuleEvaluationResults = []
     children: Sequence["ConditionEvaluation"] = []
 
@@ -76,7 +77,7 @@ class ConditionEvaluation(NamedTuple):
             asset_key=asset_key,
             asset_graph=asset_graph,
             asset_partitions_by_rule_evaluation=[*self.all_results, *discard_results],
-            num_requested=len(self.true - to_discard),
+            num_requested=len(self.true.asset_partitions - to_discard),
             num_skipped=num_skipped,
             num_discarded=len(to_discard),
             dynamic_partitions_store=instance_queryer,
@@ -110,11 +111,21 @@ class RuleCondition(
     def evaluate(self, context: RuleEvaluationContext) -> ConditionEvaluation:
         context.daemon_context._verbose_log_fn(f"Evaluating rule: {self.rule.to_snapshot()}")  # noqa
         results = self.rule.evaluate_for_asset(context)
-        true = set()
+        true_asset_partitions = set()
         for _, asset_partitions in results:
-            true |= asset_partitions
-        context.daemon_context._verbose_log_fn(f"Rule returned {len(true)} partitions")  # noqa
-        return ConditionEvaluation(condition=self, true=true, results=results)
+            true_asset_partitions |= asset_partitions
+        context.daemon_context._verbose_log_fn(  # noqa
+            f"Rule returned {len(true_asset_partitions)} partitions"
+        )
+        return ConditionEvaluation(
+            condition=self,
+            true=PartitionsSubsetWrapper.from_asset_partitions(
+                context.asset_key,
+                context.instance_queryer,
+                true_asset_partitions,
+            ),
+            results=results,
+        )
 
 
 class AndCondition(
@@ -138,7 +149,7 @@ class OrCondition(
 ):
     def evaluate(self, context: RuleEvaluationContext) -> ConditionEvaluation:
         child_evaluations: List[ConditionEvaluation] = []
-        subset = set()
+        subset = PartitionsSubsetWrapper.empty(context.asset_key, context.instance_queryer)
         for child in self.children:
             result = child.evaluate(context)
             child_evaluations.append(result)
@@ -185,7 +196,10 @@ class AutoMaterializePolicyEvaluator(NamedTuple):
         condition_evaluation = self.condition.evaluate(context)
 
         # this is treated separately from other rules, for now
-        to_discard, discard_results = set(), []
+        to_discard, discard_results = (
+            PartitionsSubsetWrapper.empty(context.asset_key, context.instance_queryer),
+            [],
+        )
         if self.max_materializations_per_minute is not None:
             discard_context = context.with_candidates(condition_evaluation.true)
             condition = RuleCondition(
@@ -205,17 +219,17 @@ class AutoMaterializePolicyEvaluator(NamedTuple):
             and len(condition_evaluation.children) == 2
         ):
             # the right-hand side of the AndCondition is the inverse of the set of skip rules
-            num_skipped = len(condition_evaluation.children[1].children[0].true)
+            num_skipped = len(condition_evaluation.children[1].children[0].true.asset_partitions)
 
         return (
             condition_evaluation.to_evaluation(
                 context.asset_key,
                 context.asset_graph,
                 context.instance_queryer,
-                to_discard,
+                to_discard.asset_partitions,
                 discard_results,
                 num_skipped=num_skipped,
             ),
-            to_materialize,
-            to_discard,
+            to_materialize.asset_partitions,
+            to_discard.asset_partitions,
         )
