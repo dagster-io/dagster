@@ -274,7 +274,7 @@ T = TypeVar("T")
 
 @experimental_param(param="data_version")
 class Output(Generic[T]):
-    """Event corresponding to one of a op's outputs.
+    """Event corresponding to one of an op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
     one output, or when they also yield events of other types, or when defining a op using the
@@ -289,7 +289,7 @@ class Output(Generic[T]):
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
         data_version (Optional[DataVersion]): (Experimental) A data version to manually set
