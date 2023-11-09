@@ -1,5 +1,45 @@
 # Changelog
 
+# 1.5.7 / 0.21.7 (libraries)
+
+### New
+
+- The `OpExecutionContext` and `AssetExecutionContext` now have a `partition_keys` property
+- [dagster-ui] The asset graph layout algorithm has been changed to a much faster one called “tight-tree”
+- [dagster-ui] The Runs table filters has a top level filter for partitions
+- [dagster-dbt] `dbt-core==1.7.*` is now supported.
+
+### Bugfixes
+
+- Fixed an issue where some schedules skipped a tick on the day after a fall Daylight Savings Time transition.
+- Fixed a bug that caused backfill policies that execute multiple partitions in a single run not to work with dynamic partitions.
+- Fixed a bug that caused an error when `build_schedule_from_partitioned_job` was used with a job with multi-partitioned assets and the `partitions_def` argument wasn’t provided to `define_asset_job`.
+- We now raise an error early if the empty string is provided as an asset’s group name (Thanks Sierrra!)
+- Fixed an issue where custom setup and teardown methods were not properly called on nested Pythonic resources.
+- Added a warning message when op or asset config is passed as an argument not named `config`.
+- [dagster-cloud] Fixed an issue where overriding the default I/O manager could break the Snowflake-dbt insights job.
+- [auto-materialize] Fixed an issue where materializing an unpartitioned parent of a dynamic-partitioned asset would only result in the latest dynamic partition of that asset being requested. Now, all partitions will be requested.
+- [dagster-embedded-elt] Fixed an issue in `dagster-embedded-elt` where sling’s `updated_at` parameter was set to the incorrect type
+- [dagster-ui] Fixed an issue in the launchpad where selecting a partition wouldn’t correctly overwrite fields using the partition’s specific configuration
+
+### Community Contributions
+
+- A docs fix to the testing concepts page, thanks @NicolaiLolansen!
+- The schema can now be overridden per asset in DB IO managers, thanks @jrstats!
+
+### Experimental
+
+- Improved failure recovery and retry behavior when the daemon that launches auto-materialization runs fails or crashes in the middle of a tick.
+- [asset-checks] UI performance for displaying check results is improved
+- [asset-checks] Removed noisy experimental warning about `AssetCheckKey`
+- [op-concurrency] Fixed a bug where concurrency slots were not getting assigned if a run that was assigned a slot was deleted before the slot had actually been claimed during execution.
+- [dagster-pipes] The `PipesSubprocessClient` now inherits the environment variables of the parent process in the launched subprocess.
+- [dagster-pipes] Exceptions are now reported in the event log for framework components and from the external process.
+
+### Documentation
+
+- Added a guide for using [Dagster Pipes with Databricks](https://docs.dagster.io/guides/dagster-pipes/databricks)
+
 # 1.5.6 / 0.21.6 (libraries)
 
 ### New
@@ -11,6 +51,7 @@
 - [dagster-dbt] `dagster-dbt project scaffold` now uses `~/.dbt/profiles.yml` if a `profiles.yml` is not present in the dbt project directory.
 - [dagster-dbt] `@dbt_assets` now support `PartitionMapping` using `DagsterDbtTranslator.get_partition_mapping`.
 - [dagster-dbt] Self dependencies can now be enabled for dbt models that are represented by `@dbt_assets`. To enable this, add the following metadata to your dbt model’s metadata in your dbt project:
+
 ```
 meta:
   dagster:
@@ -49,7 +90,7 @@ meta:
 ### New
 
 - Dagster now supports using Pydantic 2 models for Config and Resources. Pydantic 1.10 continues to be supported.
-- Added  a `report_asset_observation` REST API endpoint for runless external asset observation events
+- Added a `report_asset_observation` REST API endpoint for runless external asset observation events
 - Dramatically improved the performance of partition-mapping, for basic hourly and daily partitions definitions
 - [ui] When viewing a list of runs, you can quickly add the tag in the “Launched by” column as a filter on the list view. Hover over the tag to see the “Add to filter” button.
 - [helm] The env vars `DAGSTER_K8S_PG_PASSWORD_SECRET` and `DAGSTER_K8S_INSTANCE_CONFIG_MAP` will no longer be set in all pods.
@@ -85,7 +126,7 @@ meta:
 
 ### New
 
-- Added  a `report_asset_check` REST API endpoint for runless external asset check evaluation events. This is available in cloud as well.
+- Added a `report_asset_check` REST API endpoint for runless external asset check evaluation events. This is available in cloud as well.
 - The `config` argument is now supported on `@graph_multi_asset`
 - [ui] Improved performance for global search UI, especially for deployments with very large numbers of jobs or assets.
 - [dagster-pipes] Add S3 context injector/reader.
@@ -115,11 +156,11 @@ meta:
 ### Documentation
 
 - Added several pieces of documentation for Dagster Pipes, including:
-    - [A high-level explanation of Pipes](https://docs.dagster.io/guides/dagster-pipes)
-    - [A tutorial](https://docs.dagster.io/guides/dagster-pipes/subprocess) that demonstrates how to use Pipes with a local subprocess
-    - [A reference](https://docs.dagster.io/guides/dagster-pipes/subprocess/reference) for using a local subprocess with Pipes
-    - [A detailed explanation of Pipes](https://docs.dagster.io/guides/dagster-pipes/dagster-pipes-details-and-customization), including how to customize the process
-    - API references for [Pipes](https://docs.dagster.io/_apidocs/pipes) (orchestration-side) and [dagster-pipes](https://docs.dagster.io/_apidocs/libraries/dagster-pipes) (external process)
+  - [A high-level explanation of Pipes](https://docs.dagster.io/guides/dagster-pipes)
+  - [A tutorial](https://docs.dagster.io/guides/dagster-pipes/subprocess) that demonstrates how to use Pipes with a local subprocess
+  - [A reference](https://docs.dagster.io/guides/dagster-pipes/subprocess/reference) for using a local subprocess with Pipes
+  - [A detailed explanation of Pipes](https://docs.dagster.io/guides/dagster-pipes/dagster-pipes-details-and-customization), including how to customize the process
+  - API references for [Pipes](https://docs.dagster.io/_apidocs/pipes) (orchestration-side) and [dagster-pipes](https://docs.dagster.io/_apidocs/libraries/dagster-pipes) (external process)
 - Added documentation for the new [experimental External Assets](https://docs.dagster.io/concepts/assets/external-assets) feature
 
 ### Dagster Cloud
@@ -6362,33 +6403,33 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
     class: MySQLRunStorage
     config:
       mysql_db:
-        username: {username}
-        password: {password}
-        hostname: {hostname}
-        db_name: {database}
-        port: {port}
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { database }
+        port: { port }
 
   event_log_storage:
     module: dagster_mysql.event_log
     class: MySQLEventLogStorage
     config:
       mysql_db:
-        username: {username}
-        password: {password}
-        hostname: {hostname}
-        db_name: {db_name}
-        port: {port}
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { db_name }
+        port: { port }
 
   schedule_storage:
     module: dagster_mysql.schedule_storage
     class: MySQLScheduleStorage
     config:
       mysql_db:
-        username: {username}
-        password: {password}
-        hostname: {hostname}
-        db_name: {db_name}
-        port: {port}
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { db_name }
+        port: { port }
   ```
 
 # 0.10.7
