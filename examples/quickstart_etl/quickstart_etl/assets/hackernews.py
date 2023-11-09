@@ -1,11 +1,11 @@
 import base64
+import json
+import os
 from io import BytesIO
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-import json
-import os
 from dagster import AssetExecutionContext, MetadataValue, asset
 
 
@@ -19,19 +19,14 @@ def topstory_ids() -> None:
         json.dump(top_new_story_ids, f)
 
 
-@asset(
-    deps=[topstory_ids],
-    group_name="hackernews",
-    compute_kind="HackerNews API")
+@asset(deps=[topstory_ids], group_name="hackernews", compute_kind="HackerNews API")
 def topstories(context: AssetExecutionContext) -> None:
     with open("data/topstory_ids.json", "r") as f:
         topstory_ids = json.load(f)
 
     results = []
     for item_id in topstory_ids:
-        item = requests.get(
-            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        ).json()
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
 
         if len(results) % 20 == 0:
@@ -58,7 +53,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
     # loop through the titles and count the frequency of each word
     word_counts = {}
     for raw_title in topstories["title"]:
-        title = raw_title.lower() # type: ignore
+        title = raw_title.lower()  # type: ignore
         for word in title.split():
             cleaned_word = word.strip(".,-!?:;()[]'\"-")
             if cleaned_word not in stopwords and len(cleaned_word) > 0:
@@ -72,7 +67,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
 
     # Make a bar chart of the top 25 words
     plt.figure(figsize=(10, 6))
-    plt.bar(list(top_words.keys()), list(top_words.values())) # type: ignore
+    plt.bar(list(top_words.keys()), list(top_words.values()))  # type: ignore
     plt.xticks(rotation=45, ha="right")
     plt.title("Top 25 Words in Hacker News Titles")
     plt.tight_layout()
@@ -90,4 +85,3 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
 
     # Attach the Markdown content as metadata to the asset
     context.add_output_metadata(metadata={"plot": MetadataValue.md(md_content)})
-
