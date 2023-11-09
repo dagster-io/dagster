@@ -1,5 +1,4 @@
 import pytest
-
 from databricks.sdk.service.jobs import JobsHealthMetric, JobsHealthOperator
 
 

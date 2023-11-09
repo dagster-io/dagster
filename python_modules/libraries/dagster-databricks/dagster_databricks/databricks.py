@@ -1,7 +1,7 @@
 import base64
 import logging
 import time
-from typing import IO, Any, Mapping, Optional, Tuple, Union, cast
+from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster
 import dagster._check as check
@@ -447,7 +447,7 @@ class DatabricksJobRunner:
 
     def _get_job_health_settings(
         self, run_config: Mapping[str, Any]
-    ) -> Optional[list[jobs.JobsHealthRule]]:
+    ) -> Optional[List[jobs.JobsHealthRule]]:
         if "job_health_settings" in run_config:
             job_health_settings = [
                 jobs.JobsHealthRule.from_dict(h) for h in run_config["job_health_settings"]

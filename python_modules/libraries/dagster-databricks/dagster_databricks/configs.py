@@ -9,7 +9,7 @@ See:
 - https://docs.databricks.com/dev-tools/api/latest/clusters.html
 - https://docs.databricks.com/dev-tools/api/latest/libraries.html
 """
-from typing import Dict, Union
+from typing import Any, Dict
 
 from dagster import (
     Array,
@@ -676,13 +676,7 @@ def _define_notification_settings() -> Dict[str, Field]:
 
 def _define_webhook_notification_settings() -> Field:
     webhook_id_field = Field(
-        [
-            Shape(
-                {
-                    "id": Field(String, is_required=False),
-                }
-            )
-        ],
+        [Shape({"id": Field(String, is_required=False)})],
         is_required=False,
     )
     return Field(
@@ -759,7 +753,7 @@ def _define_job_health_settings():
     )
 
 
-def _define_submit_run_fields() -> Dict[str, Union[Selector, Field]]:
+def _define_submit_run_fields() -> Dict[str, Any]:
     run_name = Field(
         String,
         description="An optional name for the run. The default value is Untitled",
