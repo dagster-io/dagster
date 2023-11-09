@@ -53,7 +53,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
     # loop through the titles and count the frequency of each word
     word_counts = {}
     for raw_title in topstories["title"]:
-        title = raw_title.lower()  # type: ignore
+        title = raw_title.lower()
         for word in title.split():
             cleaned_word = word.strip(".,-!?:;()[]'\"-")
             if cleaned_word not in stopwords and len(cleaned_word) > 0:
@@ -67,7 +67,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
 
     # Make a bar chart of the top 25 words
     plt.figure(figsize=(10, 6))
-    plt.bar(list(top_words.keys()), list(top_words.values()))  # type: ignore
+    plt.bar(list(top_words.keys()), list(top_words.values()))
     plt.xticks(rotation=45, ha="right")
     plt.title("Top 25 Words in Hacker News Titles")
     plt.tight_layout()
