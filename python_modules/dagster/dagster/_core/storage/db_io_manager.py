@@ -207,6 +207,8 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
+                    print(f"The type of the context is {type(context)}")
+                    print(f"The partition keys are {context.asset_partition_keys}")
                     multi_partition_key_mapping = cast(
                         MultiPartitionKey, context.asset_partition_key
                     ).keys_by_dimension
