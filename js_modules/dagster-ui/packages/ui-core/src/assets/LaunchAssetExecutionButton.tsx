@@ -309,7 +309,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
       assetKeysOrJob instanceof Array
         ? await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
             query: LAUNCH_ASSET_LOADER_QUERY,
-            variables: {assetKeys: assetKeysOrJob},
+            variables: {assetKeys: assetKeysOrJob.map(asAssetKeyInput)},
           })
         : await client.query<LaunchAssetLoaderJobQuery, LaunchAssetLoaderJobQueryVariables>({
             query: LAUNCH_ASSET_LOADER_JOB_QUERY,
