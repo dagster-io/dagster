@@ -2965,6 +2965,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return result
 
     @experimental
+    @public
     def report_runless_asset_event(
         self,
         asset_event: Union["AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"],
