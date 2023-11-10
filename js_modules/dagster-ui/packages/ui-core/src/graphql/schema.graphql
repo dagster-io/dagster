@@ -690,6 +690,7 @@ type AssetNode {
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int): AssetChecksOrError!
+  currentAutoMaterializeEvaluationId: Int
 }
 
 type MaterializationUpstreamDataVersion {
@@ -3300,7 +3301,6 @@ union AutoMaterializeAssetEvaluationRecordsOrError =
 
 type AutoMaterializeAssetEvaluationRecords {
   records: [AutoMaterializeAssetEvaluationRecord!]!
-  currentEvaluationId: Int
 }
 
 type AutoMaterializeAssetEvaluationRecord {

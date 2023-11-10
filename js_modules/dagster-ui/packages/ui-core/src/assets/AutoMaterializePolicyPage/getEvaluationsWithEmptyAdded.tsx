@@ -3,7 +3,7 @@ import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluation
 
 type Config = {
   evaluations: AutoMaterializeEvaluationRecordItemFragment[];
-  currentEvaluationId: number | null;
+  currentAutoMaterializeEvaluationId: number | null;
   isFirstPage: boolean;
   isLastPage: boolean;
   isLoading: boolean;
@@ -11,7 +11,7 @@ type Config = {
 
 export const getEvaluationsWithEmptyAdded = ({
   isLoading,
-  currentEvaluationId,
+  currentAutoMaterializeEvaluationId,
   evaluations,
   isFirstPage,
   isLastPage,
@@ -23,8 +23,8 @@ export const getEvaluationsWithEmptyAdded = ({
   const evalsWithSkips = [];
 
   let current =
-    isFirstPage && currentEvaluationId !== null
-      ? currentEvaluationId
+    isFirstPage && currentAutoMaterializeEvaluationId !== null
+      ? currentAutoMaterializeEvaluationId
       : evaluations[0]?.evaluationId || 1;
 
   evaluations.forEach((evaluation, i) => {

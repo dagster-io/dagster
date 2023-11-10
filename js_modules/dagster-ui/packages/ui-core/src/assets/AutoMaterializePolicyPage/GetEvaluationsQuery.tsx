@@ -13,12 +13,12 @@ export const GET_EVALUATIONS_QUERY = gql`
             className
           }
         }
+        currentAutoMaterializeEvaluationId
       }
     }
 
     autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
       ... on AutoMaterializeAssetEvaluationRecords {
-        currentEvaluationId
         records {
           id
           ...AutoMaterializeEvaluationRecordItem
