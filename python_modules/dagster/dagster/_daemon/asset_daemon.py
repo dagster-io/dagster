@@ -2,6 +2,8 @@ import logging
 import sys
 import threading
 from collections import defaultdict
+from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import ExitStack
 from types import TracebackType
 from typing import Dict, Optional, Sequence, Tuple, Type, cast
 
@@ -53,7 +55,7 @@ from dagster._core.storage.tags import (
     AUTO_OBSERVE_TAG,
     SENSOR_NAME_TAG,
 )
-from dagster._core.utils import make_new_run_id
+from dagster._core.utils import InheritContextThreadPoolExecutor, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon
@@ -249,7 +251,6 @@ class AssetDaemon(DagsterDaemon):
         self._next_evaluation_id = None
 
         self._pre_sensor_interval_seconds = pre_sensor_interval_seconds
-        self._last_pre_sensor_submit_time = None
 
         super().__init__()
 
@@ -321,23 +322,42 @@ class AssetDaemon(DagsterDaemon):
             )
 
         sensor_state_lock = threading.Lock()
-        while True:
-            start_time = pendulum.now("UTC").timestamp()
-            yield from self._run_iteration_impl(
-                workspace_process_context,
-                debug_crash_flags={},
-                sensor_state_lock=sensor_state_lock,
-            )
-            yield None
-            end_time = pendulum.now("UTC").timestamp()
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_SECONDS - loop_duration)
-            shutdown_event.wait(sleep_time)
-            yield None
+        amp_tick_futures: Dict[Optional[str], Future] = {}
+        last_submit_times = {}
+        threadpool_executor = None
+        with ExitStack() as stack:
+            settings = instance.get_settings("auto_materialize")
+            if settings.get("use_threads"):
+                threadpool_executor = stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_workers"),
+                        thread_name_prefix="asset_daemon_worker",
+                    )
+                )
+
+            while True:
+                start_time = pendulum.now("UTC").timestamp()
+                yield from self._run_iteration_impl(
+                    workspace_process_context,
+                    threadpool_executor=threadpool_executor,
+                    amp_tick_futures=amp_tick_futures,
+                    debug_crash_flags={},
+                    last_submit_times=last_submit_times,
+                    sensor_state_lock=sensor_state_lock,
+                )
+                yield None
+                end_time = pendulum.now("UTC").timestamp()
+                loop_duration = end_time - start_time
+                sleep_time = max(0, MIN_INTERVAL_LOOP_SECONDS - loop_duration)
+                shutdown_event.wait(sleep_time)
+                yield None
 
     def _run_iteration_impl(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        threadpool_executor: Optional[ThreadPoolExecutor],
+        amp_tick_futures: Dict[Optional[str], Future],
+        last_submit_times: Dict[Optional[str], float],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         sensor_state_lock: threading.Lock,
     ):
@@ -403,39 +423,54 @@ class AssetDaemon(DagsterDaemon):
 
             auto_materialize_state = all_auto_materialize_states.get(selector_id)
 
-            if sensor:
-                if not auto_materialize_state:
-                    assert sensor.default_status == DefaultSensorStatus.RUNNING
-                    auto_materialize_state = InstigatorState(
-                        sensor.get_external_origin(),
-                        InstigatorType.SENSOR,
-                        InstigatorStatus.DECLARED_IN_CODE,
-                        SensorInstigatorData(
-                            min_interval=sensor.min_interval_seconds,
-                            cursor=None,
-                            last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
-                            sensor_type=SensorType.AUTOMATION_POLICY,
-                        ),
-                    )
-                    instance.add_instigator_state(auto_materialize_state)
-                elif is_under_min_interval(auto_materialize_state, sensor):
-                    continue
-            else:
+            if not sensor:
+                # make sure we are only running every pre_sensor_interval_seconds
                 if (
-                    self._last_pre_sensor_submit_time
-                    and now - self._last_pre_sensor_submit_time < self._pre_sensor_interval_seconds
+                    selector_id in last_submit_times
+                    and now < last_submit_times[selector_id] + self._pre_sensor_interval_seconds
                 ):
-                    # Wait until the pre-sensor interval has finished before running
+                    continue
+            elif not auto_materialize_state:
+                assert sensor.default_status == DefaultSensorStatus.RUNNING
+                auto_materialize_state = InstigatorState(
+                    sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.DECLARED_IN_CODE,
+                    SensorInstigatorData(
+                        min_interval=sensor.min_interval_seconds,
+                        cursor=None,
+                        last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                        sensor_type=SensorType.AUTOMATION_POLICY,
+                    ),
+                )
+                instance.add_instigator_state(auto_materialize_state)
+            elif is_under_min_interval(auto_materialize_state, sensor):
+                continue
+
+            if threadpool_executor:
+                # only one tick per sensor can be in flight
+                if selector_id in amp_tick_futures and not amp_tick_futures[selector_id].done():
                     continue
 
-                self._last_pre_sensor_submit_time = now
+                last_submit_times[selector_id] = now
+                future = threadpool_executor.submit(
+                    self._process_auto_materialize_tick,
+                    workspace_process_context,
+                    sensor,
+                    sensor_state_lock,
+                    debug_crash_flags,
+                )
+                amp_tick_futures[selector_id] = future
+                yield
+            else:
+                last_submit_times[selector_id] = now
 
-            yield from self._process_auto_materialize_tick_generator(
-                workspace_process_context,
-                sensor,
-                sensor_state_lock,
-                debug_crash_flags,
-            )
+                yield from self._process_auto_materialize_tick_generator(
+                    workspace_process_context,
+                    sensor,
+                    sensor_state_lock,
+                    debug_crash_flags,
+                )
 
     def _process_auto_materialize_tick(
         self,
