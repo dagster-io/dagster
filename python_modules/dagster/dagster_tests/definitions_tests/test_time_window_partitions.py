@@ -1330,8 +1330,5 @@ def test_time_window_partitions_def_serialization(partitions_def):
         end_offset=partitions_def.end_offset,
     )
     assert (
-        deserialize_value(
-            serialize_value(time_window_partitions_def.to_serializable_time_window_partitions_def())
-        ).to_time_window_partitions_def()
-        == time_window_partitions_def
+        deserialize_value(serialize_value(time_window_partitions_def)) == time_window_partitions_def
     )
