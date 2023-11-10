@@ -606,6 +606,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
           backgroundSize: `${dotsize}px`,
           cursor: isClickHeld ? 'grabbing' : 'grab',
         })}
+        data-svg-viewport="1"
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}
         onKeyDown={this.onKeyDown}
