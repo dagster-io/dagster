@@ -2885,7 +2885,7 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(MonitoringDaemon.daemon_type())
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
-        if self.auto_materialize_enabled:
+        if self.auto_materialize_enabled or self.auto_materialize_use_automation_policy_sensors:
             daemons.append(AssetDaemon.daemon_type())
         return daemons
 
