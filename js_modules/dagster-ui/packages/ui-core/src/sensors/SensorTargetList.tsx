@@ -6,10 +6,13 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-export const SensorTargetList: React.FC<{
+export const SensorTargetList = ({
+  targets,
+  repoAddress,
+}: {
   targets: {pipelineName: string}[] | null | undefined;
   repoAddress: RepoAddress;
-}> = ({targets, repoAddress}) => {
+}) => {
   const repo = useRepository(repoAddress);
   if (!targets) {
     return <span />;

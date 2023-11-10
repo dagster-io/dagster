@@ -9,7 +9,7 @@ platform_type: "cloud"
 
 External metrics, such as Snowflake credits, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster Cloud via an API.
 
-If you use dbt to materialize tables in Snowflake, use this guide to integrate Snowflake metrics into the Insights UI.
+If you use dbt to materialize tables in Snowflake, use this guide to integrate Snowflake metrics into the Insights UI. For instructions on integrating direct Snowflake queries, see [Integrating Direct Snowflake Usage with Dagster Cloud Insights](/dagster-cloud/insights/integrating-snowflake).
 
 ---
 
@@ -19,6 +19,7 @@ To complete the steps in this guide, you'll need:
 
 - A Dagster Cloud account on the Enterprise plan
 - Access to the [Dagster Cloud Insights feature](/dagster-cloud/insights)
+- Snowflake credentials which have access to the `snowflake.account_usage.query_history` table. For more information on granting access to this table, see the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles).
 - To install the following libraries:
 
   ```shell
@@ -29,7 +30,10 @@ To complete the steps in this guide, you'll need:
 
 ---
 
-## Step 1: Instrument your dbt asset definition
+## Step 1: Instrument your Dagster code
+
+<TabGroup>
+<TabItem name="Using assets">
 
 First, instrument the Dagster <PyObject module="dagster_dbt" object="dbt_assets" decorator /> function with `dbt_with_snowflake_insights`:
 
@@ -38,7 +42,7 @@ from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
 
 
 @dbt_assets(...)
-def my_asset(context: AssetExecutionContext):
+def my_asset(context: AssetExecutionContext, dbt: DbtCliResource):
     # Typically you have a `yield from dbt_resource.cli(...)`.
     # Wrap the original call with `dbt_with_snowflake_insights` as below.
     dbt_cli_invocation = dbt_resource.cli(["build"], context=context)
@@ -46,6 +50,36 @@ def my_asset(context: AssetExecutionContext):
 ```
 
 This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log.
+
+</TabItem>
+<TabItem name="Using ops and jobs">
+
+First, instrument the op function with `dbt_with_snowflake_insights`:
+
+```python
+from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
+
+
+@op(out={})
+def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
+    # Typically you have a `yield from dbt_resource.cli(...)`.
+    # Wrap the original call with `dbt_with_snowflake_insights` as below.
+    dbt_cli_invocation = dbt.cli(
+        ["build"], context=context, manifest=dbt_manifest_path
+    )
+    yield from dbt_with_snowflake_insights(context, dbt_cli_invocation)
+
+@job
+def my_dbt_job():
+  ...
+  my_dbt_op()
+  ...
+```
+
+This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log.
+
+</TabItem>
+</TabGroup>
 
 ---
 
@@ -67,9 +101,9 @@ This allows you to add a comment to every query recorded in Snowflake's `query_h
 
 ## Step 3: Create a metrics ingestion pipeline in Dagster
 
-The last step is to create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster Cloud ingestion API.
+The last step is to create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster Cloud ingestion API. Snowflake usage information is available at a delay, so this pipeline will run on a schedule to ingest Snowflake usage information from the previous hour.
 
-To do this, you'll need a Snowflake resource (<PyObject module="dagster_snowflake" object="SnowflakeResource" />) that can query the `query_history` table. For example:
+To do this, you'll need a Snowflake resource (<PyObject module="dagster_snowflake" object="SnowflakeResource" />) that can query the `snowflake.account_usage.query_history` table. You can set up the ingestion pipeline like the following:
 
 ```python
 from dagster_snowflake import SnowflakeResource

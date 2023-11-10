@@ -9,7 +9,7 @@ interface Props {
   timeFormat?: TimeFormat;
 }
 
-export const Timestamp: React.FC<Props> = (props) => {
+export const Timestamp = (props: Props) => {
   const {timestamp, timeFormat} = props;
   const {
     timezone: [timezone],

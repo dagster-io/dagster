@@ -34,7 +34,7 @@ interface SidebarRootProps {
   repoAddress?: RepoAddress;
 }
 
-export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
+export const SidebarRoot = (props: SidebarRootProps) => {
   const {
     tab,
     typeName,

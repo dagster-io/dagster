@@ -16,7 +16,7 @@ interface PartitionRunListProps {
   partitionName: string;
 }
 
-export const PartitionRunList: React.FC<PartitionRunListProps> = (props) => {
+export const PartitionRunList = (props: PartitionRunListProps) => {
   const {data, loading} = useQuery<PartitionRunListQuery, PartitionRunListQueryVariables>(
     PARTITION_RUN_LIST_QUERY,
     {

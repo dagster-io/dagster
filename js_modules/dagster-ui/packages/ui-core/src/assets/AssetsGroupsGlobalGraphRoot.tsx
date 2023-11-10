@@ -25,13 +25,13 @@ interface AssetGroupRootParams {
   0: string;
 }
 
-export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
+export const AssetsGroupsGlobalGraphRoot = () => {
   const {0: path} = useParams<AssetGroupRootParams>();
   const {visibleRepos} = React.useContext(WorkspaceContext);
   const history = useHistory();
 
   const [filters, setFilters] = useQueryPersistedState<{groups: AssetGroupSelector[]}>({
-    encode: ({groups}) => ({groups: JSON.stringify(groups)}),
+    encode: ({groups}) => ({groups: groups.length ? JSON.stringify(groups) : undefined}),
     decode: (qs) => ({groups: qs.groups ? JSON.parse(qs.groups) : []}),
   });
 

@@ -190,7 +190,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
   }
 }
 
-const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({nodes}) => {
+const OpNodeAssociatedAssets = ({nodes}: {nodes: {assetKey: AssetKey}[]}) => {
   const more = nodes.length > 1 ? ` + ${nodes.length - 1} more` : '';
   return (
     <div className="assets">

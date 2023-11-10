@@ -3,123 +3,57 @@ import functools
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Callable,
     Dict,
-    FrozenSet,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Set,
-    Tuple,
-    cast,
 )
+
+import pytz
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeDecisionType,
+    AutoMaterializeRuleEvaluationData,
+    AutoMaterializeRuleSnapshot,
+    ParentUpdatedRuleEvaluationData,
+    RuleEvaluationResults,
+    WaitingOnAssetsRuleEvaluationData,
+)
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._serdes.serdes import (
-    NamedTupleSerializer,
-    UnpackContext,
-    UnpackedValue,
-    WhitelistMap,
     whitelist_for_serdes,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.schedules import (
+    cron_string_iterator,
+    is_valid_cron_string,
+    reverse_cron_string_iterator,
+)
 
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
-from .partition import SerializedPartitionsSubset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
     from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-    from dagster._core.instance import DynamicPartitionsStore
-
-
-@whitelist_for_serdes
-class AutoMaterializeDecisionType(Enum):
-    """Represents the set of results of the auto-materialize logic.
-
-    MATERIALIZE: The asset should be materialized by a run kicked off on this tick
-    SKIP: The asset should not be materialized by a run kicked off on this tick, because future
-        ticks are expected to materialize it.
-    DISCARD: The asset should not be materialized by a run kicked off on this tick, but future
-        ticks are not expected to materialize it.
-    """
-
-    MATERIALIZE = "MATERIALIZE"
-    SKIP = "SKIP"
-    DISCARD = "DISCARD"
-
-
-class AutoMaterializeRuleEvaluationData(ABC):
-    pass
-
-
-@whitelist_for_serdes
-class TextRuleEvaluationData(
-    AutoMaterializeRuleEvaluationData,
-    NamedTuple("_TextRuleEvaluationData", [("text", str)]),
-):
-    pass
-
-
-@whitelist_for_serdes
-class ParentUpdatedRuleEvaluationData(
-    AutoMaterializeRuleEvaluationData,
-    NamedTuple(
-        "_ParentUpdatedRuleEvaluationData",
-        [
-            ("updated_asset_keys", FrozenSet[AssetKey]),
-            ("will_update_asset_keys", FrozenSet[AssetKey]),
-        ],
-    ),
-):
-    pass
-
-
-@whitelist_for_serdes
-class WaitingOnAssetsRuleEvaluationData(
-    AutoMaterializeRuleEvaluationData,
-    NamedTuple(
-        "_WaitingOnParentRuleEvaluationData",
-        [("waiting_on_asset_keys", FrozenSet[AssetKey])],
-    ),
-):
-    pass
-
-
-@whitelist_for_serdes
-class AutoMaterializeRuleSnapshot(NamedTuple):
-    """A serializable snapshot of an AutoMaterializeRule for historical evaluations."""
-
-    class_name: str
-    description: str
-    decision_type: AutoMaterializeDecisionType
-
-    @staticmethod
-    def from_rule(rule: "AutoMaterializeRule") -> "AutoMaterializeRuleSnapshot":
-        return AutoMaterializeRuleSnapshot(
-            class_name=rule.__class__.__name__,
-            description=rule.description,
-            decision_type=rule.decision_type,
-        )
-
-
-@whitelist_for_serdes
-class AutoMaterializeRuleEvaluation(NamedTuple):
-    rule_snapshot: AutoMaterializeRuleSnapshot
-    evaluation_data: Optional[AutoMaterializeRuleEvaluationData]
+    from dagster._core.definitions.auto_materialize_rule_evaluation import (
+        AutoMaterializeAssetEvaluation,
+    )
 
 
 @dataclass(frozen=True)
@@ -128,6 +62,8 @@ class RuleEvaluationContext:
     cursor: "AssetDaemonCursor"
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
+    # Tracks which asset partitions are already slated for materialization in this tick. The asset
+    # keys in the values match the asset key in the corresponding key.
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: AbstractSet[AssetKeyPartitionKey]
@@ -141,6 +77,11 @@ class RuleEvaluationContext:
     def previous_tick_evaluation(self) -> Optional["AutoMaterializeAssetEvaluation"]:
         """Returns the evaluation of the asset on the previous tick."""
         return self.cursor.latest_evaluation_by_asset_key.get(self.asset_key)
+
+    @property
+    def evaluation_time(self) -> datetime.datetime:
+        """Returns the time at which this rule is being evaluated."""
+        return self.instance_queryer.evaluation_time
 
     @functools.cached_property
     def previous_tick_requested_or_discarded_asset_partitions(
@@ -192,7 +133,7 @@ class RuleEvaluationContext:
         Many rules depend on the state of the asset's parents, so this function is useful for
         finding asset partitions that should be re-evaluated.
         """
-        updated_parents = self.get_asset_partitions_with_updated_parents()
+        updated_parents = self.get_asset_partitions_with_updated_parents_since_previous_tick()
         will_update_parents = set(self.get_will_update_parent_mapping().keys())
         return self.candidates & (updated_parents | will_update_parents)
 
@@ -252,7 +193,9 @@ class RuleEvaluationContext:
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
-    def get_asset_partitions_with_updated_parents(self) -> AbstractSet[AssetKeyPartitionKey]:
+    def get_asset_partitions_with_updated_parents_since_previous_tick(
+        self
+    ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions for the current key which have parents that updated
         since the last tick.
         """
@@ -289,9 +232,6 @@ class RuleEvaluationContext:
             asset_partitions_by_asset_key[parent.asset_key].add(parent)
 
         return asset_partitions_by_asset_key
-
-
-RuleEvaluationResults = Sequence[Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet]]
 
 
 class AutoMaterializeRule(ABC):
@@ -370,6 +310,34 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
+    def materialize_on_cron(
+        cron_schedule: str, timezone: str = "UTC", all_partitions: bool = False
+    ) -> "MaterializeOnCronRule":
+        """Materialize an asset partition if it has not been materialized since the latest cron
+        schedule tick. For assets with a time component to their partitions_def, this rule will
+        request all partitions that have been missed since the previous tick.
+
+        Args:
+            cron_schedule (str): A cron schedule string (e.g. "`0 * * * *`") indicating the ticks for
+                which this rule should fire.
+            timezone (str): The timezone in which this cron schedule should be evaluated. Defaults
+                to "UTC".
+            all_partitions (bool): If True, this rule fires for all partitions of this asset on each
+                cron tick. If False, this rule fires only for the last partition of this asset.
+                Defaults to False.
+        """
+        check.param_invariant(
+            is_valid_cron_string(cron_schedule), "cron_schedule", "must be a valid cron string"
+        )
+        check.param_invariant(
+            timezone in pytz.all_timezones_set, "timezone", "must be a valid timezone"
+        )
+        return MaterializeOnCronRule(
+            cron_schedule=cron_schedule, timezone=timezone, all_partitions=all_partitions
+        )
+
+    @public
+    @staticmethod
     def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.
@@ -411,7 +379,7 @@ class AutoMaterializeRule(ABC):
         """Skip materializing an asset partition if any of its parents have not been updated since
         the asset's last materialization.
 
-        Attributes:
+        Args:
             require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
                 asset or an asset partition that depends on more than one partition in any upstream asset.
                 If true, requires all upstream partitions in each upstream asset to be materialized since
@@ -439,7 +407,7 @@ class AutoMaterializeRule(ABC):
     ) -> "SkipOnBackfillInProgressRule":
         """Skip an asset's partitions if targeted by an in-progress backfill.
 
-        Attributes:
+        Args:
             all_partitions (bool): If True, skips all partitions of the asset being backfilled,
                 regardless of whether the specific partition is targeted by a backfill.
                 If False, skips only partitions targeted by a backfill. Defaults to False.
@@ -448,7 +416,11 @@ class AutoMaterializeRule(ABC):
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
-        return AutoMaterializeRuleSnapshot.from_rule(self)
+        return AutoMaterializeRuleSnapshot(
+            class_name=self.__class__.__name__,
+            description=self.description,
+            decision_type=self.decision_type,
+        )
 
     def __eq__(self, other) -> bool:
         # override the default NamedTuple __eq__ method to factor in types
@@ -484,6 +456,112 @@ class MaterializeOnRequiredForFreshnessRule(
 
 
 @whitelist_for_serdes
+class MaterializeOnCronRule(
+    AutoMaterializeRule,
+    NamedTuple(
+        "_MaterializeOnCronRule",
+        [("cron_schedule", str), ("timezone", str), ("all_partitions", bool)],
+    ),
+):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.MATERIALIZE
+
+    @property
+    def description(self) -> str:
+        return f"not materialized since last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
+
+    def missed_cron_ticks(self, context: RuleEvaluationContext) -> Sequence[datetime.datetime]:
+        """Returns the cron ticks which have been missed since the previous cursor was generated."""
+        if not context.cursor.latest_evaluation_timestamp:
+            previous_dt = next(
+                reverse_cron_string_iterator(
+                    end_timestamp=context.evaluation_time.timestamp(),
+                    cron_string=self.cron_schedule,
+                    execution_timezone=self.timezone,
+                )
+            )
+            return [previous_dt]
+        missed_ticks = []
+        for dt in cron_string_iterator(
+            start_timestamp=context.cursor.latest_evaluation_timestamp,
+            cron_string=self.cron_schedule,
+            execution_timezone=self.timezone,
+        ):
+            if dt > context.evaluation_time:
+                break
+            missed_ticks.append(dt)
+        return missed_ticks
+
+    def get_asset_partitions_to_request(
+        self, context: RuleEvaluationContext
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        missed_ticks = self.missed_cron_ticks(context)
+
+        if not missed_ticks:
+            return set()
+
+        partitions_def = context.asset_graph.get_partitions_def(context.asset_key)
+        if partitions_def is None:
+            return {AssetKeyPartitionKey(context.asset_key)}
+
+        # if all_partitions is set, then just return all partitions if any ticks have been missed
+        if self.all_partitions:
+            return {
+                AssetKeyPartitionKey(context.asset_key, partition_key)
+                for partition_key in partitions_def.get_partition_keys(
+                    current_time=context.evaluation_time
+                )
+            }
+
+        # for partitions_defs without a time component, just return the last partition if any ticks
+        # have been missed
+        time_partitions_def = get_time_partitions_def(partitions_def)
+        if time_partitions_def is None:
+            return {
+                AssetKeyPartitionKey(context.asset_key, partitions_def.get_last_partition_key())
+            }
+
+        missed_time_partition_keys = filter(
+            None,
+            [
+                time_partitions_def.get_last_partition_key(current_time=missed_tick)
+                for missed_tick in missed_ticks
+            ],
+        )
+        # for multi partitions definitions, request to materialize all partitions for each missed
+        # cron schedule tick
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            return {
+                AssetKeyPartitionKey(context.asset_key, partition_key)
+                for time_partition_key in missed_time_partition_keys
+                for partition_key in partitions_def.get_multipartition_keys_with_dimension_value(
+                    partitions_def.time_window_dimension.name,
+                    time_partition_key,
+                    dynamic_partitions_store=context.instance_queryer,
+                )
+            }
+        else:
+            return {
+                AssetKeyPartitionKey(context.asset_key, time_partition_key)
+                for time_partition_key in missed_time_partition_keys
+            }
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        asset_partitions_to_request = self.get_asset_partitions_to_request(context)
+        asset_partitions_by_evaluation_data = defaultdict(set)
+        if asset_partitions_to_request:
+            asset_partitions_by_evaluation_data[None].update(asset_partitions_to_request)
+        return self.add_evaluation_data_from_previous_tick(
+            context,
+            asset_partitions_by_evaluation_data,
+            should_use_past_data_fn=lambda ap: not context.materialized_requested_or_discarded_since_previous_tick(
+                ap
+            ),
+        )
+
+
+@whitelist_for_serdes
 class MaterializeOnParentUpdatedRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
 ):
@@ -505,8 +583,9 @@ class MaterializeOnParentUpdatedRule(
 
         # the set of asset partitions whose parents have been updated since last tick, or will be
         # requested this tick.
-        has_or_will_update = context.get_asset_partitions_with_updated_parents() | set(
-            will_update_parents_by_asset_partition.keys()
+        has_or_will_update = (
+            context.get_asset_partitions_with_updated_parents_since_previous_tick()
+            | set(will_update_parents_by_asset_partition.keys())
         )
         for asset_partition in has_or_will_update:
             parent_asset_partitions = context.asset_graph.get_parents_partitions(
@@ -878,301 +957,3 @@ class DiscardOnMaxMaterializationsExceededRule(
         if rate_limited_asset_partitions:
             return [(None, rate_limited_asset_partitions)]
         return []
-
-
-@whitelist_for_serdes
-class AutoMaterializeAssetEvaluation(NamedTuple):
-    """Represents the results of the auto-materialize logic for a single asset.
-
-    Properties:
-        asset_key (AssetKey): The asset key that was evaluated.
-        partition_subsets_by_condition: The rule evaluations that impact if the asset should be
-            materialized, skipped, or discarded. If the asset is partitioned, this will be a list of
-            tuples, where the first element is the condition and the second element is the
-            serialized subset of partitions that the condition applies to. If it's not partitioned,
-            the second element will be None.
-        num_requested (int): The number of asset partitions that were requested to be materialized
-        num_skipped (int): The number of asset partitions that were skipped
-        num_discarded (int): The number of asset partitions that were discarded
-        run_ids (Set[str]): The set of run IDs created for this evaluation
-        rule_snapshots (Optional[Sequence[AutoMaterializeRuleSnapshot]]): The snapshots of the
-            rules on the policy at the time it was evaluated.
-    """
-
-    asset_key: AssetKey
-    partition_subsets_by_condition: Sequence[
-        Tuple["AutoMaterializeRuleEvaluation", Optional[SerializedPartitionsSubset]]
-    ]
-    num_requested: int
-    num_skipped: int
-    num_discarded: int
-    run_ids: Set[str] = set()
-    rule_snapshots: Optional[Sequence[AutoMaterializeRuleSnapshot]] = None
-
-    @property
-    def is_empty(self) -> bool:
-        return (
-            sum([self.num_requested, self.num_skipped, self.num_discarded]) == 0
-            and len(self.partition_subsets_by_condition) == 0
-        )
-
-    @staticmethod
-    def from_rule_evaluation_results(
-        asset_graph: AssetGraph,
-        asset_key: AssetKey,
-        asset_partitions_by_rule_evaluation: Sequence[
-            Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
-        ],
-        num_requested: int,
-        num_skipped: int,
-        num_discarded: int,
-        dynamic_partitions_store: "DynamicPartitionsStore",
-    ) -> "AutoMaterializeAssetEvaluation":
-        auto_materialize_policy = asset_graph.auto_materialize_policies_by_key.get(asset_key)
-
-        if not auto_materialize_policy:
-            check.failed(f"Expected auto materialize policy on asset {asset_key}")
-
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        if partitions_def is None:
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (rule_evaluation, None)
-                    for rule_evaluation, _ in asset_partitions_by_rule_evaluation
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-                rule_snapshots=auto_materialize_policy.rule_snapshots,
-            )
-        else:
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (
-                        rule_evaluation,
-                        SerializedPartitionsSubset.from_subset(
-                            subset=partitions_def.empty_subset().with_partition_keys(
-                                check.not_none(ap.partition_key) for ap in asset_partitions
-                            ),
-                            partitions_def=partitions_def,
-                            dynamic_partitions_store=dynamic_partitions_store,
-                        ),
-                    )
-                    for rule_evaluation, asset_partitions in asset_partitions_by_rule_evaluation
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-                rule_snapshots=auto_materialize_policy.rule_snapshots,
-            )
-
-    def _deserialize_rule_evaluation_result(
-        self,
-        rule_evaluation: AutoMaterializeRuleEvaluation,
-        serialized_subset: Optional[SerializedPartitionsSubset],
-        asset_graph: AssetGraph,
-    ) -> Optional[
-        Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
-    ]:
-        partitions_def = asset_graph.get_partitions_def(self.asset_key)
-        if serialized_subset is None:
-            if partitions_def is None:
-                return (rule_evaluation.evaluation_data, {AssetKeyPartitionKey(self.asset_key)})
-        elif serialized_subset.can_deserialize(partitions_def) and partitions_def is not None:
-            return (
-                rule_evaluation.evaluation_data,
-                {
-                    AssetKeyPartitionKey(self.asset_key, partition_key)
-                    for partition_key in serialized_subset.deserialize(
-                        partitions_def=partitions_def
-                    ).get_partition_keys()
-                },
-            )
-        # old serialized result is no longer valid
-        return None
-
-    def get_rule_evaluation_results(
-        self, rule_snapshot: AutoMaterializeRuleSnapshot, asset_graph: AssetGraph
-    ) -> RuleEvaluationResults:
-        """For a given rule snapshot, returns the calculated evaluations for that rule."""
-        results = []
-        for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
-            # filter for the same rule
-            if rule_evaluation.rule_snapshot != rule_snapshot:
-                continue
-            deserialized_result = self._deserialize_rule_evaluation_result(
-                rule_evaluation, serialized_subset, asset_graph
-            )
-            if deserialized_result:
-                results.append(deserialized_result)
-        return results
-
-    def _get_asset_partitions_with_decision_type(
-        self, decision_type: AutoMaterializeDecisionType, asset_graph: AssetGraph
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of asset partitions with a given decision type applied to them."""
-        asset_partitions = set()
-        for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
-            if rule_evaluation.rule_snapshot.decision_type != decision_type:
-                continue
-            deserialized_result = self._deserialize_rule_evaluation_result(
-                rule_evaluation, serialized_subset, asset_graph
-            )
-            if deserialized_result is None:
-                continue
-            asset_partitions.update(deserialized_result[1])
-        return asset_partitions
-
-    def get_requested_or_discarded_asset_partitions(
-        self, asset_graph: AssetGraph
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of asset partitions which were either requested or discarded on this
-        evaluation.
-        """
-        to_materialize = self._get_asset_partitions_with_decision_type(
-            AutoMaterializeDecisionType.MATERIALIZE, asset_graph
-        )
-        if not to_materialize:
-            return set()
-        to_skip = self._get_asset_partitions_with_decision_type(
-            AutoMaterializeDecisionType.SKIP, asset_graph
-        )
-        return to_materialize - to_skip
-
-    def get_evaluated_asset_partitions(
-        self, asset_graph: AssetGraph
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of asset partitions which were evaluated by any rule on this evaluation."""
-        # no asset partition can be evaluated by SKIP or DISCARD rules without having at least one
-        # materialize rule evaluation
-        return self._get_asset_partitions_with_decision_type(
-            AutoMaterializeDecisionType.MATERIALIZE, asset_graph
-        )
-
-    def equivalent_to_stored_evaluation(
-        self, stored_evaluation: Optional["AutoMaterializeAssetEvaluation"], asset_graph: AssetGraph
-    ) -> bool:
-        """This function returns if a stored record is equivalent to this one. To do so, we can't
-        just use regular namedtuple equality, as the serialized partition subsets will be
-        potentially have different string values.
-        """
-        if stored_evaluation is None:
-            # empty evaluations are not stored on the cursor
-            return self.is_empty
-        return (
-            self.asset_key == stored_evaluation.asset_key
-            and set(self.rule_snapshots or []) == set(stored_evaluation.rule_snapshots or [])
-            # if num_requested / num_discarded > 0 on the stored evaluation, then something changed
-            # in the global state on the previous tick
-            and stored_evaluation.num_requested == 0
-            and stored_evaluation.num_discarded == 0
-            and stored_evaluation.num_skipped == self.num_skipped
-            # when rule evaluation results are deserialized from json, they are lists instead of
-            # tuples, so we must convert them before comparing
-            and sorted(self.partition_subsets_by_condition)
-            == sorted([tuple(x) for x in stored_evaluation.partition_subsets_by_condition])
-        )
-
-
-# BACKCOMPAT GRAVEYARD
-
-
-class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
-    """This handles backcompat for the old AutoMaterializeCondition objects, turning them into the
-    proper AutoMaterializeRuleEvaluation objects. This is necessary because old
-    AutoMaterializeAssetEvaluation objects will have serialized AutoMaterializeCondition objects,
-    and we need to be able to deserialize them.
-
-    In theory, as these serialized objects happen to be purged periodically, we can remove this
-    backcompat logic at some point in the future.
-    """
-
-    def unpack(
-        self,
-        unpacked_dict: Dict[str, UnpackedValue],
-        whitelist_map: WhitelistMap,
-        context: UnpackContext,
-    ) -> AutoMaterializeRuleEvaluation:
-        if self.klass in (
-            FreshnessAutoMaterializeCondition,
-            DownstreamFreshnessAutoMaterializeCondition,
-        ):
-            return AutoMaterializeRuleEvaluation(
-                rule_snapshot=AutoMaterializeRule.materialize_on_required_for_freshness().to_snapshot(),
-                evaluation_data=None,
-            )
-        elif self.klass == MissingAutoMaterializeCondition:
-            return AutoMaterializeRuleEvaluation(
-                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                evaluation_data=None,
-            )
-        elif self.klass == ParentMaterializedAutoMaterializeCondition:
-            updated_asset_keys = unpacked_dict.get("updated_asset_keys")
-            if isinstance(updated_asset_keys, set):
-                updated_asset_keys = cast(FrozenSet[AssetKey], frozenset(updated_asset_keys))
-            else:
-                updated_asset_keys = frozenset()
-            will_update_asset_keys = unpacked_dict.get("will_update_asset_keys")
-            if isinstance(will_update_asset_keys, set):
-                will_update_asset_keys = cast(
-                    FrozenSet[AssetKey], frozenset(will_update_asset_keys)
-                )
-            else:
-                will_update_asset_keys = frozenset()
-            return AutoMaterializeRuleEvaluation(
-                rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
-                evaluation_data=ParentUpdatedRuleEvaluationData(
-                    updated_asset_keys=updated_asset_keys,
-                    will_update_asset_keys=will_update_asset_keys,
-                ),
-            )
-        elif self.klass == ParentOutdatedAutoMaterializeCondition:
-            waiting_on_asset_keys = unpacked_dict.get("waiting_on_asset_keys")
-            if isinstance(waiting_on_asset_keys, set):
-                waiting_on_asset_keys = cast(FrozenSet[AssetKey], frozenset(waiting_on_asset_keys))
-            else:
-                waiting_on_asset_keys = frozenset()
-            return AutoMaterializeRuleEvaluation(
-                rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
-                evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                    waiting_on_asset_keys=waiting_on_asset_keys
-                ),
-            )
-        elif self.klass == MaxMaterializationsExceededAutoMaterializeCondition:
-            return AutoMaterializeRuleEvaluation(
-                rule_snapshot=DiscardOnMaxMaterializationsExceededRule(limit=1).to_snapshot(),
-                evaluation_data=None,
-            )
-        check.failed(f"Unexpected class {self.klass}")
-
-
-@whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class FreshnessAutoMaterializeCondition(NamedTuple):
-    ...
-
-
-@whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class DownstreamFreshnessAutoMaterializeCondition(NamedTuple):
-    ...
-
-
-@whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class ParentMaterializedAutoMaterializeCondition(NamedTuple):
-    ...
-
-
-@whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class MissingAutoMaterializeCondition(NamedTuple):
-    ...
-
-
-@whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class ParentOutdatedAutoMaterializeCondition(NamedTuple):
-    ...
-
-
-@whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
-class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple):
-    ...

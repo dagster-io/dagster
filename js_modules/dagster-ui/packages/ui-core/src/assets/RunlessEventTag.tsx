@@ -3,9 +3,11 @@ import React from 'react';
 
 import {DagsterTag} from '../runs/RunTag';
 
-export const RunlessEventTag: React.FC<{
+export const RunlessEventTag = ({
+  tags,
+}: {
   tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
-}> = ({tags}) => {
+}) => {
   const user = tags.find((t) => t.key === DagsterTag.ReportingUser);
 
   // Note: This does not use UserDisplay because in cloud, the UserDisplay component is hardcoded to a

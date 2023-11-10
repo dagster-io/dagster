@@ -43,27 +43,31 @@ const colorForString = memoize((s: string) => {
 
 type IconProps = React.ComponentProps<typeof Icon>;
 
-export const SubwayDot: React.FC<{
+interface Props {
   label: string;
   fontSize?: number;
   icon?: IconName;
   iconSize?: IconProps['size'];
   blobColor?: string;
   blobSize?: number;
-}> = React.memo(({label, fontSize = 13, blobColor, icon, iconSize = 16, blobSize = 24}) => (
-  <Blob $color={blobColor || colorForString(label)} $blobSize={blobSize} $fontSize={fontSize}>
-    {icon ? (
-      <Icon
-        size={iconSize}
-        name={icon}
-        color={Colors.WHITE}
-        style={{marginLeft: 0, marginTop: 0, opacity: 0.9}}
-      />
-    ) : (
-      label.slice(0, 1)
-    )}
-  </Blob>
-));
+}
+
+export const SubwayDot = React.memo(
+  ({label, fontSize = 13, blobColor, icon, iconSize = 16, blobSize = 24}: Props) => (
+    <Blob $color={blobColor || colorForString(label)} $blobSize={blobSize} $fontSize={fontSize}>
+      {icon ? (
+        <Icon
+          size={iconSize}
+          name={icon}
+          color={Colors.WHITE}
+          style={{marginLeft: 0, marginTop: 0, opacity: 0.9}}
+        />
+      ) : (
+        label.slice(0, 1)
+      )}
+    </Blob>
+  ),
+);
 
 interface BlobProps {
   $color: string;

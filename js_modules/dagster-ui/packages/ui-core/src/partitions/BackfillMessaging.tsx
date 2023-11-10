@@ -107,10 +107,11 @@ export const DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT = gql`
   }
 `;
 
-export const DaemonNotRunningAlert: React.FC<{
+export const DaemonNotRunningAlert = ({
+  instance,
+}: {
   instance: DaemonNotRunningAlertInstanceFragment;
-}> = ({instance}) =>
-  !instance.daemonHealth.daemonStatus.healthy ? <DaemonNotRunningAlertBody /> : null;
+}) => (!instance.daemonHealth.daemonStatus.healthy ? <DaemonNotRunningAlertBody /> : null);
 
 export const DaemonNotRunningAlertBody = () => (
   <Alert
@@ -142,9 +143,11 @@ export const USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT = gql`
   }
 `;
 
-export const UsingDefaultLauncherAlert: React.FC<{
+export const UsingDefaultLauncherAlert = ({
+  instance,
+}: {
   instance: UsingDefaultLauncherAlertInstanceFragment;
-}> = ({instance}) =>
+}) =>
   instance.runLauncher?.name === DEFAULT_RUN_LAUNCHER_NAME && !instance.runQueuingSupported ? (
     <Alert
       intent="warning"

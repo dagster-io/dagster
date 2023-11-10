@@ -22,6 +22,9 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     main_repo_location_name,
 )
+from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
+    root_assets_different_partitions_same_downstream,
+)
 
 GET_PARTITION_BACKFILLS_QUERY = """
   query InstanceBackfillsQuery($cursor: String, $limit: Int) {
@@ -139,10 +142,6 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
 
 
 def get_repo_with_root_assets_different_partitions() -> RepositoryDefinition:
-    from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.exotic_partition_mapping_scenarios import (
-        root_assets_different_partitions_same_downstream,
-    )
-
     return Definitions(assets=root_assets_different_partitions_same_downstream).get_repository_def()
 
 

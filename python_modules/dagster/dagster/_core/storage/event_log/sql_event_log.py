@@ -1793,54 +1793,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return set([cast(str, row[0]) for row in results])
 
-    def get_materialization_count_by_partition(
-        self,
-        asset_keys: Sequence[AssetKey],
-        after_cursor: Optional[int] = None,
-        before_cursor: Optional[int] = None,
-    ) -> Mapping[AssetKey, Mapping[str, int]]:
-        check.sequence_param(asset_keys, "asset_keys", AssetKey)
-
-        query = (
-            db_select(
-                [
-                    SqlEventLogStorageTable.c.asset_key,
-                    SqlEventLogStorageTable.c.partition,
-                    db.func.count(SqlEventLogStorageTable.c.id),
-                ]
-            )
-            .where(
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [asset_key.to_string() for asset_key in asset_keys]
-                    ),
-                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
-                    SqlEventLogStorageTable.c.dagster_event_type
-                    == DagsterEventType.ASSET_MATERIALIZATION.value,
-                )
-            )
-            .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
-        )
-
-        assets_details = self._get_assets_details(asset_keys)
-        query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
-
-        if after_cursor:
-            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
-
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
-
-        materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
-            asset_key: {} for asset_key in asset_keys
-        }
-        for row in results:
-            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
-            if asset_key:
-                materialization_count_by_partition[asset_key][cast(str, row[1])] = cast(int, row[2])
-
-        return materialization_count_by_partition
-
     def _latest_event_ids_by_partition_subquery(
         self,
         asset_key: AssetKey,
@@ -2388,12 +2340,39 @@ class SqlEventLogStorage(EventLogStorage):
                 # do nothing
                 pass
 
-    def _remove_pending_steps(self, run_id: str, step_key: Optional[str] = None):
-        query = PendingStepsTable.delete().where(PendingStepsTable.c.run_id == run_id)
+    def _remove_pending_steps(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
+        # fetch the assigned steps to delete, while grabbing the concurrency keys so that we can
+        # assign the next set of queued steps, if necessary
+        select_query = (
+            db_select(
+                [
+                    PendingStepsTable.c.id,
+                    PendingStepsTable.c.assigned_timestamp,
+                    PendingStepsTable.c.concurrency_key,
+                ]
+            )
+            .select_from(PendingStepsTable)
+            .where(PendingStepsTable.c.run_id == run_id)
+            .with_for_update()
+        )
         if step_key:
-            query = query.where(PendingStepsTable.c.step_key == step_key)
+            select_query = select_query.where(PendingStepsTable.c.step_key == step_key)
+
         with self.index_connection() as conn:
-            conn.execute(query)
+            rows = conn.execute(select_query).fetchall()
+            if not rows:
+                return []
+
+            # now, actually delete the pending steps
+            conn.execute(
+                PendingStepsTable.delete().where(
+                    PendingStepsTable.c.id.in_([row[0] for row in rows])
+                )
+            )
+
+        # return the concurrency keys for the freed slots which were assigned
+        to_assign = [cast(str, row[2]) for row in rows if row[1] is not None]
+        return to_assign
 
     def claim_concurrency_slot(
         self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
@@ -2556,18 +2535,20 @@ class SqlEventLogStorage(EventLogStorage):
             return set([cast(str, row[0]) for row in rows])
 
     def free_concurrency_slots_for_run(self, run_id: str) -> None:
-        freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id)
-        self._remove_pending_steps(run_id=run_id)
-        if freed_concurrency_keys:
+        self._free_concurrency_slots(run_id=run_id)
+        removed_assigned_concurrency_keys = self._remove_pending_steps(run_id=run_id)
+        if removed_assigned_concurrency_keys:
             # assign any pending steps that can now claim a slot
-            self.assign_pending_steps(freed_concurrency_keys)
+            self.assign_pending_steps(removed_assigned_concurrency_keys)
 
     def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
-        freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id, step_key=step_key)
-        self._remove_pending_steps(run_id=run_id, step_key=step_key)
-        if freed_concurrency_keys:
+        self._free_concurrency_slots(run_id=run_id, step_key=step_key)
+        removed_assigned_concurrency_keys = self._remove_pending_steps(
+            run_id=run_id, step_key=step_key
+        )
+        if removed_assigned_concurrency_keys:
             # assign any pending steps that can now claim a slot
-            self.assign_pending_steps(freed_concurrency_keys)
+            self.assign_pending_steps(removed_assigned_concurrency_keys)
 
     def _free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
         """Frees concurrency slots for a given run/step.
@@ -2597,7 +2578,7 @@ class SqlEventLogStorage(EventLogStorage):
                 db_select([ConcurrencySlotsTable.c.id, ConcurrencySlotsTable.c.concurrency_key])
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.run_id == run_id)
-                .with_for_update(skip_locked=True)
+                .with_for_update()
             )
             if step_key:
                 select_query = select_query.where(ConcurrencySlotsTable.c.step_key == step_key)

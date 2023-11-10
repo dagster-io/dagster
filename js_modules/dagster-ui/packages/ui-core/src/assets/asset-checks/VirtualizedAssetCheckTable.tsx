@@ -22,7 +22,7 @@ type Props = {
   rows: AssetCheckTableFragment[];
 };
 
-export const VirtualizedAssetCheckTable: React.FC<Props> = ({assetNode, rows}: Props) => {
+export const VirtualizedAssetCheckTable = ({assetNode, rows}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 

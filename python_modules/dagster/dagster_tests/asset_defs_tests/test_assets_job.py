@@ -1202,6 +1202,8 @@ def test_internal_asset_deps_assets():
     outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)}, can_subset=True
 )
 def ab(context, foo):
+    assert (context.selected_output_names != {"a", "b"}) == context.is_subset
+
     if "a" in context.selected_output_names:
         yield Output(foo + 1, "a")
     if "b" in context.selected_output_names:
@@ -2231,6 +2233,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         can_subset=allow_subset,
     )
     def abc_(context, start):
+        assert (context.selected_output_names != {"a", "b", "c"}) == context.is_subset
+
         a = (start + 1) if start else None
         b = 1
         c = b + 1
@@ -2266,6 +2270,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         can_subset=allow_subset,
     )
     def def_(context, a, b, c):
+        assert (context.selected_output_names != {"d", "e", "f"}) == context.is_subset
+
         d = (a + b) if a and b else None
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
@@ -2601,6 +2607,10 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
         can_subset=True,
     )
     def foo(context, x, y):
+        assert (
+            context.selected_output_names != {"a", "b", "c", "d", "e", "f", "g", "h"}
+        ) == context.is_subset
+
         a = b = c = d = e = f = g = h = None
         if "a" in context.selected_output_names:
             a = 1
@@ -2787,3 +2797,82 @@ def test_subset_cycle_resolution_basic():
         AssetKey("a_prime"),
         AssetKey("b_prime"),
     }
+
+
+def test_subset_cycle_dependencies():
+    """Ops:
+        foo produces: top, a, b
+        python produces: python
+    Assets:
+        top -> python -> b
+        a -> b.
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "a,b,a_prime,b_prime".split(","):
+        io_manager_obj.db[AssetKey(item)] = None
+
+    @multi_asset(
+        outs={
+            "top": AssetOut(is_required=False),
+            "a": AssetOut(is_required=False),
+            "b": AssetOut(is_required=False),
+        },
+        ins={
+            "python": AssetIn(dagster_type=Nothing),
+        },
+        internal_asset_deps={
+            "top": set(),
+            "a": set(),
+            "b": {AssetKey("a"), AssetKey("python")},
+        },
+        can_subset=True,
+    )
+    def foo(context):
+        for output in ["top", "a", "b"]:
+            if output in context.selected_output_names:
+                yield Output(output, output)
+
+    @asset(deps=[AssetKey("top")])
+    def python():
+        return 1
+
+    defs = Definitions(
+        assets=[foo, python],
+        resources={"io_manager": io_manager_def},
+    )
+    job = defs.get_implicit_global_asset_job_def()
+
+    # should produce a job with foo -> python -> foo_2
+    assert len(list(job.graph.iterate_op_defs())) == 3
+    assert job.graph.dependencies == {
+        NodeInvocation(name="foo"): {},
+        NodeInvocation(name="foo", alias="foo_2"): {
+            "__subset_input__a": DependencyDefinition(node="foo", output="a"),
+            "python": DependencyDefinition(node="python", output="result"),
+        },
+        NodeInvocation(name="python"): {"top": DependencyDefinition(node="foo", output="top")},
+    }
+
+    result = job.execute_in_process()
+    assert result.success
+    assert _all_asset_keys(result) == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("top"),
+        AssetKey("python"),
+    }
+
+    # now create a job that just executes a and b
+    job = job.get_subset(asset_selection={AssetKey("a"), AssetKey("b")})
+    # should produce a job with foo -> foo_2
+    assert len(list(job.graph.iterate_op_defs())) == 2
+    assert job.graph.dependencies == {
+        NodeInvocation(name="foo"): {},
+        # the second node must have a dependency on the first
+        NodeInvocation(name="foo", alias="foo_2"): {
+            "__subset_input__a": DependencyDefinition(node="foo", output="a"),
+        },
+    }
+    result = job.execute_in_process()
+    assert result.success
+    assert _all_asset_keys(result) == {AssetKey("a"), AssetKey("b")}

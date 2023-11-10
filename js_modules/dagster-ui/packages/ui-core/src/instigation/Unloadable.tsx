@@ -34,10 +34,13 @@ import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation'
 import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationUtils.types';
 
-export const UnloadableSensors: React.FC<{
+export const UnloadableSensors = ({
+  sensorStates,
+  showSubheading = true,
+}: {
   sensorStates: InstigationStateFragment[];
   showSubheading?: boolean;
-}> = ({sensorStates, showSubheading = true}) => {
+}) => {
   if (!sensorStates.length) {
     return null;
   }
@@ -66,10 +69,13 @@ export const UnloadableSensors: React.FC<{
   );
 };
 
-export const UnloadableSchedules: React.FC<{
+export const UnloadableSchedules = ({
+  scheduleStates,
+  showSubheading = true,
+}: {
   scheduleStates: InstigationStateFragment[];
   showSubheading?: boolean;
-}> = ({scheduleStates, showSubheading = true}) => {
+}) => {
   if (!scheduleStates.length) {
     return null;
   }
@@ -205,9 +211,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
   );
 };
 
-const ScheduleStateRow: React.FC<{
-  scheduleState: InstigationStateFragment;
-}> = ({scheduleState}) => {
+const ScheduleStateRow = ({scheduleState}: {scheduleState: InstigationStateFragment}) => {
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
     StopScheduleMutation,
     StopScheduleMutationVariables

@@ -25,13 +25,13 @@ export const CodeMirrorInDialogStyle = createGlobalStyle`
   }
 `;
 
-export const ConfigEditorWithSchema: React.FC<Props> = ({
+export const ConfigEditorWithSchema = ({
   isLoading,
   identifier,
   config,
   onConfigChange,
   configSchema,
-}) => {
+}: Props) => {
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const [editorHelpContext, setEditorHelpContext] = React.useState<ConfigEditorHelpContext | null>(
     null,

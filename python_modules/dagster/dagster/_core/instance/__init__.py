@@ -802,6 +802,12 @@ class DagsterInstance(DynamicPartitionsStore):
             return self._settings.get(settings_key)
         return {}
 
+    def get_scheduler_settings(self) -> Mapping[str, Any]:
+        return self.get_settings("schedules")
+
+    def get_sensor_settings(self) -> Mapping[str, Any]:
+        return self.get_settings("sensors")
+
     @property
     def telemetry_enabled(self) -> bool:
         if self.is_ephemeral:
@@ -2116,12 +2122,6 @@ class DagsterInstance(DynamicPartitionsStore):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
-
-    @traced
-    def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
-    ) -> Mapping[AssetKey, Mapping[str, int]]:
-        return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
     @traced
     def get_materialized_partitions(

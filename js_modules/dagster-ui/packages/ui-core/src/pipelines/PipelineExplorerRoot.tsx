@@ -51,18 +51,18 @@ export const PipelineExplorerSnapshotRoot = () => {
   );
 };
 
-export const PipelineExplorerContainer: React.FC<{
-  explorerPath: ExplorerPath;
-  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
-  repoAddress?: RepoAddress;
-  isGraph?: boolean;
-}> = ({
+export const PipelineExplorerContainer = ({
   explorerPath,
   repoAddress,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode,
   isGraph = false,
+}: {
+  explorerPath: ExplorerPath;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
+  repoAddress?: RepoAddress;
+  isGraph?: boolean;
 }) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,

@@ -41,11 +41,17 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
             )
         ),
     ]
+    expected_health = [
+        jobs.JobsHealthRule.from_dict(h) for h in databricks_run_config["job_health_settings"]
+    ]
 
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
+        health=expected_health,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"],
     )
 
     databricks_run_config["install_default_libraries"] = False
@@ -55,6 +61,9 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     mock_submit_run.assert_called_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
+        health=expected_health,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"],
     )
 
 
@@ -72,6 +81,37 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         "nodes": {"node_types": {"node_type_id": "Standard_DS3_v2"}},
     }
     databricks_run_config["cluster"] = {"new": NEW_CLUSTER}
+
+    databricks_run_config.update(
+        {
+            "email_notifications": {
+                "on_duration_warning_threshold_exceeded": ["user@alerts.com"],
+                "on_failure": ["user@alerts.com"],
+                "on_start": ["user@alerts.com"],
+                "on_success": ["user@alerts.com"],
+                "no_alert_for_skipped_runs": True,
+            },
+            "notification_settings": {
+                "no_alert_for_canceled_runs": True,
+                "no_alert_for_skipped_runs": True,
+            },
+            "webhook_notifications": {
+                "on_duration_warning_threshold_exceeded": [{"id": "abc123"}],
+                "on_failure": [{"id": "abc123"}],
+                "on_start": [{"id": "abc123"}],
+                "on_success": [{"id": "abc123"}],
+            },
+            "job_health_settings": [
+                {
+                    "metric": "RUN_DURATION_SECONDS",
+                    "op": "GREATER_THAN",
+                    "value": 100,
+                }
+            ],
+            "idempotency_token": "abc123",
+            "timeout_seconds": 100,
+        },
+    )
 
     task = databricks_run_config.pop("task")
     expected_task = jobs.SubmitTask.from_dict(task)
@@ -96,10 +136,28 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         ),
     ]
 
+    expected_email_notifications = jobs.JobEmailNotifications.from_dict(
+        databricks_run_config["email_notifications"]
+    )
+    expected_notification_settings = jobs.JobNotificationSettings.from_dict(
+        databricks_run_config["notification_settings"]
+    )
+    expected_webhook_notifications = jobs.WebhookNotifications.from_dict(
+        databricks_run_config["webhook_notifications"]
+    )
+    expected_job_health_settings = [
+        jobs.JobsHealthRule.from_dict(j) for j in databricks_run_config["job_health_settings"]
+    ]
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_once_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
+        health=expected_job_health_settings,
+        email_notifications=expected_email_notifications,
+        notification_settings=expected_notification_settings,
+        webhook_notifications=expected_webhook_notifications,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"],
     )
 
 

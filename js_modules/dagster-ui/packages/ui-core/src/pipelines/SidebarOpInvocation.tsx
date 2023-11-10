@@ -15,7 +15,7 @@ interface ISidebarOpInvocationProps {
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
 }
 
-export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) => {
+export const SidebarOpInvocation = (props: ISidebarOpInvocationProps) => {
   const {solid, onEnterSubgraph} = props;
   const showInputs = solid.inputs.some((o) => o.dependsOn.length);
   const showOutputs = solid.outputs.some((o) => o.dependedBy.length);

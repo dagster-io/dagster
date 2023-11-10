@@ -17,10 +17,13 @@ export const metadataForAssetNode = (
   return {assetType, assetMetadata};
 };
 
-export const AssetMetadataTable: React.FC<{
+export const AssetMetadataTable = ({
+  assetMetadata,
+  repoLocation,
+}: {
   assetMetadata: MetadataEntryFragment[];
   repoLocation: string;
-}> = ({assetMetadata, repoLocation}) => {
+}) => {
   const rows = assetMetadata.map((entry) => {
     return {
       key: entry.label,

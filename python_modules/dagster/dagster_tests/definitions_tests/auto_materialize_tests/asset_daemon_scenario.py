@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import json
 import logging
 import os
 import sys
@@ -17,42 +18,53 @@ from typing import (
 )
 
 import dagster._check as check
+import mock
 import pendulum
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
     AssetSpec,
     AutoMaterializePolicy,
     DagsterInstance,
+    DagsterRunStatus,
     Definitions,
+    MultiPartitionKey,
     RunRequest,
+    RunsFilter,
     asset,
+    materialize,
 )
-from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
-    AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._daemon.asset_daemon import CURSOR_KEY, AssetDaemon
+from dagster._daemon.asset_daemon import (
+    CURSOR_KEY,
+    FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+    FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    AssetDaemon,
+    get_current_evaluation_id,
+)
 
-from .base_scenario import run_request
+from .base_scenario import FAIL_TAG, run_request
 
 
 def get_code_location_origin(
@@ -88,6 +100,11 @@ def day_partition_key(time: datetime.datetime, delta: int = 0) -> str:
 def hour_partition_key(time: datetime.datetime, delta: int = 0) -> str:
     """Returns the partition key of a day partition delta days from the initial time."""
     return (time + datetime.timedelta(hours=delta - 1)).strftime("%Y-%m-%d-%H:00")
+
+
+def multi_partition_key(**kwargs) -> MultiPartitionKey:
+    """Returns a MultiPartitionKey based off of the given kwargs."""
+    return MultiPartitionKey(kwargs)
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
@@ -163,7 +180,7 @@ class AssetDaemonScenarioState(NamedTuple):
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
     current_time: datetime.datetime = pendulum.now()
     run_requests: Sequence[RunRequest] = []
-    cursor: AssetDaemonCursor = AssetDaemonCursor.empty()
+    serialized_cursor: str = AssetDaemonCursor.empty().serialize()
     evaluations: Sequence[AutoMaterializeAssetEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
     # this is set by the scenario runner
@@ -176,8 +193,13 @@ class AssetDaemonScenarioState(NamedTuple):
 
     @property
     def assets(self) -> Sequence[AssetsDefinition]:
-        def fn() -> None:
-            ...
+        def compute_fn(context: AssetExecutionContext) -> None:
+            fail_keys = {
+                AssetKey.from_coercible(s)
+                for s in json.loads(context.run.tags.get(FAIL_TAG) or "[]")
+            }
+            if context.asset_key in fail_keys:
+                raise Exception("Asset failed")
 
         assets = []
         params = {
@@ -186,13 +208,21 @@ class AssetDaemonScenarioState(NamedTuple):
             "group_name",
             "code_version",
             "auto_materialize_policy",
+            "freshness_policy",
             "partitions_def",
         }
         for spec in self.asset_specs:
             assets.append(
-                asset(compute_fn=fn, **{k: v for k, v in spec._asdict().items() if k in params})
+                asset(
+                    compute_fn=compute_fn,
+                    **{k: v for k, v in spec._asdict().items() if k in params},
+                )
             )
         return assets
+
+    @property
+    def defs(self) -> Definitions:
+        return Definitions(assets=self.assets)
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -235,7 +265,14 @@ class AssetDaemonScenarioState(NamedTuple):
         return self._replace(current_time=self.current_time + datetime.timedelta(**kwargs))
 
     def with_runs(self, *run_requests: RunRequest) -> "AssetDaemonScenarioState":
-        with pendulum.test(self.current_time):
+        start = datetime.datetime.now()
+
+        def test_time_fn() -> float:
+            # this function will increment the current timestamp in real time, relative to the
+            # fake current_time on the scenario state
+            return (self.current_time + (datetime.datetime.now() - start)).timestamp()
+
+        with pendulum.test(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
                 materialize(
                     assets=self.assets,
@@ -245,25 +282,62 @@ class AssetDaemonScenarioState(NamedTuple):
                     raise_on_error=False,
                     selection=rr.asset_selection,
                 )
+        # increment current_time by however much time elapsed during the materialize call
+        return self._replace(current_time=pendulum.from_timestamp(test_time_fn()))
+
+    def with_not_started_runs(self) -> "AssetDaemonScenarioState":
+        """Execute all runs in the NOT_STARTED state and delete them from the instance. The scenario
+        adds in the run requests from previous ticks as runs in the NOT_STARTED state, so this method
+        executes requested runs from previous ticks.
+        """
+        not_started_runs = self.instance.get_runs(
+            filters=RunsFilter(statuses=[DagsterRunStatus.NOT_STARTED])
+        )
+        for run in not_started_runs:
+            self.instance.delete_run(run_id=run.run_id)
+        return self.with_runs(
+            *[
+                run_request(
+                    asset_keys=list(run.asset_selection or set()),
+                    partition_key=run.tags.get(PARTITION_NAME_TAG),
+                )
+                for run in not_started_runs
+            ]
+        )
+
+    def with_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> "AssetDaemonScenarioState":
+        self.instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name, partition_keys=partition_keys
+        )
         return self
 
-    def with_requested_runs(self) -> "AssetDaemonScenarioState":
-        return self.with_runs(*self.run_requests)
-
     def _evaluate_tick_fast(
-        self,
+        self
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
-        return AssetDaemonContext(
+        new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
             asset_graph=self.asset_graph,
             target_asset_keys=None,
             instance=self.instance,
             materialize_run_tags={},
             observe_run_tags={},
-            cursor=self.cursor,
+            cursor=AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph),
             auto_observe=True,
             respect_materialization_data_versions=False,
             logger=self.logger,
         ).evaluate()
+
+        # make sure these run requests are available on the instance
+        for request in new_run_requests:
+            asset_selection = check.not_none(request.asset_selection)
+            job_def = self.defs.get_implicit_job_def_for_assets(asset_selection)
+            self.instance.create_run_for_job(
+                job_def=check.not_none(job_def),
+                asset_selection=set(asset_selection),
+                tags=request.tags,
+            )
+        return new_run_requests, new_cursor, new_evaluations
 
     def _evaluate_tick_daemon(
         self,
@@ -285,17 +359,16 @@ class AssetDaemonScenarioState(NamedTuple):
                 )
             )
             new_cursor = AssetDaemonCursor.from_serialized(
-                check.not_none(
-                    self.instance.daemon_cursor_storage.get_cursor_values({CURSOR_KEY}).get(
-                        CURSOR_KEY
-                    )
+                self.instance.daemon_cursor_storage.get_cursor_values({CURSOR_KEY}).get(
+                    CURSOR_KEY, AssetDaemonCursor.empty().serialize()
                 ),
                 self.asset_graph,
             )
             new_run_requests = [
                 run_request(
-                    list(run.asset_selection or []), partition_key=run.tags.get(PARTITION_NAME_TAG)
-                )
+                    list(run.asset_selection or []),
+                    partition_key=run.tags.get(PARTITION_NAME_TAG),
+                )._replace(tags=run.tags)
                 for run in self.instance.get_runs(
                     filters=RunsFilter(
                         tags={"dagster/asset_evaluation_id": str(new_cursor.evaluation_id)}
@@ -319,7 +392,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
         return self._replace(
             run_requests=new_run_requests,
-            cursor=new_cursor,
+            serialized_cursor=new_cursor.serialize(),
             evaluations=new_evaluations,
         )
 
@@ -328,6 +401,36 @@ class AssetDaemonScenarioState(NamedTuple):
         actual_str = "\n\n".join("\t" + str(rr) for rr in actual)
         message = f"\nExpected: \n\n{expected_str}\n\nActual: \n\n{actual_str}\n"
         self.logger.error(message)
+
+    def _assert_requested_runs_daemon(self, expected_run_requests: Sequence[RunRequest]) -> None:
+        """Additional assertions for daemon mode. Checks that the most recent tick matches the
+        expected requested asset partitions.
+        """
+        latest_tick = sorted(
+            self.instance.get_ticks(
+                origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
+                selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            ),
+            key=lambda tick: tick.tick_id,
+        )[-1]
+
+        expected_requested_asset_partitions = {
+            AssetKeyPartitionKey(asset_key=ak, partition_key=rr.partition_key)
+            for rr in expected_run_requests
+            for ak in (rr.asset_selection or set())
+        }
+        assert (
+            latest_tick.status == TickStatus.SUCCESS
+            if len(expected_requested_asset_partitions) > 0
+            else TickStatus.SKIPPED
+        )
+
+        assert latest_tick.requested_asset_materialization_count == len(
+            expected_requested_asset_partitions
+        )
+        assert latest_tick.requested_asset_keys == {
+            asset_partition.asset_key for asset_partition in expected_requested_asset_partitions
+        }
 
     def assert_requested_runs(
         self, *expected_run_requests: RunRequest
@@ -351,7 +454,26 @@ class AssetDaemonScenarioState(NamedTuple):
             self._log_assertion_error(sorted_expected_run_requests, sorted_run_requests)
             raise
 
+        if self.is_daemon:
+            self._assert_requested_runs_daemon(sorted_expected_run_requests)
+
         return self
+
+    def _assert_evaluation_daemon(
+        self, key: AssetKey, actual_evaluation: AutoMaterializeAssetEvaluation
+    ) -> None:
+        """Additional assertions for daemon mode. Checks that the evaluation for the given asset
+        contains the expected run ids.
+        """
+        current_evaluation_id = check.not_none(get_current_evaluation_id(self.instance))
+        new_run_ids_for_asset = {
+            run.run_id
+            for run in self.instance.get_runs(
+                filters=RunsFilter(tags={"dagster/asset_evaluation_id": str(current_evaluation_id)})
+            )
+            if key in (run.asset_selection or set())
+        }
+        assert new_run_ids_for_asset == actual_evaluation.run_ids
 
     def assert_evaluation(
         self,
@@ -369,6 +491,7 @@ class AssetDaemonScenarioState(NamedTuple):
         """
         asset_key = AssetKey.from_coercible(key)
         actual_evaluation = next((e for e in self.evaluations if e.asset_key == asset_key), None)
+
         if actual_evaluation is None:
             try:
                 assert len(expected_evaluation_specs) == 0
@@ -418,6 +541,9 @@ class AssetDaemonScenarioState(NamedTuple):
             )
             raise
 
+        if self.is_daemon:
+            self._assert_evaluation_daemon(asset_key, actual_evaluation)
+
         return self
 
 
@@ -437,6 +563,8 @@ class AssetDaemonScenario(NamedTuple):
             self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral())
         )
 
-    def evaluate_daemon(self, instance: DagsterInstance) -> None:
+    def evaluate_daemon(self, instance: DagsterInstance) -> "AssetDaemonScenarioState":
         self.initial_state.logger.setLevel(logging.DEBUG)
-        self.execution_fn(self.initial_state._replace(scenario_instance=instance, is_daemon=True))
+        return self.execution_fn(
+            self.initial_state._replace(scenario_instance=instance, is_daemon=True)
+        )

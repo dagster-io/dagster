@@ -104,7 +104,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
   };
 }
 
-export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) => {
+export const LogsScrollingTable = (props: ILogsScrollingTableProps) => {
   const {filterKey, filterStepKeys, metadata, filter, logs} = props;
   const table = React.useRef<LogsScrollingTableSized>(null);
 

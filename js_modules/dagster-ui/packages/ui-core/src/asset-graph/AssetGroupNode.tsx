@@ -10,9 +10,13 @@ import {workspacePath} from '../workspace/workspacePath';
 import {MINIMAL_SCALE, GROUPS_ONLY_SCALE} from './AssetGraphExplorer';
 import {GroupLayout} from './layout';
 
-export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({group, scale}) => {
-  const {repositoryLocationName, repositoryDisambiguationRequired, repositoryName, groupName} =
-    group;
+interface Props {
+  group: GroupLayout;
+  scale: number;
+}
+
+export const AssetGroupNode = ({group, scale}: Props) => {
+  const {repositoryLocationName, repositoryName, groupName} = group;
 
   return (
     <div style={{position: 'relative', width: '100%', height: '100%'}}>
@@ -44,16 +48,14 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
               >
                 {groupName}
               </Link>
-              {repositoryDisambiguationRequired && (
-                <GroupRepoName style={{marginBottom: '0.5em'}}>
-                  {withMiddleTruncation(
-                    buildRepoPathForHuman(repositoryName, repositoryLocationName),
-                    {
-                      maxLength: 45,
-                    },
-                  )}
-                </GroupRepoName>
-              )}
+              <GroupRepoName style={{marginBottom: '0.5em'}}>
+                {withMiddleTruncation(
+                  buildRepoPathForHuman(repositoryName, repositoryLocationName),
+                  {
+                    maxLength: 45,
+                  },
+                )}
+              </GroupRepoName>
             </Box>
           </Mono>
         </Box>
@@ -79,16 +81,11 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
             style={{fontWeight: 600, fontFamily: FontFamily.monospace}}
           >
             {groupName}
-            {repositoryDisambiguationRequired && (
-              <GroupRepoName>
-                {withMiddleTruncation(
-                  buildRepoPathForHuman(repositoryName, repositoryLocationName),
-                  {
-                    maxLength: 45,
-                  },
-                )}
-              </GroupRepoName>
-            )}
+            <GroupRepoName>
+              {withMiddleTruncation(buildRepoPathForHuman(repositoryName, repositoryLocationName), {
+                maxLength: 45,
+              })}
+            </GroupRepoName>
           </Box>
         </Box>
       ) : undefined}

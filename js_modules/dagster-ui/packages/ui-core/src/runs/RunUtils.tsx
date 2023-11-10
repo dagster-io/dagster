@@ -290,7 +290,7 @@ interface RunTimeProps {
   run: RunTimeFragment;
 }
 
-export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
+export const RunTime = React.memo(({run}: RunTimeProps) => {
   const {startTime, updateTime} = run;
 
   return (
@@ -304,7 +304,7 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   );
 });
 
-export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
+export const RunStateSummary = React.memo(({run}: RunTimeProps) => {
   // kind of a hack, but we manually set the start time to the end time in the graphql resolver
   // for this case, so check for start/end time equality for the failed to start condition
   const failedToStart =

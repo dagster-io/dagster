@@ -22,7 +22,7 @@ interface Props {
   isOpen: boolean;
 }
 
-export const ConfigEditorDialog: React.FC<Props> = ({
+export const ConfigEditorDialog = ({
   config,
   configSchema,
   isLoading,
@@ -35,7 +35,7 @@ export const ConfigEditorDialog: React.FC<Props> = ({
   title,
   saveText,
   isOpen,
-}) => {
+}: Props) => {
   return (
     <Dialog
       isOpen={isOpen}

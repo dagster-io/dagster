@@ -16,7 +16,7 @@ interface Props {
   onClose?: () => void;
 }
 
-export const Alert: React.FC<Props> = (props) => {
+export const Alert = (props: Props) => {
   const {intent, title, description, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {

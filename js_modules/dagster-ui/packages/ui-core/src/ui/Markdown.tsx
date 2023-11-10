@@ -69,7 +69,7 @@ interface Props {
   children: string;
 }
 
-export const Markdown: React.FC<Props> = (props) => {
+export const Markdown = (props: Props) => {
   return (
     <Container>
       <ReactMarkdown

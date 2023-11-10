@@ -36,10 +36,10 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagHorizontalDAGs,
   },
   {
-    key: 'New asset lineage sidebar',
+    key: 'New asset lineage sidebar and grouped asset graph',
     label: (
       <Box flex={{direction: 'column'}}>
-        New asset lineage sidebar,
+        New asset lineage sidebar and grouped asset graph,
         <div>
           <a
             href="https://github.com/dagster-io/dagster/discussions/16657"
@@ -56,24 +56,6 @@ export const getVisibleFeatureFlagRows = () => [
   {
     key: 'Disable Asset Graph caching',
     flagType: FeatureFlag.flagDisableDAGCache,
-  },
-  {
-    key: 'Experimental tight tree DAG algorithm (Faster)',
-    flagType: FeatureFlag.flagTightTreeDag,
-    label: (
-      <Box flex={{direction: 'column'}}>
-        Experimental tight tree asset graph algorithm (Faster).
-        <div>
-          <a
-            href="https://github.com/dagster-io/dagster/discussions/17240"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Learn more
-          </a>
-        </div>
-      </Box>
-    ),
   },
   {
     key: 'Experimental longest path DAG algorithm (Faster)',

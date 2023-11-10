@@ -11,7 +11,7 @@ import {
   QueueDaemonStatusQueryVariables,
 } from './types/QueuedRunsBanners.types';
 
-export const QueuedRunsBanners: React.FC = () => {
+export const QueuedRunsBanners = () => {
   const canSeeConfig = useCanSeeConfig();
 
   return (

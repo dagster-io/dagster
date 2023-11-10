@@ -28,7 +28,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
@@ -197,30 +197,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             limit=1,
         )
         return next(iter(records), None)
-
-    @cached_method
-    def get_latest_storage_id_for_event_type(
-        self, *, event_type: DagsterEventType
-    ) -> Optional[int]:
-        """Returns the latest storage id across all events of the given event_type.
-
-        Args:
-            event_type (DagsterEventType): The event type to query for.
-        """
-        from dagster._core.event_api import EventRecordsFilter
-
-        latest_record = next(
-            iter(
-                self.instance.get_event_records(
-                    event_records_filter=EventRecordsFilter(event_type=event_type),
-                    limit=1,
-                )
-            ),
-            None,
-        )
-        if latest_record is not None:
-            return latest_record.storage_id
-        return None
 
     @cached_method
     def _get_latest_materialization_or_observation_storage_ids_by_asset_partition(
@@ -828,12 +804,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ):
                 continue
 
-            # when mapping from time or dynamic downstream to unpartitioned upstream, only check
-            # for updates to the latest upstream partition
+            # when mapping from unpartitioned assets to time partitioned assets, we ignore
+            # historical time partitions
             if (
-                isinstance(
-                    partitions_def, (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition)
-                )
+                isinstance(partitions_def, TimeWindowPartitionsDefinition)
                 and not self.asset_graph.is_partitioned(parent_key)
                 and asset_partition.partition_key
                 != partitions_def.get_last_partition_key(

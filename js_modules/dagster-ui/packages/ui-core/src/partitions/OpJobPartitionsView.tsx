@@ -37,10 +37,13 @@ import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 type PartitionStatus = OpJobPartitionStatusFragment;
 
-export const OpJobPartitionsView: React.FC<{
+export const OpJobPartitionsView = ({
+  partitionSetName,
+  repoAddress,
+}: {
   partitionSetName: string;
   repoAddress: RepoAddress;
-}> = ({partitionSetName, repoAddress}) => {
+}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const {data, loading} = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
     PARTITIONS_STATUS_QUERY,
@@ -138,11 +141,15 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
   }, [partitions]);
 }
 
-export const OpJobPartitionsViewContent: React.FC<{
+export const OpJobPartitionsViewContent = ({
+  partitionSet,
+  partitionNames,
+  repoAddress,
+}: {
   partitionNames: string[];
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
-}> = ({partitionSet, partitionNames, repoAddress}) => {
+}) => {
   const {
     permissions: {canLaunchPartitionBackfill},
     disabledReasons,
@@ -369,10 +376,7 @@ export const OpJobPartitionsViewContent: React.FC<{
   );
 };
 
-export const CountBox: React.FC<{
-  count: number;
-  label: string;
-}> = ({count, label}) => (
+export const CountBox = ({count, label}: {count: number; label: string}) => (
   <Box padding={16} style={{flex: 1}} border="right">
     <div style={{fontSize: 18, marginBottom: 4}}>
       <strong>{count}</strong>

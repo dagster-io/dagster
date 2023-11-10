@@ -15,7 +15,7 @@ interface Props {
   apolloProps?: ApolloTestProps;
 }
 
-export const StorybookProvider: React.FC<Props> = (props) => {
+export const StorybookProvider = (props: Props) => {
   const {apolloProps, routerProps} = props;
 
   return (

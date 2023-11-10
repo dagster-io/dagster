@@ -155,7 +155,12 @@ export function executionDisabledMessageForAssets(
     : null;
 }
 
-export const LaunchAssetExecutionButton: React.FC<{
+export const LaunchAssetExecutionButton = ({
+  scope,
+  preferredJobName,
+  additionalDropdownOptions,
+  intent = 'primary',
+}: {
   scope: AssetsInScope;
   intent?: 'primary' | 'none';
   preferredJobName?: string;
@@ -164,7 +169,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     icon?: JSX.Element;
     onClick: () => void;
   }[];
-}> = ({scope, preferredJobName, additionalDropdownOptions, intent = 'primary'}) => {
+}) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 

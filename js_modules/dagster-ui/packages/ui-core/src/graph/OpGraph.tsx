@@ -46,7 +46,7 @@ interface OpGraphContentsProps extends OpGraphProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
+const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
   const [highlighted, setHighlighted] = React.useState<Edge[]>(() => []);
 
   const {
@@ -185,7 +185,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
     }
   }
 
-  onArrowKeyDown = (_e: React.KeyboardEvent<any>, dir: string) => {
+  onArrowKeyDown = (_e: React.KeyboardEvent<any>, dir: 'left' | 'right' | 'up' | 'down') => {
     const nextOp = closestNodeInDirection(this.props.layout, this.props.selectedOp?.name, dir);
     if (nextOp && this.props.onClickOp) {
       this.props.onClickOp({name: nextOp});

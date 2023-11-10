@@ -96,6 +96,32 @@ def experimental_warning(
 
 
 # ########################
+# ##### Config arg warning
+# ########################
+
+CONFIG_WARNING_HELP = (
+    "To mute this warning, invoke"
+    ' warnings.filterwarnings("ignore", category=dagster.ConfigArgumentWarning) or use'
+    " one of the other methods described at"
+    " https://docs.python.org/3/library/warnings.html#describing-warning-filters."
+)
+
+
+class ConfigArgumentWarning(SyntaxWarning):
+    pass
+
+
+def config_argument_warning(param_name: str, function_name: str) -> None:
+    warnings.warn(
+        f"Parameter '{param_name}' on op/asset function '{function_name}' was annotated as"
+        " a dagster.Config type. Did you mean to name this parameter 'config'"
+        " instead?\n\n"
+        f"{CONFIG_WARNING_HELP}",
+        ConfigArgumentWarning,
+    )
+
+
+# ########################
 # ##### DISABLE DAGSTER WARNINGS
 # ########################
 

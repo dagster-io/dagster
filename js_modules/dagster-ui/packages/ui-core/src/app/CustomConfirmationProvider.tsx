@@ -18,7 +18,7 @@ interface ConfirmationDialogProps extends ConfirmationOptions {
   onClose: () => void;
 }
 
-const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
+const ConfirmationDialog = ({
   open,
   icon,
   title,
@@ -27,7 +27,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   description,
   onSubmit,
   onClose,
-}) => {
+}: ConfirmationDialogProps) => {
   return (
     <Dialog icon={title ? icon ?? 'info' : icon} onClose={onClose} title={title} isOpen={open}>
       <DialogBody>{description}</DialogBody>

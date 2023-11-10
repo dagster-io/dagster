@@ -31,18 +31,23 @@ export const timingStringForStatus = (status?: RunStatus) => {
   }
 };
 
-const LoadingOrValue: React.FC<{
+const LoadingOrValue = ({
+  loading,
+  children,
+}: {
   loading: boolean;
   children: () => React.ReactNode;
-}> = ({loading, children}) =>
-  loading ? <div style={{color: Colors.Gray400}}>Loading…</div> : <div>{children()}</div>;
+}) => (loading ? <div style={{color: Colors.Gray400}}>Loading…</div> : <div>{children()}</div>);
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-export const RunTimingDetails: React.FC<{
+export const RunTimingDetails = ({
+  loading,
+  run,
+}: {
   loading: boolean;
   run: RunTimingFragment | undefined;
-}> = ({loading, run}) => {
+}) => {
   return (
     <MetadataTable
       spacing={0}

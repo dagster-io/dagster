@@ -1104,9 +1104,7 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
-        next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION
-        )
+        next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
 
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
@@ -1181,6 +1179,7 @@ def execute_asset_backfill_iteration_inner(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
             run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
+            dynamic_partitions_store=instance_queryer,
         )
     else:
         if not all(backfill_policy is None for backfill_policy in asset_backfill_policies):

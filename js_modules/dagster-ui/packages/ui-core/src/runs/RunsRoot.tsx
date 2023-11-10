@@ -108,6 +108,7 @@ export const RunsRoot = () => {
       'id',
       'job',
       'pipeline',
+      'partition',
       'backfill',
     ];
 

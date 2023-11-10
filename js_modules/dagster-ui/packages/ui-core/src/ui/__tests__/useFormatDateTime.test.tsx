@@ -17,7 +17,7 @@ describe('useFormatDateTime', () => {
     language?: string;
   }
 
-  const Test: React.FC<Props> = ({date, options, language}) => {
+  const Test = ({date, options, language}: Props) => {
     const formatDateTime = useFormatDateTime();
     return <div>{formatDateTime(date, options, language)}</div>;
   };

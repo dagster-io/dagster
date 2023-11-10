@@ -41,7 +41,7 @@ from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..asset_spec import AssetSpec
-from ..assets import AssetsDefinition
+from ..assets import ASSET_SUBSET_INPUT_PREFIX, AssetsDefinition
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
@@ -462,7 +462,9 @@ class _Asset:
             partitions_def=self.partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=wrapped_resource_defs,
-            group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
+            group_names_by_key=(
+                {out_asset_key: self.group_name} if self.group_name is not None else None
+            ),
             freshness_policies_by_key=(
                 {out_asset_key: self.freshness_policy} if self.freshness_policy else None
             ),
@@ -481,6 +483,7 @@ class _Asset:
             descriptions_by_key=None,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
+            is_subset=False,
         )
 
 
@@ -718,6 +721,10 @@ def multi_asset(
         )
 
         asset_outs_by_output_name: Mapping[str, Out] = dict(output_tuples_by_asset_key.values())
+        keys_by_output_name = {
+            output_name: asset_key
+            for asset_key, (output_name, _) in output_tuples_by_asset_key.items()
+        }
 
         check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
             check_specs, list(output_tuples_by_asset_key.keys())
@@ -737,6 +744,26 @@ def multi_asset(
             **asset_outs_by_output_name,
             **check_outs_by_output_name,
         }
+
+        if specs:
+            internal_deps = {
+                spec.key: {dep.asset_key for dep in spec.deps}
+                for spec in specs
+                if spec.deps is not None
+            }
+        else:
+            internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
+
+        # when a subsettable multi-asset is defined, it is possible that it will need to be
+        # broken into two separate parts, one which depends on the other. in order to represent
+        # this in the op execution graph, inputs need to be added to connect these possible deps
+        if can_subset and internal_deps:
+            asset_ins = {
+                **asset_ins,
+                **build_subsettable_asset_ins(
+                    asset_ins, output_tuples_by_asset_key, internal_deps.values()
+                ),
+            }
 
         with disable_dagster_warnings():
             op_required_resource_keys = required_resource_keys - arg_resource_keys
@@ -759,10 +786,6 @@ def multi_asset(
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
-        keys_by_output_name = {
-            output_name: asset_key
-            for asset_key, (output_name, _) in output_tuples_by_asset_key.items()
-        }
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
@@ -775,11 +798,6 @@ def multi_asset(
             )
 
         if specs:
-            internal_deps = {
-                spec.key: {dep.asset_key for dep in spec.deps}
-                for spec in specs
-                if spec.deps is not None
-            }
             props_by_asset_key: Mapping[AssetKey, Union[AssetSpec, AssetOut]] = {
                 spec.key: spec for spec in specs
             }
@@ -801,7 +819,6 @@ def multi_asset(
                         )
 
         else:
-            internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
             props_by_asset_key = {
                 keys_by_output_name[output_name]: asset_out
                 for output_name, asset_out in asset_out_map.items()
@@ -864,6 +881,7 @@ def multi_asset(
             metadata_by_key=metadata_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
+            is_subset=False,
         )
 
     return inner
@@ -953,6 +971,28 @@ def build_asset_ins(
         )
 
     return ins_by_asset_key
+
+
+def build_subsettable_asset_ins(
+    asset_ins: Mapping[AssetKey, Tuple[str, In]],
+    asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+    internal_upstream_deps: Iterable[AbstractSet[AssetKey]],
+) -> Mapping[AssetKey, Tuple[str, In]]:
+    """Creates a mapping from AssetKey to (name of input, In object) for any asset key that is not
+    currently an input, but may become one if this asset is subset.
+
+    For example, if a subsettable multi-asset produces both A and C, where C depends on both A and
+    some other asset B, there are some situations where executing just A and C without B will result
+    in these assets being generated by different steps within the same job. In this case, we need
+    a separate input to represent the fact that C depends on A.
+    """
+    # set of asset keys which are upstream of another asset, and are not currently inputs
+    potential_deps = set().union(*internal_upstream_deps).difference(set(asset_ins.keys()))
+    return {
+        key: (f"{ASSET_SUBSET_INPUT_PREFIX}{name}", In(Nothing))
+        for key, (name, _) in asset_outs.items()
+        if key in potential_deps
+    }
 
 
 @overload

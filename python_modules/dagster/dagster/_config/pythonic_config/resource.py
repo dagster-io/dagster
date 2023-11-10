@@ -981,8 +981,10 @@ def _call_resource_fn_with_default(
     else:
         result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
-    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
-        obj.resource_fn, contextlib.ContextDecorator
+    is_fn_generator = (
+        inspect.isgenerator(obj.resource_fn)
+        or isinstance(obj.resource_fn, contextlib.ContextDecorator)
+        or isinstance(result, contextlib.AbstractContextManager)
     )
     if is_fn_generator:
         return stack.enter_context(cast(contextlib.AbstractContextManager, result))

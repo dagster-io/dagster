@@ -2,7 +2,9 @@ import abc
 from typing import Mapping, Optional, Sequence, Set
 
 from dagster import AssetKey
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeAssetEvaluation,
+)
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (

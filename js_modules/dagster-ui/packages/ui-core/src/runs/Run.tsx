@@ -57,7 +57,7 @@ const runStatusFavicon = (status: RunStatus) => {
   }
 };
 
-export const Run: React.FC<RunProps> = (props) => {
+export const Run = (props: RunProps) => {
   const {run, runId} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
@@ -156,7 +156,7 @@ const logTypeFromQuery = (queryLogType: string) => {
  * We could revisit this in the future but I believe we iterated quite a bit to get to this
  * solution and we should avoid locking the two filter inputs together completely.
  */
-const RunWithData: React.FC<RunWithDataProps> = ({
+const RunWithData = ({
   run,
   runId,
   logs,
@@ -165,7 +165,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   selectionQuery,
   onSetLogsFilter,
   onSetSelectionQuery,
-}) => {
+}: RunWithDataProps) => {
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: LogType.structured},

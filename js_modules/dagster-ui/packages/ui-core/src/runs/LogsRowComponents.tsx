@@ -133,11 +133,13 @@ const fractionalSecondFormat = memoize((locale: string) => {
 
 // Timestamp Column
 
-export const TimestampColumn: React.FC<{
+interface TimestampColumnProps {
   time: string | null;
   runStartTime?: number;
   stepStartTime?: number;
-}> = React.memo((props) => {
+}
+
+export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
   const {time, runStartTime, stepStartTime} = props;
   const location = useLocation();
   const widths = React.useContext(ColumnWidthsContext);

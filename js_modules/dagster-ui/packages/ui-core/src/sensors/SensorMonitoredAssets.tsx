@@ -4,9 +4,7 @@ import * as React from 'react';
 import {AssetLink} from '../assets/AssetLink';
 import {SensorMetadata} from '../graphql/types';
 
-export const SensorMonitoredAssets: React.FC<{
-  metadata: SensorMetadata | undefined;
-}> = ({metadata}) => {
+export const SensorMonitoredAssets = ({metadata}: {metadata: SensorMetadata | undefined}) => {
   if (!metadata?.assetKeys?.length) {
     return <span />;
   }

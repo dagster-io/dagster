@@ -59,7 +59,7 @@ export const AssetDataRefreshButton = ({
   );
 };
 
-const TimeFromNowWithSeconds: React.FC<{timestamp: number}> = ({timestamp}) => {
+const TimeFromNowWithSeconds = ({timestamp}: {timestamp: number}) => {
   const [text, setText] = React.useState(dayjs(timestamp).fromNow(true));
   React.useEffect(() => {
     const interval = setInterval(() => {

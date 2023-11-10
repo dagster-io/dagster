@@ -16,7 +16,7 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
 
-export const RunList: React.FC<{runIds: string[]}> = ({runIds}) => {
+export const RunList = ({runIds}: {runIds: string[]}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
     LAUNCHED_RUN_LIST_QUERY,
     {
@@ -55,9 +55,7 @@ export const RunList: React.FC<{runIds: string[]}> = ({runIds}) => {
   );
 };
 
-export const FailedRunList: React.FC<{
-  originRunIds?: string[];
-}> = ({originRunIds}) => {
+export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
   if (!originRunIds || !originRunIds.length) {
     return null;
   }

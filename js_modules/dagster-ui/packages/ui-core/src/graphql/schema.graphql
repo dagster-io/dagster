@@ -865,7 +865,6 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
-  executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
 }
@@ -3128,7 +3127,6 @@ type Query {
     beforeTimestamp: Float
     afterTimestamp: Float
   ): [InstigationTick!]!
-  assetChecksOrError(assetKey: AssetKeyInput!, checkName: String): AssetChecksOrError!
   assetCheckExecutions(
     assetKey: AssetKeyInput!
     checkName: String!

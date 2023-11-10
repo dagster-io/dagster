@@ -54,16 +54,7 @@ interface BackfillOptions {
   fromFailure: boolean;
 }
 
-export const BackfillPartitionSelector: React.FC<{
-  partitionSetName: string;
-  partitionNames: string[];
-  runStatusData: {[partitionName: string]: RunStatus};
-  pipelineName: string;
-  onLaunch?: (backfillId: string, stepQuery: string) => void;
-  onCancel?: () => void;
-  onSubmit: () => void;
-  repoAddress: RepoAddress;
-}> = ({
+export const BackfillPartitionSelector = ({
   partitionSetName,
   onLaunch,
   onCancel,
@@ -72,6 +63,15 @@ export const BackfillPartitionSelector: React.FC<{
   runStatusData,
   pipelineName,
   partitionNames,
+}: {
+  partitionSetName: string;
+  partitionNames: string[];
+  runStatusData: {[partitionName: string]: RunStatus};
+  pipelineName: string;
+  onLaunch?: (backfillId: string, stepQuery: string) => void;
+  onCancel?: () => void;
+  onSubmit: () => void;
+  repoAddress: RepoAddress;
 }) => {
   const history = useHistory();
   const [range, _setRange] = React.useState<string[]>(
@@ -326,17 +326,7 @@ export const BackfillPartitionSelector: React.FC<{
   );
 };
 
-const LaunchBackfillButton: React.FC<{
-  partitionSetName: string;
-  partitionNames: string[];
-  reexecutionSteps?: string[];
-  fromFailure?: boolean;
-  tags?: PipelineRunTag[];
-  onSuccess?: (backfillId: string, isPureAssetBackfill: boolean) => void;
-  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
-  onSubmit: () => void;
-  repoAddress: RepoAddress;
-}> = ({
+const LaunchBackfillButton = ({
   partitionSetName,
   partitionNames,
   reexecutionSteps,
@@ -346,6 +336,16 @@ const LaunchBackfillButton: React.FC<{
   onError,
   onSubmit,
   repoAddress,
+}: {
+  partitionSetName: string;
+  partitionNames: string[];
+  reexecutionSteps?: string[];
+  fromFailure?: boolean;
+  tags?: PipelineRunTag[];
+  onSuccess?: (backfillId: string, isPureAssetBackfill: boolean) => void;
+  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
+  onSubmit: () => void;
+  repoAddress: RepoAddress;
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);

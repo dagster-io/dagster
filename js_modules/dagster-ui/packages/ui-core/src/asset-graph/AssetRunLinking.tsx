@@ -9,10 +9,15 @@ import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
 
 import {LiveDataForNode} from './Utils';
 
-export const AssetLatestRunSpinner: React.FC<{
+interface AssetLatestRunSpinnerProps {
   liveData?: LiveDataForNode;
   purpose?: 'caption-text' | 'body-text' | 'section';
-}> = ({liveData, purpose = 'body-text'}) => {
+}
+
+export const AssetLatestRunSpinner = ({
+  liveData,
+  purpose = 'body-text',
+}: AssetLatestRunSpinnerProps) => {
   if (liveData?.inProgressRunIds?.length) {
     return (
       <Tooltip content="A run is currently rematerializing this asset.">
@@ -30,12 +35,14 @@ export const AssetLatestRunSpinner: React.FC<{
   return null;
 };
 
-export const AssetRunLink: React.FC<{
+interface AssetRunLinkProps {
   runId: string;
   assetKey: AssetKeyInput;
   children?: React.ReactNode;
   event?: Parameters<typeof linkToRunEvent>[1];
-}> = ({assetKey, runId, children, event}) => {
+}
+
+export const AssetRunLink = ({assetKey, runId, children, event}: AssetRunLinkProps) => {
   const content = children || (
     <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
       {titleForRun({id: runId})}

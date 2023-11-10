@@ -50,7 +50,7 @@ interface PartitionStatusProps {
   selectionWindowSize?: number;
 }
 
-export const PartitionStatus: React.FC<PartitionStatusProps> = ({
+export const PartitionStatus = ({
   partitionNames,
   selected,
   onSelect,
@@ -61,7 +61,7 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   hideStatusTooltip,
   tooltipMessage,
   splitPartitions = false,
-}) => {
+}: PartitionStatusProps) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined

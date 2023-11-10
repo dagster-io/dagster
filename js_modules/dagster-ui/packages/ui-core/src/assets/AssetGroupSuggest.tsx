@@ -35,11 +35,15 @@ const FAKE_SELECTED_ITEM: AssetGroupSelector = {
   repositoryName: '-',
 };
 
-export const AssetGroupSuggest: React.FC<{
+export const AssetGroupSuggest = ({
+  assetGroups,
+  value,
+  onChange,
+}: {
   assetGroups: AssetGroupSelector[];
   value: AssetGroupSelector[];
   onChange: (g: AssetGroupSelector[]) => void;
-}> = ({assetGroups, value, onChange}) => {
+}) => {
   const repoKey = (g: AssetGroupSelector) => `${g.repositoryName}@${g.repositoryLocationName}`;
   const repoKey1 = assetGroups[0] ? repoKey(assetGroups[0]) : '';
   const repoContextNeeded = !assetGroups.every((g) => repoKey1 === repoKey(g));

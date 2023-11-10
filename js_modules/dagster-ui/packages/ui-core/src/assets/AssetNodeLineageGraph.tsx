@@ -1,14 +1,17 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
+import uniq from 'lodash/uniq';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {useFeatureFlags} from '../app/Flags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
+import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, toGraphId} from '../asset-graph/Utils';
+import {GraphData, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
@@ -20,18 +23,27 @@ import {AssetKey, AssetViewParams} from './types';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 
-export const AssetNodeLineageGraph: React.FC<{
+export const AssetNodeLineageGraph = ({
+  assetKey,
+  assetGraphData,
+  params,
+}: {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   params: AssetViewParams;
-}> = ({assetKey, assetGraphData, params}) => {
-  const assetGraphId = toGraphId(assetKey);
+}) => {
+  const {flagDAGSidebar} = useFeatureFlags();
 
+  const assetGraphId = toGraphId(assetKey);
+  const allGroups = React.useMemo(
+    () => uniq(Object.values(assetGraphData.nodes).map((g) => groupIdForNode(g))),
+    [assetGraphData],
+  );
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
   // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
   // and so that different assets dont invalidate each others layout
-  const {layout, loading} = useAssetLayout(assetGraphData);
+  const {layout, loading} = useAssetLayout(assetGraphData, allGroups);
   const viewportEl = React.useRef<SVGViewport>();
   const history = useHistory();
 
@@ -72,21 +84,26 @@ export const AssetNodeLineageGraph: React.FC<{
       {({scale}, viewportRect) => (
         <SVGContainer width={layout.width} height={layout.height}>
           {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
-          <AssetEdges
-            selected={null}
-            highlighted={highlighted}
-            edges={layout.edges}
-            viewportRect={viewportRect}
-          />
 
           {Object.values(layout.groups)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
-                <AssetGroupNode group={group} scale={scale} />
+                {flagDAGSidebar ? (
+                  <ExpandedGroupNode group={group} minimal={scale < MINIMAL_SCALE} />
+                ) : (
+                  <AssetGroupNode group={group} scale={scale} />
+                )}
               </foreignObject>
             ))}
+
+          <AssetEdges
+            selected={null}
+            highlighted={highlighted}
+            edges={layout.edges}
+            viewportRect={viewportRect}
+          />
 
           {Object.values(layout.nodes)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))

@@ -8,10 +8,13 @@ import {Timestamp} from '../app/time/Timestamp';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetLineageFragment} from './types/AssetLineageElements.types';
 
-const AssetLineageInfoElement: React.FC<{
+const AssetLineageInfoElement = ({
+  lineage_info,
+  timestamp,
+}: {
   lineage_info: AssetLineageFragment;
   timestamp: string;
-}> = ({lineage_info, timestamp}) => {
+}) => {
   const partition_list_label = lineage_info.partitions.length === 1 ? 'Partition' : 'Partitions';
   const partition_list_str = lineage_info.partitions
     .map((partition) => `"${partition}"`)
@@ -59,10 +62,13 @@ const AssetLineageInfoElement: React.FC<{
 
 const MAX_COLLAPSED = 5;
 
-export const AssetLineageElements: React.FC<{
+export const AssetLineageElements = ({
+  elements,
+  timestamp,
+}: {
   elements: AssetLineageFragment[];
   timestamp: string;
-}> = ({elements, timestamp}) => {
+}) => {
   const [collapsed, setCollapsed] = React.useState(true);
 
   return (

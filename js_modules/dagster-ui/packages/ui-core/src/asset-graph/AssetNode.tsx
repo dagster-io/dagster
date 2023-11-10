@@ -21,10 +21,12 @@ import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
-export const AssetNode: React.FC<{
+interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
-}> = React.memo(({definition, selected}) => {
+}
+
+export const AssetNode = React.memo(({definition, selected}: Props) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
@@ -34,7 +36,7 @@ export const AssetNode: React.FC<{
       <AssetTopTags definition={definition} liveData={liveData} />
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
-          <Name $isSource={isSource}>
+          <AssetName $isSource={isSource}>
             <span style={{marginTop: 1}}>
               <Icon name={isSource ? 'source_asset' : 'asset'} />
             </span>
@@ -48,14 +50,14 @@ export const AssetNode: React.FC<{
               })}
             </div>
             <div style={{flex: 1}} />
-          </Name>
+          </AssetName>
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
-              <Description $color={Colors.Gray800}>
+              <AssetDescription $color={Colors.Gray800}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
-              </Description>
+              </AssetDescription>
             ) : (
-              <Description $color={Colors.Gray400}>No description</Description>
+              <AssetDescription $color={Colors.Gray400}>No description</AssetDescription>
             )}
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
@@ -76,10 +78,12 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-const AssetTopTags: React.FC<{
+interface AssetTopTagsProps {
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
-}> = ({definition, liveData}) => (
+}
+
+const AssetTopTags = ({definition, liveData}: AssetTopTagsProps) => (
   <Box flex={{gap: 4}} padding={{left: 4}} style={{height: 24}}>
     <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="upstream" />
   </Box>
@@ -104,7 +108,7 @@ interface StatusRowProps {
   liveData: LiveDataForNode | undefined;
 }
 
-const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) => {
+const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
   const {content, background} = buildAssetNodeStatusContent({
     assetKey: definition.assetKey,
     definition,
@@ -157,10 +161,13 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
 ];
 
-const AssetNodeChecksRow: React.FC<{
+const AssetNodeChecksRow = ({
+  definition,
+  liveData,
+}: {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
-}> = ({definition, liveData}) => {
+}) => {
   if (!liveData || !liveData.assetChecks.length) {
     return <span />;
   }
@@ -205,10 +212,13 @@ const AssetNodeChecksRow: React.FC<{
   );
 };
 
-export const AssetNodeMinimal: React.FC<{
+export const AssetNodeMinimal = ({
+  selected,
+  definition,
+}: {
   selected: boolean;
   definition: AssetNodeFragment;
-}> = ({selected, definition}) => {
+}) => {
   const {isSource, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
@@ -229,15 +239,9 @@ export const AssetNodeMinimal: React.FC<{
             $background={background}
             $border={border}
           >
-            <div
-              style={{
-                top: '50%',
-                position: 'absolute',
-                transform: 'translate(8px, -16px)',
-              }}
-            >
+            <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-            </div>
+            </AssetNodeSpinnerContainer>
             <MinimalName style={{fontSize: 30}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 14})}
             </MinimalName>
@@ -324,7 +328,7 @@ const NameCSS: CSSObject = {
   fontWeight: 600,
 };
 
-const NameTooltipCSS: CSSObject = {
+export const NameTooltipCSS: CSSObject = {
   ...NameCSS,
   top: -9,
   left: -12,
@@ -343,13 +347,19 @@ const NameTooltipStyleSource = JSON.stringify({
   border: `1px solid ${Colors.Gray200}`,
 });
 
-const Name = styled.div<{$isSource: boolean}>`
+const AssetName = styled.div<{$isSource: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
   background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
+`;
+
+const AssetNodeSpinnerContainer = styled.div`
+  top: 50%;
+  position: absolute;
+  transform: translate(8px, -16px);
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
@@ -385,7 +395,7 @@ const MinimalAssetNodeBox = styled.div<{
   }
 `;
 
-const MinimalName = styled(Name)`
+const MinimalName = styled(AssetName)`
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
@@ -395,7 +405,7 @@ const MinimalName = styled(Name)`
   transform: translate(-50%, -50%);
 `;
 
-const Description = styled.div<{$color: string}>`
+export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

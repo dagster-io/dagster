@@ -26,7 +26,7 @@ interface Props {
       };
 }
 
-export const NonIdealPipelineQueryResult: React.FC<Props> = ({isGraph, repoAddress, result}) => {
+export const NonIdealPipelineQueryResult = ({isGraph, repoAddress, result}: Props) => {
   if (result.__typename === 'PipelineSnapshotNotFoundError') {
     return (
       <NonIdealState

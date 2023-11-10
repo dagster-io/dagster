@@ -32,11 +32,11 @@ import {ScheduleFragment} from './types/ScheduleUtils.types';
 
 const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 
-export const ScheduleDetails: React.FC<{
+export const ScheduleDetails = (props: {
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
   refreshState: QueryRefreshState;
-}> = (props) => {
+}) => {
   const {repoAddress, schedule, refreshState} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
   const copyToClipboard = useCopyToClipboard();

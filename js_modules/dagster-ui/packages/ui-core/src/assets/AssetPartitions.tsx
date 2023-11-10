@@ -66,13 +66,13 @@ enum SortType {
   REVERSE_ALPHABETICAL,
 }
 
-export const AssetPartitions: React.FC<Props> = ({
+export const AssetPartitions = ({
   assetKey,
   assetPartitionDimensions,
   params,
   setParams,
   dataRefreshHint,
-}) => {
+}: Props) => {
   const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,

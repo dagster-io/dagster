@@ -56,7 +56,7 @@ const fuseOptions = {
   threshold: 0.3,
 };
 
-export const LogsFilterInput: React.FC<Props> = (props) => {
+export const LogsFilterInput = (props: Props) => {
   const {value, onChange, suggestionProviders} = props;
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -197,11 +197,11 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
   );
 };
 
-const ResultItem: React.FC<{
+const ResultItem = (props: {
   suggestion: string;
   isHighlight: boolean;
   onSelect: (suggestion: string) => void;
-}> = (props) => {
+}) => {
   const {suggestion, isHighlight, onSelect} = props;
   const element = React.useRef<HTMLLIElement>(null);
 

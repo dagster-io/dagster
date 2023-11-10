@@ -37,6 +37,16 @@ export const Default = () => {
           <MenuItem intent="danger" icon="delete" text="Delete" />
         </Menu>
       </Container>
+      <Container style={{width: '180px'}}>
+        <Menu>
+          <MenuDivider title="Here you can save" />
+          <MenuItem icon="download_for_offline" text="Save" />
+          <MenuDivider title="Here you can attach" />
+          <MenuItem icon="attach_file" text="Attach" />
+          <MenuDivider title="Here you can delete" />
+          <MenuItem intent="danger" icon="delete" text="Delete" />
+        </Menu>
+      </Container>
     </Group>
   );
 };

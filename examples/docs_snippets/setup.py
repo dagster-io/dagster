@@ -24,6 +24,7 @@ setup(
         "dagster-celery",
         "dagster-dbt",
         "dagster-dask",
+        "dagster-databricks",
         "dagster-deltalake",
         "dagster-deltalake-pandas",
         "dagster-deltalake-polars",

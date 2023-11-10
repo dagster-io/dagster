@@ -25,9 +25,12 @@ function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   return stepsTag ? stepsTag.value : '*';
 }
 
-export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: number}> = ({
+export const RunGroupPanel = ({
   runId,
   runStatusLastChangedAt,
+}: {
+  runId: string;
+  runStatusLastChangedAt: number;
 }) => {
   const queryResult = useQuery<RunGroupPanelQuery, RunGroupPanelQueryVariables>(
     RUN_GROUP_PANEL_QUERY,

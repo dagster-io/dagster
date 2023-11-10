@@ -12,11 +12,15 @@ import {
   TerminateRunIdsQueryVariables,
 } from './types/TerminateAllRunsButton.types';
 
-export const TerminateAllRunsButton: React.FC<{
+export const TerminateAllRunsButton = ({
+  refetch,
+  filter,
+  disabled,
+}: {
   refetch: () => void;
   filter: RunsFilter;
   disabled: boolean;
-}> = ({refetch, filter, disabled}) => {
+}) => {
   const [terminating, setTerminating] = React.useState<{[runId: string]: boolean} | null>(null);
   const client = useApolloClient();
 

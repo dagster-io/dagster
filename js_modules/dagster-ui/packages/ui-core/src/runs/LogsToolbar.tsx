@@ -54,7 +54,7 @@ interface WithExpandCollapseProps extends ILogsToolbarProps {
 const logQueryToString = (logQuery: LogFilterValue[]) =>
   logQuery.map(({token, value}) => (token ? `${token}:${value}` : value)).join(' ');
 
-export const LogsToolbar: React.FC<ILogsToolbarProps | WithExpandCollapseProps> = (props) => {
+export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) => {
   const {
     steps,
     metadata,

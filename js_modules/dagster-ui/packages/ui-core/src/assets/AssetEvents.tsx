@@ -44,14 +44,14 @@ interface Props {
   opName?: string | null;
 }
 
-export const AssetEvents: React.FC<Props> = ({
+export const AssetEvents = ({
   assetKey,
   assetNode,
   params,
   setParams,
   liveData,
   dataRefreshHint,
-}) => {
+}: Props) => {
   const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
     useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
 
@@ -228,10 +228,13 @@ type EventType = 'observation' | 'materialization';
 
 const ALL_EVENT_TYPES: EventType[] = ['observation', 'materialization'];
 
-export const EventTypeSelect: React.FC<{
+export const EventTypeSelect = ({
+  value,
+  onChange,
+}: {
   value: EventType[];
   onChange: (value: EventType[]) => void;
-}> = ({value, onChange}) => {
+}) => {
   const [showMenu, setShowMenu] = React.useState(false);
 
   const onToggle = (type: EventType) => {

@@ -130,13 +130,7 @@ export type AssetCheck = {
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
-  executions: Array<AssetCheckExecution>;
   name: Scalars['String'];
-};
-
-export type AssetCheckExecutionsArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  limit: Scalars['Int'];
 };
 
 export enum AssetCheckCanExecuteIndividually {
@@ -2895,7 +2889,6 @@ export type Query = {
   allTopLevelResourceDetailsOrError: ResourcesOrError;
   assetBackfillPreview: Array<AssetPartitions>;
   assetCheckExecutions: Array<AssetCheckExecution>;
-  assetChecksOrError: AssetChecksOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -2960,11 +2953,6 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String'];
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
-};
-
-export type QueryAssetChecksOrErrorArgs = {
-  assetKey: AssetKeyInput;
-  checkName?: InputMaybe<Scalars['String']>;
 };
 
 export type QueryAssetNodeDefinitionCollisionsArgs = {
@@ -4643,7 +4631,6 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetCheckExecution')
         ? ({} as AssetCheckExecution)
         : buildAssetCheckExecution({}, relationshipsToOmit),
-    executions: overrides && overrides.hasOwnProperty('executions') ? overrides.executions! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
   };
 };
@@ -9997,12 +9984,6 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('assetCheckExecutions')
         ? overrides.assetCheckExecutions!
         : [],
-    assetChecksOrError:
-      overrides && overrides.hasOwnProperty('assetChecksOrError')
-        ? overrides.assetChecksOrError!
-        : relationshipsToOmit.has('AssetCheckNeedsAgentUpgradeError')
-        ? ({} as AssetCheckNeedsAgentUpgradeError)
-        : buildAssetCheckNeedsAgentUpgradeError({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!

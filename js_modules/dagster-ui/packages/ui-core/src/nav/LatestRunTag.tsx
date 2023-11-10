@@ -17,9 +17,12 @@ import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTa
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddress}> = ({
+export const LatestRunTag = ({
   pipelineName,
   repoAddress,
+}: {
+  pipelineName: string;
+  repoAddress: RepoAddress;
 }) => {
   const lastRunQuery = useQuery<LatestRunTagQuery, LatestRunTagQueryVariables>(
     LATEST_RUN_TAG_QUERY,
