@@ -112,6 +112,10 @@ export const Node = ({
 
   const ref = React.useRef<HTMLButtonElement | null>(null);
   React.useLayoutEffect(() => {
+    // When we click on a node in the graph it also changes "isSelected" in the sidebar.
+    // We want to check if the focus is currently in the graph and if it is lets keep it there
+    // Otherwise it means the click happened in the sidebar in which case we should move focus to the element
+    // in the sidebar
     if (ref.current && isSelected && !isElementInsideSVGViewport(document.activeElement)) {
       ref.current.focus();
     }
@@ -155,18 +159,13 @@ export const Node = ({
               <div style={{width: 18}} />
             )}
             <GrayOnHoverBox
-              onDoubleClick={() => {
-                if (!isOpen) {
-                  toggleOpen();
-                }
-              }}
+              onDoubleClick={toggleOpen}
               style={{
                 width: '100%',
                 borderRadius: '8px',
                 ...(isSelected ? {background: Colors.Blue50} : {}),
               }}
               $showFocusOutline={true}
-              autoFocus={isSelected}
               ref={ref}
             >
               <div
@@ -404,15 +403,5 @@ function StatusDot({node}: {node: Pick<GraphNode, 'assetKey' | 'definition'>}) {
 }
 
 function isElementInsideSVGViewport(element: Element | null) {
-  if (!element) {
-    // We've reached the root without finding an <svg> element
-    return false;
-  }
-
-  if (element.classList.contains('svgViewport')) {
-    return true;
-  }
-
-  // Start the recursive check
-  return isElementInsideSVGViewport(element.parentElement);
+  return !!element?.closest('[data-svg-viewport]');
 }
