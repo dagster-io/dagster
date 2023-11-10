@@ -51,6 +51,7 @@ from dagster._core.pipes.utils import (
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils.env import environ
 from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
+from dagster_pipes import DagsterPipesError
 from moto.server import ThreadedMotoServer
 
 _PYTHON_EXECUTABLE = shutil.which("python")
@@ -633,3 +634,45 @@ def test_run_in_op():
         resources={"pipes_client": PipesSubprocessClient()},
     )
     assert result.success
+
+
+def test_pipes_expected_materialization():
+    def script_fn():
+        ...
+
+    @asset
+    def missing_mat_result(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            return pipes_client.run(
+                command=cmd,
+                context=context,
+            ).get_materialize_result(implicit_materialization=False)
+
+    with pytest.raises(
+        DagsterPipesError,
+        match="No materialization results received from external process",
+    ):
+        materialize(
+            [missing_mat_result],
+            resources={"pipes_client": PipesSubprocessClient()},
+        )
+
+    @asset
+    def missing_results(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            return pipes_client.run(
+                command=cmd,
+                context=context,
+            ).get_results(implicit_materializations=False)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        # less then ideal error message
+        match=r"op 'missing_results' did not yield or return expected outputs {'result'}",
+    ):
+        materialize(
+            [missing_results],
+            resources={"pipes_client": PipesSubprocessClient()},
+        )

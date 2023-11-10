@@ -166,7 +166,7 @@ class _PipesDatabricksClient(PipesClient):
                         f"Error running Databricks job: {run.state.state_message}"
                     )
                 time.sleep(_RUN_POLL_INTERVAL)
-        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
+        return PipesClientCompletedInvocation(pipes_session)
 
 
 PipesDatabricksClient = ResourceParam[_PipesDatabricksClient]
