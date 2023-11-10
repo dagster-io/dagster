@@ -414,6 +414,7 @@ class AssetReconciliationScenario(
             )
 
             run_requests, cursor, evaluations = AssetDaemonContext(
+                evaluation_id=cursor.evaluation_id + 1,
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
