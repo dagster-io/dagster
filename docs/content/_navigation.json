@@ -641,6 +641,10 @@
                 "path": "/dagster-cloud/insights/integrating-external-metrics",
                 "children": [
                   {
+                    "title": "Direct Snowflake queries",
+                    "path": "/dagster-cloud/insights/integrating-snowflake"
+                  },
+                  {
                     "title": "Snowflake + dbt",
                     "path": "/dagster-cloud/insights/integrating-snowflake-and-dbt"
                   }

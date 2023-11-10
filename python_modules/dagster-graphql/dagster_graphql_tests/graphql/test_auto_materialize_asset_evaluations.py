@@ -4,9 +4,9 @@ import dagster._check as check
 import pendulum
 from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
-    AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,

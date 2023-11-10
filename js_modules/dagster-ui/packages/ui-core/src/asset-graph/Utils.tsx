@@ -48,6 +48,7 @@ export interface GraphData {
   nodes: {[assetId: GraphId]: GraphNode};
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
+  expandedGroups?: string[];
 }
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
@@ -117,7 +118,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
+export const buildSVGPath = featureEnabled(FeatureFlag.flagDAGSidebar)
   ? pathHorizontalDiagonal({
       source: (s: any) => s.source,
       target: (s: any) => s.target,
@@ -251,20 +252,13 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
 
-export function walkTreeUpwards(
-  nodeId: string,
-  graphData: GraphData,
-  callback: (nodeId: string) => void,
-) {
-  // TODO
-  console.log({nodeId, graphData, callback});
-}
+export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:[^@:]+$/.test(str);
 
-export function walkTreeDownwards(
-  nodeId: string,
-  graphData: GraphData,
-  callback: (nodeId: string) => void,
-) {
-  // TODO
-  console.log({nodeId, graphData, callback});
-}
+export const groupIdForNode = (node: GraphNode) =>
+  [
+    node.definition.repository.name,
+    '@',
+    node.definition.repository.location.name,
+    ':',
+    node.definition.groupName,
+  ].join('');

@@ -8,6 +8,7 @@ import {
   MiddleTruncate,
   MenuDivider,
   Spinner,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -109,6 +110,17 @@ export const Node = ({
   const showArrow =
     !isAssetNode || (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
 
+  const ref = React.useRef<HTMLButtonElement | null>(null);
+  React.useLayoutEffect(() => {
+    // When we click on a node in the graph it also changes "isSelected" in the sidebar.
+    // We want to check if the focus is currently in the graph and if it is lets keep it there
+    // Otherwise it means the click happened in the sidebar in which case we should move focus to the element
+    // in the sidebar
+    if (ref.current && isSelected && !isElementInsideSVGViewport(document.activeElement)) {
+      ref.current.focus();
+    }
+  }, [isSelected]);
+
   return (
     <>
       {launchpadElement}
@@ -124,10 +136,17 @@ export const Node = ({
         <BoxWrapper level={level}>
           <Box padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
             {showArrow ? (
-              <div
+              <UnstyledButton
+                $showFocusOutline
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleOpen();
+                }}
+                onKeyDown={(e) => {
+                  if (e.code === 'Space') {
+                    // Prevent the default scrolling behavior
+                    e.preventDefault();
+                  }
                 }}
                 style={{cursor: 'pointer', width: 18}}
               >
@@ -135,25 +154,19 @@ export const Node = ({
                   name="arrow_drop_down"
                   style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
                 />
-              </div>
+              </UnstyledButton>
             ) : (
               <div style={{width: 18}} />
             )}
             <GrayOnHoverBox
-              flex={{
-                direction: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 6,
-                grow: 1,
-                shrink: 1,
-              }}
-              padding={{horizontal: 8, vertical: 5 as any}}
+              onDoubleClick={toggleOpen}
               style={{
                 width: '100%',
                 borderRadius: '8px',
                 ...(isSelected ? {background: Colors.Blue50} : {}),
               }}
+              $showFocusOutline={true}
+              ref={ref}
             >
               <div
                 style={{
@@ -174,8 +187,15 @@ export const Node = ({
                     // stop propagation outside of the popover to prevent parent onClick from being selected
                     e.stopPropagation();
                   }}
+                  onKeyDown={(e) => {
+                    if (e.code === 'Space') {
+                      // Prevent the default scrolling behavior
+                      e.preventDefault();
+                    }
+                  }}
                 >
                   <Popover
+                    usePortal
                     content={
                       <Menu>
                         <MenuItem
@@ -226,7 +246,7 @@ export const Node = ({
                     placement="right"
                     shouldReturnFocusOnClose
                   >
-                    <ExpandMore style={{cursor: 'pointer'}}>
+                    <ExpandMore tabIndex={0} role="button">
                       <Icon name="more_horiz" color={Colors.Gray500} />
                     </ExpandMore>
                   </Popover>
@@ -342,10 +362,21 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
 
 const ExpandMore = styled.div``;
 
-const GrayOnHoverBox = styled(Box)`
+const GrayOnHoverBox = styled(UnstyledButton)`
   border-radius: 8px;
   cursor: pointer;
-  &:hover {
+  user-select: none;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 5px 8px;
+  justify-content: space-between;
+  gap: 6;
+  flex-grow: 1;
+  flex-shrink: 1;
+  &:hover,
+  &:focus-within {
     background: ${Colors.Gray100};
     transition: background 100ms linear;
     ${ExpandMore} {
@@ -369,4 +400,8 @@ function StatusDot({node}: {node: Pick<GraphNode, 'assetKey' | 'definition'>}) {
     expanded: true,
   });
   return <StatusCaseDot statusCase={status.case} />;
+}
+
+function isElementInsideSVGViewport(element: Element | null) {
+  return !!element?.closest('[data-svg-viewport]');
 }

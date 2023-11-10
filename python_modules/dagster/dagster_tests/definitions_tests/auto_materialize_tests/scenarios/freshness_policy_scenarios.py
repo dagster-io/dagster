@@ -4,8 +4,8 @@ from dagster import (
     AssetSelection,
     DailyPartitionsDefinition,
 )
-from dagster._core.definitions.auto_materialize_rule import (
-    AutoMaterializeRule,
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
     TextRuleEvaluationData,
 )

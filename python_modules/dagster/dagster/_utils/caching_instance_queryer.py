@@ -199,30 +199,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return next(iter(records), None)
 
     @cached_method
-    def get_latest_storage_id_for_event_type(
-        self, *, event_type: DagsterEventType
-    ) -> Optional[int]:
-        """Returns the latest storage id across all events of the given event_type.
-
-        Args:
-            event_type (DagsterEventType): The event type to query for.
-        """
-        from dagster._core.event_api import EventRecordsFilter
-
-        latest_record = next(
-            iter(
-                self.instance.get_event_records(
-                    event_records_filter=EventRecordsFilter(event_type=event_type),
-                    limit=1,
-                )
-            ),
-            None,
-        )
-        if latest_record is not None:
-            return latest_record.storage_id
-        return None
-
-    @cached_method
     def _get_latest_materialization_or_observation_storage_ids_by_asset_partition(
         self, *, asset_key: AssetKey
     ) -> Mapping[AssetKeyPartitionKey, Optional[int]]:
