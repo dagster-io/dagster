@@ -272,9 +272,8 @@ You can specify the default dataset where data will be stored as configuration t
 
 If you want to store assets in different datasets, you can specify the dataset as metadata:
 
-```python file=/integrations/bigquery/reference/dataset.py startafter=start_metadata endbefore=end_metadata
+```python file=/integrations/bigquery/reference/dataset.py startafter=start_metadata endbefore=end_metadata dedent=4
 daffodil_data = SourceAsset(key=["daffodil_data"], metadata={"schema": "daffodil"})
-
 
 @asset(metadata={"schema": "iris"})
 def iris_data() -> pd.DataFrame:
@@ -292,9 +291,8 @@ def iris_data() -> pd.DataFrame:
 
 You can also specify the dataset as part of the asset's asset key:
 
-```python file=/integrations/bigquery/reference/dataset.py startafter=start_asset_key endbefore=end_asset_key
+```python file=/integrations/bigquery/reference/dataset.py startafter=start_asset_key endbefore=end_asset_key dedent=4
 daffodil_data = SourceAsset(key=["gcp", "bigquery", "daffodil", "daffodil_data"])
-
 
 @asset(key_prefix=["gcp", "bigquery", "iris"])
 def iris_data() -> pd.DataFrame:

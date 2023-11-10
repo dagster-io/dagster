@@ -273,11 +273,10 @@ You can specify the default schema where data will be stored as configuration to
 
 If you want to store assets in different schemas, you can specify the schema as metadata:
 
-```python file=/integrations/duckdb/reference/schema.py startafter=start_metadata endbefore=end_metadata
+```python file=/integrations/duckdb/reference/schema.py startafter=start_metadata endbefore=end_metadata dedent=4
 daffodil_dataset = SourceAsset(
     key=["daffodil_dataset"], metadata={"schema": "daffodil"}
 )
-
 
 @asset(metadata={"schema": "iris"})
 def iris_dataset() -> pd.DataFrame:
@@ -298,9 +297,8 @@ You can also specify the schema as part of the asset's asset key:
 - **For `SourceAsset`**, use the `key` parameter. The schema should be the second-to-last value in the parameter. In the following example, this would be `daffodil`.
 - **For Software-defined Assets**, use the `key_prefix` parameter. This value will be prepended to the asset name to create the full asset key. In the following example, this would be `iris`.
 
-```python file=/integrations/duckdb/reference/schema.py startafter=start_asset_key endbefore=end_asset_key
+```python file=/integrations/duckdb/reference/schema.py startafter=start_asset_key endbefore=end_asset_key dedent=4
 daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
-
 
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
