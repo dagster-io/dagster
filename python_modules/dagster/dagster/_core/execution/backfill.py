@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -56,6 +56,7 @@ class PartitionBackfill(
             ("reexecution_steps", Optional[Sequence[str]]),
             # only used by asset backfills
             ("serialized_asset_backfill_data", Optional[str]),
+            ("asset_backfill_data", Optional[AssetBackfillData])
         ],
     ),
 ):
@@ -73,6 +74,7 @@ class PartitionBackfill(
         last_submitted_partition_name: Optional[str] = None,
         reexecution_steps: Optional[Sequence[str]] = None,
         serialized_asset_backfill_data: Optional[str] = None,
+        asset_backfill_data: Optional[AssetBackfillData] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -101,6 +103,7 @@ class PartitionBackfill(
             check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
             check.opt_nullable_sequence_param(reexecution_steps, "reexecution_steps", of_type=str),
             check.opt_str_param(serialized_asset_backfill_data, "serialized_asset_backfill_data"),
+            check.opt_inst_param(asset_backfill_data, "asset_backfill_data", AssetBackfillData),
         )
 
     @property
@@ -109,7 +112,7 @@ class PartitionBackfill(
 
     @property
     def is_asset_backfill(self) -> bool:
-        return self.serialized_asset_backfill_data is not None
+        return self.serialized_asset_backfill_data is not None or self.asset_backfill_data is not None
 
     @property
     def bulk_action_type(self) -> BulkActionType:
@@ -132,10 +135,13 @@ class PartitionBackfill(
         return None
 
     def is_valid_serialization(self, workspace: IWorkspace) -> bool:
-        if self.serialized_asset_backfill_data is not None:
-            return AssetBackfillData.is_valid_serialization(
-                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
-            )
+        if self.is_asset_backfill:
+            if self.serialized_asset_backfill_data:
+                return AssetBackfillData.is_valid_serialization(
+                    self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
+                )
+            else:
+                return True
         else:
             return True
 
@@ -148,16 +154,21 @@ class PartitionBackfill(
         if not self.is_valid_serialization(workspace):
             return []
 
-        if self.serialized_asset_backfill_data is not None:
+        if self.is_asset_backfill:
             asset_graph = ExternalAssetGraph.from_workspace(workspace)
-            try:
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    self.serialized_asset_backfill_data,
-                    asset_graph,
-                    self.backfill_timestamp,
-                )
-            except DagsterDefinitionChangedDeserializationError:
-                return []
+            if self.serialized_asset_backfill_data:
+                try:
+                    asset_backfill_data = AssetBackfillData.from_serialized(
+                        self.serialized_asset_backfill_data,
+                        asset_graph,
+                        self.backfill_timestamp,
+                    )
+                except DagsterDefinitionChangedDeserializationError:
+                    return []
+            elif self.asset_backfill_data:
+                asset_backfill_data = self.asset_backfill_data
+            else:
+                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
 
             return asset_backfill_data.get_backfill_status_per_asset_key(asset_graph)
         else:
@@ -169,15 +180,20 @@ class PartitionBackfill(
         if not self.is_valid_serialization(workspace):
             return None
 
-        if self.serialized_asset_backfill_data is not None:
-            try:
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    self.serialized_asset_backfill_data,
-                    ExternalAssetGraph.from_workspace(workspace),
-                    self.backfill_timestamp,
-                )
-            except DagsterDefinitionChangedDeserializationError:
-                return None
+        if self.is_asset_backfill:
+            if self.serialized_asset_backfill_data:
+                try:
+                    asset_backfill_data = AssetBackfillData.from_serialized(
+                        self.serialized_asset_backfill_data,
+                        ExternalAssetGraph.from_workspace(workspace),
+                        self.backfill_timestamp,
+                    )
+                except DagsterDefinitionChangedDeserializationError:
+                    return None
+            elif self.asset_backfill_data:
+                asset_backfill_data = self.asset_backfill_data
+            else:
+                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
 
             return asset_backfill_data.get_target_partitions_subset(asset_key)
         else:
@@ -189,16 +205,21 @@ class PartitionBackfill(
         if not self.is_valid_serialization(workspace):
             return None
 
-        if self.serialized_asset_backfill_data is not None:
-            try:
-                asset_graph = ExternalAssetGraph.from_workspace(workspace)
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    self.serialized_asset_backfill_data,
-                    asset_graph,
-                    self.backfill_timestamp,
-                )
-            except DagsterDefinitionChangedDeserializationError:
-                return None
+        if self.is_asset_backfill:
+            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+            if self.serialized_asset_backfill_data:
+                try:
+                    asset_backfill_data = AssetBackfillData.from_serialized(
+                        self.serialized_asset_backfill_data,
+                        asset_graph,
+                        self.backfill_timestamp,
+                    )
+                except DagsterDefinitionChangedDeserializationError:
+                    return None
+            elif self.asset_backfill_data:
+                asset_backfill_data = self.asset_backfill_data
+            else:
+                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
 
             return asset_backfill_data.get_target_root_partitions_subset(asset_graph)
         else:
@@ -208,15 +229,20 @@ class PartitionBackfill(
         if not self.is_valid_serialization(workspace):
             return 0
 
-        if self.serialized_asset_backfill_data is not None:
-            try:
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    self.serialized_asset_backfill_data,
-                    ExternalAssetGraph.from_workspace(workspace),
-                    self.backfill_timestamp,
-                )
-            except DagsterDefinitionChangedDeserializationError:
-                return 0
+        if self.is_asset_backfill:
+            if self.serialized_asset_backfill_data:
+                try:
+                    asset_backfill_data = AssetBackfillData.from_serialized(
+                        self.serialized_asset_backfill_data,
+                        ExternalAssetGraph.from_workspace(workspace),
+                        self.backfill_timestamp,
+                    )
+                except DagsterDefinitionChangedDeserializationError:
+                    return 0
+            elif self.asset_backfill_data:
+                asset_backfill_data = self.asset_backfill_data
+            else:
+                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
 
             return asset_backfill_data.get_num_partitions()
         else:
@@ -229,15 +255,20 @@ class PartitionBackfill(
         if not self.is_valid_serialization(workspace):
             return []
 
-        if self.serialized_asset_backfill_data is not None:
-            try:
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    self.serialized_asset_backfill_data,
-                    ExternalAssetGraph.from_workspace(workspace),
-                    self.backfill_timestamp,
-                )
-            except DagsterDefinitionChangedDeserializationError:
-                return None
+        if self.is_asset_backfill:
+            if self.serialized_asset_backfill_data:
+                try:
+                    asset_backfill_data = AssetBackfillData.from_serialized(
+                        self.serialized_asset_backfill_data,
+                        ExternalAssetGraph.from_workspace(workspace),
+                        self.backfill_timestamp,
+                    )
+                except DagsterDefinitionChangedDeserializationError:
+                    return None
+            elif self.asset_backfill_data:
+                asset_backfill_data = self.asset_backfill_data
+            else:
+                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
 
             return asset_backfill_data.get_partition_names()
         else:
@@ -285,6 +316,7 @@ class PartitionBackfill(
             error=self.error,
             asset_selection=self.asset_selection,
             serialized_asset_backfill_data=self.serialized_asset_backfill_data,
+            asset_backfill_data=self.asset_backfill_data,
         )
 
     def with_partition_checkpoint(self, last_submitted_partition_name):
@@ -302,6 +334,7 @@ class PartitionBackfill(
             error=self.error,
             asset_selection=self.asset_selection,
             serialized_asset_backfill_data=self.serialized_asset_backfill_data,
+            asset_backfill_data=self.asset_backfill_data,
         )
 
     def with_error(self, error):
@@ -319,6 +352,7 @@ class PartitionBackfill(
             error=error,
             asset_selection=self.asset_selection,
             serialized_asset_backfill_data=self.serialized_asset_backfill_data,
+            asset_backfill_data=self.asset_backfill_data,
         )
 
     def with_asset_backfill_data(
@@ -339,9 +373,8 @@ class PartitionBackfill(
             last_submitted_partition_name=self.last_submitted_partition_name,
             error=self.error,
             asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=asset_backfill_data.serialize(
-                dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
-            ),
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=asset_backfill_data,
         )
 
     @classmethod
@@ -364,6 +397,14 @@ class PartitionBackfill(
         the anchor asset, as well as all partitions of other selected assets that are downstream
         of those partitions of the anchor asset.
         """
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=partition_names,
+            asset_selection=asset_selection,
+            dynamic_partitions_store=dynamic_partitions_store,
+            all_partitions=all_partitions,
+            backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+        )
         return cls(
             backfill_id=backfill_id,
             status=BulkActionStatus.REQUESTED,
@@ -371,14 +412,8 @@ class PartitionBackfill(
             tags=tags,
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
-            serialized_asset_backfill_data=AssetBackfillData.from_asset_partitions(
-                asset_graph=asset_graph,
-                partition_names=partition_names,
-                asset_selection=asset_selection,
-                dynamic_partitions_store=dynamic_partitions_store,
-                all_partitions=all_partitions,
-                backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
-            ).serialize(dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph),
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=asset_backfill_data,
         )
 
     @classmethod
@@ -391,16 +426,18 @@ class PartitionBackfill(
         dynamic_partitions_store: DynamicPartitionsStore,
         partitions_by_assets: Sequence[PartitionsByAssetSelector],
     ):
+        asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
+            asset_graph=asset_graph,
+            dynamic_partitions_store=dynamic_partitions_store,
+            backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+            partitions_by_assets=partitions_by_assets,
+        )
         return cls(
             backfill_id=backfill_id,
             status=BulkActionStatus.REQUESTED,
             from_failure=False,
             tags=tags,
             backfill_timestamp=backfill_timestamp,
-            serialized_asset_backfill_data=AssetBackfillData.from_partitions_by_assets(
-                asset_graph=asset_graph,
-                dynamic_partitions_store=dynamic_partitions_store,
-                backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
-                partitions_by_assets=partitions_by_assets,
-            ).serialize(dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph),
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=asset_backfill_data,
         )
