@@ -37,8 +37,8 @@ def image_sensor(context: SensorEvaluationContext):
     new_images = [
         img_filename
         for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))
-        if not context.instance.has_dynamic_partition(
-            images_partitions_def.name, img_filename
+        if not images_partitions_def.has_partition_key(
+            img_filename, dynamic_partitions_store=context.instance
         )
     ]
 

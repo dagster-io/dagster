@@ -30,8 +30,9 @@ class MyIOManager(IOManager):
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
     def load_input(self, context: InputContext):
-        table_name = context.upstream_output.config["table"]
-        return read_dataframe_from_table(name=table_name)
+        if context.upstream_output:
+            table_name = context.upstream_output.config["table"]
+            return read_dataframe_from_table(name=table_name)
 
 
 @io_manager(output_config_schema={"table": str})

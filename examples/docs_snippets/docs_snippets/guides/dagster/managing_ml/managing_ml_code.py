@@ -97,15 +97,23 @@ def conditional_machine_learning_model(context: AssetExecutionContext):
         AssetKey(["conditional_machine_learning_model"])
     )
     if materialization is None:
-        yield Output(reg, metadata={"model_accuracy": reg.score(X_test, y_test)})
+        yield Output(reg, metadata={"model_accuracy": float(reg.score(X_test, y_test))})
 
     else:
-        previous_model_accuracy = materialization.asset_materialization.metadata[
-            "model_accuracy"
-        ]
+        previous_model_accuracy = None
+        if materialization.asset_materialization and isinstance(
+            materialization.asset_materialization.metadata["model_accuracy"].value,
+            float,
+        ):
+            previous_model_accuracy = float(
+                materialization.asset_materialization.metadata["model_accuracy"].value
+            )
         new_model_accuracy = reg.score(X_test, y_test)
-        if new_model_accuracy > previous_model_accuracy:
-            yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
+        if (
+            previous_model_accuracy is None
+            or new_model_accuracy > previous_model_accuracy
+        ):
+            yield Output(reg, metadata={"model_accuracy": float(new_model_accuracy)})
 
 
 ## conditional_monitoring_end
