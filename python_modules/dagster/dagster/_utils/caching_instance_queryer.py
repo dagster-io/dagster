@@ -34,7 +34,10 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partition_key,
     get_time_partitions_def,
 )
-from dagster._core.errors import DagsterDefinitionChangedDeserializationError
+from dagster._core.errors import (
+    DagsterDefinitionChangedDeserializationError,
+    DagsterInvalidDefinitionError,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
@@ -595,8 +598,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                                     current_time=self.evaluation_time,
                                 )
                             )
-                        except Exception as e:  # pylint: disable=broad-except
-                            raise Exception("Could not map partitions between {...}") from e
+                        except DagsterInvalidDefinitionError as e:
+                            # add a more helpful error message to the stack
+                            raise DagsterInvalidDefinitionError(
+                                f"Could not map partitions between parent {asset_key.to_string()} "
+                                f"and child {child.to_string()}."
+                            ) from e
                         for child_partition in child_partitions_subset.get_partition_keys():
                             # we need to see if the child is planned for the same run, but this is
                             # expensive, so we try to avoid doing so in as many situations as possible
