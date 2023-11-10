@@ -2,7 +2,7 @@ import contextlib
 import enum
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 
 import pytest
 from dagster import (
@@ -769,3 +769,103 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
         "RawIOManager cm teardown",
         "ConfigIOManager cm teardown",
     ]
+
+
+def test_multiple_nested_optional_resources() -> None:
+    class InnerResource(ConfigurableResource):
+        a_string: str = "foo"
+
+    class OuterResource(ConfigurableResource):
+        inner: InnerResource
+
+    class MainResource(ConfigurableResource):
+        outer: Optional[OuterResource]
+
+    executed = {}
+
+    @asset
+    def expects_none_asset(main: MainResource):
+        assert main.outer is None
+        executed["expects_none_asset"] = True
+
+    assert (
+        Definitions(
+            assets=[expects_none_asset],
+            resources={"main": MainResource(outer=None)},
+        )
+        .get_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+    assert executed["expects_none_asset"]
+
+    @asset
+    def hello_world_asset(main: MainResource):
+        assert main.outer and main.outer.inner.a_string == "foo"
+        executed["hello_world_asset"] = True
+
+    assert (
+        Definitions(
+            assets=[hello_world_asset],
+            resources={"main": MainResource(outer=OuterResource(inner=InnerResource()))},
+        )
+        .get_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+    assert executed["hello_world_asset"]
+
+
+def test_multiple_nested_optional_resources_complex() -> None:
+    class InnermostResource(ConfigurableResource):
+        a_string: str = "foo"
+
+    class InnerResource(ConfigurableResource):
+        innermost: Optional[InnermostResource]
+
+    class OuterResource(ConfigurableResource):
+        inner: Optional[InnerResource]
+
+    class MainResource(ConfigurableResource):
+        outer: Optional[OuterResource]
+
+    executed = {}
+
+    @asset
+    def my_asset(main: MainResource):
+        if main.outer and main.outer.inner and main.outer.inner.innermost:
+            executed["my_asset"] = main.outer.inner.innermost.a_string
+        else:
+            executed["my_asset"] = None
+
+    for main_resource in [
+        MainResource(outer=None),
+        MainResource(outer=OuterResource(inner=None)),
+        MainResource(outer=OuterResource(inner=InnerResource(innermost=None))),
+    ]:
+        assert (
+            Definitions(
+                assets=[my_asset],
+                resources={"main": main_resource},
+            )
+            .get_implicit_global_asset_job_def()
+            .execute_in_process()
+            .success
+        )
+        assert executed["my_asset"] == None
+        executed.clear()
+
+    main_resource = MainResource(
+        outer=OuterResource(inner=InnerResource(innermost=InnermostResource(a_string="bar")))
+    )
+    assert (
+        Definitions(
+            assets=[my_asset],
+            resources={"main": main_resource},
+        )
+        .get_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+    assert executed["my_asset"] == "bar"
+    executed.clear()
