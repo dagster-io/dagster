@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -56,7 +56,7 @@ class PartitionBackfill(
             ("reexecution_steps", Optional[Sequence[str]]),
             # only used by asset backfills
             ("serialized_asset_backfill_data", Optional[str]),
-            ("asset_backfill_data", Optional[AssetBackfillData])
+            ("asset_backfill_data", Optional[AssetBackfillData]),
         ],
     ),
 ):
@@ -112,7 +112,9 @@ class PartitionBackfill(
 
     @property
     def is_asset_backfill(self) -> bool:
-        return self.serialized_asset_backfill_data is not None or self.asset_backfill_data is not None
+        return (
+            self.serialized_asset_backfill_data is not None or self.asset_backfill_data is not None
+        )
 
     @property
     def bulk_action_type(self) -> BulkActionType:
@@ -138,7 +140,8 @@ class PartitionBackfill(
         if self.is_asset_backfill:
             if self.serialized_asset_backfill_data:
                 return AssetBackfillData.is_valid_serialization(
-                    self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
                 )
             else:
                 return True
@@ -168,7 +171,9 @@ class PartitionBackfill(
             elif self.asset_backfill_data:
                 asset_backfill_data = self.asset_backfill_data
             else:
-                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
+                check.failed(
+                    "Expected either serialized_asset_backfill_data or asset_backfill_data"
+                )
 
             return asset_backfill_data.get_backfill_status_per_asset_key(asset_graph)
         else:
@@ -193,7 +198,9 @@ class PartitionBackfill(
             elif self.asset_backfill_data:
                 asset_backfill_data = self.asset_backfill_data
             else:
-                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
+                check.failed(
+                    "Expected either serialized_asset_backfill_data or asset_backfill_data"
+                )
 
             return asset_backfill_data.get_target_partitions_subset(asset_key)
         else:
@@ -219,7 +226,9 @@ class PartitionBackfill(
             elif self.asset_backfill_data:
                 asset_backfill_data = self.asset_backfill_data
             else:
-                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
+                check.failed(
+                    "Expected either serialized_asset_backfill_data or asset_backfill_data"
+                )
 
             return asset_backfill_data.get_target_root_partitions_subset(asset_graph)
         else:
@@ -242,7 +251,9 @@ class PartitionBackfill(
             elif self.asset_backfill_data:
                 asset_backfill_data = self.asset_backfill_data
             else:
-                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
+                check.failed(
+                    "Expected either serialized_asset_backfill_data or asset_backfill_data"
+                )
 
             return asset_backfill_data.get_num_partitions()
         else:
@@ -268,7 +279,9 @@ class PartitionBackfill(
             elif self.asset_backfill_data:
                 asset_backfill_data = self.asset_backfill_data
             else:
-                check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
+                check.failed(
+                    "Expected either serialized_asset_backfill_data or asset_backfill_data"
+                )
 
             return asset_backfill_data.get_partition_names()
         else:
