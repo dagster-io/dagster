@@ -323,11 +323,21 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         poll_timeout: Optional[float],
     ):
         self._fivetran_resource_def = fivetran_resource_def
-        self._fivetran_instance: FivetranResource = (
-            fivetran_resource_def.process_config_and_initialize()
-            if isinstance(fivetran_resource_def, FivetranResource)
-            else fivetran_resource_def(build_init_resource_context())
-        )
+        if isinstance(fivetran_resource_def, FivetranResource):
+            # We hold a copy which is not fully processed, this retains e.g. EnvVars for
+            # display in the UI
+            self._partially_initialized_fivetran_instance = fivetran_resource_def
+            # The processed copy is used to query the Fivetran instance
+            self._fivetran_instance: (
+                FivetranResource
+            ) = self._partially_initialized_fivetran_instance.process_config_and_initialize()
+        else:
+            self._partially_initialized_fivetran_instance = fivetran_resource_def(
+                build_init_resource_context()
+            )
+            self._fivetran_instance: (
+                FivetranResource
+            ) = self._partially_initialized_fivetran_instance
 
         self._key_prefix = key_prefix
         self._connector_to_group_fn = connector_to_group_fn
@@ -413,7 +423,9 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         return [
             _build_fivetran_assets_from_metadata(
                 meta,
-                {"fivetran": self._fivetran_instance.get_resource_definition()},
+                {
+                    "fivetran": self._partially_initialized_fivetran_instance.get_resource_definition()
+                },
                 poll_interval=self._poll_interval,
                 poll_timeout=self._poll_timeout,
             )
