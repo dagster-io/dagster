@@ -394,7 +394,7 @@
                 "path": "/deployment/guides/docker"
               },
               {
-                "title": "Deploying to Amazon Web Services EC2/ECS",
+                "title": "Deploying to Amazon Web Services",
                 "path": "/deployment/guides/aws"
               },
               {
