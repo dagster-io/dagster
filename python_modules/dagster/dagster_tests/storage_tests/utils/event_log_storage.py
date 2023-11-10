@@ -3872,6 +3872,10 @@ class TestEventLogStorage:
         foo_info = storage.get_concurrency_info("foo")
         assert foo_info.active_slot_count == 1
         assert foo_info.active_run_ids == {run_id}
+        assert len(foo_info.claimed_slots) == 1
+        assert foo_info.claimed_slots[0].step_key == "a"
+        assert len(foo_info.pending_steps) == 5
+        assert len([step for step in foo_info.pending_steps if step.assigned_timestamp]) == 4
 
         # a is assigned, has the active slot, the rest are not assigned
         assert storage.check_concurrency_claim("foo", run_id, "a").assigned_timestamp is not None
