@@ -207,19 +207,19 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                    print(f"The type of the context is {type(context)}")
-                    print(f"The partition keys are {context.asset_partition_keys}")
-                    multi_partition_key_mapping = cast(
-                        MultiPartitionKey, context.asset_partition_key
-                    ).keys_by_dimension
+                    partition_keys = context.asset_partition_keys
                     for part in context.asset_partitions_def.partitions_defs:
-                        partition_key = multi_partition_key_mapping[part.name]
                         if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
-                            partitions = part.partitions_def.time_window_for_partition_key(
-                                partition_key
-                            )
+                            partitions = context.asset_partitions_time_window
                         else:
-                            partitions = [partition_key]
+                            # is a static partition, need to iterate through all the keys and collect the unique values
+                            partitions_set = set()
+                            for key in partition_keys:
+                                partitions_set.add(
+                                    cast(MultiPartitionKey, key).keys_by_dimension[part.name]
+                                )
+
+                            partitions = list(partitions_set)
 
                         partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
                         if partition_expr is None:
