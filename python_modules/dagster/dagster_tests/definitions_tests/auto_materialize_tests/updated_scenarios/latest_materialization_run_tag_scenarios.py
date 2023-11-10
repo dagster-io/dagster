@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, AutoMaterializeRule, LatestMaterializationHasRunTag
+from dagster import AutoMaterializeAssetPartitionFilter, AutoMaterializePolicy, AutoMaterializeRule
 
 from ..asset_daemon_scenario import AssetDaemonScenario
 from ..base_scenario import run_request
@@ -9,17 +9,9 @@ filter_latest_run_tag_key_policy = (
     .without_rules(AutoMaterializeRule.materialize_on_parent_updated())
     .with_rules(
         AutoMaterializeRule.materialize_on_parent_updated(
-            ignore_updates=LatestMaterializationHasRunTag("some_key")
-        )
-    )
-)
-
-filter_latest_run_tag_key_and_value_policy = (
-    AutoMaterializePolicy.eager()
-    .without_rules(AutoMaterializeRule.materialize_on_parent_updated())
-    .with_rules(
-        AutoMaterializeRule.materialize_on_parent_updated(
-            ignore_updates=LatestMaterializationHasRunTag("some_key", "some_value")
+            updated_parent_filter=AutoMaterializeAssetPartitionFilter(
+                latest_materialization_run_forbidden_tag_keys={"some_key"}
+            )
         )
     )
 )
@@ -45,17 +37,6 @@ latest_materialization_run_tag_scenarios = [
         )
         .evaluate_tick()
         .assert_requested_runs(),
-    ),
-    AssetDaemonScenario(
-        id="latest_parent_materialization_has_ignored_key_but_not_value",
-        initial_state=two_assets_in_sequence.with_asset_properties(
-            auto_materialize_policy=filter_latest_run_tag_key_and_value_policy
-        ),
-        execution_fn=lambda state: state.with_runs(
-            run_request(["A", "B"]), run_request(["A"], tags={"some_key": "some_other_value"})
-        )
-        .evaluate_tick()
-        .assert_requested_runs(run_request(["B"])),
     ),
     AssetDaemonScenario(
         id="earlier_parent_materialization_has_ignored_tag",

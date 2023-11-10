@@ -8,6 +8,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    FrozenSet,
     Mapping,
     NamedTuple,
     Optional,
@@ -18,7 +19,7 @@ from typing import (
 import pytz
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluationData,
@@ -339,7 +340,7 @@ class AutoMaterializeRule(ABC):
     @public
     @staticmethod
     def materialize_on_parent_updated(
-        ignore_updates: Optional["LatestMaterializationHasRunTag"] = None
+        updated_parent_filter: Optional["AutoMaterializeAssetPartitionFilter"] = None
     ) -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.
@@ -348,11 +349,11 @@ class AutoMaterializeRule(ABC):
         asset, this rule will only fire for the most recent partition of the downstream.
 
         Args:
-            ignore_updates (Optional[LatestMaterializationHasRunTag]): Filter to apply to updated
-                parents. If a parent was updated but matches the filter criteria, then it won't
-                count as updated for the sake of this rule.
+            updated_parent_filter (Optional[AutoMaterializeAssetPartitionFilter]): Filter to apply
+                to updated parents. If a parent was updated but does not pass the filter criteria,
+                then it won't count as updated for the sake of this rule.
         """
-        return MaterializeOnParentUpdatedRule(ignore_updates=ignore_updates)
+        return MaterializeOnParentUpdatedRule(updated_parent_filter=updated_parent_filter)
 
     @public
     @staticmethod
@@ -569,17 +570,37 @@ class MaterializeOnCronRule(
 
 
 @whitelist_for_serdes
-class LatestMaterializationHasRunTag(NamedTuple):
-    run_tag_key: str
-    run_tag_value: Optional[str] = None
+@experimental
+class AutoMaterializeAssetPartitionFilter(
+    NamedTuple(
+        "_AutoMaterializeAssetPartitionFilter",
+        [("latest_materialization_run_forbidden_tag_keys", Optional[FrozenSet[str]])],
+    )
+):
+    """A filter that can be applied to an asset partition, during auto-materialize evaluation, and
+    returns a boolean for whether it passes.
 
-    def matches(
-        self, context: RuleEvaluationContext, asset_partition: AssetKeyPartitionKey
-    ) -> bool:
+    Attributes:
+        latest_materialization_run_forbidden_tag_keys (Optional[Sequence[str]]): `passes` returns
+            False if the run responsible for the latest materialization of the asset partition has
+            any of these tag keys.
+    """
+
+    def __new__(cls, latest_materialization_run_forbidden_tag_keys: Optional[AbstractSet[str]]):
+        return super().__new__(
+            cls,
+            latest_materialization_run_forbidden_tag_keys=frozenset(
+                latest_materialization_run_forbidden_tag_keys
+            )
+            if latest_materialization_run_forbidden_tag_keys
+            else None,
+        )
+
+    def passes(self, context: RuleEvaluationContext, asset_partition: AssetKeyPartitionKey) -> bool:
         if asset_partition in context.will_materialize_mapping.get(
             asset_partition.asset_key, set()
         ):
-            return True
+            return False
 
         materialization_record = (
             context.instance_queryer.get_latest_materialization_or_observation_record(
@@ -588,13 +609,16 @@ class LatestMaterializationHasRunTag(NamedTuple):
         )
         if materialization_record is None:
             check.failed(
-                f"LatestMaterializationHasRunTag was invoked for asset partition {asset_partition},"
+                f"AutoMaterializeAssetPartitionFilter was invoked for asset partition {asset_partition},"
                 " which was not updated since previous tick. It should only be invoked for asset"
                 " partitions updated since the previous tick."
             )
 
-        return context.instance_queryer.run_has_tag(
-            materialization_record.run_id, self.run_tag_key, self.run_tag_value
+        return all(
+            not context.instance_queryer.run_has_tag(
+                materialization_record.run_id, run_tag_key, None
+            )
+            for run_tag_key in self.latest_materialization_run_forbidden_tag_keys or set()
         )
 
 
@@ -603,7 +627,7 @@ class MaterializeOnParentUpdatedRule(
     AutoMaterializeRule,
     NamedTuple(
         "_MaterializeOnParentUpdatedRule",
-        [("ignore_updates", Optional[LatestMaterializationHasRunTag])],
+        [("updated_parent_filter", Optional[AutoMaterializeAssetPartitionFilter])],
     ),
 ):
     @property
@@ -650,7 +674,8 @@ class MaterializeOnParentUpdatedRule(
             updated_parents = {
                 parent.asset_key
                 for parent in updated_parent_asset_partitions
-                if self.ignore_updates is None or not self.ignore_updates.matches(context, parent)
+                if self.updated_parent_filter is None
+                or self.updated_parent_filter.passes(context, parent)
             }
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
 
