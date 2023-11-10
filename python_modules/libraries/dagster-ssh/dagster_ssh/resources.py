@@ -7,7 +7,7 @@ from typing import Optional
 import paramiko
 from dagster import (
     BoolSource,
-    Field,
+    Field as DagsterField,
     IntSource,
     StringSource,
     _check as check,
@@ -20,7 +20,7 @@ from dagster._utils import mkdir_p
 from paramiko.client import SSHClient
 from paramiko.config import SSH_PORT
 from pydantic import (
-    Field as PyField,
+    Field,
     PrivateAttr,
 )
 from sshtunnel import SSHTunnelForwarder
@@ -43,35 +43,33 @@ class SSHResource(ConfigurableResource):
     ref: https://github.com/paramiko/paramiko
     """
 
-    remote_host: str = PyField(description="Remote host to connect to")
-    remote_port: Optional[int] = PyField(default=None, description="Port of remote host to connect")
-    username: Optional[str] = PyField(
-        default=None, description="Username to connect to remote host"
-    )
-    password: Optional[str] = PyField(
+    remote_host: str = Field(description="Remote host to connect to")
+    remote_port: Optional[int] = Field(default=None, description="Port of remote host to connect")
+    username: Optional[str] = Field(default=None, description="Username to connect to remote host")
+    password: Optional[str] = Field(
         default=None, description="Password of the username to connect to remote host"
     )
-    key_file: Optional[str] = PyField(
+    key_file: Optional[str] = Field(
         default=None, description="Key file to use to connect to remote host"
     )
-    key_string: Optional[str] = PyField(
+    key_string: Optional[str] = Field(
         default=None, description="Key string to use to connect to remote host"
     )
-    timeout: int = PyField(
+    timeout: int = Field(
         default=10, description="Timeout for the attempt to connect to remote host"
     )
-    keepalive_interval: int = PyField(
+    keepalive_interval: int = Field(
         default=30,
         description="Send a keepalive packet to remote host every keepalive_interval seconds",
     )
-    compress: bool = PyField(default=True, description="Compress the transport stream")
-    no_host_key_check: bool = PyField(
+    compress: bool = Field(default=True, description="Compress the transport stream")
+    no_host_key_check: bool = Field(
         default=True,
         description=(
             "If True, the host key will not be verified. This is unsafe and not recommended"
         ),
     )
-    allow_host_key_change: bool = PyField(
+    allow_host_key_change: bool = Field(
         default=False,
         description="If True, allow connecting to hosts whose host key has changed",
     )
@@ -95,8 +93,7 @@ class SSHResource(ConfigurableResource):
             if self._logger:
                 self._logger.debug(
                     "username to ssh to host: %s is not specified. Using system's default provided"
-                    " by getpass.getuser()"
-                    % self.remote_host
+                    " by getpass.getuser()" % self.remote_host
                 )
             self.username = getpass.getuser()
 
@@ -183,6 +180,10 @@ class SSHResource(ConfigurableResource):
             local_bind_address = ("localhost",)
 
         # Will prefer key string if specified, otherwise use the key file
+        if self._key_obj and self.key_file:
+            self.log.warning(
+                "SSHResource: key_string and key_file both specified as config. Using key_string."
+            )
         pkey = self._key_obj if self._key_obj else self.key_file
 
         if self.password and self.password.strip():
@@ -245,48 +246,48 @@ class SSHResource(ConfigurableResource):
 @dagster_maintained_resource
 @resource(
     config_schema={
-        "remote_host": Field(
+        "remote_host": DagsterField(
             StringSource, description="remote host to connect to", is_required=True
         ),
-        "remote_port": Field(
+        "remote_port": DagsterField(
             IntSource,
             description="port of remote host to connect (Default is paramiko SSH_PORT)",
             is_required=False,
             default_value=SSH_PORT,
         ),
-        "username": Field(
+        "username": DagsterField(
             StringSource, description="username to connect to the remote_host", is_required=False
         ),
-        "password": Field(
+        "password": DagsterField(
             StringSource,
             description="password of the username to connect to the remote_host",
             is_required=False,
         ),
-        "key_file": Field(
+        "key_file": DagsterField(
             StringSource,
             description="key file to use to connect to the remote_host.",
             is_required=False,
         ),
-        "key_string": Field(
+        "key_string": DagsterField(
             StringSource,
             description="key string to use to connect to remote_host",
             is_required=False,
         ),
-        "timeout": Field(
+        "timeout": DagsterField(
             IntSource,
             description="timeout for the attempt to connect to the remote_host.",
             is_required=False,
             default_value=10,
         ),
-        "keepalive_interval": Field(
+        "keepalive_interval": DagsterField(
             IntSource,
             description="send a keepalive packet to remote host every keepalive_interval seconds",
             is_required=False,
             default_value=30,
         ),
-        "compress": Field(BoolSource, is_required=False, default_value=True),
-        "no_host_key_check": Field(BoolSource, is_required=False, default_value=True),
-        "allow_host_key_change": Field(
+        "compress": DagsterField(BoolSource, is_required=False, default_value=True),
+        "no_host_key_check": DagsterField(BoolSource, is_required=False, default_value=True),
+        "allow_host_key_change": DagsterField(
             BoolSource, description="[Deprecated]", is_required=False, default_value=False
         ),
     }
