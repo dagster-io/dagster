@@ -268,15 +268,31 @@ SELECT *
 
 You may want to have different assets stored in different BigQuery datasets. The BigQuery I/O manager allows you to specify the dataset in several ways.
 
-If you want all of your assets to be stored in the same dataset, you can specify the dataset as configuration to the I/O manager, like we did in [Step 1: Configure the BigQuery I/O manager](/integrations/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
+You can specify the default dataset where data will be stored as configuration to the I/O manager, like we did in [Step 1: Configure the BigQuery I/O manager](/integrations/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
 
-If you want to store assets in different datasets, you can specify the dataset as part of the the asset's asset key:
+If you want to store assets in different datasets, you can specify the dataset as metadata:
+
+```python file=/integrations/bigquery/reference/dataset.py startafter=start_metadata endbefore=end_metadata
+daffodil_data = SourceAsset(key=["daffodil_data"], metadata={"schema": "daffodil"})
+
+
+@asset(metadata={"schema": "iris"})
+def iris_data() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+```
+
+You can also specify the dataset as part of the asset's asset key:
 
 ```python file=/integrations/bigquery/reference/dataset.py startafter=start_asset_key endbefore=end_asset_key
-import pandas as pd
-
-from dagster import SourceAsset, asset
-
 daffodil_data = SourceAsset(key=["gcp", "bigquery", "daffodil", "daffodil_data"])
 
 
@@ -297,11 +313,11 @@ def iris_data() -> pd.DataFrame:
 The dataset will be the last prefix before the asset's name. In this example, the `iris_data` asset will be stored in the `IRIS` dataset, and the `daffodil_data` asset will be found in the `DAFFODIL` dataset.
 
 <Note>
-  The two options for specifying the dataset are mutually exclusive. If you
-  provide <code>dataset</code> configuration to the I/O manager, you cannot also
-  provide it via the asset key and vice versa. If no <code>dataset</code> is
-  provided, either from configuration or asset keys, the default dataset{" "}
-  <code>PUBLIC</code> will be used.
+  The dataset is determined in this order: 1. If the dataset is set via
+  metadata, that dataset will be used 2. Otherwise, if there is a key_prefix,
+  that dataset will be used 3. Otherwise, the dataset set as configuration on
+  the I/O manager will be used. 4. If none of the above are provided, the
+  default dataset will be PUBLIC
 </Note>
 
 ---
