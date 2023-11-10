@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+import threading
 from collections import namedtuple
 from typing import (
     Any,
@@ -15,6 +16,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 import dagster._check as check
@@ -48,8 +50,18 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.scheduler.instigation import TickStatus
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    SINGLETON_REPOSITORY_NAME,
+)
+from dagster._core.host_representation.origin import (
+    ExternalInstigatorOrigin,
+    ExternalRepositoryOrigin,
+    InProcessCodeLocationOrigin,
+)
+from dagster._core.scheduler.instigation import (
+    SensorInstigatorData,
+    TickStatus,
+)
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -57,9 +69,9 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import (
-    CURSOR_KEY,
-    FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-    FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
     get_current_evaluation_id,
 )
@@ -76,9 +88,11 @@ def get_code_location_origin(
     attribute_name = (
         f"_asset_daemon_target_{hashlib.md5(str(scenario_state.asset_specs).encode()).hexdigest()}"
     )
-    globals()[attribute_name] = Definitions(
-        assets=scenario_state.assets, executor=in_process_executor
-    )
+    if attribute_name not in globals():
+        globals()[attribute_name] = Definitions(
+            assets=scenario_state.assets, executor=in_process_executor
+        )
+
     return InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -186,6 +200,7 @@ class AssetDaemonScenarioState(NamedTuple):
     # this is set by the scenario runner
     scenario_instance: Optional[DagsterInstance] = None
     is_daemon: bool = False
+    sensor_name: Optional[str] = None
 
     @property
     def instance(self) -> DagsterInstance:
@@ -363,16 +378,61 @@ class AssetDaemonScenarioState(NamedTuple):
                 workspace.get_code_location_error("test_location") is None
             ), workspace.get_code_location_error("test_location")
 
+            sensor = (
+                next(
+                    iter(workspace.get_code_location("test_location").get_repositories().values())
+                ).get_external_sensor(self.sensor_name)
+                if self.sensor_name
+                else None
+            )
+            if sensor:
+                # start sensor if it hasn't started already
+                self.instance.start_sensor(sensor)
+
+                schedule_storage = check.not_none(self.instance.schedule_storage)
+                # update the last tick timestamp so that the tick won't need to wait
+                # 30 seconds if it already just ran
+                stored_state = check.not_none(
+                    schedule_storage.get_instigator_state(
+                        sensor.get_external_origin_id(), sensor.selector_id
+                    )
+                )
+                data = cast(SensorInstigatorData, stored_state.instigator_data)
+                schedule_storage.update_instigator_state(
+                    stored_state.with_data(data._replace(last_tick_timestamp=None))
+                )
+
             list(
-                AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                AssetDaemon(pre_sensor_interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
                     workspace_context,
-                    {},
+                    debug_crash_flags={},
+                    sensor_state_lock=threading.Lock(),
                 )
             )
+
+            if sensor:
+                auto_materialize_instigator_state = check.not_none(
+                    self.instance.get_instigator_state(
+                        sensor.get_external_origin_id(), sensor.selector_id
+                    )
+                )
+                raw_cursor = (
+                    cast(
+                        SensorInstigatorData,
+                        check.not_none(auto_materialize_instigator_state).instigator_data,
+                    ).cursor
+                    or AssetDaemonCursor.empty().serialize()
+                )
+            else:
+                raw_cursor = self.instance.daemon_cursor_storage.get_cursor_values(
+                    {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY}
+                ).get(
+                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
+                    AssetDaemonCursor.empty().serialize(),
+                )
+
             new_cursor = AssetDaemonCursor.from_serialized(
-                self.instance.daemon_cursor_storage.get_cursor_values({CURSOR_KEY}).get(
-                    CURSOR_KEY, AssetDaemonCursor.empty().serialize()
-                ),
+                raw_cursor,
                 self.asset_graph,
             )
             new_run_requests = [
@@ -413,14 +473,34 @@ class AssetDaemonScenarioState(NamedTuple):
         message = f"\nExpected: \n\n{expected_str}\n\nActual: \n\n{actual_str}\n"
         self.logger.error(message)
 
+    def get_sensor_origin(self):
+        if not self.sensor_name:
+            return None
+        code_location_origin = get_code_location_origin(self)
+        return ExternalInstigatorOrigin(
+            external_repository_origin=ExternalRepositoryOrigin(
+                code_location_origin=code_location_origin,
+                repository_name=SINGLETON_REPOSITORY_NAME,
+            ),
+            instigator_name=self.sensor_name,
+        )
+
     def _assert_requested_runs_daemon(self, expected_run_requests: Sequence[RunRequest]) -> None:
         """Additional assertions for daemon mode. Checks that the most recent tick matches the
         expected requested asset partitions.
         """
+        sensor_origin = self.get_sensor_origin()
+        if sensor_origin:
+            origin_id = sensor_origin.get_id()
+            selector_id = sensor_origin.get_selector().get_id()
+        else:
+            origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
+            selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
+
         latest_tick = sorted(
             self.instance.get_ticks(
-                origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-                selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+                origin_id=origin_id,
+                selector_id=selector_id,
             ),
             key=lambda tick: tick.tick_id,
         )[-1]
@@ -476,7 +556,10 @@ class AssetDaemonScenarioState(NamedTuple):
         """Additional assertions for daemon mode. Checks that the evaluation for the given asset
         contains the expected run ids.
         """
-        current_evaluation_id = check.not_none(get_current_evaluation_id(self.instance, None))
+        sensor_origin = self.get_sensor_origin()
+        current_evaluation_id = check.not_none(
+            get_current_evaluation_id(self.instance, sensor_origin)
+        )
         new_run_ids_for_asset = {
             run.run_id
             for run in self.instance.get_runs(
@@ -574,8 +657,12 @@ class AssetDaemonScenario(NamedTuple):
             self.initial_state._replace(scenario_instance=DagsterInstance.ephemeral())
         )
 
-    def evaluate_daemon(self, instance: DagsterInstance) -> "AssetDaemonScenarioState":
+    def evaluate_daemon(
+        self, instance: DagsterInstance, sensor_name: Optional[str] = None
+    ) -> "AssetDaemonScenarioState":
         self.initial_state.logger.setLevel(logging.DEBUG)
         return self.execution_fn(
-            self.initial_state._replace(scenario_instance=instance, is_daemon=True)
+            self.initial_state._replace(
+                scenario_instance=instance, is_daemon=True, sensor_name=sensor_name
+            )
         )

@@ -32,10 +32,10 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon.asset_daemon import (
-    CURSOR_KEY,
-    FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
-    FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-    FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
+    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
 )
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 
@@ -70,13 +70,13 @@ query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [Instiga
 def _create_tick(instance, status, timestamp, evaluation_id, run_requests=None, end_timestamp=None):
     return instance.create_tick(
         TickData(
-            instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            instigator_name=FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
+            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            instigator_name=_PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
             instigator_type=InstigatorType.AUTO_MATERIALIZE,
             status=status,
             timestamp=timestamp,
             end_timestamp=end_timestamp,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
             run_ids=[],
             auto_materialize_evaluation_id=evaluation_id,
             run_requests=run_requests,
@@ -912,7 +912,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
     def _test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
-            {CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
+            {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
         )
 
         results = execute_dagster_graphql(
@@ -932,7 +932,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {
-                CURSOR_KEY: (
+                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: (
                     AssetDaemonCursor.empty()
                     .with_updates(0, set(), set(), set(), {}, 42, None, [], 0)  # type: ignore
                     .serialize()
