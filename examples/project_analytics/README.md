@@ -1,4 +1,4 @@
-# Dagster Pypi / Github
+# Dagster Pypi / Github [UNMAINTAINED]
 
 This starter kit shows how to build the Dagster's
 Software-Defined Assets for an Analytics ETL Workflow with

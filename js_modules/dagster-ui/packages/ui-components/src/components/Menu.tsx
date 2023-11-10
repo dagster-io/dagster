@@ -104,6 +104,18 @@ export const MenuExternalLink = (props: MenuExternalLinkProps) => {
 export const MenuDivider = styled(BlueprintMenuDivider)`
   border-top: 1px solid ${Colors.Gray100};
   margin: 2px 0;
+
+  :focus {
+    outline: none;
+  }
+
+  && h6 {
+    color: ${Colors.Gray500};
+    padding: 8px 6px 2px;
+    font-size: 12px;
+    font-weight: 300;
+    user-select: none;
+  }
 `;
 
 const StyledMenu = styled(BlueprintMenu)`

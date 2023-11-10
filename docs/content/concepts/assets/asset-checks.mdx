@@ -285,3 +285,11 @@ defs = Definitions(
     schedules=[basic_schedule],
 )
 ```
+
+---
+
+## Limitations
+
+- Dagster's UI is tested with a maximum of 1000 checks per asset. It's designed with the expectation that most assets will have fewer than 50 checks. If you have a use case that doesn't fit these limits, you can reach out to discuss.
+
+- Checks are currently only supported per-asset, not per-partition. See [this issue](https://github.com/dagster-io/dagster/issues/17005) for updates.

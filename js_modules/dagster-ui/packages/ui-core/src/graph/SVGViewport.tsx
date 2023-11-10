@@ -22,6 +22,7 @@ interface SVGViewportProps {
   defaultZoom: 'zoom-to-fit' | 'zoom-to-fit-width';
   maxZoom: number;
   maxAutocenterZoom: number;
+  additionalToolbarElements?: React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onDoubleClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onArrowKeyDown?: (
@@ -192,7 +193,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             <Icon size={24} name="zoom_in" />
           </IconButton>
           <Box
-            style={{width: 34}}
+            style={{width: 32}}
             padding={{vertical: 12}}
             background={Colors.White}
             data-zoom-control={true}
@@ -227,10 +228,13 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             <Icon size={24} name="zoom_out" />
           </IconButton>
         </Box>
-        <Box flex={{direction: 'column', alignItems: 'center'}}>
-          <IconButton onClick={() => viewport.onExportToSVG()} style={{marginTop: 8}}>
-            <Icon size={24} name="download_for_offline" />
-          </IconButton>
+        <Box flex={{direction: 'column', alignItems: 'center', gap: 8}} margin={{top: 8}}>
+          {viewport.props.additionalToolbarElements}
+          <Box>
+            <IconButton onClick={() => viewport.onExportToSVG()}>
+              <Icon size={24} name="download_for_offline" />
+            </IconButton>
+          </Box>
         </Box>
       </ZoomSliderContainer>
     );
@@ -241,7 +245,7 @@ const IconButton = styled.button`
   background: ${Colors.White};
   border: 1px solid ${Colors.Gray300};
   cursor: pointer;
-  padding: 4px;
+  padding: 3px;
   position: relative;
 
   :focus {
@@ -602,6 +606,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
           backgroundSize: `${dotsize}px`,
           cursor: isClickHeld ? 'grabbing' : 'grab',
         })}
+        data-svg-viewport="1"
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}
         onKeyDown={this.onKeyDown}

@@ -54,7 +54,7 @@ In this example, we attach the DuckDB resource to the `small_petals` asset. In t
 
 ## DuckDB I/O manager
 
-The DuckDB I/O manager provides several ways to customize how your data is stored and loaded in DuckDB. However, if you find that these options do not provide enough customization for your use case, we recommend using the DuckDB resource to save and load your data. By using the resource, you will have more fine grained control over how your data in handled, since you have full control over the SQL queries that are executed.
+The DuckDB I/O manager provides several ways to customize how your data is stored and loaded in DuckDB. However, if you find that these options do not provide enough customization for your use case, we recommend using the DuckDB resource to save and load your data. By using the resource, you will have more fine-grained control over how your data is handled, since you have full control over the SQL queries that are executed.
 
 ### Selecting specific columns in a downstream asset
 
@@ -153,7 +153,7 @@ SELECT *
 </TabItem>
 <TabItem name="Time partitioned assets">
 
-#### Storing time partitioned assets
+#### Storing time-partitioned assets
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 

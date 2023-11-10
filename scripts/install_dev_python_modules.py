@@ -19,7 +19,9 @@ parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
 
 
 def main(
-    quiet: bool, extra_packages: List[str], include_prebuilt_grpcio_wheel: Optional[bool]
+    quiet: bool,
+    extra_packages: List[str],
+    include_prebuilt_grpcio_wheel: Optional[bool],
 ) -> None:
     """Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -89,6 +91,9 @@ def main(
         "-e python_modules/libraries/dagster-duckdb-polars",
         "-e python_modules/libraries/dagster-duckdb-pyspark",
         "-e python_modules/libraries/dagster-wandb",
+        "-e python_modules/libraries/dagster-deltalake",
+        "-e python_modules/libraries/dagster-deltalake-pandas",
+        "-e python_modules/libraries/dagster-deltalake-polars",
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
     ]

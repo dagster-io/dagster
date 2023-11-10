@@ -1164,6 +1164,7 @@ def get_sensor_context_from_args_or_kwargs(
 def get_or_create_sensor_context(
     fn: Callable,
     *args: Any,
+    context_type: Type = SensorEvaluationContext,
     **kwargs: Any,
 ) -> SensorEvaluationContext:
     """Based on the passed resource function and the arguments passed to it, returns the
@@ -1173,12 +1174,7 @@ def get_or_create_sensor_context(
     function requires a context parameter but none is passed.
     """
     context = (
-        get_sensor_context_from_args_or_kwargs(
-            fn,
-            args,
-            kwargs,
-            context_type=SensorEvaluationContext,
-        )
+        get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
         or build_sensor_context()
     )
     resource_args_from_kwargs = {}

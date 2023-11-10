@@ -24,10 +24,33 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
-from .test_asset_daemon import _assert_run_requests_match, daemon_scenarios
+from .scenarios.auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
+from .scenarios.auto_observe_scenarios import auto_observe_scenarios
+from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
 
 if TYPE_CHECKING:
     from pendulum.datetime import DateTime
+
+daemon_scenarios = {
+    **auto_materialize_policy_scenarios,
+    **multi_code_location_scenarios,
+    **auto_observe_scenarios,
+}
+
+
+def _assert_run_requests_match(
+    expected_run_requests,
+    run_requests,
+):
+    def sort_run_request_key_fn(run_request):
+        return (min(run_request.asset_selection), run_request.partition_key)
+
+    sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
+    sorted_expected_run_requests = sorted(expected_run_requests, key=sort_run_request_key_fn)
+
+    for run_request, expected_run_request in zip(sorted_run_requests, sorted_expected_run_requests):
+        assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
+        assert run_request.partition_key == expected_run_request.partition_key
 
 
 @pytest.fixture

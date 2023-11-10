@@ -13,7 +13,9 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeAssetEvaluation,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
@@ -533,13 +535,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Set[str]:
         return self._storage.event_log_storage.get_materialized_partitions(
             asset_key, before_cursor, after_cursor
-        )
-
-    def get_materialization_count_by_partition(
-        self, asset_keys: Sequence["AssetKey"], after_cursor: Optional[int] = None
-    ) -> Mapping["AssetKey", Mapping[str, int]]:
-        return self._storage.event_log_storage.get_materialization_count_by_partition(
-            asset_keys, after_cursor
         )
 
     def get_latest_storage_id_by_partition(

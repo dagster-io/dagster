@@ -589,6 +589,10 @@
                 "path": "/dagster-cloud/insights/integrating-external-metrics",
                 "children": [
                   {
+                    "title": "Direct Snowflake queries",
+                    "path": "/dagster-cloud/insights/integrating-snowflake"
+                  },
+                  {
                     "title": "Snowflake + dbt",
                     "path": "/dagster-cloud/insights/integrating-snowflake-and-dbt"
                   }
@@ -688,6 +692,20 @@
       {
         "title": "dbt Cloud",
         "path": "/integrations/dbt-cloud"
+      },
+      {
+        "title": "Delta Lake",
+        "path": "/integrations/deltalake",
+        "children": [
+          {
+            "title": "Delta Lake + Dagster tutorial",
+            "path": "/integrations/deltalake/using-deltalake-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/deltalake/reference"
+          }
+        ]
       },
       {
         "title": "DuckDB",
@@ -1130,6 +1148,10 @@
           {
             "title": "dbt (dagster-dbt)",
             "path": "/_apidocs/libraries/dagster-dbt"
+          },
+          {
+            "title": "Delta Lake (dagster-deltalake)",
+            "path": "/_apidocs/libraries/dagster-deltalake"
           },
           {
             "title": "Docker (dagster-docker)",

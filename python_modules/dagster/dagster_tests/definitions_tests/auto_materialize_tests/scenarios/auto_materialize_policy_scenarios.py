@@ -9,8 +9,10 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
-    AutoMaterializeRuleEvaluation,
     DiscardOnMaxMaterializationsExceededRule,
+)
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )

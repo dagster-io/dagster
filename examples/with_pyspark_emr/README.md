@@ -1,4 +1,4 @@
-# Using Dagster with Spark Example
+# Using Dagster with Spark Example [UNMAINTAINED]
 
 A Dagster op can run as a Spark step on an EMR cluster.
 
