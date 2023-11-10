@@ -140,23 +140,25 @@ export const BackfillPage = () => {
       return runsPathWithFilters(filters);
     }
 
-    const onShowAssetDetails = async (assetKey: AssetKey) => {
-      const resp = await client.query<
-        BackfillPartitionsForAssetKeyQuery,
-        BackfillPartitionsForAssetKeyQueryVariables
-      >({
-        query: BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY,
-        variables: {backfillId, assetKey: asAssetKeyInput(assetKey)},
-      });
-      const data =
-        resp.data.partitionBackfillOrError.__typename === 'PartitionBackfill'
-          ? resp.data.partitionBackfillOrError.partitionsTargetedForAssetKey
-          : null;
-
+    const onShowAssetDetails = async (assetKey: AssetKey, isPartitioned: boolean) => {
       let params: AssetViewParams = {};
-      if (data && data.ranges?.length === 1) {
-        const {start, end} = data.ranges[0]!;
-        params = {default_range: `[${start}...${end}]`};
+
+      if (isPartitioned) {
+        const resp = await client.query<
+          BackfillPartitionsForAssetKeyQuery,
+          BackfillPartitionsForAssetKeyQueryVariables
+        >({
+          query: BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY,
+          variables: {backfillId, assetKey: asAssetKeyInput(assetKey)},
+        });
+        const data =
+          resp.data.partitionBackfillOrError.__typename === 'PartitionBackfill'
+            ? resp.data.partitionBackfillOrError.partitionsTargetedForAssetKey
+            : null;
+
+        if (data && data.ranges?.length) {
+          params = {default_range: data.ranges.map((r) => `[${r.start}...${r.end}]`).join(',')};
+        }
       }
       return history.push(assetDetailsPathForKey(assetKey, params));
     };
@@ -245,7 +247,14 @@ export const BackfillPage = () => {
                   <td>
                     <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                       <div>
-                        <ButtonLink onClick={() => onShowAssetDetails(asset.assetKey)}>
+                        <ButtonLink
+                          onClick={() =>
+                            onShowAssetDetails(
+                              asset.assetKey,
+                              asset.__typename === 'AssetPartitionsStatusCounts',
+                            )
+                          }
+                        >
                           {asset.assetKey.path.join('/')}
                         </ButtonLink>
                       </div>
