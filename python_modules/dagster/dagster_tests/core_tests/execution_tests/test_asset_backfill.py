@@ -291,7 +291,10 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
                 assert False
 
             backfill_data = AssetBackfillData.empty(
-                target_subset, scenario.evaluation_time, asset_graph
+                target_subset,
+                scenario.evaluation_time,
+                asset_graph,
+                dynamic_partitions_store=instance,
             )
 
             if failures == "no_failures":
@@ -425,7 +428,12 @@ def make_backfill_data(
     else:
         assert False
 
-    return AssetBackfillData.empty(target_subset, current_time or pendulum.now("UTC"), asset_graph)
+    return AssetBackfillData.empty(
+        target_subset,
+        current_time or pendulum.now("UTC"),
+        asset_graph,
+        dynamic_partitions_store=instance,
+    )
 
 
 def make_random_subset(

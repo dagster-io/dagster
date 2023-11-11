@@ -440,22 +440,26 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         result = AssetGraphSubset()
         for asset_backfill in asset_backfills:
-            if asset_backfill.serialized_asset_backfill_data is None:
-                check.failed("Asset backfill missing serialized_asset_backfill_data")
-
-            try:
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    asset_backfill.serialized_asset_backfill_data,
-                    self.asset_graph,
-                    asset_backfill.backfill_timestamp,
+            if asset_backfill.serialized_asset_backfill_data:
+                try:
+                    asset_backfill_data = AssetBackfillData.from_serialized(
+                        asset_backfill.serialized_asset_backfill_data,
+                        self.asset_graph,
+                        asset_backfill.backfill_timestamp,
+                    )
+                except DagsterDefinitionChangedDeserializationError:
+                    self._logger.warning(
+                        f"Not considering assets in backfill {asset_backfill.backfill_id} since its"
+                        " data could not be deserialized"
+                    )
+                    # Backfill can't be loaded, so no risk of the assets interfering
+                    continue
+            elif asset_backfill.asset_backfill_data:
+                asset_backfill_data = asset_backfill.asset_backfill_data
+            else:
+                check.failed(
+                    "Expected either serialized_asset_backfill_data or asset_backfill_data field"
                 )
-            except DagsterDefinitionChangedDeserializationError:
-                self._logger.warning(
-                    f"Not considering assets in backfill {asset_backfill.backfill_id} since its"
-                    " data could not be deserialized"
-                )
-                # Backfill can't be loaded, so no risk of the assets interfering
-                continue
 
             result |= asset_backfill_data.target_subset
 

@@ -924,7 +924,9 @@ def execute_asset_backfill_iteration(
         # Refetch, in case the backfill was canceled in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
         updated_backfill = backfill.with_asset_backfill_data(
-            updated_asset_backfill_data, dynamic_partitions_store=instance, asset_graph=asset_graph
+            updated_asset_backfill_data,
+            dynamic_partitions_store=instance,
+            asset_graph=asset_graph,
         )
         if updated_asset_backfill_data.is_complete():
             # The asset backfill is complete when all runs to be requested have finished (success,
@@ -975,7 +977,9 @@ def execute_asset_backfill_iteration(
             )
 
         updated_backfill = backfill.with_asset_backfill_data(
-            updated_asset_backfill_data, dynamic_partitions_store=instance, asset_graph=asset_graph
+            updated_asset_backfill_data,
+            dynamic_partitions_store=instance,
+            asset_graph=asset_graph,
         )
         # The asset backfill is successfully canceled when all requested runs have finished (success,
         # failure, or cancellation). Since the AssetBackfillData object stores materialization states

@@ -454,11 +454,11 @@ def test_remove_partitions_defs_after_backfill():
             assert get_backfills_result.data
             backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
             assert len(backfill_results) == 1
-            assert backfill_results[0]["numPartitions"] == 0
+            assert backfill_results[0]["numPartitions"] == 2
             assert backfill_results[0]["id"] == backfill_id
             assert backfill_results[0]["partitionSet"] is None
             assert backfill_results[0]["partitionSetName"] is None
-            assert set(backfill_results[0]["partitionNames"]) == set()
+            assert set(backfill_results[0]["partitionNames"]) == {"a", "b"}
 
             # on PartitionBackfill
             single_backfill_result = execute_dagster_graphql(
@@ -790,11 +790,9 @@ def _get_backfill_data(
     assert len(backfills) == 1
     backfill = backfills[0]
     assert backfill.backfill_id == backfill_id
-    assert backfill.serialized_asset_backfill_data
+    assert backfill.asset_backfill_data
 
-    return backfill_id, AssetBackfillData.from_serialized(
-        backfill.serialized_asset_backfill_data, repo.asset_graph, backfill.backfill_timestamp
-    )
+    return backfill_id, backfill.asset_backfill_data
 
 
 def _get_error_message(launch_backfill_result: GqlResult) -> Optional[str]:

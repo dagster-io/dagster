@@ -3,8 +3,8 @@ import random
 import string
 import sys
 import time
-from typing import cast
 
+import dagster._check as check
 import mock
 import pendulum
 import pytest
@@ -41,7 +41,7 @@ from dagster._core.definitions.selector import (
     PartitionsByAssetSelector,
     PartitionsSelector,
 )
-from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE, AssetBackfillData
+from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepository,
@@ -1109,11 +1109,7 @@ def test_asset_backfill_mid_iteration_cancel(
     # Check that the requested subset only contains runs that were submitted
     updated_backfill = instance.get_backfill(backfill_id)
     assert updated_backfill
-    updated_asset_backfill_data = AssetBackfillData.from_serialized(
-        cast(str, updated_backfill.serialized_asset_backfill_data),
-        asset_graph,
-        backfill.backfill_timestamp,
-    )
+    updated_asset_backfill_data = check.not_none(backfill.asset_backfill_data)
     assert all(
         len(partitions_subset) == RUN_CHUNK_SIZE
         for partitions_subset in updated_asset_backfill_data.requested_subset.partitions_subsets_by_asset_key.values()
@@ -1211,12 +1207,11 @@ def test_asset_backfill_with_multi_run_backfill_policy(
 
     updated_backfill = instance.get_backfill(backfill_id)
     assert updated_backfill
-    updated_asset_backfill_data = AssetBackfillData.from_serialized(
-        cast(str, updated_backfill.serialized_asset_backfill_data),
-        asset_graph,
-        backfill.backfill_timestamp,
-    )
-    assert list(updated_asset_backfill_data.requested_subset.iterate_asset_partitions()) == [
+    assert list(
+        check.not_none(
+            updated_backfill.asset_backfill_data
+        ).requested_subset.iterate_asset_partitions()
+    ) == [
         AssetKeyPartitionKey(asset_with_multi_run_backfill_policy.key, partition)
         for partition in partitions
     ]
@@ -1252,7 +1247,7 @@ def test_error_code_location(
 
     assert len(errors) == 1
     assert (
-        "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset asset_a existed at"
+        "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset AssetKey(['asset_a']) existed at"
         " storage-time, but no longer does. This could be because it's inside a code location"
         " that's failing to load" in errors[0].message
     )

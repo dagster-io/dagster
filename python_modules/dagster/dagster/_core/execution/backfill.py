@@ -372,6 +372,7 @@ class PartitionBackfill(
         dynamic_partitions_store: DynamicPartitionsStore,
         asset_graph: AssetGraph,
     ) -> "PartitionBackfill":
+        is_backcompat = self.serialized_asset_backfill_data is not None
         return PartitionBackfill(
             status=self.status,
             backfill_id=self.backfill_id,
@@ -384,8 +385,12 @@ class PartitionBackfill(
             last_submitted_partition_name=self.last_submitted_partition_name,
             error=self.error,
             asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=None,
-            asset_backfill_data=asset_backfill_data,
+            serialized_asset_backfill_data=asset_backfill_data.serialize(
+                dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
+            )
+            if is_backcompat
+            else None,
+            asset_backfill_data=asset_backfill_data if not is_backcompat else None,
         )
 
     @classmethod

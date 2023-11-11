@@ -300,7 +300,7 @@ def cancel_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    if backfill.serialized_asset_backfill_data:
+    if backfill.is_asset_backfill:
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
         _assert_permission_for_asset_graph(
             graphene_info,
