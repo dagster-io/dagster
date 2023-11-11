@@ -1,0 +1,153 @@
+---
+title: Scheduling assets | Dagster
+description: TODO
+---
+
+# Scheduling assets
+
+<Note>
+  This page is specific to <strong>Software-defined Assets (SDAs)</strong>.
+  Looking for ops? Refer to the{" "}
+  <a href="/concepts/partitions-schedules-sensors/partitioning-ops">
+    Scheduling ops
+  </a>{" "}
+  documentation.
+</Note>
+
+Each schedule:
+
+- Targets a single job
+- Optionally defines a function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested on in the Dagster UI.
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Software-defined Assets](/concepts/assets/software-defined-assets)
+- [Jobs](/concepts/ops-jobs-graphs/jobs)
+
+---
+
+## Relevant APIs
+
+| Name                                                      | Description                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <PyObject object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
+| <PyObject object="ScheduleDefinition" />                  | Class for schedules.                                                                                |
+| <PyObject object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+| <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                    |
+| <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.               |
+
+---
+
+## Defining schedules
+
+- [Schedules for assets](#schedules-for-assets)
+- [Schedules for partitioned assets](#schedules-for-partitioned-assets)
+
+### Schedules for assets
+
+To run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" />:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
+from dagster import AssetSelection, define_asset_job
+
+asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
+
+basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
+```
+
+### Schedules for partitioned assets
+
+The [Partitioning assets](/concepts/partitions-schedules-sensors/partitioning-assets) documentation includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitioning-assets#defining-partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
+from dagster import (
+    asset,
+    build_schedule_from_partitioned_job,
+    define_asset_job,
+    HourlyPartitionsDefinition,
+)
+
+
+@asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
+def hourly_asset():
+    ...
+
+
+partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
+
+
+asset_partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_asset_job,
+)
+```
+
+---
+
+## Running the scheduler
+
+Schedules must be started for them to run. Schedules can be started and stopped:
+
+- In the Dagster UI using the **Schedules** tab:
+
+  <Image
+  alt="Schedules tab in the Dagster UI"
+  src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
+  width={1164}
+  height={280}
+  />
+
+- Using the CLI:
+
+  ```shell
+  dagster schedule start
+  dagster schedule stop
+  ```
+
+- In code by setting the schedule's default status to `DefaultScheduleStatus.RUNNING`:
+
+  ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_running_in_code endbefore=end_running_in_code
+  my_running_schedule = ScheduleDefinition(
+      job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
+  )
+  ```
+
+If you manually start or stop a schedule in the UI, that overrides any default status set in code.
+
+Once the schedule is started, the schedule will begin executing immediately if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment. Refer to the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section if your schedule has been started but isn't submitting runs.
+
+---
+
+## See it in action
+
+For more examples of schedules, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
+
+- [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/schedules"
+    title="Schedules"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/scheduling-ops"
+    title="Scheduling ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/testing-schedules"
+    title="Testing schedules"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/assets/software-defined-assets"
+    title="Software-defined Assets"
+  ></ArticleListItem>
+</ArticleList>

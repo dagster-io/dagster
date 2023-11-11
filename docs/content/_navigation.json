@@ -116,14 +116,27 @@
           }
         ]
       },
-
       {
-        "title": "Schedules & Sensors",
+        "title": "Schedules",
+        "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
-            "title": "Schedules",
-            "path": "/concepts/partitions-schedules-sensors/schedules"
+            "title": "Scheduling assets",
+            "path": "/concepts/partitions-schedules-sensors/scheduling-assets"
           },
+          {
+            "title": "Scheduling ops (Advanced)",
+            "path": "/concepts/partitions-schedules-sensors/scheduling-ops"
+          },
+          {
+            "title": "Testing schedules",
+            "path": "/concepts/partitions-schedules-sensors/testing-schedules"
+          }
+        ]
+      },
+      {
+        "title": "Sensors",
+        "children": [
           {
             "title": "Sensors",
             "path": "/concepts/partitions-schedules-sensors/sensors"

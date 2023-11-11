@@ -1,0 +1,335 @@
+---
+title: Scheduling ops | Dagster
+description: TODO
+---
+
+# Scheduling ops
+
+<Note>
+  This page is specific to <strong>ops</strong>. Looking for Software-defined
+  Assets? Refer to the{" "}
+  <a href="/concepts/partitions-schedules-sensors/scheduling-assets">
+    Scheduling assets
+  </a>{" "}
+  documentation.
+</Note>
+
+Each schedule:
+
+- Targets a single job
+- Optionally defines a function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested on in the Dagster UI.
+
+<!-- When defining a job that uses [ops](/concepts/ops-jobs-graphs/ops), you can schedule it ...TODO.
+
+In this guide, we'll demonstrate to use partitions with ops and [jobs](/concepts/ops-jobs-graphs/jobs). -->
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Ops](/concepts/ops-jobs-graphs/ops)
+- [Jobs](/concepts/ops-jobs-graphs/jobs)
+- [Run configuration](/concepts/configuration/config-schema)
+
+---
+
+## Relevant APIs
+
+| Name                                                      | Description                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <PyObject object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
+| <PyObject object="ScheduleDefinition" />                  | Class for schedules.                                                                                |
+| <PyObject object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+| <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                    |
+| <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.               |
+
+---
+
+## Defining schedules
+
+You define a schedule by constructing a <PyObject object="ScheduleDefinition" />. In this section:
+
+- [Basic schedules](#basic-schedules)
+- [Schedules that provide custom run config and tags](#schedules-that-provide-custom-run-config-and-tags)
+- [Schedules from partitioned jobs](#schedules-from-partitioned-jobs), including [time partitioned jobs](#time-partitioned-jobs) and [static partitioned jobs](#static-partitioned-jobs)
+- [Customizing execution times](#customizing-execution-times), including [timezones](#customizing-the-executing-timezone) and accounting for [Daylight Savings Time](#execution-time-and-daylight-savings-time)
+
+### Basic schedules
+
+Here's a simple schedule that runs a job every day, at midnight:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
+@job
+def my_job():
+    ...
+
+
+basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+```
+
+The `cron_schedule` argument accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
+
+### Schedules that provide custom run config and tags
+
+If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
+@op(config_schema={"scheduled_date": str})
+def configurable_op(context):
+    context.log.info(context.op_config["scheduled_date"])
+
+
+@job
+def configurable_job():
+    configurable_op()
+
+
+@schedule(job=configurable_job, cron_schedule="0 0 * * *")
+def configurable_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return RunRequest(
+        run_key=None,
+        run_config={
+            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+        },
+        tags={"date": scheduled_date},
+    )
+```
+
+If you don't need access to the context parameter, you can omit it from the decorated function.
+
+### Schedules from partitioned jobs
+
+- [Time partitioned jobs](#time-partitioned-jobs)
+- [Static partitioned jobs](#static-partitioned-jobs)
+
+#### Time partitioned jobs
+
+When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job. For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
+
+Having defined a date-partitioned job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
+from dagster import build_schedule_from_partitioned_job, job
+
+
+@job(config=my_partitioned_config)
+def do_stuff_partitioned():
+    ...
+
+
+do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
+    do_stuff_partitioned,
+)
+```
+
+Each schedule tick of a partitioned job fills in the latest partition in the partition set that exists as of the tick time. Note that this implies that when the schedule submits a run on a particular day, it will typically be for the partition whose key corresponds to the previous day. For example, the schedule will fill in the `2020-04-01` partition on `2020-04-02`. That's because each partition corresponds to a time window. The key of the partition is the start of the time window, but the partition isn't included in the list until its time window has completed. Waiting until the time window has finished before Kicking off a run means the run can process data from within that entire time window.
+
+However, you can use the `end_offset` parameter of <PyObject object="daily_partitioned_config" decorator /> to change which partition is the most recent partition that is filled in at each schedule tick. Setting `end_offset` to `1` will extend the partitions forward so that the schedule tick that runs on day `N` will fill in day `N`'s partition instead of day `N-1`, and setting `end_offset` to a negative number will cause the schedule to fill in earlier days' partitions. In general, setting `end_offset` to `X` will cause the partition that runs on day `N` to fill in the partition for day `N - 1 + X`. The same holds true for hourly, weekly, and monthly partitioned jobs, for their respective partition sizes.
+
+You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to `30` and `hour_of_day` to `1`, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`.
+
+#### Static partitioned jobs
+
+You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitioning-ops#defining-jobs-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
+
+For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
+
+```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
+from dagster import Config, job, op, static_partitioned_config
+
+CONTINENTS = [
+    "Africa",
+    "Antarctica",
+    "Asia",
+    "Europe",
+    "North America",
+    "Oceania",
+    "South America",
+]
+
+
+@static_partitioned_config(partition_keys=CONTINENTS)
+def continent_config(partition_key: str):
+    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+
+
+class ContinentOpConfig(Config):
+    continent_name: str
+
+
+@op
+def continent_op(context, config: ContinentOpConfig):
+    context.log.info(config.continent_name)
+
+
+@job(config=continent_config)
+def continent_job():
+    continent_op()
+```
+
+We can write a schedule that will run this partition:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
+from dagster import schedule, RunRequest
+
+
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def continent_schedule():
+    for c in CONTINENTS:
+        yield RunRequest(run_key=c, partition_key=c)
+```
+
+Or a schedule that will run a subselection of the partition:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def antarctica_schedule():
+    return RunRequest(partition_key="Antarctica")
+```
+
+### Customizing execution times
+
+- [Customizing the executing timezone](#customizing-the-executing-timezone)
+- [Execution time and Daylight Savings Time](#execution-time-and-daylight-savings-time)
+
+#### Customizing the executing timezone
+
+You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [`tz` timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
+
+For example, the following schedule executes daily at 9AM in US/Pacific time:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
+my_timezone_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="US/Pacific"
+)
+```
+
+The <PyObject object="schedule" decorator /> decorator accepts the same argument. Schedules from partitioned jobs execute in the timezone defined on the partitioned config.
+
+#### Execution time and Daylight Savings Time
+
+Because of Daylight Savings Time transitions, it's possible to specify an execution time that does not exist for every scheduled interval. For example, say you have a daily schedule with an execution time of 2:30 AM in the US/Eastern timezone. On 2019/03/10, the time jumps from 2:00 AM to 3:00 AM when Daylight Savings Time begins. Therefore, the time of 2:30 AM did not exist for the day.
+
+If you specify such an execution time, Dagster runs your schedule at the next time that exists. In the previous example, the schedule would run at 3:00 AM.
+
+It's also possible to specify an execution time that exists twice on one day every year. For example, on 2019/11/03 in US/Eastern time, the hour from 1:00 AM to 2:00 AM repeats, so a daily schedule running at 1:30 AM has two possible times in which it could execute. In this case, Dagster will execute your schedule at the latter of the two possible times.
+
+Hourly schedules will be unaffected by daylight savings time transitions - the schedule will continue to run exactly once every hour, even as the timezone changes. In the example above where the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
+
+### Using resources in schedules
+
+Dagster's [resources](/concepts/resources) system can be used with schedules to make it easier to interact with external systems or to make components of a schedule easier to plug in for testing purposes.
+
+To specify resource dependencies, annotate the resource as a parameter to the schedule's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
+
+Here, a resource is provided that helps a schedule generate a date string:
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
+from dagster import (
+    schedule,
+    ScheduleEvaluationContext,
+    ConfigurableResource,
+    job,
+    RunRequest,
+    RunConfig,
+    Definitions,
+)
+from datetime import datetime
+from typing import List
+
+class DateFormatter(ConfigurableResource):
+    format: str
+
+    def strftime(self, dt: datetime) -> str:
+        return dt.strftime(self.format)
+
+@job
+def process_data():
+    ...
+
+@schedule(job=process_data, cron_schedule="* * * * *")
+def process_data_schedule(
+    context: ScheduleEvaluationContext,
+    date_formatter: DateFormatter,
+):
+    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
+
+    return RunRequest(
+        run_key=None,
+        tags={"date": formatted_date},
+    )
+
+defs = Definitions(
+    jobs=[process_data],
+    schedules=[process_data_schedule],
+    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+)
+```
+
+For more information on resources, refer to the [Resources documentation](/concepts/resources). To see how to test schedules with resources, refer to the section on [Testing schedules with resources](#testing-schedules-with-resources).
+
+---
+
+## Running the scheduler
+
+Schedules must be started for them to run. Schedules can be started and stopped:
+
+- In the Dagster UI using the **Schedules** tab:
+
+  <Image
+  alt="Schedules tab in the Dagster UI"
+  src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
+  width={1164}
+  height={280}
+  />
+
+- Using the CLI:
+
+  ```shell
+  dagster schedule start
+  dagster schedule stop
+  ```
+
+- In code by setting the schedule's default status to `DefaultScheduleStatus.RUNNING`:
+
+  ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_running_in_code endbefore=end_running_in_code
+  my_running_schedule = ScheduleDefinition(
+      job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
+  )
+  ```
+
+If you manually start or stop a schedule in the UI, that overrides any default status set in code.
+
+Once the schedule is started, the schedule will begin executing immediately if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment. Refer to the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section if your schedule has been started but isn't submitting runs.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitions"
+    title="Partitions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/partitioning-assets"
+    title="Partitioned assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/testing-partitions"
+    title="Testing partitioned config and jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/ops-jobs-graphs/ops"
+    title="Ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/ops-jobs-graphs/jobs"
+    title="Jobs"
+  ></ArticleListItem>
+</ArticleList>
