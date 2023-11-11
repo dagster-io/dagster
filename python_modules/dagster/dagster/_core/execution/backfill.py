@@ -162,9 +162,7 @@ class PartitionBackfill(
             if self.serialized_asset_backfill_data:
                 try:
                     asset_backfill_data = AssetBackfillData.from_serialized(
-                        self.serialized_asset_backfill_data,
-                        asset_graph,
-                        self.backfill_timestamp,
+                        self.serialized_asset_backfill_data, asset_graph, self.backfill_timestamp
                     )
                 except DagsterDefinitionChangedDeserializationError:
                     return []
