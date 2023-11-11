@@ -252,47 +252,6 @@ class AssetDaemonContext:
         ) = self._get_never_handled_and_newly_handled_root_asset_partitions()
         return newly_handled_keys, newly_handled_partitions_by_key
 
-    @cached_method
-    def _get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id(
-        self,
-    ) -> Tuple[Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]], Optional[int]]:
-        """Returns a mapping from asset keys to the set of asset partitions that have newly updated
-        parents, and the new latest storage ID.
-        """
-        (
-            asset_partitions,
-            new_latest_storage_id,
-        ) = self.instance_queryer.asset_partitions_with_newly_updated_parents_and_new_latest_storage_id(
-            latest_storage_id=self.latest_storage_id,
-            target_asset_keys=frozenset(self.target_asset_keys),
-            target_asset_keys_and_parents=frozenset(self.target_asset_keys_and_parents),
-            map_old_time_partitions=False,
-        )
-        ret = defaultdict(set)
-        for asset_partition in asset_partitions:
-            ret[asset_partition.asset_key].add(asset_partition)
-        return ret, new_latest_storage_id
-
-    def get_new_latest_storage_id(self) -> Optional[int]:
-        """Returns the latest storage of all target asset keys since the last tick."""
-        (
-            _,
-            new_latest_storage_id,
-        ) = self._get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id()
-        return new_latest_storage_id
-
-    def get_asset_partitions_with_newly_updated_parents_for_key(
-        self, asset_key: AssetKey
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of asset partitions whose parents have been updated since the last tick
-        for a given asset key.
-        """
-        (
-            updated_parent_mapping,
-            _,
-        ) = self._get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id()
-        return updated_parent_mapping.get(asset_key, set())
-
     def evaluate_asset(
         self,
         asset_key: AssetKey,
@@ -568,7 +527,7 @@ class AssetDaemonContext:
         return (
             run_requests,
             self.cursor.with_updates(
-                latest_storage_id=self.get_new_latest_storage_id(),
+                latest_storage_id=self.instance_queryer.instance.event_log_storage.get_maximum_record_id(),
                 to_materialize=to_materialize,
                 to_discard=to_discard,
                 asset_graph=self.asset_graph,
