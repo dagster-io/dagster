@@ -25,7 +25,11 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    PartitionsSubset,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
@@ -518,15 +522,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         child_asset_partitions_with_updated_parents = set()
         for parent_asset_key in self.asset_graph.get_parents(child_asset_key):
             # the set of asset partitions which have been updated since the latest storage id
-            new_parent_asset_partitions = self.get_asset_partitions_updated_after_cursor(
-                asset_key=parent_asset_key,
-                asset_partitions=None,
-                after_cursor=latest_storage_id,
-                # we don't need to use asset versions here because we will filter out any materialized
-                # but not updated partitions in a later step
-                respect_materialization_data_versions=False,
+            parent_partitions_subset = self.get_partitions_subset_or_bool_updated_after_cursor(
+                asset_key=parent_asset_key, after_cursor=latest_storage_id
             )
-            if not new_parent_asset_partitions:
+            if not parent_partitions_subset:
                 continue
             if child_partitions_def is None:
                 return {AssetKeyPartitionKey(child_asset_key, None)}
@@ -561,18 +560,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                             AssetKeyPartitionKey(child_asset_key, child_partition_key)
                         )
             else:
-                parent_partitions_subset = parent_partitions_def.empty_subset().with_partition_keys(
-                    [
-                        asset_partition.partition_key
-                        for asset_partition in new_parent_asset_partitions
-                        if asset_partition.partition_key is not None
-                        and parent_partitions_def.has_partition_key(
-                            asset_partition.partition_key,
-                            dynamic_partitions_store=self,
-                            current_time=self.evaluation_time,
-                        )
-                    ]
-                )
                 # we are mapping from the partitions of the parent asset to the partitions of
                 # the child asset
                 partition_mapping = self.asset_graph.get_partition_mapping(
@@ -617,7 +604,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         # executed in the same run as its parent
                         latest_partition_record = check.not_none(
                             self.get_latest_materialization_or_observation_record(
-                                AssetKeyPartitionKey(child_asset_key, child_partition),
+                                AssetKeyPartitionKey(parent_asset_key, child_partition),
                                 after_cursor=latest_storage_id,
                             )
                         )
@@ -762,6 +749,38 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # more expensive check to explicitly handle data versions
         return self._asset_partition_versions_updated_after_cursor(
             asset_key, updated_after_cursor, after_cursor
+        )
+
+    @cached_method
+    def get_partitions_subset_or_bool_updated_after_cursor(
+        self,
+        *,
+        asset_key: AssetKey,
+        after_cursor: Optional[int],
+    ) -> Optional[PartitionsSubset]:
+        new_asset_partitions = self.get_asset_partitions_updated_after_cursor(
+            asset_key,
+            asset_partitions=None,
+            after_cursor=after_cursor,
+            respect_materialization_data_versions=False,
+        )
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
+        if not new_asset_partitions:
+            return None
+        elif partitions_def is None:
+            # placeholder
+            return DefaultPartitionsSubset(StaticPartitionsDefinition(["1"]), {"1"})
+        return partitions_def.subset_with_partition_keys(
+            [
+                asset_partition.partition_key
+                for asset_partition in new_asset_partitions
+                if asset_partition.partition_key is not None
+                and partitions_def.has_partition_key(
+                    partition_key=asset_partition.partition_key,
+                    dynamic_partitions_store=self,
+                    current_time=self.evaluation_time,
+                )
+            ]
         )
 
     def get_parent_asset_partitions_updated_after_child(
