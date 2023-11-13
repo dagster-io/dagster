@@ -307,18 +307,15 @@ class AssetReconciliationScenario(
             for i, target in enumerate(self.active_backfill_targets or []):
                 if isinstance(target, Mapping):
                     target_subset = AssetGraphSubset(
-                        # asset_graph=repo.asset_graph,
                         partitions_subsets_by_asset_key=target,
                         non_partitioned_asset_keys=set(),
                     )
                 else:
                     target_subset = AssetGraphSubset(
-                        # asset_graph=repo.asset_graph,
                         partitions_subsets_by_asset_key={},
                         non_partitioned_asset_keys=target,
                     )
                 empty_subset = AssetGraphSubset(
-                    # asset_graph=repo.asset_graph,
                     partitions_subsets_by_asset_key={},
                     non_partitioned_asset_keys=set(),
                 )

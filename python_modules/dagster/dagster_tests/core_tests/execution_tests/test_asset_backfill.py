@@ -1428,10 +1428,8 @@ def test_asset_backfill_serialization_deserialization():
 
     asset_backfill_data = AssetBackfillData.from_asset_partitions(
         asset_graph=asset_graph,
-        # partition_names=["2023-01-01", "2023-01-02", "2023-01-05"],
-        partition_names=["2023-01-01"],
-        # asset_selection=[upstream.key, middle.key, downstream.key],
-        asset_selection=[upstream.key],
+        partition_names=["2023-01-01", "2023-01-02", "2023-01-05"],
+        asset_selection=[upstream.key, middle.key, downstream.key],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
         backfill_start_time=pendulum.datetime(2023, 1, 9, 0, 0, 0),

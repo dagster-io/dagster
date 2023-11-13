@@ -179,9 +179,6 @@ class AssetGraphSubset(
         result_partition_subsets_by_asset_key = {**self.partitions_subsets_by_asset_key}
         result_non_partitioned_asset_keys = set(self.non_partitioned_asset_keys)
 
-        # if not isinstance(other, AssetGraphSubset):
-        #     other = AssetGraphSubset.from_asset_partition_set(other, self.asset_graph)
-
         for asset_key in other.asset_keys:
             if asset_key in other.non_partitioned_asset_keys:
                 check.invariant(asset_key not in self.partitions_subsets_by_asset_key)
@@ -197,26 +194,15 @@ class AssetGraphSubset(
                 )
 
                 other_subset = other.get_partitions_subset(asset_key)
-                if other_subset is None and subset is None:
-                    pass
-                if subset is None and other_subset is not None:
-                    if oper == operator.or_:
-                        result_partition_subsets_by_asset_key[asset_key] = other_subset
-                    elif oper == operator.sub:
-                        pass
-                    elif oper == operator.and_:
-                        pass
-                    else:
-                        check.failed(f"Unsupported operator {oper}")
-                elif subset is not None and other_subset is None:
-                    if oper == operator.or_:
-                        pass
-                    elif oper == operator.sub:
-                        pass
-                    elif oper == operator.and_:
-                        del result_partition_subsets_by_asset_key[asset_key]
-                else:
+
+                if other_subset is not None and subset is not None:
                     result_partition_subsets_by_asset_key[asset_key] = oper(subset, other_subset)
+
+                # Special case operations if either subset is None
+                if subset is None and other_subset is not None and oper == operator.or_:
+                    result_partition_subsets_by_asset_key[asset_key] = other_subset
+                elif subset is not None and other_subset is None and oper == operator.and_:
+                    del result_partition_subsets_by_asset_key[asset_key]
 
         return AssetGraphSubset(
             partitions_subsets_by_asset_key=result_partition_subsets_by_asset_key,

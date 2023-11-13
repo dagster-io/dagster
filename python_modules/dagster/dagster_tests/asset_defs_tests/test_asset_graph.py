@@ -60,12 +60,9 @@ def to_external_asset_graph(assets, asset_checks=None) -> AssetGraph:
 
 
 @pytest.fixture(
-    name="asset_graph_from_assets",
-    params=[AssetGraph.from_assets, to_external_asset_graph],
+    name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_external_asset_graph]
 )
-def asset_graph_from_assets_fixture(
-    request,
-) -> Callable[[List[AssetsDefinition]], AssetGraph]:
+def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], AssetGraph]:
     return request.param
 
 
@@ -89,12 +86,7 @@ def test_basics(asset_graph_from_assets):
     assets = [asset0, asset1, asset2, asset3]
     asset_graph = asset_graph_from_assets(assets)
 
-    assert asset_graph.all_asset_keys == {
-        asset0.key,
-        asset1.key,
-        asset2.key,
-        asset3.key,
-    }
+    assert asset_graph.all_asset_keys == {asset0.key, asset1.key, asset2.key, asset3.key}
     assert not asset_graph.is_partitioned(asset0.key)
     assert asset_graph.is_partitioned(asset1.key)
     assert asset_graph.have_same_partitioning(asset1.key, asset2.key)
@@ -107,9 +99,7 @@ def test_basics(asset_graph_from_assets):
     assert asset_graph.get_code_version(asset1.key) is None
 
 
-def test_get_children_partitions_unpartitioned_parent_partitioned_child(
-    asset_graph_from_assets,
-):
+def test_get_children_partitions_unpartitioned_parent_partitioned_child(asset_graph_from_assets):
     @asset
     def parent():
         ...
@@ -127,9 +117,7 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
         )
 
 
-def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
-    asset_graph_from_assets,
-):
+def test_get_parent_partitions_unpartitioned_child_partitioned_parent(asset_graph_from_assets):
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
     def parent():
         ...
@@ -145,10 +133,7 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
         assert asset_graph.get_parents_partitions(
             instance, current_time, child.key
         ).parent_partitions == set(
-            [
-                AssetKeyPartitionKey(parent.key, "a"),
-                AssetKeyPartitionKey(parent.key, "b"),
-            ]
+            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
         )
 
 
@@ -308,8 +293,7 @@ def test_required_multi_asset_sets_non_subsettable_multi_asset(asset_graph_from_
 
 def test_required_multi_asset_sets_subsettable_multi_asset(asset_graph_from_assets):
     @multi_asset(
-        outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)},
-        can_subset=True,
+        outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)}, can_subset=True
     )
     def subsettable_multi_asset():
         ...
