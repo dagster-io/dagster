@@ -554,7 +554,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc."""
         return self._step_execution_context.previous_attempt_count
 
-    def describe_op(self):
+    def describe_op(self) -> str:
         return self._step_execution_context.describe_op()
 
     @public
@@ -1358,7 +1358,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         ctx = _current_asset_execution_context.get()
         if ctx is None:
             raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
-        return ctx.get_op_execution_context()
+        return ctx.op_execution_context
 
 
 def _copy_docs_from_op_execution_context(obj):
@@ -1371,6 +1371,7 @@ def _copy_docs_from_op_execution_context(obj):
 ALTERNATE_METHODS = {
     "run_id": "run_info.run_id",
     "run": "run_info.dagster_run",
+    "dagster_run": "run_info.dagster_run",
     "run_config": "run_info.run_config",
     "retry_number": "run_info.retry_number",
 }
@@ -1458,6 +1459,12 @@ class AssetExecutionContext:
     def run(self) -> DagsterRun:
         return self.op_execution_context.run
 
+    @deprecated(**_get_deprecation_kwargs("dagster_run"))
+    @property
+    def dagster_run(self) -> DagsterRun:
+        """DagsterRun: The current pipeline run."""
+        return self.op_execution_context.dagster_run
+
     @deprecated(**_get_deprecation_kwargs("run_id"))
     @property
     @_copy_docs_from_op_execution_context
@@ -1477,7 +1484,7 @@ class AssetExecutionContext:
         return self.op_execution_context.retry_number
 
 
-    # pass-through methods
+    ########## pass-through to op context
 
     @public
     @property
