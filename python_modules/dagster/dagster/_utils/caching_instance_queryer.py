@@ -26,9 +26,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
-    DefaultPartitionsSubset,
     PartitionsSubset,
-    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
@@ -521,11 +519,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         child_asset_partitions_with_updated_parents = set()
         for parent_asset_key in self.asset_graph.get_parents(child_asset_key):
-            # the set of asset partitions which have been updated since the latest storage id
-            parent_partitions_subset = self.get_partitions_subset_or_bool_updated_after_cursor(
-                asset_key=parent_asset_key, after_cursor=latest_storage_id
-            )
-            if not parent_partitions_subset:
+            # if the parent has not been updated at all since the latest_storage_id, then skip
+            if not self.asset_partition_has_materialization_or_observation(
+                AssetKeyPartitionKey(parent_asset_key), after_cursor=latest_storage_id
+            ):
                 continue
             if child_partitions_def is None:
                 return {AssetKeyPartitionKey(child_asset_key, None)}
@@ -560,6 +557,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                             AssetKeyPartitionKey(child_asset_key, child_partition_key)
                         )
             else:
+                # the set of asset partitions which have been updated since the latest storage id
+                parent_partitions_subset = self.get_partitions_subset_updated_after_cursor(
+                    asset_key=parent_asset_key, after_cursor=latest_storage_id
+                )
                 # we are mapping from the partitions of the parent asset to the partitions of
                 # the child asset
                 partition_mapping = self.asset_graph.get_partition_mapping(
@@ -752,24 +753,20 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
 
     @cached_method
-    def get_partitions_subset_or_bool_updated_after_cursor(
-        self,
-        *,
-        asset_key: AssetKey,
-        after_cursor: Optional[int],
-    ) -> Optional[PartitionsSubset]:
+    def get_partitions_subset_updated_after_cursor(
+        self, *, asset_key: AssetKey, after_cursor: Optional[int]
+    ) -> PartitionsSubset:
+        """Returns a PartitionsSubset representing the set of partitions that have been updated
+        after the given cursor. This subset will contain only valid partition keys for the given
+        asset.
+        """
         new_asset_partitions = self.get_asset_partitions_updated_after_cursor(
             asset_key,
             asset_partitions=None,
             after_cursor=after_cursor,
             respect_materialization_data_versions=False,
         )
-        partitions_def = self.asset_graph.get_partitions_def(asset_key)
-        if not new_asset_partitions:
-            return None
-        elif partitions_def is None:
-            # placeholder
-            return DefaultPartitionsSubset(StaticPartitionsDefinition(["1"]), {"1"})
+        partitions_def = check.not_none(self.asset_graph.get_partitions_def(asset_key))
         return partitions_def.subset_with_partition_keys(
             [
                 asset_partition.partition_key

@@ -38,7 +38,6 @@ from dagster._seven.compat.pendulum import (
     to_timezone,
 )
 from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.cached_method import cached_method
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -884,17 +883,8 @@ class TimeWindowPartitionsDefinition(
     ) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
-    def has_partition_key(self, partition_key, current_time=None, dynamic_partitions_store=None):
-        return self._has_partition_key(
-            partition_key=partition_key,
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
-
-    @cached_method
-    def _has_partition_key(
+    def has_partition_key(
         self,
-        *,
         partition_key: str,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
