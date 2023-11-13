@@ -580,7 +580,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.asset_decorator import (
-            _validate_and_assign_output_names_to_check_specs,
+            _assign_output_names_to_check_specs,
+            _validate_check_specs_target_relevant_asset_keys,
         )
 
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
@@ -612,12 +613,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
-        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
-            check_specs, list(keys_by_output_name.values())
-        )
+        check_specs_by_output_name = _assign_output_names_to_check_specs(check_specs)
 
         keys_by_output_name = _infer_keys_by_output_names(
             node_def, keys_by_output_name or {}, check_specs_by_output_name
+        )
+
+        _validate_check_specs_target_relevant_asset_keys(
+            check_specs, list(keys_by_output_name.values())
         )
 
         keys_by_output_name_with_prefix: Dict[str, AssetKey] = {}
