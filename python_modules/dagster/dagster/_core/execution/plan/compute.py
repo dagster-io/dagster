@@ -176,12 +176,12 @@ def _yield_compute_results(
     if inspect.isasyncgen(user_event_generator):
         user_event_generator = gen_from_async_gen(user_event_generator)
 
-    op_label = step_context.describe_op()
+    step_label = compute_context.execution_info.step_description
 
     for event in iterate_with_context(
         lambda: op_execution_error_boundary(
             DagsterExecutionStepExecutionError,
-            msg_fn=lambda: f"Error occurred while executing {op_label}:",
+            msg_fn=lambda: f"Error occurred while executing {step_label}:",
             step_context=step_context,
             step_key=step_context.step.key,
             op_def_name=step_context.op_def.name,
@@ -189,11 +189,11 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if compute_context.has_events():
-            yield from compute_context.consume_events()
+        if compute_context.execution_info.op_execution_context.has_events():
+            yield from compute_context.execution_info.op_execution_context.consume_events()
         yield _validate_event(event, step_context)
 
-    if compute_context.has_events():
+    if compute_context.execution_info.op_execution_context.has_events():
         yield from compute_context.consume_events()
 
 

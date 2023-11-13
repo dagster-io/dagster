@@ -66,56 +66,39 @@ from dagster._utils.warnings import (
 from .system import StepExecutionContext
 
 
+class ExecutionInfo(
+    NamedTuple(
+        "_ExecutionInfo",
+        [
+            ("step_description", PublicAttr[str]),
+            ("op_execution_context", PublicAttr["OpExecutionContext"]),
+        ],
+    )
+):
+    """Information to be used by dagster internals during execution. Contains:
+    * A description of the step.
+    """
+
+    def __new__(cls, step_description: str, op_execution_context: "OpExecutionContext"):
+        return super(ExecutionInfo, cls).__new__(
+            cls, step_description=step_description, op_execution_context=op_execution_context
+        )
+
+
 # This metaclass has to exist for OpExecutionContext to have a metaclass
 class AbstractComputeMetaclass(ABCMeta):
     pass
 
 
 class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
-    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
+    """Base class for op context implemented by OpExecutionContext, AssetExecutionContext,
+    and DagstermillExecutionContext.
+    """
 
+    @property
     @abstractmethod
-    def has_tag(self, key: str) -> bool:
+    def execution_info(self) -> ExecutionInfo:
         """Implement this method to check if a logging tag is set."""
-
-    @abstractmethod
-    def get_tag(self, key: str) -> Optional[str]:
-        """Implement this method to get a logging tag."""
-
-    @property
-    @abstractmethod
-    def run_id(self) -> str:
-        """The run id for the context."""
-
-    @property
-    @abstractmethod
-    def op_def(self) -> OpDefinition:
-        """The op definition corresponding to the execution step being executed."""
-
-    @property
-    @abstractmethod
-    def job_def(self) -> JobDefinition:
-        """The job being executed."""
-
-    @property
-    @abstractmethod
-    def run(self) -> DagsterRun:
-        """The DagsterRun object corresponding to the execution."""
-
-    @property
-    @abstractmethod
-    def resources(self) -> Any:
-        """Resources available in the execution context."""
-
-    @property
-    @abstractmethod
-    def log(self) -> DagsterLogManager:
-        """The log manager available in the execution context."""
-
-    @property
-    @abstractmethod
-    def op_config(self) -> Any:
-        """The parsed config specific to this op."""
 
 
 class OpExecutionContextMetaClass(AbstractComputeMetaclass):
@@ -555,7 +538,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return self._step_execution_context.previous_attempt_count
 
     def describe_op(self) -> str:
-        return self._step_execution_context.describe_op()
+        return self.execution_info.step_description
 
     @public
     def get_mapping_key(self) -> Optional[str]:
@@ -1420,6 +1403,11 @@ class AssetExecutionContext(OpExecutionContext):
             retry_number=self._op_execution_context.retry_number,
         )
 
+        self._execution_info = ExecutionInfo(
+            step_description=f"asset {self._op_execution_context.node_handle}",
+            op_execution_context=self._op_execution_context,
+        )
+
     @staticmethod
     def get() -> "AssetExecutionContext":
         ctx = _current_asset_execution_context.get()
@@ -1434,6 +1422,10 @@ class AssetExecutionContext(OpExecutionContext):
     @property
     def run_properties(self) -> RunProperties:
         return self._run_props
+
+    @property
+    def execution_info(self) -> ExecutionInfo:
+        return self._execution_info
 
     ######## Deprecated methods
 
