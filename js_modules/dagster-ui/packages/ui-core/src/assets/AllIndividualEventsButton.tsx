@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  ButtonLink,
   Colors,
   DialogFooter,
   Dialog,
@@ -226,11 +225,11 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
           <Group direction="column" spacing={4}>
             <Timestamp timestamp={{ms: Number(timestamp)}} />
             {all?.length > 1 ? (
-              <AllIndividualEventsLink
+              <AllIndividualEventsButton
                 hasPartitions={hasPartitions}
                 hasLineage={hasLineage}
                 events={all}
-              >{`View ${all.length} events`}</AllIndividualEventsLink>
+              >{`View ${all.length} events`}</AllIndividualEventsButton>
             ) : latest.__typename === 'MaterializationEvent' ? (
               <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.Gray600}}>
                 <Icon name="materialization" size={16} color={Colors.Gray600} />
@@ -293,15 +292,18 @@ interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
   events: (AssetMaterializationFragment | AssetObservationFragment)[];
-  children: React.ReactNode;
 }
 
-export const AllIndividualEventsLink = ({
+export const AllIndividualEventsButton = ({
+  disabled,
   hasLineage,
   hasPartitions,
   events,
   children,
-}: PredecessorDialogProps) => {
+}: PredecessorDialogProps & {
+  children: React.ReactNode;
+  disabled?: boolean;
+}) => {
   const [open, setOpen] = React.useState(false);
   const [focused, setFocused] = React.useState<AssetEventGroup | undefined>();
   const groups = React.useMemo(
@@ -326,7 +328,9 @@ export const AllIndividualEventsLink = ({
 
   return (
     <>
-      <ButtonLink onClick={() => setOpen(true)}>{children}</ButtonLink>
+      <Button disabled={disabled} onClick={() => setOpen(true)}>
+        {children}
+      </Button>
       <Dialog
         isOpen={open}
         canEscapeKeyClose
