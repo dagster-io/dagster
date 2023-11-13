@@ -129,6 +129,10 @@ def my_check():
 defs = Definitions(assets=[my_asset], asset_checks=[my_check])
 ```
 
+### Blocking asset checks
+
+Sometimes if a check fails, you want to prevent any downstream assets from materializing. There are different ways to do this depending on whether you're writing a separate `@asset_check` or including the check in the `@asset`.
+
 ### Adding metadata to check results
 
 You can add information why a check passed or failed using the `metadata` argument on <PyObject object="AssetCheckResult" />. We'll add `num_null_order_ids` as metadata to the `orders_id_has_no_nulls` example:
