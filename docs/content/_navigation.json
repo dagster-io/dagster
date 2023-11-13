@@ -10,12 +10,16 @@
         "path": "/getting-started/overview"
       },
       {
-        "title": "Quickstart",
+        "title": "Hello, Dagster!",
         "path": "/getting-started/hello-dagster"
       },
       {
         "title": "Installation",
         "path": "/getting-started/install"
+      },
+      {
+        "title": "Creating a new project",
+        "path": "/guides/create-new-project"
       },
       {
         "title": "Getting help",
@@ -776,16 +780,8 @@
         "title": "Development",
         "children": [
           {
-            "title": "Creating a new project",
-            "path": "/guides/create-new-project"
-          },
-          {
             "title": "Understanding Dagster project files",
             "path": "/guides/understanding-dagster-project-files"
-          },
-          {
-            "title": "Opting in or out of Dagster telemetry",
-            "path": "/guides/opting-in-out-dagster-telemetry"
           },
           {
             "title": "Running Dagster locally",
@@ -1303,7 +1299,6 @@
       },
       {
         "title": "Releases",
-        "path": "/getting-started/releases"
         "path": "/about/releases"
       },
       {
