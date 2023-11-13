@@ -6,6 +6,7 @@ from dagster import (
     DagsterType,
     Failure,
     Field,
+    OpExecutionContext,
     String,
     check_dagster_type,
     dagster_type_loader,
@@ -60,7 +61,7 @@ else:
 
 
 @op
-def sort_by_calories(context, cereals: LessSimpleDataFrame):
+def sort_by_calories(context: OpExecutionContext, cereals: LessSimpleDataFrame):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
     context.log.info(
         "Least caloric cereal: {least_caloric}".format(

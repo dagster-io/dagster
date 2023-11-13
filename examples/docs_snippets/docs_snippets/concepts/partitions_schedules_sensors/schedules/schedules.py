@@ -1,5 +1,6 @@
 from dagster import (
     DefaultScheduleStatus,
+    OpExecutionContext,
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
@@ -37,7 +38,7 @@ basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 
 # start_run_config_schedule
 @op(config_schema={"scheduled_date": str})
-def configurable_op(context):
+def configurable_op(context: OpExecutionContext):
     context.log.info(context.op_config["scheduled_date"])
 
 

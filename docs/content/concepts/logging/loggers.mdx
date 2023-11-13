@@ -43,11 +43,11 @@ Any op can emit log messages at any point in its computation. For example:
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_marker_0 endbefore=end_builtin_logger_marker_0
 # demo_logger.py
 
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 @op
-def hello_logs(context):
+def hello_logs(context: OpExecutionContext):
     context.log.info("Hello, world!")
 
 
@@ -153,11 +153,11 @@ For example, if an error is introduced into an op's logic:
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_error_marker_0 endbefore=end_builtin_logger_error_marker_0
 # demo_logger_error.py
 
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 @op
-def hello_logs_error(context):
+def hello_logs_error(context: OpExecutionContext):
     raise Exception("Somebody set up us the bomb")
 
 
@@ -204,7 +204,7 @@ Dagster recognizes this by attaching loggers to jobs so that you can seamlessly 
 
 ```python file=/concepts/logging/logging_jobs.py startafter=start_logging_mode_marker_0 endbefore=end_logging_mode_marker_0
 @op
-def log_op(context):
+def log_op(context: OpExecutionContext):
     context.log.info("Hello, world!")
 
 

@@ -1,4 +1,4 @@
-# Using Dagster with Spark Example
+# Using Dagster with Spark Example [UNMAINTAINED]
 
 Dagster ops can perform computations using Spark.
 

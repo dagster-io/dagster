@@ -1,6 +1,6 @@
 # ruff: isort: skip_file
 
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 def read_df():
@@ -24,7 +24,7 @@ from dagster import AssetObservation, op
 
 
 @op
-def observation_op(context):
+def observation_op(context: OpExecutionContext):
     df = read_df()
     context.log_event(
         AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
@@ -35,7 +35,7 @@ def observation_op(context):
 # end_observation_asset_marker_0
 
 # start_partitioned_asset_observation
-from dagster import AssetMaterialization, Config, op
+from dagster import AssetMaterialization, Config, op, OpExecutionContext
 
 
 class MyOpConfig(Config):
@@ -43,7 +43,7 @@ class MyOpConfig(Config):
 
 
 @op
-def partitioned_dataset_op(context, config: MyOpConfig):
+def partitioned_dataset_op(context: OpExecutionContext, config: MyOpConfig):
     partition_date = config.date
     df = read_df_for_date(partition_date)
     context.log_event(
@@ -60,7 +60,7 @@ from dagster import AssetMaterialization, AssetObservation, MetadataValue, op
 
 
 @op
-def observes_dataset_op(context):
+def observes_dataset_op(context: OpExecutionContext):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     context.log_event(

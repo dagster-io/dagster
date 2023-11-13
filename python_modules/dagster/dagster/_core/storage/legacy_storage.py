@@ -537,13 +537,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, before_cursor, after_cursor
         )
 
-    def get_materialization_count_by_partition(
-        self, asset_keys: Sequence["AssetKey"], after_cursor: Optional[int] = None
-    ) -> Mapping["AssetKey", Mapping[str, int]]:
-        return self._storage.event_log_storage.get_materialization_count_by_partition(
-            asset_keys, after_cursor
-        )
-
     def get_latest_storage_id_by_partition(
         self, asset_key: "AssetKey", event_type: "DagsterEventType"
     ) -> Mapping[str, int]:

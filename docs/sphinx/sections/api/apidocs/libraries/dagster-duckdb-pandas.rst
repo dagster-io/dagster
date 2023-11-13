@@ -1,7 +1,7 @@
 DuckDB + Pandas (dagster-duckdb-pandas)
 ---------------------------------------
 
-This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ database and Pandas data processing library.
+This library provides an integration with the `DuckDB <https://duckdb.org/>`_ database and Pandas data processing library.
 
 Related guides:
 

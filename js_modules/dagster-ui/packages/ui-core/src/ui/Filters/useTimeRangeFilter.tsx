@@ -171,7 +171,7 @@ export function useTimeRangeFilter({
 
 function TimeRangeResult({range}: {range: string}) {
   return (
-    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
       <Icon name="date" color={Colors.Dark} />
       {range}
     </Box>

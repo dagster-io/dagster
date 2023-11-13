@@ -12,6 +12,7 @@ from dagster import (
     DagsterRunStatus,
     run_status_sensor,
     run_failure_sensor,
+    OpExecutionContext,
 )
 
 
@@ -24,7 +25,7 @@ class FileConfig(Config):
 
 
 @op
-def process_file(context, config: FileConfig):
+def process_file(context: OpExecutionContext, config: FileConfig):
     context.log.info(config.filename)
 
 

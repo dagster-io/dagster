@@ -70,7 +70,7 @@ If you want to vary the behavior of your job based on the time it's scheduled to
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
 @op(config_schema={"scheduled_date": str})
-def configurable_op(context):
+def configurable_op(context: OpExecutionContext):
     context.log.info(context.op_config["scheduled_date"])
 
 
@@ -155,7 +155,7 @@ You can also create a schedule for a static partition. The Partitioned Jobs conc
 For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import Config, job, op, static_partitioned_config
+from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -178,7 +178,7 @@ class ContinentOpConfig(Config):
 
 
 @op
-def continent_op(context, config: ContinentOpConfig):
+def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
     context.log.info(config.continent_name)
 
 

@@ -1246,6 +1246,619 @@ export type LaunchAssetLoaderQuery = {
   }>;
 };
 
+export type LaunchAssetLoaderJobQueryVariables = Types.Exact<{
+  job: Types.PipelineSelector;
+}>;
+
+export type LaunchAssetLoaderJobQuery = {
+  __typename: 'Query';
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    id: string;
+    opNames: Array<string>;
+    jobNames: Array<string>;
+    graphName: string | null;
+    hasMaterializePermission: boolean;
+    isObservable: boolean;
+    isExecutable: boolean;
+    isSource: boolean;
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      description: string;
+      type: Types.PartitionDefinitionType;
+      name: string | null;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        name: string;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
+    } | null;
+    backfillPolicy: {
+      __typename: 'BackfillPolicy';
+      maxPartitionsPerRun: number | null;
+      description: string;
+      policyType: Types.BackfillPolicyType;
+    } | null;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    assetChecksOrError:
+      | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+      | {__typename: 'AssetCheckNeedsMigrationError'}
+      | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+      | {
+          __typename: 'AssetChecks';
+          checks: Array<{
+            __typename: 'AssetCheck';
+            name: string;
+            canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+          }>;
+        };
+    dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+    repository: {
+      __typename: 'Repository';
+      id: string;
+      name: string;
+      location: {__typename: 'RepositoryLocation'; id: string; name: string};
+    };
+    requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+    configField: {
+      __typename: 'ConfigTypeField';
+      name: string;
+      isRequired: boolean;
+      configType:
+        | {
+            __typename: 'ArrayConfigType';
+            key: string;
+            description: string | null;
+            isSelector: boolean;
+            typeParamKeys: Array<string>;
+            recursiveConfigTypes: Array<
+              | {
+                  __typename: 'ArrayConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'CompositeConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  fields: Array<{
+                    __typename: 'ConfigTypeField';
+                    name: string;
+                    description: string | null;
+                    isRequired: boolean;
+                    configTypeKey: string;
+                    defaultValueAsJson: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'EnumConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  values: Array<{
+                    __typename: 'EnumConfigValue';
+                    value: string;
+                    description: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'MapConfigType';
+                  keyLabelName: string | null;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'NullableConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'RegularConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'ScalarUnionConfigType';
+                  scalarTypeKey: string;
+                  nonScalarTypeKey: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+            >;
+          }
+        | {
+            __typename: 'CompositeConfigType';
+            key: string;
+            description: string | null;
+            isSelector: boolean;
+            typeParamKeys: Array<string>;
+            recursiveConfigTypes: Array<
+              | {
+                  __typename: 'ArrayConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'CompositeConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  fields: Array<{
+                    __typename: 'ConfigTypeField';
+                    name: string;
+                    description: string | null;
+                    isRequired: boolean;
+                    configTypeKey: string;
+                    defaultValueAsJson: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'EnumConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  values: Array<{
+                    __typename: 'EnumConfigValue';
+                    value: string;
+                    description: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'MapConfigType';
+                  keyLabelName: string | null;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'NullableConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'RegularConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'ScalarUnionConfigType';
+                  scalarTypeKey: string;
+                  nonScalarTypeKey: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+            >;
+            fields: Array<{
+              __typename: 'ConfigTypeField';
+              name: string;
+              description: string | null;
+              isRequired: boolean;
+              configTypeKey: string;
+              defaultValueAsJson: string | null;
+            }>;
+          }
+        | {
+            __typename: 'EnumConfigType';
+            givenName: string;
+            key: string;
+            description: string | null;
+            isSelector: boolean;
+            typeParamKeys: Array<string>;
+            recursiveConfigTypes: Array<
+              | {
+                  __typename: 'ArrayConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'CompositeConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  fields: Array<{
+                    __typename: 'ConfigTypeField';
+                    name: string;
+                    description: string | null;
+                    isRequired: boolean;
+                    configTypeKey: string;
+                    defaultValueAsJson: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'EnumConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  values: Array<{
+                    __typename: 'EnumConfigValue';
+                    value: string;
+                    description: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'MapConfigType';
+                  keyLabelName: string | null;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'NullableConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'RegularConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'ScalarUnionConfigType';
+                  scalarTypeKey: string;
+                  nonScalarTypeKey: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+            >;
+            values: Array<{
+              __typename: 'EnumConfigValue';
+              value: string;
+              description: string | null;
+            }>;
+          }
+        | {
+            __typename: 'MapConfigType';
+            keyLabelName: string | null;
+            key: string;
+            description: string | null;
+            isSelector: boolean;
+            typeParamKeys: Array<string>;
+            recursiveConfigTypes: Array<
+              | {
+                  __typename: 'ArrayConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'CompositeConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  fields: Array<{
+                    __typename: 'ConfigTypeField';
+                    name: string;
+                    description: string | null;
+                    isRequired: boolean;
+                    configTypeKey: string;
+                    defaultValueAsJson: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'EnumConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  values: Array<{
+                    __typename: 'EnumConfigValue';
+                    value: string;
+                    description: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'MapConfigType';
+                  keyLabelName: string | null;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'NullableConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'RegularConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'ScalarUnionConfigType';
+                  scalarTypeKey: string;
+                  nonScalarTypeKey: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+            >;
+          }
+        | {
+            __typename: 'NullableConfigType';
+            key: string;
+            description: string | null;
+            isSelector: boolean;
+            typeParamKeys: Array<string>;
+            recursiveConfigTypes: Array<
+              | {
+                  __typename: 'ArrayConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'CompositeConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  fields: Array<{
+                    __typename: 'ConfigTypeField';
+                    name: string;
+                    description: string | null;
+                    isRequired: boolean;
+                    configTypeKey: string;
+                    defaultValueAsJson: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'EnumConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  values: Array<{
+                    __typename: 'EnumConfigValue';
+                    value: string;
+                    description: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'MapConfigType';
+                  keyLabelName: string | null;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'NullableConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'RegularConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'ScalarUnionConfigType';
+                  scalarTypeKey: string;
+                  nonScalarTypeKey: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+            >;
+          }
+        | {
+            __typename: 'RegularConfigType';
+            givenName: string;
+            key: string;
+            description: string | null;
+            isSelector: boolean;
+            typeParamKeys: Array<string>;
+            recursiveConfigTypes: Array<
+              | {
+                  __typename: 'ArrayConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'CompositeConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  fields: Array<{
+                    __typename: 'ConfigTypeField';
+                    name: string;
+                    description: string | null;
+                    isRequired: boolean;
+                    configTypeKey: string;
+                    defaultValueAsJson: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'EnumConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  values: Array<{
+                    __typename: 'EnumConfigValue';
+                    value: string;
+                    description: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'MapConfigType';
+                  keyLabelName: string | null;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'NullableConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'RegularConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'ScalarUnionConfigType';
+                  scalarTypeKey: string;
+                  nonScalarTypeKey: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+            >;
+          }
+        | {
+            __typename: 'ScalarUnionConfigType';
+            scalarTypeKey: string;
+            nonScalarTypeKey: string;
+            key: string;
+            description: string | null;
+            isSelector: boolean;
+            typeParamKeys: Array<string>;
+            recursiveConfigTypes: Array<
+              | {
+                  __typename: 'ArrayConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'CompositeConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  fields: Array<{
+                    __typename: 'ConfigTypeField';
+                    name: string;
+                    description: string | null;
+                    isRequired: boolean;
+                    configTypeKey: string;
+                    defaultValueAsJson: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'EnumConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                  values: Array<{
+                    __typename: 'EnumConfigValue';
+                    value: string;
+                    description: string | null;
+                  }>;
+                }
+              | {
+                  __typename: 'MapConfigType';
+                  keyLabelName: string | null;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'NullableConfigType';
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'RegularConfigType';
+                  givenName: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+              | {
+                  __typename: 'ScalarUnionConfigType';
+                  scalarTypeKey: string;
+                  nonScalarTypeKey: string;
+                  key: string;
+                  description: string | null;
+                  isSelector: boolean;
+                  typeParamKeys: Array<string>;
+                }
+            >;
+          };
+    } | null;
+  }>;
+};
+
 export type LaunchAssetLoaderResourceQueryVariables = Types.Exact<{
   pipelineName: Types.Scalars['String'];
   repositoryLocationName: Types.Scalars['String'];

@@ -11,7 +11,7 @@ from dagster import (
     WeeklyPartitionsDefinition,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 
 
 def subset_with_keys(partitions_def: TimeWindowPartitionsDefinition, keys: Sequence[str]):
@@ -622,7 +622,7 @@ def test_daily_upstream_of_yearly():
     ],
 )
 def test_downstream_partition_has_valid_upstream_partitions(
-    downstream_partitions_subset: TimeWindowPartitionsSubset,
+    downstream_partitions_subset: BaseTimeWindowPartitionsSubset,
     upstream_partitions_def: TimeWindowPartitionsDefinition,
     allow_nonexistent_upstream_partitions: bool,
     current_time: datetime,

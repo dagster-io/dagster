@@ -32,7 +32,7 @@ exclude = [
   "**/.tox",
   ".git",
   "**/.venv*",
-  "**/build"
+  "**/build",
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -102,7 +102,7 @@ target-version = "py38"
 extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
-  "*/snapshots/*"
+  "*/snapshots/*",
 ]
 
 ignore = [
@@ -156,13 +156,13 @@ ignore = [
 
   # (assorted docstring rules) There are too many violations of these to enable
   # right now, but we should enable after fixing the violations.
-  "D200",  # (one-line docstring should fit)
-  "D205",  # (blank line after summary)
-  "D417",  # (missing arg in docstring)
+  "D200", # (one-line docstring should fit)
+  "D205", # (blank line after summary)
+  "D417", # (missing arg in docstring)
 
   # (assorted perf rules) We have a lot of violations, enable when autofix is available
-  "PERF401",  # (manual-list-comprehension)
-  "PERF402",  # (manual-list-copy)
+  "PERF401", # (manual-list-comprehension)
+  "PERF402", # (manual-list-copy)
 ]
 
 # Codebase-wide default line length. Override in package-specific pyproject.toml where a different
@@ -212,7 +212,7 @@ select = [
   # (private member access) Flag access to `_`-prefixed symbols. By default the various special
   # methods on `NamedTuple` are ignored (e.g. `_replace`).
   "SLF001",
-  
+
   # (flake8-type-checking) Auto-sort imports into TYPE_CHECKING blocks depending on whether
   # they are runtime or type-only imports.
   "TCH",

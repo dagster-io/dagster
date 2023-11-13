@@ -10,6 +10,7 @@ export type FilterObject<T = any> = {
   icon: IconName;
   name: string;
   getResults: (query: string) => {label: JSX.Element; key: string; value: any}[];
+  getNoResultsPlaceholder?: (query: string) => string;
   onSelect: (selectArg: {
     value: T;
     close: () => void;

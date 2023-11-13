@@ -2,11 +2,11 @@ import csv
 
 import requests
 
-from dagster import job, op
+from dagster import OpExecutionContext, job, op
 
 
 @op
-def hello_cereal(context):
+def hello_cereal(context: OpExecutionContext):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     cereals = [row for row in csv.DictReader(lines)]

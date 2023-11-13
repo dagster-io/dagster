@@ -6,6 +6,7 @@ from dagster import (
     Definitions,
     In,
     Nothing,
+    OpExecutionContext,
     RetryPolicy,
     ScheduleDefinition,
     job,
@@ -16,7 +17,7 @@ from dagster import (
 
 # start_ops
 @op
-def print_date(context) -> datetime:
+def print_date(context: OpExecutionContext) -> datetime:
     ds = datetime.now()
     context.log.info(ds)
     return ds
@@ -28,7 +29,7 @@ def sleep():
 
 
 @op
-def templated(context, ds: datetime):
+def templated(context: OpExecutionContext, ds: datetime):
     for _i in range(5):
         context.log.info(ds)
         context.log.info(ds - timedelta(days=7))

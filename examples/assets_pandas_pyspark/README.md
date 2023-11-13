@@ -1,4 +1,4 @@
-# Software-Defined Assets with Pandas and PySpark Example
+# Software-Defined Assets with Pandas and PySpark Example [UNMAINTAINED]
 
 In this example, we'll define some tables with dependencies on each other. We have a table of temperature samples collected in five-minute increments, and we want to compute a table of the highest temperatures for each day.
 
