@@ -450,9 +450,11 @@ def test_async_assets_with_shared_context():
     ctx = build_op_context()
 
     async def main():
-        asyncio.gather(
+        return await asyncio.gather(
             async_asset_one(ctx),
             async_asset_two(ctx),
         )
 
-    asyncio.run(main())
+    result = asyncio.run(main())
+    assert result[0] == "one"
+    assert result[1] == "two"
