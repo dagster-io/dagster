@@ -357,7 +357,59 @@
           },
           {
             "title": "Guides",
-            "path": "/deployment/guides"
+            "path": "/deployment/guides",
+            "children": [
+              {
+                "title": "Running Dagster locally",
+                "path": "/guides/running-dagster-locally"
+              },
+              {
+                "title": "Running Dagster as a service",
+                "path": "/deployment/guides/service"
+              },
+              {
+                "title": "Deploying with Helm",
+                "path": "/deployment/guides/kubernetes",
+                "children": [
+                  {
+                    "title": "Helm",
+                    "path": "/deployment/guides/kubernetes/deploying-with-helm"
+                  },
+                  {
+                    "title": "Celery + Helm",
+                    "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
+                  },
+                  {
+                    "title": "Customzing deployments",
+                    "path": "/deployment/guides/kubernetes/customizing-your-deployment"
+                  },
+                  {
+                    "title": "Migrating instances while upgrading",
+                    "path": "/deployment/guides/kubernetes/how-to-migrate-your-instance"
+                  }
+                ]
+              },
+              {
+                "title": "Deploying to Docker",
+                "path": "/deployment/guides/docker"
+              },
+              {
+                "title": "Deploying to Amazon Web Services",
+                "path": "/deployment/guides/aws"
+              },
+              {
+                "title": "Deploying to Google Cloud Platform",
+                "path": "/deployment/guides/gcp"
+              },
+              {
+                "title": "Executing Dagster with Celery",
+                "path": "/deployment/guides/celery"
+              },
+              {
+                "title": "Executing Dagster with Dask",
+                "path": "/deployment/guides/dask"
+              }
+            ]
           }
         ]
       },
