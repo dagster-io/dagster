@@ -317,13 +317,20 @@ def iris_dataset() -> pd.DataFrame:
 In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
 
 <Note>
-    The schema is determined in this order:
-    <ol>
+  The schema is determined in this order:
+  <ol>
     <li>If the schema is set via metadata, that schema will be used</li>
-    <li>Otherwise, if there is a <code>key_prefix</code>, that schema will be used</li>
-    <li>Otherwise, the schema set as configuration on the I/O manager will be used</li>
-    <li>If none of the above are provided, the default schema will be <code>PUBLIC</code></li>
-    </ol>
+    <li>
+      Otherwise, if there is a <code>key_prefix</code>, that schema will be used
+    </li>
+    <li>
+      Otherwise, the schema set as configuration on the I/O manager will be used
+    </li>
+    <li>
+      If none of the above are provided, the default schema will be{" "}
+      <code>PUBLIC</code>
+    </li>
+  </ol>
 </Note>
 
 ### Using the DuckDB I/O manager with other I/O managers

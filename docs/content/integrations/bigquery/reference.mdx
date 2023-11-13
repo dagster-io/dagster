@@ -311,13 +311,22 @@ def iris_data() -> pd.DataFrame:
 The dataset will be the last prefix before the asset's name. In this example, the `iris_data` asset will be stored in the `IRIS` dataset, and the `daffodil_data` asset will be found in the `DAFFODIL` dataset.
 
 <Note>
-    The dataset is determined in this order:
-    <ol>
+  The dataset is determined in this order:
+  <ol>
     <li>If the dataset is set via metadata, that dataset will be used</li>
-    <li>Otherwise, if there is a <code>key_prefix</code>, that dataset will be used</li>
-    <li>Otherwise, the dataset set as configuration on the I/O manager will be used</li>
-    <li>If none of the above are provided, the default dataset will be <code>PUBLIC</code></li>
-    </ol>
+    <li>
+      Otherwise, if there is a <code>key_prefix</code>, that dataset will be
+      used
+    </li>
+    <li>
+      Otherwise, the dataset set as configuration on the I/O manager will be
+      used
+    </li>
+    <li>
+      If none of the above are provided, the default dataset will be{" "}
+      <code>PUBLIC</code>
+    </li>
+  </ol>
 </Note>
 
 ---
