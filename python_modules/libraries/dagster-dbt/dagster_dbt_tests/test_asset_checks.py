@@ -30,6 +30,11 @@ dagster_dbt_translator_with_checks = DagsterDbtTranslator(
 )
 
 
+@pytest.fixture(params=[[["build"]], [["seed"], ["run"], ["test"]]])
+def dbt_commands(request):
+    return request.param
+
+
 def test_with_asset_checks() -> None:
     @dbt_assets(manifest=manifest)
     def my_dbt_assets_no_checks():
@@ -106,19 +111,6 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 
 
 @pytest.mark.parametrize(
-    "dbt_commands",
-    [
-        [
-            ["build"],
-        ],
-        [
-            ["seed"],
-            ["run"],
-            ["test"],
-        ],
-    ],
-)
-@pytest.mark.parametrize(
     "selection",
     [
         None,
@@ -146,13 +138,9 @@ def test_enable_asset_checks_with_custom_translator() -> None:
         "select only checks for customers",
     ],
 )
-def test_asset_check_execution(
-    mocker: MockerFixture, dbt_commands: List[List[str]], selection: Optional[AssetSelection]
+def test_asset_check_materialize(
+    dbt_commands: List[List[str]], selection: Optional[AssetSelection]
 ) -> None:
-    mock_context = mocker.MagicMock()
-    mock_context.assets_def = None
-    mock_context.has_assets_def = True
-
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
@@ -169,6 +157,16 @@ def test_asset_check_execution(
     )
 
     assert result.success
+
+
+def test_asset_checks_are_logged_from_resource(
+    mocker: MockerFixture, dbt_commands: List[List[str]]
+):
+    mock_context = mocker.MagicMock()
+    mock_context.assets_def = None
+    mock_context.has_assets_def = True
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
     events = []
     invocation_id = ""
