@@ -1,6 +1,6 @@
 from dagster_k8s import k8s_job_executor
 
-from dagster import job, op
+from dagster import OpExecutionContext, job, op
 
 
 # fmt: off
@@ -16,7 +16,7 @@ from dagster import job, op
         }
     }
 )
-def my_op(context):
+def my_op(context: OpExecutionContext):
     context.log.info("running")
 
 @job(executor_def=k8s_job_executor)

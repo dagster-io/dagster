@@ -57,7 +57,7 @@ The most common kind of partitioned job is a time-partitioned job - each partiti
 Before we dive in, let's look at a non-partitioned job that computes some data for a given date:
 
 ```python file=/concepts/partitions_schedules_sensors/date_config_job.py
-from dagster import Config, job, op
+from dagster import Config, OpExecutionContext, job, op
 
 
 class ProcessDateConfig(Config):
@@ -65,7 +65,7 @@ class ProcessDateConfig(Config):
 
 
 @op
-def process_data_for_date(context, config: ProcessDateConfig):
+def process_data_for_date(context: OpExecutionContext, config: ProcessDateConfig):
     date = config.date
     context.log.info(f"processing data for {date}")
 
@@ -119,7 +119,7 @@ def do_stuff_partitioned():
 Not all jobs are partitioned by time. For example, the following example shows a partitioned job where the partitions are continents:
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import Config, job, op, static_partitioned_config
+from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -142,7 +142,7 @@ class ContinentOpConfig(Config):
 
 
 @op
-def continent_op(context, config: ContinentOpConfig):
+def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
     context.log.info(config.continent_name)
 
 

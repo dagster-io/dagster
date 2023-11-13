@@ -188,7 +188,7 @@ If we execute the following job:
 
 ```python file=/concepts/logging/file_output_pipeline.py startafter=start_custom_file_output_log endbefore=end_custom_file_output_log
 @op
-def file_log_op(context):
+def file_log_op(context: OpExecutionContext):
     context.log.info("Hello world!")
 
 

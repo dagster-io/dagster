@@ -1,5 +1,11 @@
 # start_marker
-from dagster import AssetKey, BackfillPolicy, DailyPartitionsDefinition, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    BackfillPolicy,
+    DailyPartitionsDefinition,
+    asset,
+)
 
 
 @asset(
@@ -7,7 +13,7 @@ from dagster import AssetKey, BackfillPolicy, DailyPartitionsDefinition, asset
     backfill_policy=BackfillPolicy.single_run(),
     deps=[AssetKey("raw_events")],
 )
-def events(context):
+def events(context: AssetExecutionContext):
     start_datetime, end_datetime = context.partition_time_window
 
     input_data = read_data_in_datetime_range(start_datetime, end_datetime)

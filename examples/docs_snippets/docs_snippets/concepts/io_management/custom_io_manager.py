@@ -52,7 +52,7 @@ class MyIOManager(ConfigurableIOManager):
 
 # start_io_manager_factory_marker
 
-from dagster import IOManager, ConfigurableIOManagerFactory
+from dagster import IOManager, ConfigurableIOManagerFactory, OutputContext, InputContext
 import requests
 
 
@@ -62,10 +62,10 @@ class ExternalIOManager(IOManager):
         # setup stateful cache
         self._cache = {}
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         ...
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         if context.asset_key in self._cache:
             return self._cache[context.asset_key]
         ...
@@ -89,10 +89,10 @@ class MyPartitionedIOManager(IOManager):
         else:
             return "/".join(context.asset_key.path)
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         write_csv(self._get_path(context), obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_csv(self._get_path(context))
 
 
@@ -103,15 +103,16 @@ from dagster import ConfigurableIOManager, io_manager
 
 
 class DataframeTableIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         # name is the name given to the Out that we're storing for
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         # upstream_output.name is the name given to the Out that we're loading for
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
+        if context.upstream_output:
+            table_name = context.upstream_output.name
+            return read_dataframe_from_table(name=table_name)
 
 
 @job(resource_defs={"io_manager": DataframeTableIOManager()})
@@ -124,15 +125,16 @@ def my_job():
 
 # start_metadata_marker
 class DataframeTableIOManagerWithMetadata(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
         context.add_output_metadata({"num_rows": len(obj), "table_name": table_name})
 
-    def load_input(self, context):
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
+    def load_input(self, context: InputContext):
+        if context.upstream_output:
+            table_name = context.upstream_output.name
+            return read_dataframe_from_table(name=table_name)
 
 
 # end_metadata_marker

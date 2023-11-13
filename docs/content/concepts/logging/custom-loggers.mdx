@@ -51,7 +51,7 @@ def json_console_logger(init_context):
 
 
 @op
-def hello_logs(context):
+def hello_logs(context: OpExecutionContext):
     context.log.info("Hello, world!")
 
 

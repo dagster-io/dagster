@@ -12,6 +12,7 @@ from dagster import (
     DagsterTypeCheckDidNotPass,
     In,
     Nothing,
+    OpExecutionContext,
     Out,
     PythonObjectDagsterType,
     dagster_type_loader,
@@ -193,7 +194,7 @@ def test_nothing_fanin_actually_test():
     ordering = {"counter": 0}
 
     @op(out=Out(Nothing))
-    def start_first_job_section(context):
+    def start_first_job_section(context: OpExecutionContext):
         ordering["counter"] += 1
         ordering[context.op.name] = ordering["counter"]
 
@@ -201,12 +202,12 @@ def test_nothing_fanin_actually_test():
         ins={"first_section_done": In(Nothing)},
         out=Out(Nothing),
     )
-    def perform_clean_up(context):
+    def perform_clean_up(context: OpExecutionContext):
         ordering["counter"] += 1
         ordering[context.op.name] = ordering["counter"]
 
     @op(ins={"on_cleanup_tasks_done": In(Nothing)})
-    def start_next_job_section(context):
+    def start_next_job_section(context: OpExecutionContext):
         ordering["counter"] += 1
         ordering[context.op.name] = ordering["counter"]
         return "worked"
