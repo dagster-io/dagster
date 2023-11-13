@@ -548,7 +548,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc."""
         return self._step_execution_context.previous_attempt_count
 
-    def describe_op(self):
+    def describe_op(self) -> str:
         return self._step_execution_context.describe_op()
 
     @public
@@ -1352,7 +1352,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         ctx = _current_asset_execution_context.get()
         if ctx is None:
             raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
-        return ctx.get_op_execution_context()
+        return ctx.op_execution_context
 
 
 ###############################
@@ -1362,6 +1362,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 ALTERNATE_METHODS = {
     "run_id": "run_info.run_id",
     "run": "run_info.dagster_run",
+    "dagster_run": "run_info.dagster_run",
     "run_config": "run_info.run_config",
     "retry_number": "run_info.retry_number",
 }
@@ -1426,6 +1427,13 @@ class AssetExecutionContext:
             retry_number=self._op_execution_context.retry_number,
         )
 
+    @staticmethod
+    def get() -> "AssetExecutionContext":
+        ctx = _current_asset_execution_context.get()
+        if ctx is None:
+            raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
+        return ctx
+
     @property
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
@@ -1441,6 +1449,12 @@ class AssetExecutionContext:
     def run(self) -> DagsterRun:
         return self.op_execution_context.run
 
+    @deprecated(**_get_deprecation_kwargs("dagster_run"))
+    @property
+    def dagster_run(self) -> DagsterRun:
+        """DagsterRun: The current pipeline run."""
+        return self.op_execution_context.dagster_run
+
     @deprecated(**_get_deprecation_kwargs("run_id"))
     @property
     def run_id(self) -> str:
@@ -1453,32 +1467,22 @@ class AssetExecutionContext:
 
     @deprecated(**_get_deprecation_kwargs("retry_number"))
     @property
-    def retry_number(self):
+    def retry_number(self) -> int:
         return self.op_execution_context.retry_number
 
-    @staticmethod
-    def get() -> "AssetExecutionContext":
-        ctx = _current_asset_execution_context.get()
-        if ctx is None:
-            raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
-        return ctx
     ########## pass-through to op context
+
     @public
     @property
     def op_config(self) -> Any:
         """Any: The parsed config specific to this op."""
-        return self._op_execution_context.op_config
-
-    @property
-    def dagster_run(self) -> DagsterRun:
-        """PipelineRun: The current pipeline run."""
-        return self._op_execution_context.dagster_run
+        return self.op_execution_context.op_config
 
     @public
     @property
     def instance(self) -> DagsterInstance:
         """DagsterInstance: The current Dagster instance."""
-        return self._op_execution_context.instance
+        return self.op_execution_context.instance
 
     @public
     @property
@@ -1492,7 +1496,7 @@ class AssetExecutionContext:
                 def debug(context):
                     context.pdb.set_trace()
         """
-        return self._op_execution_context.pdb
+        return self.op_execution_context.pdb
 
     @property
     def file_manager(self):
@@ -1509,30 +1513,30 @@ class AssetExecutionContext:
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
-        return self._op_execution_context.resources
+        return self.op_execution_context.resources
 
     @property
     def step_launcher(self) -> Optional[StepLauncher]:
         """Optional[StepLauncher]: The current step launcher, if any."""
-        return self._op_execution_context.step_launcher
+        return self.op_execution_context.step_launcher
 
     @public
     @property
     def job_def(self) -> JobDefinition:
         """JobDefinition: The currently executing pipeline."""
-        return self._op_execution_context.job_def
+        return self.op_execution_context.job_def
 
     @public
     @property
     def job_name(self) -> str:
         """str: The name of the currently executing pipeline."""
-        return self._op_execution_context.job_name
+        return self.op_execution_context.job_name
 
     @public
     @property
     def log(self) -> DagsterLogManager:
         """DagsterLogManager: The log manager available in the execution context."""
-        return self._op_execution_context.log
+        return self.op_execution_context.log
 
     @property
     def node_handle(self) -> NodeHandle:
@@ -1540,7 +1544,7 @@ class AssetExecutionContext:
 
         :meta private:
         """
-        return self._op_execution_context.node_handle
+        return self.op_execution_context.node_handle
 
     @property
     def op_handle(self) -> NodeHandle:
@@ -1548,7 +1552,7 @@ class AssetExecutionContext:
 
         :meta private:
         """
-        return self._op_execution_context.op_handle
+        return self.op_execution_context.op_handle
 
     @property
     def op(self) -> Node:
@@ -1557,19 +1561,19 @@ class AssetExecutionContext:
         :meta private:
 
         """
-        return self._op_execution_context.op
+        return self.op_execution_context.op
 
     @public
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
-        return self._op_execution_context.op_def
+        return self.op_execution_context.op_def
 
     @public
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
-        return self._op_execution_context.has_partition_key
+        return self.op_execution_context.has_partition_key
 
     @public
     @property
@@ -1593,7 +1597,7 @@ class AssetExecutionContext:
                 # materializing the 2023-08-21 partition of this asset will log:
                 #   "2023-08-21"
         """
-        return self._op_execution_context.partition_key
+        return self.op_execution_context.partition_key
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
@@ -1604,7 +1608,7 @@ class AssetExecutionContext:
         If run is for a single partition key, return a `PartitionKeyRange` with the same start and
         end. Raises an error if the current run is not a partitioned run.
         """
-        return self._op_execution_context.asset_partition_key_range
+        return self.op_execution_context.asset_partition_key_range
 
     @public
     @property
@@ -1628,7 +1632,7 @@ class AssetExecutionContext:
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
         """
-        return self._op_execution_context.partition_key_range
+        return self.op_execution_context.partition_key_range
 
     @public
     @property
@@ -1652,7 +1656,7 @@ class AssetExecutionContext:
                 # materializing the 2023-08-21 partition of this asset will log:
                 #   TimeWindow("2023-08-21", "2023-08-22")
         """
-        return self._op_execution_context.partition_time_window
+        return self.op_execution_context.partition_time_window
 
     @public
     def has_tag(self, key: str) -> bool:
@@ -1664,7 +1668,7 @@ class AssetExecutionContext:
         Returns:
             bool: Whether the tag is set.
         """
-        return self._op_execution_context.has_tag(key)
+        return self.op_execution_context.has_tag(key)
 
     @public
     def get_tag(self, key: str) -> Optional[str]:
@@ -1676,22 +1680,22 @@ class AssetExecutionContext:
         Returns:
             Optional[str]: The value of the tag, if present.
         """
-        return self._op_execution_context.get_tag(key)
+        return self.op_execution_context.get_tag(key)
 
     @property
     def run_tags(self) -> Mapping[str, str]:
         """Mapping[str, str]: The tags for the current run."""
-        return self._op_execution_context.run_tags
+        return self.op_execution_context.run_tags
 
     def has_events(self) -> bool:
-        return self._op_execution_context.has_events()
+        return self.op_execution_context.has_events()
 
     def consume_events(self) -> Iterator[DagsterEvent]:
         """Pops and yields all user-generated events that have been recorded from this context.
 
         If consume_events has not yet been called, this will yield all logged events since the beginning of the op's computation. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-        return self._op_execution_context.consume_events()
+        return self.op_execution_context.consume_events()
 
     @public
     def log_event(self, event: UserEvent) -> None:
@@ -1712,7 +1716,7 @@ class AssetExecutionContext:
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-        return self._op_execution_context.log_event(event)
+        return self.op_execution_context.log_event(event)
 
     @public
     def add_output_metadata(
@@ -1752,14 +1756,14 @@ class AssetExecutionContext:
                 return ("dog", 5)
 
         """
-        return self._op_execution_context.add_output_metadata(
+        return self.op_execution_context.add_output_metadata(
             metadata=metadata, output_name=output_name, mapping_key=mapping_key
         )
 
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None
     ) -> Optional[Mapping[str, Any]]:
-        return self._op_execution_context.get_output_metadata(
+        return self.op_execution_context.get_output_metadata(
             output_name=output_name, mapping_key=mapping_key
         )
 
@@ -1772,39 +1776,39 @@ class AssetExecutionContext:
         Returns:
             StepExecutionContext: The underlying system context.
         """
-        return self._op_execution_context.get_step_execution_context()
+        return self.op_execution_context.get_step_execution_context()
 
-    def describe_op(self):
-        return self._op_execution_context.describe_op()
+    def describe_op(self) -> str:
+        return self.op_execution_context.describe_op()
 
     @public
     def get_mapping_key(self) -> Optional[str]:
         """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None."""
-        return self._op_execution_context.get_mapping_key()
+        return self.op_execution_context.get_mapping_key()
 
     @public
     @property
     def asset_key(self) -> AssetKey:
         """The AssetKey for the current asset. In a multi_asset, use asset_key_for_output instead."""
-        return self._op_execution_context.asset_key
+        return self.op_execution_context.asset_key
 
     @public
     @property
     def has_assets_def(self) -> bool:
         """If there is a backing AssetsDefinition for what is currently executing."""
-        return self._op_execution_context.has_assets_def
+        return self.op_execution_context.has_assets_def
 
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
         """The backing AssetsDefinition for what is currently executing, errors if not available."""
-        return self._op_execution_context.assets_def
+        return self.op_execution_context.assets_def
 
     @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
         """Get the set of AssetKeys this execution is expected to materialize."""
-        return self._op_execution_context.selected_asset_keys
+        return self.op_execution_context.selected_asset_keys
 
     @public
     @property
@@ -1815,7 +1819,7 @@ class AssetExecutionContext:
         Returns:
             bool: True if there is a backing AssetChecksDefinition for the current execution, otherwise False.
         """
-        return self._op_execution_context.has_asset_checks_def
+        return self.op_execution_context.has_asset_checks_def
 
     @public
     @property
@@ -1826,33 +1830,33 @@ class AssetExecutionContext:
         Returns:
             AssetChecksDefinition.
         """
-        return self._op_execution_context.asset_checks_def
+        return self.op_execution_context.asset_checks_def
 
     @public
     @property
     def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        return self._op_execution_context.selected_asset_check_keys
+        return self.op_execution_context.selected_asset_check_keys
 
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
         """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
-        return self._op_execution_context.selected_output_names
+        return self.op_execution_context.selected_output_names
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         """Return the AssetKey for the corresponding output."""
-        return self._op_execution_context.asset_key_for_output(output_name=output_name)
+        return self.op_execution_context.asset_key_for_output(output_name=output_name)
 
     @public
     def output_for_asset_key(self, asset_key: AssetKey) -> str:
         """Return the output name for the corresponding asset key."""
-        return self._op_execution_context.output_for_asset_key(asset_key=asset_key)
+        return self.op_execution_context.output_for_asset_key(asset_key=asset_key)
 
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         """Return the AssetKey for the corresponding input."""
-        return self._op_execution_context.asset_key_for_input(input_name=input_name)
+        return self.op_execution_context.asset_key_for_input(input_name=input_name)
 
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
@@ -1909,7 +1913,7 @@ class AssetExecutionContext:
                 #   "2023-08-21"
 
         """
-        return self._op_execution_context.asset_partition_key_for_output(output_name=output_name)
+        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
 
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
@@ -1984,7 +1988,7 @@ class AssetExecutionContext:
                 #   TimeWindow("2023-08-21", "2023-08-26")
 
         """
-        return self._op_execution_context.asset_partitions_time_window_for_output(output_name)
+        return self.op_execution_context.asset_partitions_time_window_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_output(
@@ -2047,7 +2051,7 @@ class AssetExecutionContext:
                 #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
 
         """
-        return self._op_execution_context.asset_partition_key_range_for_output(output_name)
+        return self.op_execution_context.asset_partition_key_range_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
@@ -2110,7 +2114,7 @@ class AssetExecutionContext:
 
 
         """
-        return self._op_execution_context.asset_partition_key_range_for_input(input_name)
+        return self.op_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
@@ -2153,7 +2157,7 @@ class AssetExecutionContext:
                 #   "2023-08-20"
 
         """
-        return self._op_execution_context.asset_partition_key_for_input(input_name)
+        return self.op_execution_context.asset_partition_key_for_input(input_name)
 
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
@@ -2195,7 +2199,7 @@ class AssetExecutionContext:
                 #   DailyPartitionsDefinition("2023-08-20")
 
         """
-        return self._op_execution_context.asset_partitions_def_for_output(output_name=output_name)
+        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
 
     @public
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
@@ -2225,7 +2229,7 @@ class AssetExecutionContext:
                 #   DailyPartitionsDefinition("2023-08-20")
 
         """
-        return self._op_execution_context.asset_partitions_def_for_input(input_name=input_name)
+        return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
 
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
@@ -2285,7 +2289,7 @@ class AssetExecutionContext:
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
-        return self._op_execution_context.asset_partition_keys_for_output(output_name=output_name)
+        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
 
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
@@ -2346,7 +2350,7 @@ class AssetExecutionContext:
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
         """
-        return self._op_execution_context.asset_partition_keys_for_input(input_name=input_name)
+        return self.op_execution_context.asset_partition_keys_for_input(input_name=input_name)
 
     @public
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
@@ -2422,7 +2426,7 @@ class AssetExecutionContext:
                 #   TimeWindow("2023-08-20", "2023-08-25")
 
         """
-        return self._op_execution_context.asset_partitions_time_window_for_input(input_name)
+        return self.op_execution_context.asset_partitions_time_window_for_input(input_name)
 
     @public
     @experimental
@@ -2437,7 +2441,7 @@ class AssetExecutionContext:
                 materialization of the asset. Returns `None` if the asset was never materialized or
                 the materialization record is too old to contain provenance information.
         """
-        return self._op_execution_context.get_asset_provenance(asset_key=asset_key)
+        return self.op_execution_context.get_asset_provenance(asset_key=asset_key)
 
     def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
         """Set the data version for an asset being materialized by the currently executing step.
@@ -2448,31 +2452,31 @@ class AssetExecutionContext:
             asset_key (AssetKey): Key of the asset for which to set the data version.
             data_version (DataVersion): The data version to set.
         """
-        return self._op_execution_context.set_data_version(
+        return self.op_execution_context.set_data_version(
             asset_key=asset_key, data_version=data_version
         )
 
     @property
     def asset_check_spec(self) -> AssetCheckSpec:
-        return self._op_execution_context.asset_check_spec
+        return self.op_execution_context.asset_check_spec
 
     # In this mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.
     @property
     def requires_typed_event_stream(self) -> bool:
-        return self._op_execution_context.requires_typed_event_stream
+        return self.op_execution_context.requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
-        return self._op_execution_context.typed_event_stream_error_message
+        return self.op_execution_context.typed_event_stream_error_message
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
-        self._op_execution_context.set_requires_typed_event_stream(error_message=error_message)
-
+        self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
 
     @cached_method
     def get_op_execution_context(self) -> "OpExecutionContext":
-        return OpExecutionContext(self._step_execution_context)
+        # TODO - potentially delete in favor of self.op_execution_context if not a breaking change
+        return self.op_execution_context
 
 
 @contextmanager
@@ -2530,7 +2534,7 @@ def enter_execution_context(
         )
 
     # Structured assuming upcoming changes to make AssetExecutionContext contain an OpExecutionContext
-    asset_ctx = AssetExecutionContext(step_context)
+    asset_ctx = AssetExecutionContext(op_execution_context=OpExecutionContext(step_context))
     asset_token = _current_asset_execution_context.set(asset_ctx)
 
     try:
@@ -2542,13 +2546,13 @@ def enter_execution_context(
             if is_asset_check:
                 yield asset_ctx
             elif is_op_in_graph_asset or not is_sda_step:
-                yield asset_ctx.get_op_execution_context()
+                yield asset_ctx.op_execution_context
             else:
                 yield asset_ctx
         elif context_annotation is AssetExecutionContext:
             yield asset_ctx
         else:
-            yield asset_ctx.get_op_execution_context()
+            yield asset_ctx.op_execution_context
     finally:
         _current_asset_execution_context.reset(asset_token)
 
