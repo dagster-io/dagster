@@ -1,3 +1,4 @@
+import pickle
 import random
 from datetime import datetime
 from typing import Optional, Sequence, cast
@@ -25,6 +26,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -1332,3 +1334,14 @@ def test_time_window_partitions_def_serialization(partitions_def):
     assert (
         deserialize_value(serialize_value(time_window_partitions_def)) == time_window_partitions_def
     )
+
+
+def test_cannot_pickle_time_window_partitions_def():
+    import datetime
+
+    partitions_def = TimeWindowPartitionsDefinition(
+        datetime.datetime(2021, 1, 1), "America/Los_Angeles", cron_schedule="0 0 * * *"
+    )
+
+    with pytest.raises(DagsterInvariantViolationError, match="not pickleable"):
+        pickle.loads(pickle.dumps(partitions_def))

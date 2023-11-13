@@ -208,7 +208,7 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    require_args_to_match_field_ordering: bool = True,
+    is_pickleable: bool = True,
 ) -> Callable[[T_Type], T_Type]:
     ...
 
@@ -223,7 +223,7 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    require_args_to_match_field_ordering: bool = True,
+    is_pickleable: bool = True,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorator to whitelist a NamedTuple or Enum subclass to be serializable. Various arguments can be passed
     to alter serialization behavior for backcompat purposes.
@@ -280,7 +280,7 @@ def whitelist_for_serdes(
         check.class_param(__cls, "__cls")
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP,
-            require_args_to_match_field_ordering=require_args_to_match_field_ordering,
+            is_pickleable=is_pickleable,
         )(__cls)
     else:  # decorator passed params
         check.opt_class_param(serializer, "serializer", superclass=Serializer)
@@ -293,7 +293,7 @@ def whitelist_for_serdes(
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
             field_serializers=field_serializers,
-            require_args_to_match_field_ordering=require_args_to_match_field_ordering,
+            is_pickleable=is_pickleable,
         )
 
 
@@ -306,7 +306,7 @@ def _whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    require_args_to_match_field_ordering: bool = True,
+    is_pickleable: bool = True,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if issubclass(klass, Enum) and (
@@ -323,9 +323,7 @@ def _whitelist_for_serdes(
         elif is_named_tuple_subclass(klass) and (
             serializer is None or issubclass(serializer, NamedTupleSerializer)
         ):
-            _check_serdes_tuple_class_invariants(
-                klass, require_args_to_match_field_ordering=require_args_to_match_field_ordering
-            )
+            _check_serdes_tuple_class_invariants(klass, is_pickleable=is_pickleable)
             whitelist_map.register_tuple(
                 klass.__name__,
                 klass,
@@ -942,7 +940,7 @@ def _unpack_value(
 
 
 def _check_serdes_tuple_class_invariants(
-    klass: Type[NamedTuple], require_args_to_match_field_ordering: bool = True
+    klass: Type[NamedTuple], is_pickleable: bool = True
 ) -> None:
     sig_params = signature(klass.__new__).parameters
     dunder_new_params = list(sig_params.values())
@@ -971,7 +969,7 @@ def _check_serdes_tuple_class_invariants(
 
             raise SerdesUsageError(_with_header(error_msg))
 
-        if require_args_to_match_field_ordering:
+        if is_pickleable:
             value_param = value_params[index]
             if value_param.name != field:
                 error_msg = (

@@ -27,6 +27,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer
@@ -85,7 +86,7 @@ class TimeWindow(NamedTuple):
 
 @whitelist_for_serdes(
     field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
-    require_args_to_match_field_ordering=False,
+    is_pickleable=False,
 )
 class TimeWindowPartitionsDefinition(
     PartitionsDefinition,
@@ -317,6 +318,13 @@ class TimeWindowPartitionsDefinition(
 
     def __hash__(self):
         return hash(tuple(self.__repr__()))
+
+    def __getstate__(self):
+        # Only namedtuples where the ordering of fields matches the ordering of __new__ args
+        # are pickleable. This does not apply for TimeWindowPartitionsDefinition, so we
+        # override __getstate__ to raise an error when attempting to pickle.
+        # https://github.com/dagster-io/dagster/issues/2372
+        raise DagsterInvariantViolationError("TimeWindowPartitionsDefinition is not pickleable")
 
     @functools.lru_cache(maxsize=100)
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
