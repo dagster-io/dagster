@@ -56,7 +56,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .compute import OpExecutionContext
+from .compute import ExecutionInfo, OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -402,11 +402,14 @@ class RunlessOpExecutionContext(OpExecutionContext):
             op_config=op_config,
             step_description=step_description,
         )
-
+        self._execution_info = ExecutionInfo(
+            step_description=f"op {alias}", op_execution_context=self
+        )
         return self
 
     def unbind(self):
         self._bound_properties = None
+        self._execution_info = None
 
     @property
     def is_bound(self) -> bool:
