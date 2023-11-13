@@ -40,7 +40,7 @@ To use Dagster Pipes with Kubernetes, you’ll need:
 
 ## Step 1: Define the external Kubernetes code container
 
-In this step, you’ll create a Kubernetes container that runs some code that uses `dagster-pipes`.
+In this step, you’ll create a Kubernetes container image that runs some code that uses `dagster-pipes`.
 
 ### Step 1.1: Write a Python script
 
@@ -96,10 +96,10 @@ COPY my_python_script.py .
 Then, build the image:
 
 ```shell
-docker build -t pipes-example:latest
+docker build -t pipes-example:v1
 ```
 
-**Note**: Depending on the Kubernetes setup you're using, you may need to upload the container image to a registry or otherwise make it available to the cluster. For example: `kind load docker-image pipes-example:latest`
+**Note**: Depending on the Kubernetes setup you're using, you may need to upload the container image to a registry or otherwise make it available to the cluster. For example: `kind load docker-image pipes-example:v1`
 
 ---
 
@@ -132,7 +132,7 @@ Here’s what we did in this example:
 
 - Provided <PyObject object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
 
-- Specified a resource for the asset to use, <PyObject module="dagster_k8s" object="PipesK8sClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with your Kubernetes workspace.
+- Specified a resource for the asset to use, <PyObject module="dagster_k8s" object="PipesK8sClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with Kubernetes.
 
   We also specified the following for the resource:
 
@@ -141,7 +141,7 @@ Here’s what we did in this example:
 
   These arguments are passed to the `run` method of <PyObject module="dagster_k8s" object="PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
 
-- Returned a <PyObject object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject module="dagster_pipes" object="PipesClientCompletedInvocation" /> object returned by `run` after the execution in Kubernetes has completed. **Note**: Execution can take several minutes even for trivial scripts due to cluster provisioning times.
+- Returned a <PyObject object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject module="dagster_pipes" object="PipesClientCompletedInvocation" /> object returned by `run` after the execution in Kubernetes has completed.
 
 <Note>
   <strong>Heads up!</strong> Depending on your Kubernetes setup, there may be a
