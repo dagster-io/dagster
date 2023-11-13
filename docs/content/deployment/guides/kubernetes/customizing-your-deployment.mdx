@@ -182,7 +182,7 @@ For example, for an asset:
         }
     }
 )
-def my_asset(context):
+def my_asset(context: AssetExecutionContext):
     context.log.info("running")
 
 my_job = define_asset_job(name="my_job", selection="my_asset", executor_def=k8s_job_executor)
@@ -202,7 +202,7 @@ or an op:
         }
     }
 )
-def my_op(context):
+def my_op(context: OpExecutionContext):
     context.log.info("running")
 
 @job(executor_def=k8s_job_executor)

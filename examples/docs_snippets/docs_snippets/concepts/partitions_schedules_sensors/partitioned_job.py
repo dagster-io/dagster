@@ -1,9 +1,9 @@
 # ruff: isort: skip_file
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 @op(config_schema={"date": str})
-def process_data_for_date(context):
+def process_data_for_date(context: OpExecutionContext):
     date = context.op_config["date"]
     context.log.info(f"processing data for {date}")
 

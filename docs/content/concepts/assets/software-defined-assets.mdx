@@ -553,7 +553,7 @@ Consider the following asset that uses a context object:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_with_context_asset endbefore=end_with_context_asset
 @asset
-def uses_context(context):
+def uses_context(context: AssetExecutionContext):
     context.log.info(context.run_id)
     return "bar"
 ```

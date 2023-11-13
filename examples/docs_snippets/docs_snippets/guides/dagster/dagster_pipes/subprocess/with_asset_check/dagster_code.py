@@ -1,6 +1,7 @@
 import shutil
 
 from dagster import (
+    AssetCheckResult,
     AssetExecutionContext,
     Definitions,
     MaterializeResult,
@@ -9,7 +10,6 @@ from dagster import (
     asset_check,
     file_relative_path,
 )
-from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 
 @asset
@@ -19,7 +19,7 @@ def my_asset():
 
 @asset_check(asset="my_asset")
 def no_empty_order_check(
-    context, pipes_subprocess_client: PipesSubprocessClient
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
 ) -> AssetCheckResult:
     cmd = [
         shutil.which("python"),

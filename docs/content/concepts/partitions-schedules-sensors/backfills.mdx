@@ -55,7 +55,13 @@ To get this behavior, you need to:
 For example:
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py startafter=start_marker endbefore=end_marker
-from dagster import AssetKey, BackfillPolicy, DailyPartitionsDefinition, asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    BackfillPolicy,
+    DailyPartitionsDefinition,
+    asset,
+)
 
 
 @asset(
@@ -63,7 +69,7 @@ from dagster import AssetKey, BackfillPolicy, DailyPartitionsDefinition, asset
     backfill_policy=BackfillPolicy.single_run(),
     deps=[AssetKey("raw_events")],
 )
-def events(context):
+def events(context: AssetExecutionContext):
     start_datetime, end_datetime = context.partition_time_window
 
     input_data = read_data_in_datetime_range(start_datetime, end_datetime)
@@ -75,15 +81,15 @@ def events(context):
 If you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O managers, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box. **Note**: This doesn't apply to file system I/O managers.
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster import IOManager
+from dagster import InputContext, IOManager, OutputContext
 
 
 class MyIOManager(IOManager):
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         start_datetime, end_datetime = context.asset_partitions_time_window
         return read_data_in_datetime_range(start_datetime, end_datetime)
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         start_datetime, end_datetime = context.asset_partitions_time_window
         return overwrite_data_in_datetime_range(start_datetime, end_datetime, obj)
 ```

@@ -144,7 +144,7 @@ def scope_upstream_multi_asset():
             ).items()
         }
     )
-    def jaffle_shop(context):
+    def jaffle_shop(context: AssetExecutionContext):
         output_names = list(context.selected_output_names)
         yield Output(value=..., output_name=output_names[0])
         yield Output(value=..., output_name=output_names[1])

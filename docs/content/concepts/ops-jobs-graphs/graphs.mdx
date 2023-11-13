@@ -37,16 +37,16 @@ To create an op graph, use the <PyObject module="dagster" object="graph" decorat
 In the following example, we return one output from the root op (`return_one`) and pass data along through single inputs and outputs:
 
 ```python file=/concepts/ops_jobs_graphs/graphs/linear_graph.py startafter=start_marker endbefore=end_marker
-from dagster import graph, op
+from dagster import OpExecutionContext, graph, op
 
 
 @op
-def return_one(context) -> int:
+def return_one(context: OpExecutionContext) -> int:
     return 1
 
 
 @op
-def add_one(context, number: int) -> int:
+def add_one(context: OpExecutionContext, number: int) -> int:
     return number + 1
 
 
@@ -98,21 +98,21 @@ height={250}
 A single output can be passed to multiple inputs on downstream ops. In this example, the output from the first op is passed to two different ops. The outputs of those ops are combined and passed to the final op:
 
 ```python file=/concepts/ops_jobs_graphs/graphs/multiple_io_graph.py startafter=start_marker endbefore=end_marker
-from dagster import graph, op
+from dagster import OpExecutionContext, graph, op
 
 
 @op
-def return_one(context) -> int:
+def return_one(context: OpExecutionContext) -> int:
     return 1
 
 
 @op
-def add_one(context, number: int):
+def add_one(context: OpExecutionContext, number: int):
     return number + 1
 
 
 @op
-def adder(context, a: int, b: int) -> int:
+def adder(context: OpExecutionContext, a: int, b: int) -> int:
     return a + b
 
 

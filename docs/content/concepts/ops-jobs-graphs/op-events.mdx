@@ -100,11 +100,11 @@ The <PyObject object="EventMetadata" /> class contains a set of static wrappers 
 The following example demonstrates how you might use this functionality:
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_op_output_3 endbefore=end_op_output_3
-from dagster import MetadataValue, Output, op
+from dagster import MetadataValue, Output, op, OpExecutionContext
 
 
 @op
-def my_metadata_output(context) -> Output:
+def my_metadata_output(context: OpExecutionContext) -> Output:
     df = get_some_data()
     return Output(
         df,
@@ -129,11 +129,11 @@ Generally, you'd want to send this event directly after you persist the asset to
 If you're using [Software-defined Assets](/concepts/assets/software-defined-assets), you don't need to record these events explicitly – the framework handles it for you.
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_asset_op endbefore=end_asset_op
-from dagster import AssetMaterialization, op
+from dagster import AssetMaterialization, op, OpExecutionContext
 
 
 @op
-def my_asset_op(context):
+def my_asset_op(context: OpExecutionContext):
     df = get_some_data()
     store_to_s3(df)
     context.log_event(
@@ -175,11 +175,11 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-from dagster import AssetMaterialization, MetadataValue, op
+from dagster import AssetMaterialization, MetadataValue, op, OpExecutionContext
 
 
 @op
-def my_metadata_materialization_op(context):
+def my_metadata_materialization_op(context: OpExecutionContext):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     context.log_event(
@@ -212,7 +212,7 @@ from dagster import AssetObservation, op
 
 
 @op
-def observation_op(context):
+def observation_op(context: OpExecutionContext):
     df = read_df()
     context.log_event(
         AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
@@ -229,11 +229,11 @@ To learn more about asset observations, check out the [Asset Observation](/conce
 Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject object="ExpectationResult" />. To generate an expectation result, we can log or yield an <PyObject object="ExpectationResult" /> event in our op.
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_expectation_op endbefore=end_expectation_op
-from dagster import ExpectationResult, op
+from dagster import ExpectationResult, op, OpExecutionContext
 
 
 @op
-def my_expectation_op(context, df):
+def my_expectation_op(context: OpExecutionContext, df):
     do_some_transform(df)
     context.log_event(
         ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")
@@ -248,11 +248,11 @@ Like many other event types in Dagster, there are a variety of types of metadata
 This example shows metadata entries of different types attached to the same expectation result:
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_metadata_expectation_op endbefore=end_metadata_expectation_op
-from dagster import ExpectationResult, MetadataValue, op
+from dagster import ExpectationResult, MetadataValue, op, OpExecutionContext
 
 
 @op
-def my_metadata_expectation_op(context, df):
+def my_metadata_expectation_op(context: OpExecutionContext, df):
     df = do_some_transform(df)
     context.log_event(
         ExpectationResult(

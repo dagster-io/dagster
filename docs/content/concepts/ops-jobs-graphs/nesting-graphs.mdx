@@ -26,7 +26,7 @@ We use the term _node_ to refer to both ops and graphs, because both ops and gra
 As a baseline, here's a job that does not use nesting. It starts with an op that returns a number, then uses two ops to convert it from Celsius to Fahrenheight, then logs the result:
 
 ```python file=/concepts/ops_jobs_graphs/unnested_ops.py
-from dagster import job, op
+from dagster import OpExecutionContext, job, op
 
 
 @op
@@ -45,7 +45,7 @@ def multiply_by_one_point_eight(number):
 
 
 @op
-def log_number(context, number):
+def log_number(context: OpExecutionContext, number):
     context.log.info(f"number: {number}")
 
 
@@ -88,12 +88,12 @@ This example two ops that both take config and are wrapped by a graph, which is 
 
 ```python file=/concepts/ops_jobs_graphs/nested_graphs.py startafter=start_composite_solid_config_marker endbefore=end_composite_solid_config_marker
 @op(config_schema={"n": float})
-def add_n(context, number):
+def add_n(context: OpExecutionContext, number):
     return number + context.op_config["n"]
 
 
 @op(config_schema={"m": float})
-def multiply_by_m(context, number):
+def multiply_by_m(context: OpExecutionContext, number):
     return number * context.op_config["m"]
 
 
