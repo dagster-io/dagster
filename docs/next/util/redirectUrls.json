@@ -731,6 +731,11 @@
     "statusCode": 302
   },
   {
+    "source": "/getting-started/telemetry",
+    "destination": "/about/telemetry",
+    "statusCode": 302
+  },
+  {
     "source": "/:version(\\d+.\\d+.\\d+)/:slug*",
     "destination": "/:slug*",
     "statusCode": 302

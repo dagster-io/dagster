@@ -1305,6 +1305,10 @@
         "title": "Changelog",
         "path": "/changelog",
         "isNotDynamic": true
+      },
+      {
+        "title": "Telemetry",
+        "path": "/about/telemetry"
       }
     ]
   }
