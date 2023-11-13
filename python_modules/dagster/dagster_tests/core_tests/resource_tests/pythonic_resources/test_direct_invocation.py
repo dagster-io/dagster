@@ -447,6 +447,8 @@ def test_async_assets_with_shared_context():
         await asyncio.sleep(0.01)
         return "two"
 
+    # test that we can run two ops/assets with the same context at the same time without
+    # overriding op/asset specific attributes
     ctx = build_op_context()
 
     async def main():
