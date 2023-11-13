@@ -82,7 +82,7 @@ project_fully_featured
 
 This project was scaffolded by the `dagster project` CLI. This tool generates files and folder structures that enable you to quickly get started with everything set up, especially the Python setup.
 
-Refer to the [Dagster project files reference](/getting-started/project-file-reference) for more info about the default files in a Dagster project. This reference also includes details about additional configuration files, like `dagster.yaml` and `workspace.yaml`.
+Refer to the [Dagster project files reference](/guides/understanding-dagster-project-files) for more info about the default files in a Dagster project. This reference also includes details about additional configuration files, like `dagster.yaml` and `workspace.yaml`.
 
 ---
 
@@ -163,7 +163,7 @@ We recommend defining ops and graphs a job file along with the job definition wi
 
 So far, we've discussed our recommendations for structuring a large project which contains only one code location. Dagster also allows you to structure a project with multiple definitions. We don't recommend over-abstracting too early; in most cases, one code location should be sufficient. A helpful pattern uses multiple code locations to separate conflicting dependencies, where each definition has its own package requirements (e.g., `setup.py`) and deployment specs (e.g., Dockerfile).
 
-To include multiple code locations in a single project, you'll need to add a [configuration file](/getting-started/project-file-reference#configuration-files) to your project:
+To include multiple code locations in a single project, you'll need to add a [configuration file](/guides/understanding-dagster-project-files#configuration-files) to your project:
 
 - **If using Dagster Cloud**, add a [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) to the root of your project.
 - **If developing locally or deploying to your infrastructure**, add a `workspace.yaml` file to the root of your project. Refer to the [workspace files documentation](/concepts/code-locations/workspace-files) for more info.
