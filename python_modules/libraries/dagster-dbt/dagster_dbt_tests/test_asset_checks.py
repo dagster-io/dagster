@@ -35,14 +35,6 @@ def dbt_commands(request):
     return request.param
 
 
-@pytest.fixture()
-def mocked_context(mocker: MockerFixture):
-    mock_context = mocker.MagicMock()
-    mock_context.assets_def = None
-    mock_context.has_assets_def = True
-    return mock_context
-
-
 def test_with_asset_checks() -> None:
     @dbt_assets(manifest=manifest)
     def my_dbt_assets_no_checks():
@@ -167,7 +159,13 @@ def test_asset_check_materialize(
     assert result.success
 
 
-def test_asset_checks_are_logged(mocked_context, dbt_commands: List[List[str]]):
+def test_asset_checks_are_logged_from_resource(
+    mocker: MockerFixture, dbt_commands: List[List[str]]
+):
+    mock_context = mocker.MagicMock()
+    mock_context.assets_def = None
+    mock_context.has_assets_def = True
+
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
     events = []
@@ -177,7 +175,7 @@ def test_asset_checks_are_logged(mocked_context, dbt_commands: List[List[str]]):
             dbt_command,
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator_with_checks,
-            context=mocked_context,
+            context=mock_context,
             target_path=Path("target"),
         )
 
