@@ -28,7 +28,19 @@ Before you get started, complete the following:
   in the proper namespace.
 </Note>
 
-First, run [`helm upgrade`](https://helm.sh/docs/helm/helm_upgrade/) with your desired Dagster chart version and Helm values.
+1. First, [update the repository's version of Helm](https://helm.sh/docs/helm/helm_repo_update/):
+
+   ```shell
+   helm repo update
+   ```
+
+2. Run [`helm upgrade`](https://helm.sh/docs/helm/helm_upgrade/) with your desired Dagster chart version and Helm values:
+
+   ```shell
+   helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml
+   ```
+
+   This installs the new Helm chart and creates a release if it doesn't exist. If it does, the existing `dagster` release will be modified.
 
 ---
 
@@ -60,38 +72,44 @@ kubectl scale deploy $DAEMON_DEPLOYMENT_NAME --replicas=0
 
 ## Step 3: Migrate the Dagster instance
 
-Next, run a Kubernetes Job with the `dagster instance migrate` command:
+1. Run a Kubernetes job with the `dagster instance migrate` command. In the following example, `helm template` will run a job that uses this command and migrates the instance:
 
-```shell
-dagster instance migrate
-```
+   ```shell
+   # Run `helm list` and save your Dagster Helm release name
+   export HELM_DAGSTER_RELEASE_NAME=<DAGSTER_RELEASE_NAME>
 
-Check if the migration succeeded by inspecting the resulting Pod of the Job:
+   # The `helm template` command must be run from the directory containing the
+   # `values.yaml` file you used to install the Dagster Helm chart.
+   #
+   # If needed, you can retrieve the currently applied `values.yaml` file
+   # from the cluster by running:
+   #
+   # `helm get values $HELM_DAGSTER_RELEASE_NAME > values.yaml`
+   #
+   helm template $HELM_DAGSTER_RELEASE_NAME dagster/dagster \
+       --set "migrate.enabled=true" \
+       --show-only templates/job-instance-migrate.yaml \
+       --values values.yaml \
+       | kubectl apply -f -
+   ```
 
-```shell
-# Run `helm list` and save your Dagster Helm release name
-export HELM_DAGSTER_RELEASE_NAME=<DAGSTER_RELEASE_NAME>
+2. Next, you'll check that the migration succeeded. Run the following to get the name of the pod:
 
-# The `helm template` command must be run from the directory containing the
-# `values.yaml` file you used to install the Dagster Helm chart.
-#
-# If needed, you can retrieve the currently applied `values.yaml` file
-# from the cluster by running:
-#
-# `helm get values $HELM_DAGSTER_RELEASE_NAME > values.yaml`
-#
-helm template $HELM_DAGSTER_RELEASE_NAME dagster/dagster \
-    --set "migrate.enabled=true" \
-    --show-only templates/job-instance-migrate.yaml \
-    --values values.yaml \
-    | kubectl apply -f -
-```
+   ```shell
+   kubectl get pods -l job-name=dagster-instance-migrate
+   ```
+
+3. Lastly, run the following to inspect the resulting pod, replacing `<POD_NAME>` with the name of the pod:
+
+   ```shell
+   kubectl describe pod <POD_NAME>
+   ```
 
 ---
 
 ## Step 4: Scale Dagster back up
 
-Lastly, use the following commands to scale the Dagster webserver and daemon deployments back up:
+The last step is to scale the Dagster webserver and daemon deployments back up. Run the following commands:
 
 ```shell
 kubectl scale deploy $WEBSERVER_DEPLOYMENT_NAME --replicas=$WEBSERVER_DEPLOYMENT_REPLICA_COUNT
