@@ -45,6 +45,10 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
 )
 from pandas import DataFrame, Timestamp
 
+pytestmark = pytest.mark.skip(
+    "snowflake-python-connector upgrade, broke these tests https://github.com/dagster-io/dagster/issues/17977"
+)
+
 resource_config = {
     "database": "database_abc",
     "account": "account_abc",
