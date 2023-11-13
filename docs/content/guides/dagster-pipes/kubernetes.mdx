@@ -137,7 +137,7 @@ Here’s what we did in this example:
   We also specified the following for the resource:
 
   - `context` - The asset's `context` (<PyObject object="AssetExecutionContext" />) data
-  - `image` - The Kubernetes image we created in [Step 1](#step-1-define-the-external-code-container)
+  - `image` - The Kubernetes image we created in [Step 1](#step-1-define-the-external-kubernetes-code-container)
 
   These arguments are passed to the `run` method of <PyObject module="dagster_k8s" object="PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
 
