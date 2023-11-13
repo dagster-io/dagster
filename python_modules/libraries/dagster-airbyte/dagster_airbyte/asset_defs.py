@@ -638,11 +638,20 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
         )
         self._workspace_id = workspace_id
-        self._airbyte_instance: AirbyteResource = (
-            airbyte_resource_def.process_config_and_initialize()
-            if isinstance(airbyte_resource_def, AirbyteResource)
-            else airbyte_resource_def(build_init_resource_context())
-        )
+
+        if isinstance(airbyte_resource_def, AirbyteResource):
+            # We hold a copy which is not fully processed, this retains e.g. EnvVars for
+            # display in the UI
+            self._partially_initialized_airbyte_instance = airbyte_resource_def
+            # The processed copy is used to query the Airbyte instance
+            self._airbyte_instance: (
+                AirbyteResource
+            ) = self._partially_initialized_airbyte_instance.process_config_and_initialize()
+        else:
+            self._partially_initialized_airbyte_instance = airbyte_resource_def(
+                build_init_resource_context()
+            )
+            self._airbyte_instance: AirbyteResource = self._partially_initialized_airbyte_instance
 
     def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
         workspace_id = self._workspace_id
@@ -694,7 +703,8 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
         return super()._build_definitions_with_resources(
-            data, {"airbyte": self._airbyte_instance.get_resource_definition()}
+            data,
+            {"airbyte": self._partially_initialized_airbyte_instance.get_resource_definition()},
         )
 
 
