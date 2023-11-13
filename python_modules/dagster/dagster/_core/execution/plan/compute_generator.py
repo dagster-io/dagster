@@ -18,7 +18,6 @@ from typing import (
 
 from typing_extensions import get_args
 
-from dagster import AssetExecutionContext
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
     AssetCheckResult,
@@ -37,7 +36,7 @@ from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
-from ..context.compute import OpExecutionContext
+from ..context.compute import AssetExecutionContext, OpExecutionContext
 
 
 def create_op_compute_wrapper(
