@@ -103,9 +103,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 resource_config=resources_config,
             )
         )
-        self._init_resources = (
-            self._resources
-        )  # so we can unbind the context back to it's original state
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
         self._log = initialize_console_manager(None)
@@ -140,6 +137,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         #     ...
         # ctx = build_op_context() # ctx._bound is False
         # my_op(ctx)
+        # ctx._bound is True, must call ctx.unbind() to unbind
         self._bound = False
 
     def __enter__(self):
@@ -230,7 +228,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 build_resources(resource_defs, self.instance, self._resources_config)
             )
         else:
-            self._resources = self.resources
             resource_defs = self._resource_defs
 
         _validate_resource_requirements(resource_defs, op_def)
@@ -337,7 +334,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
     @property
     def node_handle(self) -> NodeHandle:
-        raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("node_handle", "property"))
 
     @property
     def op(self) -> Node:
@@ -350,7 +347,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
     @property
     def op_def(self) -> OpDefinition:
         self._check_bound(fn_name="op_def", fn_type="property")
-        return self._op_def
+        return cast(OpDefinition, self._op_def)
 
     @property
     def has_assets_def(self) -> bool:
@@ -405,7 +402,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
     @property
     def alias(self) -> str:
         self._check_bound(fn_name="alias", fn_type="property")
-        return self._alias
+        return cast(str, self._alias)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "method"))
