@@ -51,7 +51,7 @@ class FileConfig(Config):
 
 
 @op
-def process_file(context, config: FileConfig):
+def process_file(context: OpExecutionContext, config: FileConfig):
     context.log.info(config.filename)
 
 

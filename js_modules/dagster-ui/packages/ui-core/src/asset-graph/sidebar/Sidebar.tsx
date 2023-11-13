@@ -295,6 +295,8 @@ export const AssetGraphExplorerSidebar = React.memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [viewType, renderedNodes, selectedNode],
     );
+    const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
+    indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 
     React.useLayoutEffect(() => {
       if (indexOfLastSelectedNode !== -1) {
@@ -349,7 +351,35 @@ export const AssetGraphExplorerSidebar = React.memo(
           />
         </Box>
         <div>
-          <Container ref={containerRef}>
+          <Container
+            ref={containerRef}
+            onKeyDown={(e) => {
+              let nextIndex = 0;
+              if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+                nextIndex = indexOfLastSelectedNodeRef.current + (e.code === 'ArrowDown' ? 1 : -1);
+                indexOfLastSelectedNodeRef.current = nextIndex;
+                e.preventDefault();
+                const nextNode = renderedNodes[nextIndex % renderedNodes.length]!;
+                setSelectedNode(nextNode);
+                selectNode(e, nextNode.id);
+              } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                const open = e.code === 'ArrowRight';
+                setOpenNodes((nodes) => {
+                  const node = renderedNodes[indexOfLastSelectedNode];
+                  if (!node) {
+                    return nodes;
+                  }
+                  const openNodes = new Set(nodes);
+                  if (open) {
+                    openNodes.add(nodePathKey(node));
+                  } else {
+                    openNodes.delete(nodePathKey(node));
+                  }
+                  return openNodes;
+                });
+              }
+            }}
+          >
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start, measureElement}) => {
                 const node = renderedNodes[index]!;

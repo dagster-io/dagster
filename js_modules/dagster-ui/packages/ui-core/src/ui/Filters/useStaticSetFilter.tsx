@@ -258,12 +258,12 @@ export function SetFilterLabel(props: SetFilterLabelProps) {
   const labelRef = React.useRef<HTMLDivElement>(null);
 
   return (
-    // 4 px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
+    // 2px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
     // SVG it contains with size="small"
     <Box
       flex={{direction: 'row', gap: 6, alignItems: 'center'}}
       ref={labelRef}
-      margin={{left: 4}}
+      margin={allowMultipleSelections ? {left: 2} : {}}
       style={{maxWidth: '500px'}}
     >
       {allowMultipleSelections ? <Checkbox checked={isActive} size="small" readOnly /> : null}

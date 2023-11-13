@@ -186,7 +186,7 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
 
   const opts = React.useMemo(
     () => ({
-      horizontalDAGs: flags.flagHorizontalDAGs,
+      horizontalDAGs: flags.flagDAGSidebar,
       longestPath: flags.flagLongestPathDag,
     }),
     [flags],

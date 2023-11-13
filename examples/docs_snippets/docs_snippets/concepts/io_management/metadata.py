@@ -1,4 +1,13 @@
-from dagster import ConfigurableIOManager, IOManager, Out, io_manager, job, op
+from dagster import (
+    ConfigurableIOManager,
+    InputContext,
+    IOManager,
+    Out,
+    OutputContext,
+    io_manager,
+    job,
+    op,
+)
 
 
 def connect():
@@ -29,15 +38,23 @@ def op_2(_input_dataframe):
 
 # io_manager_start_marker
 class MyIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
-        table_name = context.metadata["table"]
-        schema = context.metadata["schema"]
-        write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+    def handle_output(self, context: OutputContext, obj):
+        if context.metadata:
+            table_name = context.metadata["table"]
+            schema = context.metadata["schema"]
+            write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+        else:
+            raise Exception(
+                f"op {context.op_def.name} doesn't have schema and metadata set"
+            )
 
-    def load_input(self, context):
-        table_name = context.upstream_output.metadata["table"]
-        schema = context.upstream_output.metadata["schema"]
-        return read_dataframe_from_table(name=table_name, schema=schema)
+    def load_input(self, context: InputContext):
+        if context.upstream_output and context.upstream_output.metadata:
+            table_name = context.upstream_output.metadata["table"]
+            schema = context.upstream_output.metadata["schema"]
+            return read_dataframe_from_table(name=table_name, schema=schema)
+        else:
+            raise Exception("Upstream output doesn't have schema and metadata set")
 
 
 # io_manager_end_marker

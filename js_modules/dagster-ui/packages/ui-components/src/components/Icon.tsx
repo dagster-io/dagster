@@ -78,6 +78,7 @@ import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
+import id from '../icon-svgs/id.svg';
 import infinity from '../icon-svgs/infinity.svg';
 import info from '../icon-svgs/info.svg';
 import job from '../icon-svgs/job.svg';
@@ -219,6 +220,7 @@ export const Icons = {
   youtube,
   arrow_indent,
   editor_role,
+  id,
 
   graph,
   graph_downstream,

@@ -136,7 +136,7 @@ The options are discussed below:
 You can supply a <PyObject object="RunConfig"/> object or raw config dictionary. The supplied config will be used to configure the op job whenever it's launched. It will show up in the Dagster UI Launchpad and can be overridden.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
-from dagster import Config, RunConfig, job, op
+from dagster import Config, OpExecutionContext, RunConfig, job, op
 
 
 class DoSomethingConfig(Config):
@@ -144,7 +144,7 @@ class DoSomethingConfig(Config):
 
 
 @op
-def do_something(context, config: DoSomethingConfig):
+def do_something(context: OpExecutionContext, config: DoSomethingConfig):
     context.log.info("config_param: " + config.config_param)
 
 
@@ -176,7 +176,7 @@ Supplying a <PyObject object="ConfigMapping" /> allows you to expose a narrower 
 Instead of needing to configure every op and resource individually when launching the op job, you can supply a smaller number of values to the outer config. The <PyObject object="ConfigMapping" /> will then translate it into config for all the job's ops and resources.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_with_config_mapping.py
-from dagster import Config, RunConfig, config_mapping, job, op
+from dagster import Config, OpExecutionContext, RunConfig, config_mapping, job, op
 
 
 class DoSomethingConfig(Config):
@@ -184,7 +184,7 @@ class DoSomethingConfig(Config):
 
 
 @op
-def do_something(context, config: DoSomethingConfig) -> None:
+def do_something(context: OpExecutionContext, config: DoSomethingConfig) -> None:
     context.log.info("config_param: " + config.config_param)
 
 

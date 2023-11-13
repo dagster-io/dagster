@@ -118,7 +118,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
+export const buildSVGPath = featureEnabled(FeatureFlag.flagDAGSidebar)
   ? pathHorizontalDiagonal({
       source: (s: any) => s.source,
       target: (s: any) => s.target,

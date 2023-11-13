@@ -99,8 +99,8 @@ function stepSelectionFromRunTags(
   );
 }
 
-export const canRunAllSteps = (run: RunFragment) => doneStatuses.has(run.status);
-export const canRunFromFailure = (run: RunFragment) =>
+export const canRunAllSteps = (run: Pick<RunFragment, 'status'>) => doneStatuses.has(run.status);
+export const canRunFromFailure = (run: Pick<RunFragment, 'status' | 'executionPlan'>) =>
   run.executionPlan && failedStatuses.has(run.status);
 
 export const RunActionButtons = (props: RunActionButtonsProps) => {

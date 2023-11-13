@@ -31,7 +31,7 @@ The function responsible for computing the contents of any software-defined asse
 The easiest way to create a multi-asset is with the <PyObject object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject object="asset" decorator /> decorator, but requires an `outs` parameter specifying each output asset of the function.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_basic_multi_asset endbefore=end_basic_multi_asset
-from dagster import AssetOut, multi_asset
+from dagster import AssetOut, multi_asset, AssetExecutionContext
 
 
 @multi_asset(
@@ -100,7 +100,7 @@ from dagster import AssetOut, Output, multi_asset
     },
     can_subset=True,
 )
-def split_actions(context):
+def split_actions(context: AssetExecutionContext):
     if "a" in context.selected_output_names:
         yield Output(value=123, output_name="a")
     if "b" in context.selected_output_names:

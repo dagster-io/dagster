@@ -59,11 +59,11 @@ The following example demonstrates creating an asset that has a partition for ea
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
 import urllib.request
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-def my_daily_partitioned_asset(context) -> None:
+def my_daily_partitioned_asset(context: AssetExecutionContext) -> None:
     partition_date_str = context.asset_partition_key_for_output()
 
     url = f"coolweatherwebsite.com/weather_obs&date={partition_date_str}"
@@ -91,6 +91,7 @@ Consider the following asset:
 
 ```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_marker endbefore=end_multi_partitions_marker
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -106,8 +107,9 @@ from dagster import (
         }
     )
 )
-def multi_partitions_asset(context):
-    context.log.info(context.partition_key.keys_by_dimension)
+def multi_partitions_asset(context: AssetExecutionContext):
+    if isinstance(context.partition_key, MultiPartitionKey):
+        context.log.info(context.partition_key.keys_by_dimension)
 ```
 
 In this example, the asset would contain a partition for each combination of color and date:
@@ -148,7 +150,7 @@ images_partitions_def = DynamicPartitionsDefinition(name="images")
 
 
 @asset(partitions_def=images_partitions_def)
-def images(context):
+def images(context: AssetExecutionContext):
     ...
 ```
 
@@ -161,12 +163,12 @@ images_job = define_asset_job(
 
 
 @sensor(job=images_job)
-def image_sensor(context):
+def image_sensor(context: SensorEvaluationContext):
     new_images = [
         img_filename
         for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))
-        if not context.instance.has_dynamic_partition(
-            images_partitions_def.name, img_filename
+        if not images_partitions_def.has_partition_key(
+            img_filename, dynamic_partitions_store=context.instance
         )
     ]
 
@@ -195,11 +197,11 @@ For example, this example demonstrates how to define an asset that relies on an 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset_uses_io_manager.py
 import pandas as pd
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-def my_daily_partitioned_asset(context) -> pd.DataFrame:
+def my_daily_partitioned_asset(context: AssetExecutionContext) -> pd.DataFrame:
     partition_date_str = context.asset_partition_key_for_output()
     return pd.read_csv(f"coolweatherwebsite.com/weather_obs&date={partition_date_str}")
 ```
