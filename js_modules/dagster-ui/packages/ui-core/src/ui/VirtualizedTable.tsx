@@ -1,4 +1,4 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -28,7 +28,7 @@ export const RowCell = ({
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
-    style={{color: Colors.Gray500, overflow: 'hidden', ...(style || {})}}
+    style={{overflow: 'hidden', ...(style || {})}}
     border="right"
   >
     {children}
