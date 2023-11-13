@@ -176,6 +176,8 @@ def test_update_cursor_and_sensor_result_cursor():
 
 
 def test_sensor_result_asset_sensor():
+    observed = {}
+
     @op
     def my_table_materialization():
         yield AssetMaterialization("my_table")
@@ -187,6 +189,7 @@ def test_sensor_result_asset_sensor():
 
     @asset_sensor(asset_key=AssetKey("my_table"), job=do_something_job)
     def my_asset_sensor(context, asset_event):
+        observed["cursor"] = context.cursor
         return SensorResult([RunRequest("foo")])
 
     @asset_sensor(asset_key=AssetKey("my_table"), job=do_something_job)
@@ -201,6 +204,7 @@ def test_sensor_result_asset_sensor():
             result = my_asset_sensor.evaluate_tick(ctx)
             assert len(result.run_requests) == 1
             assert result.run_requests[0].run_key == "foo"
+            assert result.cursor != observed["cursor"]  # ensure cursor progresses
 
         with build_sensor_context(
             instance=instance,
