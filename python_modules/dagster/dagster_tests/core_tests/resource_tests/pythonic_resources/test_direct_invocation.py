@@ -7,7 +7,7 @@ from dagster import (
     asset,
     op,
 )
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.invocation import build_op_context
 
 
@@ -428,11 +428,9 @@ def test_direct_invocation_output_metadata():
     my_asset(ctx)
     assert ctx.get_output_metadata("result") == {"foo": "bar"}
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="attempted to log metadata for output 'result' more than once",
-    ):
-        my_other_asset(ctx)
+    # context in unbound when used in another invocation. This allows the metadata to be
+    # added in my_other_asset
+    my_other_asset(ctx)
 
 
 def test_async_assets_with_shared_context():
@@ -461,6 +459,7 @@ def test_async_assets_with_shared_context():
     result = asyncio.run(main())
     assert result[0] == "one"
     assert result[1] == "two"
+
 
 def test_direct_invocation_resource_context_manager():
     from dagster import resource
