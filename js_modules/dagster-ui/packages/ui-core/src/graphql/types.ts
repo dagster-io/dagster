@@ -1493,6 +1493,7 @@ export type InputTag = {
 export type Instance = {
   __typename: 'Instance';
   autoMaterializePaused: Scalars['Boolean'];
+  concurrencyLimit: ConcurrencyKeyInfo;
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String'];
@@ -1501,8 +1502,13 @@ export type Instance = {
   id: Scalars['String'];
   info: Maybe<Scalars['String']>;
   runLauncher: Maybe<RunLauncher>;
+  runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
   supportsConcurrencyLimits: Scalars['Boolean'];
+};
+
+export type InstanceConcurrencyLimitArgs = {
+  concurrencyKey?: InputMaybe<Scalars['String']>;
 };
 
 export type InstigationEvent = {
@@ -2058,6 +2064,7 @@ export type Mutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
+  freeConcurrencySlots: Scalars['Boolean'];
   freeConcurrencySlotsForRun: Scalars['Boolean'];
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
@@ -2102,6 +2109,11 @@ export type MutationDeletePipelineRunArgs = {
 
 export type MutationDeleteRunArgs = {
   runId: Scalars['String'];
+};
+
+export type MutationFreeConcurrencySlotsArgs = {
+  runId: Scalars['String'];
+  stepKey?: InputMaybe<Scalars['String']>;
 };
 
 export type MutationFreeConcurrencySlotsForRunArgs = {
@@ -3644,6 +3656,12 @@ export type RunNotFoundError = Error &
   };
 
 export type RunOrError = PythonError | Run | RunNotFoundError;
+
+export type RunQueueConfig = {
+  __typename: 'RunQueueConfig';
+  maxConcurrentRuns: Scalars['Int'];
+  tagConcurrencyLimitsYaml: Maybe<Scalars['String']>;
+};
 
 export type RunRequest = {
   __typename: 'RunRequest';
@@ -7263,6 +7281,12 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('autoMaterializePaused')
         ? overrides.autoMaterializePaused!
         : true,
+    concurrencyLimit:
+      overrides && overrides.hasOwnProperty('concurrencyLimit')
+        ? overrides.concurrencyLimit!
+        : relationshipsToOmit.has('ConcurrencyKeyInfo')
+        ? ({} as ConcurrencyKeyInfo)
+        : buildConcurrencyKeyInfo({}, relationshipsToOmit),
     concurrencyLimits:
       overrides && overrides.hasOwnProperty('concurrencyLimits')
         ? overrides.concurrencyLimits!
@@ -7288,6 +7312,12 @@ export const buildInstance = (
         : relationshipsToOmit.has('RunLauncher')
         ? ({} as RunLauncher)
         : buildRunLauncher({}, relationshipsToOmit),
+    runQueueConfig:
+      overrides && overrides.hasOwnProperty('runQueueConfig')
+        ? overrides.runQueueConfig!
+        : relationshipsToOmit.has('RunQueueConfig')
+        ? ({} as RunQueueConfig)
+        : buildRunQueueConfig({}, relationshipsToOmit),
     runQueuingSupported:
       overrides && overrides.hasOwnProperty('runQueuingSupported')
         ? overrides.runQueuingSupported!
@@ -8443,6 +8473,10 @@ export const buildMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
         ? ({} as DeletePipelineRunSuccess)
         : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    freeConcurrencySlots:
+      overrides && overrides.hasOwnProperty('freeConcurrencySlots')
+        ? overrides.freeConcurrencySlots!
+        : false,
     freeConcurrencySlotsForRun:
       overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
         ? overrides.freeConcurrencySlotsForRun!
@@ -11298,6 +11332,25 @@ export const buildRunNotFoundError = (
     __typename: 'RunNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'illo',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'non',
+  };
+};
+
+export const buildRunQueueConfig = (
+  overrides?: Partial<RunQueueConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunQueueConfig'} & RunQueueConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunQueueConfig');
+  return {
+    __typename: 'RunQueueConfig',
+    maxConcurrentRuns:
+      overrides && overrides.hasOwnProperty('maxConcurrentRuns')
+        ? overrides.maxConcurrentRuns!
+        : 9835,
+    tagConcurrencyLimitsYaml:
+      overrides && overrides.hasOwnProperty('tagConcurrencyLimitsYaml')
+        ? overrides.tagConcurrencyLimitsYaml!
+        : 'reprehenderit',
   };
 };
 

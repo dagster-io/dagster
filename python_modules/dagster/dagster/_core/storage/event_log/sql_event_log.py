@@ -2511,8 +2511,10 @@ class SqlEventLogStorage(EventLogStorage):
                     PendingStepInfo(
                         run_id=row["run_id"],
                         step_key=row["step_key"],
-                        enqueued_timestamp=row["create_timestamp"],
-                        assigned_timestamp=row["assigned_timestamp"],
+                        enqueued_timestamp=utc_datetime_from_naive(row["create_timestamp"]),
+                        assigned_timestamp=utc_datetime_from_naive(row["assigned_timestamp"])
+                        if row["assigned_timestamp"]
+                        else None,
                         priority=row["priority"],
                     )
                     for row in pending_rows
