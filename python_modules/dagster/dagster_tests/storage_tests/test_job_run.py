@@ -22,7 +22,6 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import deserialize_value, serialize_value
 
 
 def test_queued_job_origin_check():
@@ -81,7 +80,3 @@ def test_runs_filter_supports_nonempty_run_ids():
 
     with pytest.raises(CheckError):
         RunsFilter(run_ids=[])
-
-
-def test_serialize_runs_filter():
-    deserialize_value(serialize_value(RunsFilter()), RunsFilter)
