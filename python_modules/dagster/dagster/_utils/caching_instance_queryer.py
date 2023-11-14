@@ -519,6 +519,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         child_asset_partitions_with_updated_parents = set()
         for parent_asset_key in self.asset_graph.get_parents(child_asset_key):
+            # ignore non-observable sources
+            if self.asset_graph.is_source(parent_asset_key) and not self.asset_graph.is_observable(
+                parent_asset_key
+            ):
+                continue
             # if the parent has not been updated at all since the latest_storage_id, then skip
             if not self.get_asset_partitions_updated_after_cursor(
                 asset_key=parent_asset_key,
