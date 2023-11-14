@@ -363,6 +363,7 @@ query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickSt
         id
         ticks(statuses: $statuses) {
           id
+          tickId
           status
           timestamp
         }
@@ -1044,7 +1045,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         _create_tick(graphql_context)  # create a success tick
 
     # create a started tick
-    graphql_context.instance.create_tick(
+    started_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
             instigator_origin_id=external_sensor.get_external_origin().get_id(),
             instigator_name=sensor_name,
@@ -1056,7 +1057,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     )
 
     # create a skipped tick
-    graphql_context.instance.create_tick(
+    skipped_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
             instigator_origin_id=external_sensor.get_external_origin().get_id(),
             instigator_name=sensor_name,
@@ -1068,7 +1069,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     )
 
     # create a failed tick
-    graphql_context.instance.create_tick(
+    failed_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
             instigator_origin_id=external_sensor.get_external_origin().get_id(),
             instigator_name=sensor_name,
@@ -1094,6 +1095,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["status"] == "STARTED"
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["tickId"] == str(started_tick_id)
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -1102,6 +1104,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["status"] == "FAILURE"
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["tickId"] == str(failed_tick_id)
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -1110,6 +1113,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["status"] == "SKIPPED"
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["tickId"] == str(skipped_tick_id)
 
 
 def _get_unloadable_sensor_origin(name):
