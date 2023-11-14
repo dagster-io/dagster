@@ -1,0 +1,248 @@
+---
+title: "Integrating Kubernetes with Dagster Pipes | Dagster Docs"
+description: "Learn to integrate Dagster Pipes with Kubernetes to launch external code from Dagster assets."
+---
+
+# Integrating Kubernetes with Dagster Pipes
+
+<Note>
+  <strong>Heads up!</strong> This guide focuses on using an out-of-the-box
+  Kubernetes resource. For further customization, use the{" "}
+  <a href="/guides/dagster-pipes/customizing-dagster-pipes-protocols">
+    <code>open_pipes_session</code> approach
+  </a>{" "}
+  instead.
+</Note>
+
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Kubernetes integration to launch Kubernetes pods and execute external code.
+
+Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
+
+**Note**: Dagster Pipes is currently **experimental**.
+
+---
+
+## Prerequisites
+
+To use Dagster Pipes with Kubernetes, you’ll need:
+
+- **In the orchestration environment**, you'll need to install the following packages:
+
+  ```shell
+  pip install dagster dagster-webserver dagster-k8s
+  ```
+
+  Refer to the [Dagster installation guide](/getting-started/install) for more info.
+
+- **A Kubernetes cluster**. This can be an existing cluster. Or, if working locally, you can use [kind](https://kind.sigs.k8s.io/) or [Docker Desktop](https://docs.docker.com/desktop/kubernetes/).
+
+---
+
+## Step 1: Define the external Kubernetes code container
+
+In this step, you’ll create a Kubernetes container image that runs some code that uses `dagster-pipes`.
+
+### Step 1.1: Write a Python script
+
+First, you'll write a Python script that uses `dagster-pipes` and is executed in a container via Kubernetes:
+
+```python
+# my_python_script.py
+
+from dagster_pipes import open_dagster_pipes
+
+with open_dagster_pipes() as pipes:
+    # Stream log message back to Dagster
+    pipes.log.info(f"Using some_parameter value: {some_parameter_value}")
+
+    # ... your code that computes and persists the asset
+
+    # Stream asset materialization metadata and data version back to Dagster.
+    # This should be called after you've computed and stored the asset value. We
+    # omit the asset key here because there is only one asset in scope, but for
+    # multi-assets you can pass an `asset_key` parameter.
+    pipes.report_asset_materialization(
+        metadata={
+            "some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}
+        },
+        data_version="alpha",
+    )
+```
+
+Let's review what this code does:
+
+- Imports <PyObject object="open_dagster_pipes" module="dagster_pipes" /> from `dagster_pipes`
+
+- **Initializes the Dagster Pipes context (<PyObject object="open_dagster_pipes" module="dagster_pipes" />), which yields an instance of <PyObject object="PipesContext" module="dagster_pipes" /> called `pipes`.**
+
+  We're using the default context loader (<PyObject object="PipesDefaultContextLoader" module="dagster_pipes" />) and message writer (<PyObject object="PipesDefaultMessageWriter" module="dagster_pipes" />) in this example. These objects establish communication between the orchestration and external process. On the orchestration end, these match a corresponding `PipesContextInjector` and `PipesMessageReader`, which are instantiated inside the <PyObject module="dagster_k8s" object="PipesK8sClient" />.
+
+- **Inside the body of the context manager (<PyObject object="open_dagster_pipes" module="dagster_pipes" />), retrieve a log and report an asset materialization.** These calls use the temporary communications channels established by <PyObject object="PipesDefaultContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDefaultMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes documentation](/guides/dagster-pipes).
+
+At this point you can execute the rest of your Kubernetes code as normal, invoking various <PyObject object="PipesContext" module="dagster_pipes" /> APIs as needed.
+
+### Step 1.2: Define and build the container image
+
+Next, you'll package the script into a container image using a `Dockerfile`. For example:
+
+```dockerfile
+FROM python:3.10-slim
+
+pip install dagster-pipes
+
+COPY my_python_script.py .
+```
+
+Then, build the image:
+
+```shell
+docker build -t pipes-example:v1
+```
+
+**Note**: Depending on the Kubernetes setup you're using, you may need to upload the container image to a registry or otherwise make it available to the cluster. For example: `kind load docker-image pipes-example:v1`
+
+---
+
+## Step 2: Create the Dagster objects
+
+In this step, you’ll create a Dagster asset that, when materialized, opens a Dagster pipes session and spins up a Kubernetes pod to execute the container created in the previous step.
+
+### Step 2.1: Define the Dagster asset
+
+In your Dagster project, create a file named `dagster_k8s_pipes.py` and paste in the following code:
+
+```python
+# dagster_k8s_pipes.py
+
+from dagster import AssetExecutionContext, Definitions, asset
+from dagster_k8s import PipesK8sClient
+
+
+@asset
+def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+  return k8s_pipes_client.run(
+      context=context,
+      image="pipes-example:v1",
+  ).get_materialize_result()
+```
+
+Here’s what we did in this example:
+
+- Created an asset named `k8s_pipes_asset`
+
+- Provided <PyObject object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
+
+- Specified a resource for the asset to use, <PyObject module="dagster_k8s" object="PipesK8sClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with Kubernetes.
+
+  We also specified the following for the resource:
+
+  - `context` - The asset's `context` (<PyObject object="AssetExecutionContext" />) data
+  - `image` - The Kubernetes image we created in [Step 1](#step-1-define-the-external-kubernetes-code-container)
+
+  These arguments are passed to the `run` method of <PyObject module="dagster_k8s" object="PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
+
+- Returned a <PyObject object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject module="dagster_pipes" object="PipesClientCompletedInvocation" /> object returned by `run` after the execution in Kubernetes has completed.
+
+<Note>
+  <strong>Heads up!</strong> Depending on your Kubernetes setup, there may be a
+  few additional things you need to do:
+  <ul>
+    <li>
+      <strong>
+        If the default behavior doesn't target the correct cluster
+      </strong>
+      , supply the <code>load_incluster_config</code>, <code>
+        kubeconfig_file
+      </code>, and <code>kube_context</code> arguments on <PyObject module="dagster_k8s" object="PipesK8sClient" />
+    </li>
+    <li>
+      <strong>If you need to alter default spec behaviors</strong>, use
+      arguments on <code>PipesK8sClient.run</code> such as{" "}
+      <code>base_pod_spec</code>
+    </li>
+  </ul>
+</Note>
+
+### Step 2.2: Create Dagster Definitions
+
+Next, you’ll add the asset and Kubernetes resource to your project’s code location via the <PyObject object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/concepts/code-locations).
+
+Copy and paste the following to the bottom of `dagster_k8s_pipes.py`:
+
+```python
+# dagster_k8s_pipes.py
+
+defs = Definitions(
+  assets=[k8s_pipes_asset],
+  resources={
+    "k8s_pipes_client": PipesK8sClient(),
+  },
+)
+```
+
+At this point, `dagster_k8s_pipes.py` should look like the following:
+
+```python
+# dagster_k8s_pipes.py
+
+from dagster import AssetExecutionContext, Definitions, asset
+from dagster_k8s import PipesK8sClient
+
+
+@asset
+def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+  return k8s_pipes_client.run(
+      context=context,
+      image="pipes-materialize:v1",
+  ).get_materialize_result()
+
+
+defs = Definitions(
+  assets=[k8s_pipes_asset],
+  resources={
+    "k8s_pipes_client": PipesK8sClient(),
+  },
+)
+```
+
+---
+
+## Step 3: Launch the Kubernetes container from the Dagster UI
+
+In this step, you’ll run the Kubernetes container you defined in [Step 1](#step-1-define-the-external-kubernetes-code-container) from the Dagster UI.
+
+1. In a new command line session, run the following to start the UI:
+
+   ```python
+   dagster dev -f dagster_k8s_pipes.py
+   ```
+
+2. Navigate to [localhost:3000](http://localhost:3000/), where you should see the UI.
+
+3. Click **Materialize** near the top right corner of the page, then click **View** on the **Launched Run** popup. Wait for the run to complete, and the event log should look like this:
+
+   <Image
+   alt="Event log for Kubernetes run"
+   src="/images/guides/dagster-pipes/kubernetes/run.png"
+   width={1784}
+   height={1495}
+   />
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Pipes"
+    href="/guides/dagster-pipes"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster Pipes details and customization"
+    href="/guides/dagster-pipes/dagster-pipes-details-and-customization"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-k8s API reference"
+    href="/_apidocs/libraries/dagster-k8s"
+  ></ArticleListItem>
+</ArticleList>

@@ -485,7 +485,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
         assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
         evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
-        assert evaluation_result["cursor"] is None
+        assert evaluation_result["cursor"] == "blah"
         assert len(evaluation_result["runRequests"]) == 1
         assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
         assert evaluation_result["skipReason"] is None

@@ -584,7 +584,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 @experimental_param(param="partitions_def")
 @experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
-    dbt_cloud: ResourceDefinition,
+    dbt_cloud: Union[DbtCloudClientResource, ResourceDefinition],
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     node_info_to_group_fn: Callable[

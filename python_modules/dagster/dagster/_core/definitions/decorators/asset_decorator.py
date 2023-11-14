@@ -1409,11 +1409,11 @@ def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[
     return list(dep_dict.values())
 
 
-def _validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+def _assign_output_names_to_check_specs(
+    check_specs: Optional[Sequence[AssetCheckSpec]]
 ) -> Mapping[str, AssetCheckSpec]:
-    check_specs_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
-    if check_specs and len(check_specs_by_output_name) != len(check_specs):
+    checks_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
+    if check_specs and len(checks_by_output_name) != len(check_specs):
         duplicates = {
             item: count
             for item, count in Counter(
@@ -1424,14 +1424,25 @@ def _validate_and_assign_output_names_to_check_specs(
 
         raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
 
-    for spec in check_specs_by_output_name.values():
+    return checks_by_output_name
+
+
+def _validate_check_specs_target_relevant_asset_keys(
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+) -> None:
+    for spec in check_specs or []:
         if spec.asset_key not in valid_asset_keys:
             raise DagsterInvalidDefinitionError(
                 f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
                 f" {valid_asset_keys}"
             )
 
-    return check_specs_by_output_name
+
+def _validate_and_assign_output_names_to_check_specs(
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+) -> Mapping[str, AssetCheckSpec]:
+    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
+    return _assign_output_names_to_check_specs(check_specs)
 
 
 def _get_partition_mappings_from_deps(
