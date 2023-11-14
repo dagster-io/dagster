@@ -10,7 +10,7 @@ import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
-import {Node} from './Node';
+import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
@@ -395,7 +395,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                     ref={measureElement}
                   >
                     {row ? (
-                      <Node
+                      <AssetSidebarNode
                         viewType={viewType}
                         isOpen={openNodes.has(nodePathKey(node))}
                         graphData={graphData}

@@ -8,10 +8,10 @@ import {useFeatureFlags} from '../app/Flags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
-import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
+import {AssetNodeMinimal, AssetNode, AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, groupIdForNode, toGraphId} from '../asset-graph/Utils';
+import {GraphData, groupIdForNode, toGraphId, GraphNode} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
@@ -30,6 +30,8 @@ export const AssetNodeLineageGraph = ({
 }: {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
+  fullAssetGraphData: GraphData;
+  node: GraphNode;
   params: AssetViewParams;
 }) => {
   const {flagDAGSidebar} = useFeatureFlags();
@@ -111,6 +113,11 @@ export const AssetNodeLineageGraph = ({
               const graphNode = assetGraphData.nodes[id];
               const path = JSON.parse(id);
 
+              const contextMenuProps = {
+                graphData: assetGraphData,
+                node: graphNode!,
+              };
+
               return (
                 <foreignObject
                   {...bounds}
@@ -127,15 +134,19 @@ export const AssetNodeLineageGraph = ({
                   {!graphNode ? (
                     <AssetNodeLink assetKey={{path}} />
                   ) : scale < MINIMAL_SCALE ? (
-                    <AssetNodeMinimal
-                      definition={graphNode.definition}
-                      selected={graphNode.id === assetGraphId}
-                    />
+                    <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                      <AssetNodeMinimal
+                        definition={graphNode.definition}
+                        selected={graphNode.id === assetGraphId}
+                      />
+                    </AssetNodeContextMenuWrapper>
                   ) : (
-                    <AssetNode
-                      definition={graphNode.definition}
-                      selected={graphNode.id === assetGraphId}
-                    />
+                    <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                      <AssetNode
+                        definition={graphNode.definition}
+                        selected={graphNode.id === assetGraphId}
+                      />
+                    </AssetNodeContextMenuWrapper>
                   )}
                 </foreignObject>
               );
