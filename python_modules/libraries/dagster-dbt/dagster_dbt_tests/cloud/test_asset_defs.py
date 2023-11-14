@@ -713,7 +713,7 @@ def test_load_from_dbt_cloud_with_env_var(dbt_cloud_service) -> None:
         )
 
         dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
-            dbt_cloud=dbt_cloud,  # type: ignore
+            dbt_cloud=dbt_cloud,
             job_id=DBT_CLOUD_JOB_ID,
         )
         dbt_cloud_cacheable_assets.compute_cacheable_data()
