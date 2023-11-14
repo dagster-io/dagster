@@ -1,5 +1,16 @@
 # Changelog
 
+# 1.5.8 / 0.21.8 (libraries)
+
+### Bugfixes
+
+- Fixed an error when trying to directly invoke a run status sensor when passing resources.
+- [dagster-airbyte][dagster-fivetran] Fixed an issue where `EnvVars` used in Airbyte or Fivetran resources would show up as their processed values in the launchpad when loading assets from a live Fivetran or Airbyte instance.
+
+### Dagster Cloud
+
+- Substantially improved performance of the Dagster insights DBT/Snowflake usage job.
+
 # 1.5.7 / 0.21.7 (libraries)
 
 ### New

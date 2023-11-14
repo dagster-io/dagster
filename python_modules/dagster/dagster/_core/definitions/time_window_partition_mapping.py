@@ -183,7 +183,9 @@ class TimeWindowPartitionMapping(
             )
 
         if to_partitions_def.timezone != from_partitions_def.timezone:
-            raise DagsterInvalidDefinitionError("Timezones don't match")
+            raise DagsterInvalidDefinitionError(
+                f"Timezones {to_partitions_def.timezone} and {from_partitions_def.timezone} don't match"
+            )
 
         result = self._do_cheap_partition_mapping_if_possible(
             from_partitions_def=from_partitions_def,

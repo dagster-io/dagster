@@ -27,7 +27,11 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import FieldSerializer
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -50,6 +54,24 @@ from .partition import (
 from .partition_key_range import PartitionKeyRange
 
 
+class DatetimeFieldSerializer(FieldSerializer):
+    """Serializes datetime objects to and from floats."""
+
+    def pack(self, datetime: Optional[datetime], **_kwargs) -> Optional[float]:
+        if datetime:
+            check.invariant(datetime.tzinfo is not None)
+
+        # Get the timestamp in UTC
+        return datetime.timestamp() if datetime else None
+
+    def unpack(
+        self,
+        datetime_float: Optional[float],
+        **_kwargs,
+    ) -> Optional[datetime]:
+        return utc_datetime_from_timestamp(datetime_float) if datetime_float else None
+
+
 class TimeWindow(NamedTuple):
     """An interval that is closed at the start and open at the end.
 
@@ -62,6 +84,10 @@ class TimeWindow(NamedTuple):
     end: PublicAttr[datetime]
 
 
+@whitelist_for_serdes(
+    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
+    is_pickleable=False,
+)
 class TimeWindowPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
@@ -76,7 +102,7 @@ class TimeWindowPartitionsDefinition(
         ],
     ),
 ):
-    r"""A set of partitions where each partitions corresponds to a time window.
+    r"""A set of partitions where each partition corresponds to a time window.
 
     The provided cron_schedule determines the bounds of the time windows. E.g. a cron_schedule of
     "0 0 \\* \\* \\*" will result in daily partitions that start at midnight and end at midnight of the
@@ -122,6 +148,11 @@ class TimeWindowPartitionsDefinition(
 
         if isinstance(start, datetime):
             start_dt = pendulum.instance(start, tz=timezone)
+
+            if start.tzinfo:
+                # Pendulum.instance does not override the timezone of the datetime object,
+                # so we convert it to the provided timezone
+                start_dt = start_dt.in_tz(tz=timezone)
         else:
             start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
 
@@ -287,6 +318,13 @@ class TimeWindowPartitionsDefinition(
 
     def __hash__(self):
         return hash(tuple(self.__repr__()))
+
+    def __getstate__(self):
+        # Only namedtuples where the ordering of fields matches the ordering of __new__ args
+        # are pickleable. This does not apply for TimeWindowPartitionsDefinition, so we
+        # override __getstate__ to raise an error when attempting to pickle.
+        # https://github.com/dagster-io/dagster/issues/2372
+        raise DagsterInvariantViolationError("TimeWindowPartitionsDefinition is not pickleable")
 
     @functools.lru_cache(maxsize=100)
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
