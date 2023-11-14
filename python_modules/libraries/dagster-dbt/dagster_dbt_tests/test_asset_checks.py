@@ -234,3 +234,49 @@ def test_asset_checks_are_logged_from_resource(
         )
         in events
     )
+
+
+@pytest.mark.xfail(
+    is_dbt_1_4,
+    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+)
+def test_dbt_model_selection(dbt_commands: List[List[str]]):
+    dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
+
+    @dbt_assets(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
+        select="customers",
+    )
+    def my_dbt_assets(context, dbt: DbtCliResource):
+        for dbt_command in dbt_commands:
+            yield from dbt.cli(dbt_command, context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 0
+
+
+@pytest.mark.xfail(
+    is_dbt_1_4,
+    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+)
+def test_dbt_test_selection(dbt_commands: List[List[str]]):
+    dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
+
+    @dbt_assets(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
+        select="customers tag:data_quality",
+    )
+    def my_dbt_assets(context, dbt: DbtCliResource):
+        for dbt_command in dbt_commands:
+            yield from dbt.cli(dbt_command, context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 1
