@@ -13,7 +13,7 @@ import {
   AssetNodeLiveObservationFragment,
   AssetCheckLiveFragment,
 } from '../asset-data/types/AssetLiveDataProvider.types';
-import {Graph, RunStatus, StaleStatus} from '../graphql/types';
+import {RunStatus, StaleStatus} from '../graphql/types';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
