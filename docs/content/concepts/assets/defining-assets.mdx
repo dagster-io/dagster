@@ -1,0 +1,67 @@
+---
+title: "Defining assets | Dagster Docs"
+---
+
+# Defining assets
+
+INTRO
+
+---
+
+## Asset anatomy
+
+<!-- This is pulled from Dagster Essentials - we'll adapt it to fit in the docs, and potentially expand to include some of the other topics we need to cover. Ex: Context, config, etc. -->
+
+To create an asset, you write code that describes an asset that you want to exist, along with any other assets that the asset is derived from, and a function that computes the contents of the asset.
+
+Specifically, an asset includes:
+
+- **An `@asset` decorator.** This tells Dagster that the function produces an asset.
+- **An asset key** that uniquely identifies the asset in Dagster. By default, this is the function name. However, asset keys can have prefixes, much like how files are in folders or database tables are in schemas.
+- **A set of upstream asset dependencies**, referenced using their asset keys. We’ll talk about this more in the next lesson, which focuses on asset dependencies.
+- **A Python function** that defines how the asset is computed.
+
+When naming assets, it’s best practice to use a **noun**, specifically **a descriptor of what is produced,** and not the steps required to produce it.
+
+---
+
+## Asset types
+
+- Comparison of the different asset types
+- Description of what it is
+- Include example uses and when to use each one
+- Subsections will discuss and demonstrate how to define each type of asset
+
+| Type         | Description | Example uses |   |
+| ------------ | ----------- | ------------ | - |
+| "Vanilla"    |             |              |   |
+| Graph-backed |             |              |   |
+| Multi-assets |             |              |   |
+| External     |             |              |   |
+
+### "Vanilla" assets
+
+Example
+
+**TODO: Add tabs that show the asset "in code" and then what it looks like in the UI. May need to fix Ben's old component for this, [otherwise we can just use tabs like we did here](/concepts/assets/external-assets#defining-external-assets).**
+
+### Graph-backed assets
+
+Example; [link to dedicated documentation](/concepts/assets/defining-assets/graph-backed-assets)
+
+### Multi-assets
+
+Example; [link to dedicated documentation](/concepts/assets/defining-assets/multi-assets)
+
+### External assets
+
+Example; [link to dedicated documentation](/concepts/assets/defining-assets/external-assets)
+
+---
+
+## What's next?
+
+- Add dependencies
+- Add asset groups
+- Add resources
+- Automate using schedules and sensors

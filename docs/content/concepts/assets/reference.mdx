@@ -1,0 +1,126 @@
+---
+title: "Asset reference | Dagster Docs"
+---
+
+# Asset reference
+
+---
+
+## Asset types
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "20%",
+        }}
+      >
+        Type
+      </th>
+      <th
+        style={{
+          width: "40%",
+        }}
+      >
+        Description
+      </th>
+      <th>Example uses</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>Software-defined Asset</strong> (
+        <PyObject object="asset" decorator />)
+      </td>
+      <td>
+        An asset is an object in persistent storage, such as a database table, a
+        file, or a machine learning model. A Software-defined Asset a
+        description, in code, of an asset that should exist, including how it's
+        produced and updated.
+      </td>
+      <td>
+        <ul>
+          <li>A table in a database, such as Snowflake or PostgreSQL</li>
+          <li>A file in Amazon S3</li>
+          <li>
+            An asset from an integration, such as a dbt model or a Fivetran
+            connector
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Graph-backed Asset</strong> (
+        <PyObject object="graph_asset" decorator />)
+      </td>
+      <td>
+        Graph-backed Assets are made up of a graph of ops. This type of asset is
+        useful when generating an asset that involves several discrete
+        computations, or several steps to arrive at a result.
+      </td>
+      <td>
+        <ul>
+          <li>TODO</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Multi-asset</strong> (
+        <PyObject object="multi_asset" decorator />)
+      </td>
+      <td>
+        A set of Software-defined Assets that are updated by the same op or
+        graph. Multi-assets can be used to define a single op or graph and
+        produce the contents of multiple data assets at once.
+      </td>
+      <td>
+        <ul>
+          <li>A single API call updating multiple tables</li>
+          <li>An in-memory object used to compute multiple assets</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Graph-backed multi-asset</strong> (
+        <PyObject object="graph_multi_asset" decorator />)
+      </td>
+      <td>TODO</td>
+      <td>
+        <ul>
+          <li>TODO</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>External Asset</strong> (<code>external_asset_from_spec</code>)
+      </td>
+      <td>
+        An asset that is visible in the Dagster UI, but executed by a process
+        external to Dagster. This type of asset is essentially a piece of
+        metadata in an asset graph - it represents a data asset, but Dagster
+        doesn't materialize it.
+      </td>
+      <td>
+        <ul>
+          <li>A daily file drop into Amazon S3</li>
+          <li>A manually created spreadsheet</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Defining dependencies
