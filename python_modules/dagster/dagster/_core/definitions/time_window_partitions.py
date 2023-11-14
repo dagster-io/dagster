@@ -1575,6 +1575,8 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             else:
                 if result_windows and window.start == result_windows[0].start:
                     result_windows[0] = TimeWindow(window.start, included_window.end)  # type: ignore
+                elif result_windows and window.end == result_windows[0].start:
+                    result_windows[0] = TimeWindow(window.start, included_window.end)  # type: ignore
                 else:
                     result_windows.insert(0, window)
 
@@ -1812,6 +1814,9 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
             partitions_def=partitions_def,
             included_partition_keys=self._included_partition_keys,
         )
+
+    def __repr__(self) -> str:
+        return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges()})"
 
 
 class TimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):

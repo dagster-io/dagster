@@ -1345,3 +1345,18 @@ def test_cannot_pickle_time_window_partitions_def():
 
     with pytest.raises(DagsterInvariantViolationError, match="not pickleable"):
         pickle.loads(pickle.dumps(partitions_def))
+
+
+def test_time_window_partitions_subset_add_partition_to_front():
+    partitions_def = DailyPartitionsDefinition("2023-01-01")
+    partition_keys_subset = PartitionKeysTimeWindowPartitionsSubset(partitions_def, {"2023-01-01"})
+    time_windows_subset = TimeWindowPartitionsSubset(
+        partitions_def,
+        num_partitions=1,
+        included_time_windows=[time_window("2023-01-02", "2023-01-03")],
+    )
+
+    combined = time_windows_subset | partition_keys_subset
+    assert combined == PartitionKeysTimeWindowPartitionsSubset(
+        partitions_def, {"2023-01-01", "2023-01-02"}
+    )
