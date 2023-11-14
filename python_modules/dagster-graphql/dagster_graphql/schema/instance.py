@@ -7,7 +7,7 @@ from dagster._core.launcher.base import RunLauncher
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._daemon.asset_daemon import get_auto_materialize_paused
 from dagster._daemon.types import DaemonStatus
-from dagster._utils.concurrency import ConcurrencyKeyInfo
+from dagster._utils.concurrency import ClaimedSlotInfo, ConcurrencyKeyInfo, PendingStepInfo
 
 from .errors import GraphenePythonError
 from .util import ResolveInfo, non_null_list
@@ -89,9 +89,44 @@ class GrapheneDaemonHealth(graphene.ObjectType):
         ]
 
 
+class GrapheneClaimedConcurrencySlot(graphene.ObjectType):
+    runId = graphene.NonNull(graphene.String)
+    stepKey = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "ClaimedConcurrencySlot"
+
+    def __init__(self, claimed_slot_info: ClaimedSlotInfo):
+        super().__init__(runId=claimed_slot_info.run_id, stepKey=claimed_slot_info.step_key)
+
+
+class GraphenePendingConcurrencyStep(graphene.ObjectType):
+    runId = graphene.NonNull(graphene.String)
+    stepKey = graphene.NonNull(graphene.String)
+    enqueuedTimestamp = graphene.NonNull(graphene.Float)
+    assignedTimestamp = graphene.Float()
+    priority = graphene.Int()
+
+    class Meta:
+        name = "PendingConcurrencyStep"
+
+    def __init__(self, pending_step_info: PendingStepInfo):
+        super().__init__(
+            runId=pending_step_info.run_id,
+            stepKey=pending_step_info.step_key,
+            enqueuedTimestamp=pending_step_info.enqueued_timestamp.timestamp(),
+            assignedTimestamp=pending_step_info.assigned_timestamp.timestamp()
+            if pending_step_info.assigned_timestamp
+            else None,
+            priority=pending_step_info.priority,
+        )
+
+
 class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
     concurrencyKey = graphene.NonNull(graphene.String)
     slotCount = graphene.NonNull(graphene.Int)
+    claimedSlots = non_null_list(GrapheneClaimedConcurrencySlot)
+    pendingSteps = non_null_list(GraphenePendingConcurrencyStep)
     activeSlotCount = graphene.NonNull(graphene.Int)
     activeRunIds = non_null_list(graphene.String)
     pendingStepCount = graphene.NonNull(graphene.Int)
@@ -103,6 +138,8 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
         name = "ConcurrencyKeyInfo"
 
     def __init__(self, concurrency_key_info: ConcurrencyKeyInfo):
+        self._claimed_slots = concurrency_key_info.claimed_slots
+        self._pending_steps = concurrency_key_info.pending_steps
         super().__init__(
             concurrencyKey=concurrency_key_info.concurrency_key,
             slotCount=concurrency_key_info.slot_count,
@@ -113,6 +150,12 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
             assignedStepCount=concurrency_key_info.assigned_step_count,
             assignedStepRunIds=list(concurrency_key_info.assigned_run_ids),
         )
+
+    def resolve_claimedSlots(self, _graphene_info: ResolveInfo):
+        return [GrapheneClaimedConcurrencySlot(slot) for slot in self._claimed_slots]
+
+    def resolve_pendingSteps(self, _graphene_info: ResolveInfo):
+        return [GraphenePendingConcurrencyStep(step) for step in self._pending_steps]
 
 
 class GrapheneInstance(graphene.ObjectType):
