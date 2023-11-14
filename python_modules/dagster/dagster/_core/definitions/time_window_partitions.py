@@ -1947,7 +1947,7 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
 class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
     # TimeWindowPartitionsSubsets have custom logic to delay calculating num_partitions until it
     # is needed to improve performance. When serializing, we want to serialize the number of
-    # partitions, so we force calculatation.
+    # partitions, so we force calculation.
     def before_pack(self, value: "TimeWindowPartitionsSubset") -> "TimeWindowPartitionsSubset":
         if value._asdict()["num_partitions"] is None:
             return TimeWindowPartitionsSubset(
@@ -1958,9 +1958,7 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
         return value
 
 
-@whitelist_for_serdes(
-    serializer=TimeWindowPartitionsSubsetSerializer,
-)
+@whitelist_for_serdes(serializer=TimeWindowPartitionsSubsetSerializer)
 class TimeWindowPartitionsSubset(
     BaseTimeWindowPartitionsSubset,
     NamedTuple(
