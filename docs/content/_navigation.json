@@ -818,6 +818,10 @@
         "path": "/integrations/pandas"
       },
       {
+        "title": "Pandera",
+        "path": "/integrations/pandera"
+      },
+      {
         "title": "PySpark",
         "path": "/integrations/spark"
       },
