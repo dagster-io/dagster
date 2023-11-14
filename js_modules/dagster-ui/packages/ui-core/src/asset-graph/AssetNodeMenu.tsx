@@ -160,7 +160,9 @@ export const useAssetNodeMenu = ({
     dialog: (
       <>
         <MaterializeWithUpstreamDialog
-          assetKeys={getUpstreamNodes(node.assetKey, graphData)}
+          assetKeys={
+            showMaterializeWithUpstreamDialog ? getUpstreamNodes(node.assetKey, graphData) : []
+          }
           isOpen={showMaterializeWithUpstreamDialog}
           close={() => setShowMaterializeWithUpstreamDialog(false)}
           onMaterialize={onClick}

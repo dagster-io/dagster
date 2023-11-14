@@ -159,7 +159,6 @@ const AssetNodePopoverMenu = (props: Parameters<typeof useAssetNodeMenu>[0]) => 
     >
       {dialog}
       <Popover
-        usePortal
         content={menu}
         hoverOpenDelay={100}
         hoverCloseDelay={100}

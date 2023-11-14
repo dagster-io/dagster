@@ -164,90 +164,92 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
 ];
 
-export const AssetNodeContextMenuWrapper = ({
-  children,
-  graphData,
-  explorerPath,
-  onChangeExplorerPath,
-  selectNode,
-  node,
-}: {
-  children: React.ReactNode;
-  graphData: GraphData;
-  node: GraphNode;
-  selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-  explorerPath?: ExplorerPath;
-  onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-}) => {
-  const [menuVisible, setMenuVisible] = React.useState(false);
-  const [menuPosition, setMenuPosition] = React.useState<{top: number; left: number}>({
-    top: 0,
-    left: 0,
-  });
-
-  const showMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMenuVisible(true);
-    setMenuPosition({top: e.pageY, left: e.pageX});
-  };
-
-  const hideMenu = () => {
-    setMenuVisible(false);
-  };
-  const ref = React.useRef<HTMLDivElement | null>(null);
-  React.useEffect(() => {
-    const node = ref.current;
-    const listener = (e: MouseEvent) => {
-      if (ref.current && e.target && !ref.current.contains(e.target as Node)) {
-        hideMenu();
-      }
-    };
-    if (menuVisible && node) {
-      document.body.addEventListener('click', listener);
-    }
-    return () => {
-      if (node) {
-        document.body.removeEventListener('click', listener);
-      }
-    };
-  }, [menuVisible]);
-  const {dialog, menu} = useAssetNodeMenu({
+export const AssetNodeContextMenuWrapper = React.memo(
+  ({
+    children,
     graphData,
     explorerPath,
     onChangeExplorerPath,
     selectNode,
     node,
-  });
-  return (
-    <div ref={ref}>
-      <div onContextMenu={showMenu} onClick={hideMenu}>
-        {children}
+  }: {
+    children: React.ReactNode;
+    graphData: GraphData;
+    node: GraphNode;
+    selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+    explorerPath?: ExplorerPath;
+    onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  }) => {
+    const [menuVisible, setMenuVisible] = React.useState(false);
+    const [menuPosition, setMenuPosition] = React.useState<{top: number; left: number}>({
+      top: 0,
+      left: 0,
+    });
+
+    const showMenu = (e: React.MouseEvent) => {
+      e.preventDefault();
+      setMenuVisible(true);
+      setMenuPosition({top: e.pageY, left: e.pageX});
+    };
+
+    const hideMenu = () => {
+      setMenuVisible(false);
+    };
+    const ref = React.useRef<HTMLDivElement | null>(null);
+    React.useEffect(() => {
+      const node = ref.current;
+      const listener = (e: MouseEvent) => {
+        if (ref.current && e.target && !ref.current.contains(e.target as Node)) {
+          hideMenu();
+        }
+      };
+      if (menuVisible && node) {
+        document.body.addEventListener('click', listener);
+      }
+      return () => {
+        if (node) {
+          document.body.removeEventListener('click', listener);
+        }
+      };
+    }, [menuVisible]);
+    const {dialog, menu} = useAssetNodeMenu({
+      graphData,
+      explorerPath,
+      onChangeExplorerPath,
+      selectNode,
+      node,
+    });
+    return (
+      <div ref={ref}>
+        <div onContextMenu={showMenu} onClick={hideMenu}>
+          {children}
+        </div>
+        {dialog}
+        {menuVisible
+          ? ReactDOM.createPortal(
+              <div
+                style={{
+                  position: 'absolute',
+                  top: menuPosition.top,
+                  left: menuPosition.left,
+                  backgroundColor: '#fff',
+                  border: '1px solid #ccc',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  zIndex: 10,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {menu}
+              </div>,
+              document.body,
+            )
+          : null}
       </div>
-      {dialog}
-      {menuVisible
-        ? ReactDOM.createPortal(
-            <div
-              style={{
-                position: 'absolute',
-                top: menuPosition.top,
-                left: menuPosition.left,
-                backgroundColor: '#fff',
-                border: '1px solid #ccc',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                zIndex: 10,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              {menu}
-            </div>,
-            document.body,
-          )
-        : null}
-    </div>
-  );
-};
+    );
+  },
+);
 
 const AssetNodeChecksRow = ({
   definition,
