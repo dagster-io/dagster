@@ -229,7 +229,7 @@ class DbIOManager(IOManager):
                             else:
                                 partitions = partitions[0]
                         else:
-                            partitions = cast(Sequence[str], partition_keys_by_dim[part.name])
+                            partitions = list(partition_keys_by_dim[part.name])
 
                         partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
                         if partition_expr is None:

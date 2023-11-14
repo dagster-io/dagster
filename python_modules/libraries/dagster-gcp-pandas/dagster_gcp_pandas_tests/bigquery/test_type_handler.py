@@ -14,6 +14,7 @@ from dagster import (
     EnvVar,
     MultiPartitionKey,
     MultiPartitionsDefinition,
+    MultiToSingleDimensionPartitionMapping,
     Out,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
@@ -542,3 +543,82 @@ def test_self_dependent_asset(io_manager):
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+@pytest.mark.integration
+def test_multi_partitioned_asset_with_downstream_mapping(io_manager):
+    with temporary_bigquery_table(
+        schema_name=SCHEMA,
+    ) as table_name:
+        partitions_def = MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+                "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            }
+        )
+
+        @asset(
+            partitions_def=partitions_def,
+            key_prefix=SCHEMA,
+            metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+            config_schema={"value": str},
+            name=table_name,
+        )
+        def multi_partitioned(context) -> pd.DataFrame:
+            partition = context.partition_key.keys_by_dimension
+            value = context.op_config["value"]
+            return pd.DataFrame(
+                {
+                    "color": [partition["color"], partition["color"], partition["color"]],
+                    "time": [partition["time"], partition["time"], partition["time"]],
+                    "a": [value, value, value],
+                }
+            )
+
+        @asset(
+            ins={
+                "multi_partitioned": AssetIn(
+                    key="multi_partitioned",
+                    partition_mapping=MultiToSingleDimensionPartitionMapping(
+                        partition_dimension_name="time"
+                    ),
+                ),
+            },
+            key_prefix=SCHEMA,
+            partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+            metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
+        )
+        def downstream_of_multi_partitioned(context, multi_partitioned: pd.DataFrame) -> None:
+            partition = context.partition_key
+            assert "red" in list(multi_partitioned.color)
+            assert "blue" in list(multi_partitioned.color)
+            assert partition in list(multi_partitioned.time)
+            return None
+
+        asset_full_name = f"{SCHEMA}__{table_name}"
+
+        resource_defs = {"io_manager": io_manager}
+
+        with instance_for_test() as inst:
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+                resources=resource_defs,
+                run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+                resources=resource_defs,
+                run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned.to_source_asset(), downstream_of_multi_partitioned],
+                partition_key="2022-01-01",
+                resources=resource_defs,
+                instance=inst,
+            )

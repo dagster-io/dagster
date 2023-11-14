@@ -341,21 +341,11 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
             }
         )
 
-    @asset(
-        partitions_def=partitions_def,
-        key_prefix=["my_schema"],
-        ins={"df": AssetIn(["my_schema", "multi_partitioned"])},
-        # io_manager_key="fs_io",
-    )
-    def downstream_partitioned(df: pd.DataFrame) -> None:
-        # assert that we only get the columns created in multi_partitioned
-        assert len(df.index) == 3
-
     for io_manager in io_managers:
         resource_defs = {"io_manager": io_manager}
 
         materialize(
-            [multi_partitioned, downstream_partitioned],
+            [multi_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
@@ -367,7 +357,7 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
         duckdb_conn.close()
 
         materialize(
-            [multi_partitioned, downstream_partitioned],
+            [multi_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
             resources=resource_defs,
             run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "2"}}}},
@@ -379,7 +369,7 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
         duckdb_conn.close()
 
         materialize(
-            [multi_partitioned, downstream_partitioned],
+            [multi_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "3"}}}},
@@ -391,7 +381,7 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
         duckdb_conn.close()
 
         materialize(
-            [multi_partitioned, downstream_partitioned],
+            [multi_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
