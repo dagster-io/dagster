@@ -620,7 +620,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
         key_prefix=["my_schema"],
     )
     def downstream_of_multi_partitioned(context, multi_partitioned: pl.DataFrame) -> None:
-        num_rows = multi_partitioned.select(pl.count())[0, 0] == 6
+        num_rows = multi_partitioned.select(pl.count())[0, 0]
         assert num_rows == 6
         return None
 
