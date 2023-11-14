@@ -956,7 +956,8 @@ def _subset_assets_defs(
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "
-                f"contains asset keys {sorted(list(asset.keys))}, but "
+                f"contains asset keys {sorted(list(asset.keys))} and check keys "
+                f"{sorted(list(asset.check_keys))}, but "
                 f"attempted to select only {sorted(list(selected_subset))}. "
                 "This AssetsDefinition does not support subsetting. Please select all "
                 "asset keys produced by this asset."
