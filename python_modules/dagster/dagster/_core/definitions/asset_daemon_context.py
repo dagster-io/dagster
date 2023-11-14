@@ -39,6 +39,7 @@ from .asset_daemon_cursor import AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import (
     AutoMaterializeRule,
+    PartitionsSubsetOrBool,
     RuleEvaluationContext,
 )
 from .auto_materialize_rule_evaluation import (
@@ -281,22 +282,6 @@ class AssetDaemonContext:
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         ).to_auto_materialize_policy_evaluator()
 
-        # NOTE: this is expensive, as it forces us to produce every single partition key for every
-        # single partitions definition on each tick. this will be worked around upstack with a
-        # wrapper class that can represent "all partitions" without having to always generate the
-        # keys
-        partitions_def = self.asset_graph.get_partitions_def(asset_key)
-        initial_candidates = {
-            AssetKeyPartitionKey(asset_key, partition_key)
-            for partition_key in (
-                partitions_def.get_partition_keys(
-                    current_time=self.instance_queryer.evaluation_time,
-                    dynamic_partitions_store=self.instance_queryer,
-                )
-                if partitions_def is not None
-                else [None]
-            )
-        }
         context = RuleEvaluationContext(
             asset_key=asset_key,
             cursor=self.cursor,
@@ -304,7 +289,9 @@ class AssetDaemonContext:
             data_time_resolver=self.data_time_resolver,
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
-            candidates=initial_candidates,
+            candidates=PartitionsSubsetOrBool.all(
+                self.asset_graph.get_partitions_def(asset_key), self.instance_queryer
+            ),
             daemon_context=self,
         )
 

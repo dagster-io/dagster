@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import functools
+import operator
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
 )
 
 import pytz
@@ -35,6 +37,7 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
@@ -58,6 +61,88 @@ if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_rule_evaluation import (
         AutoMaterializeAssetEvaluation,
     )
+    from dagster._core.definitions.partition import PartitionsSubset
+
+
+@dataclass(frozen=True)
+class PartitionsSubsetOrBool(NamedTuple):
+    """Lightweight wrapper to allow operations on both partitioned and unpartitioned assets."""
+
+    inner: Union[bool, "PartitionsSubset"]
+    instance_queryer: CachingInstanceQueryer
+    partitions_def: Optional[PartitionsDefinition]
+
+    @staticmethod
+    def all(
+        partitions_def: Optional[PartitionsDefinition], instance_queryer: CachingInstanceQueryer
+    ) -> "PartitionsSubsetOrBool":
+        return PartitionsSubsetOrBool(
+            inner=AllPartitionsSubset(partitions_def, instance_queryer)
+            if partitions_def is not None
+            else True,
+            instance_queryer=instance_queryer,
+            partitions_def=partitions_def,
+        )
+
+    @staticmethod
+    def empty(
+        partitions_def: Optional[PartitionsDefinition], instance_queryer: CachingInstanceQueryer
+    ) -> "PartitionsSubsetOrBool":
+        return PartitionsSubsetOrBool(
+            inner=partitions_def.empty_subset() if partitions_def is not None else False,
+            instance_queryer=instance_queryer,
+            partitions_def=partitions_def,
+        )
+
+    def from_asset_partitions(
+        self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+    ) -> "PartitionsSubsetOrBool":
+        if isinstance(self.inner, bool):
+            return self._replace(inner=self.inner | bool(asset_partitions))
+        return self._replace(
+            inner=self.inner
+            | check.not_none(self.partitions_def).subset_with_partition_keys(
+                {ap.partition_key for ap in asset_partitions if ap.partition_key is not None}
+            )
+        )
+
+    def get_asset_partitions(self, asset_key: AssetKey) -> AbstractSet[AssetKeyPartitionKey]:
+        if isinstance(self.inner, bool):
+            return {AssetKeyPartitionKey(asset_key)} if self.inner else set()
+        return {
+            AssetKeyPartitionKey(asset_key, partition_key)
+            for partition_key in self.inner.get_partition_keys(
+                current_time=self.instance_queryer.evaluation_time
+            )
+        }
+
+    def _oper(
+        self,
+        other: Union["PartitionsSubsetOrBool", AbstractSet[AssetKeyPartitionKey]],
+        oper: Callable,
+    ) -> "PartitionsSubsetOrBool":
+        if not isinstance(other, PartitionsSubsetOrBool):
+            other = self.from_asset_partitions(other)
+        if type(self.inner) != type(other.inner):
+            check.failed(
+                "Cannot operate on different inner types when using PartitionsSubsetOrBool"
+            )
+        return oper(self, other)
+
+    def __sub__(
+        self, other: Union["PartitionsSubsetOrBool", AbstractSet[AssetKeyPartitionKey]]
+    ) -> "PartitionsSubsetOrBool":
+        return self._oper(other, operator.sub)
+
+    def __and__(
+        self, other: Union["PartitionsSubsetOrBool", AbstractSet[AssetKeyPartitionKey]]
+    ) -> "PartitionsSubsetOrBool":
+        return self._oper(other, operator.and_)
+
+    def __or__(
+        self, other: Union["PartitionsSubsetOrBool", AbstractSet[AssetKeyPartitionKey]]
+    ) -> "PartitionsSubsetOrBool":
+        return self._oper(other, operator.or_)
 
 
 @dataclass(frozen=True)
@@ -70,7 +155,7 @@ class RuleEvaluationContext:
     # keys in the values match the asset key in the corresponding key.
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
-    candidates: AbstractSet[AssetKeyPartitionKey]
+    candidates: PartitionsSubsetOrBool
     daemon_context: "AssetDaemonContext"
 
     @property
@@ -106,9 +191,7 @@ class RuleEvaluationContext:
         )
 
     @functools.cached_property
-    def previous_tick_evaluated_asset_partitions(
-        self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    def previous_tick_evaluated_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions that were evaluated on the previous tick."""
         if not self.previous_tick_evaluation:
             return set()
@@ -131,7 +214,7 @@ class RuleEvaluationContext:
 
     def get_candidates_not_evaluated_by_rule_on_previous_tick(
         self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> PartitionsSubsetOrBool:
         """Returns the set of candidates that were not evaluated by the rule that is currently being
         evaluated on the previous tick.
 
@@ -142,7 +225,7 @@ class RuleEvaluationContext:
 
     def get_candidates_with_updated_or_will_update_parents(
         self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> PartitionsSubsetOrBool:
         """Returns the set of candidate asset partitions whose parents have been updated since the
         last tick or will be requested on this tick.
 
@@ -846,7 +929,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
             context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.get_asset_partitions(context.asset_key):
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
@@ -892,7 +975,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
             context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.get_asset_partitions(context.asset_key):
             missing_parent_asset_keys = set()
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
@@ -959,7 +1042,7 @@ class SkipOnNotAllParentsUpdatedRule(
             context.get_candidates_not_evaluated_by_rule_on_previous_tick()
             | context.get_candidates_with_updated_or_will_update_parents()
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.get_asset_partitions(context.asset_key):
             parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -1031,7 +1114,7 @@ class SkipOnRequiredButNonexistentParentsRule(
         asset_partitions_by_evaluation_data = defaultdict(set)
 
         candidates_to_evaluate = context.get_candidates_not_evaluated_by_rule_on_previous_tick()
-        for candidate in candidates_to_evaluate:
+        for candidate in candidates_to_evaluate.get_asset_partitions(context.asset_key):
             nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -1077,12 +1160,14 @@ class SkipOnBackfillInProgressRule(
         if self.all_partitions:
             backfill_in_progress_candidates = {
                 candidate
-                for candidate in context.candidates
+                for candidate in context.candidates.get_asset_partitions(context.asset_key)
                 if candidate.asset_key in backfilling_subset.asset_keys
             }
         else:
             backfill_in_progress_candidates = {
-                candidate for candidate in context.candidates if candidate in backfilling_subset
+                candidate
+                for candidate in context.candidates.get_asset_partitions(context.asset_key)
+                if candidate in backfilling_subset
             }
 
         if backfill_in_progress_candidates:
@@ -1107,7 +1192,7 @@ class DiscardOnMaxMaterializationsExceededRule(
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
             sorted(
-                context.candidates,
+                context.candidates.get_asset_partitions(context.asset_key),
                 key=lambda x: sort_key_for_asset_partition(context.asset_graph, x),
             )[self.limit :]
         )
