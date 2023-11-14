@@ -5,6 +5,7 @@ from typing import Sequence
 
 import pytest
 from dagster import (
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
@@ -871,6 +872,22 @@ def test_group_name_requirements():
         @asset(group_name="")
         def empty_name():
             return 3
+
+
+def test_from_graph_w_check_specs():
+    @op
+    def my_op():
+        pass
+
+    @graph(out={"my_out": GraphOut()})
+    def my_graph():
+        return my_op()
+
+    my_asset = AssetsDefinition.from_graph(
+        my_graph, check_specs=[AssetCheckSpec("check1", asset="my_out")]
+    )
+
+    assert list(my_asset.check_specs) == [AssetCheckSpec("check1", asset=AssetKey(["my_out"]))]
 
 
 def test_from_graph_w_key_prefix():
