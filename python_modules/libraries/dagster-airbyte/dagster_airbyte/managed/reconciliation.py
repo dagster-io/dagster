@@ -14,7 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -39,6 +39,7 @@ from dagster_airbyte.asset_defs import (
     _clean_name,
 )
 from dagster_airbyte.managed.types import (
+    MANAGED_ELEMENTS_DEPRECATION_MSG,
     AirbyteConnection,
     AirbyteDestination,
     AirbyteDestinationNamespace,
@@ -636,6 +637,7 @@ def reconcile_connections_post(
 
 
 @experimental
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
     """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
@@ -740,6 +742,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
 
 
 @experimental
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     connections: Iterable[AirbyteConnection],
