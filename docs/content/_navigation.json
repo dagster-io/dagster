@@ -1031,10 +1031,6 @@
             "title": "Experimental features",
             "children": [
               {
-                "title": "Using custom run coordinators",
-                "path": "/guides/dagster/run-attribution"
-              },
-              {
                 "title": "Airbyte ingestion as code",
                 "path": "/guides/dagster/airbyte-ingestion-as-code"
               },
