@@ -173,7 +173,7 @@ class DbIOManager(IOManager):
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
-            # schema order of precedence: metadata, key_prefix, I/O manager 'schema' config
+            # schema order of precedence: metadata, I/O manager 'schema' config, key_prefix
             if output_context_metadata.get("schema"):
                 if self._schema:
                     context.log.warn(
@@ -192,17 +192,17 @@ class DbIOManager(IOManager):
                         " will be used."
                     )
                 schema = cast(str, output_context_metadata["schema"])
-            elif len(asset_key_path) > 1:
-                if self._schema:
+            elif self._schema:
+                if len(asset_key_path) > 1:
                     context.log.warn(
-                        f"Schema {asset_key_path[-2]} specified via key prefix, and schema"
-                        f"{self._schema} was provided as config to the I/O manager."
-                        f" The schema set via key prefix, {asset_key_path[:-1]}"
+                        f"Schema {self._schema} was provided as config to the I/O manager and "
+                        f"schema {asset_key_path[-2]} specified via key prefix."
+                        f" The schema set via I/O manager config, {self._schema}"
                         " will be used."
                     )
-                schema = asset_key_path[-2]
-            elif self._schema:
                 schema = self._schema
+            elif len(asset_key_path) > 1:
+                schema = asset_key_path[-2]
             else:
                 schema = "public"
 

@@ -423,7 +423,7 @@ def test_asset_schema_defaults():
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
-    assert table_slice.schema == "schema1"
+    assert table_slice.schema == "my_schema"
 
     asset_key = AssetKey(["table1"])
     output_context = build_output_context(
