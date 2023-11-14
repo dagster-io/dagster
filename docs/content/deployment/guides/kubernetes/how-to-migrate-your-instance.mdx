@@ -28,11 +28,13 @@ Before you get started, complete the following:
   in the proper namespace.
 </Note>
 
-1. First, [update the repository's version of Helm](https://helm.sh/docs/helm/helm_repo_update/):
+1. First, [get the latest information about available charts](https://helm.sh/docs/helm/helm_repo_update/) by running:
 
    ```shell
    helm repo update
    ```
+
+   This retrieves the latest information about the Dagster Helm chart, which is updated with every Open Source (OSS) release.
 
 2. Run [`helm upgrade`](https://helm.sh/docs/helm/helm_upgrade/) with your desired Dagster chart version and Helm values:
 
@@ -104,6 +106,8 @@ kubectl scale deploy $DAEMON_DEPLOYMENT_NAME --replicas=0
    ```shell
    kubectl describe pod <POD_NAME>
    ```
+
+   Verify that the pod completed without any errors before proceeding.
 
 ---
 
