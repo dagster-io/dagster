@@ -1,3 +1,4 @@
+import pendulum
 import pytest
 from dagster import (
     DailyPartitionsDefinition,
@@ -5,12 +6,13 @@ from dagster import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsSubset
-from dagster._core.definitions.partition import DefaultPartitionsSubset
+from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -83,3 +85,45 @@ def test_empty_subsets():
     assert type(composite.empty_subset()) is MultiPartitionsSubset
     assert type(static_partitions.empty_subset()) is DefaultPartitionsSubset
     assert type(time_window_partitions.empty_subset()) is PartitionKeysTimeWindowPartitionsSubset
+
+
+def test_all_partitions_subset_static_partitions_def() -> None:
+    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    all_subset = AllPartitionsSubset(static_partitions_def, None)
+    assert len(all_subset) == 4
+    assert set(all_subset.get_partition_keys()) == {"a", "b", "c", "d"}
+    assert all_subset == AllPartitionsSubset(static_partitions_def, None)
+
+    abc_subset = DefaultPartitionsSubset(static_partitions_def, {"a", "b", "c"})
+    assert all_subset & abc_subset == abc_subset
+    assert all_subset | abc_subset == all_subset
+    assert all_subset - abc_subset == DefaultPartitionsSubset(static_partitions_def, {"d"})
+    assert abc_subset - all_subset == DefaultPartitionsSubset(static_partitions_def, set())
+
+
+def test_all_partitions_subset_time_window_partitions_def() -> None:
+    with pendulum.test(create_pendulum_time(2020, 1, 6, hour=10)):
+        time_window_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+        all_subset = AllPartitionsSubset(time_window_partitions_def, None)
+        assert len(all_subset) == 5
+        assert set(all_subset.get_partition_keys()) == {
+            "2020-01-01",
+            "2020-01-02",
+            "2020-01-03",
+            "2020-01-04",
+            "2020-01-05",
+        }
+        assert all_subset == AllPartitionsSubset(time_window_partitions_def, None)
+
+        subset = PartitionKeysTimeWindowPartitionsSubset(
+            time_window_partitions_def,
+            included_partition_keys={"2020-01-01", "2020-01-02", "2020-01-03"},
+        )
+        assert all_subset & subset == subset
+        assert all_subset | subset == all_subset
+        assert all_subset - subset == PartitionKeysTimeWindowPartitionsSubset(
+            time_window_partitions_def, included_partition_keys={"2020-01-04", "2020-01-05"}
+        )
+        assert subset - all_subset == PartitionKeysTimeWindowPartitionsSubset(
+            time_window_partitions_def, included_partition_keys=set()
+        )
