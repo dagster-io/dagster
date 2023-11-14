@@ -228,6 +228,9 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 build_resources(resource_defs, self.instance, self._resources_config)
             )
         else:
+            # this runs the check in resources() to ensure we are in a context manager if necessary
+            self._resources = self.resources
+
             resource_defs = self._resource_defs
 
         _validate_resource_requirements(resource_defs, op_def)
