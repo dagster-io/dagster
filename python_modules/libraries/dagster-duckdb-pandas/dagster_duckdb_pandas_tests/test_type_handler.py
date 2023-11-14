@@ -14,6 +14,7 @@ from dagster import (
     Out,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    WeeklyPartitionsDefinition,
     asset,
     graph,
     instance_for_test,
@@ -630,4 +631,98 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
 
         # drop table so we start with an empty db for the next io manager
         duckdb_conn.execute("DELETE FROM my_schema.multi_partitioned")
+        duckdb_conn.close()
+
+
+def test_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2023-11-01"),
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
+        config_schema={"value": str},
+    )
+    def daily_partitioned(context) -> pd.DataFrame:
+        partition = context.partition_key
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "time": [partition],
+                "a": [value],
+            }
+        )
+
+    @asset(
+        partitions_def=WeeklyPartitionsDefinition(start_date="2023-11-01"),
+        metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
+        key_prefix=["my_schema"],
+    )
+    def downstream_of_multi_partitioned(daily_partitioned: pd.DataFrame) -> None:
+        assert (daily_partitioned["a"] == pd.Series(["1", "2", "3", "4", "5", "6", "7"])).all()
+        return None
+
+    for io_manager in io_managers:
+        resource_defs = {"io_manager": io_manager}
+
+        with instance_for_test() as inst:
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-05",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-06",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "2"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-07",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "3"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-08",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "4"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-09",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "5"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-10",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "6"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-11",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "7"}}}},
+                instance=inst,
+            )
+
+            materialize(
+                [daily_partitioned.to_source_asset(), downstream_of_multi_partitioned],
+                partition_key="2023-11-05",
+                resources=resource_defs,
+                instance=inst,
+            )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+
+        # drop table so we start with an empty db for the next io manager
+        duckdb_conn.execute("DELETE FROM my_schema.daily_partitioned")
         duckdb_conn.close()
