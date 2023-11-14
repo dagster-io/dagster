@@ -541,11 +541,15 @@
                 "title": "SSO and provisioning",
                 "children": [
                   {
-                    "title": "Azure Active Directory",
+                    "title": "SCIM provisioning",
+                    "path": "/dagster-cloud/account/authentication//utilizing-scim-provisioning"
+                  },
+                  {
+                    "title": "SSO for Azure Active Directory",
                     "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
                   },
                   {
-                    "title": "Google Workspace",
+                    "title": "SSO for Google Workspace",
                     "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
                   },
                   {
@@ -562,11 +566,11 @@
                     ]
                   },
                   {
-                    "title": "OneLogin",
+                    "title": "SSO for OneLogin",
                     "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
                   },
                   {
-                    "title": "PingOne",
+                    "title": "SSO for PingOne",
                     "path": "/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
                   }
                 ]
