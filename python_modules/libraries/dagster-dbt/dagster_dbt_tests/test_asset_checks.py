@@ -280,7 +280,6 @@ def test_dbt_model_and_test_selection(dbt_commands: List[List[str]]):
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
     assert len(result.get_asset_check_evaluations()) == 1
-    assert 0
 
 
 @pytest.mark.xfail(
@@ -296,7 +295,7 @@ def test_dbt_test_selection(dbt_commands: List[List[str]]):
     @dbt_assets(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator_with_checks,
-        select="test_name:unique_customers_customer_id",
+        select="not_null_customers_customer_id",
     )
     def my_dbt_assets(context, dbt: DbtCliResource):
         # for dbt_command in dbt_commands:

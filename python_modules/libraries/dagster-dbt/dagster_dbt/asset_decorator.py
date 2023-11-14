@@ -1,4 +1,5 @@
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -275,6 +276,7 @@ def dbt_assets(
         check_specs,
     ) = get_dbt_multi_asset_args(
         dbt_nodes=node_info_by_dbt_unique_id,
+        selected_unique_ids=unique_ids,
         dbt_unique_id_deps=dbt_unique_id_deps,
         io_manager_key=io_manager_key,
         manifest=manifest,
@@ -320,6 +322,7 @@ def dbt_assets(
 
 def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
+    selected_unique_ids: AbstractSet[str],
     dbt_unique_id_deps: Mapping[str, FrozenSet[str]],
     io_manager_key: Optional[str],
     manifest: Mapping[str, Any],
@@ -334,6 +337,21 @@ def get_dbt_multi_asset_args(
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs: Sequence[AssetCheckSpec] = []
+
+    for unique_id in selected_unique_ids:
+        dbt_resource_props = dbt_nodes[unique_id]
+        if dbt_resource_props["resource_type"] == "test":
+            check_spec = default_asset_check_fn(
+                dagster_dbt_translator.get_asset_key(
+                    dbt_nodes[dbt_resource_props["attached_node"]]
+                ),
+                dbt_resource_props["attached_node"],
+                dagster_dbt_translator.settings,
+                dbt_resource_props,
+            )
+
+            if check_spec:
+                check_specs.append(check_spec)
 
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]

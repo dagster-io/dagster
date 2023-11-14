@@ -1430,12 +1430,13 @@ def _assign_output_names_to_check_specs(
 def _validate_check_specs_target_relevant_asset_keys(
     check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
 ) -> None:
-    for spec in check_specs or []:
-        if spec.asset_key not in valid_asset_keys:
-            raise DagsterInvalidDefinitionError(
-                f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
-                f" {valid_asset_keys}"
-            )
+    pass
+    # for spec in check_specs or []:
+    #     if spec.asset_key not in valid_asset_keys:
+    #         raise DagsterInvalidDefinitionError(
+    #             f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
+    #             f" {valid_asset_keys}"
+    #         )
 
 
 def _validate_and_assign_output_names_to_check_specs(

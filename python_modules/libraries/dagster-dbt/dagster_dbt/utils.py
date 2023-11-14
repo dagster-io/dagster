@@ -317,6 +317,7 @@ def select_unique_ids_from_manifest(
     # execute this selection against the graph
     selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
     selected, _ = selector.select_nodes(parsed_spec)
+    print("selected", selected)
     return selected
 
 
