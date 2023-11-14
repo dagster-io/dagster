@@ -22,7 +22,7 @@ export const AssetKeysDialog = (props: Props) => {
     <Dialog
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
-      style={{width: '750px', maxWidth: '80vw', minWidth: '500px'}}
+      style={{width: '750px', maxWidth: '80vw', minWidth: '500px', transform: 'scale(1)'}}
       canOutsideClickClose
       canEscapeKeyClose
     >
