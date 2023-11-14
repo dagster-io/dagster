@@ -282,10 +282,10 @@ class ConfigurableResourceFactoryState(NamedTuple):
 
 
 class ConfigurableResourceFactory(
-    Generic[TResValue],
     Config,
     TypecheckAllowPartialResourceInitParams,
     AllowDelayedDependencies,
+    Generic[TResValue],
     ABC,
     metaclass=BaseResourceMeta,
 ):
@@ -343,7 +343,7 @@ class ConfigurableResourceFactory(
         )
 
         # Populate config values
-        Config.__init__(self, **{**data_without_resources, **resource_pointers})
+        super().__init__(**data_without_resources, **resource_pointers)
 
         # We pull the values from the Pydantic config object, which may cast values
         # to the correct type under the hood - useful in particular for enums
@@ -745,7 +745,11 @@ class PartialResourceState(NamedTuple):
     nested_resources: Dict[str, Any]
 
 
-class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
+class PartialResource(
+    AllowDelayedDependencies,
+    MakeConfigCacheable,
+    Generic[TResValue],
+):
     data: Dict[str, Any]
     resource_cls: Type[Any]
 
@@ -756,7 +760,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     ):
         resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
 
-        MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
+        super().__init__(data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
             to_populate = resource_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
@@ -1009,7 +1013,6 @@ def validate_resource_annotated_function(fn) -> None:
     from dagster._config.pythonic_config.resource import (
         ConfigurableResource,
         ConfigurableResourceFactory,
-        TResValue,
     )
 
     from .type_check_utils import safe_is_subclass
@@ -1024,10 +1027,13 @@ def validate_resource_annotated_function(fn) -> None:
         malformed_param = malformed_params[0]
         output_type = None
         if safe_is_subclass(malformed_param.annotation, ConfigurableResourceFactory):
-            orig_bases = getattr(malformed_param.annotation, "__orig_bases__", None)
-            output_type = get_args(orig_bases[0])[0] if orig_bases and len(orig_bases) > 0 else None
-            if output_type == TResValue:
-                output_type = None
+            orig_bases = getattr(malformed_param.annotation, "__orig_bases__", ())
+            for base in orig_bases:
+                if get_origin(base) is ConfigurableResourceFactory:
+                    args = get_args(base)
+                    output_type = args[0] if len(args) == 1 else None
+                    if output_type == TResValue:
+                        output_type = None
 
         output_type_name = getattr(output_type, "__name__", str(output_type))
         raise DagsterInvalidDefinitionError(
