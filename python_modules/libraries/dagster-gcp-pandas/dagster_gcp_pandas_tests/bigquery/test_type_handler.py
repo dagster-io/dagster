@@ -580,7 +580,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(io_manager):
         @asset(
             ins={
                 "multi_partitioned": AssetIn(
-                    key="multi_partitioned",
+                    key=[SCHEMA, "multi_partitioned"],
                     partition_mapping=MultiToSingleDimensionPartitionMapping(
                         partition_dimension_name="time"
                     ),
@@ -595,6 +595,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(io_manager):
             assert "red" in list(multi_partitioned.color)
             assert "blue" in list(multi_partitioned.color)
             assert partition in list(multi_partitioned.time)
+            assert multi_partitioned.shape[0] == 6
             return None
 
         asset_full_name = f"{SCHEMA}__{table_name}"
@@ -612,6 +613,13 @@ def test_multi_partitioned_asset_with_downstream_mapping(io_manager):
             materialize(
                 [multi_partitioned],
                 partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+                resources=resource_defs,
+                run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "blue"}),
                 resources=resource_defs,
                 run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
                 instance=inst,

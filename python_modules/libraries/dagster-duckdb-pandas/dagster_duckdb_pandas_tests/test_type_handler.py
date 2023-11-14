@@ -576,7 +576,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
     @asset(
         ins={
             "multi_partitioned": AssetIn(
-                key="multi_partitioned",
+                key=["my_schema", "multi_partitioned"],
                 partition_mapping=MultiToSingleDimensionPartitionMapping(
                     partition_dimension_name="time"
                 ),
@@ -584,12 +584,14 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
         },
         partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
         metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
+        schema=["my_schema"],
     )
     def downstream_of_multi_partitioned(context, multi_partitioned: pd.DataFrame) -> None:
         partition = context.partition_key
         assert "red" in list(multi_partitioned.color)
         assert "blue" in list(multi_partitioned.color)
         assert partition in list(multi_partitioned.time)
+        assert multi_partitioned.shape[0] == 6
         return None
 
     for io_manager in io_managers:
@@ -606,6 +608,13 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
             materialize(
                 [multi_partitioned],
                 partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "blue"}),
                 resources=resource_defs,
                 run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
                 instance=inst,

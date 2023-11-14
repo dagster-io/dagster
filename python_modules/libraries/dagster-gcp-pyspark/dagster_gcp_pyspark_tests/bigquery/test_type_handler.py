@@ -679,7 +679,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(spark, io_manager):
         @asset(
             ins={
                 "multi_partitioned": AssetIn(
-                    key="multi_partitioned",
+                    key=[SCHEMA, "multi_partitioned"],
                     partition_mapping=MultiToSingleDimensionPartitionMapping(
                         partition_dimension_name="time"
                     ),
