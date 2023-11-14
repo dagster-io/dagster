@@ -162,7 +162,7 @@ class DbtCliEventMessage:
                         "Execution Duration": duration_seconds,
                     },
                 )
-            else:
+            elif manifest.get("nodes"):
                 dbt_resource_props = manifest["nodes"][unique_id]
                 asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
 
