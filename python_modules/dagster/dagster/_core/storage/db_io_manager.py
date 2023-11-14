@@ -9,6 +9,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Type,
     TypeVar,
     Union,
@@ -26,7 +27,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
@@ -208,18 +209,27 @@ class DbIOManager(IOManager):
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
                     partition_keys = context.asset_partition_keys
+                    dims = context.asset_partitions_def.partition_dimension_names
+                    partition_keys_by_dim: dict[str, Set[str]] = {d: set() for d in dims}
+                    # need to iterate and collect all of the partition keys by dimension so we can make the correct
+                    # time windows or lists
+                    for key in partition_keys:
+                        cast_key = cast(MultiPartitionKey, key)
+                        for d in dims:
+                            partition_keys_by_dim[d].add(cast_key.keys_by_dimension[d])
                     for part in context.asset_partitions_def.partitions_defs:
                         if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
-                            partitions = context.asset_partitions_time_window
-                        else:
-                            # is a static partition, need to iterate through all the keys and collect the unique values
-                            partitions_set = set()
-                            for key in partition_keys:
-                                partitions_set.add(
-                                    cast(MultiPartitionKey, key).keys_by_dimension[part.name]
+                            partitions = part.partitions_def.time_windows_for_partition_keys(
+                                frozenset(partition_keys_by_dim[part.name])
+                            )
+                            if len(partitions) > 1:
+                                raise DagsterInvariantViolationError(
+                                    f"Non-overlapping partition time windows {partitions} cannot be loaded by the {self._io_manager_name}"
                                 )
-
-                            partitions = list(partitions_set)
+                            else:
+                                partitions = partitions[0]
+                        else:
+                            partitions = cast(Sequence[str], partition_keys_by_dim[part.name])
 
                         partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
                         if partition_expr is None:

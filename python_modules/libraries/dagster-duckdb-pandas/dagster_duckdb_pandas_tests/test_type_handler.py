@@ -316,10 +316,8 @@ def test_static_partitioned_asset(tmp_path, io_managers):
         duckdb_conn.close()
 
 
-
 def test_multi_partitioned_asset(tmp_path, io_managers):
-
-    partitions_def=MultiPartitionsDefinition(
+    partitions_def = MultiPartitionsDefinition(
         {
             "time": DailyPartitionsDefinition(start_date="2022-01-01"),
             "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
@@ -561,7 +559,7 @@ def test_self_dependent_asset(tmp_path, io_managers):
 
 
 def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
-    partitions_def=MultiPartitionsDefinition(
+    partitions_def = MultiPartitionsDefinition(
         {
             "time": DailyPartitionsDefinition(start_date="2022-01-01"),
             "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
@@ -591,7 +589,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
                 key="multi_partitioned",
                 partition_mapping=MultiToSingleDimensionPartitionMapping(
                     partition_dimension_name="time"
-                )
+                ),
             ),
         },
         partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -599,36 +597,35 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
     )
     def downstream_of_multi_partitioned(context, multi_partitioned: pd.DataFrame) -> None:
         partition = context.partition_key
-        assert "red" in multi_partitioned.color
-        assert "blue" in multi_partitioned.color
-        assert partition in multi_partitioned.time
+        assert "red" in list(multi_partitioned.color)
+        assert "blue" in list(multi_partitioned.color)
+        assert partition in list(multi_partitioned.time)
         return None
 
     for io_manager in io_managers:
         resource_defs = {"io_manager": io_manager}
 
         with instance_for_test() as inst:
-
-                materialize(
-                    [multi_partitioned],
-                    partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
-                    resources=resource_defs,
-                    run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
-                    instance=inst
-                )
-                materialize(
-                    [multi_partitioned],
-                    partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
-                    resources=resource_defs,
-                    run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
-                    instance=inst
-                )
-                materialize(
-                    [multi_partitioned.to_source_asset(), downstream_of_multi_partitioned],
-                    partition_key="2022-01-01",
-                    resources=resource_defs,
-                    instance=inst
-                )
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned.to_source_asset(), downstream_of_multi_partitioned],
+                partition_key="2022-01-01",
+                resources=resource_defs,
+                instance=inst,
+            )
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
