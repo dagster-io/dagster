@@ -11,7 +11,7 @@ import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode, AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, groupIdForNode, toGraphId, GraphNode} from '../asset-graph/Utils';
+import {GraphData, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
@@ -30,8 +30,6 @@ export const AssetNodeLineageGraph = ({
 }: {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  fullAssetGraphData: GraphData;
-  node: GraphNode;
   params: AssetViewParams;
 }) => {
   const {flagDAGSidebar} = useFeatureFlags();
