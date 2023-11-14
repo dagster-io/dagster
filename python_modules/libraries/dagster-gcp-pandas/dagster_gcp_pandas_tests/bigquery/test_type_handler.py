@@ -580,7 +580,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(io_manager):
         @asset(
             ins={
                 "multi_partitioned": AssetIn(
-                    key=[SCHEMA, "multi_partitioned"],
+                    key=[SCHEMA, table_name],
                     partition_mapping=MultiToSingleDimensionPartitionMapping(
                         partition_dimension_name="time"
                     ),

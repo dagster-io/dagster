@@ -584,7 +584,7 @@ def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
         },
         partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
         metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
-        schema=["my_schema"],
+        key_prefix=["my_schema"],
     )
     def downstream_of_multi_partitioned(context, multi_partitioned: pd.DataFrame) -> None:
         partition = context.partition_key
