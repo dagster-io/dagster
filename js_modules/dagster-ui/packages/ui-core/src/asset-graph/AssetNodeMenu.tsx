@@ -301,23 +301,16 @@ const MaterializeWithUpstreamDialog = React.memo(
       setChecked(new Set(assetKeys));
     }, [assetKeys]);
 
-    const [opened, setOpened] = React.useState(false);
-
     return (
       <Dialog
         isOpen={isOpen}
         onClose={close}
-        onOpened={() => {
-          setOpened(true);
-        }}
-        onClosed={() => {
-          setOpened(false);
-        }}
         title="Materialize with upstream"
         icon="materialization"
+        style={{transform: 'scale(1)'}}
       >
         {/* Change they key after the openning animation to force MiddleTruncates to re-render and re-measure */}
-        <DialogBody key={opened ? '1' : '0'}>
+        <DialogBody>
           <div style={{scale: 1}}>
             <RowGrid border="bottom" padding={{bottom: 8}}>
               <Checkbox
