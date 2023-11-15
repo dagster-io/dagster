@@ -705,3 +705,25 @@ def test_dst_transition_with_daily_partitions(
     assert downstream.get_partition_keys(current_time=current_time) == [
         expected_downstream_partition_key
     ]
+
+
+def test_mar_2024_dst_transition_with_hourly_partitions():
+    partitions_def = HourlyPartitionsDefinition("2023-11-01-00:00", timezone="America/Los_Angeles")
+    time_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    current_time = datetime(2024, 3, 20, 0)
+
+    assert "2023-03-10-02:00" not in partitions_def.get_partition_keys(current_time=current_time)
+
+    subset = partitions_def.subset_with_partition_keys(["2024-03-10-03:00"])
+    upstream = time_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset, partitions_def, current_time=current_time
+    )
+    assert upstream.partitions_subset.get_partition_keys(current_time=current_time) == [
+        "2024-03-10-01:00",
+    ]
+    downstream = time_partition_mapping.get_downstream_partitions_for_partitions(
+        subset, partitions_def, current_time=current_time
+    )
+    assert downstream.get_partition_keys(current_time=current_time) == [
+        "2024-03-10-04:00",
+    ]
