@@ -36,6 +36,12 @@ yamllint:
 	yamllint -c .yamllint.yaml --strict \
     `git ls-files 'helm/*.yml' 'helm/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
 
+check_prettier:
+	npm --prefix js_modules/dagster-ui/packages/eslint-config exec -- prettier `git ls-files 'python_modules/*.yml' 'python_modules/*.yaml'` --check
+
+prettier:
+	npm --prefix js_modules/dagster-ui/packages/eslint-config exec -- prettier `git ls-files 'python_modules/*.yml' 'python_modules/*.yaml'` --write
+
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -qqq
 
