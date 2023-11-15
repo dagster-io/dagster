@@ -377,6 +377,7 @@ class FromStepOutput(
         [
             ("step_output_handle", StepOutputHandle),
             ("fan_in", bool),
+            ("output_dagster_type_is_nothing", bool),
             # deprecated, preserved for back-compat
             ("node_handle", NodeHandle),
             ("input_name", str),
@@ -392,6 +393,7 @@ class FromStepOutput(
         cls,
         step_output_handle: StepOutputHandle,
         fan_in: bool,
+        output_dagster_type_is_nothing: bool,
         # deprecated, preserved for back-compat
         node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
@@ -402,6 +404,9 @@ class FromStepOutput(
                 step_output_handle, "step_output_handle", StepOutputHandle
             ),
             fan_in=check.bool_param(fan_in, "fan_in"),
+            output_dagster_type_is_nothing=check.bool_param(
+                output_dagster_type_is_nothing, "output_dagster_type_is_nothing"
+            ),
             # add placeholder values for back-compat
             node_handle=check.opt_inst_param(
                 node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
@@ -890,6 +895,7 @@ class FromPendingDynamicStepOutput(
                 output_name=self.step_output_handle.output_name,
                 mapping_key=mapping_key,
             ),
+            output_dagster_type_is_nothing=False,
             fan_in=False,
         )
 
@@ -951,6 +957,7 @@ class FromUnresolvedStepOutput(
         return FromStepOutput(
             step_output_handle=self.unresolved_step_output_handle.resolve(mapping_key),
             fan_in=False,
+            output_dagster_type_is_nothing=False,
         )
 
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
@@ -1013,6 +1020,7 @@ class FromDynamicCollect(
                     output_name=self.resolved_by_output_name,
                 ),
                 fan_in=False,
+                output_dagster_type_is_nothing=False,
             )
         return FromMultipleSources(
             sources=[self.source.resolve(map_key) for map_key in mapping_keys],
