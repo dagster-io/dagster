@@ -220,11 +220,11 @@ class DbIOManager(IOManager):
                     for part in context.asset_partitions_def.partitions_defs:
                         if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
                             partitions = part.partitions_def.time_windows_for_partition_keys(
-                                frozenset(partition_keys_by_dim[part.name])
+                                frozenset(partition_keys_by_dim[part.name]), merge=True
                             )
                             if len(partitions) > 1:
                                 raise DagsterInvariantViolationError(
-                                    f"Non-overlapping partition time windows {partitions} cannot be loaded by the {self._io_manager_name}"
+                                    f"Non-overlapping partition time windows {partitions} cannot be handled by the {self._io_manager_name}."
                                 )
                             else:
                                 partitions = partitions[0]

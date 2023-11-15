@@ -297,9 +297,7 @@ class TimeWindowPartitionsDefinition(
 
     @functools.lru_cache(maxsize=5)
     def time_windows_for_partition_keys(
-        self,
-        partition_keys: FrozenSet[str],
-        validate: bool = True,
+        self, partition_keys: FrozenSet[str], validate: bool = True, merge: bool = False
     ) -> Sequence[TimeWindow]:
         if len(partition_keys) == 0:
             return []
@@ -314,7 +312,12 @@ class TimeWindowPartitionsDefinition(
         for partition_key in sorted_pks:
             next_window = next(cur_windows_iterator)
             if next_window.start.strftime(self.fmt) == partition_key:
-                partition_key_time_windows.append(next_window)
+                if merge and len(partition_key_time_windows) > 0:
+                    latest_window = partition_key_time_windows.pop()
+                    replacement_window = TimeWindow(latest_window.start, next_window.end)
+                    partition_key_time_windows.append(replacement_window)
+                else:
+                    partition_key_time_windows.append(next_window)
             else:
                 cur_windows_iterator = iter(
                     self._iterate_time_windows(
@@ -340,6 +343,7 @@ class TimeWindowPartitionsDefinition(
                 for tw in partition_key_time_windows
                 if tw.start.timestamp() >= start_timestamp and tw.end.timestamp() <= end_timestamp
             ]
+
         return partition_key_time_windows
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
