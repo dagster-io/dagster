@@ -175,31 +175,8 @@ class DbIOManager(IOManager):
             table = asset_key_path[-1]
             # schema order of precedence: metadata, I/O manager 'schema' config, key_prefix
             if output_context_metadata.get("schema"):
-                if self._schema:
-                    context.log.warn(
-                        f"Schema {output_context_metadata.get('schema')}"
-                        f" specified via metadata, and schema {self._schema}"
-                        " was provided as config to the I/O manager."
-                        f" The schema set via metadata, {output_context_metadata.get('schema')}"
-                        " will be used."
-                    )
-                if len(asset_key_path) > 1:
-                    context.log.warn(
-                        f"Schema {output_context_metadata.get('schema')}"
-                        f" specified via metadata, and schema {asset_key_path[:-1]}"
-                        " was specified in the key prefix."
-                        f" The schema set via metadata, {output_context_metadata.get('schema')}"
-                        " will be used."
-                    )
                 schema = cast(str, output_context_metadata["schema"])
             elif self._schema:
-                if len(asset_key_path) > 1:
-                    context.log.warn(
-                        f"Schema {self._schema} was provided as config to the I/O manager and "
-                        f"schema {asset_key_path[-2]} specified via key prefix."
-                        f" The schema set via I/O manager config, {self._schema}"
-                        " will be used."
-                    )
                 schema = self._schema
             elif len(asset_key_path) > 1:
                 schema = asset_key_path[-2]
@@ -264,14 +241,6 @@ class DbIOManager(IOManager):
         else:
             table = output_context.name
             if output_context_metadata.get("schema"):
-                if self._schema:
-                    context.log.warn(
-                        f"Schema {output_context_metadata.get('schema')}"
-                        f" specified via metadata, and schema {self._schema}"
-                        " was provided as config to the I/O manager."
-                        f" The schema set via metadata, {output_context_metadata.get('schema')}"
-                        " will be used."
-                    )
                 schema = cast(str, output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema
