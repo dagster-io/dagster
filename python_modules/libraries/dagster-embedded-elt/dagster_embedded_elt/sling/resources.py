@@ -140,16 +140,20 @@ class SlingResource(ConfigurableResource):
         ):
             yield
 
-    @staticmethod
-    def _exec_sling_cmd(cmd, stdin=None, stdout=PIPE, stderr=STDOUT) -> Generator[str, None, None]:
+    def process_stdout(self, stdout: bytes, encoding="utf8") -> None:
+        """Process stdout from the Sling CLI."""
         ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-        with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
-            assert proc.stdout
+        for line in stdout:
+            fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
+            clean_line = ansi_escape.sub("", fmt_line).replace("INF", "")
+            yield clean_line
 
-            for line in proc.stdout:
-                fmt_line = str(line, "utf-8")
-                clean_line = ansi_escape.sub("", fmt_line).replace("INF", "")
-                yield clean_line
+    def _exec_sling_cmd(
+        self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT, encoding="utf8"
+    ) -> Generator[str, None, None]:
+        with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
+            for line in self.process_stdout(proc.stdout, encoding=encoding):
+                yield line
 
             proc.wait()
             if proc.returncode != 0:
@@ -164,6 +168,7 @@ class SlingResource(ConfigurableResource):
         update_key: Optional[str] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
+        encoding: str = "utf8",
     ) -> Generator[str, None, None]:
         """Runs a Sling sync from the given source table to the given destination table. Generates
         output lines from the Sling CLI.
@@ -197,7 +202,7 @@ class SlingResource(ConfigurableResource):
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
-            yield from self._exec_sling_cmd(cmd)
+            yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
     def sync(
         self,
@@ -208,6 +213,7 @@ class SlingResource(ConfigurableResource):
         update_key: Optional[str] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
+        encoding: str = "utf8",
     ) -> Generator[str, None, None]:
         """Initiate a Sling Sync between a source stream and a target object.
 
@@ -230,6 +236,8 @@ class SlingResource(ConfigurableResource):
             target_options (Dict[str, Any[): Other target options to pass to Sling,
                 see https://docs.slingdata.io/sling-cli/running-tasks#target-options-tgt-options-flag-target.options-key
                 for details
+            encoding (str): The encoding to use when reading from stdout, defautls to utf-8. By default, will replace
+                non-utf-8 characters with the unicode replacement character.
 
         Examples:
             Sync from a source file to a sqlite database:
@@ -276,4 +284,5 @@ class SlingResource(ConfigurableResource):
             update_key=update_key,
             source_options=source_options,
             target_options=target_options,
+            encoding=encoding,
         )
