@@ -94,7 +94,8 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                         columns=[
                             TableColumn(name=name, type=str(dtype))
                             for name, dtype in zip(  # type: ignore pyarrow does not expose types
-                                reader.schema.names, reader.schema.types, strict=True
+                                reader.schema.names,
+                                reader.schema.types,
                             )
                         ]
                     )
