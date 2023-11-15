@@ -395,11 +395,20 @@ class TimeWindowPartitionMapping(
 def _offsetted_datetime(
     partitions_def: TimeWindowPartitionsDefinition, dt: datetime, offset: int
 ) -> datetime:
+    result = None
+    fallback_to_slow_logic = False
+
     if partitions_def.is_basic_daily and offset != 0:
         result = dt + timedelta(days=offset)
+
+        # Daylight savings transitions can cause the hour to change, so we fall back to slow logic
+        if result.hour != dt.hour:
+            fallback_to_slow_logic = True
+
     elif partitions_def.is_basic_hourly and offset != 0:
         result = dt + timedelta(hours=offset)
-    else:
+
+    if result is None or fallback_to_slow_logic:
         result = dt
         for _ in range(abs(offset)):
             if offset < 0:
