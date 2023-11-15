@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import (
     datetime,
-    timedelta,
 )
 from enum import Enum
 from typing import (
@@ -24,7 +23,6 @@ from typing import (
     cast,
 )
 
-from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeVar
 
 import dagster._check as check
@@ -109,19 +107,6 @@ class ScheduleType(Enum):
     @property
     def ordinal(self):
         return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
-
-    @property
-    def delta(self):
-        if self == ScheduleType.HOURLY:
-            return timedelta(hours=1)
-        elif self == ScheduleType.DAILY:
-            return timedelta(days=1)
-        elif self == ScheduleType.WEEKLY:
-            return timedelta(weeks=1)
-        elif self == ScheduleType.MONTHLY:
-            return relativedelta(months=1)
-        else:
-            check.failed(f"Unexpected ScheduleType {self}")
 
     def __gt__(self, other: "ScheduleType") -> bool:
         check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
