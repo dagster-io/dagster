@@ -203,12 +203,19 @@ export const AssetNodeContextMenuWrapper = React.memo(
           hideMenu();
         }
       };
+      const keydownListener = (e: KeyboardEvent) => {
+        if (ref.current && e.code === 'Escape') {
+          hideMenu();
+        }
+      };
       if (menuVisible && node) {
         document.body.addEventListener('click', listener);
+        document.body.addEventListener('keydown', keydownListener);
       }
       return () => {
         if (node) {
           document.body.removeEventListener('click', listener);
+          document.body.removeEventListener('keydown', keydownListener);
         }
       };
     }, [menuVisible]);
