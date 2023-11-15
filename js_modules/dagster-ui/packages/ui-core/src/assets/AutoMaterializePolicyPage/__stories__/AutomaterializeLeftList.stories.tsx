@@ -22,7 +22,7 @@ export const WithPartitions = () => {
   const evaluations = buildEvaluationRecordsWithPartitions();
   const evaluationsWithEmpty = getEvaluationsWithEmptyAdded({
     evaluations,
-    currentEvaluationId: evaluations[0]!.evaluationId,
+    currentAutoMaterializeEvaluationId: evaluations[0]!.evaluationId,
     isLastPage: true,
     isFirstPage: true,
     isLoading: false,
@@ -48,7 +48,7 @@ export const NoPartitions = () => {
   const evaluations = buildEvaluationRecordsWithoutPartitions();
   const evaluationsWithEmpty = getEvaluationsWithEmptyAdded({
     evaluations,
-    currentEvaluationId: evaluations[0]!.evaluationId,
+    currentAutoMaterializeEvaluationId: evaluations[0]!.evaluationId,
     isLastPage: true,
     isFirstPage: true,
     isLoading: false,

@@ -217,17 +217,9 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
 
 class GrapheneAutoMaterializeAssetEvaluationRecords(graphene.ObjectType):
     records = non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord)
-    currentEvaluationId = graphene.Int()
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecords"
-
-    def resolve_currentEvaluationId(self, graphene_info):
-        from dagster._daemon.asset_daemon import get_current_evaluation_id
-
-        # TODO Move to its own top-level field rather than a field
-        # on GrapheneAutoMaterializeAssetEvaluationRecords
-        return get_current_evaluation_id(graphene_info.context.instance)
 
 
 class GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(graphene.ObjectType):

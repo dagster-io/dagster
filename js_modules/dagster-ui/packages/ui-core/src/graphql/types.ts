@@ -339,6 +339,7 @@ export type AssetNode = {
   backfillPolicy: Maybe<BackfillPolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
+  currentAutoMaterializeEvaluationId: Maybe<Scalars['Int']>;
   dataVersion: Maybe<Scalars['String']>;
   dataVersionByPartition: Array<Maybe<Scalars['String']>>;
   dependedBy: Array<AssetDependency>;
@@ -505,7 +506,6 @@ export type AutoMaterializeAssetEvaluationRecord = {
 
 export type AutoMaterializeAssetEvaluationRecords = {
   __typename: 'AutoMaterializeAssetEvaluationRecords';
-  currentEvaluationId: Maybe<Scalars['Int']>;
   records: Array<AutoMaterializeAssetEvaluationRecord>;
 };
 
@@ -5144,6 +5144,10 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('ConfigTypeField')
         ? ({} as ConfigTypeField)
         : buildConfigTypeField({}, relationshipsToOmit),
+    currentAutoMaterializeEvaluationId:
+      overrides && overrides.hasOwnProperty('currentAutoMaterializeEvaluationId')
+        ? overrides.currentAutoMaterializeEvaluationId!
+        : 6693,
     dataVersion:
       overrides && overrides.hasOwnProperty('dataVersion') ? overrides.dataVersion! : 'a',
     dataVersionByPartition:
@@ -5423,10 +5427,6 @@ export const buildAutoMaterializeAssetEvaluationRecords = (
   relationshipsToOmit.add('AutoMaterializeAssetEvaluationRecords');
   return {
     __typename: 'AutoMaterializeAssetEvaluationRecords',
-    currentEvaluationId:
-      overrides && overrides.hasOwnProperty('currentEvaluationId')
-        ? overrides.currentEvaluationId!
-        : 9797,
     records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
   };
 };
