@@ -1452,7 +1452,10 @@ class AssetExecutionContext(OpExecutionContext):
             retry_number=self._op_execution_context.retry_number,
         )
 
-        self._execution_props = None
+        self._execution_props = ExecutionProperties(
+            step_description=f"asset {self.assets_def.node_def.name}",
+            op_execution_context=self._op_execution_context,
+        )
 
     @staticmethod
     def get() -> "AssetExecutionContext":
@@ -1471,12 +1474,6 @@ class AssetExecutionContext(OpExecutionContext):
 
     @property
     def execution_properties(self) -> ExecutionProperties:
-        if self._execution_props is None:
-            self._execution_props = ExecutionProperties(
-                step_description=f"asset {self.assets_def.node_def.name}",
-                op_execution_context=self._op_execution_context,
-            )
-
         return self._execution_props
 
     ######## Deprecated methods
