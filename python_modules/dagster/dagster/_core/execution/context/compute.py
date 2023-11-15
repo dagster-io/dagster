@@ -75,8 +75,8 @@ class ExecutionProperties(
         ],
     )
 ):
-    """Information to be used by dagster internals during execution. Contains:
-    * A description of the step.
+    """Information to be used by dagster internals during execution.
+    You should not need to access these attributes directly.
     """
 
     def __new__(cls, step_description: str, op_execution_context: "OpExecutionContext"):
