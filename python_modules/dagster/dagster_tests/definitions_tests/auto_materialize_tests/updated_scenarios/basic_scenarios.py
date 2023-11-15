@@ -1,5 +1,7 @@
 from dagster import AssetSpec, AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule import ParentUpdatedRuleEvaluationData
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    ParentUpdatedRuleEvaluationData,
+)
 
 from ..asset_daemon_scenario import (
     AssetDaemonScenario,
