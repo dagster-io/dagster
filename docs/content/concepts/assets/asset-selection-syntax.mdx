@@ -13,16 +13,19 @@ Using a simple query syntax, you can specify an asset selection as a string. In 
 
 The asset selection syntax can be used in:
 
-- **In the `selection` parameter of <PyObject object="define_asset_job" />.** Alternatively, this parameter accepts an <PyObject object="AssetSelection"/> object, which supports more complex selections built from compositions of Python objects.
+- **In the `selection` parameter of <PyObject object="define_asset_job" />.** Alternatively, this parameter accepts an <PyObject object="AssetSelection"/> object, which supports more complex selections built from compositions of Python objects. For example:
+
+  ```python
+  taxi_zones_job = define_asset_job(name="taxi_zones_job", selection="taxi_zones_file+")
+  ```
 
 - **The [asset command-line interface](/\_apidocs/cli#dagster-asset)** with the `list` and `materialize` commands. For example:
 
   ```shell
-  dagster asset list --select TODO
-  dagster asset materialize --select TODO
+  dagster asset list --select taxi_trips
   ```
 
-- **In the Dagster UI**, in the **Filter asset groups** search box on the [**Global asset lineage** page](/concepts/webserver/ui#global-asset-lineage).
+- **In the Dagster UI**, in the search box on the [**Global asset lineage** page](/concepts/webserver/ui#global-asset-lineage).
 
 ---
 
@@ -136,7 +139,7 @@ height={1508}
 
 ### Selecting a single asset
 
-To select a single asset, use the asset's asset key. For example, the following query would select the `manhattan_stats` asset:
+To select a single asset, use the asset's asset key. For example, entering the following query in the UI would select the `manhattan_stats` asset:
 
 ```shell
 manhattan_stats
@@ -155,7 +158,7 @@ height={1508}
 
 ### Selecting multiple assets
 
-To select multiple assets, use a list of the assets' asset keys. The assets don't have to be dependent on each other. For example, the following query would select the `adhoc_request` and `manhattan_stats` assets:
+To select multiple assets, use a list of the assets' asset keys. The assets don't have to be dependent on each other. For example, entering the following query in the UI would select the `adhoc_request` and `manhattan_stats` assets:
 
 ```shell
 adhoc_request manhattan_stats
@@ -179,7 +182,7 @@ height={1508}
 
 #### Selecting all upstream dependencies
 
-To select an asset and all its upstream dependencies, add an asterisk (`*`) before the asset key in the query. For example, the following query would select the `manhattan_map` asset and all its upstream dependencies:
+To select an asset and all its upstream dependencies, add an asterisk (`*`) before the asset key in the query. For example, entering the following query in the UI would select the `manhattan_map` asset and all its upstream dependencies:
 
 ```shell
 *manhattan_map
@@ -201,7 +204,7 @@ height={1508}
 
 #### Selecting a specific number of upstream layers
 
-To select an asset and multiple upstream layers, add a plus sign (`+`) for each layer you want to select before the asset key in the query. For example, the following query would select the `manhattan_map` asset and two upstream layers:
+To select an asset and multiple upstream layers, add a plus sign (`+`) for each layer you want to select before the asset key in the query. For example, entering the following query in the UI would select the `manhattan_map` asset and two upstream layers:
 
 ```shell
 ++manhattan_map
@@ -228,7 +231,7 @@ height={1508}
 
 #### Selecting all downstream dependencies
 
-To select an asset and all its downstream dependencies, add an asterisk (`*`) after the asset key in the query. For example, the following query would select the `taxi_trips_file` asset and all its downstream dependencies:
+To select an asset and all its downstream dependencies, add an asterisk (`*`) after the asset key in the query. For example, entering the following query in the UI would select the `taxi_trips_file` asset and all its downstream dependencies:
 
 ```shell
 taxi_trips_file*
@@ -250,7 +253,7 @@ height={1508}
 
 #### Specific a number of downstream layers
 
-To select an asset and multiple downstream layers, add plus sign (`+`) for each layer you want to select after the asset key in the query. For example, the following query would select the `taxi_trips_file` asset and two downstream layers:
+To select an asset and multiple downstream layers, add plus sign (`+`) for each layer you want to select after the asset key in the query. For example, entering the following query in the UI would select the `taxi_trips_file` asset and two downstream layers:
 
 ```shell
 taxi_trips_file++
@@ -272,7 +275,7 @@ height={1508}
 
 ### Selecting an asset's entire lineage
 
-To select an asset's entire lineage, add an asterisk (`*`) before and after the asset key in the query. For example, the following query would select the entire lineage for the `manhattan_stats` asset:
+To select an asset's entire lineage, add an asterisk (`*`) before and after the asset key in the query. For example, entering the following query in the UI would select the entire lineage for the `manhattan_stats` asset:
 
 ```shell
 *manhattan_stats*
