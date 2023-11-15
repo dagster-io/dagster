@@ -1026,7 +1026,7 @@ def test_time_window_partitions_contains():
     assert "2015-01-11" not in subset
 
 
-def test_dst_transition_time_window_partitions() -> None:
+def test_dst_transition_hourly_partitions() -> None:
     partitions_def = HourlyPartitionsDefinition(
         start_date="2020-10-31-23:00", end_date="2020-11-01-5:00", timezone="US/Pacific"
     )
@@ -1039,6 +1039,28 @@ def test_dst_transition_time_window_partitions() -> None:
         "2020-11-01-02:00",
         "2020-11-01-03:00",
         "2020-11-01-04:00",
+    }
+    assert subset.get_partition_keys_not_in_subset() == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        == []
+    )
+
+
+def test_dst_transition_daily_partitions() -> None:
+    partitions_def = DailyPartitionsDefinition(
+        start_date="2020-10-30-01:00",
+        end_date="2020-11-03-01:00",
+        timezone="US/Pacific",
+        hour_offset=1,
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-30-01:00",
+        "2020-10-31-01:00",
+        "2020-11-01-01:00",
+        "2020-11-02-01:00",
     }
     assert subset.get_partition_keys_not_in_subset() == []
     assert (
