@@ -1379,9 +1379,9 @@ def _get_deprecation_kwargs(attr: str):
     return deprecation_kwargs
 
 
-class RunInfo(
+class RunProperties(
     NamedTuple(
-        "_RunInfo",
+        "_RunProperties",
         [
             ("run_id", PublicAttr[str]),
             ("dagster_run", PublicAttr[DagsterRun]),
@@ -1404,7 +1404,7 @@ class RunInfo(
         run_config: Mapping[str, object],
         retry_number: int,
     ):
-        return super(RunInfo, cls).__new__(
+        return super(RunProperties, cls).__new__(
             cls,
             run_id=run_id,
             dagster_run=dagster_run,
@@ -1419,12 +1419,8 @@ class AssetExecutionContext(OpExecutionContext):
             op_execution_context, "op_execution_context", OpExecutionContext
         )
         self._step_execution_context = self._op_execution_context._step_execution_context  # noqa: SLF001
-        self._run_info = RunInfo(
-            run_id=self._op_execution_context.run_id,
-            run_config=self._op_execution_context.run_config,
-            dagster_run=self._op_execution_context.run,
-            retry_number=self._op_execution_context.retry_number,
-        )
+
+        self._run_props = None
 
     @staticmethod
     def get() -> "AssetExecutionContext":
@@ -1440,8 +1436,16 @@ class AssetExecutionContext(OpExecutionContext):
     #### Run related
 
     @property
-    def run_info(self) -> RunInfo:
-        return self._run_info
+    def run_properties(self) -> RunProperties:
+        if self._run_props is None:
+            self._run_props = RunProperties(
+                run_id=self._op_execution_context.run_id,
+                run_config=self._op_execution_context.run_config,
+                dagster_run=self._op_execution_context.run,
+                retry_number=self._op_execution_context.retry_number,
+            )
+
+        return self._run_props
 
     ######## Deprecated methods
 
