@@ -659,6 +659,11 @@ def test_downstream_partition_has_valid_upstream_partitions(
             "2023-11-07",
         ),
         (
+            "2023-11-07",
+            "2023-11-06",
+            "2023-11-08",
+        ),
+        (
             "2024-03-09",
             "2024-03-08",
             "2024-03-10",
@@ -672,6 +677,11 @@ def test_downstream_partition_has_valid_upstream_partitions(
             "2024-03-11",
             "2024-03-10",
             "2024-03-12",
+        ),
+        (
+            "2024-03-12",
+            "2024-03-11",
+            "2024-03-13",
         ),
     ],
 )

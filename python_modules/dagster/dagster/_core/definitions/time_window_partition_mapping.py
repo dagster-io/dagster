@@ -395,33 +395,30 @@ class TimeWindowPartitionMapping(
 def _offsetted_datetime(
     partitions_def: TimeWindowPartitionsDefinition, dt: datetime, offset: int
 ) -> datetime:
-    result = None
-    fallback_to_slow_logic = False
-
     if partitions_def.is_basic_daily and offset != 0:
         result = dt + timedelta(days=offset)
 
-        # Daylight savings transitions can cause the hour to change, so we fall back to slow logic
-        if result.hour != dt.hour:
-            fallback_to_slow_logic = True
+        if result.hour == dt.hour:
+            # Can't short-circuit in cases where a DST transition moved us
+            # to a different hour, fall back to slow logic
+            return result
 
     elif partitions_def.is_basic_hourly and offset != 0:
-        result = dt + timedelta(hours=offset)
+        return dt + timedelta(hours=offset)
 
-    if result is None or fallback_to_slow_logic:
-        result = dt
-        for _ in range(abs(offset)):
-            if offset < 0:
-                prev_window = cast(
-                    TimeWindow,
-                    partitions_def.get_prev_partition_window(result, respect_bounds=False),
-                )
-                result = prev_window.start
-            else:
-                next_window = cast(
-                    TimeWindow,
-                    partitions_def.get_next_partition_window(result, respect_bounds=False),
-                )
-                result = next_window.end
+    result = dt
+    for _ in range(abs(offset)):
+        if offset < 0:
+            prev_window = cast(
+                TimeWindow,
+                partitions_def.get_prev_partition_window(result, respect_bounds=False),
+            )
+            result = prev_window.start
+        else:
+            next_window = cast(
+                TimeWindow,
+                partitions_def.get_next_partition_window(result, respect_bounds=False),
+            )
+            result = next_window.end
 
     return result
