@@ -629,3 +629,20 @@ def test_retry_policy_with_failure_hook():
 
     assert len(hook_calls) == 1
     assert hook_calls[0].op_exception == exception
+
+
+def test_failure_metadata():
+    @op(retry_policy=RetryPolicy(max_retries=1))
+    def fails():
+        raise Failure("FAILURE", metadata={"meta": "data"})
+
+    @job
+    def exceeds():
+        fails()
+
+    result = exceeds.execute_in_process(raise_on_error=False)
+    assert not result.success
+    step_failure_data = result.failure_data_for_node("fails")
+    assert step_failure_data
+    assert step_failure_data.user_failure_data
+    assert step_failure_data.user_failure_data.metadata["meta"].value == "data"

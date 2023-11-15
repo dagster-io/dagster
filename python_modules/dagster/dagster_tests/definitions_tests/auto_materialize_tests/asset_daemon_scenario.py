@@ -316,13 +316,16 @@ class AssetDaemonScenarioState(NamedTuple):
     def _evaluate_tick_fast(
         self
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
+        cursor = AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph)
+
         new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
+            evaluation_id=cursor.evaluation_id + 1,
             asset_graph=self.asset_graph,
             target_asset_keys=None,
             instance=self.instance,
             materialize_run_tags={},
             observe_run_tags={},
-            cursor=AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph),
+            cursor=cursor,
             auto_observe=True,
             respect_materialization_data_versions=False,
             logger=self.logger,
