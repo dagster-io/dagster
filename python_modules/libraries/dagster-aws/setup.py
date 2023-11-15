@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_aws_tests*"]),
     include_package_data=True,
     install_requires=[
-        "boto3!=1.29.1",
+        "boto3",
         f"dagster{pin}",
         "packaging",
         "requests",
@@ -43,7 +43,7 @@ setup(
         "redshift": ["psycopg2-binary"],
         "pyspark": ["dagster-pyspark"],
         "test": [
-            "botocore",
+            "botocore!=1.32.1",
             "moto[s3,server]>=2.2.8",
             "requests-mock",
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
