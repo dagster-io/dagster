@@ -91,17 +91,64 @@ class AbstractComputeMetaclass(ABCMeta):
 
 
 class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
-    """Base class for op context implemented by OpExecutionContext, AssetExecutionContext,
+    """Base class for op context implemented by OpExecutionContext,
     and DagstermillExecutionContext.
     """
 
+    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
+
+    @abstractmethod
+    def has_tag(self, key: str) -> bool:
+        """Implement this method to check if a logging tag is set."""
+
+    @abstractmethod
+    def get_tag(self, key: str) -> Optional[str]:
+        """Implement this method to get a logging tag."""
+
+    @property
+    @abstractmethod
+    def run_id(self) -> str:
+        """The run id for the context."""
+
+    @property
+    @abstractmethod
+    def op_def(self) -> OpDefinition:
+        """The op definition corresponding to the execution step being executed."""
+
+    @property
+    @abstractmethod
+    def job_def(self) -> JobDefinition:
+        """The job being executed."""
+
+    @property
+    @abstractmethod
+    def run(self) -> DagsterRun:
+        """The DagsterRun object corresponding to the execution."""
+
+    @property
+    @abstractmethod
+    def resources(self) -> Any:
+        """Resources available in the execution context."""
+
+    @property
+    @abstractmethod
+    def log(self) -> DagsterLogManager:
+        """The log manager available in the execution context."""
+
+    @property
+    @abstractmethod
+    def op_config(self) -> Any:
+        """The parsed config specific to this op."""
+
+
+class HasExecutionInfo(ABC):
     @property
     @abstractmethod
     def execution_info(self) -> ExecutionInfo:
         """Implement this method to check if a logging tag is set."""
 
 
-class OpExecutionContextMetaClass(AbstractComputeMetaclass):
+class OpExecutionContextMetaClass(AbstractComputeMetaclass, HasExecutionInfo):
     def __instancecheck__(cls, instance) -> bool:
         # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
         # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
