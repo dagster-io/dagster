@@ -31,6 +31,7 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
         *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
+        *build_repo_wide_prettier_steps(),
     ]
 
 
@@ -66,6 +67,20 @@ def build_repo_wide_ruff_steps() -> List[CommandStep]:
         )
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_python_changes())
+        .build(),
+    ]
+
+
+def build_repo_wide_prettier_steps() -> List[CommandStep]:
+    return [
+        CommandStepBuilder(":prettier: prettier")
+        .run(
+            "pushd js_modules/dagster-ui/packages/eslint-config",
+            "yarn install",
+            "popd",
+            "make check_prettier",
+        )
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
     ]
 
