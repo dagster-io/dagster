@@ -638,3 +638,92 @@ def test_downstream_partition_has_valid_upstream_partitions(
     )
     assert result.partitions_subset.get_partition_keys() == valid_partitions_mapped_to
     assert result.required_but_nonexistent_partition_keys == required_but_nonexistent_partition_keys
+
+
+@pytest.mark.parametrize(
+    "partition_key,expected_upstream_partition_key,expected_downstream_partition_key",
+    [
+        (
+            "2023-11-04",
+            "2023-11-03",
+            "2023-11-05",
+        ),
+        (
+            "2023-11-05",
+            "2023-11-04",
+            "2023-11-06",
+        ),
+        (
+            "2023-11-06",
+            "2023-11-05",
+            "2023-11-07",
+        ),
+        (
+            "2023-11-07",
+            "2023-11-06",
+            "2023-11-08",
+        ),
+        (
+            "2024-03-09",
+            "2024-03-08",
+            "2024-03-10",
+        ),
+        (
+            "2024-03-10",
+            "2024-03-09",
+            "2024-03-11",
+        ),
+        (
+            "2024-03-11",
+            "2024-03-10",
+            "2024-03-12",
+        ),
+        (
+            "2024-03-12",
+            "2024-03-11",
+            "2024-03-13",
+        ),
+    ],
+)
+def test_dst_transition_with_daily_partitions(
+    partition_key: str, expected_upstream_partition_key: str, expected_downstream_partition_key: str
+):
+    partitions_def = DailyPartitionsDefinition("2023-11-01", timezone="America/Los_Angeles")
+    time_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    current_time = datetime(2024, 3, 20, 0)
+
+    subset = partitions_def.subset_with_partition_keys([partition_key])
+    upstream = time_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset, partitions_def, current_time=current_time
+    )
+    assert upstream.partitions_subset.get_partition_keys(current_time=current_time) == [
+        expected_upstream_partition_key
+    ]
+    downstream = time_partition_mapping.get_downstream_partitions_for_partitions(
+        subset, partitions_def, current_time=current_time
+    )
+    assert downstream.get_partition_keys(current_time=current_time) == [
+        expected_downstream_partition_key
+    ]
+
+
+def test_mar_2024_dst_transition_with_hourly_partitions():
+    partitions_def = HourlyPartitionsDefinition("2023-11-01-00:00", timezone="America/Los_Angeles")
+    time_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    current_time = datetime(2024, 3, 20, 0)
+
+    assert "2023-03-10-02:00" not in partitions_def.get_partition_keys(current_time=current_time)
+
+    subset = partitions_def.subset_with_partition_keys(["2024-03-10-03:00"])
+    upstream = time_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset, partitions_def, current_time=current_time
+    )
+    assert upstream.partitions_subset.get_partition_keys(current_time=current_time) == [
+        "2024-03-10-01:00",
+    ]
+    downstream = time_partition_mapping.get_downstream_partitions_for_partitions(
+        subset, partitions_def, current_time=current_time
+    )
+    assert downstream.get_partition_keys(current_time=current_time) == [
+        "2024-03-10-04:00",
+    ]
