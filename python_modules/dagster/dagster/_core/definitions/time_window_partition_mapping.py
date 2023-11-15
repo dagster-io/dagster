@@ -397,22 +397,28 @@ def _offsetted_datetime(
 ) -> datetime:
     if partitions_def.is_basic_daily and offset != 0:
         result = dt + timedelta(days=offset)
+
+        if result.hour == dt.hour:
+            # Can't short-circuit in cases where a DST transition moved us
+            # to a different hour, fall back to slow logic
+            return result
+
     elif partitions_def.is_basic_hourly and offset != 0:
-        result = dt + timedelta(hours=offset)
-    else:
-        result = dt
-        for _ in range(abs(offset)):
-            if offset < 0:
-                prev_window = cast(
-                    TimeWindow,
-                    partitions_def.get_prev_partition_window(result, respect_bounds=False),
-                )
-                result = prev_window.start
-            else:
-                next_window = cast(
-                    TimeWindow,
-                    partitions_def.get_next_partition_window(result, respect_bounds=False),
-                )
-                result = next_window.end
+        return dt + timedelta(hours=offset)
+
+    result = dt
+    for _ in range(abs(offset)):
+        if offset < 0:
+            prev_window = cast(
+                TimeWindow,
+                partitions_def.get_prev_partition_window(result, respect_bounds=False),
+            )
+            result = prev_window.start
+        else:
+            next_window = cast(
+                TimeWindow,
+                partitions_def.get_next_partition_window(result, respect_bounds=False),
+            )
+            result = next_window.end
 
     return result
