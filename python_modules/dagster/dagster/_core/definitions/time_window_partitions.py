@@ -31,6 +31,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer
+from dagster._seven.compat.pendulum import PendulumDateTime, create_pendulum_time
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
@@ -52,6 +53,53 @@ from .partition import (
     cron_schedule_from_schedule_type_and_offsets,
 )
 from .partition_key_range import PartitionKeyRange
+
+POST_DST_TRANSITION_SUFFIX = "_POST_DST_TRANSITION"
+
+
+def dst_safe_strftime(dt: datetime, timezone_str: str, fmt: str) -> str:
+    """A method for converting a datetime to a string which will append a suffix in cases where
+    the resulting timestamp would be ambiguous due to DST transitions.
+    """
+    time_str = dt.strftime(fmt)
+    try:
+        create_pendulum_time(
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt.microsecond,
+            tz=timezone_str,
+            dst_rule=pendulum.TRANSITION_ERROR,
+        )
+    except pendulum.tz.exceptions.AmbiguousTime:  # type: ignore
+        if dt.fold == 1:
+            return time_str + POST_DST_TRANSITION_SUFFIX
+    return time_str
+
+
+def dst_safe_strptime(date_string: str, timezone_str: str, fmt: str) -> PendulumDateTime:
+    """A method for parsing a datetime created with the dst_safe_strftime() method."""
+    if date_string.endswith(POST_DST_TRANSITION_SUFFIX):
+        dst_rule = pendulum.POST_TRANSITION
+        date_string = date_string[: -len(POST_DST_TRANSITION_SUFFIX)]
+    else:
+        dst_rule = pendulum.PRE_TRANSITION
+
+    dt = datetime.strptime(date_string, fmt)
+    return create_pendulum_time(
+        dt.year,
+        dt.month,
+        dt.day,
+        dt.hour,
+        dt.minute,
+        dt.second,
+        dt.microsecond,
+        tz=timezone_str,
+        dst_rule=dst_rule,
+    )
 
 
 class DatetimeFieldSerializer(FieldSerializer):
@@ -154,14 +202,14 @@ class TimeWindowPartitionsDefinition(
                 # so we convert it to the provided timezone
                 start_dt = start_dt.in_tz(tz=timezone)
         else:
-            start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
+            start_dt = dst_safe_strptime(start, timezone, fmt)
 
         if not end:
             end_dt = None
         elif isinstance(end, datetime):
             end_dt = pendulum.instance(end, tz=timezone)
         else:
-            end_dt = pendulum.instance(datetime.strptime(end, fmt), tz=timezone)
+            end_dt = dst_safe_strptime(end, timezone, fmt)
 
         if cron_schedule is not None:
             check.invariant(
@@ -252,7 +300,9 @@ class TimeWindowPartitionsDefinition(
                 or partitions_past_current_time < self.end_offset
             ):
                 if idx >= start_idx and idx < end_idx:
-                    partition_keys.append(time_window.start.strftime(self.fmt))
+                    partition_keys.append(
+                        dst_safe_strftime(time_window.start, self.timezone, self.fmt)
+                    )
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
             else:
@@ -281,7 +331,7 @@ class TimeWindowPartitionsDefinition(
                 time_window.end.timestamp() <= current_timestamp
                 or partitions_past_current_time < self.end_offset
             ):
-                partition_keys.append(time_window.start.strftime(self.fmt))
+                partition_keys.append(dst_safe_strftime(time_window.start, self.timezone, self.fmt))
 
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
@@ -297,9 +347,7 @@ class TimeWindowPartitionsDefinition(
         schedule_str = (
             self.schedule_type.value.capitalize() if self.schedule_type else self.cron_schedule
         )
-        partition_def_str = (
-            f"{schedule_str}, starting {self.start.strftime(self.fmt)} {self.timezone}."
-        )
+        partition_def_str = f"{schedule_str}, starting {dst_safe_strftime(self.start, self.timezone, self.fmt)} {self.timezone}."
         if self.end_offset != 0:
             partition_def_str += (
                 " End offsetted by"
@@ -328,9 +376,7 @@ class TimeWindowPartitionsDefinition(
 
     @functools.lru_cache(maxsize=100)
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
-        partition_key_dt = pendulum.instance(
-            datetime.strptime(partition_key, self.fmt), tz=self.timezone
-        )
+        partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
         return next(iter(self._iterate_time_windows(partition_key_dt)))
 
     @functools.lru_cache(maxsize=5)
@@ -342,23 +388,21 @@ class TimeWindowPartitionsDefinition(
         if len(partition_keys) == 0:
             return []
 
-        sorted_pks = sorted(partition_keys, key=lambda pk: datetime.strptime(pk, self.fmt))
+        sorted_pks = sorted(
+            partition_keys, key=lambda pk: dst_safe_strptime(pk, self.timezone, self.fmt)
+        )
         cur_windows_iterator = iter(
-            self._iterate_time_windows(
-                pendulum.instance(datetime.strptime(sorted_pks[0], self.fmt), tz=self.timezone)
-            )
+            self._iterate_time_windows(dst_safe_strptime(sorted_pks[0], self.timezone, self.fmt))
         )
         partition_key_time_windows: List[TimeWindow] = []
         for partition_key in sorted_pks:
             next_window = next(cur_windows_iterator)
-            if next_window.start.strftime(self.fmt) == partition_key:
+            if dst_safe_strftime(next_window.start, self.timezone, self.fmt) == partition_key:
                 partition_key_time_windows.append(next_window)
             else:
                 cur_windows_iterator = iter(
                     self._iterate_time_windows(
-                        pendulum.instance(
-                            datetime.strptime(partition_key, self.fmt), tz=self.timezone
-                        )
+                        dst_safe_strptime(partition_key, self.timezone, self.fmt)
                     )
                 )
                 partition_key_time_windows.append(next(cur_windows_iterator))
@@ -382,7 +426,7 @@ class TimeWindowPartitionsDefinition(
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
         partition_key_dt = pendulum.instance(
-            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+            dst_safe_strptime(partition_key, self.timezone, self.fmt)
         )
         if self.is_basic_hourly or self.is_basic_daily:
             return partition_key_dt
@@ -399,7 +443,7 @@ class TimeWindowPartitionsDefinition(
             return None
 
         partition_key_dt = pendulum.instance(
-            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+            dst_safe_strptime(partition_key, self.timezone, self.fmt)
         )
         windows_iter = iter(self._iterate_time_windows(partition_key_dt))
         next(windows_iter)
@@ -407,7 +451,7 @@ class TimeWindowPartitionsDefinition(
         if start_time >= last_partition_window.end:
             return None
         else:
-            return start_time.strftime(self.fmt)
+            return dst_safe_strftime(start_time, self.timezone, self.fmt)
 
     def get_next_partition_window(
         self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
@@ -530,7 +574,7 @@ class TimeWindowPartitionsDefinition(
         if first_window is None:
             return None
 
-        return first_window.start.strftime(self.fmt)
+        return dst_safe_strftime(first_window.start, self.timezone, self.fmt)
 
     def get_last_partition_key(
         self,
@@ -541,7 +585,7 @@ class TimeWindowPartitionsDefinition(
         if last_window is None:
             return None
 
-        return last_window.start.strftime(self.fmt)
+        return dst_safe_strftime(last_window.start, self.timezone, self.fmt)
 
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
@@ -551,7 +595,9 @@ class TimeWindowPartitionsDefinition(
         result: List[str] = []
         for partition_time_window in self._iterate_time_windows(time_window.start):
             if partition_time_window.start < time_window.end:
-                result.append(partition_time_window.start.strftime(self.fmt))
+                result.append(
+                    dst_safe_strftime(partition_time_window.start, self.timezone, self.fmt)
+                )
             else:
                 break
         return result
@@ -760,9 +806,9 @@ class TimeWindowPartitionsDefinition(
         prev_next = next(iterator)
 
         if end_closed or prev_next.timestamp() > timestamp:
-            return prev.strftime(self.fmt)
+            return dst_safe_strftime(prev, self.timezone, self.fmt)
         else:
-            return prev_next.strftime(self.fmt)
+            return dst_safe_strftime(prev_next, self.timezone, self.fmt)
 
     def less_than(self, partition_key1: str, partition_key2: str) -> bool:
         """Returns true if the partition_key1 is earlier than partition_key2."""
@@ -806,7 +852,7 @@ class TimeWindowPartitionsDefinition(
             # partition starts after the last valid partition
             or partition_start_time > last_partition_window.start
             # partition key string does not represent the start of an actual partition
-            or partition_start_time.strftime(self.fmt) != partition_key
+            or dst_safe_strftime(partition_start_time, self.timezone, self.fmt) != partition_key
         )
 
     def equal_except_for_start_or_end(self, other: "TimeWindowPartitionsDefinition") -> bool:
