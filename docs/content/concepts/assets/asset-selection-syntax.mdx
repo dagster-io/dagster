@@ -1,32 +1,313 @@
 ---
-title: Asset Selection Syntax | Dagster
-description: To specify an asset selection, Dagster supports a simple query syntax.
+title: "Asset selection syntax | Dagster Docs"
+description: "Learn how to use Dagster's query syntax to select assets in your code, the Dagster UI, and the Dagster CLI."
 ---
 
-# Asset Selection Syntax
+# Asset selection syntax
 
-To specify an asset selection as a string, Dagster supports a simple query syntax. This selection syntax is accepted in a few different places:
+Using a simple query syntax, you can specify an asset selection as a string. In this guide, we'll cover where the syntax is supported, how it works, and some examples.
 
-- The `list` and `materialize` commands in the [asset command-line interface](/\_apidocs/cli#dagster-asset).
-- The asset filter text box on the asset graph page, in the UI.
-- The `selection` parameter of <PyObject object="define_asset_job" />. (This parameter alternatively accepts an <PyObject object="AssetSelection"/> object, which supports more complex selections built from compositions of Python objects.)
+---
 
-It works as follows:
+## Supported locations
 
-- A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of <PyObject object="define_asset_job" />, <PyObject object="materialize" />, and <PyObject object="materialize_to_memory" />, where each clause is a separate element in a list.
-- A clause can be an asset key, in which case that asset is selected.
-- An asset key with multiple components can be specified by inserting slashes between the components.
-- A clause can be an asset key preceded by `*`, in which case that asset and all of its ancestors (upstream dependencies) are selected.
-- A clause can be an asset key followed by `*`, in which case that asset and all of its descendents (downstream dependencies) are selected.
-- A clause can be an asset key followed by any number of `+`s, in which case that asset and descendents up to that many hops away are selected.
-- A clause can be an asset key preceded by any number of `+`s, in which case that asset and ancestors up to that many hops away are selected.
+The asset selection syntax can be used in:
 
-**Clause examples**
+- **In the `selection` parameter of <PyObject object="define_asset_job" />.** Alternatively, this parameter accepts an <PyObject object="AssetSelection"/> object, which supports more complex selections built from compositions of Python objects.
 
-- `some_asset`: select "some_asset" itself
+- **The [asset command-line interface](/\_apidocs/cli#dagster-asset)** with the `list` and `materialize` commands. For example:
+
+  ```shell
+  dagster asset list --select TODO
+  dagster asset materialize --select TODO
+  ```
+
+- **In the Dagster UI**, in the **Filter asset groups** search box on the [**Global asset lineage** page](/concepts/webserver/ui#global-asset-lineage).
+
+---
+
+## Usage
+
+A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of <PyObject object="define_asset_job" />, <PyObject object="materialize" />, and <PyObject object="materialize_to_memory" />, where each clause is a separate element in a list.
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Clause syntax
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <code>ASSET_KEY</code>
+      </td>
+      <td>Selects a single asset by asset key</td>
+    </tr>
+    <tr>
+      <td>
+        <code>TODO</code>
+      </td>
+      <td>
+        Selects an asset key with multiple components (TODO: An asset key with
+        multiple components can be specified by inserting slashes between the
+        components. `my/prefixed/asset`: select the asset whose{" "}
+        <PyObject object="AssetKey" /> in Python is `AssetKey(["my", "prefixed",
+        "asset"])` )
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>*ASSET_KEY</code>
+      </td>
+      <td>
+        An asterisk (<code>*</code>) preceding an asset key selects an asset and
+        all of its upstream dependencies
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>ASSET_KEY*</code>
+      </td>
+      <td>
+        An asterisk (<code>*</code>) preceding an asset key selects an asset and
+        all of its downstream dependencies
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>+ASSET_KEY</code>
+      </td>
+      <td>
+        A plus sign (<code>+</code>) preceding an asset key selects an asset and
+        one layer upstream of the asset.
+        <br></br>
+        <br></br>
+        Including multiple <code>+</code>s will select that number of upstream layers
+        from the asset. For example, <code>++ASSET_KEY</code> will select the asset
+        and two upstream layers of dependencies. Any number of <code>+</code>s is
+        supported.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>ASSET_KEY+</code>
+      </td>
+      <td>
+        A plus sign (<code>+</code>) following an asset key selects an asset and
+        one layer upstream of the asset.
+        <br></br>
+        <br></br>
+        Including multiple <code>+</code>s will select that number of downstream
+        layers from the asset. For example, <code>ASSET_KEY++</code> will select
+        the asset and two downstream layers of dependencies. Any number of <code>
+          +
+        </code>s is supported.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Examples
+
+To demonstrate how to use the asset selection syntax, we'll use the following asset graph from the Dagster University Essentials project:
+
+<!-- ![Global asset lineage for the Dagster University Essentials project](/images/concepts/assets/asset-selection/asset-selection-syntax-dag.png) -->
+
+<Image
+alt="Global asset lineage for the Dagster University Essentials project"
+src="/images/concepts/assets/asset-selection/asset-selection-syntax-dag.png"
+width={2646}
+height={1508}
+/>
+
+### Selecting a single asset
+
+To select a single asset, use the asset's asset key. For example, the following query would select the `manhattan_stats` asset:
+
+```shell
+manhattan_stats
+```
+
+Which would look like the following in the UI:
+
+<!-- ![Selection query that selects a single asset in the Dagster UI](/images/concepts/assets/asset-selection/select-single-asset.png) -->
+
+<Image
+alt="Selection query that selects a single asset in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-single-asset.png"
+width={2646}
+height={1508}
+/>
+
+### Selecting multiple assets
+
+To select multiple assets, use a list of the assets' asset keys. The assets don't have to be dependent on each other. For example, the following query would select the `adhoc_request` and `manhattan_stats` assets:
+
+```shell
+adhoc_request manhattan_stats
+```
+
+Which would look like the following in the UI:
+
+<!-- ![Selection query that selects two non-linear assets in the Dagster UI](/images/concepts/assets/asset-selection/select-disjointed-lineages.png) -->
+
+<Image
+alt="Selection query that selects two non-linear assets in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-disjointed-lineages.png"
+width={2646}
+height={1508}
+/>
+
+### Selecting upstream dependencies
+
+<TabGroup>
+<TabItem name="All upstream dependencies">
+
+#### Selecting all upstream dependencies
+
+To select an asset and all its upstream dependencies, add an asterisk (`*`) before the asset key in the query. For example, the following query would select the `manhattan_map` asset and all its upstream dependencies:
+
+```shell
+*manhattan_map
+```
+
+Which would look like the following in the UI:
+
+<!-- ![Selection query selects the manhattan_map asset and all its upstream dependencies in the Dagster UI](/images/concepts/assets/asset-selection/select-upstream-dependencies.png) -->
+
+<Image
+alt="Selection query selects the manhattan_map asset and all its upstream dependencies in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-upstream-dependencies.png"
+width={2646}
+height={1508}
+/>
+
+</TabItem>
+<TabItem name="Specific number of upstream layers">
+
+#### Selecting a specific number of upstream layers
+
+To select an asset and multiple upstream layers, add a plus sign (`+`) for each layer you want to select before the asset key in the query. For example, the following query would select the `manhattan_map` asset and two upstream layers:
+
+```shell
+++manhattan_map
+```
+
+Which would look like the following in the UI:
+
+<!-- ![Selection query selects the manhattan_map asset and two upstream layers in the Dagster UI](/images/concepts/assets/asset-selection/select-two-upstream-layers.png) -->
+
+<Image
+alt="Selection query selects the manhattan_map asset and two upstream layers in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-two-upstream-layers.png"
+width={2646}
+height={1508}
+/>
+
+</TabItem>
+</TabGroup>
+
+### Selecting downstream dependencies
+
+<TabGroup>
+<TabItem name="All downstream dependencies">
+
+#### Selecting all downstream dependencies
+
+To select an asset and all its downstream dependencies, add an asterisk (`*`) after the asset key in the query. For example, the following query would select the `taxi_trips_file` asset and all its downstream dependencies:
+
+```shell
+taxi_trips_file*
+```
+
+Which would look like the following in the UI:
+
+<!-- ![Selection query selects the taxi_trips_file asset and all its downstream dependencies in the Dagster UI](/images/concepts/assets/asset-selection/select-downstream-dependencies.png) -->
+
+<Image
+alt="Selection query selects the taxi_trips_file asset and all its downstream dependencies in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-downstream-dependencies.png"
+width={2646}
+height={1508}
+/>
+
+</TabItem>
+<TabItem name="Specific number of downstream layers">
+
+#### Specific a number of downstream layers
+
+To select an asset and multiple downstream layers, add plus sign (`+`) for each layer you want to select after the asset key in the query. For example, the following query would select the `taxi_trips_file` asset and two downstream layers:
+
+```shell
+taxi_trips_file++
+```
+
+Which would look like the following in the UI:
+
+<!-- ![Selection query selects the taxi_trips_file asset and two downstream layers in the Dagster UI](/images/concepts/assets/asset-selection/select-two-downstream-layers.png) -->
+
+<Image
+alt="Selection query selects the taxi_trips_file asset and two downstream layers in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-two-downstream-layers.png"
+width={2646}
+height={1508}
+/>
+
+</TabItem>
+</TabGroup>
+
+### Selecting an asset's entire lineage
+
+To select an asset's entire lineage, add an asterisk (`*`) before and after the asset key in the query. For example, the following query would select the entire lineage for the `manhattan_stats` asset:
+
+```shell
+*manhattan_stats*
+```
+
+Which would look like the following in the UI:
+
+<!-- ![Selection query selects the entire lineage of the manhattan_stats in the Dagster UI](/images/concepts/assets/asset-selection/select-entire-lineage.png) -->
+
+<Image
+alt="Selection query selects the entire lineage of the manhattan_stats in the Dagster UI"
+src="/images/concepts/assets/asset-selection/select-entire-lineage.png"
+width={2646}
+height={1508}
+/>
+
+### Selecting assets with multiple key components
+
+TODO:
+
+An asset key with multiple components can be specified by inserting slashes between the components.
+
 - `my/prefixed/asset`: select the asset whose <PyObject object="AssetKey"/> in Python is `AssetKey(["my", "prefixed", "asset"])`
-- `*some_asset`: select "some_asset" and all ancestors (upstream dependencies).
-- `some_asset*`: select "some_asset" and all descendants (downstream dependencies).
-- `*some_asset*`: select "some_asset" and all of its ancestors and descendants.
-- `+some_asset`: select "some_asset" and its direct parents.
-- `some_asset+++`: select "some_asset" and its children, its children's children, and its children's children's children.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Software-defined Assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster UI"
+    href="/concepts/webserver/ui"
+  ></ArticleListItem>
+</ArticleList>
