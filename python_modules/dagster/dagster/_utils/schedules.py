@@ -618,7 +618,7 @@ def _timezone_aware_cron_iter(
                 cron_iter=cron_iter,
                 next_date=next_date,
                 timezone_str=timezone_str,
-                repeats_every_hour=cron_string_repeats_every_hour(cron_string),
+                repeats_every_hour=repeats_every_hour,
                 ascending=ascending,
             )
 
