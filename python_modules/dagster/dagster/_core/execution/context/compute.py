@@ -1369,11 +1369,11 @@ def _copy_docs_from_op_execution_context(obj):
 ###############################
 
 ALTERNATE_METHODS = {
-    "run_id": "run_info.run_id",
-    "run": "run_info.dagster_run",
-    "dagster_run": "run_info.dagster_run",
-    "run_config": "run_info.run_config",
-    "retry_number": "run_info.retry_number",
+    "run_id": "run_properties.run_id",
+    "run": "run_properties.dagster_run",
+    "dagster_run": "run_properties.dagster_run",
+    "run_config": "run_properties.run_config",
+    "retry_number": "run_properties.retry_number",
 }
 
 
@@ -1429,7 +1429,13 @@ class AssetExecutionContext(OpExecutionContext):
         self._op_execution_context = check.inst_param(
             op_execution_context, "op_execution_context", OpExecutionContext
         )
-        self._run_props = None
+
+        self._run_props = RunProperties(
+            run_id=self._op_execution_context.run_id,
+            run_config=self._op_execution_context.run_config,
+            dagster_run=self._op_execution_context.run,
+            retry_number=self._op_execution_context.retry_number,
+        )
 
     @staticmethod
     def get() -> "AssetExecutionContext":
@@ -1444,14 +1450,6 @@ class AssetExecutionContext(OpExecutionContext):
 
     @property
     def run_properties(self) -> RunProperties:
-        if self._run_props is None:
-            self._run_props = RunProperties(
-                run_id=self._op_execution_context.run_id,
-                run_config=self._op_execution_context.run_config,
-                dagster_run=self._op_execution_context.run,
-                retry_number=self._op_execution_context.retry_number,
-            )
-
         return self._run_props
 
     ######## Deprecated methods
