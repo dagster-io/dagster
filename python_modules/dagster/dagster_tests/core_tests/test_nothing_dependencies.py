@@ -351,13 +351,15 @@ def test_none_output_non_none_input():
 
 
 def test_asset_none_output_non_none_input():
+    from dagster import AssetIn
+
     @asset
     def asset1() -> None:
         pass
 
-    @asset
-    def asset2(asset1):
-        assert asset1 is None
+    @asset(ins={"inp": AssetIn(key="asset1")})
+    def asset2(inp):
+        assert inp is None
 
     assert materialize_to_memory([asset1, asset2]).success
 

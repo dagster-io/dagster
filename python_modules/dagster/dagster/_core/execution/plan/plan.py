@@ -51,6 +51,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.types.dagster_type import Any as DagsterAny
 from dagster._core.utils import toposort
 
 from ..context.output import get_output_context
@@ -461,6 +462,7 @@ def get_step_input_source(
         return FromStepOutput(
             step_output_handle=step_output_handle,
             fan_in=False,
+            output_dagster_type_is_nothing=node_output_handle.output_def.dagster_type.is_nothing,
         )
 
     if dependency_structure.has_fan_in_deps(input_handle):
@@ -565,6 +567,7 @@ def _step_input_source_from_multi_dep_def(
                 FromStepOutput(
                     step_output_handle=step_output_handle,
                     fan_in=True,
+                    output_dagster_type=DagsterAny,
                 )
             )
         else:
@@ -612,7 +615,11 @@ def _step_input_source_from_blocking_asset_checks_dep_def(
                     "should have been caught at definition time."
                 )
 
-            source = FromStepOutput(step_output_handle=step_output_handle, fan_in=True)
+            source = FromStepOutput(
+                step_output_handle=step_output_handle,
+                fan_in=True,
+                output_dagster_type_is_nothing=node_output.output_def.dagster_type.is_nothing,
+            )
             sources.append(source)
             if (
                 dep_def.other_dependency is not None
