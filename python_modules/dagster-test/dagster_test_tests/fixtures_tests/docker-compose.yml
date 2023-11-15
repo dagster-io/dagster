@@ -10,7 +10,6 @@ services:
     volumes:
       - test_volume:/tmp
 
-
 volumes:
   test_volume:
     name: ${TEST_VOLUME}
