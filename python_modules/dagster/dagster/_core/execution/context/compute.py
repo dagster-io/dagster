@@ -66,9 +66,9 @@ from dagster._utils.warnings import (
 from .system import StepExecutionContext
 
 
-class ExecutionInfo(
+class ExecutionProperties(
     NamedTuple(
-        "_ExecutionInfo",
+        "_ExecutionProperties",
         [
             ("step_description", PublicAttr[str]),
             ("op_execution_context", PublicAttr["OpExecutionContext"]),
@@ -80,7 +80,7 @@ class ExecutionInfo(
     """
 
     def __new__(cls, step_description: str, op_execution_context: "OpExecutionContext"):
-        return super(ExecutionInfo, cls).__new__(
+        return super(ExecutionProperties, cls).__new__(
             cls, step_description=step_description, op_execution_context=op_execution_context
         )
 
@@ -141,14 +141,14 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
         """The parsed config specific to this op."""
 
 
-class HasExecutionInfo(ABC):
+class HasExecutionProperties(ABC):
     @property
     @abstractmethod
-    def execution_info(self) -> ExecutionInfo:
+    def execution_properties(self) -> ExecutionProperties:
         """Implement this method to check if a logging tag is set."""
 
 
-class OpExecutionContextMetaClass(AbstractComputeMetaclass, HasExecutionInfo):
+class OpExecutionContextMetaClass(AbstractComputeMetaclass):
     def __instancecheck__(cls, instance) -> bool:
         # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
         # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
@@ -166,7 +166,9 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass, HasExecutionInfo):
         return super().__instancecheck__(instance)
 
 
-class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
+class OpExecutionContext(
+    AbstractComputeExecutionContext, HasExecutionProperties, metaclass=OpExecutionContextMetaClass
+):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
@@ -1450,10 +1452,7 @@ class AssetExecutionContext(OpExecutionContext):
             retry_number=self._op_execution_context.retry_number,
         )
 
-        self._execution_info = ExecutionInfo(
-            step_description=f"asset {self._op_execution_context.node_handle}",
-            op_execution_context=self._op_execution_context,
-        )
+        self._execution_props = None
 
     @staticmethod
     def get() -> "AssetExecutionContext":
@@ -1471,8 +1470,14 @@ class AssetExecutionContext(OpExecutionContext):
         return self._run_props
 
     @property
-    def execution_info(self) -> ExecutionInfo:
-        return self._execution_info
+    def execution_properties(self) -> ExecutionProperties:
+        if self._execution_props is None:
+            self._execution_props = ExecutionProperties(
+                step_description=f"asset {self.assets_def.node_def.name}",
+                op_execution_context=self._op_execution_context,
+            )
+
+        return self._execution_props
 
     ######## Deprecated methods
 
