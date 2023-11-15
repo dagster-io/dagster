@@ -27,7 +27,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
 
     const actual = getEvaluationsWithEmptyAdded({
       evaluations,
-      currentEvaluationId: 3,
+      currentAutoMaterializeEvaluationId: 3,
       isFirstPage: false,
       isLastPage: false,
       isLoading: true,
@@ -41,7 +41,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
 
     const actual = getEvaluationsWithEmptyAdded({
       evaluations,
-      currentEvaluationId: null,
+      currentAutoMaterializeEvaluationId: null,
       isFirstPage: true,
       isLastPage: true,
       isLoading: false,
@@ -63,7 +63,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
 
     const actual = getEvaluationsWithEmptyAdded({
       evaluations,
-      currentEvaluationId: null,
+      currentAutoMaterializeEvaluationId: null,
       isFirstPage: true,
       isLastPage: true,
       isLoading: false,
@@ -81,7 +81,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
   });
 
   it(
-    'should return a skipped entry on top if its the first page and the currentEvaluationId is greater' +
+    'should return a skipped entry on top if its the first page and the currentAutoMaterializeEvaluationId is greater' +
       "than the last evaluation's ID + at the bottom if its the last page and the last evaluation ID is not 1",
     () => {
       const evaluations = [
@@ -107,7 +107,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
 
       const actual = getEvaluationsWithEmptyAdded({
         evaluations,
-        currentEvaluationId: 10,
+        currentAutoMaterializeEvaluationId: 10,
         isFirstPage: true,
         isLastPage: true,
         isLoading: false,
@@ -157,7 +157,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
 
     const actual = getEvaluationsWithEmptyAdded({
       evaluations,
-      currentEvaluationId: 3,
+      currentAutoMaterializeEvaluationId: 3,
       isFirstPage: true,
       isLastPage: true,
       isLoading: false,

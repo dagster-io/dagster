@@ -283,9 +283,9 @@ export const Evaluations = {
           autoMaterializePolicy: buildAutoMaterializePolicy({
             rules: BASE_AUTOMATERIALIZE_RULES,
           }),
+          currentAutoMaterializeEvaluationId: 1000,
         }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          currentEvaluationId: 1000,
           records: [],
         }),
       },
