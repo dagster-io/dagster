@@ -36,6 +36,7 @@ from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
+    cron_string_repeats_every_hour,
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
 )
@@ -74,12 +75,13 @@ def is_ambiguous_time(dt: datetime):
     return offset_before > offset_after
 
 
-def dst_safe_strftime(dt: datetime, fmt: str, schedule_type: Optional[ScheduleType]) -> str:
+def dst_safe_strftime(dt: datetime, fmt: str, cron_schedule: str) -> str:
     """A method for converting a datetime to a string which will append a suffix in cases where
     the resulting timestamp would be ambiguous due to DST transitions.
     """
     time_str = dt.strftime(fmt)
-    if schedule_type != ScheduleType.HOURLY:
+    # only need to handle ambiguous times for cron schedules which repeat every hour
+    if not cron_string_repeats_every_hour(cron_schedule):
         return time_str
 
     # fold attribute not set correctly in pendulum 1
@@ -312,7 +314,7 @@ class TimeWindowPartitionsDefinition(
             ):
                 if idx >= start_idx and idx < end_idx:
                     partition_keys.append(
-                        dst_safe_strftime(time_window.start, self.fmt, self.schedule_type)
+                        dst_safe_strftime(time_window.start, self.fmt, self.cron_schedule)
                     )
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
@@ -343,7 +345,7 @@ class TimeWindowPartitionsDefinition(
                 or partitions_past_current_time < self.end_offset
             ):
                 partition_keys.append(
-                    dst_safe_strftime(time_window.start, self.fmt, self.schedule_type)
+                    dst_safe_strftime(time_window.start, self.fmt, self.cron_schedule)
                 )
 
                 if time_window.end.timestamp() > current_timestamp:
@@ -360,7 +362,7 @@ class TimeWindowPartitionsDefinition(
         schedule_str = (
             self.schedule_type.value.capitalize() if self.schedule_type else self.cron_schedule
         )
-        partition_def_str = f"{schedule_str}, starting {dst_safe_strftime(self.start, self.fmt, self.schedule_type)} {self.timezone}."
+        partition_def_str = f"{schedule_str}, starting {dst_safe_strftime(self.start, self.fmt, self.cron_schedule)} {self.timezone}."
         if self.end_offset != 0:
             partition_def_str += (
                 " End offsetted by"
@@ -403,7 +405,7 @@ class TimeWindowPartitionsDefinition(
 
         sorted_pks = sorted(
             partition_keys,
-            key=lambda pk: dst_safe_strptime(pk, self.timezone, self.fmt),
+            key=lambda pk: dst_safe_strptime(pk, self.timezone, self.fmt).timestamp(),
         )
         cur_windows_iterator = iter(
             self._iterate_time_windows(dst_safe_strptime(sorted_pks[0], self.timezone, self.fmt))
@@ -411,7 +413,7 @@ class TimeWindowPartitionsDefinition(
         partition_key_time_windows: List[TimeWindow] = []
         for partition_key in sorted_pks:
             next_window = next(cur_windows_iterator)
-            if dst_safe_strftime(next_window.start, self.fmt, self.schedule_type) == partition_key:
+            if dst_safe_strftime(next_window.start, self.fmt, self.cron_schedule) == partition_key:
                 partition_key_time_windows.append(next_window)
             else:
                 cur_windows_iterator = iter(
@@ -465,7 +467,7 @@ class TimeWindowPartitionsDefinition(
         if start_time >= last_partition_window.end:
             return None
         else:
-            return dst_safe_strftime(start_time, self.fmt, self.schedule_type)
+            return dst_safe_strftime(start_time, self.fmt, self.cron_schedule)
 
     def get_next_partition_window(
         self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
@@ -588,7 +590,7 @@ class TimeWindowPartitionsDefinition(
         if first_window is None:
             return None
 
-        return dst_safe_strftime(first_window.start, self.fmt, self.schedule_type)
+        return dst_safe_strftime(first_window.start, self.fmt, self.cron_schedule)
 
     def get_last_partition_key(
         self,
@@ -599,7 +601,7 @@ class TimeWindowPartitionsDefinition(
         if last_window is None:
             return None
 
-        return dst_safe_strftime(last_window.start, self.fmt, self.schedule_type)
+        return dst_safe_strftime(last_window.start, self.fmt, self.cron_schedule)
 
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
@@ -610,7 +612,7 @@ class TimeWindowPartitionsDefinition(
         for partition_time_window in self._iterate_time_windows(time_window.start):
             if partition_time_window.start < time_window.end:
                 result.append(
-                    dst_safe_strftime(partition_time_window.start, self.fmt, self.schedule_type)
+                    dst_safe_strftime(partition_time_window.start, self.fmt, self.cron_schedule)
                 )
             else:
                 break
@@ -820,9 +822,9 @@ class TimeWindowPartitionsDefinition(
         prev_next = next(iterator)
 
         if end_closed or prev_next.timestamp() > timestamp:
-            return dst_safe_strftime(prev, self.fmt, self.schedule_type)
+            return dst_safe_strftime(prev, self.fmt, self.cron_schedule)
         else:
-            return dst_safe_strftime(prev_next, self.fmt, self.schedule_type)
+            return dst_safe_strftime(prev_next, self.fmt, self.cron_schedule)
 
     def less_than(self, partition_key1: str, partition_key2: str) -> bool:
         """Returns true if the partition_key1 is earlier than partition_key2."""
@@ -866,7 +868,7 @@ class TimeWindowPartitionsDefinition(
             # partition starts after the last valid partition
             or partition_start_time > last_partition_window.start
             # partition key string does not represent the start of an actual partition
-            or dst_safe_strftime(partition_start_time, self.fmt, self.schedule_type)
+            or dst_safe_strftime(partition_start_time, self.fmt, self.cron_schedule)
             != partition_key
         )
 
@@ -1602,7 +1604,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             TimeWindowPartitionsDefinition, self.partitions_def
         ).time_windows_for_partition_keys(frozenset(partition_keys), validate=validate)
         num_added_partitions = 0
-        for window in sorted(time_windows):
+        for window in sorted(time_windows, key=lambda tw: tw.start.timestamp()):
             # go in reverse order because it's more common to add partitions at the end than the
             # beginning
             for i in reversed(range(len(result_windows))):

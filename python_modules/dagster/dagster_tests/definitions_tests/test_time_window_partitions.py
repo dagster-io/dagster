@@ -1026,6 +1026,36 @@ def test_time_window_partitions_contains():
     assert "2015-01-11" not in subset
 
 
+def test_dst_transition_15_minute_partitions() -> None:
+    partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="*/15 * * * *",
+        start="2020-11-01-00:30",
+        end="2020-11-01-2:30",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-11-01-00:30",
+        "2020-11-01-00:45",
+        "2020-11-01-01:00",
+        "2020-11-01-01:15",
+        "2020-11-01-01:30",
+        "2020-11-01-01:45",
+        "2020-11-01-01:00" + POST_DST_TRANSITION_SUFFIX,
+        "2020-11-01-01:15" + POST_DST_TRANSITION_SUFFIX,
+        "2020-11-01-01:30" + POST_DST_TRANSITION_SUFFIX,
+        "2020-11-01-01:45" + POST_DST_TRANSITION_SUFFIX,
+        "2020-11-01-02:00",
+        "2020-11-01-02:15",
+    }
+    assert subset.get_partition_keys_not_in_subset() == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        == []
+    )
+
+
 def test_dst_transition_hourly_partitions() -> None:
     partitions_def = HourlyPartitionsDefinition(
         start_date="2020-10-31-23:00", end_date="2020-11-01-5:00", timezone="US/Pacific"
