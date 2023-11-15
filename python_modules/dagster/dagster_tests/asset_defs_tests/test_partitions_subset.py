@@ -105,15 +105,22 @@ def test_time_window_partitions_subset_serialization_deserialization(
         timezone=partitions_def.timezone,
         end_offset=partitions_def.end_offset,
     )
-    subset = TimeWindowPartitionsSubset.empty_subset(
-        time_window_partitions_def
-    ).with_partition_keys(["2023-01-01"])
+    subset = cast(
+        TimeWindowPartitionsSubset,
+        TimeWindowPartitionsSubset.empty_subset(time_window_partitions_def).with_partition_keys(
+            ["2023-01-01"]
+        ),
+    )
 
     deserialized = deserialize_value(
         serialize_value(cast(TimeWindowPartitionsSubset, subset)), TimeWindowPartitionsSubset
     )
     assert deserialized == subset
     assert deserialized.get_partition_keys() == ["2023-01-01"]
+    assert (
+        deserialized.included_time_windows[0].start.tzinfo
+        == subset.included_time_windows[0].start.tzinfo
+    )
 
 
 def test_time_window_partitions_subset_num_partitions_serialization():
