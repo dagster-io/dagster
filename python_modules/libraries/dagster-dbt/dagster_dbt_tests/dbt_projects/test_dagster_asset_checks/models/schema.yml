@@ -10,6 +10,7 @@ models:
         tests:
           - unique:
               severity: "warn"
+              tags: ["data_quality"]
           - not_null:
               severity: "error"
 
