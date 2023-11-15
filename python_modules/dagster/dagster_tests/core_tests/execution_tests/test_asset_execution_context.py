@@ -94,6 +94,9 @@ def test_deprecation_warnings():
         "consume_events",
         "log_event",
         "get_asset_provenance",
+        "is_subset",
+        "partition_keys",
+        "get",
     ]
 
     other_ignores = [
@@ -174,8 +177,9 @@ def test_deprecation_warnings():
                 assert_deprecation_messages_as_expected(deprecation_info, expected_deprecation_args)
             else:
                 raise Exception(
-                    f"Attribute {method} not accounted for in AssetExecutionContext deprecation"
-                    " test"
+                    f"Method {method} on OpExecutionContext not accounted for in AssetExecutionContext deprecation"
+                    f" test. Ensure that the method {method} exists on AssetExecutionContext, or is explicitly ignored in"
+                    " the test."
                 )
 
     materialize([test_context])
