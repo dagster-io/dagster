@@ -474,18 +474,20 @@ def test_webserver_scheduler_name_override(deployment_template: HelmTemplate):
 
 
 def test_webserver_security_context(deployment_template: HelmTemplate):
-    security_context = {
-        "allowPrivilegeEscalation": False,
-        "runAsNonRoot": True,
-        "runAsUser": 1000,
-        "privileged": False,
-        "capabilities": {
-            "drop": ["ALL"],
-        },
-        "seccompProfile": {
-            "type": "RuntimeDefault",
-        },
-    }
+    security_context = kubernetes.SecurityContext(
+        {
+            "allowPrivilegeEscalation": False,
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "privileged": False,
+            "capabilities": {
+                "drop": ["ALL"],
+            },
+            "seccompProfile": {
+                "type": "RuntimeDefault",
+            },
+        }
+    )
     helm_values = DagsterHelmValues.construct(
         dagsterWebserver=Webserver.construct(securityContext=security_context)
     )
@@ -498,7 +500,7 @@ def test_webserver_security_context(deployment_template: HelmTemplate):
         container.security_context
         == k8s_model_from_dict(
             k8s_client.models.V1SecurityContext,
-            k8s_snake_case_dict(k8s_client.models.V1SecurityContext, security_context),
+            k8s_snake_case_dict(k8s_client.models.V1SecurityContext, dict(security_context.root)),
         )
         for container in webserver_deployment.spec.template.spec.init_containers
     )

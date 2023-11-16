@@ -6,6 +6,8 @@ from ...utils import kubernetes
 
 
 class Flower(BaseModel):
+    annotations: Optional[kubernetes.Annotations] = None
+    schedulerName: Optional[str] = None
     enabled: bool
     service: kubernetes.Service
     nodeSelector: kubernetes.NodeSelector
@@ -16,5 +18,3 @@ class Flower(BaseModel):
     resources: kubernetes.Resources
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
-    annotations: Optional[kubernetes.Annotations]
-    schedulerName: Optional[str]

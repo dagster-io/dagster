@@ -864,18 +864,24 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
 def test_user_deployment_resources(template: HelmTemplate, include_config_in_launched_runs: bool):
     name = "foo"
 
-    resources = {
-        "requests": {"memory": "64Mi", "cpu": "250m"},
-        "limits": {"memory": "128Mi", "cpu": "500m"},
-    }
+    resources = kubernetes.Resources(
+        {
+            "requests": {"memory": "64Mi", "cpu": "250m"},
+            "limits": {"memory": "128Mi", "cpu": "500m"},
+        }
+    )
 
     deployment = UserDeployment.construct(
         name=name,
-        image={"repository": f"repo/{name}", "tag": "tag1", "pullPolicy": "Always"},
+        image=kubernetes.Image.construct(
+            repository=f"repo/{name}", tag="tag1", pullPolicy="Always"
+        ),
         dagsterApiGrpcArgs=["-m", name],
         port=3030,
         resources=resources,
-        includeConfigInLaunchedRuns={"enabled": include_config_in_launched_runs},
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns.construct(
+            enabled=include_config_in_launched_runs
+        ),
     )
 
     helm_values = DagsterHelmValues.construct(
@@ -899,7 +905,7 @@ def test_user_deployment_resources(template: HelmTemplate, include_config_in_lau
                 "env_config_maps": [
                     "release-name-dagster-user-deployments-foo-user-env",
                 ],
-                "resources": resources,
+                "resources": dict(resources.root),
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
             }

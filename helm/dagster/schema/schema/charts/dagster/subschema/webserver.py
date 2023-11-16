@@ -7,23 +7,29 @@ from ...utils.utils import BaseModel
 
 
 class Server(BaseModel):
+    name: Optional[str] = None
+    ssl: Optional[bool] = None
     host: str
     port: int
-    name: Optional[str]
-    ssl: Optional[bool]
 
 
 class Workspace(BaseModel):
+    externalConfigmap: Optional[str] = None
     enabled: bool
     servers: List[Server]
-    externalConfigmap: Optional[str]
 
 
-class Webserver(BaseModel):
+class Webserver(BaseModel, extra="allow"):
+    dbStatementTimeout: Optional[int] = None
+    dbPoolRecycle: Optional[int] = None
+    logLevel: Optional[str] = None
+    schedulerName: Optional[str] = None
+    volumeMounts: Optional[List[kubernetes.VolumeMount]] = None
+    volumes: Optional[List[kubernetes.Volume]] = None
+    pathPrefix: Optional[str] = None
     replicaCount: int
     image: kubernetes.Image
     nameOverride: str
-    pathPrefix: Optional[str]
     service: kubernetes.Service
     workspace: Workspace
     env: Union[Dict[str, str], List[kubernetes.EnvVar]]
@@ -42,12 +48,6 @@ class Webserver(BaseModel):
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     enableReadOnly: bool
-    dbStatementTimeout: Optional[int]
-    dbPoolRecycle: Optional[int]
-    logLevel: Optional[str]
-    schedulerName: Optional[str]
-    volumeMounts: Optional[List[kubernetes.VolumeMount]]
-    volumes: Optional[List[kubernetes.Volume]]
 
     class Config:
         extra = Extra.forbid
