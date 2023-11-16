@@ -6,6 +6,7 @@ from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequen
 
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
+from dagster._core.events import AssetKey
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
@@ -721,3 +722,40 @@ def test_enum_custom_serializer():
     assert serialized == '{"__enum__": "Foo.BLUE"}'
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == Foo.RED
+
+
+def test_serialize_dict_keyed_by_asset_key():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Fizz(NamedTuple):
+        buzz: int
+
+    mapping = {
+        AssetKey(["a", "a_2"]): Fizz(1),
+        AssetKey("b"): 1,
+        AssetKey("c"): {AssetKey("d"): "1"},
+    }
+
+    serialized = serialize_value(mapping, whitelist_map=test_env)
+    assert (
+        serialized
+        == '{"__dict_keyed_by_asset_key_": {"a/a_2": {"__class__": "Fizz", "buzz": 1}, "b": 1, "c": {"__dict_keyed_by_asset_key_": {"d": "1"}}}}'
+    )
+    assert deserialize_value(serialized, whitelist_map=test_env) == mapping
+
+
+def test_serialize_mapping_keyed_by_asset_key():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Foo(NamedTuple):
+        keyed_by_asset_key: Mapping[AssetKey, int]
+
+    named_tuple = Foo(keyed_by_asset_key={AssetKey(["a", "a_2"]): 1})
+    assert (
+        deserialize_value(
+            serialize_value(named_tuple, whitelist_map=test_env), whitelist_map=test_env
+        )
+        == named_tuple
+    )

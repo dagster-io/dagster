@@ -682,9 +682,21 @@ def _pack_value(
             for idx, item in enumerate(cast(list, val))
         ]
     if tval is dict:
+        from dagster._core.definitions.asset_key import AssetKey
+
+        dict_val = cast(dict, val)
+
+        if dict_val and all(type(key) is AssetKey for key in dict_val.keys()):
+            return {
+                "__dict_keyed_by_asset_key_": {
+                    key.to_user_string(): _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+                    for key, value in dict_val.items()
+                }
+            }
+
         return {
             key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in cast(dict, val).items()
+            for key, value in dict_val.items()
         }
 
     # inlined is_named_tuple_instance
@@ -855,6 +867,14 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
     if "__frozenset__" in val:
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
+
+    if "__dict_keyed_by_asset_key_" in val:
+        from dagster._core.events import AssetKey
+
+        return {
+            AssetKey.from_user_string(key): _unpack_value(value, whitelist_map, context)
+            for key, value in cast(dict, val["__dict_keyed_by_asset_key_"]).items()
+        }
 
     return val
 
