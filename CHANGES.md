@@ -1,5 +1,54 @@
 # Changelog
 
+# 1.5.9 / 0.21.9 (libraries)
+
+### New
+
+- [ui] Enabled collapsing asset groups in the global asset view when the new experimental asset graph is turned on in User Settings
+- [ui] The experimental asset graph sidebar now supports keyboard navigation via arrow keys
+- [ui] You can now right click nodes in the asset graph to materialize them or filter the graph
+- [ui] Jobs can now be searched by run ID
+- [ui] You can now launch runs from the job actions menu
+- [auto-materialize] A new `AutoMaterializeRule.materialize_on_cron()` rule makes it possible to create policies which materialize assets on a regular cadence.
+- [auto-materialize] If a partition-mapping-related error occurs within the Asset Daemon, a more informative error message will be provided.
+- [dagster-databricks] Extended the set of available config options to the Databricks step launcher - thanks [@zyd14](https://github.com/zyd14)!
+
+### Bugfixes
+
+- Fixed an issue where some schedules incorrectly skipped ticks during Daylight Savings Times transitions.
+- Returning a `SensorResult` from a sensor no longer overwrites a cursor if it was set via the context.
+- Fixed issue which could cause incorrect execution order when executing multi-assets with `can_subset=True` alongside assets which were upstream of some assets in the multi-asset, and downstream of others.
+- Previously, when creating an `HourlyPartitionsDefinition` with a non-UTC timezone and the default format string (or any format string not including a UTC-offset), there was no way to disambiguate between the first and second instance of the repeated hour during a daylight saving time transition. Now, for the one hour per year in which this ambiguity exists, the partition key of the second instance of the hour will have the UTC offset automatically appended to it.
+- [asset checks] Fixed a bug that caused an error when passing `check_specs` to `AssetsDefinition.from_graph`
+- [dagster-dbt] Fixed a bug in `dagster-dbt` that caused some dbt tests to not be selected as asset checks.
+- [dagster-dbt] Fixed an issue where multiple copies of the dbt manifest were held in memory when loading a dbt project as software-defined assets.
+- The `email_on_failure` sensor called deprecated methods on the context. This has been fixed
+
+### Community Contributions
+
+- [dagster-deltalake] Added Delta Lake support along with support for pandas and polars. Thanks Robert Pack!
+- [dagster-graphql] Fixed the asset cursor format to use a normalized format - thanks [@sisidra](https://github.com/sisidra)!
+- [dagster-databricks] Extended the set of available config options to the Databricks step launcher - thanks [@zyd14](https://github.com/zyd14)!
+
+### Experimental
+
+- `DagsterInstance.report_runless_asset_event` is now public.
+- `AutoMaterializeRule.materialize_on_parent_updated` now accepts an `updated_parents_filter` of type `AutoMaterializeAssetPartitionsFilter`, which allows only materializing based on updates from runs with a required set of tags.
+
+### Documentation
+
+- Added a new guide for using [Dagster Pipes with Kubernetes](https://docs.dagster.io/guides/dagster-pipes)
+- Added all [OSS deployment guides](https://docs.dagster.io/deployment/guides) to the site’s side navigation (**Deployment > Open Source > Guides**)
+- Updated formatting in the [Migrating your Dagster instance while upgrading Helm guide](https://docs.dagster.io/deployment/guides/kubernetes/how-to-migrate-your-instance)
+- Added **Experimental** tags to [Dagster Cloud Insights docs](https://docs.dagster.io/dagster-cloud/insights)
+- The [Transitioning Data Pipelines from Development to Production](https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production) and [Testing against production with Dagster Cloud Branch Deployments](https://docs.dagster.io/guides/dagster/branch_deployments) guides have been updated to use Pythonic Resources
+
+### Dagster Cloud
+
+- Reporting runless events and manually marking an asset as successfully materialized are no possible with “Launcher” level permissions
+- [ui] Improved search and render performance of Users page, especially for large lists of users.
+- [billing] Fixed issues with correctly displaying your tax ID
+
 # 1.5.8 / 0.21.8 (libraries)
 
 ### Bugfixes
