@@ -261,9 +261,11 @@ raw_data_job = define_asset_job(
 </TabItem>
 <TabItem name="CLI">
 
+When selecting multiple assets, enclose the list of asset keys in double quotes (`"`) and separate each asset key with a comma.
+
 ```shell
-dagster asset list --select TODO
-dagster asset materialize --select TODO
+dagster asset list --select "taxi_zones_file,taxi_trips_file"
+dagster asset materialize --select "taxi_zones_file,taxi_trips_file"
 ```
 
 ---
@@ -309,9 +311,11 @@ taxi_zones_job = define_asset_job(name="taxi_zones_job", selection="*taxi_zones*
 </TabItem>
 <TabItem name="CLI">
 
+When selecting an asset's entire lineage using the CLI, enclose the asterisk (`*`) and the asset key in double quotes (`"`):
+
 ```shell
-dagster asset list --select TODO
-dagster asset materialize --select TODO
+dagster asset list --select "*taxi_zones*"
+dagster asset materialize --select "*taxi_zones*"
 ```
 
 ---
@@ -359,9 +363,11 @@ manhattan_job = define_asset_job(name="manhattan_job", selection="*manhattan_map
 </TabItem>
 <TabItem name="CLI">
 
+When selecting an asset's dependencies using the CLI, enclose the asterisk (`*`) and the asset key in double quotes (`"`):
+
 ```shell
-dagster asset list --select TODO
-dagster asset materialize --select TODO
+dagster asset list --select "*manhattan_map"
+dagster asset materialize --select "*manhattan_map"
 ```
 
 ---
@@ -407,9 +413,11 @@ manhattan_job = define_asset_job(name="manhattan_job", selection="++manhattan_ma
 </TabItem>
 <TabItem name="CLI">
 
+When selecting an asset's dependencies using the CLI, enclose the plus sign (`+`) and the asset key in double quotes (`"`):
+
 ```shell
-dagster asset list --select TODO
-dagster asset materialize --select TODO
+dagster asset list --select "++manhattan_map"
+dagster asset materialize --select "++manhattan_map"
 ```
 
 ---
@@ -457,9 +465,11 @@ taxi_zones_job = define_asset_job(name="taxi_zones_job", selection="taxi_zones_f
 </TabItem>
 <TabItem name="CLI">
 
+When selecting an asset's dependencies using the CLI, enclose the asterisk (`*`) and the asset key in double quotes (`"`):
+
 ```shell
-dagster asset list --select TODO
-dagster asset materialize --select TODO
+dagster asset list --select "taxi_zones_file*"
+dagster asset materialize --select "taxi_zones_file*"
 ```
 
 ---
@@ -503,9 +513,11 @@ taxi_zones_job = define_asset_job(name="taxi_zones_job", selection="taxi_zones_f
 </TabItem>
 <TabItem name="CLI">
 
+When selecting an asset's dependencies using the CLI, enclose the plus sign (`+`) and the asset key in double quotes (`"`):
+
 ```shell
-dagster asset list --select TODO
-dagster asset materialize --select TODO
+dagster asset list --select "taxi_zones_file++"
+dagster asset materialize --select "taxi_zones_file++"
 ```
 
 </TabItem>
