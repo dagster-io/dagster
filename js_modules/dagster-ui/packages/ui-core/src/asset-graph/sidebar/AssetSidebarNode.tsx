@@ -1,10 +1,13 @@
 import {
   Box,
-  Colors,
   Icon,
   MiddleTruncate,
   Popover,
   UnstyledButton,
+  colorAccentGray,
+  colorBackgroundBlue,
+  colorBackgroundLight,
+  colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -107,7 +110,7 @@ export const AssetSidebarNode = ({
               style={{
                 width: '100%',
                 borderRadius: '8px',
-                ...(isSelected ? {background: Colors.Blue50} : {}),
+                ...(isSelected ? {background: colorBackgroundBlue()} : {}),
               }}
               $showFocusOutline={true}
               ref={ref}
@@ -167,7 +170,7 @@ const AssetNodePopoverMenu = (props: Parameters<typeof useAssetNodeMenu>[0]) => 
         canEscapeKeyClose
       >
         <ExpandMore tabIndex={0} role="button">
-          <Icon name="more_horiz" color={Colors.Gray500} />
+          <Icon name="more_horiz" color={colorAccentGray()} />
         </ExpandMore>
       </Popover>
     </div>
@@ -182,7 +185,9 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
         <Box
           padding={{left: 8}}
           margin={{left: 8}}
-          border={i < level - 1 ? {side: 'left', width: 1, color: Colors.KeylineGray} : undefined}
+          border={
+            i < level - 1 ? {side: 'left', width: 1, color: colorKeylineDefault()} : undefined
+          }
           style={{position: 'relative'}}
         >
           {sofar}
@@ -212,7 +217,7 @@ const GrayOnHoverBox = styled(UnstyledButton)`
   flex-shrink: 1;
   &:hover,
   &:focus-within {
-    background: ${Colors.Gray100};
+    background: ${colorBackgroundLight()};
     transition: background 100ms linear;
     ${ExpandMore} {
       visibility: visible;

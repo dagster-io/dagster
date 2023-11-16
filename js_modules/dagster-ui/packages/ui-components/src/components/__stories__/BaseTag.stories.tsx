@@ -1,8 +1,25 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
+import {
+  colorAccentBlue,
+  colorAccentCyan,
+  colorAccentGray,
+  colorAccentGreen,
+  colorAccentLime,
+  colorAccentRed,
+  colorAccentYellow,
+  colorBackgroundBlue,
+  colorBackgroundCyan,
+  colorBackgroundGray,
+  colorBackgroundGreen,
+  colorBackgroundLime,
+  colorBackgroundRed,
+  colorBackgroundYellow,
+  colorTextCyan,
+  colorTextDefault,
+} from '../../theme/color';
 import {BaseTag} from '../BaseTag';
-import {Colors} from '../Colors';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
 
@@ -13,12 +30,17 @@ export default {
 } as Meta;
 
 const COLORS = [
-  {fillColor: Colors.Gray10, textColor: Colors.Gray900, iconColor: Colors.Gray900},
-  {fillColor: Colors.Blue50, textColor: Colors.Blue700, iconColor: Colors.Blue500},
-  {fillColor: Colors.Green50, textColor: Colors.Green700, iconColor: Colors.Green500},
-  {fillColor: Colors.Yellow50, textColor: Colors.Yellow700, iconColor: Colors.Yellow500},
-  {fillColor: Colors.Red50, textColor: Colors.Red700, iconColor: Colors.Red500},
-  {fillColor: Colors.Olive50, textColor: Colors.Olive700, iconColor: Colors.Olive500},
+  {fillColor: colorBackgroundGray(), textColor: colorTextDefault(), iconColor: colorAccentGray()},
+  {fillColor: colorBackgroundBlue(), textColor: colorAccentBlue(), iconColor: colorAccentBlue()},
+  {fillColor: colorBackgroundCyan(), textColor: colorTextCyan(), iconColor: colorAccentCyan()},
+  {fillColor: colorBackgroundGreen(), textColor: colorAccentGreen(), iconColor: colorAccentGreen()},
+  {fillColor: colorBackgroundLime(), textColor: colorAccentLime(), iconColor: colorAccentLime()},
+  {
+    fillColor: colorBackgroundYellow(),
+    textColor: colorAccentYellow(),
+    iconColor: colorAccentYellow(),
+  },
+  {fillColor: colorBackgroundRed(), textColor: colorAccentRed(), iconColor: colorAccentRed()},
 ];
 
 export const Basic = () => {

@@ -3,7 +3,7 @@ import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {Colors} from '../Colors';
+import {colorAccentBlue} from '../../theme/color';
 import {Group} from '../Group';
 import {Slider, MultiSlider} from '../Slider';
 
@@ -50,7 +50,7 @@ export const Sizes = () => {
         min={0}
         max={10}
         stepSize={0.01}
-        fillColor={Colors.Blue500}
+        fillColor={colorAccentBlue()}
         labelRenderer={(value: number) => (
           <span style={{whiteSpace: 'nowrap'}}>Value: {value.toFixed(1)}</span>
         )}

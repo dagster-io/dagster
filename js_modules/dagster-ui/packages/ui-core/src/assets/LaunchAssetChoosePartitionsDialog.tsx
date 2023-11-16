@@ -7,7 +7,6 @@ import {
   Button,
   ButtonLink,
   Checkbox,
-  Colors,
   Dialog,
   DialogFooter,
   DialogHeader,
@@ -15,6 +14,9 @@ import {
   RadioContainer,
   Subheading,
   Tooltip,
+  colorAccentGray,
+  colorBackgroundYellow,
+  colorTextYellow,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -621,7 +623,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                           </div>
                         }
                       >
-                        <Icon name="info" color={Colors.Gray500} />
+                        <Icon name="info" color={colorAccentGray()} />
                       </Tooltip>
                     </Box>
                   </Radio>
@@ -819,15 +821,15 @@ const Warnings = ({
 
   return (
     <ToggleableSection
-      background={Colors.Yellow50}
+      background={colorBackgroundYellow()}
       isInitiallyOpen={false}
       title={
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          style={{color: Colors.Yellow700}}
+          style={{color: colorTextYellow()}}
         >
           <Box flex={{alignItems: 'center', gap: 12}}>
-            <Icon name="warning" color={Colors.Yellow700} />
+            <Icon name="warning" color={colorTextYellow()} />
             <Subheading>Warnings</Subheading>
           </Box>
           <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>

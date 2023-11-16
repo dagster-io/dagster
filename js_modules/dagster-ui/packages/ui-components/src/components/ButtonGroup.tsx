@@ -1,8 +1,15 @@
 import * as React from 'react';
 
+import {
+  colorBackgroundDefault,
+  colorBackgroundGray,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextLight,
+} from '../theme/color';
+
 import {BaseButton} from './BaseButton';
 import {JoinedButtons} from './Button';
-import {Colors} from './Colors';
 import {IconName, Icon} from './Icon';
 import {Tooltip} from './Tooltip';
 
@@ -29,11 +36,11 @@ export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
         const buttonElement = (
           <BaseButton
             key={id}
-            fillColor={isActive ? Colors.Gray200 : Colors.White}
-            textColor={isActive ? Colors.Gray900 : Colors.Gray700}
-            icon={
-              icon ? <Icon name={icon} color={isActive ? Colors.Gray900 : Colors.Gray700} /> : null
-            }
+            fillColor={isActive ? colorBackgroundGray() : colorBackgroundDefault()}
+            textColor={isActive ? colorTextDefault() : colorTextLight()}
+            iconColor={isActive ? colorTextDefault() : colorTextLight()}
+            strokeColor={colorBorderDefault()}
+            icon={icon ? <Icon name={icon} /> : null}
             label={label}
             onClick={(e) => onClick(id, e)}
           />

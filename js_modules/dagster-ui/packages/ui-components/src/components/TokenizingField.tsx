@@ -3,8 +3,20 @@ import {TagInput} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {
+  colorBackgroundGray,
+  colorBackgroundGreen,
+  colorBackgroundRed,
+  colorBackgroundYellow,
+  colorBorderDefault,
+  colorKeylineDefault,
+  colorTextDefault,
+  colorTextGreen,
+  colorTextRed,
+  colorTextYellow,
+} from '../theme/color';
+
 import {Box} from './Box';
-import {Colors} from './Colors';
 import {MenuItem, Menu} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
@@ -451,16 +463,16 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   border: none;
   border-radius: 8px;
   box-shadow:
-    ${Colors.Gray300} inset 0px 0px 0px 1px,
-    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+    ${colorBorderDefault()} inset 0px 0px 0px 1px,
+    ${colorKeylineDefault()} inset 2px 2px 1.5px;
   min-width: 400px;
   max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
   &.bp4-active {
     box-shadow:
-      ${Colors.Gray300} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      ${colorBorderDefault()} inset 0px 0px 0px 1px,
+      ${colorKeylineDefault()} inset 2px 2px 1.5px,
       rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 
@@ -501,23 +513,23 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   }
 
   .bp4-tag.bp4-minimal:not([class*='bp4-intent-']) {
-    background-color: ${Colors.Gray100};
-    color: ${Colors.Gray900};
+    background-color: ${colorBackgroundGray()};
+    color: ${colorTextDefault()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-success {
-    background-color: ${Colors.Green50};
-    color: ${Colors.Green700};
+    background-color: ${colorBackgroundGreen()};
+    color: ${colorTextGreen()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-warning {
-    background-color: ${Colors.Yellow50};
-    color: ${Colors.Yellow700};
+    background-color: ${colorBackgroundYellow()};
+    color: ${colorTextYellow()};
   }
 
   .bp4-tag.bp4-minimal.bp4-intent-danger {
-    background-color: ${Colors.Red50};
-    color: ${Colors.Red700};
+    background-color: ${colorBackgroundRed()};
+    color: ${colorTextRed()};
   }
 `;
 

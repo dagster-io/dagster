@@ -1,4 +1,12 @@
-import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {
+  FontFamily,
+  colorAccentPrimary,
+  colorAccentReversed,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorKeylineDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -209,31 +217,31 @@ const TimescaleContainer = styled.div`
     text-align: center;
   }
   & .tick.duration {
-    color: ${Colors.Gray500};
-    background: ${Colors.Gray100};
+    color: ${colorTextLight()};
+    background: ${colorBackgroundLight()};
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   }
   & .tick.highlight {
-    color: white;
+    color: ${colorAccentReversed()};
     height: ${TICKS_ROW_HEIGHT + 2}px;
-    background: ${Colors.Gray900};
+    background: ${colorAccentPrimary()};
   }
   & .line {
     position: absolute;
-    border-left: 1px solid #f0f0f0;
+    border-left: 1px solid ${colorBorderDefault()};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
   }
   & .line.highlight {
-    border-left: 2px solid ${Colors.Gray900};
+    border-left: 2px solid ${colorBorderDefault()};
     z-index: 1111;
     top: -1px;
   }
 
   & .fog-of-war {
     position: absolute;
-    background: ${Colors.Gray50};
+    background: ${colorBackgroundLight()};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
@@ -245,12 +253,12 @@ const TimescaleTicksContainer = styled.div`
   height: ${TICKS_ROW_HEIGHT}px;
   z-index: 4;
   position: relative;
-  background: ${Colors.White};
+  background: ${colorBackgroundLight()};
   display: flex;
-  color: ${Colors.Gray500};
+  color: ${colorTextLight()};
   font-size: 13px;
   font-family: ${FontFamily.monospace};
-  box-shadow: inset 0 -1px ${Colors.KeylineGray};
+  box-shadow: inset 0 -1px ${colorKeylineDefault()};
   overflow: hidden;
 `;
 

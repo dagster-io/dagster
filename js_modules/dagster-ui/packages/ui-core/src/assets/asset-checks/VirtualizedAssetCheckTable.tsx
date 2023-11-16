@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Body2, Box, Caption, Colors} from '@dagster-io/ui-components';
+import {Body2, Box, Caption, colorTextLight} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -138,7 +138,7 @@ export const VirtualizedAssetCheckHeader = () => {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
       }}
     >
       <HeaderCell>Check name</HeaderCell>

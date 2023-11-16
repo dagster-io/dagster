@@ -1,4 +1,9 @@
-import {Colors} from '@dagster-io/ui-components';
+import {
+  colorAccentBlue,
+  colorAccentBlueHover,
+  colorAccentGreen,
+  colorAccentRed,
+} from '@dagster-io/ui-components';
 
 import {queuedStatuses, inProgressStatuses, failedStatuses, successStatuses} from './RunStatuses';
 import {TimelineRun} from './RunTimeline';
@@ -8,15 +13,15 @@ type BackgroundStatus = 'inProgress' | 'queued' | 'failed' | 'succeeded' | 'sche
 const statusToColor = (status: BackgroundStatus) => {
   switch (status) {
     case 'queued':
-      return Colors.Blue200;
+      return colorAccentBlueHover();
     case 'inProgress':
-      return Colors.Blue500;
+      return colorAccentBlue();
     case 'failed':
-      return Colors.Red500;
+      return colorAccentRed();
     case 'succeeded':
-      return Colors.Green500;
+      return colorAccentGreen();
     case 'scheduled':
-      return Colors.Blue200;
+      return colorAccentBlueHover();
   }
 };
 

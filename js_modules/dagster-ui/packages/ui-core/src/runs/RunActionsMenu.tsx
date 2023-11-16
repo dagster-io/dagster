@@ -13,8 +13,9 @@ import {
   JoinedButtons,
   DialogBody,
   Box,
-  Colors,
   StyledRawCodeMirror,
+  colorBackgroundLight,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -495,8 +496,8 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
 const SlashShortcut = styled.div`
   border-radius: 4px;
   padding: 0px 6px;
-  background: ${Colors.Gray100};
-  color: ${Colors.Gray500};
+  background: ${colorBackgroundLight()};
+  color: ${colorTextLight()};
 `;
 
 const LinkNoUnderline = styled(Link)`

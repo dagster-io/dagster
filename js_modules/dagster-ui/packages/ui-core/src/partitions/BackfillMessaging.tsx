@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
+import {Alert, ButtonLink, Group, Mono, colorAccentReversed} from '@dagster-io/ui-components';
 import {History} from 'history';
 import * as React from 'react';
 
@@ -41,7 +41,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
-          color={Colors.White}
+          color={colorAccentReversed()}
           underline="always"
           onClick={() => {
             showCustomAlert({

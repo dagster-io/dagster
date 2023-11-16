@@ -1,4 +1,11 @@
-import {Box, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  Spinner,
+  Tooltip,
+  colorAccentGray,
+  colorAccentYellow,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
@@ -15,7 +22,7 @@ const CombinedStatusIcon = React.memo(() => {
   if (codeLocations?.type === 'spinner') {
     return (
       <Tooltip content={codeLocations.content} placement="bottom">
-        <Spinner purpose="body-text" fillColor={Colors.Gray300} />
+        <Spinner purpose="body-text" fillColor={colorAccentGray()} />
       </Tooltip>
     );
   }
@@ -34,7 +41,7 @@ const CombinedStatusIcon = React.memo(() => {
         position="bottom"
         modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
       >
-        <Icon name="warning" color={Colors.Yellow500} />
+        <Icon name="warning" color={colorAccentYellow()} />
       </WarningTooltip>
     );
   }
