@@ -74,6 +74,7 @@
               "__class__": "FromStepOutput",
               "fan_in": false,
               "input_name": "",
+              "output_dagster_type_is_nothing": false,
               "solid_handle": {
                 "__class__": "SolidHandle",
                 "name": "",
@@ -326,6 +327,7 @@
               "__class__": "FromStepOutput",
               "fan_in": false,
               "input_name": "",
+              "output_dagster_type_is_nothing": false,
               "solid_handle": {
                 "__class__": "SolidHandle",
                 "name": "",
@@ -355,6 +357,7 @@
               "__class__": "FromStepOutput",
               "fan_in": false,
               "input_name": "",
+              "output_dagster_type_is_nothing": false,
               "solid_handle": {
                 "__class__": "SolidHandle",
                 "name": "",
@@ -427,6 +430,7 @@
               "__class__": "FromStepOutput",
               "fan_in": false,
               "input_name": "",
+              "output_dagster_type_is_nothing": false,
               "solid_handle": {
                 "__class__": "SolidHandle",
                 "name": "",
@@ -557,6 +561,7 @@
               "__class__": "FromStepOutput",
               "fan_in": false,
               "input_name": "",
+              "output_dagster_type_is_nothing": false,
               "solid_handle": {
                 "__class__": "SolidHandle",
                 "name": "",

@@ -393,7 +393,7 @@ class FromStepOutput(
         cls,
         step_output_handle: StepOutputHandle,
         fan_in: bool,
-        output_dagster_type_is_nothing: bool,
+        output_dagster_type_is_nothing: bool = False,
         # deprecated, preserved for back-compat
         node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
