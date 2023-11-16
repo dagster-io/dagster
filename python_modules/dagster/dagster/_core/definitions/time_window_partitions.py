@@ -32,14 +32,6 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import (
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import FieldSerializer
-from dagster._seven.compat.pendulum import (
-    _IS_PENDULUM_2,
-    PendulumDateTime,
-    create_pendulum_time,
-    to_timezone,
-)
-from dagster._serdes.serdes import FieldSerializer, deserialize_value, serialize_value
 from dagster._serdes.serdes import (
     FieldSerializer,
     NamedTupleSerializer,
@@ -47,6 +39,12 @@ from dagster._serdes.serdes import (
     WhitelistMap,
     pack_value,
     unpack_value,
+)
+from dagster._seven.compat.pendulum import (
+    _IS_PENDULUM_2,
+    PendulumDateTime,
+    create_pendulum_time,
+    to_timezone,
 )
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -151,12 +149,15 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
             dt = dt.add(microseconds=-1)
         return dt
 
-# UTCTimestampWithTimezone is used to preserve timezone information when serializing.
-# We can't store datetime.isoformat() because it only preserves UTC offsets, which vary depending on
-# daylight savings time.
+
+# TimestampWithTimezone is used to preserve IANA timezone information when serializing.
+# Serializing with the UTC offset (i.e. via datetime.isoformat) is insufficient because offsets vary
+# depending on daylight savings time. This causes timedelta operations to be inexact, since the
+# exact timezone is not preserved. To prevent any lossy serialization, ths implementation
+# serializes both the datetime float and the IANA timezone.
 @whitelist_for_serdes
-class UTCTimestampWithTimezone(NamedTuple):
-    datetime_float: float
+class TimestampWithTimezone(NamedTuple):
+    timestamp: float  # Seconds since the Unix epoch
     timezone: str
 
 
@@ -170,9 +171,7 @@ class DatetimeFieldSerializer(FieldSerializer):
             check.invariant(datetime.tzinfo is not None)
             pendulum_datetime = pendulum.instance(datetime, tz=datetime.tzinfo)
             return pack_value(
-                UTCTimestampWithTimezone(
-                    datetime.timestamp(), str(pendulum_datetime.timezone.name)
-                ),
+                TimestampWithTimezone(datetime.timestamp(), str(pendulum_datetime.timezone.name)),
                 whitelist_map,
                 descent_path,
             )
@@ -188,12 +187,12 @@ class DatetimeFieldSerializer(FieldSerializer):
         if serialized_datetime_with_timezone:
             unpacked = unpack_value(
                 serialized_datetime_with_timezone,
-                UTCTimestampWithTimezone,
+                TimestampWithTimezone,
                 whitelist_map,
                 context,
             )
             unpacked_datetime = pendulum.instance(
-                utc_datetime_from_timestamp(unpacked.datetime_float), tz=unpacked.timezone
+                utc_datetime_from_timestamp(unpacked.timestamp), tz=unpacked.timezone
             ).in_tz(tz=unpacked.timezone)
             check.invariant(unpacked_datetime.tzinfo is not None)
             return unpacked_datetime
@@ -2057,17 +2056,17 @@ class TimeWindowPartitionsSubset(
         Args:
             dt_cron_schedule (str): A cron schedule that dt is on one of the ticks of.
         """
-        return self._included_time_windows[-1].end.timestamp() <= dt.timestamp()
+        return self.included_time_windows[-1].end.timestamp() <= dt.timestamp()
 
     @cached_property
     def num_partitions(self) -> int:
-        _num_partitions = self._asdict()["num_partitions"]
-        if _num_partitions is None:
+        num_partitions_ = self._asdict()["num_partitions"]
+        if num_partitions_ is None:
             return sum(
                 len(self.partitions_def.get_partition_keys_in_time_window(time_window))
                 for time_window in self.included_time_windows
             )
-        return _num_partitions
+        return num_partitions_
 
     @classmethod
     def _num_partitions_from_time_windows(
