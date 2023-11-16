@@ -98,8 +98,8 @@ def test_deprecation_warnings():
         "is_subset",
         "partition_keys",
         "get",
-        "execution_info",
-        "_execution_info",
+        "execution_properties",
+        "_execution_props",
     ]
 
     other_ignores = [

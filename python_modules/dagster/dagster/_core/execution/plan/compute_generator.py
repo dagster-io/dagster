@@ -36,7 +36,10 @@ from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
-from ..context.compute import AssetExecutionContext, OpExecutionContext
+from ..context.compute import (
+    ContextHasExecutionProperties,
+    OpExecutionContext,
+)
 
 
 def create_op_compute_wrapper(
@@ -137,7 +140,7 @@ def _coerce_op_compute_fn_to_iterator(
 
 def _zip_and_iterate_op_result(
     result: Any,
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: ContextHasExecutionProperties,
     output_defs: Sequence[OutputDefinition],
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
     # Filtering the expected output defs here is an unfortunate temporary solution to deal with the
@@ -166,7 +169,7 @@ def _zip_and_iterate_op_result(
 # MaterializeResult.
 def _filter_expected_output_defs(
     result: Any,
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: ContextHasExecutionProperties,
     output_defs: Sequence[OutputDefinition],
 ) -> Sequence[OutputDefinition]:
     result_tuple = (
@@ -184,7 +187,7 @@ def _filter_expected_output_defs(
 
 
 def _validate_multi_return(
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: ContextHasExecutionProperties,
     result: Any,
     output_defs: Sequence[OutputDefinition],
 ) -> Any:
@@ -200,7 +203,7 @@ def _validate_multi_return(
     # When returning from an op with multiple outputs, the returned object must be a tuple of the same length as the number of outputs. At the time of the op's construction, we verify that a provided annotation is a tuple with the same length as the number of outputs, so if the result matches the number of output defs on the op, it will transitively also match the annotation.
     if not isinstance(result, tuple):
         raise DagsterInvariantViolationError(
-            f"{context.execution_info.step_description} has multiple outputs, but only one "
+            f"{context.execution_properties.step_description} has multiple outputs, but only one "
             f"output was returned of type {type(result)}. When using "
             "multiple outputs, either yield each output, or return a tuple "
             "containing a value for each output. Check out the "
@@ -211,9 +214,9 @@ def _validate_multi_return(
     if not len(output_tuple) == len(output_defs):
         raise DagsterInvariantViolationError(
             "Length mismatch between returned tuple of outputs and number of "
-            f"output defs on {context.execution_info.step_description}. Output tuple has "
+            f"output defs on {context.execution_properties.step_description}. Output tuple has "
             f"{len(output_tuple)} outputs, while "
-            f"{context.execution_info.step_description} has {len(output_defs)} outputs."
+            f"{context.execution_properties.step_description} has {len(output_defs)} outputs."
         )
     return result
 
@@ -247,7 +250,7 @@ def _check_output_object_name(
 
 def validate_and_coerce_op_result_to_iterator(
     result: Any,
-    context: Union[AssetExecutionContext, OpExecutionContext],
+    context: ContextHasExecutionProperties,
     output_defs: Sequence[OutputDefinition],
 ) -> Iterator[Any]:
     if inspect.isgenerator(result):
@@ -256,7 +259,7 @@ def validate_and_coerce_op_result_to_iterator(
             yield event
     elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
-            f"Error in {context.execution_info.step_description}: If you are "
+            f"Error in {context.execution_properties.step_description}: If you are "
             "returning an AssetMaterialization "
             "or an ExpectationResult from "
             "an op you must yield them "
@@ -269,8 +272,8 @@ def validate_and_coerce_op_result_to_iterator(
         yield result
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
-            f"Error in {context.execution_info.step_description}: Unexpectedly returned output of type"
-            f" {type(result)}. {context.execution_info.step_description} is explicitly defined to"
+            f"Error in {context.execution_properties.step_description}: Unexpectedly returned output of type"
+            f" {type(result)}. {context.execution_properties.step_description} is explicitly defined to"
             " return no results."
         )
     # `requires_typed_event_stream` is a mode where we require users to return/yield exactly the
@@ -295,7 +298,7 @@ def validate_and_coerce_op_result_to_iterator(
             if output_def.is_dynamic:
                 if not isinstance(element, list):
                     raise DagsterInvariantViolationError(
-                        f"Error with output for {context.execution_info.step_description}: "
+                        f"Error with output for {context.execution_properties.step_description}: "
                         f"dynamic output '{output_def.name}' expected a list of "
                         "DynamicOutput objects, but instead received instead an "
                         f"object of type {type(element)}."
@@ -303,7 +306,7 @@ def validate_and_coerce_op_result_to_iterator(
                 for item in element:
                     if not isinstance(item, DynamicOutput):
                         raise DagsterInvariantViolationError(
-                            f"Error with output for {context.execution_info.step_description}: "
+                            f"Error with output for {context.execution_properties.step_description}: "
                             f"dynamic output '{output_def.name}' at position {position} expected a "
                             "list of DynamicOutput objects, but received an "
                             f"item with type {type(item)}."
@@ -325,7 +328,7 @@ def validate_and_coerce_op_result_to_iterator(
                     annotation
                 ):
                     raise DagsterInvariantViolationError(
-                        f"Error with output for {context.execution_info.step_description}: received Output object for"
+                        f"Error with output for {context.execution_properties.step_description}: received Output object for"
                         f" output '{output_def.name}' which does not have an Output annotation."
                         f" Annotation has type {annotation}."
                     )
@@ -343,7 +346,7 @@ def validate_and_coerce_op_result_to_iterator(
                 # output object was not received, throw an error.
                 if is_generic_output_annotation(annotation):
                     raise DagsterInvariantViolationError(
-                        f"Error with output for {context.execution_info.step_description}: output "
+                        f"Error with output for {context.execution_properties.step_description}: output "
                         f"'{output_def.name}' has generic output annotation, "
                         "but did not receive an Output object for this output. "
                         f"Received instead an object of type {type(element)}."
@@ -351,7 +354,7 @@ def validate_and_coerce_op_result_to_iterator(
                 if result is None and output_def.is_required is False:
                     context.log.warning(
                         'Value "None" returned for non-required output '
-                        f'"{output_def.name}" of {context.execution_info.step_description}. '
+                        f'"{output_def.name}" of {context.execution_properties.step_description}. '
                         "This value will be passed to downstream "
                         f"{context.op_def.node_type_str}s. For conditional "
                         "execution, results must be yielded: "

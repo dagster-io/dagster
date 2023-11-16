@@ -36,8 +36,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.compute import (
-    AssetExecutionContext,
-    OpExecutionContext,
+    ContextHasExecutionProperties,
 )
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -154,7 +153,7 @@ def _yield_compute_results(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext],
+    compute_context: ContextHasExecutionProperties,
 ) -> Iterator[OpOutputUnion]:
     user_event_generator = compute_fn(compute_context, inputs)
 
@@ -176,7 +175,7 @@ def _yield_compute_results(
     if inspect.isasyncgen(user_event_generator):
         user_event_generator = gen_from_async_gen(user_event_generator)
 
-    step_label = compute_context.execution_info.step_description
+    step_label = compute_context.execution_properties.step_description
 
     for event in iterate_with_context(
         lambda: op_execution_error_boundary(
@@ -189,11 +188,11 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if compute_context.execution_info.op_execution_context.has_events():
-            yield from compute_context.execution_info.op_execution_context.consume_events()
+        if compute_context.execution_properties.op_execution_context.has_events():
+            yield from compute_context.execution_properties.op_execution_context.consume_events()
         yield _validate_event(event, step_context)
 
-    if compute_context.execution_info.op_execution_context.has_events():
+    if compute_context.execution_properties.op_execution_context.has_events():
         yield from compute_context.consume_events()
 
 
@@ -201,7 +200,7 @@ def execute_core_compute(
     step_context: StepExecutionContext,
     inputs: Mapping[str, Any],
     compute_fn: OpComputeFunction,
-    compute_context: Union[OpExecutionContext, AssetExecutionContext],
+    compute_context: ContextHasExecutionProperties,
 ) -> Iterator[OpOutputUnion]:
     """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.

@@ -141,7 +141,7 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
         """The parsed config specific to this op."""
 
 
-class HasExecutionProperties(ABC):
+class ContextHasExecutionProperties(ABC):
     @property
     @abstractmethod
     def execution_properties(self) -> ExecutionProperties:
@@ -167,7 +167,9 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
 
 
 class OpExecutionContext(
-    AbstractComputeExecutionContext, HasExecutionProperties, metaclass=OpExecutionContextMetaClass
+    AbstractComputeExecutionContext,
+    ContextHasExecutionProperties,
+    metaclass=OpExecutionContextMetaClass,
 ):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
@@ -587,7 +589,7 @@ class OpExecutionContext(
         return self._step_execution_context.previous_attempt_count
 
     def describe_op(self) -> str:
-        return self.execution_info.step_description
+        return self.execution_properties.step_description
 
     @public
     def get_mapping_key(self) -> Optional[str]:
