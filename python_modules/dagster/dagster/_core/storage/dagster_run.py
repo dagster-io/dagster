@@ -33,6 +33,7 @@ from .tags import (
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
+    TICK_ID_TAG,
 )
 
 if TYPE_CHECKING:
@@ -434,6 +435,10 @@ class DagsterRun(
     @staticmethod
     def tags_for_backfill_id(backfill_id: str) -> Mapping[str, str]:
         return {BACKFILL_ID_TAG: backfill_id}
+
+    @staticmethod
+    def tags_for_tick_id(tick_id: str) -> Mapping[str, str]:
+        return {TICK_ID_TAG: tick_id}
 
 
 class RunsFilter(
