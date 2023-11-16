@@ -143,7 +143,7 @@ class RuleEvaluationContext:
         Many rules depend on the state of the asset's parents, so this function is useful for
         finding asset partitions that should be re-evaluated.
         """
-        updated_parents = self.get_asset_partitions_with_updated_parents_since_previous_tick()
+        updated_parents = self.asset_partitions_with_updated_parents_since_previous_tick
         will_update_parents = set(self.get_will_update_parent_mapping().keys())
         return self.candidates & (updated_parents | will_update_parents)
 
@@ -203,14 +203,17 @@ class RuleEvaluationContext:
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
-    def get_asset_partitions_with_updated_parents_since_previous_tick(
+    @functools.cached_property
+    def asset_partitions_with_updated_parents_since_previous_tick(
         self
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions for the current key which have parents that updated
         since the last tick.
         """
-        return self.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
-            self.asset_key
+        return self.instance_queryer.asset_partitions_with_newly_updated_parents(
+            latest_storage_id=self.cursor.latest_storage_id,
+            child_asset_key=self.asset_key,
+            map_old_time_partitions=False,
         )
 
     def get_will_update_parent_mapping(
@@ -686,7 +689,7 @@ class MaterializeOnParentUpdatedRule(
         # the set of asset partitions whose parents have been updated since last tick, or will be
         # requested this tick.
         has_or_will_update = (
-            context.get_asset_partitions_with_updated_parents_since_previous_tick()
+            context.asset_partitions_with_updated_parents_since_previous_tick
             | set(will_update_parents_by_asset_partition.keys())
         )
 
@@ -802,11 +805,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         )
         # in addition to missing root asset partitions, check any asset partitions with updated
         # parents to see if they're missing
-        for (
-            candidate
-        ) in context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
-            context.asset_key
-        ):
+        for candidate in context.asset_partitions_with_updated_parents_since_previous_tick:
             if not context.instance_queryer.asset_partition_has_materialization_or_observation(
                 candidate
             ):

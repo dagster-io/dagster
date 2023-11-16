@@ -1097,6 +1097,7 @@ def execute_asset_backfill_iteration_inner(
     """
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
+    next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
     if request_roots:
         initial_candidates.update(
             asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
@@ -1104,26 +1105,17 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
-        next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
-
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
     else:
-        target_parent_asset_keys = {
-            parent
-            for target_asset_key in asset_backfill_data.target_subset.asset_keys
-            for parent in asset_graph.get_parents(target_asset_key)
-        }
-        target_asset_keys_and_parents = (
-            asset_backfill_data.target_subset.asset_keys | target_parent_asset_keys
-        )
-        (
-            parent_materialized_asset_partitions,
-            next_latest_storage_id,
-        ) = instance_queryer.asset_partitions_with_newly_updated_parents_and_new_latest_storage_id(
-            target_asset_keys=frozenset(asset_backfill_data.target_subset.asset_keys),
-            target_asset_keys_and_parents=frozenset(target_asset_keys_and_parents),
-            latest_storage_id=asset_backfill_data.latest_storage_id,
+        parent_materialized_asset_partitions = set().union(
+            *(
+                instance_queryer.asset_partitions_with_newly_updated_parents(
+                    latest_storage_id=asset_backfill_data.latest_storage_id,
+                    child_asset_key=asset_key,
+                )
+                for asset_key in asset_backfill_data.target_subset.asset_keys
+            )
         )
         initial_candidates.update(parent_materialized_asset_partitions)
 
