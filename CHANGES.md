@@ -26,7 +26,7 @@
 
 ### Community Contributions
 
-- [dagster-deltalake] Added Delta Lake support along with support for pandas and polars. Thanks Robert Pack!
+- [dagster-deltalake] Added Delta Lake support along with support for pandas and polars. Thanks Robert Pack [@roeap](https://github.com/roeap)!
 - [dagster-graphql] Fixed the asset cursor format to use a normalized format - thanks [@sisidra](https://github.com/sisidra)!
 - [dagster-databricks] Extended the set of available config options to the Databricks step launcher - thanks [@zyd14](https://github.com/zyd14)!
 
