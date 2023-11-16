@@ -74,9 +74,15 @@ class ConditionEvaluation(NamedTuple):
             asset_key=asset_key,
             asset_graph=asset_graph,
             asset_partitions_by_rule_evaluation=[*self.all_results, *discard_results],
-            num_requested=len(self.true - to_discard),
+            num_requested=len(
+                (self.true - to_discard).get_asset_partitions(
+                    asset_key, instance_queryer.evaluation_time
+                )
+            ),
             num_skipped=num_skipped,
-            num_discarded=len(to_discard),
+            num_discarded=len(
+                to_discard.get_asset_partitions(asset_key, instance_queryer.evaluation_time)
+            ),
             dynamic_partitions_store=instance_queryer,
         )
 
@@ -203,7 +209,11 @@ class AutoMaterializePolicyEvaluator(NamedTuple):
             and len(condition_evaluation.children) == 2
         ):
             # the right-hand side of the AndCondition is the inverse of the set of skip rules
-            num_skipped = len(condition_evaluation.children[1].children[0].true)
+            num_skipped = len(
+                condition_evaluation.children[1]
+                .children[0]
+                .true.get_asset_partitions(context.asset_key, context.evaluation_time)
+            )
 
         return (
             condition_evaluation.to_evaluation(
@@ -214,6 +224,6 @@ class AutoMaterializePolicyEvaluator(NamedTuple):
                 discard_results,
                 num_skipped=num_skipped,
             ),
-            to_materialize.get_asset_partitions(context.asset_key),
-            to_discard.get_asset_partitions(context.asset_key),
+            to_materialize.get_asset_partitions(context.asset_key, context.evaluation_time),
+            to_discard.get_asset_partitions(context.asset_key, context.evaluation_time),
         )
