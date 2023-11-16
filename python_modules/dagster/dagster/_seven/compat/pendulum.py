@@ -40,11 +40,7 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
                 )
             )
         elif "tzinfo" in kwargs:
-            dt = datetime.datetime(year, month, day, *args, **kwargs)
-            print("d", dt.timestamp(), dt.tzinfo)
-            ret = pendulum.instance(datetime.datetime(year, month, day, *args, **kwargs))
-            print("r", ret.timestamp(), ret.tzinfo)
-            return ret
+            return pendulum.instance(datetime.datetime(year, month, day, *args, **kwargs))
         else:
             return pendulum.create(year, month, day, *args, **kwargs)
 
