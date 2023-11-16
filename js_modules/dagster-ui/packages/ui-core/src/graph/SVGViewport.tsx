@@ -1,4 +1,15 @@
-import {Box, Colors, FontFamily, Icon, IconWrapper, Slider} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  IconWrapper,
+  Slider,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
+import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import animate from 'amator';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
@@ -195,10 +206,10 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
           <Box
             style={{width: 32}}
             padding={{vertical: 12}}
-            background={Colors.White}
+            background={colorBackgroundDefault()}
             data-zoom-control={true}
             flex={{alignItems: 'center', direction: 'column'}}
-            border={{side: 'left-and-right', color: Colors.Gray300}}
+            border={{side: 'left-and-right', color: colorBorderDefault()}}
           >
             <Slider
               vertical
@@ -242,8 +253,8 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 };
 
 const IconButton = styled.button`
-  background: ${Colors.White};
-  border: 1px solid ${Colors.Gray300};
+  background: ${colorBackgroundDefault()};
+  border: 1px solid ${colorBorderDefault()};
   cursor: pointer;
   padding: 3px;
   position: relative;
@@ -264,7 +275,7 @@ const IconButton = styled.button`
     border-bottom-right-radius: 8px;
   }
   :active {
-    background-color: ${Colors.Gray100};
+    background-color: ${colorBackgroundLight()};
   }
 `;
 
@@ -639,7 +650,7 @@ const SVGViewportStyles: React.CSSProperties = {
   overflow: 'hidden',
   userSelect: 'none',
   outline: 'none',
-  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='rgba(236, 236, 236, 1)' cx='5' cy='5' r='5' /></svg>") repeat`,
+  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='${colorKeylineDefault()}' cx='5' cy='5' r='5' /></svg>") repeat`,
 };
 
 const ZoomSliderContainer = styled.div`
@@ -647,7 +658,7 @@ const ZoomSliderContainer = styled.div`
   bottom: 12px;
   right: 12px;
   width: 30px;
-  background: rgba(245, 248, 250, 0.4);
+  background: ${colorBackgroundLight()};
 `;
 
 const WheelInstructionTooltip = () => {
@@ -698,7 +709,7 @@ const WheelInstructionTooltipContainer = styled.div`
   font-size: 12px;
   line-height: 16px;
   border-radius: 2px;
-  background: ${Colors.Gray900};
-  color: ${Colors.Gray50};
+  background: ${CoreColors.Gray900};
+  color: ${CoreColors.Gray50};
   padding: 8px 16px;
 `;

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, JoinedButtons, TokenizingFieldValue} from '@dagster-io/ui-components';
+import {JoinedButtons, TokenizingFieldValue, colorBackgroundGray} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
@@ -106,7 +106,7 @@ export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
   ${(props) =>
     props.$active &&
     `
-    background: ${Colors.Gray200};
+    background-color: ${colorBackgroundGray()};
   `}
 `;
 

@@ -1,4 +1,11 @@
-import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  Subheading,
+  Tooltip,
+  colorAccentGray,
+  colorBackgroundLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -24,7 +31,7 @@ export const CollapsibleSection = ({header, details, headerRightSide, children}:
             <Subheading>{header}</Subheading>
             {details ? (
               <Tooltip content={details} placement="top">
-                <Icon color={Colors.Gray500} name="info" />
+                <Icon color={colorAccentGray()} name="info" />
               </Tooltip>
             ) : null}
           </Box>
@@ -66,7 +73,7 @@ export const Collapsible = ({
 };
 
 const SectionHeader = styled.button`
-  background-color: ${Colors.White};
+  background-color: ${colorBackgroundLight()};
   border: 0;
   cursor: pointer;
   padding: 0;

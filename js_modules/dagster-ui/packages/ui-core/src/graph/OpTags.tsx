@@ -1,4 +1,13 @@
-import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  IconWrapper,
+  colorAccentPrimary,
+  colorAccentReversed,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -418,8 +427,9 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
         const text = known?.content || tag.label;
-        const color = known?.color || Colors.Gray600;
-        const textcolor = known && 'reversed' in known ? Colors.Gray900 : Colors.White;
+        const color = known?.color || colorTextLight();
+        const textcolor =
+          known && 'reversed' in known ? colorAccentPrimary() : colorAccentReversed();
         return (
           <Box
             key={tag.label}
@@ -428,8 +438,12 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
             onClick={tag.onClick}
             style={{
               background:
-                reduceColor && reduceText ? Colors.White : reduceColor ? Colors.Gray100 : color,
-              color: reduceColor ? Colors.Gray700 : textcolor,
+                reduceColor && reduceText
+                  ? colorBackgroundDefault()
+                  : reduceColor
+                  ? colorBackgroundLight()
+                  : color,
+              color: reduceColor ? colorTextLight() : textcolor,
               fontWeight: reduceColor ? 500 : 700,
             }}
           >
@@ -439,7 +453,11 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
                 $size={16}
                 $img={known.icon.src}
                 $color={
-                  reduceColor ? (known && 'reversed' in known ? Colors.Gray900 : color) : textcolor
+                  reduceColor
+                    ? known && 'reversed' in known
+                      ? colorAccentPrimary()
+                      : color
+                    : textcolor
                 }
                 //$color={reduceColor ? color : textcolor}
                 $rotation={null}

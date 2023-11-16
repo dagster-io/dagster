@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorBackgroundLight, colorTextDefault} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -120,9 +120,9 @@ const Label = styled.div<{$hasIcon: boolean}>`
 `;
 
 export const LabelTooltipStyles = JSON.stringify({
-  background: Colors.Gray100,
+  background: colorBackgroundLight(),
   filter: `brightness(97%)`,
-  color: Colors.Gray900,
+  color: colorTextDefault(),
   border: 'none',
   borderRadius: 7,
   overflow: 'hidden',

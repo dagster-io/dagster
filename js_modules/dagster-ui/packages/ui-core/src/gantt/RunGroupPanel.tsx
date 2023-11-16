@@ -1,5 +1,22 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ButtonLink, Colors, Group, Icon, FontFamily} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonLink,
+  Group,
+  Icon,
+  FontFamily,
+  colorAccentYellow,
+  colorLinkDefault,
+  colorTextLight,
+  colorBackgroundLight,
+  colorBackgroundDefault,
+  colorBackgroundLightHover,
+  colorBackgroundDefaultHover,
+  colorBorderDefault,
+  colorTextDefault,
+  colorAccentReversed,
+  colorAccentPrimary,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -62,11 +79,11 @@ export const RunGroupPanel = ({
   if (group.__typename === 'PythonError') {
     return (
       <Group direction="row" spacing={8} padding={8}>
-        <Icon name="warning" color={Colors.Yellow500} />
+        <Icon name="warning" color={colorAccentYellow()} />
         <div style={{fontSize: '13px'}}>
           The run group for this run could not be loaded.{' '}
           <ButtonLink
-            color={Colors.Blue500}
+            color={colorLinkDefault()}
             underline="always"
             onClick={() => {
               showCustomAlert({
@@ -111,7 +128,7 @@ export const RunGroupPanel = ({
                   flex: 1,
                   marginLeft: 5,
                   minWidth: 0,
-                  color: Colors.Gray700,
+                  color: colorTextLight(),
                 }}
               >
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
@@ -124,7 +141,7 @@ export const RunGroupPanel = ({
                 <div
                   style={{
                     display: 'flex',
-                    color: Colors.Gray700,
+                    color: colorTextLight(),
                     justifyContent: 'space-between',
                   }}
                 >
@@ -173,7 +190,7 @@ export const RUN_GROUP_PANEL_QUERY = gql`
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;
-  background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
+  background: ${({selected}) => (selected ? colorBackgroundLight() : colorBackgroundDefault())};
   padding: 4px 6px 4px 24px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
@@ -182,7 +199,8 @@ const RunGroupRun = styled(Link)<{selected: boolean}>`
   position: relative;
   &:hover {
     text-decoration: none;
-    background: ${({selected}) => (selected ? Colors.Gray100 : Colors.Gray50)};
+    background: ${({selected}) =>
+      selected ? colorBackgroundLightHover() : colorBackgroundDefaultHover()};
   }
 `;
 
@@ -190,13 +208,13 @@ const ThinLine = styled.div`
   position: absolute;
   top: 20px;
   width: 1px;
-  background: ${Colors.Gray200};
+  background: ${colorBorderDefault()};
   left: 29px;
   z-index: 2;
 `;
 
 const RunTitle = styled.span`
-  color: ${Colors.Dark};
+  color: ${colorTextDefault()};
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -210,8 +228,8 @@ const RootTag = (
       borderRadius: 2,
       fontSize: 12,
       lineHeight: '14px',
-      background: Colors.Gray300,
-      color: Colors.White,
+      background: colorAccentReversed(),
+      color: colorAccentPrimary(),
       padding: '0 4px',
       fontWeight: 400,
       userSelect: 'none',

@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Colors,
   DialogBody,
   DialogFooter,
   Icon,
@@ -11,6 +10,9 @@ import {
   Spinner,
   Subheading,
   Tooltip,
+  colorAccentGray,
+  colorBorderDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -238,7 +240,7 @@ export const BackfillPartitionSelector = ({
                       placement="top"
                       content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed. Only applies for selections of failed partitions."
                     >
-                      <Icon name="info" color={Colors.Gray500} />
+                      <Icon name="info" color={colorAccentGray()} />
                     </Tooltip>
                   </Box>
                 }
@@ -254,7 +256,7 @@ export const BackfillPartitionSelector = ({
                   placement="top"
                   content="Applies a step-selection to each run for the requested partitions."
                 >
-                  <Icon name="info" color={Colors.Gray500} />
+                  <Icon name="info" color={colorAccentGray()} />
                 </Tooltip>
               </Box>
             }
@@ -270,7 +272,7 @@ export const BackfillPartitionSelector = ({
                 autoApplyChanges={true}
               />
               {query ? (
-                <div style={{color: Colors.Gray500}}>
+                <div style={{color: colorTextLight()}}>
                   {stepRows.length} step{stepRows.length === 1 ? '' : 's'} selected
                 </div>
               ) : null}
@@ -285,7 +287,9 @@ export const BackfillPartitionSelector = ({
               onRequestClose={() => setTagEditorOpen(false)}
             />
             {tags.length ? (
-              <div style={{border: `1px solid ${Colors.Gray300}`, borderRadius: 8, padding: 3}}>
+              <div
+                style={{border: `1px solid ${colorBorderDefault()}`, borderRadius: 8, padding: 3}}
+              >
                 <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
               </div>
             ) : (

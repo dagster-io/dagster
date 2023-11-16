@@ -1,16 +1,29 @@
-import {Colors} from '@dagster-io/ui-components';
+import {
+  colorAccentBlue,
+  colorAccentBlueHover,
+  colorAccentGreen,
+  colorAccentGreenHover,
+  colorAccentPrimary,
+  colorAccentRed,
+  colorAccentRedHover,
+  colorAccentReversed,
+  colorAccentYellow,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
 export const BOX_SIZE = 32;
 
 const STEP_STATUS_COLORS = {
-  SUCCESS: Colors.Green500,
-  SUCCESS_SKIPPED: Colors.Green200,
-  FAILURE: Colors.Red500,
-  FAILURE_SKIPPED: Colors.Red200,
-  SKIPPED: Colors.Yellow500,
-  IN_PROGRESS: Colors.Blue500,
+  SUCCESS: colorAccentGreen(),
+  SUCCESS_SKIPPED: colorAccentGreenHover(),
+  FAILURE: colorAccentRed(),
+  FAILURE_SKIPPED: colorAccentRedHover(),
+  SKIPPED: colorAccentYellow(),
+  IN_PROGRESS: colorAccentBlue(),
 };
 
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
@@ -35,12 +48,12 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-      background: ${Colors.Gray100};
+      background: ${colorBackgroundLight()};
       cursor: default;
       ${TopLabelTiltedInner} {
-        background: ${Colors.White};
+        background: ${colorAccentPrimary()};
         .tilted {
-          background: ${Colors.Gray100};
+          background: ${colorBackgroundLight()};
         }
       }
       .square {
@@ -52,36 +65,36 @@ export const GridColumn = styled.div<{
     disabled &&
     `
       ${TopLabelTiltedInner} {
-        color: ${Colors.Gray400}
+        color: ${colorTextLight()}
       }
     `}
 
   ${({focused}) =>
     focused &&
-    `background: ${Colors.Blue500};
+    `background: ${colorAccentBlue()};
     ${LeftLabel} {
-      color: white;
+      color: ${colorAccentReversed()};
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.White};
-      color: white;
+      background: ${colorAccentPrimary()};
+      color: ${colorAccentReversed()};
       .tilted {
-        background: ${Colors.Blue500};
+        background: ${colorAccentBlue()};
       }
     }
   }`}
 
   ${({multiselectFocused}) =>
     multiselectFocused &&
-    `background: ${Colors.Blue200};
+    `background: ${colorAccentBlueHover()};
     ${LeftLabel} {
-      color: white;
+      color: ${colorAccentReversed()};
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.White};
-      color: white;
+      background: ${colorAccentPrimary()};
+      color: ${colorAccentReversed()};
       .tilted {
-        background: ${Colors.Blue200};
+        background: ${colorAccentBlueHover()};
       }
     }
   }`}
@@ -105,7 +118,7 @@ export const GridColumn = styled.div<{
     display: inline-block;
 
     &:hover:not(.empty):before {
-      box-shadow: ${Colors.Blue500} 0 0 0 3px;
+      box-shadow: ${colorAccentBlue()} 0 0 0 3px;
     }
     &:before {
       content: ' ';
@@ -167,7 +180,8 @@ export const LeftLabel = styled.div<{hovered?: boolean}>`
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
-  background: ${({hovered}) => flatGradientStack([hovered ? Colors.Gray100 : 'transparent'])};
+  background: ${({hovered}) =>
+    flatGradientStack([hovered ? colorBackgroundLight() : 'transparent'])};
 `;
 
 export const TopLabel = styled.div`
@@ -225,7 +239,7 @@ export const GRID_FLOATING_CONTAINER_WIDTH = 330;
 
 export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
-  border-right: 1px solid ${Colors.Gray200};
+  border-right: 1px solid ${colorBorderDefault()};
   padding-bottom: 16px;
   width: ${GRID_FLOATING_CONTAINER_WIDTH}px;
   z-index: 1;

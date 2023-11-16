@@ -3,9 +3,10 @@ import {Placement} from '@blueprintjs/popover2';
 import React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
+import {CoreColors} from '../palettes/Colors';
+
 import {Box} from './Box';
 import {Button} from './Button';
-import {Colors} from './Colors';
 import {Popover} from './Popover';
 import {Subheading} from './Text';
 
@@ -97,7 +98,7 @@ export const ProductTour = ({
 
 const ProductTourContainer = styled(Box)`
   pointer-events: all;
-  background: ${Colors.Gray900};
+  background: ${CoreColors.Gray900};
   border-radius: 4px;
   padding: 16px;
   box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.12);
@@ -107,7 +108,7 @@ const ProductTourContainer = styled(Box)`
     &,
     &:hover,
     &:focus {
-      color: ${Colors.White};
+      color: ${CoreColors.White};
     }
   }
 `;

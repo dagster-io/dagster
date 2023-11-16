@@ -2,12 +2,12 @@ import {gql, useMutation} from '@apollo/client';
 import {
   ButtonLink,
   Button,
-  Colors,
   DialogBody,
   DialogFooter,
   Dialog,
   Group,
   TextArea,
+  colorAccentReversed,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -56,7 +56,7 @@ export const EditCursorDialog = ({
           <Group direction="row" spacing={8}>
             <div>Could not set cursor value.</div>
             <ButtonLink
-              color={Colors.White}
+              color={colorAccentReversed()}
               underline="always"
               onClick={() => {
                 showCustomAlert({

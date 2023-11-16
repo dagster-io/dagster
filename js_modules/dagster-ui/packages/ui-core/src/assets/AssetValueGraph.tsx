@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorAccentBlue} from '@dagster-io/ui-components';
 import {ActiveElement, ChartEvent} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
@@ -47,12 +47,12 @@ export const AssetValueGraph = (props: {
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: Colors.Blue500,
+        borderColor: colorAccentBlue(),
         backgroundColor: 'rgba(0,0,0,0)',
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: Colors.Blue500,
+        pointHoverBorderColor: colorAccentBlue(),
       },
     ],
   };

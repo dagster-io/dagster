@@ -1,4 +1,5 @@
-import {Colors, Group, Icon, Spinner, FontFamily} from '@dagster-io/ui-components';
+import {Group, Icon, Spinner, FontFamily, colorAccentYellow} from '@dagster-io/ui-components';
+import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
@@ -57,7 +58,7 @@ export const RawLogContent = React.memo((props: Props) => {
   const warning = isTruncated ? (
     <FileWarning>
       <Group direction="row" spacing={8} alignItems="center">
-        <Icon name="warning" color={Colors.Yellow500} />
+        <Icon name="warning" color={colorAccentYellow()} />
         <div>
           This log has exceeded the 5MB limit.{' '}
           {downloadUrl ? (
@@ -82,7 +83,7 @@ export const RawLogContent = React.memo((props: Props) => {
               onMouseOut={scheduleHideWarning}
             >
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="arrow_upward" color={Colors.White} />
+                <Icon name="arrow_upward" color={CoreColors.White} />
                 Scroll to top
               </Group>
             </ScrollToTop>
@@ -247,7 +248,7 @@ const LineNumbers = (props: IScrollContainerProps) => {
 
 const Content = styled.div`
   padding: 10px;
-  background-color: ${Colors.Gray900};
+  background-color: ${CoreColors.Gray900};
 `;
 const LineNumberContainer = styled.div`
   display: flex;
@@ -256,7 +257,7 @@ const LineNumberContainer = styled.div`
   border-right: 1px solid #5c7080;
   padding: 10px 10px 10px 20px;
   margin-right: 5px;
-  background-color: ${Colors.Gray900};
+  background-color: ${CoreColors.Gray900};
   opacity: 0.8;
   color: #858585;
   min-height: 100%;
@@ -291,7 +292,7 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   min-height: 100%;
-  background-color: ${Colors.Gray900};
+  background-color: ${CoreColors.Gray900};
 `;
 const FileContainer = styled.div`
   flex: 1;
@@ -309,7 +310,7 @@ const FileFooter = styled.div`
   flex-direction: row;
   align-items: center;
   height: 30px;
-  background-color: ${Colors.Gray900};
+  background-color: ${CoreColors.Gray900};
   border-top: 0.5px solid #5c7080;
   color: #aaaaaa;
   padding: 2px 5px;
@@ -347,7 +348,7 @@ const LoadingContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  backgroundcolor: ${Colors.Gray800};
+  backgroundcolor: ${CoreColors.Gray800};
   opacity: 0.3;
 `;
 
@@ -364,11 +365,11 @@ const ScrollToast = styled.div`
   z-index: 1;
 `;
 const ScrollToTop = styled.div`
-  background-color: black;
+  background-color: ${CoreColors.Gray950};
   padding: 10px 20px;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
-  color: white;
+  color: ${CoreColors.White};
   border-bottom: 0.5px solid #5c7080;
   border-left: 0.5px solid #5c7080;
   border-right: 0.5px solid #5c7080;
