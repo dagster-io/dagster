@@ -1,4 +1,10 @@
-import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {
+  FontFamily,
+  colorAccentBlue,
+  colorAccentGray,
+  colorTextBlue,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -100,7 +106,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: ${(p) => (p.$highlighted ? Colors.Blue500 : Colors.Gray500)};
+    background: ${(p) => (p.$highlighted ? colorAccentBlue() : colorAccentGray())};
     display: inline-block;
     margin: 6px;
   }
@@ -116,13 +122,13 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     padding: 1px 6px;
     background: #e7e6f0;
     margin-right: 4px;
-    color: ${Colors.Blue500};
+    color: ${colorTextBlue()};
     font-family: ${FontFamily.monospace};
     font-weight: 700;
     border-radius: 4px;
   }
   .collapsedCount {
-    color: ${(p) => (p.$highlighted ? Colors.Blue500 : Colors.Gray500)};
+    color: ${(p) => (p.$highlighted ? colorTextBlue() : colorTextLight())};
     font-weight: 600;
     margin-left: -3px;
     padding-right: 4px;

@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorBackgroundDefault, colorKeylineDefault} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 interface Props {
@@ -15,7 +15,7 @@ export const StickyTableContainer = styled.div<Props>`
   thead tr {
     position: sticky;
     top: ${({$top = 0}) => $top}px;
-    background-color: ${Colors.White};
+    background-color: ${colorBackgroundDefault()};
     z-index: 1;
   }
 
@@ -36,7 +36,7 @@ export const StickyTableContainer = styled.div<Props>`
     content: '';
     display: block;
     height: 1px;
-    background-color: ${Colors.KeylineGray};
+    background-color: ${colorKeylineDefault()};
     position: absolute;
     bottom: -1px;
     left: 0;

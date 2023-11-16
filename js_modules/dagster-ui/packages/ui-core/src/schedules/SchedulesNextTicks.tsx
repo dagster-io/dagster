@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   DialogBody,
   DialogFooter,
   Dialog,
@@ -18,6 +17,8 @@ import {
   Subheading,
   ExternalAnchorButton,
   StyledRawCodeMirror,
+  colorTextLight,
+  colorAccentYellow,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -422,7 +423,7 @@ const NextTickDialog = ({
                         underline={false}
                       >
                         <Group direction="row" spacing={8} alignItems="center">
-                          <Icon name="open_in_new" color={Colors.Gray400} />
+                          <Icon name="open_in_new" color={colorTextLight()} />
                           <span>View config</span>
                         </Group>
                       </ButtonLink>
@@ -579,6 +580,6 @@ const RunRequestBody = styled.div`
 
 const SkipWrapper = styled.div`
   background-color: #fdfcf2;
-  border: 1px solid ${Colors.Yellow500};
+  border: 1px solid ${colorAccentYellow()};
   border-radius: 3px;
 `;

@@ -1,4 +1,5 @@
-import {IconWrapper, Colors, Icon} from '@dagster-io/ui-components';
+import {IconWrapper, Icon} from '@dagster-io/ui-components';
+import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -16,18 +17,18 @@ const SettingsButton = styled.button`
   }
 
   &:hover ${IconWrapper} {
-    background: ${Colors.White};
+    background: ${CoreColors.White};
   }
 
   &:active ${IconWrapper} {
-    background: ${Colors.White};
+    background: ${CoreColors.White};
   }
 
   &:focus {
     outline: none;
 
     ${IconWrapper} {
-      background: ${Colors.White};
+      background: ${CoreColors.White};
     }
   }
 `;
@@ -37,7 +38,7 @@ export const UserSettingsButton = () => {
   return (
     <>
       <SettingsButton onClick={() => setIsOpen(true)} title="User settings">
-        <Icon name="settings" color={Colors.Gray200} />
+        <Icon name="settings" color={CoreColors.Gray200} />
       </SettingsButton>
       <UserSettingsDialog
         isOpen={isOpen}

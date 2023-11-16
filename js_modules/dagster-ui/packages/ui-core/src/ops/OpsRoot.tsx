@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   NonIdealState,
   SplitPanelContainer,
   SuggestionProvider,
@@ -10,6 +9,11 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
   FontFamily,
+  colorKeylineDefault,
+  colorBackgroundLight,
+  colorBackgroundDefault,
+  colorAccentLime,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -353,11 +357,11 @@ const OPS_ROOT_QUERY = gql`
 `;
 
 const OpListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
+  background: ${({selected}) => (selected ? colorBackgroundLight() : colorBackgroundDefault())};
   box-shadow:
-    ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
-    ${Colors.KeylineGray} 0 -1px 0 inset;
-  color: ${Colors.Gray800};
+    ${({selected}) => (selected ? colorAccentLime() : 'transparent')} 4px 0 0 inset,
+    ${colorKeylineDefault()} 0 -1px 0 inset;
+  color: ${colorTextLight()};
   cursor: pointer;
   font-size: 14px;
   display: flex;
@@ -366,7 +370,7 @@ const OpListItem = styled.div<{selected: boolean}>`
   user-select: none;
 
   & > code.bp4-code {
-    color: ${Colors.Gray800};
+    color: ${colorTextLight()};
     background: transparent;
     font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;

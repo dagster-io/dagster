@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
+import {Box, Icon, Table, Tag, colorKeylineDefault} from '@dagster-io/ui-components';
 import qs from 'qs';
 import React from 'react';
 
@@ -72,7 +72,7 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
   );
   return (
     <div>
-      <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`, tableLayout: 'fixed'}}>
+      <Table style={{borderRight: `1px solid ${colorKeylineDefault()}`, tableLayout: 'fixed'}}>
         <thead>
           <tr>
             <th>{isJob ? 'Job' : 'Pipeline'} name</th>

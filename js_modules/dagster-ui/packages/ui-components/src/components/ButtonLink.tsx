@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {Colors} from './Colors';
+import {colorLinkDefault} from '../theme/color';
 
 type Color =
   | string
@@ -91,6 +91,6 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
 `;
 
 ButtonLink.defaultProps = {
-  color: Colors.Link,
+  color: colorLinkDefault(),
   underline: 'hover',
 };

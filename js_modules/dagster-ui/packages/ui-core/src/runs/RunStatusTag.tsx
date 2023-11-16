@@ -1,4 +1,15 @@
-import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  CaptionMono,
+  Popover,
+  Tag,
+  colorAccentBlue,
+  colorAccentBlueHover,
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentGreen,
+  colorAccentRed,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {assertUnreachable} from '../app/Util';
@@ -76,18 +87,18 @@ export const runStatusToBackfillStateString = (status: RunStatus) => {
 };
 
 export const RUN_STATUS_COLORS = {
-  QUEUED: Colors.Blue200,
-  NOT_STARTED: Colors.Gray600,
-  MANAGED: Colors.Gray400,
-  STARTED: Colors.Blue500,
-  STARTING: Colors.Blue500,
-  CANCELING: Colors.Blue500,
-  SUCCESS: Colors.Green500,
-  FAILURE: Colors.Red500,
-  CANCELED: Colors.Gray400,
+  QUEUED: colorAccentBlueHover(),
+  NOT_STARTED: colorAccentGrayHover(),
+  MANAGED: colorAccentGray(),
+  STARTED: colorAccentBlue(),
+  STARTING: colorAccentBlue(),
+  CANCELING: colorAccentBlue(),
+  SUCCESS: colorAccentGreen(),
+  FAILURE: colorAccentRed(),
+  CANCELED: colorAccentRed(),
 
   // Not technically a RunStatus, but useful.
-  SCHEDULED: Colors.Blue200,
+  SCHEDULED: colorAccentBlueHover(),
 };
 
 export const RunStatusTag = (props: {status: RunStatus}) => {

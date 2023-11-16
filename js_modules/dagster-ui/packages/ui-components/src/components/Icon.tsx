@@ -152,8 +152,7 @@ import wysiwyg from '../icon-svgs/wysiwyg.svg';
 import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
-
-import {Colors} from './Colors';
+import {colorAccentPrimary} from '../theme/color';
 
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
@@ -350,7 +349,8 @@ export const Icon = React.memo((props: Props) => {
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
   const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
 
-  const color: string | null = props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.Dark);
+  const color: string | null =
+    props.color || (SVGS_WITH_COLORS.has(img) ? null : colorAccentPrimary());
   return (
     <IconWrapper
       role="img"

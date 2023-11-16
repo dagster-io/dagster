@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors} from '@dagster-io/ui-components';
+import {Box, Caption, colorTextLight} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -41,7 +41,7 @@ export const VirtualizedGraphTable = ({repoAddress, graphs}: Props) => {
           gridTemplateColumns: '100%',
           height: '32px',
           fontSize: '12px',
-          color: Colors.Gray600,
+          color: colorTextLight(),
         }}
       >
         <HeaderCell>Graph</HeaderCell>
@@ -126,7 +126,7 @@ const GraphRow = (props: GraphRowProps) => {
               >
                 <Caption
                   style={{
-                    color: Colors.Gray500,
+                    color: colorTextLight(),
                     whiteSpace: 'nowrap',
                   }}
                 >

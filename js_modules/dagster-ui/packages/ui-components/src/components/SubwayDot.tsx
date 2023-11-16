@@ -1,8 +1,8 @@
-// eslint-disable-next-line no-restricted-imports
-import {Colors} from '@blueprintjs/core';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {colorAccentReversed} from '../theme/color';
 
 import {Icon, IconName} from './Icon';
 
@@ -59,7 +59,7 @@ export const SubwayDot = React.memo(
         <Icon
           size={iconSize}
           name={icon}
-          color={Colors.WHITE}
+          color={colorAccentReversed()}
           style={{marginLeft: 0, marginTop: 0, opacity: 0.9}}
         />
       ) : (
@@ -79,7 +79,7 @@ const Blob = styled.div<BlobProps>`
   align-items: center;
   background-color: ${({$color}) => $color};
   border-radius: 50%;
-  color: ${Colors.WHITE};
+  color: ${colorAccentReversed()};
   cursor: pointer;
   display: flex;
   flex-shrink: 0;

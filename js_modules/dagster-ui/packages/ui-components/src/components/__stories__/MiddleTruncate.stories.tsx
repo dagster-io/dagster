@@ -2,8 +2,8 @@ import {Meta} from '@storybook/react';
 import faker from 'faker';
 import * as React from 'react';
 
+import {colorBackgroundBlue, colorBackgroundLight} from '../../theme/color';
 import {Box} from '../Box';
-import {Colors} from '../Colors';
 import {Icon} from '../Icon';
 import {MiddleTruncate} from '../MiddleTruncate';
 import {Slider} from '../Slider';
@@ -119,7 +119,7 @@ export const Containers = () => {
         <Box flex={{direction: 'row', gap: 24, alignItems: 'center'}} margin={{vertical: 12}}>
           <Box
             flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}
-            background={Colors.Gray100}
+            background={colorBackgroundLight()}
             padding={12}
             style={{overflow: 'hidden'}}
           >
@@ -128,7 +128,7 @@ export const Containers = () => {
             </div>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={colorBackgroundBlue()}
               padding={4}
               style={{maxWidth: '100px'}}
             >
@@ -137,7 +137,7 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={colorBackgroundBlue()}
               padding={4}
               style={{maxWidth: '300px'}}
             >
@@ -146,7 +146,7 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={colorBackgroundBlue()}
               padding={4}
               style={{width: '100%'}}
             >
@@ -155,7 +155,7 @@ export const Containers = () => {
                 <MiddleTruncate text={LONG_TEXT} />
               </div>
             </Box>
-            <Box flex={{direction: 'row', gap: 4}} background={Colors.Blue100} padding={4}>
+            <Box flex={{direction: 'row', gap: 4}} background={colorBackgroundBlue()} padding={4}>
               <Icon name="account_circle" />
               <MiddleTruncate text={LONG_TEXT} />
             </Box>
@@ -164,14 +164,14 @@ export const Containers = () => {
         <Box margin={{bottom: 12}}>
           <Box
             flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}
-            background={Colors.Gray100}
+            background={colorBackgroundLight()}
             padding={12}
             style={{overflow: 'hidden'}}
           >
             <MiddleTruncate text={SHORT_TEXT} />
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={colorBackgroundBlue()}
               padding={4}
               style={{maxWidth: '100px'}}
             >
@@ -180,7 +180,7 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={colorBackgroundBlue()}
               padding={4}
               style={{maxWidth: '60px'}}
             >
@@ -189,14 +189,14 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={colorBackgroundBlue()}
               padding={4}
               style={{maxWidth: '100%'}}
             >
               <Icon name="account_circle" />
               <MiddleTruncate text={SHORT_TEXT} />
             </Box>
-            <Box flex={{direction: 'row', gap: 4}} background={Colors.Blue100} padding={4}>
+            <Box flex={{direction: 'row', gap: 4}} background={colorBackgroundBlue()} padding={4}>
               <Icon name="account_circle" />
               <MiddleTruncate text={SHORT_TEXT} />
             </Box>

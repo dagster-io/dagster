@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 import {
   Box,
   Checkbox,
-  Colors,
   Icon,
   NonIdealState,
   Table,
@@ -16,6 +15,8 @@ import {
   ProductTour,
   ProductTourPosition,
   Caption,
+  colorTextLighter,
+  colorLinkDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -440,7 +441,7 @@ const RunRow = ({
                 }
                 target="_blank"
               >
-                <Icon name="open_in_new" color={Colors.Blue500} />
+                <Icon name="open_in_new" color={colorLinkDefault()} />
               </Link>
             </Box>
           )}
@@ -459,7 +460,7 @@ const RunRow = ({
                   onClick={() => {
                     setShowRunTags(true);
                   }}
-                  color={Colors.Gray700}
+                  color={colorTextLighter()}
                   style={{margin: '-4px', padding: '4px'}}
                 >
                   View all tags ({allTagsWithPinned.length})

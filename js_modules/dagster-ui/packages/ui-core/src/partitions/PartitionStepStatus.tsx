@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  Colors,
   DialogFooter,
   Dialog,
   Icon,
@@ -10,6 +9,8 @@ import {
   Menu,
   Popover,
   useViewport,
+  colorKeylineDefault,
+  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -378,7 +379,7 @@ const PartitionStepStatus = (props: PartitionStepStatusProps) => {
 const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   width: 30px;
   position: absolute;
-  border: 1px solid ${Colors.KeylineGray};
+  border: 1px solid ${colorKeylineDefault()};
   border-radius: 3px;
   display: flex;
   justify-content: center;
@@ -386,7 +387,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   top: calc(50% - 15px);
   bottom: calc(50% - 15px);
   ${({$direction}) => ($direction === 'left' ? 'left: 315px;' : 'right: 0;')}
-  background: white;
+  background: ${colorBackgroundDefault()};
   z-index: 10;
 
   justify-content: center;
@@ -406,7 +407,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${Colors.KeylineGray};
+  border-top: 1px solid ${colorKeylineDefault()};
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan

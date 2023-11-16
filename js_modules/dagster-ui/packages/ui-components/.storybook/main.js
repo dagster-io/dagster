@@ -28,7 +28,7 @@ const config = {
     storyStoreV7: true,
   },
   docs: {
-    autodocs: true,
+    autodocs: false,
   },
   env: (config) => ({
     ...config,

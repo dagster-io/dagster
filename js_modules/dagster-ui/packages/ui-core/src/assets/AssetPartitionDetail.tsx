@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  Colors,
   Group,
   Heading,
   Icon,
@@ -11,6 +10,11 @@ import {
   Spinner,
   Subheading,
   Tag,
+  colorAccentGray,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -258,7 +262,7 @@ export const AssetPartitionDetail = ({
             ) : undefined}
           </div>
         ) : (
-          <Heading color={Colors.Gray400}>No partition selected</Heading>
+          <Heading color={colorTextLight()}>No partition selected</Heading>
         )}
         <div style={{flex: 1}} />
       </Box>
@@ -345,7 +349,7 @@ export const AssetPartitionDetail = ({
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={Colors.Gray400} />
+                <Icon name="linear_scale" color={colorAccentGray()} />
                 <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
               </Group>
             </Box>
@@ -381,9 +385,9 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
 );
 
 const PartitionHeadingTooltipStyle = JSON.stringify({
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
+  background: colorBackgroundLight(),
+  border: `1px solid ${colorBorderDefault()}`,
   fontSize: '18px',
   fontWeight: '600',
-  color: Colors.Dark,
+  color: colorTextDefault(),
 });

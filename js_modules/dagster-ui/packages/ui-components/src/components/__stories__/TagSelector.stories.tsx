@@ -2,9 +2,9 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorAccentGray, colorAccentGreen} from '../../theme/color';
 import {Box} from '../Box';
 import {Checkbox} from '../Checkbox';
-import {Colors} from '../Colors';
 import {Icon} from '../Icon';
 import {Menu, MenuDivider, MenuItem} from '../Menu';
 import {TagSelector, TagSelectorWithSearch} from '../TagSelector';
@@ -64,7 +64,7 @@ export const Styled = () => {
                     checked={dropdownItemProps.selected}
                     onChange={dropdownItemProps.toggle}
                   />
-                  <Dot color={Math.random() > 0.5 ? Colors.Green500 : Colors.Gray500} />
+                  <Dot color={Math.random() > 0.5 ? colorAccentGreen() : colorAccentGray()} />
                   <span>{tag}</span>
                 </Box>
               }

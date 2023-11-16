@@ -1,4 +1,13 @@
-import {Colors} from '@dagster-io/ui-components';
+import {
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentGreen,
+  colorAccentGreenHover,
+  colorAccentRed,
+  colorAccentRedHover,
+  colorAccentYellow,
+  colorAccentYellowHover,
+} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {IStepState} from './RunMetadataProvider';
@@ -11,24 +20,24 @@ export const ExecutionStateDot = styled.div<{state: IStepState}>`
   transition: background 200ms linear;
   background: ${({state}) =>
     ({
-      [IStepState.RUNNING]: Colors.Gray400,
-      [IStepState.SUCCEEDED]: Colors.Green700,
-      [IStepState.SKIPPED]: Colors.Yellow500,
-      [IStepState.FAILED]: Colors.Red500,
-      [IStepState.PREPARING]: Colors.Red500,
-      [IStepState.RETRY_REQUESTED]: Colors.Red500,
-      [IStepState.UNKNOWN]: Colors.Red500,
+      [IStepState.RUNNING]: colorAccentGray(),
+      [IStepState.SUCCEEDED]: colorAccentGreen(),
+      [IStepState.SKIPPED]: colorAccentYellow(),
+      [IStepState.FAILED]: colorAccentRed(),
+      [IStepState.PREPARING]: colorAccentRed(),
+      [IStepState.RETRY_REQUESTED]: colorAccentRed(),
+      [IStepState.UNKNOWN]: colorAccentRed(),
     })[state]};
   &:hover {
     background: ${({state}) =>
       ({
-        [IStepState.RUNNING]: Colors.Gray400,
-        [IStepState.SUCCEEDED]: Colors.Green700,
-        [IStepState.SKIPPED]: Colors.Yellow500,
-        [IStepState.FAILED]: Colors.Red200,
-        [IStepState.PREPARING]: Colors.Red500,
-        [IStepState.RETRY_REQUESTED]: Colors.Red500,
-        [IStepState.UNKNOWN]: Colors.Red500,
+        [IStepState.RUNNING]: colorAccentGrayHover(),
+        [IStepState.SUCCEEDED]: colorAccentGreenHover(),
+        [IStepState.SKIPPED]: colorAccentYellowHover(),
+        [IStepState.FAILED]: colorAccentRedHover(),
+        [IStepState.PREPARING]: colorAccentRedHover(),
+        [IStepState.RETRY_REQUESTED]: colorAccentRedHover(),
+        [IStepState.UNKNOWN]: colorAccentRedHover(),
       })[state]};
   }
 `;
