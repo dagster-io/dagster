@@ -10,9 +10,11 @@ from dagster import (
     DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
+    MultiToSingleDimensionPartitionMapping,
     Out,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    WeeklyPartitionsDefinition,
     asset,
     graph,
     instance_for_test,
@@ -315,30 +317,31 @@ def test_static_partitioned_asset(tmp_path, io_managers):
         duckdb_conn.close()
 
 
-@asset(
-    partitions_def=MultiPartitionsDefinition(
+def test_multi_partitioned_asset(tmp_path, io_managers):
+    partitions_def = MultiPartitionsDefinition(
         {
             "time": DailyPartitionsDefinition(start_date="2022-01-01"),
             "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
         }
-    ),
-    key_prefix=["my_schema"],
-    metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
-    config_schema={"value": str},
-)
-def multi_partitioned(context) -> pd.DataFrame:
-    partition = context.partition_key.keys_by_dimension
-    value = context.op_config["value"]
-    return pd.DataFrame(
-        {
-            "color": [partition["color"], partition["color"], partition["color"]],
-            "time": [partition["time"], partition["time"], partition["time"]],
-            "a": [value, value, value],
-        }
     )
 
+    @asset(
+        partitions_def=partitions_def,
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+        config_schema={"value": str},
+    )
+    def multi_partitioned(context) -> pd.DataFrame:
+        partition = context.partition_key.keys_by_dimension
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "color": [partition["color"], partition["color"], partition["color"]],
+                "time": [partition["time"], partition["time"], partition["time"]],
+                "a": [value, value, value],
+            }
+        )
 
-def test_multi_partitioned_asset(tmp_path, io_managers):
     for io_manager in io_managers:
         resource_defs = {"io_manager": io_manager}
 
@@ -543,4 +546,183 @@ def test_self_dependent_asset(tmp_path, io_managers):
 
         # drop table so we start with an empty db for the next io manager
         duckdb_conn.execute("DELETE FROM my_schema.self_dependent_asset")
+        duckdb_conn.close()
+
+
+def test_multi_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    )
+
+    @asset(
+        partitions_def=partitions_def,
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+        config_schema={"value": str},
+    )
+    def multi_partitioned(context) -> pd.DataFrame:
+        partition = context.partition_key.keys_by_dimension
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "color": [partition["color"], partition["color"], partition["color"]],
+                "time": [partition["time"], partition["time"], partition["time"]],
+                "a": [value, value, value],
+            }
+        )
+
+    @asset(
+        ins={
+            "multi_partitioned": AssetIn(
+                key=["my_schema", "multi_partitioned"],
+                partition_mapping=MultiToSingleDimensionPartitionMapping(
+                    partition_dimension_name="time"
+                ),
+            ),
+        },
+        partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+        metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
+        key_prefix=["my_schema"],
+    )
+    def downstream_of_multi_partitioned(context, multi_partitioned: pd.DataFrame) -> None:
+        partition = context.partition_key
+        assert "red" in list(multi_partitioned.color)
+        assert "blue" in list(multi_partitioned.color)
+        assert partition in list(multi_partitioned.time)
+        assert multi_partitioned.shape[0] == 6
+        return None
+
+    for io_manager in io_managers:
+        resource_defs = {"io_manager": io_manager}
+
+        with instance_for_test() as inst:
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned],
+                partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "blue"}),
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [multi_partitioned.to_source_asset(), downstream_of_multi_partitioned],
+                partition_key="2022-01-01",
+                resources=resource_defs,
+                instance=inst,
+            )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+
+        # drop table so we start with an empty db for the next io manager
+        duckdb_conn.execute("DELETE FROM my_schema.multi_partitioned")
+        duckdb_conn.close()
+
+
+def test_partitioned_asset_with_downstream_mapping(tmp_path, io_managers):
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2023-11-01"),
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
+        config_schema={"value": str},
+    )
+    def daily_partitioned(context) -> pd.DataFrame:
+        partition = context.partition_key
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "time": [partition],
+                "a": [value],
+            }
+        )
+
+    @asset(
+        partitions_def=WeeklyPartitionsDefinition(start_date="2023-11-01"),
+        metadata={"partition_expr": "CAST(time as TIMESTAMP)"},
+        key_prefix=["my_schema"],
+    )
+    def downstream_of_multi_partitioned(daily_partitioned: pd.DataFrame) -> None:
+        assert (daily_partitioned["a"] == pd.Series(["1", "2", "3", "4", "5", "6", "7"])).all()
+        return None
+
+    for io_manager in io_managers:
+        resource_defs = {"io_manager": io_manager}
+
+        with instance_for_test() as inst:
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-05",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-06",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "2"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-07",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "3"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-08",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "4"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-09",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "5"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-10",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "6"}}}},
+                instance=inst,
+            )
+            materialize(
+                [daily_partitioned],
+                partition_key="2023-11-11",
+                resources=resource_defs,
+                run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "7"}}}},
+                instance=inst,
+            )
+
+            materialize(
+                [daily_partitioned.to_source_asset(), downstream_of_multi_partitioned],
+                partition_key="2023-11-05",
+                resources=resource_defs,
+                instance=inst,
+            )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+
+        # drop table so we start with an empty db for the next io manager
+        duckdb_conn.execute("DELETE FROM my_schema.daily_partitioned")
         duckdb_conn.close()
