@@ -51,7 +51,6 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.types.dagster_type import Any as DagsterAny
 from dagster._core.utils import toposort
 
 from ..context.output import get_output_context
@@ -567,7 +566,7 @@ def _step_input_source_from_multi_dep_def(
                 FromStepOutput(
                     step_output_handle=step_output_handle,
                     fan_in=True,
-                    output_dagster_type=DagsterAny,
+                    output_dagster_type_is_nothing=False,
                 )
             )
         else:
