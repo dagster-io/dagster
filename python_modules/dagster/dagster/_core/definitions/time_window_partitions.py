@@ -31,7 +31,12 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer
-from dagster._seven.compat.pendulum import _IS_PENDULUM_2, PendulumDateTime, create_pendulum_time
+from dagster._seven.compat.pendulum import (
+    _IS_PENDULUM_2,
+    PendulumDateTime,
+    create_pendulum_time,
+    to_timezone,
+)
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
@@ -230,11 +235,10 @@ class TimeWindowPartitionsDefinition(
 
         if isinstance(start, datetime):
             start_dt = pendulum.instance(start, tz=timezone)
-
             if start.tzinfo:
                 # Pendulum.instance does not override the timezone of the datetime object,
                 # so we convert it to the provided timezone
-                start_dt = start_dt.in_tz(tz=timezone)
+                start_dt = to_timezone(start_dt, timezone)
         else:
             start_dt = dst_safe_strptime(start, timezone, fmt)
 
@@ -245,7 +249,7 @@ class TimeWindowPartitionsDefinition(
             if end.tzinfo:
                 # Pendulum.instance does not override the timezone of the datetime object,
                 # so we convert it to the provided timezone
-                end_dt = end_dt.in_tz(tz=timezone)
+                end_dt = to_timezone(end_dt, timezone)
         else:
             end_dt = dst_safe_strptime(end, timezone, fmt)
 
@@ -1100,7 +1104,11 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             Default is None. Can provide in either a datetime or string format.
         minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
             to 0.
-        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`. Note that if a non-UTC
+            timezone is used, the date format must include a timezone offset to disambiguate between
+            multiple instances of the same time before and after the Fall DST transition. If the
+            format does not contain this offset, the second instance of the ambiguous time partition
+            key will have the UTC offset automatically appended to it.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
