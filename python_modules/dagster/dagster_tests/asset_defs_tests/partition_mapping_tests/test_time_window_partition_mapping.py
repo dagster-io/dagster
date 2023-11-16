@@ -745,13 +745,13 @@ def test_dst_transition_with_daily_partitions(
 
     subset = partitions_def.subset_with_partition_keys([partition_key])
     upstream = time_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-        subset, partitions_def, current_time=current_time
+        subset, partitions_def, partitions_def, current_time=current_time
     )
     assert upstream.partitions_subset.get_partition_keys(current_time=current_time) == [
         expected_upstream_partition_key
     ]
     downstream = time_partition_mapping.get_downstream_partitions_for_partitions(
-        subset, partitions_def, current_time=current_time
+        subset, partitions_def, partitions_def, current_time=current_time
     )
     assert downstream.get_partition_keys(current_time=current_time) == [
         expected_downstream_partition_key
@@ -767,13 +767,13 @@ def test_mar_2024_dst_transition_with_hourly_partitions():
 
     subset = partitions_def.subset_with_partition_keys(["2024-03-10-03:00"])
     upstream = time_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-        subset, partitions_def, current_time=current_time
+        subset, partitions_def, partitions_def, current_time=current_time
     )
     assert upstream.partitions_subset.get_partition_keys(current_time=current_time) == [
         "2024-03-10-01:00",
     ]
     downstream = time_partition_mapping.get_downstream_partitions_for_partitions(
-        subset, partitions_def, current_time=current_time
+        subset, partitions_def, partitions_def, current_time=current_time
     )
     assert downstream.get_partition_keys(current_time=current_time) == [
         "2024-03-10-04:00",

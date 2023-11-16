@@ -1049,9 +1049,11 @@ def test_dst_transition_15_minute_partitions() -> None:
         "2020-11-01-02:00",
         "2020-11-01-02:15",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 
@@ -1070,9 +1072,11 @@ def test_dst_transition_hourly_partitions() -> None:
         "2020-11-01-03:00",
         "2020-11-01-04:00",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 
@@ -1094,9 +1098,11 @@ def test_dst_transition_hourly_partitions_with_utc_offset() -> None:
         "2020-11-01-03:00:00-0800",
         "2020-11-01-04:00:00-0800",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 
@@ -1116,9 +1122,11 @@ def test_dst_transition_daily_partitions() -> None:
         "2020-11-01-01:00",
         "2020-11-02-01:00",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 

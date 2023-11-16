@@ -1979,7 +1979,7 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         )
 
     def __repr__(self) -> str:
-        return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges()})"
+        return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
 
 class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
