@@ -229,10 +229,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 + ",".join(list(paused_location_names))
             )
 
-        self._logger.info(
-            f"Retrieved %d queued runs, checking limits.{locations_clause}",
-            len(queued_runs),
-        )
+        # self._logger.info(
+        #     f"Retrieved %d queued runs, checking limits.{locations_clause}",
+        #     len(queued_runs),
+        # )
 
         # place in order
         sorted_runs = self._priority_sort(queued_runs)
