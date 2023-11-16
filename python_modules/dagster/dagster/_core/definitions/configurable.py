@@ -173,6 +173,11 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         " the `tag` or `alias` methods. For usage examples, see"
         " https://docs.dagster.io/concepts/configuration/configured",
     )
+    from dagster._config.pythonic_config import ConfigurableResourceFactory, safe_is_subclass
+
+    if safe_is_subclass(configurable, ConfigurableResourceFactory):
+        return
+
     check.inst_param(
         configurable,
         "configurable",
@@ -311,6 +316,16 @@ def configured(
 
     """
     _check_configurable_param(configurable)
+
+    from dagster._config.pythonic_config import ConfigurableResourceFactory, safe_is_subclass
+
+    if safe_is_subclass(configurable, ConfigurableResourceFactory):
+        configurable_inner = (
+            cast(Type[ConfigurableResourceFactory], configurable)
+            .configure_at_launch()
+            .get_resource_definition()
+        )
+        return configured(configurable_inner, config_schema=config_schema, **kwargs)
 
     if isinstance(configurable, NamedConfigurableDefinition):
 
