@@ -1,4 +1,17 @@
-import {Box, ButtonLink, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonLink,
+  colorAccentGray,
+  colorAccentPrimary,
+  colorAccentPrimaryHover,
+  colorBackgroundLight,
+  colorBackgroundLighter,
+  colorTextLight,
+  colorTextLighter,
+  colorTextRed,
+  Icon,
+  IconWrapper,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
@@ -75,7 +88,7 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
       )}
       {canRemove && !editing && onRemove ? (
         <RemoveButton onClick={onClickRemove}>
-          <Icon name="close" color={Colors.Olive500} />
+          <Icon name="close" color={colorAccentPrimary()} />
         </RemoveButton>
       ) : null}
     </TabContainer>
@@ -145,12 +158,12 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
         ))}
         <LaunchpadTab title="+ Add..." onClick={onCreate} />
         {sessionKeys.length > REMOVE_ALL_THRESHOLD ? (
-          <ButtonLink color={Colors.Red500} onClick={onRemoveAll}>
+          <ButtonLink color={colorTextRed()} onClick={onRemoveAll}>
             <Box
               flex={{direction: 'row', gap: 4, alignItems: 'center'}}
               style={{whiteSpace: 'nowrap'}}
             >
-              <Icon name="delete" color={Colors.Red500} />
+              <Icon name="delete" color={colorTextRed()} />
               <div>Remove all</div>
             </Box>
           </ButtonLink>
@@ -186,20 +199,20 @@ const TabContainer = styled.div<{$active: boolean}>`
     $active
       ? css`
           font-weight: 600;
-          background-color: ${Colors.Gray100};
-          color: ${Colors.ForestGreen};
-          box-shadow: ${Colors.ForestGreen} 0 -2px 0 inset;
+          background-color: ${colorBackgroundLighter()};
+          color: ${colorAccentPrimary()};
+          box-shadow: ${colorAccentPrimary()} 0 -2px 0 inset;
         `
       : css`
           font-weight: normal;
-          background-color: ${Colors.Gray50};
-          color: ${Colors.Gray300};
-          box-shadow: ${Colors.Olive200} 0 -1px 0 inset;
+          background-color: ${colorBackgroundLight()};
+          color: ${colorTextLighter()};
+          box-shadow: ${colorAccentGray()} 0 -1px 0 inset;
 
           &:hover {
-            background-color: ${Colors.Gray100};
-            box-shadow: ${Colors.Olive500} 0 -1px 0 inset;
-            color: ${Colors.Olive500};
+            background-color: ${colorBackgroundLight()};
+            box-shadow: ${colorAccentGray()} 0 -1px 0 inset;
+            color: ${colorTextLight()};
           }
         `}
 
@@ -229,6 +242,6 @@ const RemoveButton = styled.button`
   }
 
   &:hover ${IconWrapper} {
-    background-color: ${Colors.Olive700};
+    background-color: ${colorAccentPrimaryHover()};
   }
 `;

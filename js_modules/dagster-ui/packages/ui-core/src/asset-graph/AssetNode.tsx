@@ -1,5 +1,25 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  Spinner,
+  Tooltip,
+  colorAccentBlue,
+  colorAccentBlueHover,
+  colorAccentCyan,
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentGreen,
+  colorAccentRed,
+  colorAccentYellow,
+  colorBackgroundBlue,
+  colorBackgroundDefault,
+  colorBackgroundGray,
+  colorBackgroundLight,
+  colorTextDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
@@ -56,11 +76,11 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
           </AssetName>
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
-              <AssetDescription $color={Colors.Gray800}>
+              <AssetDescription $color={colorTextDefault()}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
               </AssetDescription>
             ) : (
-              <AssetDescription $color={Colors.Gray400}>No description</AssetDescription>
+              <AssetDescription $color={colorTextLight()}>No description</AssetDescription>
             )}
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
@@ -144,23 +164,23 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
   {
     type: 'NOT_EVALUATED',
-    content: <Icon name="dot" color={Colors.Gray500} />,
+    content: <Icon name="dot" color={colorAccentGray()} />,
   },
   {
     type: 'ERROR',
-    content: <Icon name="cancel" color={Colors.Red700} />,
+    content: <Icon name="cancel" color={colorAccentRed()} />,
   },
   {
     type: 'WARN',
-    content: <Icon name="warning_outline" color={Colors.Yellow700} />,
+    content: <Icon name="warning_outline" color={colorAccentYellow()} />,
   },
   {
     type: AssetCheckExecutionResolvedStatus.SKIPPED,
-    content: <Icon name="dot" color={Colors.Gray500} />,
+    content: <Icon name="dot" color={colorAccentGray()} />,
   },
   {
     type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-    content: <Icon name="check_circle" color={Colors.Green700} />,
+    content: <Icon name="check_circle" color={colorAccentGreen()} />,
   },
 ];
 
@@ -289,7 +309,7 @@ const AssetNodeChecksRow = ({
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
       border="top"
-      background={Colors.Gray50}
+      background={colorBackgroundLight()}
     >
       Checks
       <Link
@@ -400,15 +420,15 @@ const AssetNodeShowOnHover = styled.span`
 const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
-      ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`
-      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200}`};
+      ? `border: 2px dashed ${p.$selected ? colorAccentGrayHover() : colorAccentGray()}`
+      : `border: 2px solid ${p.$selected ? colorAccentBlueHover() : colorAccentBlue()}`};
 
   ${(p) =>
     p.$isSource
-      ? `outline: 3px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
-      : `outline: 3px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
+      ? `outline: 3px solid ${p.$selected ? colorAccentBlue() : 'transparent'}`
+      : `outline: 3px solid ${p.$selected ? colorAccentCyan() : 'transparent'}`};
 
-  background: ${Colors.White};
+  background: ${colorBackgroundDefault()};
   border-radius: 8px;
   position: relative;
   &:hover {
@@ -422,7 +442,7 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
 const NameCSS: CSSObject = {
   padding: '3px 6px',
-  color: Colors.Gray800,
+  color: colorTextDefault(),
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
 };
@@ -436,21 +456,21 @@ export const NameTooltipCSS: CSSObject = {
 
 export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.Blue50,
-  border: `1px solid ${Colors.Blue100}`,
+  background: colorBackgroundBlue(),
+  border: `1px solid ${colorAccentBlue()}`,
 });
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
+  background: colorBackgroundGray(),
+  border: `1px solid ${colorAccentGray()}`,
 });
 
 const AssetName = styled.div<{$isSource: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
-  background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
+  background: ${(p) => (p.$isSource ? colorBackgroundLight() : colorBackgroundBlue())};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
@@ -474,13 +494,13 @@ const MinimalAssetNodeBox = styled.div<{
   background: ${(p) => p.$background};
   ${(p) =>
     p.$isSource
-      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border}`
-      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border}`};
+      ? `border: 4px dashed ${p.$selected ? colorAccentGray() : p.$border}`
+      : `border: 4px solid ${p.$selected ? colorAccentBlue() : p.$border}`};
 
   ${(p) =>
     p.$isSource
-      ? `outline: 8px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
-      : `outline: 8px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
+      ? `outline: 8px solid ${p.$selected ? colorAccentGrayHover() : 'transparent'}`
+      : `outline: 8px solid ${p.$selected ? colorAccentCyan() : 'transparent'}`};
 
   border-radius: 10px;
   position: relative;

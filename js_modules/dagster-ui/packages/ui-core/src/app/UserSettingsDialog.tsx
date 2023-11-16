@@ -9,6 +9,7 @@ import {
   MetadataTable,
   Subheading,
 } from '@dagster-io/ui-components';
+import {DAGSTER_THEME_KEY, DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
 import * as React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -16,6 +17,7 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {HourCycleSelect} from './time/HourCycleSelect';
+import {ThemeSelect} from './time/ThemeSelect';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
 
@@ -59,8 +61,16 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
     (value: any) => (typeof value === 'boolean' ? value : true),
   );
 
+  const [theme, setTheme] = useStateWithStorage(DAGSTER_THEME_KEY, (value: any) => {
+    if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
+      return value;
+    }
+    return DagsterTheme.Legacy;
+  });
+
   const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
+  const initialTheme = React.useRef(theme);
 
   React.useEffect(() => {
     setFeatureFlags(flags);
@@ -84,7 +94,8 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
 
   const anyChange =
     initialFlagState.current !== JSON.stringify([...flags.sort()]) ||
-    initialShortcutsEnabled.current !== shortcutsEnabled;
+    initialShortcutsEnabled.current !== shortcutsEnabled ||
+    initialTheme.current !== theme;
 
   const handleClose = (event: React.SyntheticEvent<HTMLElement>) => {
     if (anyChange) {
@@ -117,6 +128,14 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
                 value: (
                   <Box margin={{bottom: 4}}>
                     <HourCycleSelect />
+                  </Box>
+                ),
+              },
+              {
+                key: 'Theme (experimental)',
+                value: (
+                  <Box margin={{bottom: 4}}>
+                    <ThemeSelect theme={theme} onChange={setTheme} />
                   </Box>
                 ),
               },

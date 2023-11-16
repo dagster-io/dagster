@@ -2,7 +2,6 @@ import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -15,6 +14,7 @@ import {
   Spinner,
   Subheading,
   Tag,
+  colorKeylineDefault,
   useViewport,
 } from '@dagster-io/ui-components';
 import React from 'react';
@@ -396,7 +396,7 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
   margin-bottom: 12px;
   ${Subheading} {
     padding-bottom: 4px;

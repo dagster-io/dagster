@@ -1,4 +1,16 @@
-import {Box, Caption, Colors, CursorPaginationControls} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  CursorPaginationControls,
+  colorBackgroundBlue,
+  colorBackgroundBlueHover,
+  colorBackgroundDefault,
+  colorBackgroundDefaultHover,
+  colorBackgroundLight,
+  colorKeylineDefault,
+  colorTextBlue,
+  colorTextDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -88,9 +100,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
 const PaginationWrapper = styled.div`
   position: sticky;
   bottom: 0;
-  background: ${Colors.White};
-  border-right: 1px solid ${Colors.KeylineGray};
-  box-shadow: inset 0 1px ${Colors.KeylineGray};
+  background: ${colorBackgroundLight()};
+  border-right: 1px solid ${colorKeylineDefault()};
+  box-shadow: inset 0 1px ${colorKeylineDefault()};
   margin-top: -1px;
   padding-bottom: 16px;
   padding-top: 16px;
@@ -104,10 +116,11 @@ interface EvaluationListItemProps {
 }
 
 const EvaluationListItem = styled.button<EvaluationListItemProps>`
-  background-color: ${({$selected}) => ($selected ? Colors.Blue50 : Colors.White)};
+  background-color: ${({$selected}) =>
+    $selected ? colorBackgroundBlue() : colorBackgroundDefault()};
   border: none;
   border-radius: 8px;
-  color: ${({$selected}) => ($selected ? Colors.Blue700 : Colors.Dark)};
+  color: ${({$selected}) => ($selected ? colorTextBlue() : colorTextDefault())};
   cursor: pointer;
   margin: 2px 0;
   text-align: left;
@@ -117,7 +130,8 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${({$selected}) => ($selected ? Colors.Blue50 : Colors.Gray10)};
+    background-color: ${({$selected}) =>
+      $selected ? colorBackgroundBlueHover() : colorBackgroundDefaultHover()};
   }
 
   &:focus,

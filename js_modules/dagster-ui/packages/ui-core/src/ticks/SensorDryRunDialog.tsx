@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -14,6 +13,9 @@ import {
   Subheading,
   Tag,
   TextInput,
+  colorAccentGreen,
+  colorAccentReversed,
+  colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -185,7 +187,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           <Group direction="row" spacing={8}>
             <div>Could not set cursor value.</div>
             <ButtonLink
-              color={Colors.White}
+              color={colorAccentReversed()}
               underline="always"
               onClick={() => {
                 showCustomAlert({
@@ -263,7 +265,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                       </span>
                     </Button>
                     {cursorState === 'Persisted' ? (
-                      <Icon name="check_circle" color={Colors.Green500} />
+                      <Icon name="check_circle" color={colorAccentGreen()} />
                     ) : null}
                   </Box>
                 )}
@@ -396,7 +398,7 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
   margin-bottom: 12px;
   ${Subheading} {
     padding-bottom: 4px;

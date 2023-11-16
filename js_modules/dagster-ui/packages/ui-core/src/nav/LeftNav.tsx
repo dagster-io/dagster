@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorBackgroundLighter, colorKeylineDefault} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -29,8 +29,8 @@ const LeftNavContainer = styled.div<{$open: boolean; $smallScreen: boolean}>`
   flex-shrink: 0;
   flex-direction: column;
   justify-content: start;
-  background: ${Colors.Gray100};
-  box-shadow: 1px 0px 0px ${Colors.KeylineGray};
+  background: ${colorBackgroundLighter()};
+  box-shadow: 1px 0px 0px ${colorKeylineDefault()};
 
   ${(p) =>
     p.$smallScreen

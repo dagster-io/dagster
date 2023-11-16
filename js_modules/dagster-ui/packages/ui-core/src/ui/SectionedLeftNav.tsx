@@ -1,11 +1,19 @@
 import {
   BaseTag,
   Box,
-  Colors,
   Icon,
   IconWrapper,
   MiddleTruncate,
   StyledTag,
+  colorBackgroundDisabled,
+  colorBackgroundGray,
+  colorBackgroundLight,
+  colorBackgroundLighter,
+  colorBackgroundLighterHover,
+  colorKeylineDefault,
+  colorTextDefault,
+  colorTextDisabled,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -300,7 +308,7 @@ export const SectionedLeftNav = () => {
 const Container = styled.div`
   height: 100%;
   overflow: auto;
-  background-color: ${Colors.Gray100};
+  background-color: ${colorBackgroundLight()};
 `;
 
 interface CodeLocationNameRowProps {
@@ -346,8 +354,8 @@ const CodeLocationNameRow = (props: CodeLocationNameRowProps) => {
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
-                fillColor={Colors.Gray10}
-                textColor={Colors.Dark}
+                fillColor={colorBackgroundGray()}
+                textColor={colorTextDefault()}
                 label={itemCount.toLocaleString()}
               />
             </div>
@@ -425,9 +433,9 @@ const ItemRow = (props: ItemRowProps) => {
 };
 
 const CodeLocationTooltipStyles = JSON.stringify({
-  background: Colors.Gray100,
+  background: colorBackgroundLighterHover(),
   filter: `brightness(97%)`,
-  color: Colors.Gray900,
+  color: colorTextDefault(),
   fontWeight: 500,
   border: 'none',
   borderRadius: 7,
@@ -484,7 +492,7 @@ const usePathMatch = () => {
 };
 
 const ItemTypeLabel = styled.div`
-  color: ${Colors.Gray600};
+  color: ${colorTextLight()};
   padding: 0 12px 4px;
   font-size: 12px;
 `;
@@ -493,9 +501,9 @@ const SectionHeader = styled.button<{
   $open: boolean;
   $showRepoLocation: boolean;
 }>`
-  background: ${Colors.Gray100};
+  background: ${colorBackgroundLighter()};
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -509,7 +517,7 @@ const SectionHeader = styled.button<{
   width: 100%;
   margin: 0;
   
-  box-shadow: inset 0px 1px 0 ${Colors.KeylineGray}, inset 0px -1px 0 ${Colors.KeylineGray};
+  box-shadow: inset 0px 1px 0 ${colorKeylineDefault()}, inset 0px -1px 0 ${colorKeylineDefault()};
 
   :disabled {
     cursor: default;
@@ -517,12 +525,12 @@ const SectionHeader = styled.button<{
 
   :hover,
   :active {
-    background-color: ${Colors.Gray50};
+    background-color: ${colorBackgroundLighterHover()};
   }
 
   :disabled:hover,
   :disabled:active {
-    background-color: ${Colors.Gray100};
+    background-color: ${colorBackgroundDisabled()};
   }
 
   :focus,
@@ -536,7 +544,7 @@ const SectionHeader = styled.button<{
   }
 
   :disabled ${IconWrapper} {
-    background-color: ${Colors.Gray300};
+    background-color: ${colorTextDisabled()};
   }
 
   ${StyledTag} {
@@ -549,7 +557,7 @@ const SectionHeader = styled.button<{
   }
 
   :disabled ${StyledTag} {
-    color: ${Colors.Gray400};
+    color: ${colorTextDisabled()};
   }
 }`;
 

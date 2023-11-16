@@ -1,7 +1,20 @@
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {Colors} from './Colors';
+import {
+  colorAccentGray,
+  colorAccentPrimary,
+  colorBackgroundDefault,
+  colorBackgroundDisabled,
+  colorBorderDefault,
+  colorBorderDisabled,
+  colorKeylineDefault,
+  colorTextDefault,
+  colorTextDisabled,
+  colorTextLight,
+  colorTextLighter,
+} from '../theme/color';
+
 import {IconName, Icon, IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 
@@ -17,7 +30,7 @@ export const TextInput = React.forwardRef(
     const {
       icon,
       disabled,
-      strokeColor = Colors.Gray300,
+      strokeColor = colorBorderDefault(),
       rightElement,
       type = 'text',
       ...rest
@@ -25,7 +38,9 @@ export const TextInput = React.forwardRef(
 
     return (
       <TextInputContainer $disabled={!!disabled}>
-        {icon ? <Icon name={icon} color={Colors.Gray900} /> : null}
+        {icon ? (
+          <Icon name={icon} color={disabled ? colorAccentGray() : colorAccentPrimary()} />
+        ) : null}
         <StyledInput
           {...rest}
           $strokeColor={strokeColor}
@@ -45,7 +60,7 @@ TextInput.displayName = 'TextInput';
 
 export const TextInputContainerStyles = css`
   align-items: center;
-  color: ${Colors.Gray600};
+  color: ${colorTextLight()};
   display: inline-flex;
   flex-direction: row;
   flex: 1;
@@ -66,7 +81,7 @@ export const TextInputContainer = styled.div<{$disabled?: boolean}>`
     ${({$disabled}) =>
       $disabled
         ? css`
-            background-color: ${Colors.Gray400};
+            background-color: ${colorBackgroundDisabled()};
           `
         : null};
   }
@@ -83,11 +98,13 @@ const RightContainer = styled.div`
 `;
 
 export const TextInputStyles = css`
+  background-color: ${colorBackgroundDefault()};
   border: none;
   border-radius: 8px;
   box-shadow:
-    ${Colors.Gray300} inset 0px 0px 0px 1px,
-    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+    ${colorBorderDefault()} inset 0px 0px 0px 1px,
+    ${colorKeylineDefault()} inset 2px 2px 1.5px;
+  color: ${colorTextDefault()};
   flex-grow: 1;
   font-size: 14px;
   line-height: 20px;
@@ -95,22 +112,26 @@ export const TextInputStyles = css`
   margin: 0;
   transition: box-shadow 150ms;
 
+  ::placeholder {
+    color: ${colorTextLighter()};
+  }
+
   :disabled {
     box-shadow:
-      ${Colors.Gray200} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px;
-    background-color: ${Colors.Gray50};
-    color: ${Colors.Gray400};
+      ${colorBorderDisabled()} inset 0px 0px 0px 1px,
+      ${colorKeylineDefault()} inset 2px 2px 1.5px;
+    background-color: ${colorBackgroundDisabled()};
+    color: ${colorTextDisabled()};
   }
 
   :disabled::placeholder {
-    color: ${Colors.Gray400};
+    color: ${colorTextDisabled()};
   }
 
   :focus {
     box-shadow:
-      ${Colors.Gray300} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      ${colorBorderDefault()} inset 0px 0px 0px 1px,
+      ${colorKeylineDefault()} inset 2px 2px 1.5px,
       rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
   }
@@ -135,13 +156,13 @@ const StyledInput = styled.input<StyledInputProps>`
       : null}
 
   box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+    ${colorKeylineDefault()} inset 2px 2px 1.5px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
 
   :focus {
     box-shadow:
       ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      ${colorKeylineDefault()} inset 2px 2px 1.5px,
       rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 `;
@@ -154,13 +175,13 @@ interface TextAreaProps {
 export const TextArea = styled.textarea<TextAreaProps>`
   ${TextInputStyles}
 
-  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
-    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+  box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderDefault()} inset 0px 0px 0px 1px,
+    ${colorKeylineDefault()} inset 2px 2px 1.5px;
 
   :focus {
     box-shadow:
-      ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
-      ${Colors.KeylineGray} inset 2px 2px 1.5px,
+      ${({$strokeColor}) => $strokeColor || colorBorderDefault()} inset 0px 0px 0px 1px,
+      ${colorKeylineDefault()} inset 2px 2px 1.5px,
       rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 

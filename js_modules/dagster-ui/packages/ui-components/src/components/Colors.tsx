@@ -1,4 +1,4 @@
-export const Colors = {
+export const LegacyColors = {
   Dark: 'rgba(23, 22, 21, 1)',
   Gray900: 'rgba(35, 31, 27, 1)',
   Gray800: 'rgba(58, 54, 49, 1)',
@@ -43,3 +43,5 @@ export const Colors = {
   Olive200: 'rgba(215, 222, 213, 1)',
   Olive50: 'rgba(236, 237, 236, 1)',
 };
+
+export const Colors = LegacyColors;

@@ -2,7 +2,12 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {Colors} from '../Colors';
+import {
+  colorAccentRed,
+  colorAccentGreen,
+  colorAccentBlue,
+  colorAccentYellow,
+} from '../../theme/color';
 import {Group} from '../Group';
 import {
   Suggestion,
@@ -87,10 +92,10 @@ export const TokenAndSuggestionProviders = () => {
 export const CustomSuggestionRenderer = () => {
   const [value, setValue] = React.useState<TokenizingFieldValue[]>([]);
   const colors = {
-    Red: Colors.Red500,
-    Green: Colors.Green500,
-    Blue: Colors.Blue500,
-    Yellow: Colors.Yellow500,
+    Red: colorAccentRed(),
+    Green: colorAccentGreen(),
+    Blue: colorAccentBlue(),
+    Yellow: colorAccentYellow(),
   };
 
   const suggestionProviders: SuggestionProvider[] = [{values: () => Object.keys(colors)}];
