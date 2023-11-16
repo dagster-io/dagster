@@ -10,7 +10,7 @@ models:
     config:
       meta:
         dagster:
-          asset_key: ['customized', 'staging', 'customers']
+          asset_key: ["customized", "staging", "customers"]
           group: customized_dagster_group
     columns:
       - name: customer_id
@@ -23,7 +23,7 @@ models:
       group: customized_dbt_group
       meta:
         dagster:
-          asset_key: ['customized', 'staging', 'orders']
+          asset_key: ["customized", "staging", "orders"]
     columns:
       - name: order_id
         tests:
@@ -32,14 +32,15 @@ models:
       - name: status
         tests:
           - accepted_values:
-              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+              values:
+                ["placed", "shipped", "completed", "return_pending", "returned"]
 
   - name: stg_payments
     config:
       group: customized_dbt_group
       meta:
         dagster:
-          asset_key: ['customized', 'staging', 'payments']
+          asset_key: ["customized", "staging", "payments"]
           group: customized_dagster_group
     columns:
       - name: payment_id
@@ -49,4 +50,4 @@ models:
       - name: payment_method
         tests:
           - accepted_values:
-              values: ['credit_card', 'coupon', 'bank_transfer', 'gift_card']
+              values: ["credit_card", "coupon", "bank_transfer", "gift_card"]
