@@ -1076,7 +1076,7 @@ def test_dst_transition_hourly_partitions() -> None:
     )
 
 
-def test_dst_transition_hourly__partitions_with_utc_offset() -> None:
+def test_dst_transition_hourly_partitions_with_utc_offset() -> None:
     partitions_def = HourlyPartitionsDefinition(
         start_date="2020-10-31-23:00:00-0700",
         end_date="2020-11-01-5:00:00-0800",

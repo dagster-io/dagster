@@ -209,8 +209,14 @@ class TimeWindowPartitionsDefinition(
         timezone (Optional[str]): The timezone in which each time should exist.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+
         end (datetime): The last partition (excluding) in the set.
-        fmt (str): The date format to use for partition_keys.
+        fmt (str): The date format to use for partition_keys. Note that if a non-UTC timezone is
+            used, and the cron schedule repeats every hour or faster, the date format must include
+            a timezone offset to disambiguate between multiple instances of the same time before and
+            after the Fall DST transition. If the format does not contain this offset, the second
+            instance of the ambiguous time partition key will have the UTC offset automatically
+            appended to it.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
