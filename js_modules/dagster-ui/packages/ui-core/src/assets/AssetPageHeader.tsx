@@ -2,12 +2,15 @@
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import {
   Box,
-  Colors,
   PageHeader,
   Heading,
   Icon,
   Tooltip,
   IconWrapper,
+  colorLinkDefault,
+  colorTextLight,
+  colorAccentGray,
+  colorAccentGrayHover,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -74,7 +77,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
             <CopyButton onClick={performCopy}>
               <Icon
                 name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                color={Colors.Gray400}
+                color={colorAccentGray()}
               />
             </CopyButton>
           </Tooltip>
@@ -101,14 +104,14 @@ const CopyButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    background-color: ${Colors.Gray800};
+    background-color: ${colorAccentGrayHover()};
   }
 `;
 
 export const AssetGlobalLineageLink = () => (
   <Link to="/asset-groups">
     <Box flex={{gap: 4}}>
-      <Icon color={Colors.Link} name="schema" />
+      <Icon color={colorLinkDefault()} name="schema" />
       View global asset lineage
     </Box>
   </Link>
@@ -127,10 +130,10 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
 `;
 
 const BreadcrumbLink = styled(Link)`
-  color: ${Colors.Gray800};
+  color: ${colorTextLight()};
 
   :hover,
   :active {
-    color: ${Colors.Gray800};
+    color: ${colorTextLight()};
   }
 `;

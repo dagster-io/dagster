@@ -2,6 +2,7 @@
 import {AnchorButton as BlueprintAnchorButton} from '@blueprintjs/core';
 import {
   intentToFillColor,
+  intentToIconColor,
   intentToStrokeColor,
   intentToTextColor,
   StyledButton,
@@ -28,6 +29,7 @@ export const AnchorButton = React.forwardRef(
         $fillColor={intentToFillColor(intent, outlined)}
         $strokeColor={intentToStrokeColor(intent, outlined)}
         $textColor={intentToTextColor(intent, outlined)}
+        $iconColor={intentToIconColor(intent, outlined)}
         ref={ref}
       >
         {icon || null}

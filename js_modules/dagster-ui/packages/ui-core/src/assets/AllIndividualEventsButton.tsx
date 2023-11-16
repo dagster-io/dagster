@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   DialogFooter,
   Dialog,
   Group,
@@ -9,6 +8,11 @@ import {
   IconWrapper,
   Table,
   Mono,
+  colorTextLight,
+  colorBackgroundLight,
+  colorAccentLime,
+  colorBackgroundLightHover,
+  colorTextDefault,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import * as React from 'react';
@@ -87,7 +91,7 @@ const AssetEventsTable = ({
   );
 };
 
-const NoneSpan = () => <span style={{color: Colors.Gray400}}>None</span>;
+const NoneSpan = () => <span style={{color: colorTextLight()}}>None</span>;
 
 interface MetadataEntriesRowProps {
   group: AssetEventGroup;
@@ -110,7 +114,7 @@ const MetadataEntriesRow = React.memo(({group, hasLineage}: MetadataEntriesRowPr
       : [];
 
   return (
-    <tr style={{background: Colors.Gray50}}>
+    <tr style={{background: colorBackgroundLight()}}>
       <td colSpan={6} style={{fontSize: 14, padding: 0}}>
         {latest.description && (
           <Box padding={{horizontal: 24, vertical: 12}}>{latest.description}</Box>
@@ -186,7 +190,7 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
   const {latest, partition, timestamp, all} = group;
 
   const focusCss = isFocused
-    ? {paddingLeft: 4, borderLeft: `4px solid ${Colors.HighlightGreen}`}
+    ? {paddingLeft: 4, borderLeft: `4px solid ${colorAccentLime()}`}
     : {paddingLeft: 8};
 
   const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
@@ -231,13 +235,13 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
                 events={all}
               >{`View ${all.length} events`}</AllIndividualEventsButton>
             ) : latest.__typename === 'MaterializationEvent' ? (
-              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.Gray600}}>
-                <Icon name="materialization" size={16} color={Colors.Gray600} />
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: colorTextLight()}}>
+                <Icon name="materialization" size={16} color={colorTextLight()} />
                 Materialization
               </Box>
             ) : (
-              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.Gray600}}>
-                <Icon name="observation" size={16} color={Colors.Gray600} /> Observation
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: colorTextLight()}}>
+                <Icon name="observation" size={16} color={colorTextLight()} /> Observation
               </Box>
             )}
           </Group>
@@ -256,7 +260,7 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
               />
             </Box>
             <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-              <Icon name="linear_scale" color={Colors.Gray400} />
+              <Icon name="linear_scale" color={colorTextLight()} />
               <Link to={linkToRunEvent(run, latest)}>{latest.stepKey}</Link>
             </Group>
           </Box>
@@ -276,7 +280,7 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
 
 const HoverableRow = styled.tr`
   &:hover {
-    background: ${Colors.Gray10};
+    background: ${colorBackgroundLightHover()};
   }
 `;
 
@@ -384,7 +388,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
     outline: none;
 
     ${IconWrapper} {
-      background: ${Colors.Dark};
+      background: ${colorTextDefault()};
       opacity: 0.5;
     }
   }

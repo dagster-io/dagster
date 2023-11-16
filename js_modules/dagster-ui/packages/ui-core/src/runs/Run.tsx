@@ -6,6 +6,7 @@ import {
   Button,
   Icon,
   Tooltip,
+  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -394,7 +395,7 @@ const NoStepSelectionState = ({type}: {type: LogType}) => {
         alignItems: 'center',
         justifyContent: 'center',
       }}
-      style={{background: '#221F1B'}}
+      style={{background: colorBackgroundDefault()}}
     >
       <NonIdealState
         title={`Select a step to view ${type}`}

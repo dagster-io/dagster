@@ -6,13 +6,16 @@ import {
   Button,
   ButtonLink,
   Checkbox,
-  Colors,
   Icon,
   SplitPanelContainer,
   Tag,
   Code,
   Tooltip,
   FontFamily,
+  colorAccentGreen,
+  colorTextLight,
+  colorAccentRed,
+  colorBackgroundLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -137,7 +140,7 @@ const RemoveExtraConfigButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={Colors.Green500} />
+          <Icon name="check_circle" color={colorAccentGreen()} />
           No extra config to remove
         </Box>
       ) : null}
@@ -192,7 +195,7 @@ const ScaffoldConfigButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={Colors.Green500} />
+          <Icon name="check_circle" color={colorAccentGreen()} />
           No missing config
         </Box>
       ) : null}
@@ -229,7 +232,7 @@ const ExpandDefaultButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={Colors.Green500} />
+          <Icon name="check_circle" color={colorAccentGreen()} />
           All defaults expanded
         </Box>
       ) : null}
@@ -423,7 +426,7 @@ export const RunPreview = (props: RunPreviewProps) => {
               ))
             ) : (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <Icon name="check_circle" color={Colors.Green500} />
+                <Icon name="check_circle" color={colorAccentGreen()} />
                 No errors
               </Box>
             )}
@@ -560,7 +563,7 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
   text-transform: uppercase;
   font-size: 12px;
   margin-bottom: 8px;
@@ -610,7 +613,7 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${Colors.Gray50};
+      background: ${colorBackgroundLight()};
     }
   `}
 `;
@@ -650,7 +653,7 @@ const ErrorRow = ({
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
       <div style={{paddingRight: 4}}>
-        <Icon name="error" color={Colors.Red500} />
+        <Icon name="error" color={colorAccentRed()} />
       </div>
       <div>
         {displayed}

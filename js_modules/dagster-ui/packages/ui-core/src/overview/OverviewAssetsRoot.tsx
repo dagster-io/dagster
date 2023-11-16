@@ -2,13 +2,17 @@ import {useQuery} from '@apollo/client';
 import {
   Box,
   Caption,
-  Colors,
   Icon,
   MenuItem,
   Select,
   Spinner,
   Tag,
   TextInput,
+  colorAccentGreen,
+  colorBackgroundDefault,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextLight,
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -195,11 +199,11 @@ function VirtualHeaderRow() {
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
         position: 'sticky',
         top: 0,
         zIndex: 1,
-        background: Colors.White,
+        background: colorBackgroundDefault(),
       }}
     >
       <HeaderCell>Group name</HeaderCell>
@@ -350,7 +354,7 @@ function VirtualRow({height, start, group}: RowProps) {
                     style={{
                       width: '12px',
                       height: '12px',
-                      border: `2px solid ${Colors.Gray500}`,
+                      border: `2px solid ${colorBorderDefault()}`,
                       borderRadius: '50%',
                     }}
                   />
@@ -430,7 +434,7 @@ function VirtualRow({height, start, group}: RowProps) {
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   <div
                     style={{
-                      backgroundColor: Colors.Green500,
+                      backgroundColor: colorAccentGreen(),
                       width: '10px',
                       height: '10px',
                       borderRadius: '50%',
@@ -460,7 +464,7 @@ const RowGrid = styled(Box)`
 
 const Cell = ({children}: {children: React.ReactNode}) => {
   return (
-    <RowCell style={{color: Colors.Gray900}}>
+    <RowCell style={{color: colorTextDefault()}}>
       <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>{children}</Box>
     </RowCell>
   );
@@ -470,7 +474,7 @@ const RepositoryLinkWrapper = styled.div<{maxWidth?: number}>`
   font-size: 12px;
   pointer-events: none;
   a {
-    color: ${Colors.Gray600};
+    color: ${colorTextLight()};
     pointer-events: none;
     max-width: ${({maxWidth}) => (maxWidth ? 'unset' : `${maxWidth}px`)};
   }
@@ -517,7 +521,7 @@ function SelectOnHover({
                       {displayNameForAssetKey(item.asset.key)}
                     </div>
                     {count && count > 0 ? (
-                      <Caption style={{color: Colors.Gray700}}>
+                      <Caption style={{color: colorTextLight()}}>
                         {partitionCountString(count)} {adjective}
                       </Caption>
                     ) : null}

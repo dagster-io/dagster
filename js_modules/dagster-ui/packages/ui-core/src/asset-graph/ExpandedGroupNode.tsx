@@ -1,4 +1,11 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorBackgroundLightHover,
+  colorBorderDefault,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -39,19 +46,19 @@ const GroupOutline = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;
-  background: rgba(255, 255, 255, 0.35);
+  background: ${colorBackgroundDefault()};
   width: 100%;
   border-radius: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   pointer-events: none;
 
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorBorderDefault()};
 `;
 
 const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
-  background: ${Colors.Gray50};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorBorderDefault()};
+  background: ${colorBackgroundLight()};
   width: 100%;
   height: 60px;
   display: flex;
@@ -65,6 +72,6 @@ const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
   position: relative;
 
   &:hover {
-    background: ${Colors.Gray100};
+    background: ${colorBackgroundLightHover()};
   }
 `;

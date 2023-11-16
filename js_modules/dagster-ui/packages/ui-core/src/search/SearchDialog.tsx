@@ -1,6 +1,18 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Box, Colors, Icon, Spinner, FontFamily} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  Spinner,
+  FontFamily,
+  colorBackgroundGray,
+  colorAccentGray,
+  colorTextLight,
+  colorTextLighter,
+  colorBackgroundDefault,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
+import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -187,10 +199,10 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
       <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
         <SearchTrigger onClick={openSearch}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <Box flex={{alignItems: 'center', gap: 8}}>
+            <Box flex={{alignItems: 'center', gap: 4}}>
               <div
                 style={{
-                  background: Colors.Gray900,
+                  background: CoreColors.Gray900,
                   borderRadius: '12px',
                   height: '24px',
                   width: '24px',
@@ -199,23 +211,23 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
                   justifyContent: 'center',
                 }}
               >
-                <Icon name="search" color={Colors.Gray50} />
+                <Icon name="search" color={CoreColors.Gray50} />
               </div>
-              <Placeholder>{searchPlaceholder}</Placeholder>
+              <div>{searchPlaceholder}</div>
             </Box>
             <SlashShortcut>/</SlashShortcut>
           </Box>
         </SearchTrigger>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: Colors.WashGray}}}
+        backdropProps={{style: {backgroundColor: colorBackgroundGray()}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
       >
         <Container>
           <SearchBox hasQueryString={!!queryString.length}>
-            <Icon name="search" color={Colors.Gray200} size={20} />
+            <Icon name="search" color={colorAccentGray()} size={20} />
             <SearchInput
               autoFocus
               spellCheck={false}
@@ -240,30 +252,25 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
 };
 
 const SearchTrigger = styled.button`
-  background-color: ${Colors.Gray800};
+  background-color: ${CoreColors.Gray900};
   border-radius: 24px;
   border: none;
-  color: ${Colors.Gray50};
+  color: ${CoreColors.Gray50};
   font-size: 14px;
   cursor: pointer;
-  padding: 4px 16px 4px 4px;
+  padding: 4px 16px 4px 8px;
   outline: none;
   user-select: none;
   width: 188px;
   height: 32px;
 
   :focus {
-    border-color: ${Colors.Gray100};
+    border-color: ${CoreColors.Gray100};
   }
 `;
 
-const Placeholder = styled.div`
-  position: relative;
-  top: -1px;
-`;
-
 const Container = styled.div`
-  background-color: ${Colors.White};
+  background-color: ${colorBackgroundDefault()};
   border-radius: 4px;
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   max-height: 60vh;
@@ -271,6 +278,10 @@ const Container = styled.div`
   overflow: hidden;
   width: 600px;
   top: 20vh;
+
+  input {
+    background-color: transparent;
+  }
 `;
 
 interface SearchBoxProps {
@@ -279,14 +290,15 @@ interface SearchBoxProps {
 
 const SearchBox = styled.div<SearchBoxProps>`
   align-items: center;
-  border-bottom: ${({hasQueryString}) => (hasQueryString ? `1px solid ${Colors.Gray100}` : 'none')};
+  border-bottom: ${({hasQueryString}) =>
+    hasQueryString ? `1px solid ${colorKeylineDefault()}` : 'none'};
   display: flex;
   padding: 12px 20px 12px 12px;
 `;
 
 const SearchInput = styled.input`
   border: none;
-  color: ${Colors.Gray600};
+  color: ${colorTextLight()};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
@@ -294,15 +306,14 @@ const SearchInput = styled.input`
   width: 100%;
 
   &::placeholder {
-    color: ${Colors.Gray200};
+    color: ${colorTextLighter()};
   }
 `;
 
 const SlashShortcut = styled.div`
-  background-color: ${Colors.Gray700};
+  background-color: ${CoreColors.Gray900};
   border-radius: 3px;
-  color: ${Colors.Gray100};
+  color: ${CoreColors.White};
   font-size: 14px;
-  font-family: ${FontFamily.monospace};
-  padding: 2px 6px;
+  padding: 2px;
 `;

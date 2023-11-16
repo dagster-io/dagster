@@ -1,4 +1,13 @@
-import {Box, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  colorAccentReversed,
+  colorBackgroundLight,
+  colorBackgroundLightHover,
+  colorBorderDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -70,7 +79,7 @@ export const CollapsedGroupNode = ({
         </Box>
         {!minimal && (
           <Box padding={{horizontal: 12, bottom: 4}}>
-            <AssetDescription $color={Colors.Gray400}>
+            <AssetDescription $color={colorTextLight()}>
               {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'}
             </AssetDescription>
           </Box>
@@ -84,20 +93,20 @@ export const CollapsedGroupNode = ({
 
 export const GroupNameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
+  background: colorBackgroundLight(),
+  border: `1px solid ${colorBorderDefault()}`,
 });
 
 const GroupStackLine = styled.div`
-  background: ${Colors.Gray200};
-  border-top: 2px solid ${Colors.White};
+  background: ${colorBackgroundLight()};
+  border-top: 2px solid ${colorAccentReversed()};
   border-radius: 2px;
   height: 4px;
 `;
 
 const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
-  background: ${Colors.Gray50};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorBorderDefault()};
+  background: ${colorBackgroundLight()};
   border-radius: 8px;
   position: relative;
   outline-bottom: 3px solid gray;
@@ -113,7 +122,7 @@ const CollapsedGroupNodeContainer = styled.div`
   &:hover {
     transform: scale(1.03);
     ${CollapsedGroupNodeBox} {
-      background: ${Colors.Gray100};
+      background: ${colorBackgroundLightHover()};
     }
   }
 `;

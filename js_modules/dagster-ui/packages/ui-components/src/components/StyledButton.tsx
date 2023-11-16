@@ -8,6 +8,7 @@ interface StyledButtonProps {
   $fillColor: string;
   $strokeColor: string;
   $textColor: string;
+  $iconColor: string;
 }
 
 export const StyledButton = styled.button<StyledButtonProps>`
@@ -69,8 +70,8 @@ export const StyledButton = styled.button<StyledButtonProps>`
   }
 
   ${IconWrapper} {
-    color: ${({$textColor}) => $textColor};
-    background-color: ${({$textColor}) => $textColor};
+    color: ${({$iconColor}) => $iconColor};
+    background-color: ${({$iconColor}) => $iconColor};
     align-self: center;
     display: block;
   }

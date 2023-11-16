@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorAccentBlue, colorKeylineDefault} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {buildSVGPath} from './Utils';
@@ -18,7 +18,7 @@ export const AssetEdges = ({
   selected,
   highlighted,
   strokeWidth = 4,
-  baseColor = Colors.KeylineGray,
+  baseColor = colorKeylineDefault(),
   viewportRect,
 }: AssetEdgesProps) => {
   // Note: we render the highlighted edges twice, but it's so that the first item with
@@ -39,7 +39,7 @@ export const AssetEdges = ({
         viewportRect={viewportRect}
       />
       <AssetEdgeSet
-        color={Colors.Blue500}
+        color={colorAccentBlue()}
         edges={edges.filter(
           ({fromId, toId}) =>
             selected?.includes(fromId) ||

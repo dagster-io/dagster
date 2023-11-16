@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorBackgroundLight, colorBackgroundLightHover} from '@dagster-io/ui-components';
 import {LinkVertical as Link} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -67,10 +67,10 @@ export const ExternalConnectionNode = ({
 
 const BackingRect = styled('rect')`
   stroke-width: 10px;
-  fill: ${Colors.Gray100};
-  stroke: ${Colors.Gray100};
+  fill: ${colorBackgroundLight()};
+  stroke: ${colorBackgroundLight()};
   &:hover {
-    fill: ${Colors.Gray200};
-    stroke: ${Colors.Gray200};
+    fill: ${colorBackgroundLightHover()};
+    stroke: ${colorBackgroundLightHover()};
   }
 `;

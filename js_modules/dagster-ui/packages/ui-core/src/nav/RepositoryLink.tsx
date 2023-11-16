@@ -1,11 +1,13 @@
 import {
   Box,
-  Colors,
   Icon,
   IconWrapper,
   MiddleTruncate,
   Spinner,
   Tooltip,
+  colorAccentBlue,
+  colorAccentGray,
+  colorAccentGrayHover,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -34,7 +36,7 @@ export const RepositoryLink = ({
 
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}} title={repoString}>
-      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={Colors.Gray400} />}
+      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={colorAccentGray()} />}
       <RepositoryName to={workspacePathFromAddress(repoAddress)} style={{flex: 1}}>
         <MiddleTruncate text={repoString} />
       </RepositoryName>
@@ -64,7 +66,7 @@ export const RepositoryLink = ({
                   <StyledButton disabled={!hasReloadPermission} onClick={tryReload}>
                     <Icon
                       name="refresh"
-                      color={hasReloadPermission ? Colors.Gray400 : Colors.Gray300}
+                      color={hasReloadPermission ? colorAccentGray() : colorAccentGrayHover()}
                     />
                   </StyledButton>
                 )}
@@ -111,6 +113,6 @@ const StyledButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${Colors.Blue500};
+    color: ${colorAccentBlue()};
   }
 `;

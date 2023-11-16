@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   Icon,
   IconWrapper,
   Menu,
@@ -9,7 +8,10 @@ import {
   Popover,
   Spinner,
   TextInput,
+  colorBackgroundLight,
+  colorTextLight,
 } from '@dagster-io/ui-components';
+import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState, useRef} from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
@@ -266,7 +268,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               </Inner>
             </Container>
           ) : (
-            <Box padding={{vertical: 12, horizontal: 12}} style={{color: Colors.Gray500}}>
+            <Box padding={{vertical: 12, horizontal: 12}} style={{color: colorTextLight()}}>
               {selectedFilter?.getNoResultsPlaceholder?.(search) || 'No results'}
             </Box>
           )}
@@ -424,7 +426,7 @@ export const FilterDropdownMenuItem = React.memo(
 
 const StyledMenuItem = styled(MenuItem)`
   &.bp4-active:focus {
-    color: white;
+    color: ${CoreColors.White};
     box-shadow: initial;
   }
 `;
@@ -432,8 +434,8 @@ const StyledMenuItem = styled(MenuItem)`
 const SlashShortcut = styled.div`
   border-radius: 4px;
   padding: 0px 6px;
-  background: ${Colors.Gray100};
-  color: ${Colors.Gray500};
+  background: ${colorBackgroundLight()};
+  color: ${colorTextLight()};
 `;
 
 const PopoverStyle = createGlobalStyle`

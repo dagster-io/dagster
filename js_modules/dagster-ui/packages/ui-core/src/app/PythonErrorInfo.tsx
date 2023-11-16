@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Icon, FontFamily, Colors} from '@dagster-io/ui-components';
+import {Button, Icon, FontFamily, colorKeylineDefault} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -122,7 +122,7 @@ const CopyErrorButtonWrapper = styled.button`
   gap: 8px;
   top: 0px;
   right: -8px;
-  border: 1px solid ${Colors.KeylineGray};
+  border: 1px solid ${colorKeylineDefault()};
   background: transparent;
   cursor: pointer;
   border: none;

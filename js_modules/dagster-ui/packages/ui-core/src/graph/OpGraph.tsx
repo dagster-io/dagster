@@ -1,5 +1,9 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@dagster-io/ui-components';
+import {
+  colorAccentBlue,
+  colorBackgroundYellow,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -71,7 +75,7 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
           {...layout.parent.invocationBoundingBox}
           key={`composite-rect-${parentHandleID}`}
           label=""
-          fill={Colors.Yellow50}
+          fill={colorBackgroundYellow()}
           minified={minified}
         />
       )}
@@ -90,14 +94,14 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
       <OpEdges
         ops={ops}
         layout={layout}
-        color={Colors.KeylineGray}
+        color={colorKeylineDefault()}
         edges={layout.edges}
         onHighlight={setHighlighted}
       />
       <OpEdges
         ops={ops}
         layout={layout}
-        color={Colors.Blue500}
+        color={colorAccentBlue()}
         onHighlight={setHighlighted}
         edges={layout.edges.filter(({from, to}) =>
           isHighlighted(highlighted, {a: from.opName, b: to.opName}),
