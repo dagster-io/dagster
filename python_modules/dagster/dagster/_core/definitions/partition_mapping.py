@@ -62,6 +62,7 @@ class PartitionMapping(ABC):
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -81,6 +82,7 @@ class PartitionMapping(ABC):
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -107,6 +109,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -134,6 +137,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -167,6 +171,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -179,6 +184,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -197,6 +203,7 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -214,11 +221,12 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        last_upstream_partition = upstream_partitions_subset.partitions_def.get_last_partition_key(
+        last_upstream_partition = upstream_partitions_def.get_last_partition_key(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
         if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
@@ -259,6 +267,7 @@ class SpecificPartitionsPartitionMapping(
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -270,6 +279,7 @@ class SpecificPartitionsPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -325,9 +335,8 @@ class BaseMultiPartitionMapping(ABC):
         a_partition_keys_by_dimension = defaultdict(set)
         if isinstance(a_partitions_def, MultiPartitionsDefinition):
             for partition_key in a_partitions_subset.get_partition_keys():
-                for dimension_name, key in cast(
-                    MultiPartitionKey, partition_key
-                ).keys_by_dimension.items():
+                key = a_partitions_def.get_partition_key_from_str(partition_key)
+                for dimension_name, key in key.keys_by_dimension.items():
                     a_partition_keys_by_dimension[dimension_name].add(key)
         else:
             for partition_key in a_partitions_subset.get_partition_keys():
@@ -383,6 +392,7 @@ class BaseMultiPartitionMapping(ABC):
                                 a_dimension_partitions_def.empty_subset().with_partition_keys(
                                     [key]
                                 ),
+                                a_dimension_partitions_def,
                                 b_dimension_partitions_def,
                                 current_time=current_time,
                                 dynamic_partitions_store=dynamic_partitions_store,
@@ -421,6 +431,7 @@ class BaseMultiPartitionMapping(ABC):
                                 a_dimension_partitions_def.empty_subset().with_partition_keys(
                                     [key]
                                 ),
+                                a_dimension_partitions_def,
                                 b_dimension_partitions_def,
                                 current_time=current_time,
                                 dynamic_partitions_store=dynamic_partitions_store,
@@ -447,7 +458,9 @@ class BaseMultiPartitionMapping(ABC):
                     [
                         dep_b_keys_by_a_dim_and_key[dim_name][
                             (
-                                cast(MultiPartitionKey, key).keys_by_dimension[dim_name]
+                                cast(MultiPartitionsDefinition, a_partitions_def)
+                                .get_partition_key_from_str(key)
+                                .keys_by_dimension[dim_name]
                                 if dim_name
                                 else key
                             )
@@ -487,6 +500,7 @@ class BaseMultiPartitionMapping(ABC):
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -495,7 +509,7 @@ class BaseMultiPartitionMapping(ABC):
             check.failed("downstream asset is not partitioned")
 
         result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
+            check.not_none(downstream_partitions_def),
             downstream_partitions_subset,
             cast(MultiPartitionsDefinition, upstream_partitions_def),
             a_upstream_of_b=False,
@@ -511,6 +525,7 @@ class BaseMultiPartitionMapping(ABC):
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -519,7 +534,7 @@ class BaseMultiPartitionMapping(ABC):
             check.failed("upstream asset is not partitioned")
 
         result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
+            upstream_partitions_def,
             upstream_partitions_subset,
             cast(MultiPartitionsDefinition, downstream_partitions_def),
             a_upstream_of_b=True,
@@ -855,6 +870,7 @@ class StaticPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -870,6 +886,7 @@ class StaticPartitionMapping(
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,

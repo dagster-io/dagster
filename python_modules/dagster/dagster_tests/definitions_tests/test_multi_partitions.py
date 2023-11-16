@@ -320,9 +320,9 @@ def test_multipartitions_subset_addition(initial, added):
     assert added_subset.get_partition_keys(current_time=current_day) == set(
         added_subset_keys + initial_subset_keys
     )
-    assert added_subset.get_partition_keys_not_in_subset(current_time=current_day) == set(
-        expected_keys_not_in_updated_subset
-    )
+    assert added_subset.get_partition_keys_not_in_subset(
+        multipartitions_def, current_time=current_day
+    ) == set(expected_keys_not_in_updated_subset)
 
 
 def test_asset_partition_key_is_multipartition_key():
@@ -630,3 +630,27 @@ def test_multipartitions_self_dependency():
         partition_key=second_partition_key,
         resources=resources,
     )
+
+
+def test_context_returns_multipartition_keys():
+    partitions_def = MultiPartitionsDefinition(
+        {"a": StaticPartitionsDefinition(["a", "b"]), "1": StaticPartitionsDefinition(["1", "2"])}
+    )
+
+    @asset(partitions_def=partitions_def)
+    def upstream(context):
+        assert isinstance(context.partition_key, MultiPartitionKey)
+
+    @asset(partitions_def=partitions_def)
+    def downstream(context, upstream):
+        assert isinstance(context.partition_key, MultiPartitionKey)
+
+        input_range = context.asset_partition_key_range_for_input("upstream")
+        assert isinstance(input_range.start, MultiPartitionKey)
+        assert isinstance(input_range.end, MultiPartitionKey)
+
+        output = context.asset_partition_key_range_for_output("result")
+        assert isinstance(output.start, MultiPartitionKey)
+        assert isinstance(output.end, MultiPartitionKey)
+
+    materialize([upstream, downstream], partition_key="1|a")

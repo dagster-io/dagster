@@ -808,7 +808,8 @@ def test_partition_subset_get_partition_keys_not_in_subset(
         assert partition_key in subset
     assert (
         subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+            partitions_def=partitions_def,
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
         )
         == expected_keys_not_in_subset
     )
@@ -946,7 +947,8 @@ def test_partition_subset_with_partition_keys(
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
     assert (
         updated_subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+            partitions_def=partitions_def,
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
         )
         == expected_keys_not_in_updated_subset
     )
@@ -1047,9 +1049,11 @@ def test_dst_transition_15_minute_partitions() -> None:
         "2020-11-01-02:00",
         "2020-11-01-02:15",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 
@@ -1068,9 +1072,11 @@ def test_dst_transition_hourly_partitions() -> None:
         "2020-11-01-03:00",
         "2020-11-01-04:00",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 
@@ -1092,9 +1098,11 @@ def test_dst_transition_hourly_partitions_with_utc_offset() -> None:
         "2020-11-01-03:00:00-0800",
         "2020-11-01-04:00:00-0800",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 
@@ -1114,9 +1122,11 @@ def test_dst_transition_daily_partitions() -> None:
         "2020-11-01-01:00",
         "2020-11-02-01:00",
     }
-    assert subset.get_partition_keys_not_in_subset() == []
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
         == []
     )
 
