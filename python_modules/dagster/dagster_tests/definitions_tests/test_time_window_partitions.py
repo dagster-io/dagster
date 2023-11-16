@@ -676,7 +676,7 @@ def test_time_partitions_weekly_partitions(
             [
                 "2021-11-07-00:00",
                 "2021-11-07-01:00",
-                "2021-11-07-01:00",
+                "2021-11-07-01:00-0600",
                 "2021-11-07-02:00",
                 "2021-11-07-03:00",
             ],
@@ -1025,6 +1025,103 @@ def test_time_window_partitions_contains():
     assert "2015-01-11" not in subset
 
 
+def test_dst_transition_15_minute_partitions() -> None:
+    partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="*/15 * * * *",
+        start="2020-11-01-00:30",
+        end="2020-11-01-2:30",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-11-01-00:30",
+        "2020-11-01-00:45",
+        "2020-11-01-01:00",
+        "2020-11-01-01:15",
+        "2020-11-01-01:30",
+        "2020-11-01-01:45",
+        "2020-11-01-01:00-0800",
+        "2020-11-01-01:15-0800",
+        "2020-11-01-01:30-0800",
+        "2020-11-01-01:45-0800",
+        "2020-11-01-02:00",
+        "2020-11-01-02:15",
+    }
+    assert subset.get_partition_keys_not_in_subset() == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        == []
+    )
+
+
+def test_dst_transition_hourly_partitions() -> None:
+    partitions_def = HourlyPartitionsDefinition(
+        start_date="2020-10-31-23:00", end_date="2020-11-01-5:00", timezone="US/Pacific"
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-31-23:00",
+        "2020-11-01-00:00",
+        "2020-11-01-01:00",
+        "2020-11-01-01:00-0800",
+        "2020-11-01-02:00",
+        "2020-11-01-03:00",
+        "2020-11-01-04:00",
+    }
+    assert subset.get_partition_keys_not_in_subset() == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        == []
+    )
+
+
+def test_dst_transition_hourly_partitions_with_utc_offset() -> None:
+    partitions_def = HourlyPartitionsDefinition(
+        start_date="2020-10-31-23:00:00-0700",
+        end_date="2020-11-01-5:00:00-0800",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M:%S%z",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-31-23:00:00-0700",
+        "2020-11-01-00:00:00-0700",
+        "2020-11-01-01:00:00-0700",
+        "2020-11-01-01:00:00-0800",
+        "2020-11-01-02:00:00-0800",
+        "2020-11-01-03:00:00-0800",
+        "2020-11-01-04:00:00-0800",
+    }
+    assert subset.get_partition_keys_not_in_subset() == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        == []
+    )
+
+
+def test_dst_transition_daily_partitions() -> None:
+    partitions_def = DailyPartitionsDefinition(
+        start_date="2020-10-30-01:00",
+        end_date="2020-11-03-01:00",
+        timezone="US/Pacific",
+        hour_offset=1,
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-30-01:00",
+        "2020-10-31-01:00",
+        "2020-11-01-01:00",
+        "2020-11-02-01:00",
+    }
+    assert subset.get_partition_keys_not_in_subset() == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        == []
+    )
+
+
 def test_unique_identifier():
     assert (
         DailyPartitionsDefinition(start_date="2015-01-01").get_serializable_unique_identifier()
@@ -1297,7 +1394,6 @@ def test_partition_with_end_date(
         == last_partition_window_
     )
     assert not partitions_def.get_next_partition_window(last_partition_window_.end)
-    # get_partition_keys
     assert len(partitions_def.get_partition_keys()) == number_of_partitions
     assert partitions_def.get_partition_keys()[0] == first_partition_window[0]
     assert partitions_def.get_partition_keys()[-1] == last_partition_window[0]
