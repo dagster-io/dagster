@@ -5,6 +5,27 @@ from dagster import Config, ConfigurableResource, InitResourceContext, configure
 from dagster._check import CheckError
 
 
+def test_config_mapping_return_resource_config_dict_noargs() -> None:
+    class MyResource(ConfigurableResource):
+        resource_param: str
+
+    @configured(MyResource)
+    def my_resource_noargs(_) -> Dict[str, Any]:
+        return {"resource_param": "foo"}
+
+    @op
+    def do_something(my_resource: ConfigurableResource) -> str:
+        return my_resource.resource_param
+
+    @job
+    def do_it_all() -> None:
+        do_something()
+
+    result = do_it_all.execute_in_process(resources={"my_resource": my_resource_noargs})
+    assert result.success
+    assert result.output_for_node("do_something") == "foo"
+
+
 def test_config_mapping_return_resource_config_dict() -> None:
     class MyResource(ConfigurableResource):
         resource_param: str
@@ -110,3 +131,47 @@ def test_config_annotation_extra_param_err() -> None:
         @configured(MyResource)
         def my_resource_simplified(config_in: MyResourceSimplifiedConfig, useless_param: str):
             ...
+
+
+def test_factory_resource_pattern_noargs() -> None:
+    class MyResource(ConfigurableResource):
+        resource_param: str
+
+    class MyResourceNoargs(ConfigurableResource):
+        def create_resource(self, context: InitResourceContext) -> Any:
+            return MyResource(resource_param="foo")
+
+    @op
+    def do_something(my_resource: ConfigurableResource) -> str:
+        return my_resource.resource_param
+
+    @job
+    def do_it_all() -> None:
+        do_something()
+
+    result = do_it_all.execute_in_process(resources={"my_resource": MyResourceNoargs()})
+    assert result.success
+    assert result.output_for_node("do_something") == "foo"
+
+
+def test_factory_resource_pattern_args() -> None:
+    class MyResource(ConfigurableResource):
+        resource_param: str
+
+    class MyResourceFromInt(ConfigurableResource):
+        an_int: int
+
+        def create_resource(self, context: InitResourceContext) -> Any:
+            return MyResource(resource_param=str(self.an_int))
+
+    @op
+    def do_something(my_resource: ConfigurableResource) -> str:
+        return my_resource.resource_param
+
+    @job
+    def do_it_all() -> None:
+        do_something()
+
+    result = do_it_all.execute_in_process(resources={"my_resource": MyResourceFromInt(an_int=10)})
+    assert result.success
+    assert result.output_for_node("do_something") == "10"
