@@ -284,6 +284,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(GrapheneAssetChecksOrError),
         limit=graphene.Argument(graphene.Int),
     )
+    currentAutoMaterializeEvaluationId = graphene.Int()
 
     class Meta:
         name = "AssetNode"
@@ -831,6 +832,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         if self._external_asset_node.auto_materialize_policy:
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
         return None
+
+    def resolve_currentAutoMaterializeEvaluationId(self, graphene_info):
+        from dagster._daemon.asset_daemon import get_current_evaluation_id
+
+        return get_current_evaluation_id(graphene_info.context.instance)
 
     def resolve_backfillPolicy(
         self, _graphene_info: ResolveInfo

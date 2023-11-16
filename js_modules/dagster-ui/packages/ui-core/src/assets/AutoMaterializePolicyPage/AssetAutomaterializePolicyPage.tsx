@@ -24,19 +24,23 @@ export const AssetAutomaterializePolicyPage = ({
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const {evaluations, currentEvaluationId} = React.useMemo(() => {
+  const {evaluations, currentAutoMaterializeEvaluationId} = React.useMemo(() => {
     if (
       queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
-      'AutoMaterializeAssetEvaluationRecords'
+        'AutoMaterializeAssetEvaluationRecords' &&
+      queryResult.data?.assetNodeOrError?.__typename === 'AssetNode'
     ) {
       return {
         evaluations: queryResult.data?.autoMaterializeAssetEvaluationsOrError.records,
-        currentEvaluationId:
-          queryResult.data.autoMaterializeAssetEvaluationsOrError.currentEvaluationId,
+        currentAutoMaterializeEvaluationId:
+          queryResult.data.assetNodeOrError.currentAutoMaterializeEvaluationId,
       };
     }
-    return {evaluations: [], currentEvaluationId: null};
-  }, [queryResult.data?.autoMaterializeAssetEvaluationsOrError]);
+    return {evaluations: [], currentAutoMaterializeEvaluationId: null};
+  }, [
+    queryResult.data?.autoMaterializeAssetEvaluationsOrError,
+    queryResult.data?.assetNodeOrError,
+  ]);
 
   const isFirstPage = !paginationProps.hasPrevCursor;
   const isLastPage = !paginationProps.hasNextCursor;
@@ -44,13 +48,13 @@ export const AssetAutomaterializePolicyPage = ({
   const evaluationsIncludingEmpty = React.useMemo(
     () =>
       getEvaluationsWithEmptyAdded({
-        currentEvaluationId,
+        currentAutoMaterializeEvaluationId,
         evaluations,
         isFirstPage,
         isLastPage,
         isLoading,
       }),
-    [currentEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
+    [currentAutoMaterializeEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
   );
 
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<

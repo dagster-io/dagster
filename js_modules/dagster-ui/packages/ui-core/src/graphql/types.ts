@@ -339,6 +339,7 @@ export type AssetNode = {
   backfillPolicy: Maybe<BackfillPolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
+  currentAutoMaterializeEvaluationId: Maybe<Scalars['Int']>;
   dataVersion: Maybe<Scalars['String']>;
   dataVersionByPartition: Array<Maybe<Scalars['String']>>;
   dependedBy: Array<AssetDependency>;
@@ -505,7 +506,6 @@ export type AutoMaterializeAssetEvaluationRecord = {
 
 export type AutoMaterializeAssetEvaluationRecords = {
   __typename: 'AutoMaterializeAssetEvaluationRecords';
-  currentEvaluationId: Maybe<Scalars['Int']>;
   records: Array<AutoMaterializeAssetEvaluationRecord>;
 };
 
@@ -611,6 +611,12 @@ export type CapturedLogsMetadata = {
   stdoutLocation: Maybe<Scalars['String']>;
 };
 
+export type ClaimedConcurrencySlot = {
+  __typename: 'ClaimedConcurrencySlot';
+  runId: Scalars['String'];
+  stepKey: Scalars['String'];
+};
+
 export type CompositeConfigType = ConfigType & {
   __typename: 'CompositeConfigType';
   description: Maybe<Scalars['String']>;
@@ -675,9 +681,11 @@ export type ConcurrencyKeyInfo = {
   activeSlotCount: Scalars['Int'];
   assignedStepCount: Scalars['Int'];
   assignedStepRunIds: Array<Scalars['String']>;
+  claimedSlots: Array<ClaimedConcurrencySlot>;
   concurrencyKey: Scalars['String'];
   pendingStepCount: Scalars['Int'];
   pendingStepRunIds: Array<Scalars['String']>;
+  pendingSteps: Array<PendingConcurrencyStep>;
   slotCount: Scalars['Int'];
 };
 
@@ -2585,6 +2593,15 @@ export type PathMetadataEntry = MetadataEntry & {
   description: Maybe<Scalars['String']>;
   label: Scalars['String'];
   path: Scalars['String'];
+};
+
+export type PendingConcurrencyStep = {
+  __typename: 'PendingConcurrencyStep';
+  assignedTimestamp: Maybe<Scalars['Float']>;
+  enqueuedTimestamp: Scalars['Float'];
+  priority: Maybe<Scalars['Int']>;
+  runId: Scalars['String'];
+  stepKey: Scalars['String'];
 };
 
 export type Permission = {
@@ -5127,6 +5144,10 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('ConfigTypeField')
         ? ({} as ConfigTypeField)
         : buildConfigTypeField({}, relationshipsToOmit),
+    currentAutoMaterializeEvaluationId:
+      overrides && overrides.hasOwnProperty('currentAutoMaterializeEvaluationId')
+        ? overrides.currentAutoMaterializeEvaluationId!
+        : 6693,
     dataVersion:
       overrides && overrides.hasOwnProperty('dataVersion') ? overrides.dataVersion! : 'a',
     dataVersionByPartition:
@@ -5406,10 +5427,6 @@ export const buildAutoMaterializeAssetEvaluationRecords = (
   relationshipsToOmit.add('AutoMaterializeAssetEvaluationRecords');
   return {
     __typename: 'AutoMaterializeAssetEvaluationRecords',
-    currentEvaluationId:
-      overrides && overrides.hasOwnProperty('currentEvaluationId')
-        ? overrides.currentEvaluationId!
-        : 9797,
     records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
   };
 };
@@ -5602,6 +5619,19 @@ export const buildCapturedLogsMetadata = (
   };
 };
 
+export const buildClaimedConcurrencySlot = (
+  overrides?: Partial<ClaimedConcurrencySlot>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ClaimedConcurrencySlot'} & ClaimedConcurrencySlot => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ClaimedConcurrencySlot');
+  return {
+    __typename: 'ClaimedConcurrencySlot',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'ullam',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'ut',
+  };
+};
+
 export const buildCompositeConfigType = (
   overrides?: Partial<CompositeConfigType>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -5726,6 +5756,8 @@ export const buildConcurrencyKeyInfo = (
       overrides && overrides.hasOwnProperty('assignedStepRunIds')
         ? overrides.assignedStepRunIds!
         : [],
+    claimedSlots:
+      overrides && overrides.hasOwnProperty('claimedSlots') ? overrides.claimedSlots! : [],
     concurrencyKey:
       overrides && overrides.hasOwnProperty('concurrencyKey') ? overrides.concurrencyKey! : 'quasi',
     pendingStepCount:
@@ -5734,6 +5766,8 @@ export const buildConcurrencyKeyInfo = (
       overrides && overrides.hasOwnProperty('pendingStepRunIds')
         ? overrides.pendingStepRunIds!
         : [],
+    pendingSteps:
+      overrides && overrides.hasOwnProperty('pendingSteps') ? overrides.pendingSteps! : [],
     slotCount: overrides && overrides.hasOwnProperty('slotCount') ? overrides.slotCount! : 455,
   };
 };
@@ -9379,6 +9413,28 @@ export const buildPathMetadataEntry = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'rerum',
     path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : 'soluta',
+  };
+};
+
+export const buildPendingConcurrencyStep = (
+  overrides?: Partial<PendingConcurrencyStep>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PendingConcurrencyStep'} & PendingConcurrencyStep => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PendingConcurrencyStep');
+  return {
+    __typename: 'PendingConcurrencyStep',
+    assignedTimestamp:
+      overrides && overrides.hasOwnProperty('assignedTimestamp')
+        ? overrides.assignedTimestamp!
+        : 9.29,
+    enqueuedTimestamp:
+      overrides && overrides.hasOwnProperty('enqueuedTimestamp')
+        ? overrides.enqueuedTimestamp!
+        : 1.74,
+    priority: overrides && overrides.hasOwnProperty('priority') ? overrides.priority! : 8863,
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'facere',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'fuga',
   };
 };
 

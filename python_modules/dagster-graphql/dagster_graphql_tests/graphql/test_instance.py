@@ -21,6 +21,17 @@ query InstanceConcurrencyLimitsQuery {
             slotCount
             activeSlotCount
             activeRunIds
+            claimedSlots {
+                runId
+                stepKey
+            }
+            pendingSteps {
+                runId
+                stepKey
+                enqueuedTimestamp
+                assignedTimestamp
+                priority
+            }
         }
     }
 }
@@ -62,14 +73,12 @@ class TestInstanceSettings(BaseTestSuite):
             results = execute_dagster_graphql(
                 graphql_context,
                 GET_CONCURRENCY_LIMITS_QUERY,
-                variables={
-                    "concurrencyKey": key,
-                },
             )
             assert results.data
             assert "instance" in results.data
             assert "concurrencyLimits" in results.data["instance"]
-            return results.data["instance"]["concurrencyLimits"]
+            limit_info = results.data["instance"]["concurrencyLimits"]
+            return next(iter([info for info in limit_info if info["concurrencyKey"] == key]), None)
 
         def _set_limits(key: str, limit: int):
             execute_dagster_graphql(
@@ -82,42 +91,56 @@ class TestInstanceSettings(BaseTestSuite):
             )
 
         # default limits are empty
-        assert _fetch_limits("foo") == []
+        assert _fetch_limits("foo") is None
 
         # set a limit
         _set_limits("foo", 10)
-        assert _fetch_limits("foo") == [
-            {"concurrencyKey": "foo", "slotCount": 10, "activeRunIds": [], "activeSlotCount": 0}
-        ]
+        foo = _fetch_limits("foo")
+        assert foo["concurrencyKey"] == "foo"
+        assert foo["slotCount"] == 10
+        assert foo["activeSlotCount"] == 0
+        assert foo["activeRunIds"] == []
+        assert foo["claimedSlots"] == []
+        assert foo["pendingSteps"] == []
 
         # claim a slot
         run_id = "fake_run_id"
         instance.event_log_storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
-        assert _fetch_limits("foo") == [
-            {
-                "concurrencyKey": "foo",
-                "slotCount": 10,
-                "activeRunIds": [run_id],
-                "activeSlotCount": 1,
-            }
-        ]
+        foo = _fetch_limits("foo")
+        assert foo["concurrencyKey"] == "foo"
+        assert foo["slotCount"] == 10
+        assert foo["activeSlotCount"] == 1
+        assert foo["activeRunIds"] == [run_id]
+        assert foo["claimedSlots"] == [{"runId": run_id, "stepKey": "fake_step_key"}]
+        assert len(foo["pendingSteps"]) == 1
+        assert foo["pendingSteps"][0]["runId"] == run_id
+        assert foo["pendingSteps"][0]["stepKey"] == "fake_step_key"
+        assert foo["pendingSteps"][0]["assignedTimestamp"] is not None
+        assert foo["pendingSteps"][0]["priority"] == 0
 
         # set a new limit
         _set_limits("foo", 5)
-        assert _fetch_limits("foo") == [
-            {
-                "concurrencyKey": "foo",
-                "slotCount": 5,
-                "activeRunIds": [run_id],
-                "activeSlotCount": 1,
-            }
-        ]
+        foo = _fetch_limits("foo")
+        assert foo["concurrencyKey"] == "foo"
+        assert foo["slotCount"] == 5
+        assert foo["activeSlotCount"] == 1
+        assert foo["activeRunIds"] == [run_id]
+        assert foo["claimedSlots"] == [{"runId": run_id, "stepKey": "fake_step_key"}]
+        assert len(foo["pendingSteps"]) == 1
+        assert foo["pendingSteps"][0]["runId"] == run_id
+        assert foo["pendingSteps"][0]["stepKey"] == "fake_step_key"
+        assert foo["pendingSteps"][0]["assignedTimestamp"] is not None
+        assert foo["pendingSteps"][0]["priority"] == 0
 
         # free a slot
         instance.event_log_storage.free_concurrency_slots_for_run(run_id)
-        assert _fetch_limits("foo") == [
-            {"concurrencyKey": "foo", "slotCount": 5, "activeRunIds": [], "activeSlotCount": 0}
-        ]
+        foo = _fetch_limits("foo")
+        assert foo["concurrencyKey"] == "foo"
+        assert foo["slotCount"] == 5
+        assert foo["activeSlotCount"] == 0
+        assert foo["activeRunIds"] == []
+        assert foo["claimedSlots"] == []
+        assert foo["pendingSteps"] == []
 
     def test_concurrency_free(self, graphql_context):
         storage = graphql_context.instance.event_log_storage

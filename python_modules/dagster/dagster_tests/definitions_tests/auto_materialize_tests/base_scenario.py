@@ -414,6 +414,7 @@ class AssetReconciliationScenario(
             )
 
             run_requests, cursor, evaluations = AssetDaemonContext(
+                evaluation_id=cursor.evaluation_id + 1,
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
@@ -600,11 +601,12 @@ def run_request(
     asset_keys: Sequence[CoercibleToAssetKey],
     partition_key: Optional[str] = None,
     fail_keys: Optional[Sequence[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> RunRequest:
     return RunRequest(
         asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
         partition_key=partition_key,
-        tags={FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {},
+        tags={**(tags or {}), **({FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {})},
     )
 
 

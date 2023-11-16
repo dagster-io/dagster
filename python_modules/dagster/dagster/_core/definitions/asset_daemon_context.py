@@ -92,6 +92,7 @@ def get_implicit_auto_materialize_policy(
 class AssetDaemonContext:
     def __init__(
         self,
+        evaluation_id: int,
         instance: "DagsterInstance",
         asset_graph: AssetGraph,
         cursor: AssetDaemonCursor,
@@ -105,6 +106,7 @@ class AssetDaemonContext:
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+        self._evaluation_id = evaluation_id
         self._instance_queryer = CachingInstanceQueryer(
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
@@ -572,7 +574,7 @@ class AssetDaemonContext:
                 asset_graph=self.asset_graph,
                 newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
                 newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-                evaluation_id=self.cursor.evaluation_id + 1,
+                evaluation_id=self._evaluation_id,
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests

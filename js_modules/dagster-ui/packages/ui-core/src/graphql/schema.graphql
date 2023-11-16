@@ -690,6 +690,7 @@ type AssetNode {
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int): AssetChecksOrError!
+  currentAutoMaterializeEvaluationId: Int
 }
 
 type MaterializationUpstreamDataVersion {
@@ -2322,12 +2323,27 @@ type Instance {
 type ConcurrencyKeyInfo {
   concurrencyKey: String!
   slotCount: Int!
+  claimedSlots: [ClaimedConcurrencySlot!]!
+  pendingSteps: [PendingConcurrencyStep!]!
   activeSlotCount: Int!
   activeRunIds: [String!]!
   pendingStepCount: Int!
   pendingStepRunIds: [String!]!
   assignedStepCount: Int!
   assignedStepRunIds: [String!]!
+}
+
+type ClaimedConcurrencySlot {
+  runId: String!
+  stepKey: String!
+}
+
+type PendingConcurrencyStep {
+  runId: String!
+  stepKey: String!
+  enqueuedTimestamp: Float!
+  assignedTimestamp: Float
+  priority: Int
 }
 
 type RunLauncher {
@@ -3285,7 +3301,6 @@ union AutoMaterializeAssetEvaluationRecordsOrError =
 
 type AutoMaterializeAssetEvaluationRecords {
   records: [AutoMaterializeAssetEvaluationRecord!]!
-  currentEvaluationId: Int
 }
 
 type AutoMaterializeAssetEvaluationRecord {

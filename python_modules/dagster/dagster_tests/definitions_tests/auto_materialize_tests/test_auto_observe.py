@@ -105,6 +105,7 @@ def test_reconcile():
     instance = DagsterInstance.ephemeral()
 
     run_requests, cursor, _ = AssetDaemonContext(
+        evaluation_id=1,
         auto_observe=True,
         asset_graph=asset_graph,
         target_asset_keys=set(),
