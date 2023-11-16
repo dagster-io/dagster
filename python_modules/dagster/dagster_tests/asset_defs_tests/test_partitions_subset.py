@@ -1,16 +1,19 @@
+from typing import cast
+
 import pytest
 from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsSubset
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
+    TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
+from dagster._serdes import deserialize_value, serialize_value
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -80,6 +83,61 @@ def test_get_subset_type():
 
 
 def test_empty_subsets():
-    assert type(composite.empty_subset()) is MultiPartitionsSubset
     assert type(static_partitions.empty_subset()) is DefaultPartitionsSubset
     assert type(time_window_partitions.empty_subset()) is PartitionKeysTimeWindowPartitionsSubset
+
+
+@pytest.mark.parametrize(
+    "partitions_def",
+    [
+        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+        (DailyPartitionsDefinition("2023-01-01")),
+    ],
+)
+def test_time_window_partitions_subset_serialization_deserialization(
+    partitions_def: DailyPartitionsDefinition,
+):
+    time_window_partitions_def = TimeWindowPartitionsDefinition(
+        start=partitions_def.start,
+        end=partitions_def.end,
+        cron_schedule="0 0 * * *",
+        fmt="%Y-%m-%d",
+        timezone=partitions_def.timezone,
+        end_offset=partitions_def.end_offset,
+    )
+    subset = cast(
+        TimeWindowPartitionsSubset,
+        TimeWindowPartitionsSubset.empty_subset(time_window_partitions_def).with_partition_keys(
+            ["2023-01-01"]
+        ),
+    )
+
+    deserialized = deserialize_value(
+        serialize_value(cast(TimeWindowPartitionsSubset, subset)), TimeWindowPartitionsSubset
+    )
+    assert deserialized == subset
+    assert deserialized.get_partition_keys() == ["2023-01-01"]
+    assert (
+        deserialized.included_time_windows[0].start.tzinfo
+        == subset.included_time_windows[0].start.tzinfo
+    )
+
+
+def test_time_window_partitions_subset_num_partitions_serialization():
+    daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
+    time_partitions_def = TimeWindowPartitionsDefinition(
+        start=daily_partitions_def.start,
+        end=daily_partitions_def.end,
+        cron_schedule="0 0 * * *",
+        fmt="%Y-%m-%d",
+        timezone=daily_partitions_def.timezone,
+        end_offset=daily_partitions_def.end_offset,
+    )
+
+    tw = time_partitions_def.time_window_for_partition_key("2023-01-01")
+
+    subset = TimeWindowPartitionsSubset(
+        time_partitions_def, num_partitions=None, included_time_windows=[tw]
+    )
+    deserialized = deserialize_value(serialize_value(subset), TimeWindowPartitionsSubset)
+    assert deserialized._asdict()["num_partitions"] is not None

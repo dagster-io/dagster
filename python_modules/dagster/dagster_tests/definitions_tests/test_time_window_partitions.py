@@ -814,8 +814,7 @@ def test_partition_subset_get_partition_keys_not_in_subset(
     )
     assert (
         cast(
-            TimeWindowPartitionsSubset,
-            partitions_def.deserialize_subset(subset.serialize()),
+            TimeWindowPartitionsSubset, partitions_def.deserialize_subset(subset.serialize())
         ).included_time_windows
         == subset.included_time_windows
     )
@@ -1427,9 +1426,9 @@ def test_time_window_partitions_def_serialization(partitions_def):
         timezone=partitions_def.timezone,
         end_offset=partitions_def.end_offset,
     )
-    assert (
-        deserialize_value(serialize_value(time_window_partitions_def)) == time_window_partitions_def
-    )
+    deserialized = deserialize_value(serialize_value(time_window_partitions_def))
+    assert deserialized == time_window_partitions_def
+    assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo
 
 
 def test_cannot_pickle_time_window_partitions_def():

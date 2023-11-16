@@ -1,7 +1,7 @@
 import copy
 import hashlib
 import json
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import (
     datetime,
@@ -1023,8 +1023,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
     ) -> bool:
         ...
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def partitions_def(self) -> PartitionsDefinition[T_str]:
         ...
 
