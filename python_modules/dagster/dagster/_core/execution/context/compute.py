@@ -1477,7 +1477,7 @@ class AssetExecutionContext(OpExecutionContext):
     def execution_properties(self) -> ExecutionProperties:
         if self._execution_props is None:
             self._execution_props = ExecutionProperties(
-                step_description=f"asset {self.assets_def.node_def.name}",
+                step_description=f"asset {self.op_execution_context.node_handle}",
                 op_execution_context=self._op_execution_context,
             )
         return self._execution_props
