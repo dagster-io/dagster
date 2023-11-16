@@ -14,6 +14,7 @@ from ..utils import (
     is_release_branch,
     safe_getenv,
     skip_if_no_python_changes,
+    skip_if_no_yaml_changes,
 )
 from .helm import build_helm_steps
 from .integration import build_integration_steps
@@ -81,6 +82,7 @@ def build_repo_wide_prettier_steps() -> List[CommandStep]:
             "make check_prettier",
         )
         .on_test_image(AvailablePythonVersion.get_default())
+        .with_skip(skip_if_no_yaml_changes())
         .build(),
     ]
 
