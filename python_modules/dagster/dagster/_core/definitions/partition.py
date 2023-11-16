@@ -1214,7 +1214,6 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
 
 
 class AllPartitionsSubset(
-    PartitionsSubset,
     NamedTuple(
         "_AllPartitionsSubset",
         [
@@ -1222,6 +1221,7 @@ class AllPartitionsSubset(
             ("dynamic_partitions_store", Optional[DynamicPartitionsStore]),
         ],
     ),
+    PartitionsSubset,
 ):
     """This is an in-memory (i.e. not serializable) convenience class that represents all partitions
     of a given PartitionsDefinition, allowing set operations to be taken without having to load
@@ -1236,10 +1236,6 @@ class AllPartitionsSubset(
         return super().__new__(
             cls, partitions_def=partitions_def, dynamic_partitions_store=dynamic_partitions_store
         )
-
-    @property
-    def partitions_def(self) -> PartitionsDefinition:
-        return self._asdict()["partitions_def"]
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
         return self.partitions_def.get_partition_keys(current_time, self.dynamic_partitions_store)
