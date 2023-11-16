@@ -55,8 +55,6 @@ from .partition import (
 )
 from .partition_key_range import PartitionKeyRange
 
-POST_DST_TRANSITION_SUFFIX = "_POST_DST_TRANSITION"
-
 
 def is_ambiguous_time(dt: datetime):
     """Returns if a datetime is ambiguous due to DST transitions."""
@@ -75,11 +73,25 @@ def is_ambiguous_time(dt: datetime):
     return offset_before > offset_after
 
 
+def dst_safe_fmt(fmt: str) -> str:
+    """Adds UTC offset information to a datetime format string to disambiguate timestamps around DST
+    transitions.
+    """
+    if "%z" in fmt:
+        return fmt
+    return fmt + "%z"
+
+
 def dst_safe_strftime(dt: datetime, fmt: str, cron_schedule: str) -> str:
     """A method for converting a datetime to a string which will append a suffix in cases where
     the resulting timestamp would be ambiguous due to DST transitions.
     """
     time_str = dt.strftime(fmt)
+
+    # if the format already includes a UTC offset, then we don't need to do anything
+    if fmt == dst_safe_fmt(fmt):
+        return time_str
+
     # only need to handle ambiguous times for cron schedules which repeat every hour
     if not cron_string_repeats_every_hour(cron_schedule):
         return time_str
@@ -89,19 +101,21 @@ def dst_safe_strftime(dt: datetime, fmt: str, cron_schedule: str) -> str:
         return time_str
 
     if is_ambiguous_time(dt) and dt.fold > 0:
-        return time_str + POST_DST_TRANSITION_SUFFIX
+        return dt.strftime(dst_safe_fmt(fmt))
     return time_str
 
 
 def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
     """A method for parsing a datetime created with the dst_safe_strftime() method."""
-    if date_string.endswith(POST_DST_TRANSITION_SUFFIX):
-        dst_rule = pendulum.POST_TRANSITION
-        date_string = date_string[: -len(POST_DST_TRANSITION_SUFFIX)]
-    else:
+    try:
+        # first, try to parse the datetime in the normal format
+        dt = datetime.strptime(date_string, fmt)
         dst_rule = pendulum.PRE_TRANSITION
+    except ValueError:
+        # if this fails, try to parse the datetime with a UTC offset added
+        dt = datetime.strptime(date_string, dst_safe_fmt(fmt))
+        dst_rule = pendulum.POST_TRANSITION
 
-    dt = datetime.strptime(date_string, fmt)
     return create_pendulum_time(
         dt.year,
         dt.month,
@@ -110,7 +124,8 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
         dt.minute,
         dt.second,
         dt.microsecond,
-        tz=tz,
+        # the datetime object may have timezone information on it, depending on the format used
+        tz=dt.tzinfo or tz,
         dst_rule=dst_rule,
     )
 

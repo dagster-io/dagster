@@ -20,7 +20,6 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
-    POST_DST_TRANSITION_SUFFIX,
     BaseTimeWindowPartitionsSubset,
     PartitionKeysTimeWindowPartitionsSubset,
     ScheduleType,
@@ -677,7 +676,7 @@ def test_time_partitions_weekly_partitions(
             [
                 "2021-11-07-00:00",
                 "2021-11-07-01:00",
-                "2021-11-07-01:00_POST_DST_TRANSITION",
+                "2021-11-07-01:00-0600",
                 "2021-11-07-02:00",
                 "2021-11-07-03:00",
             ],
@@ -1042,10 +1041,10 @@ def test_dst_transition_15_minute_partitions() -> None:
         "2020-11-01-01:15",
         "2020-11-01-01:30",
         "2020-11-01-01:45",
-        "2020-11-01-01:00" + POST_DST_TRANSITION_SUFFIX,
-        "2020-11-01-01:15" + POST_DST_TRANSITION_SUFFIX,
-        "2020-11-01-01:30" + POST_DST_TRANSITION_SUFFIX,
-        "2020-11-01-01:45" + POST_DST_TRANSITION_SUFFIX,
+        "2020-11-01-01:00-0800",
+        "2020-11-01-01:15-0800",
+        "2020-11-01-01:30-0800",
+        "2020-11-01-01:45-0800",
         "2020-11-01-02:00",
         "2020-11-01-02:15",
     }
@@ -1065,10 +1064,34 @@ def test_dst_transition_hourly_partitions() -> None:
         "2020-10-31-23:00",
         "2020-11-01-00:00",
         "2020-11-01-01:00",
-        "2020-11-01-01:00" + POST_DST_TRANSITION_SUFFIX,
+        "2020-11-01-01:00-0800",
         "2020-11-01-02:00",
         "2020-11-01-03:00",
         "2020-11-01-04:00",
+    }
+    assert subset.get_partition_keys_not_in_subset() == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset()
+        == []
+    )
+
+
+def test_dst_transition_hourly_partitions_with_utc_offset() -> None:
+    partitions_def = HourlyPartitionsDefinition(
+        start_date="2020-10-31-23:00:00-0700",
+        end_date="2020-11-01-5:00:00-0800",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M:%S%z",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-31-23:00:00-0700",
+        "2020-11-01-00:00:00-0700",
+        "2020-11-01-01:00:00-0700",
+        "2020-11-01-01:00:00-0800",
+        "2020-11-01-02:00:00-0800",
+        "2020-11-01-03:00:00-0800",
+        "2020-11-01-04:00:00-0800",
     }
     assert subset.get_partition_keys_not_in_subset() == []
     assert (
