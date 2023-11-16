@@ -13,9 +13,9 @@ Throughout this module, you’ve used DuckDB to store and transform your data. E
 	deps=["taxi_trips_file"],
 )
 def taxi_trips():
-		...
-		conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-		...
+    ...
+    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+    ...
 ```
 
 Every asset that queries DuckDB contains the `duckdb.connect` line. As previously mentioned, this can become brittle and error-prone as your project grows, whether in the number of assets that use it or the complexity of the connections. For example, to MotherDuck, a specific S3 bucket, or loading an extension. To be exact, this brittleness is shared across the following assets:
@@ -93,10 +93,10 @@ Update `dagster_university/__init__.py` with the following changes:
 
    ```python
    defs = Definitions(
-   	assets=[*trip_assets, *metric_assets],
-   		resources={
-       	"database": database_resource,
-     },
+       assets=[*trip_assets, *metric_assets],
+       resources={
+           "database": database_resource,
+       },
    )
    ```
 
