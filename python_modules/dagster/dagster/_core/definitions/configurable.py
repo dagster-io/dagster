@@ -177,16 +177,16 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
 
     if safe_is_subclass(configurable, ConfigurableResourceFactory):
         return
-
-    check.inst_param(
-        configurable,
-        "configurable",
-        ConfigurableDefinition,
-        "Only the following types can be used with the `configured` method: ResourceDefinition,"
-        " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
-        " For usage examples of `configured`, see"
-        " https://docs.dagster.io/concepts/configuration/configured",
-    )
+    else:
+        check.inst_param(
+            configurable,
+            "configurable",
+            ConfigurableDefinition,
+            "Only the following types can be used with the `configured` method: ResourceDefinition,"
+            " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
+            " For usage examples of `configured`, see"
+            " https://docs.dagster.io/concepts/configuration/configured",
+        )
 
 
 T_Configurable = TypeVar(
@@ -318,14 +318,20 @@ def configured(
     _check_configurable_param(configurable)
 
     from dagster._config.pythonic_config import ConfigurableResourceFactory, safe_is_subclass
+    from dagster._core.definitions.resource_definition import ResourceDefinition
 
+    # we specially handle ConfigurableResources, treating it as @configured of the
+    # underlying resource definition (which is indeed a ConfigurableDefinition)
     if safe_is_subclass(configurable, ConfigurableResourceFactory):
-        configurable_inner = (
-            cast(Type[ConfigurableResourceFactory], configurable)
-            .configure_at_launch()
-            .get_resource_definition()
+        configurable_inner = cast(
+            ResourceDefinition,
+            (
+                cast(Type[ConfigurableResourceFactory], configurable)
+                .configure_at_launch()
+                .get_resource_definition()
+            ),
         )
-        return configured(configurable_inner, config_schema=config_schema, **kwargs)
+        return configured(configurable_inner, config_schema=config_schema, **kwargs)  # type: ignore
 
     if isinstance(configurable, NamedConfigurableDefinition):
 
