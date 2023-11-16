@@ -17,6 +17,7 @@ from typing import (
 import pyarrow as pa
 import pyarrow.compute as pc
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._annotations import experimental
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
@@ -37,6 +38,7 @@ T = TypeVar("T")
 ArrowTypes = Union[pa.Table, pa.RecordBatchReader]
 
 
+@experimental
 class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
     @abstractmethod
     def from_arrow(self, obj: pa.RecordBatchReader, target_type: type) -> T:
@@ -128,6 +130,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         return self.from_arrow(scanner.to_reader(), context.dagster_type.typing_type)
 
 
+@experimental
 class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
     def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type[ArrowTypes]) -> ArrowTypes:
         if target_type == pa.Table:
@@ -144,6 +147,7 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
         return [pa.Table, pa.RecordBatchReader]
 
 
+@experimental
 def partition_dimensions_to_dnf(
     partition_dimensions: Iterable[TablePartitionDimension],
     table_schema: Schema,

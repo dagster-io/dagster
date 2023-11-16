@@ -1,12 +1,14 @@
 from typing import Optional, Union
 
 from dagster import ConfigurableResource
+from dagster._annotations import experimental
 from deltalake import DeltaTable
 from pydantic import Field
 
 from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 
 
+@experimental
 class DeltaTableResource(ConfigurableResource):
     """Resource for interacting with a Delta table.
 

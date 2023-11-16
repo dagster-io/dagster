@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional, Sequence, Tuple, Type
 
 import pandas as pd
 import pyarrow as pa
+from dagster._annotations import experimental
 from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
 )
@@ -12,6 +13,7 @@ from dagster_deltalake.handler import (
 from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 
+@experimental
 class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
     def from_arrow(
         self, obj: pa.RecordBatchReader, target_type: Type[pd.DataFrame]
@@ -26,6 +28,7 @@ class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
         return [pd.DataFrame]
 
 
+@experimental
 class DeltaLakePandasIOManager(DeltaLakeIOManager):
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:

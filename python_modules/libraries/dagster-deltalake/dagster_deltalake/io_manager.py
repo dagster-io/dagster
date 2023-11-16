@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast
 
 from dagster import OutputContext
+from dagster._annotations import experimental
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -53,6 +54,7 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
     table_config: NotRequired[Dict[str, str]]
 
 
+@experimental
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     """Base class for an IO manager definition that reads inputs from and writes outputs to Delta Lake.
 
@@ -146,6 +148,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         )
 
 
+@experimental
 class DeltaLakeDbClient(DbClient):
     @staticmethod
     def delete_table_slice(
