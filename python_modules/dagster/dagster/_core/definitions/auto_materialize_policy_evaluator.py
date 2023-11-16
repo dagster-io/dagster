@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional, Sequence, Tuple
 
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsSubset
 
 from .auto_materialize_rule import (
     DiscardOnMaxMaterializationsExceededRule,
+    PartitionsSubsetOrBool,
     RuleEvaluationContext,
     RuleEvaluationResults,
 )
@@ -19,8 +19,6 @@ from .auto_materialize_rule_evaluation import (
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-PartitionsSubsetOrBool = Union[PartitionsSubset, bool]
-
 
 class EvaluationData(NamedTuple):
     ...
@@ -30,7 +28,7 @@ class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
     condition: "AutoMaterializeCondition"
-    true: AbstractSet[AssetKeyPartitionKey]
+    true: PartitionsSubsetOrBool
     results: RuleEvaluationResults = []
     children: Sequence["ConditionEvaluation"] = []
 
@@ -63,7 +61,7 @@ class ConditionEvaluation(NamedTuple):
         asset_key: AssetKey,
         asset_graph: AssetGraph,
         instance_queryer: "CachingInstanceQueryer",
-        to_discard: AbstractSet[AssetKeyPartitionKey],
+        to_discard: PartitionsSubsetOrBool,
         discard_results: Sequence[
             Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
         ],
@@ -110,7 +108,7 @@ class RuleCondition(
     def evaluate(self, context: RuleEvaluationContext) -> ConditionEvaluation:
         context.daemon_context._verbose_log_fn(f"Evaluating rule: {self.rule.to_snapshot()}")  # noqa
         results = self.rule.evaluate_for_asset(context)
-        true = set()
+        true = context.empty_subset_or_bool
         for _, asset_partitions in results:
             true |= asset_partitions
         context.daemon_context._verbose_log_fn(f"Rule returned {len(true)} partitions")  # noqa
@@ -138,7 +136,7 @@ class OrCondition(
 ):
     def evaluate(self, context: RuleEvaluationContext) -> ConditionEvaluation:
         child_evaluations: List[ConditionEvaluation] = []
-        subset = set()
+        subset = context.empty_subset_or_bool
         for child in self.children:
             result = child.evaluate(context)
             child_evaluations.append(result)
@@ -185,7 +183,7 @@ class AutoMaterializePolicyEvaluator(NamedTuple):
         condition_evaluation = self.condition.evaluate(context)
 
         # this is treated separately from other rules, for now
-        to_discard, discard_results = set(), []
+        to_discard, discard_results = context.empty_subset_or_bool, []
         if self.max_materializations_per_minute is not None:
             discard_context = context.with_candidates(condition_evaluation.true)
             condition = RuleCondition(
@@ -216,6 +214,6 @@ class AutoMaterializePolicyEvaluator(NamedTuple):
                 discard_results,
                 num_skipped=num_skipped,
             ),
-            to_materialize,
-            to_discard,
+            to_materialize.get_asset_partitions(context.asset_key),
+            to_discard.get_asset_partitions(context.asset_key),
         )

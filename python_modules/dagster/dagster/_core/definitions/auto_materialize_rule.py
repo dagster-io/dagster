@@ -65,7 +65,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class PartitionsSubsetOrBool(NamedTuple):
+class PartitionsSubsetOrBool:
     """Lightweight wrapper to allow operations on both partitioned and unpartitioned assets."""
 
     inner: Union[bool, "PartitionsSubset"]
@@ -98,12 +98,13 @@ class PartitionsSubsetOrBool(NamedTuple):
         self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
     ) -> "PartitionsSubsetOrBool":
         if isinstance(self.inner, bool):
-            return self._replace(inner=self.inner | bool(asset_partitions))
-        return self._replace(
+            return dataclasses.replace(self, inner=self.inner | bool(asset_partitions))
+        return dataclasses.replace(
+            self,
             inner=self.inner
             | check.not_none(self.partitions_def).subset_with_partition_keys(
                 {ap.partition_key for ap in asset_partitions if ap.partition_key is not None}
-            )
+            ),
         )
 
     def get_asset_partitions(self, asset_key: AssetKey) -> AbstractSet[AssetKeyPartitionKey]:
@@ -123,11 +124,11 @@ class PartitionsSubsetOrBool(NamedTuple):
     ) -> "PartitionsSubsetOrBool":
         if not isinstance(other, PartitionsSubsetOrBool):
             other = self.from_asset_partitions(other)
-        if type(self.inner) != type(other.inner):
-            check.failed(
-                "Cannot operate on different inner types when using PartitionsSubsetOrBool"
-            )
-        return oper(self, other)
+        new_inner = oper(self.inner, other.inner)
+        # special handling for the __sub__ case
+        if isinstance(new_inner, int):
+            new_inner = bool(new_inner)
+        return dataclasses.replace(self, inner=new_inner)
 
     def __sub__(
         self, other: Union["PartitionsSubsetOrBool", AbstractSet[AssetKeyPartitionKey]]
@@ -144,6 +145,16 @@ class PartitionsSubsetOrBool(NamedTuple):
     ) -> "PartitionsSubsetOrBool":
         return self._oper(other, operator.or_)
 
+    def __len__(self) -> int:
+        if isinstance(self.inner, bool):
+            return 1 if self.inner else 0
+        return len(self.inner)
+
+    def __contains__(self, asset_partition: AssetKeyPartitionKey) -> bool:
+        if isinstance(self.inner, bool):
+            return self.inner
+        return asset_partition.partition_key in self.inner
+
 
 @dataclass(frozen=True)
 class RuleEvaluationContext:
@@ -157,6 +168,20 @@ class RuleEvaluationContext:
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: PartitionsSubsetOrBool
     daemon_context: "AssetDaemonContext"
+
+    @property
+    def all_subset_or_bool(self) -> PartitionsSubsetOrBool:
+        return PartitionsSubsetOrBool.all(
+            partitions_def=self.asset_graph.get_partitions_def(self.asset_key),
+            instance_queryer=self.instance_queryer,
+        )
+
+    @property
+    def empty_subset_or_bool(self) -> PartitionsSubsetOrBool:
+        return PartitionsSubsetOrBool.empty(
+            partitions_def=self.asset_graph.get_partitions_def(self.asset_key),
+            instance_queryer=self.instance_queryer,
+        )
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -199,9 +224,7 @@ class RuleEvaluationContext:
             asset_graph=self.asset_graph
         )
 
-    def with_candidates(
-        self, candidates: AbstractSet[AssetKeyPartitionKey]
-    ) -> "RuleEvaluationContext":
+    def with_candidates(self, candidates: PartitionsSubsetOrBool) -> "RuleEvaluationContext":
         return dataclasses.replace(self, candidates=candidates)
 
     def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
