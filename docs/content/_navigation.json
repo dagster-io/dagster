@@ -542,7 +542,7 @@
                 "children": [
                   {
                     "title": "SCIM provisioning",
-                    "path": "/dagster-cloud/account/authentication//utilizing-scim-provisioning"
+                    "path": "/dagster-cloud/account/authentication/utilizing-scim-provisioning"
                   },
                   {
                     "title": "SSO for Azure Active Directory",
