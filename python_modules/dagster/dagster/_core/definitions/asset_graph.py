@@ -19,7 +19,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import toposort
 
 import dagster._check as check
@@ -754,7 +753,7 @@ class InternalAssetGraph(AssetGraph):
 
 def sort_key_for_asset_partition(
     asset_graph: AssetGraph, asset_partition: AssetKeyPartitionKey
-) -> int:
+) -> float:
     """Returns an integer sort key such that asset partitions are sorted in the order in which they
     should be materialized. For assets without a time window partition dimension, this is always 0.
     Assets with a time window partition dimension will be sorted from newest to oldest, unless they
@@ -767,9 +766,8 @@ def sort_key_for_asset_partition(
 
     # A sort key such that time window partitions are sorted from oldest to newest
     time_partition_key = get_time_partition_key(partitions_def, asset_partition.partition_key)
-    partition_timestamp = pendulum.instance(
-        datetime.strptime(time_partition_key, time_partitions_def.fmt),
-        tz=time_partitions_def.timezone,
+    partition_timestamp = time_partitions_def.start_time_for_partition_key(
+        time_partition_key
     ).timestamp()
 
     if asset_graph.has_self_dependency(asset_partition.asset_key):

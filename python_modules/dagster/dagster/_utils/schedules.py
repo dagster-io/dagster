@@ -77,6 +77,12 @@ def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
     )
 
 
+def cron_string_repeats_every_hour(cron_string: str) -> bool:
+    """Returns if the given cron schedule repeats every hour."""
+    cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
+    return len(cron_parts[1]) == 1 and cron_parts[1][0] == "*"
+
+
 def _replace_date_fields(
     pendulum_date: PendulumDateTime,
     hour: int,
@@ -545,8 +551,7 @@ def _timezone_aware_cron_iter(
     # entirely and just move on to the next matching time (instead of returning
     # the end time of the non-existant interval), and when there are two times that match the cron
     # string, they return both instead of picking the latter time.
-    cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
-    repeats_every_hour = len(cron_parts[1]) == 1 and cron_parts[1][0] == "*"
+    repeats_every_hour = cron_string_repeats_every_hour(cron_string)
 
     # Chronological order of dates to return
     dates_to_consider = []
