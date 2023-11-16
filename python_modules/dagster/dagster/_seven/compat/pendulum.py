@@ -22,28 +22,33 @@ def mock_pendulum_timezone(override_timezone):
 
 
 def create_pendulum_time(year, month, day, *args, **kwargs):
-    if "tz" in kwargs and "dst_rule" in kwargs and not _IS_PENDULUM_2:
-        tz = pendulum.timezone(kwargs.pop("tz"))
-        dst_rule = kwargs.pop("dst_rule")
+    if not _IS_PENDULUM_2:
+        if "tz" in kwargs and "dst_rule" in kwargs:
+            tz = pendulum.timezone(kwargs.pop("tz"))
+            dst_rule = kwargs.pop("dst_rule")
 
-        return pendulum.instance(
-            tz.convert(
-                datetime.datetime(
-                    year,
-                    month,
-                    day,
-                    *args,
-                    **kwargs,
-                ),
-                dst_rule=dst_rule,
+            return pendulum.instance(
+                tz.convert(
+                    datetime.datetime(
+                        year,
+                        month,
+                        day,
+                        *args,
+                        **kwargs,
+                    ),
+                    dst_rule=dst_rule,
+                )
             )
-        )
+        elif "tzinfo" in kwargs:
+            dt = datetime.datetime(year, month, day, *args, **kwargs)
+            print("d", dt.timestamp(), dt.tzinfo)
+            ret = pendulum.instance(datetime.datetime(year, month, day, *args, **kwargs))
+            print("r", ret.timestamp(), ret.tzinfo)
+            return ret
+        else:
+            return pendulum.create(year, month, day, *args, **kwargs)
 
-    return (
-        pendulum.datetime(year, month, day, *args, **kwargs)
-        if _IS_PENDULUM_2
-        else pendulum.create(year, month, day, *args, **kwargs)
-    )
+    return pendulum.datetime(year, month, day, *args, **kwargs)
 
 
 PendulumDateTime: TypeAlias = (

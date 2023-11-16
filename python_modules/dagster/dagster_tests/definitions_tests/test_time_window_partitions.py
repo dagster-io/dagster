@@ -1076,7 +1076,7 @@ def test_dst_transition_hourly_partitions() -> None:
     )
 
 
-def test_dst_transition_hourly_partitions_with_utc_offset() -> None:
+def test_dst_transition_hourly__partitions_with_utc_offset() -> None:
     partitions_def = HourlyPartitionsDefinition(
         start_date="2020-10-31-23:00:00-0700",
         end_date="2020-11-01-5:00:00-0800",
@@ -1394,7 +1394,6 @@ def test_partition_with_end_date(
         == last_partition_window_
     )
     assert not partitions_def.get_next_partition_window(last_partition_window_.end)
-    # get_partition_keys
     assert len(partitions_def.get_partition_keys()) == number_of_partitions
     assert partitions_def.get_partition_keys()[0] == first_partition_window[0]
     assert partitions_def.get_partition_keys()[-1] == last_partition_window[0]

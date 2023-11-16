@@ -60,7 +60,7 @@ def is_ambiguous_time(dt: datetime):
     """Returns if a datetime is ambiguous due to DST transitions."""
     tz = check.not_none(dt.tzinfo)
     # UTC is never ambiguous
-    if tz.tzname == "UTC":
+    if tz.tzname(None) == "UTC":
         return False
     offset_before = cast(
         timedelta,
@@ -96,10 +96,6 @@ def dst_safe_strftime(dt: datetime, fmt: str, cron_schedule: str) -> str:
     if not cron_string_repeats_every_hour(cron_schedule):
         return time_str
 
-    # fold attribute not set correctly in pendulum 1
-    if not _IS_PENDULUM_2:
-        return time_str
-
     if is_ambiguous_time(dt) and dt.fold > 0:
         return dt.strftime(dst_safe_fmt(fmt))
     return time_str
@@ -116,17 +112,25 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
         dt = datetime.strptime(date_string, dst_safe_fmt(fmt))
         dst_rule = pendulum.POST_TRANSITION
 
+    # the datetime object may have timezone information on it, depending on the format used. If it
+    # does, use this timezone information when creating the datetime object.
+    if dt.tzinfo:
+        tz_kwargs = {"tzinfo": dt.tzinfo}
+    else:
+        tz_kwargs = {"tz": tz, "dst_rule": dst_rule}
+
+    if not _IS_PENDULUM_2:
+        # pendulum 1.x erroneously believes that there are two instances of the *second* hour after
+        # a DST transition, which causes the PRE_TRANSITION rule to be applied to two consecutive
+        # hours. to avoid this, we make it consider a microsecond in the future when calculating
+        # DST transitions, then move the time back a microsecond at the end.
+        ms = dt.microsecond
+        dt = create_pendulum_time(
+            dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, ms + 1, **tz_kwargs
+        )
+        return dt + timedelta(microseconds=-1)
     return create_pendulum_time(
-        dt.year,
-        dt.month,
-        dt.day,
-        dt.hour,
-        dt.minute,
-        dt.second,
-        dt.microsecond,
-        # the datetime object may have timezone information on it, depending on the format used
-        tz=dt.tzinfo or tz,
-        dst_rule=dst_rule,
+        dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond, **tz_kwargs
     )
 
 
@@ -236,6 +240,10 @@ class TimeWindowPartitionsDefinition(
             end_dt = None
         elif isinstance(end, datetime):
             end_dt = pendulum.instance(end, tz=timezone)
+            if end.tzinfo:
+                # Pendulum.instance does not override the timezone of the datetime object,
+                # so we convert it to the provided timezone
+                end_dt = end_dt.in_tz(tz=timezone)
         else:
             end_dt = dst_safe_strptime(end, timezone, fmt)
 
