@@ -106,32 +106,34 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
     try:
         # first, try to parse the datetime in the normal format
         dt = datetime.strptime(date_string, fmt)
-        dst_rule = pendulum.PRE_TRANSITION
     except ValueError:
         # if this fails, try to parse the datetime with a UTC offset added
         dt = datetime.strptime(date_string, dst_safe_fmt(fmt))
-        dst_rule = pendulum.POST_TRANSITION
 
     # the datetime object may have timezone information on it, depending on the format used. If it
-    # does, use this timezone information when creating the datetime object.
+    # does, no extra timezone information needs to be added and we can make a simple conversion
     if dt.tzinfo:
-        tz_kwargs = {"tzinfo": dt.tzinfo}
+        return pendulum.instance(dt)
+    # otherwise, ensure that we assume the pre-transition timezone
     else:
-        tz_kwargs = {"tz": tz, "dst_rule": dst_rule}
-
-    if not _IS_PENDULUM_2:
-        # pendulum 1.x erroneously believes that there are two instances of the *second* hour after
-        # a DST transition, which causes the PRE_TRANSITION rule to be applied to two consecutive
-        # hours. to avoid this, we make it consider a microsecond in the future when calculating
-        # DST transitions, then move the time back a microsecond at the end.
-        ms = dt.microsecond
+        # Pendulum 1.x erroneously believes that there are two instances of the *second* hour after
+        # a datetime transition, so to work around this we calculate the timestamp of the next
+        # microsecond of the given datetime.
+        dt_microsecond = dt.microsecond + 1 if not _IS_PENDULUM_2 else dt.microsecond
         dt = create_pendulum_time(
-            dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, ms + 1, **tz_kwargs
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt_microsecond,
+            tz=tz,
+            dst_rule=pendulum.PRE_TRANSITION,
         )
-        return dt + timedelta(microseconds=-1)
-    return create_pendulum_time(
-        dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond, **tz_kwargs
-    )
+        if not _IS_PENDULUM_2:
+            dt = dt.add(microseconds=-1)
+        return dt
 
 
 class DatetimeFieldSerializer(FieldSerializer):
