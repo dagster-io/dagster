@@ -43,8 +43,10 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
             return pendulum.instance(datetime.datetime(year, month, day, *args, **kwargs))
         else:
             return pendulum.create(year, month, day, *args, **kwargs)
-
-    return pendulum.datetime(year, month, day, *args, **kwargs)
+    else:
+        if "tzinfo" in kwargs:
+            kwargs["tz"] = kwargs.pop("tzinfo")
+        return pendulum.datetime(year, month, day, *args, **kwargs)
 
 
 PendulumDateTime: TypeAlias = (
