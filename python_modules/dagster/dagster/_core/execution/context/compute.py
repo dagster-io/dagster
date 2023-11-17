@@ -1420,13 +1420,8 @@ class AssetExecutionContext(OpExecutionContext):
         )
         self._step_execution_context = self._op_execution_context._step_execution_context  # noqa: SLF001
 
-        self._run_props = RunProperties(
-            run_id=self._op_execution_context.run_id,
-            run_config=self._op_execution_context.run_config,
-            dagster_run=self._op_execution_context.run,
-            retry_number=self._op_execution_context.retry_number,
-        )
-        
+        self._run_props = None
+
     @staticmethod
     def get() -> "AssetExecutionContext":
         ctx = _current_asset_execution_context.get()
@@ -1442,6 +1437,13 @@ class AssetExecutionContext(OpExecutionContext):
 
     @property
     def run_properties(self) -> RunProperties:
+        if self._run_props is None:
+            self._run_props = RunProperties(
+                run_id=self._op_execution_context.run_id,
+                run_config=self._op_execution_context.run_config,
+                dagster_run=self._op_execution_context.run,
+                retry_number=self._op_execution_context.retry_number,
+            )
         return self._run_props
 
     ######## Deprecated methods
