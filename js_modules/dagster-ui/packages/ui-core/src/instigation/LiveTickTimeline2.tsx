@@ -105,7 +105,8 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minX, now, ticksReversed, fullRange, viewport.width]);
 
-  const tickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
+  const timeTickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
+  const tickGridDelta = timeTickGridDelta / 5;
   const startTickGridX = Math.ceil(minX / tickGridDelta) * tickGridDelta;
   const gridTicks = React.useMemo(() => {
     const ticks = [];
@@ -113,11 +114,11 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
       ticks.push({
         time: i,
         x: getX(i, viewport.width, minX, fullRange),
-        showLabel: i % tickGridDelta === 0,
+        showLabel: i % timeTickGridDelta === 0,
       });
     }
     return ticks;
-  }, [startTickGridX, maxX, tickGridDelta, viewport.width, minX, fullRange]);
+  }, [maxX, startTickGridX, tickGridDelta, viewport.width, minX, fullRange, timeTickGridDelta]);
 
   const {
     timezone: [timezone],
