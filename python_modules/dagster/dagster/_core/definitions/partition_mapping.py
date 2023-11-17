@@ -939,7 +939,10 @@ class StaticPartitionMapping(
         return UpstreamPartitionsResult(upstream_subset.with_partition_keys(upstream_keys), [])
 
     def __str__(self) -> str:
-        return f"Upstream partitions are dependencies of downstream partitions according to the following mapping: \n{self.downstream_partition_keys_by_upstream_partition_key}"
+        return (
+            f"Maps upstream partitions to their downstream dependencies according to the "
+            f"following mapping: \n{self.downstream_partition_keys_by_upstream_partition_key}"
+        )
 
 
 class InferSingleToMultiDimensionDepsResult(
