@@ -424,15 +424,19 @@ scheduler:
   #   CustomScheduler,
   #  ]
   type: DagsterDaemonScheduler
-
   config: {}
-  ## Uncomment this configuration will only be used if the CustomScheduler is selected.
-  ## Using this setting requires a custom webserver image that defines the user specified
-  ## scheduler in an installed python module.
-  #   customScheduler:
-  #     module: ~
-  #     class: ~
-  #     config: {}
+    ## This configuration will only be used if the DagsterDaemonScheduler is selected.
+    # daemonScheduler:
+    #   maxCatchupRuns: 5
+    #   maxTickRetries: 0
+
+    ## This configuration will only be used if the CustomScheduler is selected.
+    ## Using this setting requires a custom webserver image that defines the user specified
+    ## scheduler in an installed python module.
+    #   customScheduler:
+    #     module: ~
+    #     class: ~
+    #     config: {}
 
 ####################################################################################################
 # Run Launcher: Configuration for run launcher

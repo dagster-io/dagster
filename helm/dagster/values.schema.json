@@ -1719,10 +1719,49 @@
             ],
             "type": "string"
         },
+        "DaemonSchedulerConfig": {
+            "title": "DaemonSchedulerConfig",
+            "type": "object",
+            "properties": {
+                "maxCatchupRuns": {
+                    "title": "Maxcatchupruns",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "maxTickRetries": {
+                    "title": "Maxtickretries",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
         "SchedulerConfig": {
             "title": "SchedulerConfig",
             "type": "object",
             "properties": {
+                "daemonScheduler": {
+                    "title": "DaemonSchedulerConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/DaemonSchedulerConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "customScheduler": {
                     "title": "ConfigurableClass",
                     "anyOf": [
