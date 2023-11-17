@@ -60,10 +60,8 @@ from .compute import AssetExecutionContext, ExecutionProperties, OpExecutionCont
 from .system import StepExecutionContext, TypeCheckContext
 
 
-def _property_msg(prop_name: str, method_name: str) -> str:
-    return (
-        f"The {prop_name} {method_name} is not set on the context when an op is directly invoked."
-    )
+def _property_msg(prop_name: str, method_name: str, step_type: str) -> str:
+    return f"The {prop_name} {method_name} is not set on the context when an {step_type} is directly invoked."
 
 
 class BoundProperties(
@@ -306,10 +304,10 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
     def _check_bound(self, fn_name: str, fn_type: str) -> BoundProperties:
         if self._bound_properties is None:
-            raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
+            raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type, "op"))
         # return self._bound_properties so that the calling function can access properties
         # of self._bound_properties without causing pyright errors
-        return self._bound_properties
+        return self._bound_propertiesg
 
     def bind(
         self,
@@ -451,7 +449,7 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
     @property
     def dagster_run(self) -> DagsterRun:
-        raise DagsterInvalidPropertyError(_property_msg("dagster_run", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("dagster_run", "property", "op"))
 
     @property
     def instance(self) -> DagsterInstance:
@@ -476,7 +474,7 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
     @property
     def step_launcher(self) -> Optional[StepLauncher]:
-        raise DagsterInvalidPropertyError(_property_msg("step_launcher", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("step_launcher", "property", "op"))
 
     @property
     def run_id(self) -> str:
@@ -497,11 +495,11 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
     @property
     def job_def(self) -> JobDefinition:
-        raise DagsterInvalidPropertyError(_property_msg("job_def", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("job_def", "property", "op"))
 
     @property
     def job_name(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("job_name", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("job_name", "property", "op"))
 
     @property
     def log(self) -> DagsterLogManager:
@@ -510,15 +508,15 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
     @property
     def node_handle(self) -> NodeHandle:
-        raise DagsterInvalidPropertyError(_property_msg("node_handle", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("node_handle", "property", "op"))
 
     @property
     def op(self) -> Node:
-        raise DagsterInvalidPropertyError(_property_msg("op", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("op", "property", "op"))
 
     @property
     def solid(self) -> Node:
-        raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
+        raise DagsterInvalidPropertyError(_property_msg("solid", "property", "op"))
 
     @property
     def op_def(self) -> OpDefinition:
@@ -581,7 +579,9 @@ class RunlessOpExecutionContext(OpExecutionContext):
         return cast(str, bound_properties.alias)
 
     def get_step_execution_context(self) -> StepExecutionContext:
-        raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "method"))
+        raise DagsterInvalidPropertyError(
+            _property_msg("get_step_execution_context", "method", "op")
+        )
 
     def get_events(self) -> Sequence[UserEvent]:
         """Retrieve the list of user-generated events that were logged via the context.
@@ -760,7 +760,7 @@ class DirectInvocationAssetExecutionContext(AssetExecutionContext):
 
     def _check_bound(self, fn_name: str, fn_type: str):
         if not self._bound:
-            raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
+            raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type, "asset"))
 
     def bind(
         self,
