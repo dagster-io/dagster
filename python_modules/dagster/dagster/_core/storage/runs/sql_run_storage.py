@@ -350,7 +350,7 @@ class SqlRunStorage(RunStorage):
                 db.func.coalesce(
                     # try to get the priority tag value
                     db.func.cast(
-                        RunsTable.c.run_body.op("->>")(f'$.tags."{PRIORITY_TAG}"'),
+                        db.func.json_extract(RunsTable.c.run_body, f'$.tags."{PRIORITY_TAG}"'),
                         db.Integer,
                     ),
                     # default to a priority of 0
