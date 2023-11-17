@@ -203,6 +203,16 @@ def skip_if_no_python_changes():
     return "No python changes"
 
 
+def skip_if_no_yaml_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all):
+        return None
+
+    return "No yaml changes"
+
+
 @functools.lru_cache(maxsize=None)
 def has_helm_changes():
     return any(Path("helm") in path.parents for path in ChangedFiles.all)
