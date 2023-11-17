@@ -1,3 +1,4 @@
+import io
 import os
 import sqlite3
 import tempfile
@@ -162,3 +163,15 @@ def test_update_mode(
     res = sling_job_update.execute_in_process()
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
+
+
+@pytest.mark.parametrize(
+    "text, encoding, expected",
+    [
+        (io.BytesIO(b"\xc6some\ndata"), "utf-8", ["\ufffdsome\n", "data"]),
+        (io.BytesIO(b"\xc6some\ndata"), "latin-1", ["Æsome\n", "data"]),
+    ],
+)
+def test_non_unicode_stdout(text, encoding, expected, sling_sqlite_resource: SlingResource):
+    lines = sling_sqlite_resource.process_stdout(text, encoding)
+    assert list(lines) == expected
