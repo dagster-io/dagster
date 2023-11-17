@@ -152,11 +152,11 @@ def test_all_partitions_subset_static_partitions_def() -> None:
     assert set(all_subset.get_partition_keys()) == {"a", "b", "c", "d"}
     assert all_subset == AllPartitionsSubset(static_partitions_def, None)
 
-    abc_subset = DefaultPartitionsSubset(static_partitions_def, {"a", "b", "c"})
+    abc_subset = DefaultPartitionsSubset({"a", "b", "c"})
     assert all_subset & abc_subset == abc_subset
     assert all_subset | abc_subset == all_subset
-    assert all_subset - abc_subset == DefaultPartitionsSubset(static_partitions_def, {"d"})
-    assert abc_subset - all_subset == DefaultPartitionsSubset(static_partitions_def, set())
+    assert all_subset - abc_subset == DefaultPartitionsSubset({"d"})
+    assert abc_subset - all_subset == DefaultPartitionsSubset(set())
 
 
 def test_all_partitions_subset_time_window_partitions_def() -> None:
