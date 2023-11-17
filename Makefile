@@ -32,15 +32,15 @@ check_ruff:
 	ruff .
 	ruff format --check .
 
-yamllint:
-	yamllint -c .yamllint.yaml --strict \
-    `git ls-files 'helm/*.yml' 'helm/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
-
 check_prettier:
-	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files 'python_modules/*.yml' 'python_modules/*.yaml'` --check
+	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files \
+	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
+	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'` --check
 
 prettier:
-	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files 'python_modules/*.yml' 'python_modules/*.yaml'` --write
+	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files \
+	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
+	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'` --write
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -qqq
