@@ -111,7 +111,10 @@ class TimeWindowPartitionMapping(
         )
 
         if self.start_offset != 0 or self.end_offset != 0:
-            description += f"The start and end of the upstream time window is offsetted by {self.start_offset} and {self.end_offset} partitions respectively."
+            description += (
+                f" The start and end of the upstream time window is offsetted by "
+                f"{self.start_offset} and {self.end_offset} partitions respectively."
+            )
 
         return description
 

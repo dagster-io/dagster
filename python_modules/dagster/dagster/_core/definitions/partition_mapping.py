@@ -159,6 +159,12 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
             list(downstream_partition_keys & upstream_partition_keys)
         )
 
+    def __str__(self) -> str:
+        return (
+            "Assumes upstream and downstream assets share the same partitions definition. "
+            "Maps each partition in the downstream asset to the same partition in the upstream asset."
+        )
+
 
 @whitelist_for_serdes
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
@@ -190,6 +196,9 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
         raise NotImplementedError()
+
+    def __str__(self) -> str:
+        return "Each downstream partition depends on all partitions of the upstream asset."
 
 
 @whitelist_for_serdes
@@ -235,6 +244,9 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
             )
         else:
             return downstream_partitions_def.empty_subset()
+
+    def __str__(self) -> str:
+        return "Each downstream partition depends on the last partition of the upstream asset."
 
 
 @whitelist_for_serdes
@@ -291,6 +303,9 @@ class SpecificPartitionsPartitionMapping(
                 dynamic_partitions_store=dynamic_partitions_store
             )
         return downstream_partitions_def.empty_subset()
+
+    def __str__(self) -> str:
+        return f"Each downstream partition depends on the following upstream partitions: {self.partition_keys}"
 
 
 class DimensionDependency(NamedTuple):
@@ -579,6 +594,14 @@ class MultiToSingleDimensionPartitionMapping(
             ),
         )
 
+    def __str__(self):
+        description = (
+            "Assumes that the single-dimension partitions definition is a dimension of the "
+            "multipartitions definition. For a single-dimension partition key X, any "
+            "multi-partition key with X in the matching dimension is a dependency."
+        )
+        return description
+
     def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
@@ -727,6 +750,18 @@ class MultiPartitionMapping(
                 value_type=DimensionPartitionMapping,
             ),
         )
+
+    def __str__(self) -> str:
+        description = "\n ".join(
+            [
+                (
+                    f"Upstream dimension '{upstream_dim}' mapped to downstream dimension "
+                    f"'{downstream_mapping.dimension_name}' using '{type(downstream_mapping).__name__}."
+                )
+                for upstream_dim, downstream_mapping in self.downstream_mappings_by_upstream_dimension.items()
+            ]
+        )
+        return description
 
     def get_dimension_dependencies(
         self,

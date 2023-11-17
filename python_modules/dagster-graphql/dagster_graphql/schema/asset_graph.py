@@ -132,7 +132,6 @@ class GrapheneAssetDependency(graphene.ObjectType):
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        print(partition_mapping)
         self._repository_location = check.inst_param(
             repository_location, "repository_location", CodeLocation
         )
