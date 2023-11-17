@@ -651,7 +651,7 @@ class TestRunStorage:
         assert storage.get_run_ids(RunsFilter(job_name="some_pipeline")) == [three, two, one]
         assert storage.get_run_ids(RunsFilter(job_name="some_pipeline"), limit=1) == [three]
 
-    def tests_get_run_ids_prioritized(self, storage):
+    def test_get_run_ids_prioritized(self, storage):
         storage.add_run(TestRunStorage.build_run(run_id="1", job_name="some_pipeline"))
         storage.add_run(
             TestRunStorage.build_run(
