@@ -75,7 +75,7 @@ class DbtManifestAssetSelection(AssetSelection):
 
         return keys
 
-    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetCheckKey]:
         if not self.dagster_dbt_translator.settings.enable_asset_checks:
             return set()
 
@@ -88,14 +88,17 @@ class DbtManifestAssetSelection(AssetSelection):
             manifest_json=self.manifest,
         ):
             dbt_resource_props = dbt_nodes[unique_id]
-            if dbt_resource_props["resource_type"] == "test":
-                attached_node_unique_id = dbt_resource_props.get("attached_node")
-                is_generic_test = bool(attached_node_unique_id)
+            if dbt_resource_props["resource_type"] != "test":
+                continue
+            attached_node_unique_id = dbt_resource_props.get("attached_node")
+            is_generic_test = bool(attached_node_unique_id)
 
-                if is_generic_test:
-                    asset_resource_props = dbt_nodes[attached_node_unique_id]
-                    asset_key = self.dagster_dbt_translator.get_asset_key(asset_resource_props)
+            if not is_generic_test:
+                continue
 
-                    keys.add(AssetCheckKey(asset_key, dbt_resource_props["name"]))
+            asset_resource_props = dbt_nodes[attached_node_unique_id]
+            asset_key = self.dagster_dbt_translator.get_asset_key(asset_resource_props)
+
+            keys.add(AssetCheckKey(asset_key, dbt_resource_props["name"]))
 
         return keys

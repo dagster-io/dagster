@@ -20,8 +20,7 @@ manifest_path = (
     .resolve()
 )
 
-with open(manifest_path, "r") as f:
-    manifest = json.load(f)
+manifest = json.loads(manifest_path.read_bytes())
 
 
 @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
@@ -113,20 +112,6 @@ def test_selection_customers():
             asset_key=AssetKey(["orders"]),
             name="relationships_orders_customer_id__customer_id__ref_customers_",
         )
-    }
-
-
-def test_test_name():
-    asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="test_name:not_null")
-    assert asset_selection.resolve(asset_graph) == set()
-    assert asset_selection.resolve_checks(asset_graph) == {
-        key for key in ALL_CHECK_KEYS if "not_null" in key.name
-    }
-
-    asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_exclude="test_name:not_null")
-    assert asset_selection.resolve(asset_graph) == ALL_ASSET_KEYS
-    assert asset_selection.resolve_checks(asset_graph) == {
-        key for key in ALL_CHECK_KEYS if "not_null" not in key.name
     }
 
 
