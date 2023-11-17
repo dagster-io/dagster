@@ -1220,7 +1220,7 @@ class AllPartitionsSubset(
         "_AllPartitionsSubset",
         [
             ("partitions_def", PartitionsDefinition),
-            ("instance_queryer", Optional["CachingInstanceQueryer"]),
+            ("instance_queryer", "CachingInstanceQueryer"),
         ],
     ),
     PartitionsSubset,
@@ -1275,18 +1275,12 @@ class AllPartitionsSubset(
         return self
 
     def __len__(self) -> int:
-        return len(
-            self.get_partition_keys(
-                current_time=self.instance_queryer.evaluation_time
-                if self.instance_queryer
-                else None
-            )
-        )
+        return len(self.get_partition_keys(current_time=self.instance_queryer.evaluation_time))
 
     def __contains__(self, value) -> bool:
         return self.partitions_def.has_partition_key(
             partition_key=value,
-            current_time=self.instance_queryer.evaluation_time if self.instance_queryer else None,
+            current_time=self.instance_queryer.evaluation_time,
             dynamic_partitions_store=self.instance_queryer,
         )
 
