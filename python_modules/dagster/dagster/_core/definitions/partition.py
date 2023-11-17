@@ -9,6 +9,7 @@ from datetime import (
 )
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -51,6 +52,9 @@ from ..errors import (
 )
 from .config import ConfigMapping
 from .utils import validate_tags
+
+if TYPE_CHECKING:
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -1216,7 +1220,7 @@ class AllPartitionsSubset(
         "_AllPartitionsSubset",
         [
             ("partitions_def", PartitionsDefinition),
-            ("dynamic_partitions_store", Optional[DynamicPartitionsStore]),
+            ("instance_queryer", Optional["CachingInstanceQueryer"]),
         ],
     ),
     PartitionsSubset,
@@ -1226,17 +1230,8 @@ class AllPartitionsSubset(
     all partition keys immediately.
     """
 
-    def __new__(
-        cls,
-        partitions_def: PartitionsDefinition,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore],
-    ):
-        return super().__new__(
-            cls, partitions_def=partitions_def, dynamic_partitions_store=dynamic_partitions_store
-        )
-
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
-        return self.partitions_def.get_partition_keys(current_time, self.dynamic_partitions_store)
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
+        return self.partitions_def.get_partition_keys(current_time, self.instance_queryer)
 
     def get_partition_keys_not_in_subset(
         self,
@@ -1281,16 +1276,18 @@ class AllPartitionsSubset(
 
     def __len__(self) -> int:
         return len(
-            self.partitions_def.subset_with_all_partitions(
-                dynamic_partitions_store=self.dynamic_partitions_store
+            self.get_partition_keys(
+                current_time=self.instance_queryer.evaluation_time
+                if self.instance_queryer
+                else None
             )
         )
 
     def __contains__(self, value) -> bool:
         return self.partitions_def.has_partition_key(
             partition_key=value,
-            current_time=None,
-            dynamic_partitions_store=self.dynamic_partitions_store,
+            current_time=self.instance_queryer.evaluation_time if self.instance_queryer else None,
+            dynamic_partitions_store=self.instance_queryer,
         )
 
     def __repr__(self) -> str:
