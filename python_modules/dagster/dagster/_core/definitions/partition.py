@@ -1231,7 +1231,10 @@ class AllPartitionsSubset(
     """
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
-        return self.partitions_def.get_partition_keys(current_time, self.instance_queryer)
+        check.param_invariant(current_time is None, "current_time")
+        return self.partitions_def.get_partition_keys(
+            self.instance_queryer.evaluation_time, self.instance_queryer
+        )
 
     def get_partition_keys_not_in_subset(
         self,
@@ -1247,8 +1250,14 @@ class AllPartitionsSubset(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        first_key = partitions_def.get_first_partition_key(current_time, dynamic_partitions_store)
-        last_key = partitions_def.get_last_partition_key(current_time, dynamic_partitions_store)
+        check.param_invariant(current_time is None, "current_time")
+        check.param_invariant(dynamic_partitions_store is None, "dynamic_partitions_store")
+        first_key = partitions_def.get_first_partition_key(
+            self.instance_queryer.evaluation_time, self.instance_queryer
+        )
+        last_key = partitions_def.get_last_partition_key(
+            self.instance_queryer.evaluation_time, self.instance_queryer
+        )
         if first_key and last_key:
             return [PartitionKeyRange(first_key, last_key)]
         return []
@@ -1275,7 +1284,7 @@ class AllPartitionsSubset(
         return self
 
     def __len__(self) -> int:
-        return len(self.get_partition_keys(current_time=self.instance_queryer.evaluation_time))
+        return len(self.get_partition_keys())
 
     def __contains__(self, value) -> bool:
         return self.partitions_def.has_partition_key(
