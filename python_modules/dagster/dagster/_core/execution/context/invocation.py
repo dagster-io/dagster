@@ -1,3 +1,5 @@
+import warnings
+from abc import abstractmethod
 from contextlib import ExitStack
 from typing import (
     AbstractSet,
@@ -56,7 +58,13 @@ from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .compute import AssetExecutionContext, ExecutionProperties, OpExecutionContext, RunProperties
+from .compute import (
+    AssetExecutionContext,
+    ContextHasExecutionProperties,
+    ExecutionProperties,
+    OpExecutionContext,
+    RunProperties,
+)
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -221,7 +229,8 @@ class RunlessExecutionProperties(ExecutionProperties):
         self._typed_event_stream_error_message = error_message
 
 
-class BaseDirectInvocationContext:
+class BaseDirectInvocationContext(ContextHasExecutionProperties):
+    @abstractmethod
     def bind(
         self,
         op_def: OpDefinition,
@@ -230,6 +239,14 @@ class BaseDirectInvocationContext:
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
     ):
+        pass
+
+    @abstractmethod
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        pass
+
+    @abstractmethod
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         pass
 
 
@@ -821,9 +838,18 @@ class DirectInvocationAssetExecutionContext(AssetExecutionContext, BaseDirectInv
 
         self._bound = False
 
-    @property
-    def op_execution_context(self) -> OpExecutionContext:
-        return self._op_execution_context
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        self._check_bound(fn_name="for_type", fn_type="method")
+        resources = cast(NamedTuple, self.resources)
+        return TypeCheckContext(
+            self.run_id,
+            self.log,
+            ScopedResourcesBuilder(resources._asdict()),
+            dagster_type,
+        )
+
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        self._op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
 
     @property
     def run_properties(self) -> RunProperties:
