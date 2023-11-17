@@ -58,9 +58,7 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
     return newObj;
   }
 
-  return `${opts?.horizontalDAGs ? 'horizontal:' : ''}${
-    opts?.longestPath ? 'longest-path' : ''
-  }${JSON.stringify({
+  return `${opts?.horizontalDAGs ? 'horizontal:' : ''}${JSON.stringify({
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
     nodes: Object.keys(graphData.nodes).sort(),
@@ -187,7 +185,6 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
   const opts = React.useMemo(
     () => ({
       horizontalDAGs: flags.flagDAGSidebar,
-      longestPath: flags.flagLongestPathDag,
     }),
     [flags],
   );
