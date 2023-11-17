@@ -3,7 +3,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence
+from typing import Dict, Iterator, List, Optional, Sequence
 
 from dagster import (
     DagsterEvent,
@@ -27,7 +27,6 @@ from dagster._core.storage.dagster_run import (
     DagsterRunStatus,
     RunsFilter,
 )
-from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
@@ -207,9 +206,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 )
                 return []
 
-        queued_runs = self._get_queued_runs(instance)
+        sorted_run_ids = self._get_queued_run_ids(instance)
 
-        if not queued_runs:
+        if not sorted_run_ids:
             self._logger.debug("Poll returned no queued runs.")
             return []
 
@@ -231,17 +230,22 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         self._logger.info(
             f"Retrieved %d queued runs, checking limits.{locations_clause}",
-            len(queued_runs),
+            len(sorted_run_ids),
         )
 
         # place in order
-        sorted_runs = self._priority_sort(queued_runs)
         tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
             tag_concurrency_limits, in_progress_runs
         )
 
         batch: List[DagsterRun] = []
-        for run in sorted_runs:
+        for run_id in sorted_run_ids:
+            runs = instance.get_runs(RunsFilter(run_ids=[run_id]))
+            if runs:
+                run = runs[0]
+            else:
+                continue
+
             if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
                 break
 
@@ -259,26 +263,12 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         return batch
 
-    def _get_queued_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
+    def _get_queued_run_ids(self, instance: DagsterInstance) -> Sequence[str]:
         queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
-
-        # Reversed for fifo ordering
-        runs = instance.get_runs(filters=queued_runs_filter)[::-1]
-        return runs
+        return instance.get_run_ids(filters=queued_runs_filter, prioritized=True)
 
     def _get_in_progress_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
-
-    def _priority_sort(self, runs: Iterable[DagsterRun]) -> Sequence[DagsterRun]:
-        def get_priority(run: DagsterRun) -> int:
-            priority_tag_value = run.tags.get(PRIORITY_TAG, "0")
-            try:
-                return int(priority_tag_value)
-            except ValueError:
-                return 0
-
-        # sorted is stable, so fifo is maintained
-        return sorted(runs, key=get_priority, reverse=True)
 
     def _is_location_pausing_dequeues(self, location_name: str, now: float) -> bool:
         with self._location_timeouts_lock:
