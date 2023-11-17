@@ -13,14 +13,18 @@ from dagster._core.storage.runs import (
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster._core.storage.runs.schema import KeyValueStoreTable, SnapshotsTable
+from dagster._core.storage.runs.schema import KeyValueStoreTable, RunsTable, SnapshotsTable
 from dagster._core.storage.runs.sql_run_storage import SnapshotType
 from dagster._core.storage.sql import (
     AlembicVersion,
+    SqlAlchemyQuery,
     check_alembic_revision,
     create_engine,
     run_alembic_upgrade,
     stamp_alembic_rev,
+)
+from dagster._core.storage.tags import (
+    PRIORITY_TAG,
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
@@ -232,6 +236,32 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             )
             conn.execute(snapshot_insert)
             return snapshot_id
+
+    def _order_by_run_priority(self, query: SqlAlchemyQuery) -> SqlAlchemyQuery:
+        # https://docs.dagster.io/guides/customizing-run-queue-priority
+
+        # Remove the default ordering
+        query = query.order_by(None)
+        # Higher priority > no priority > negative priority
+        query = query.order_by(
+            db.desc(
+                db.func.coalesce(
+                    # try to get the priority tag value
+                    db.func.cast(
+                        db.func.cast(RunsTable.c.run_body, db.JSON)
+                        .op("->")("tags")
+                        .op("->>")(PRIORITY_TAG),
+                        db.Integer,
+                    ),
+                    # default to a priority of 0
+                    0,
+                ),
+            ),
+        )
+        # Within matching priorities, oldest first
+        query = query.order_by(RunsTable.c.id)
+
+        return query
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)

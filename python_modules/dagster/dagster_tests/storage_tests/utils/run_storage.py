@@ -38,6 +38,7 @@ from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
+    PRIORITY_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
 )
@@ -649,6 +650,28 @@ class TestRunStorage:
 
         assert storage.get_run_ids(RunsFilter(job_name="some_pipeline")) == [three, two, one]
         assert storage.get_run_ids(RunsFilter(job_name="some_pipeline"), limit=1) == [three]
+
+    def tests_get_run_ids_prioritized(self, storage):
+        storage.add_run(TestRunStorage.build_run(run_id="1", job_name="some_pipeline"))
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id="low-priority",
+                job_name="some_pipeline",
+                tags={PRIORITY_TAG: "-100"},
+            )
+        )
+        storage.add_run(TestRunStorage.build_run(run_id="2", job_name="some_pipeline"))
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id="high-priority",
+                job_name="some_pipeline",
+                tags={PRIORITY_TAG: "100"},
+            )
+        )
+
+        # Default sort is id desc
+        assert storage.get_run_ids() == ["high-priority", "2", "low-priority", "1"]
+        assert storage.get_run_ids(prioritized=True) == ["high-priority", "1", "2", "low-priority"]
 
     def test_fetch_by_status(self, storage):
         assert storage
