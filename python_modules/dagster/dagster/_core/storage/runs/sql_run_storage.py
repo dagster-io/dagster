@@ -52,6 +52,7 @@ from dagster._core.storage.sqlalchemy_compat import (
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
+    PRIORITY_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
 )
@@ -338,13 +339,42 @@ class SqlRunStorage(RunStorage):
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
+    def _order_by_run_priority(self, query: SqlAlchemyQuery) -> SqlAlchemyQuery:
+        # https://docs.dagster.io/guides/customizing-run-queue-priority
+
+        # Remove the default ordering
+        query = query.order_by(None)
+        # Higher priority > no priority > negative priority
+        query = query.order_by(
+            db.desc(
+                db.func.coalesce(
+                    # try to get the priority tag value
+                    db.func.cast(
+                        RunsTable.c.run_body.op("->>")(f'$.tags."{PRIORITY_TAG}"'),
+                        db.Integer,
+                    ),
+                    # default to a priority of 0
+                    0,
+                ),
+            ),
+        )
+        # Within matching priorities, oldest first
+        query = query.order_by(RunsTable.c.id)
+
+        return query
+
     def get_run_ids(
         self,
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        prioritized: Optional[bool] = False,
     ) -> Sequence[str]:
         query = self._runs_query(filters=filters, cursor=cursor, limit=limit, columns=["run_id"])
+
+        if prioritized:
+            query = self._order_by_run_priority(query)
+
         rows = self.fetchall(query)
         return [row["run_id"] for row in rows]
 
