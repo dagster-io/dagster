@@ -5,6 +5,7 @@ from dagster import (
     AssetSelection,
     _check as check,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 
 from .asset_utils import is_non_asset_node
@@ -71,5 +72,30 @@ class DbtManifestAssetSelection(AssetSelection):
             if is_dbt_asset and not is_non_asset_node(dbt_resource_props):
                 asset_key = self.dagster_dbt_translator.get_asset_key(dbt_resource_props)
                 keys.add(asset_key)
+
+        return keys
+
+    def resolve_checks_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        if not self.dagster_dbt_translator.settings.enable_asset_checks:
+            return set()
+
+        dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
+
+        keys = set()
+        for unique_id in select_unique_ids_from_manifest(
+            select=self.select,
+            exclude=self.exclude,
+            manifest_json=self.manifest,
+        ):
+            dbt_resource_props = dbt_nodes[unique_id]
+            if dbt_resource_props["resource_type"] == "test":
+                attached_node_unique_id = dbt_resource_props.get("attached_node")
+                is_generic_test = bool(attached_node_unique_id)
+
+                if is_generic_test:
+                    asset_resource_props = dbt_nodes[attached_node_unique_id]
+                    asset_key = self.dagster_dbt_translator.get_asset_key(asset_resource_props)
+
+                    keys.add(AssetCheckKey(asset_key, dbt_resource_props["name"]))
 
         return keys
