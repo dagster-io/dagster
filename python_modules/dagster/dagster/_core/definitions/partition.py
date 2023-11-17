@@ -9,7 +9,6 @@ from datetime import (
 )
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -52,9 +51,6 @@ from ..errors import (
 )
 from .config import ConfigMapping
 from .utils import validate_tags
-
-if TYPE_CHECKING:
-    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -1220,7 +1216,8 @@ class AllPartitionsSubset(
         "_AllPartitionsSubset",
         [
             ("partitions_def", PartitionsDefinition),
-            ("instance_queryer", "CachingInstanceQueryer"),
+            ("dynamic_partitions_store", "DynamicPartitionsStore"),
+            ("current_time", datetime),
         ],
     ),
     PartitionsSubset,
@@ -1230,10 +1227,23 @@ class AllPartitionsSubset(
     all partition keys immediately.
     """
 
+    def __new__(
+        cls,
+        partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
+    ):
+        return super().__new__(
+            cls,
+            partitions_def=partitions_def,
+            dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
+        )
+
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         check.param_invariant(current_time is None, "current_time")
         return self.partitions_def.get_partition_keys(
-            self.instance_queryer.evaluation_time, self.instance_queryer
+            self.current_time, self.dynamic_partitions_store
         )
 
     def get_partition_keys_not_in_subset(
@@ -1253,10 +1263,10 @@ class AllPartitionsSubset(
         check.param_invariant(current_time is None, "current_time")
         check.param_invariant(dynamic_partitions_store is None, "dynamic_partitions_store")
         first_key = partitions_def.get_first_partition_key(
-            self.instance_queryer.evaluation_time, self.instance_queryer
+            self.current_time, self.dynamic_partitions_store
         )
         last_key = partitions_def.get_last_partition_key(
-            self.instance_queryer.evaluation_time, self.instance_queryer
+            self.current_time, self.dynamic_partitions_store
         )
         if first_key and last_key:
             return [PartitionKeyRange(first_key, last_key)]
@@ -1289,8 +1299,8 @@ class AllPartitionsSubset(
     def __contains__(self, value) -> bool:
         return self.partitions_def.has_partition_key(
             partition_key=value,
-            current_time=self.instance_queryer.evaluation_time,
-            dynamic_partitions_store=self.instance_queryer,
+            current_time=self.current_time,
+            dynamic_partitions_store=self.dynamic_partitions_store,
         )
 
     def __repr__(self) -> str:

@@ -147,12 +147,11 @@ def test_time_window_partitions_subset_num_partitions_serialization():
 
 
 def test_all_partitions_subset_static_partitions_def() -> None:
-    instance_queryer = Mock()
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
-    all_subset = AllPartitionsSubset(static_partitions_def, instance_queryer)
+    all_subset = AllPartitionsSubset(static_partitions_def, Mock(), pendulum.now("UTC"))
     assert len(all_subset) == 4
     assert set(all_subset.get_partition_keys()) == {"a", "b", "c", "d"}
-    assert all_subset == AllPartitionsSubset(static_partitions_def, instance_queryer)
+    assert all_subset == AllPartitionsSubset(static_partitions_def, Mock(), pendulum.now("UTC"))
 
     abc_subset = DefaultPartitionsSubset({"a", "b", "c"})
     assert all_subset & abc_subset == abc_subset
@@ -163,10 +162,8 @@ def test_all_partitions_subset_static_partitions_def() -> None:
 
 def test_all_partitions_subset_time_window_partitions_def() -> None:
     with pendulum.test(create_pendulum_time(2020, 1, 6, hour=10)):
-        instance_queryer = Mock()
-        instance_queryer.evaluation_time = pendulum.now("UTC")
         time_window_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
-        all_subset = AllPartitionsSubset(time_window_partitions_def, instance_queryer)
+        all_subset = AllPartitionsSubset(time_window_partitions_def, Mock(), pendulum.now("UTC"))
         assert len(all_subset) == 5
         assert set(all_subset.get_partition_keys()) == {
             "2020-01-01",
@@ -175,7 +172,9 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
             "2020-01-04",
             "2020-01-05",
         }
-        assert all_subset == AllPartitionsSubset(time_window_partitions_def, instance_queryer)
+        assert all_subset == AllPartitionsSubset(
+            time_window_partitions_def, Mock(), pendulum.now("UTC")
+        )
 
         subset = PartitionKeysTimeWindowPartitionsSubset(
             time_window_partitions_def,
