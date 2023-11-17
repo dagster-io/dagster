@@ -440,7 +440,7 @@ def test_direct_invocation_output_metadata():
     def my_other_asset(context):
         context.add_output_metadata({"baz": "qux"})
 
-    ctx = build_op_context()
+    ctx = build_asset_context()
 
     my_asset(ctx)
     assert ctx.get_output_metadata("result") == {"foo": "bar"}
@@ -467,7 +467,7 @@ def test_async_assets_with_shared_context():
 
     # test that we can run two ops/assets with the same context at the same time without
     # overriding op/asset specific attributes
-    ctx = build_op_context()
+    ctx = build_asset_context()
 
     async def main():
         return await asyncio.gather(

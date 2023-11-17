@@ -24,8 +24,8 @@ from dagster import (
     TimeWindowPartitionMapping,
     _check as check,
     build_asset_context,
-    graph,
     build_op_context,
+    graph,
     graph_asset,
     graph_multi_asset,
     io_manager,
@@ -614,9 +614,7 @@ def test_kwargs_with_context():
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
     assert my_asset(build_asset_context(), upstream=5) == 7
-    assert (
-        my_asset.op(build_op_context(), upstream=5) == 7
-    )  # TODO - this test is odd now since my_asset should expect an AssetContext
+    assert my_asset.op(build_op_context(), upstream=5) == 7
 
     @asset
     def upstream():
