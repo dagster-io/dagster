@@ -952,4 +952,4 @@ def build_asset_context(
         instance=instance,
     )
 
-    return AssetExecutionContext(op_execution_context=op_context)
+    return DirectInvocationAssetExecutionContext(op_execution_context=op_context)
