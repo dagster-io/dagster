@@ -10,7 +10,6 @@ import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBa
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
 import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';
 import {AutomaterializeRightPanel} from './AutomaterializeRightPanel';
-import {getEvaluationsWithEmptyAdded} from './getEvaluationsWithEmptyAdded';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 
 export const AssetAutomaterializePolicyPage = ({
@@ -24,7 +23,7 @@ export const AssetAutomaterializePolicyPage = ({
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const {evaluations, currentAutoMaterializeEvaluationId} = React.useMemo(() => {
+  const {evaluations} = React.useMemo(() => {
     if (
       queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
         'AutoMaterializeAssetEvaluationRecords' &&
@@ -43,19 +42,6 @@ export const AssetAutomaterializePolicyPage = ({
   ]);
 
   const isFirstPage = !paginationProps.hasPrevCursor;
-  const isLastPage = !paginationProps.hasNextCursor;
-  const isLoading = queryResult.loading && !queryResult.data;
-  const evaluationsIncludingEmpty = React.useMemo(
-    () =>
-      getEvaluationsWithEmptyAdded({
-        currentAutoMaterializeEvaluationId,
-        evaluations,
-        isFirstPage,
-        isLastPage,
-        isLoading,
-      }),
-    [currentAutoMaterializeEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
-  );
 
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
     number | undefined
@@ -73,12 +59,10 @@ export const AssetAutomaterializePolicyPage = ({
     // automatically select the first item -- an evaluation on another page might be our
     // active evaluation ID.
     if (selectedEvaluationId === undefined && isFirstPage) {
-      return evaluationsIncludingEmpty[0];
+      return evaluations[0];
     }
-    return evaluationsIncludingEmpty.find(
-      (evaluation) => evaluation.evaluationId === selectedEvaluationId,
-    );
-  }, [selectedEvaluationId, isFirstPage, evaluationsIncludingEmpty]);
+    return evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
+  }, [selectedEvaluationId, isFirstPage, evaluations]);
 
   return (
     <AutomaterializePage
@@ -102,7 +86,6 @@ export const AssetAutomaterializePolicyPage = ({
               <AutomaterializeLeftPanel
                 assetHasDefinedPartitions={assetHasDefinedPartitions}
                 evaluations={evaluations}
-                evaluationsIncludingEmpty={evaluationsIncludingEmpty}
                 paginationProps={paginationProps}
                 onSelectEvaluation={(evaluation) => {
                   setSelectedEvaluationId(evaluation.evaluationId);
