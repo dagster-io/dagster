@@ -3,7 +3,7 @@ import json
 import re
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import Any, Dict, Generator, List, Optional
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
 from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
 from dagster._annotations import experimental
@@ -140,20 +140,22 @@ class SlingResource(ConfigurableResource):
         ):
             yield
 
-    def process_stdout(self, stdout: bytes, encoding="utf8") -> None:
+    def process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
         """Process stdout from the Sling CLI."""
         ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
         for line in stdout:
+            assert isinstance(line, bytes)
             fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
-            clean_line = ansi_escape.sub("", fmt_line).replace("INF", "")
+            clean_line: str = ansi_escape.sub("", fmt_line).replace("INF", "")
             yield clean_line
 
     def _exec_sling_cmd(
         self, cmd, stdin=None, stdout=PIPE, stderr=STDOUT, encoding="utf8"
     ) -> Generator[str, None, None]:
         with Popen(cmd, shell=True, stdin=stdin, stdout=stdout, stderr=stderr) as proc:
-            for line in self.process_stdout(proc.stdout, encoding=encoding):
-                yield line
+            if proc.stdout:
+                for line in self.process_stdout(proc.stdout, encoding=encoding):
+                    yield line
 
             proc.wait()
             if proc.returncode != 0:
