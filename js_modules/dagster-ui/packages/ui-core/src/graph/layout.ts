@@ -134,7 +134,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], opts: LayoutOpGraphOptio
   }
 
   // Define a new top-down, left to right graph layout
-  g.setGraph({rankdir: 'TB', marginx, marginy, ranker: 'network-simplex'});
+  g.setGraph({rankdir: 'TB', marginx, marginy, ranker: 'tight-tree'});
   g.setDefaultEdgeLabel(() => ({}));
 
   const edges: OpLayoutEdge[] = [];
