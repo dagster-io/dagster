@@ -646,6 +646,29 @@ GET_ASSET_BACKFILL_POLICY = """
     }
 """
 
+GET_ASSET_DEPENDENCIES_PARTITION_MAPPING = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                assetKey {
+                    path
+                }
+                dependencies {
+                    asset {
+                        assetKey {
+                            path
+                        }
+                    }
+                    partitionMapping {
+                        name
+                        description
+                    }
+                }
+            }
+        }
+    }
+"""
+
 
 def _create_run(
     graphql_context: WorkspaceRequestContext,
@@ -2374,6 +2397,27 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert (
             result.data["assetNodeOrError"]["backfillPolicy"]["description"]
             == "Backfills in multiple runs, with a maximum of 10 partitions per run"
+        )
+
+    def test_get_partition_mapping(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_DEPENDENCIES_PARTITION_MAPPING,
+            variables={
+                "assetKey": {"path": ["downstream_time_partitioned_asset"]},
+            },
+        )
+
+        assert result.data["assetNodeOrError"]["assetKey"]["path"] == [
+            "downstream_time_partitioned_asset"
+        ]
+        dependencies = result.data["assetNodeOrError"]["dependencies"]
+        assert len(dependencies) == 1
+        assert dependencies[0]["asset"]["assetKey"]["path"] == ["upstream_time_partitioned_asset"]
+        assert dependencies[0]["partitionMapping"]["name"] == "TimeWindowPartitionMapping"
+        assert (
+            dependencies[0]["partitionMapping"]["description"]
+            == "Maps a downstream partition to any upstream partition with an overlapping time window."
         )
 
 
