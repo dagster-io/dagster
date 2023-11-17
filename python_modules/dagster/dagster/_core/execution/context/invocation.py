@@ -221,7 +221,19 @@ class RunlessExecutionProperties(ExecutionProperties):
         self._typed_event_stream_error_message = error_message
 
 
-class RunlessOpExecutionContext(OpExecutionContext):
+class BaseDirectInvocationContext:
+    def bind(
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ):
+        pass
+
+
+class RunlessOpExecutionContext(OpExecutionContext, BaseDirectInvocationContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -737,7 +749,7 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
-class DirectInvocationAssetExecutionContext(AssetExecutionContext):
+class DirectInvocationAssetExecutionContext(AssetExecutionContext, BaseDirectInvocationContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
     """

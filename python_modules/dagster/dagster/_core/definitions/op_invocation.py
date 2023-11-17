@@ -109,7 +109,7 @@ def direct_invocation_result(
 ) -> Any:
     from dagster._config.pythonic_config import Config
     from dagster._core.execution.context.invocation import (
-        RunlessOpExecutionContext,
+        BaseDirectInvocationContext,
         build_op_context,
     )
 
@@ -149,12 +149,12 @@ def direct_invocation_result(
                 " no context was provided when invoking."
             )
         if len(args) > 0:
-            if args[0] is not None and not isinstance(args[0], RunlessOpExecutionContext):
+            if args[0] is not None and not isinstance(args[0], BaseDirectInvocationContext):
                 raise DagsterInvalidInvocationError(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
                 )
-            context = cast(RunlessOpExecutionContext, args[0])
+            context = args[0]
             # update args to omit context
             args = args[1:]
         else:  # context argument is provided under kwargs
@@ -165,14 +165,14 @@ def direct_invocation_result(
                     f"'{context_param_name}', but no value for '{context_param_name}' was "
                     f"found when invoking. Provided kwargs: {kwargs}"
                 )
-            context = cast(RunlessOpExecutionContext, kwargs[context_param_name])
+            context = kwargs[context_param_name]
             # update kwargs to remove context
             kwargs = {
                 kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
             }
     # allow passing context, even if the function doesn't have an arg for it
-    elif len(args) > 0 and isinstance(args[0], RunlessOpExecutionContext):
-        context = cast(RunlessOpExecutionContext, args[0])
+    elif len(args) > 0 and isinstance(args[0], BaseDirectInvocationContext):
+        context = args[0]
         args = args[1:]
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
