@@ -239,27 +239,35 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         )
 
         batch: List[DagsterRun] = []
-        for run_id in sorted_run_ids:
-            runs = instance.get_runs(RunsFilter(run_ids=[run_id]))
-            if runs:
-                run = runs[0]
-            else:
-                continue
 
-            if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
-                break
-
-            if tag_concurrency_limits_counter.is_blocked(run):
-                continue
-
-            location_name = (
-                run.external_job_origin.location_name if run.external_job_origin else None
+        page_size = 25
+        for page in range(0, len(sorted_run_ids), page_size):
+            sorted_run_ids_page = sorted_run_ids[page : page + page_size]
+            # Create a dict of runs keyed by id
+            runs_by_id = dict(
+                [
+                    (run.run_id, run)
+                    for run in instance.get_runs(RunsFilter(run_ids=sorted_run_ids_page))
+                ]
             )
-            if location_name and location_name in paused_location_names:
-                continue
+            # So we can still iterate over the runs in priority sort order
+            for run_id in sorted_run_ids_page:
+                run = runs_by_id.get(run_id)
+                if run:
+                    if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
+                        break
 
-            tag_concurrency_limits_counter.update_counters_with_launched_item(run)
-            batch.append(run)
+                    if tag_concurrency_limits_counter.is_blocked(run):
+                        continue
+
+                    location_name = (
+                        run.external_job_origin.location_name if run.external_job_origin else None
+                    )
+                    if location_name and location_name in paused_location_names:
+                        continue
+
+                    tag_concurrency_limits_counter.update_counters_with_launched_item(run)
+                    batch.append(run)
 
         return batch
 
