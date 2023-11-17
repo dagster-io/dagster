@@ -798,7 +798,7 @@ def test_nov_2023_dst_transition_with_hourly_partitions():
         downstream_key = partitions[i + 1]
         subset = partitions_def.subset_with_partition_keys([downstream_key])
         upstream = time_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-            subset, partitions_def, current_time=current_time
+            subset, partitions_def, partitions_def, current_time=current_time
         )
         assert upstream.partitions_subset.get_partition_keys(current_time=current_time) == [
             upstream_key,
@@ -806,7 +806,7 @@ def test_nov_2023_dst_transition_with_hourly_partitions():
 
         subset = partitions_def.subset_with_partition_keys([upstream_key])
         downstream = time_partition_mapping.get_downstream_partitions_for_partitions(
-            subset, partitions_def, current_time=current_time
+            subset, partitions_def, partitions_def, current_time=current_time
         )
         assert downstream.get_partition_keys(current_time=current_time) == [
             downstream_key,
