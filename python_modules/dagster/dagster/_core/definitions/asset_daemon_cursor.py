@@ -51,7 +51,7 @@ class AssetDaemonAssetCursor(NamedTuple):
         if partitions_def is None:
             return (
                 {AssetKeyPartitionKey(self.asset_key, None)}
-                if self.materialized_requested_or_discarded
+                if not self.materialized_requested_or_discarded
                 else set()
             )
 
@@ -69,21 +69,28 @@ class AssetDaemonAssetCursor(NamedTuple):
         self,
         asset_graph: AssetGraph,
         newly_materialized_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        discarded_asset_partitions: AbstractSet[AssetKeyPartitionKey],
     ) -> "AssetDaemonAssetCursor":
         if self.asset_key not in asset_graph.root_asset_keys:
             return self
+        materialized_requested_or_discarded = (
+            newly_materialized_asset_partitions
+            | requested_asset_partitions
+            | discarded_asset_partitions
+        )
         partitions_def = asset_graph.get_partitions_def(self.asset_key)
         if partitions_def is None:
             return self._replace(
-                materialized_requested_or_discarded=bool(newly_materialized_asset_partitions),
+                materialized_requested_or_discarded=bool(materialized_requested_or_discarded),
             )
         return self._replace(
             materialized_requested_or_discarded_subset=(
                 self.materialized_requested_or_discarded_subset or partitions_def.empty_subset()
             ).with_partition_keys(
-                *(
+                (
                     asset_partition.partition_key
-                    for asset_partition in newly_materialized_asset_partitions
+                    for asset_partition in materialized_requested_or_discarded
                     if asset_partition.partition_key is not None
                 )
             )

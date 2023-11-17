@@ -331,7 +331,10 @@ class AssetDaemonContext:
                 dynamic_partitions_store=self.instance_queryer,
             ),
             asset_cursor.with_updates(
-                self.asset_graph, materialize_context.newly_materialized_root_partitions
+                self.asset_graph,
+                materialize_context.newly_materialized_root_partitions,
+                to_materialize,
+                to_discard,
             ),
             to_materialize,
         )
@@ -400,6 +403,7 @@ class AssetDaemonContext:
             )
 
             evaluations_by_key[asset_key] = evaluation
+            asset_cursors.append(asset_cursor_for_asset)
             will_materialize_mapping[asset_key] = to_materialize_for_asset
 
             expected_data_time = get_expected_data_time_for_asset_key(
