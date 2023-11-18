@@ -1902,7 +1902,7 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         return len(self._included_partition_keys)
 
     @public
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+    def get_partition_keys(self) -> Iterable[str]:
         return list(self._included_partition_keys) if self._included_partition_keys else []
 
     @property
@@ -2105,7 +2105,7 @@ class TimeWindowPartitionsSubset(
         )
 
     @public
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+    def get_partition_keys(self) -> Iterable[str]:
         return [
             pk
             for time_window in self.included_time_windows
