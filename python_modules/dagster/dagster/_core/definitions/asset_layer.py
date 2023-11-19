@@ -909,7 +909,7 @@ def build_asset_selection_job(
         hooks=hooks,
         asset_retry_policy=asset_retry_policy,
         _asset_selection_data=asset_selection_data,
-    )   
+    )
 
 
 def _subset_assets_defs(
