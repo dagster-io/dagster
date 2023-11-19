@@ -38,6 +38,7 @@ from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 from .resource_definition import ResourceDefinition
+from .policy import RetryPolicy
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
@@ -837,6 +838,7 @@ def build_asset_selection_job(
     asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
+    asset_retry_policy: Optional[RetryPolicy] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions.assets_job import build_assets_job
 
@@ -905,8 +907,9 @@ def build_asset_selection_job(
         tags=tags,
         metadata=metadata,
         hooks=hooks,
+        asset_retry_policy=asset_retry_policy,
         _asset_selection_data=asset_selection_data,
-    )
+    )   
 
 
 def _subset_assets_defs(
