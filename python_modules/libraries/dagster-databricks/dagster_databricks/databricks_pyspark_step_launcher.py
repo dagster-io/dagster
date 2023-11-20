@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 import zlib
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, cast, List
 
 from dagster import (
     Bool,
@@ -168,6 +168,16 @@ DAGSTER_SYSTEM_ENV_VARS = {
                 " ignored when the environment variables provided by Dagster Cloud are not present."
             ),
         ),
+        "exclude_from_zip": Field(
+            list,
+            default_value=[r".*pytest.*", r".*__pycache__.*", r".*pyc$"],
+            is_required=False,
+            description=(
+                "A list of regular expression patterns to exclude paths from the archive."
+                " Regular expressions will be matched against the absolute filepath with"
+                " `re.search`."
+            ),
+        ),
     }
 )
 def databricks_pyspark_step_launcher(
@@ -208,10 +218,12 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         local_dagster_job_package_path: Optional[str] = None,
         verbose_logs: bool = True,
         add_dagster_env_variables: bool = True,
+        exclude_from_zip: Optional[List[str]] = None,
     ):
         self.run_config = check.mapping_param(run_config, "run_config")
         self.permissions = check.mapping_param(permissions, "permissions")
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
+        self.exclude_from_zip = exclude_from_zip
 
         check.invariant(
             databricks_token is not None or oauth_credentials is not None,
@@ -492,7 +504,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         with tempfile.TemporaryDirectory() as temp_dir:
             # Zip and upload package containing dagster job
             zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
-            build_pyspark_zip(zip_local_path, self.local_dagster_job_package_path)
+            build_pyspark_zip(zip_local_path,
+                              self.local_dagster_job_package_path,
+                              self.exclude_from_zip
+            )
             with open(zip_local_path, "rb") as infile:
                 self.databricks_runner.client.put_file(
                     infile, self._dbfs_path(run_id, step_key, CODE_ZIP_NAME), overwrite=True
