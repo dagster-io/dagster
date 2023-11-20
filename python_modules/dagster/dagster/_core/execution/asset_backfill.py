@@ -871,7 +871,7 @@ def execute_asset_backfill_iteration(
     if not backfill.is_asset_backfill:
         check.failed("Backfill must be an asset backfill")
 
-    backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
+    backfill_start_time = pendulum.from_timestamp(backfill.backfill_timestamp, "UTC")
     instance_queryer = CachingInstanceQueryer(
         instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_time
     )

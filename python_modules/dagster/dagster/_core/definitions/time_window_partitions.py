@@ -47,7 +47,6 @@ from dagster._seven.compat.pendulum import (
     create_pendulum_time,
     to_timezone,
 )
-from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -200,9 +199,7 @@ class DatetimeFieldSerializer(FieldSerializer):
                 whitelist_map,
                 context,
             )
-            unpacked_datetime = pendulum.instance(
-                utc_datetime_from_timestamp(unpacked.timestamp), tz=unpacked.timezone
-            ).in_tz(tz=unpacked.timezone)
+            unpacked_datetime = pendulum.from_timestamp(unpacked.timestamp, unpacked.timezone)
             check.invariant(unpacked_datetime.tzinfo is not None)
             return unpacked_datetime
 

@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
+import pendulum
+
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -13,7 +15,6 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
 from ..definitions.selector import PartitionsByAssetSelector
@@ -419,7 +420,7 @@ class PartitionBackfill(
             asset_selection=asset_selection,
             dynamic_partitions_store=dynamic_partitions_store,
             all_partitions=all_partitions,
-            backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+            backfill_start_time=pendulum.from_timestamp(backfill_timestamp, tz="UTC"),
         )
         return cls(
             backfill_id=backfill_id,
@@ -445,7 +446,7 @@ class PartitionBackfill(
         asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
             asset_graph=asset_graph,
             dynamic_partitions_store=dynamic_partitions_store,
-            backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+            backfill_start_time=pendulum.from_timestamp(backfill_timestamp, tz="UTC"),
             partitions_by_assets=partitions_by_assets,
         )
         return cls(
