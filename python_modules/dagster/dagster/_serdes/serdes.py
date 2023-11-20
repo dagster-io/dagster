@@ -18,12 +18,14 @@ from enum import Enum
 from functools import partial
 from inspect import Parameter, signature
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
     Dict,
     FrozenSet,
     Generic,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -46,6 +48,9 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_key import AssetKey
 
 ###################################################################################################
 # Types
@@ -89,6 +94,28 @@ UnpackedValue: TypeAlias = Union[
     Enum,
     "UnknownSerdesValue",
 ]
+
+_V = TypeVar("_V")
+
+
+class AssetKeyMap(Mapping["AssetKey", _V]):
+    def __init__(self, mapping: Mapping["AssetKey", _V] = {}) -> None:
+        from dagster._core.definitions.asset_key import AssetKey
+
+        check.mapping_param(mapping, "mapping", key_type=AssetKey)
+        self.mapping: Mapping[AssetKey, _V] = mapping
+
+    def __setitem__(self, key, item):
+        raise NotImplementedError("AssetKeyMap is immutable")
+
+    def __getitem__(self, item: "AssetKey") -> _V:
+        return self.mapping[item]
+
+    def __len__(self) -> int:
+        return len(self.mapping)
+
+    def __iter__(self) -> Iterator["AssetKey"]:
+        return iter(self.mapping)
 
 
 ###################################################################################################
@@ -681,19 +708,15 @@ def _pack_value(
             _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(cast(list, val))
         ]
-    if tval is dict:
-        from dagster._core.definitions.asset_key import AssetKey
-
-        dict_val = cast(dict, val)
-
-        if dict_val and all(type(key) is AssetKey for key in dict_val.keys()):
-            return {
-                "__dict_keyed_by_asset_key_": {
-                    key.to_user_string(): _pack_value(value, whitelist_map, f"{descent_path}.{key}")
-                    for key, value in dict_val.items()
-                }
+    if tval is AssetKeyMap:
+        return {
+            "__asset_key_map__": {
+                key.to_string(): _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+                for key, value in cast(dict, val).items()
             }
-
+        }
+    if tval is dict:
+        dict_val = cast(dict, val)
         return {
             key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in dict_val.items()
@@ -868,12 +891,12 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
 
-    if "__dict_keyed_by_asset_key_" in val:
+    if "__asset_key_map__" in val:
         from dagster._core.events import AssetKey
 
         return {
-            AssetKey.from_user_string(key): _unpack_value(value, whitelist_map, context)
-            for key, value in cast(dict, val["__dict_keyed_by_asset_key_"]).items()
+            AssetKey.from_db_string(key): _unpack_value(value, whitelist_map, context)
+            for key, value in cast(dict, val["__asset_key_map__"]).items()
         }
 
     return val

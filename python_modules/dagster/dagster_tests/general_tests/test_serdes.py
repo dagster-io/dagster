@@ -5,10 +5,11 @@ from enum import Enum
 from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence
 
 import pytest
-from dagster._check import ParameterCheckError, inst_param, set_param
+from dagster._check import CheckError, ParameterCheckError, inst_param, set_param
 from dagster._core.events import AssetKey
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
+    AssetKeyMap,
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
@@ -724,33 +725,36 @@ def test_enum_custom_serializer():
     assert deserialized == Foo.RED
 
 
-def test_serialize_dict_keyed_by_asset_key():
-    test_env = WhitelistMap.create()
-
-    @_whitelist_for_serdes(test_env)
-    class Fizz(NamedTuple):
-        buzz: int
-
-    mapping = {
-        AssetKey(["a", "a_2"]): Fizz(1),
-        AssetKey("b"): 1,
-        AssetKey("c"): {AssetKey("d"): "1"},
-    }
-
-    serialized = serialize_value(mapping, whitelist_map=test_env)
-    assert (
-        serialized
-        == '{"__dict_keyed_by_asset_key_": {"a/a_2": {"__class__": "Fizz", "buzz": 1}, "b": 1, "c": {"__dict_keyed_by_asset_key_": {"d": "1"}}}}'
-    )
-    assert deserialize_value(serialized, whitelist_map=test_env) == mapping
-
-
 def test_serialize_mapping_keyed_by_asset_key():
     test_env = WhitelistMap.create()
+    asset_key_map = AssetKeyMap({AssetKey(["a", "a_2"]): 1})
+
+    serialized = serialize_value(asset_key_map, whitelist_map=test_env)
+    assert serialized == '{"__asset_key_map__": {"[\\"a\\", \\"a_2\\"]": 1}}'
+    assert asset_key_map == deserialize_value(serialized, whitelist_map=test_env)
+
+
+def test_asset_key_map():
+    asset_key_map = AssetKeyMap({AssetKey(["a", "a_2"]): 1})
+
+    assert len(asset_key_map) == 1
+    assert asset_key_map[AssetKey(["a", "a_2"])] == 1
+    assert list(iter(asset_key_map)) == list(iter([AssetKey(["a", "a_2"])]))
+
+    with pytest.raises(NotImplementedError, match="AssetKeyMap is immutable"):
+        asset_key_map["foo"] = None
+
+    with pytest.raises(CheckError, match="Key in Mapping mismatches type"):
+        AssetKeyMap({"a": 1})
+
+
+def test_mapping_keyed_by_asset_key_in_named_tuple():
+    test_env = WhitelistMap.create()
 
     @_whitelist_for_serdes(test_env)
-    class Foo(NamedTuple):
-        keyed_by_asset_key: Mapping[AssetKey, int]
+    class Foo(NamedTuple("_Foo", [("keyed_by_asset_key", Mapping[AssetKey, int])])):
+        def __new__(cls, keyed_by_asset_key):
+            return super(Foo, cls).__new__(cls, AssetKeyMap(keyed_by_asset_key))
 
     named_tuple = Foo(keyed_by_asset_key={AssetKey(["a", "a_2"]): 1})
     assert (
