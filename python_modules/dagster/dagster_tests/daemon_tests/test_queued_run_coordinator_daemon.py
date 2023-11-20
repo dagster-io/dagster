@@ -1,6 +1,5 @@
 import time
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
 from typing import Iterator
 
 import pytest
@@ -22,25 +21,26 @@ from dagster_tests.api_tests.utils import get_foo_job_handle
 
 
 class QueuedRunCoordinatorDaemonTests(ABC):
-    @abstractmethod
-    @contextmanager
-    def instance_for_queued_run_coordinator(self, **kwargs):
-        raise NotImplementedError
+    @pytest.fixture
+    def run_coordinator_config(self):
+        return {}
 
+    @abstractmethod
     @pytest.fixture()
-    def instance(self):
-        with self.instance_for_queued_run_coordinator(max_concurrent_runs=10) as instance:
-            yield instance
+    def instance(self, run_coordinator_config):
+        raise NotImplementedError
 
     @abstractmethod
     @pytest.fixture()
     def daemon(self):
-        return QueuedRunCoordinatorDaemon(interval_seconds=1)
+        raise NotImplementedError
 
-    @abstractmethod
     @pytest.fixture()
     def workspace_context(self, instance):
-        raise NotImplementedError
+        with create_test_daemon_workspace_context(
+            workspace_load_target=EmptyWorkspaceTarget(), instance=instance
+        ) as workspace_context:
+            yield workspace_context
 
     @pytest.fixture(scope="module")
     def job_handle(self) -> Iterator[JobHandle]:
@@ -129,83 +129,81 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         [0, 1, 5],
     )
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(max_concurrent_runs=4, dequeue_use_threads=True),
+            dict(max_concurrent_runs=4, dequeue_use_threads=False),
+        ],
     )
     def test_get_queued_runs_max_runs(
         self,
         num_in_progress_runs,
-        use_threads,
         job_handle,
         workspace_context,
         daemon,
+        run_coordinator_config,
+        instance,
     ):
-        max_runs = 4
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=max_runs, dequeue_use_threads=use_threads
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
-            # fill run store with ongoing runs
-            in_progress_run_ids = [f"in_progress-run-{i}" for i in range(num_in_progress_runs)]
-            for i, run_id in enumerate(in_progress_run_ids):
-                # get a selection of all in progress statuses
-                status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
-                self.create_run(
-                    instance,
-                    job_handle,
-                    run_id=run_id,
-                    status=status,
-                )
+        max_runs = run_coordinator_config["max_concurrent_runs"]
+        # fill run store with ongoing runs
+        in_progress_run_ids = [f"in_progress-run-{i}" for i in range(num_in_progress_runs)]
+        for i, run_id in enumerate(in_progress_run_ids):
+            # get a selection of all in progress statuses
+            status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
+            self.create_run(
+                instance,
+                job_handle,
+                run_id=run_id,
+                status=status,
+            )
 
-            # add more queued runs than should be launched
-            queued_run_ids = [f"queued-run-{i}" for i in range(max_runs + 1)]
-            for run_id in queued_run_ids:
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id=run_id,
-                )
+        # add more queued runs than should be launched
+        queued_run_ids = [f"queued-run-{i}" for i in range(max_runs + 1)]
+        for run_id in queued_run_ids:
+            self.create_queued_run(
+                instance,
+                job_handle,
+                run_id=run_id,
+            )
 
-            list(daemon.run_iteration(bounded_ctx))
+        list(daemon.run_iteration(workspace_context))
 
-            assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
+        assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(max_concurrent_runs=-1, dequeue_use_threads=True),
+            dict(max_concurrent_runs=-1, dequeue_use_threads=False),
+        ],
     )
     def test_disable_max_concurrent_runs_limit(
-        self, use_threads, workspace_context, job_handle, daemon
+        self, workspace_context, job_handle, daemon, instance
     ):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=-1, dequeue_use_threads=use_threads
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+        # create ongoing runs
+        in_progress_run_ids = [f"in_progress-run-{i}" for i in range(5)]
+        for i, run_id in enumerate(in_progress_run_ids):
+            # get a selection of all in progress statuses
+            status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
+            self.create_run(
+                instance,
+                job_handle,
+                run_id=run_id,
+                status=status,
+            )
 
-            # create ongoing runs
-            in_progress_run_ids = [f"in_progress-run-{i}" for i in range(5)]
-            for i, run_id in enumerate(in_progress_run_ids):
-                # get a selection of all in progress statuses
-                status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
-                self.create_run(
-                    instance,
-                    job_handle,
-                    run_id=run_id,
-                    status=status,
-                )
+        # add more queued runs
+        queued_run_ids = [f"queued-run-{i}" for i in range(6)]
+        for run_id in queued_run_ids:
+            self.create_queued_run(
+                instance,
+                job_handle,
+                run_id=run_id,
+            )
 
-            # add more queued runs
-            queued_run_ids = [f"queued-run-{i}" for i in range(6)]
-            for run_id in queued_run_ids:
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id=run_id,
-                )
+        list(daemon.run_iteration(workspace_context))
 
-            list(daemon.run_iteration(bounded_ctx))
-
-            assert len(instance.run_launcher.queue()) == 6
+        assert len(instance.run_launcher.queue()) == 6
 
     def test_priority(self, instance, workspace_context, job_handle, daemon):
         self.create_run(
@@ -245,321 +243,376 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         assert self.get_run_ids(instance.run_launcher.queue()) == ["bad-pri-run"]
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
+                dequeue_use_threads=False,
+            ),
+        ],
     )
-    def test_tag_limits(self, use_threads, workspace_context, job_handle, daemon):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+    def test_tag_limits(self, workspace_context, job_handle, daemon, instance):
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="tiny-1",
+            tags={"database": "tiny"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="tiny-2",
+            tags={"database": "tiny"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="large-1",
+            tags={"database": "large"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="tiny-1",
-                tags={"database": "tiny"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="tiny-2",
-                tags={"database": "tiny"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="large-1",
-                tags={"database": "large"},
-            )
+        list(daemon.run_iteration(workspace_context))
 
-            list(daemon.run_iteration(bounded_ctx))
-
-            # exact order non-deterministic due to threaded dequeue
-            assert set(self.get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "large-1"}
+        # exact order non-deterministic due to threaded dequeue
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "large-1"}
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "database", "value": {"applyLimitPerUniqueValue": False}, "limit": 2}
+                ],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "database", "value": {"applyLimitPerUniqueValue": False}, "limit": 2}
+                ],
+                dequeue_use_threads=False,
+            ),
+        ],
     )
-    def test_tag_limits_just_key(self, use_threads, workspace_context, job_handle, daemon):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            tag_concurrency_limits=[
-                {"key": "database", "value": {"applyLimitPerUniqueValue": False}, "limit": 2}
-            ],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+    def test_tag_limits_just_key(self, workspace_context, job_handle, daemon, instance):
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="tiny-1",
+            tags={"database": "tiny"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="tiny-2",
+            tags={"database": "tiny"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="large-1",
+            tags={"database": "large"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="tiny-1",
-                tags={"database": "tiny"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="tiny-2",
-                tags={"database": "tiny"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="large-1",
-                tags={"database": "large"},
-            )
+        list(daemon.run_iteration(workspace_context))
 
-            list(daemon.run_iteration(bounded_ctx))
-
-            # exact order non-deterministic due to threaded dequeue
-            assert set(self.get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "tiny-2"}
+        # exact order non-deterministic due to threaded dequeue
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "tiny-2"}
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "database", "value": "tiny", "limit": 1},
+                    {"key": "user", "value": "johann", "limit": 2},
+                ],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "database", "value": "tiny", "limit": 1},
+                    {"key": "user", "value": "johann", "limit": 2},
+                ],
+                dequeue_use_threads=False,
+            ),
+        ],
     )
     def test_multiple_tag_limits(
         self,
-        use_threads,
         workspace_context,
         daemon,
         job_handle,
+        instance,
     ):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            tag_concurrency_limits=[
-                {"key": "database", "value": "tiny", "limit": 1},
-                {"key": "user", "value": "johann", "limit": 2},
-            ],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-1",
+            tags={"database": "tiny", "user": "johann"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-2",
+            tags={"database": "tiny"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-3",
+            tags={"user": "johann"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-4",
+            tags={"user": "johann"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-1",
-                tags={"database": "tiny", "user": "johann"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-2",
-                tags={"database": "tiny"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-3",
-                tags={"user": "johann"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-4",
-                tags={"user": "johann"},
-            )
+        list(daemon.run_iteration(workspace_context))
 
-            list(daemon.run_iteration(bounded_ctx))
-
-            # exact order non-deterministic due to threaded dequeue
-            assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
+        # exact order non-deterministic due to threaded dequeue
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 2},
+                    {"key": "foo", "value": "bar", "limit": 1},
+                ],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 2},
+                    {"key": "foo", "value": "bar", "limit": 1},
+                ],
+                dequeue_use_threads=False,
+            ),
+        ],
     )
-    def test_overlapping_tag_limits(self, use_threads, workspace_context, daemon, job_handle):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            tag_concurrency_limits=[
-                {"key": "foo", "limit": 2},
-                {"key": "foo", "value": "bar", "limit": 1},
-            ],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+    def test_overlapping_tag_limits(self, workspace_context, daemon, job_handle, instance):
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-1",
+            tags={"foo": "bar"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-2",
+            tags={"foo": "bar"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-3",
+            tags={"foo": "other"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-4",
+            tags={"foo": "other"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-1",
-                tags={"foo": "bar"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-2",
-                tags={"foo": "bar"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-3",
-                tags={"foo": "other"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-4",
-                tags={"foo": "other"},
-            )
+        list(daemon.run_iteration(workspace_context))
 
-            list(daemon.run_iteration(bounded_ctx))
-
-            # exact order non-deterministic due to threaded dequeue
-            assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
+        # exact order non-deterministic due to threaded dequeue
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
+                ],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
+                ],
+                dequeue_use_threads=False,
+            ),
+        ],
     )
-    def test_limits_per_unique_value(self, use_threads, workspace_context, job_handle, daemon):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            tag_concurrency_limits=[
-                {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
-            ],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+    def test_limits_per_unique_value(self, workspace_context, job_handle, daemon, instance):
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-1",
+            tags={"foo": "bar"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-2",
+            tags={"foo": "bar"},
+        )
+        list(daemon.run_iteration(workspace_context))
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-1",
-                tags={"foo": "bar"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-2",
-                tags={"foo": "bar"},
-            )
-            list(daemon.run_iteration(bounded_ctx))
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-3",
+            tags={"foo": "other"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-4",
+            tags={"foo": "other"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-3",
-                tags={"foo": "other"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-4",
-                tags={"foo": "other"},
-            )
+        list(daemon.run_iteration(workspace_context))
 
-            list(daemon.run_iteration(bounded_ctx))
-
-            # exact order non-deterministic due to threaded dequeue
-            assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
+        # exact order non-deterministic due to threaded dequeue
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
+                    {"key": "foo", "limit": 2},
+                ],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
+                    {"key": "foo", "limit": 2},
+                ],
+                dequeue_use_threads=False,
+            ),
+        ],
     )
-    def test_limits_per_unique_value_overlapping_limits(
+    def test_limits_per_unique_value_overlapping_limits_less_than(
         self,
-        use_threads,
         workspace_context,
         daemon,
         job_handle,
+        instance,
     ):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            tag_concurrency_limits=[
-                {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
-                {"key": "foo", "limit": 2},
-            ],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-1",
+            tags={"foo": "bar"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-2",
+            tags={"foo": "bar"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-3",
+            tags={"foo": "other"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-4",
+            tags={"foo": "other-2"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-1",
-                tags={"foo": "bar"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-2",
-                tags={"foo": "bar"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-3",
-                tags={"foo": "other"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-4",
-                tags={"foo": "other-2"},
-            )
+        list(daemon.run_iteration(workspace_context))
 
-            list(daemon.run_iteration(bounded_ctx))
+        # exact order non-deterministic due to threaded dequeue
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
-            # exact order non-deterministic due to threaded dequeue
-            assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 2, "value": {"applyLimitPerUniqueValue": True}},
+                    {"key": "foo", "limit": 1, "value": "bar"},
+                ],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=10,
+                tag_concurrency_limits=[
+                    {"key": "foo", "limit": 2, "value": {"applyLimitPerUniqueValue": True}},
+                    {"key": "foo", "limit": 1, "value": "bar"},
+                ],
+                dequeue_use_threads=False,
+            ),
+        ],
+    )
+    def test_limits_per_unique_value_overlapping_limits_greater_than(
+        self,
+        workspace_context,
+        daemon,
+        job_handle,
+        instance,
+    ):
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-1",
+            tags={"foo": "bar"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-2",
+            tags={"foo": "baz"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-3",
+            tags={"foo": "bar"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-4",
+            tags={"foo": "baz"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-5",
+            tags={"foo": "baz"},
+        )
 
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            tag_concurrency_limits=[
-                {"key": "foo", "limit": 2, "value": {"applyLimitPerUniqueValue": True}},
-                {"key": "foo", "limit": 1, "value": "bar"},
-            ],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+        list(daemon.run_iteration(workspace_context))
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-1",
-                tags={"foo": "bar"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-2",
-                tags={"foo": "baz"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-3",
-                tags={"foo": "bar"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-4",
-                tags={"foo": "baz"},
-            )
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-5",
-                tags={"foo": "baz"},
-            )
-
-            list(daemon.run_iteration(bounded_ctx))
-
-            # exact order non-deterministic due to threaded dequeue
-            assert set(self.get_run_ids(instance.run_launcher.queue())) == {
-                "run-1",
-                "run-2",
-                "run-4",
-            }
+        # exact order non-deterministic due to threaded dequeue
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {
+            "run-1",
+            "run-2",
+            "run-4",
+        }
 
     def test_locations_not_created(
         self, instance, monkeypatch, workspace_context, daemon, job_handle
@@ -617,249 +670,213 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         assert len(method_calls) == 0
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(max_concurrent_runs=10, dequeue_use_threads=True),
+            dict(max_concurrent_runs=10, dequeue_use_threads=False),
+        ],
     )
-    def test_skip_error_runs(self, job_handle, daemon, use_threads):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10, dequeue_use_threads=use_threads
-        ) as instance:
-            with create_test_daemon_workspace_context(
-                workspace_load_target=EmptyWorkspaceTarget(), instance=instance
-            ) as workspace_context:
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id="bad-run",
-                )
+    def test_skip_error_runs(self, job_handle, daemon, instance, workspace_context):
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="bad-run",
+        )
 
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id="good-run",
-                )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="good-run",
+        )
 
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id="bad-user-code-run",
-                )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="bad-user-code-run",
+        )
 
-                list(daemon.run_iteration(workspace_context))
+        list(daemon.run_iteration(workspace_context))
 
-                assert self.get_run_ids(instance.run_launcher.queue()) == ["good-run"]
-                assert instance.get_run_by_id("bad-run").status == DagsterRunStatus.FAILURE
-                assert (
-                    instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.FAILURE
-                )
+        assert self.get_run_ids(instance.run_launcher.queue()) == ["good-run"]
+        assert instance.get_run_by_id("bad-run").status == DagsterRunStatus.FAILURE
+        assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.FAILURE
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(max_user_code_failure_retries=2, max_concurrent_runs=10, dequeue_use_threads=True),
+            dict(
+                max_user_code_failure_retries=2, max_concurrent_runs=10, dequeue_use_threads=False
+            ),
+        ],
     )
     def test_retry_user_code_error_run(
-        self, job_handle, other_location_job_handle, daemon, use_threads
+        self, job_handle, other_location_job_handle, daemon, instance, workspace_context
     ):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            dequeue_use_threads=use_threads,
-            max_user_code_failure_retries=2,
-            user_code_failure_retry_delay=120,
-        ) as instance:
-            with create_test_daemon_workspace_context(
-                workspace_load_target=EmptyWorkspaceTarget(), instance=instance
-            ) as workspace_context:
-                fixed_iteration_time = time.time() - 3600 * 24 * 365
+        fixed_iteration_time = time.time() - 3600 * 24 * 365
 
-                self.create_queued_run(instance, job_handle, run_id="bad-run")
-                self.create_queued_run(instance, job_handle, run_id="good-run")
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id="bad-user-code-run",
-                )
+        self.create_queued_run(instance, job_handle, run_id="bad-run")
+        self.create_queued_run(instance, job_handle, run_id="good-run")
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="bad-user-code-run",
+        )
 
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                assert self.get_run_ids(instance.run_launcher.queue()) == ["good-run"]
-                assert instance.get_run_by_id("bad-run").status == DagsterRunStatus.FAILURE
+        assert self.get_run_ids(instance.run_launcher.queue()) == ["good-run"]
+        assert instance.get_run_by_id("bad-run").status == DagsterRunStatus.FAILURE
 
-                # Run was put back into the queue due to the user code failure
-                assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
+        # Run was put back into the queue due to the user code failure
+        assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
 
-                # Other runs in the same location are skipped
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id="good-run-same-location",
-                    tags={
-                        "dagster/priority": "5",
-                    },
-                )
-                self.create_queued_run(
-                    instance,
-                    other_location_job_handle,
-                    run_id="good-run-other-location",
-                )
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        # Other runs in the same location are skipped
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="good-run-same-location",
+            tags={
+                "dagster/priority": "5",
+            },
+        )
+        self.create_queued_run(
+            instance,
+            other_location_job_handle,
+            run_id="good-run-other-location",
+        )
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                assert self.get_run_ids(instance.run_launcher.queue()) == [
-                    "good-run",
-                    "good-run-other-location",
-                ]
+        assert self.get_run_ids(instance.run_launcher.queue()) == [
+            "good-run",
+            "good-run-other-location",
+        ]
 
-                fixed_iteration_time = fixed_iteration_time + 10
+        fixed_iteration_time = fixed_iteration_time + 10
 
-                # Add more runs, one in the same location, one in another location - the former is
-                # skipped, the other launches. The original failed run is also skipped
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        # Add more runs, one in the same location, one in another location - the former is
+        # skipped, the other launches. The original failed run is also skipped
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
-                assert (
-                    instance.get_run_by_id("good-run-same-location").status
-                    == DagsterRunStatus.QUEUED
-                )
+        assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
+        assert instance.get_run_by_id("good-run-same-location").status == DagsterRunStatus.QUEUED
 
-                fixed_iteration_time = fixed_iteration_time + 121
+        fixed_iteration_time = fixed_iteration_time + 121
 
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
+        assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
 
-                fixed_iteration_time = fixed_iteration_time + 121
+        fixed_iteration_time = fixed_iteration_time + 121
 
-                # Gives up after max_user_code_failure_retries retries - the good run from that
-                # location succeeds
+        # Gives up after max_user_code_failure_retries retries - the good run from that
+        # location succeeds
 
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                assert (
-                    instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.FAILURE
-                )
+        assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.FAILURE
 
-                fixed_iteration_time = fixed_iteration_time + 121
+        fixed_iteration_time = fixed_iteration_time + 121
 
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                # good run is now free to launch (since it is dequeud before the bad run due to), bad run does its second retry
-                assert self.get_run_ids(instance.run_launcher.queue()) == [
-                    "good-run",
-                    "good-run-other-location",
-                    "good-run-same-location",
-                ]
+        # good run is now free to launch (since it is dequeud before the bad run due to), bad run does its second retry
+        assert self.get_run_ids(instance.run_launcher.queue()) == [
+            "good-run",
+            "good-run-other-location",
+            "good-run-same-location",
+        ]
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_user_code_failure_retries=1,
+                user_code_failure_retry_delay=5,
+                max_concurrent_runs=10,
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_user_code_failure_retries=1,
+                user_code_failure_retry_delay=5,
+                max_concurrent_runs=10,
+                dequeue_use_threads=False,
+            ),
+        ],
     )
-    def test_retry_user_code_error_recovers(self, job_handle, daemon, use_threads):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=10,
-            dequeue_use_threads=use_threads,
-            max_user_code_failure_retries=1,
-            user_code_failure_retry_delay=5,
-        ) as instance:
-            with create_test_daemon_workspace_context(
-                workspace_load_target=EmptyWorkspaceTarget(), instance=instance
-            ) as workspace_context:
-                fixed_iteration_time = time.time() - 3600 * 24 * 365
+    def test_retry_user_code_error_recovers(self, job_handle, daemon, instance, workspace_context):
+        fixed_iteration_time = time.time() - 3600 * 24 * 365
 
-                self.create_queued_run(
-                    instance,
-                    job_handle,
-                    run_id="bad-user-code-run",
-                )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="bad-user-code-run",
+        )
 
-                # fails on initial dequeue
+        # fails on initial dequeue
 
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
+        assert instance.get_run_by_id("bad-user-code-run").status == DagsterRunStatus.QUEUED
 
-                fixed_iteration_time = fixed_iteration_time + 6
+        fixed_iteration_time = fixed_iteration_time + 6
 
-                # Passes on retry
+        # Passes on retry
 
-                instance.run_launcher.bad_user_code_run_ids = set()
+        instance.run_launcher.bad_user_code_run_ids = set()
 
-                list(
-                    daemon.run_iteration(
-                        workspace_context, fixed_iteration_time=fixed_iteration_time
-                    )
-                )
+        list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
-                assert self.get_run_ids(instance.run_launcher.queue()) == [
-                    "bad-user-code-run",
-                ]
+        assert self.get_run_ids(instance.run_launcher.queue()) == [
+            "bad-user-code-run",
+        ]
 
     @pytest.mark.parametrize(
-        "use_threads",
-        [False, True],
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=2,
+                tag_concurrency_limits=[
+                    {"key": "test", "limit": 1},
+                ],
+                dequeue_use_threads=True,
+            ),
+            dict(
+                max_concurrent_runs=2,
+                tag_concurrency_limits=[
+                    {"key": "test", "limit": 1},
+                ],
+                dequeue_use_threads=False,
+            ),
+        ],
     )
-    def test_key_limit_with_extra_tags(self, use_threads, workspace_context, daemon, job_handle):
-        with self.instance_for_queued_run_coordinator(
-            max_concurrent_runs=2,
-            tag_concurrency_limits=[
-                {"key": "test", "limit": 1},
-            ],
-            dequeue_use_threads=use_threads,
-        ) as instance:
-            bounded_ctx = workspace_context.copy_for_test_instance(instance)
+    def test_key_limit_with_extra_tags(self, workspace_context, daemon, job_handle, instance):
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-1",
+            tags={"other-tag": "value", "test": "value"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-1",
-                tags={"other-tag": "value", "test": "value"},
-            )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="run-2",
+            tags={"other-tag": "value", "test": "value"},
+        )
 
-            self.create_queued_run(
-                instance,
-                job_handle,
-                run_id="run-2",
-                tags={"other-tag": "value", "test": "value"},
-            )
-
-            list(daemon.run_iteration(bounded_ctx))
-            assert self.get_run_ids(instance.run_launcher.queue()) == ["run-1"]
+        list(daemon.run_iteration(workspace_context))
+        assert self.get_run_ids(instance.run_launcher.queue()) == ["run-1"]
 
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
-    @contextmanager
-    def instance_for_queued_run_coordinator(self, **kwargs):
+    @pytest.fixture
+    def instance(self, run_coordinator_config):
         overrides = {
             "run_coordinator": {
                 "module": "dagster._core.run_coordinator",
                 "class": "QueuedRunCoordinator",
-                "config": {**kwargs},
+                "config": {**run_coordinator_config},
             },
             "run_launcher": {
                 "module": "dagster._core.test_utils",
@@ -877,10 +894,3 @@ class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture()
     def daemon(self):
         return QueuedRunCoordinatorDaemon(interval_seconds=1)
-
-    @pytest.fixture()
-    def workspace_context(self, instance):
-        with create_test_daemon_workspace_context(
-            workspace_load_target=EmptyWorkspaceTarget(), instance=instance
-        ) as workspace_context:
-            yield workspace_context
