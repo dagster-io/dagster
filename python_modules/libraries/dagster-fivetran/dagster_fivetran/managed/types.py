@@ -1,6 +1,13 @@
 from typing import Any, Dict, Optional
 
 import dagster._check as check
+from dagster._annotations import deprecated
+
+MANAGED_ELEMENTS_DEPRECATION_MSG = (
+    "Dagster is deprecating support for ingestion-as-code."
+    " We suggest using the Fivetran terraform provider:"
+    " https://registry.terraform.io/providers/fivetran/fivetran/latest/docs."
+)
 
 
 class FivetranDestination:
@@ -45,6 +52,7 @@ class InitializedFivetranDestination:
         )
 
 
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class FivetranConnector:
     def __init__(
         self,
