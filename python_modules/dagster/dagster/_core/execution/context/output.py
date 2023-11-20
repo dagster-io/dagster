@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ContextManager,
+    Dict,
     Iterator,
     List,
     Mapping,
@@ -22,7 +23,9 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
 )
 from dagster._core.definitions.metadata import (
+    NO_PARTITION_MARKER_KEY,
     ArbitraryMetadataMapping,
+    MetadataMapping,
     MetadataValue,
     RawMetadataValue,
 )
@@ -68,7 +71,7 @@ class OutputContext:
     _job_name: Optional[str]
     _run_id: Optional[str]
     _metadata: ArbitraryMetadataMapping
-    _user_generated_metadata: Mapping[str, MetadataValue]
+    _user_generated_metadata: Dict[str, Mapping[str, MetadataValue]]
     _mapping_key: Optional[str]
     _config: object
     _op_def: Optional["OpDefinition"]
@@ -663,13 +666,23 @@ class OutputContext:
         return self._user_events
 
     @public
-    def add_output_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> None:
+    def add_output_metadata(
+        self, metadata: Mapping[str, RawMetadataValue], partition_key: Optional[str] = None
+    ) -> None:
         """Add a dictionary of metadata to the handled output.
 
-        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
+        When an output represents multiple partitions, a partition key can be provided to assign
+        metadata to a particular partition. If the output has multiple partitions and no partition
+        key is passed the metadata will be assigned to all partitions.
+
+        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events
+        associated with the output.
 
         Args:
             metadata (Mapping[str, RawMetadataValue]): A metadata dictionary to log
+            partition_key (Optional[str]): The partition key to assign the metadata to. If the
+                output corresponds to a partitioned asset and a key is not provided, the metadata
+                will be assigned to all partitions.
 
         Examples:
             .. code-block:: python
@@ -682,36 +695,26 @@ class OutputContext:
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
-        overlapping_labels = set(self._user_generated_metadata.keys()) & metadata.keys()
+        storage_key = NO_PARTITION_MARKER_KEY if partition_key is None else partition_key
+        existing_metadata = self._user_generated_metadata.get(storage_key, {})
+        overlapping_labels = set(existing_metadata.keys()) & metadata.keys()
         if overlapping_labels:
             raise DagsterInvalidMetadata(
                 f"Tried to add metadata for key(s) that already have metadata: {overlapping_labels}"
             )
 
-        self._user_generated_metadata = {
-            **self._user_generated_metadata,
+        self._user_generated_metadata[storage_key] = {
+            **existing_metadata,
             **normalize_metadata(metadata),
         }
 
-    def get_logged_metadata(
-        self,
-    ) -> Mapping[str, MetadataValue]:
+    def get_logged_metadata(self, partition_key: Optional[str] = None) -> MetadataMapping:
         """Get the mapping of metadata entries that have been logged for use with this output."""
-        return self._user_generated_metadata
-
-    def consume_logged_metadata(
-        self,
-    ) -> Mapping[str, MetadataValue]:
-        """Pops and yields all user-generated metadata entries that have been recorded from this context.
-
-        If consume_logged_metadata has not yet been called, this will yield all logged events since
-        the call to `handle_output`. If consume_logged_metadata has been called, it will yield all
-        events since the last time consume_logged_metadata_entries was called. Designed for internal
-        use. Users should never need to invoke this method.
-        """
-        result = self._user_generated_metadata
-        self._user_generated_metadata = {}
-        return result or {}
+        all_partitions_metadata = self._user_generated_metadata.get(NO_PARTITION_MARKER_KEY, {})
+        scoped_metadata = (
+            self._user_generated_metadata.get(partition_key, {}) if partition_key else {}
+        )
+        return {**all_partitions_metadata, **scoped_metadata}
 
 
 def get_output_context(

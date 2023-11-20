@@ -66,25 +66,23 @@ class DataVersion(
 
 @experimental
 class DataVersionsByPartition(
-    NamedTuple(
-        "_DataVersionsByPartition", [("data_versions_by_partition", Mapping[str, DataVersion])]
-    )
+    NamedTuple("_DataVersionsByPartition", [("data", Mapping[str, DataVersion])])
 ):
     def __new__(
         cls,
-        data_versions_by_partition: Mapping[str, Union[str, DataVersion]],
+        data: Mapping[str, Union[str, DataVersion]],
     ):
         check.dict_param(
-            data_versions_by_partition,
-            "data_versions_by_partition",
+            data,
+            "data",
             key_type=str,
             value_type=(str, DataVersion),
         )
         return super(DataVersionsByPartition, cls).__new__(
             cls,
-            data_versions_by_partition={
+            data={
                 partition: DataVersion(version) if isinstance(version, str) else version
-                for partition, version in data_versions_by_partition.items()
+                for partition, version in data.items()
             },
         )
 

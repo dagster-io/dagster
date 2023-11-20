@@ -19,15 +19,21 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, deprecated, experimental_param, public
-from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
+    DataVersion,
+    DataVersionsByPartition,
+)
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 
 from .metadata import (
+    MetadataByPartition,
     MetadataFieldSerializer,
     MetadataMapping,
     MetadataValue,
+    RawMetadataMapping,
     RawMetadataValue,
     normalize_metadata,
 )
@@ -262,7 +268,7 @@ class Output(Generic[T]):
         value (Any): The value returned by the compute function.
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
-        metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
+        metadata (Optional[Union[Dict[str, RawMetadataValue]], MetadataByPartition]):
             Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -274,19 +280,30 @@ class Output(Generic[T]):
         self,
         value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        data_version: Optional[DataVersion] = None,
+        metadata: Optional[Union[RawMetadataMapping, MetadataByPartition]] = None,
+        data_version: Optional[Union[DataVersion, DataVersionsByPartition]] = None,
     ):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
-        self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
-        self._metadata = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        self._data_version = check.opt_inst_param(
+            data_version, "data_version", (DataVersion, DataVersionsByPartition)
         )
+        if isinstance(metadata, MetadataByPartition):
+            self._metadata = metadata
+        else:
+            self._metadata = normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str),
+            )
 
     @property
-    def metadata(self) -> MetadataMapping:
+    def metadata(self) -> Union[MetadataMapping, MetadataByPartition]:
         return self._metadata
+
+    def metadata_for_partition(self, partition_key: str) -> MetadataMapping:
+        if isinstance(self._metadata, MetadataByPartition):
+            return self._metadata.data.get(partition_key) or {}
+        else:
+            return self._metadata
 
     @public
     @property
@@ -302,9 +319,15 @@ class Output(Generic[T]):
 
     @public
     @property
-    def data_version(self) -> Optional[DataVersion]:
+    def data_version(self) -> Optional[Union[DataVersion, DataVersionsByPartition]]:
         """Optional[DataVersion]: A data version that was manually set on the `Output`."""
         return self._data_version
+
+    def data_version_for_partition(self, partition_key: str) -> Optional[DataVersion]:
+        if isinstance(self._data_version, DataVersionsByPartition):
+            return self._data_version.data.get(partition_key, None)
+        else:
+            return self._data_version
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -344,18 +367,27 @@ class DynamicOutput(Generic[T]):
         value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata: Optional[Union[RawMetadataMapping, MetadataByPartition]] = None,
     ):
         self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
         self._output_name = check.str_param(output_name, "output_name")
         self._value = value
-        self._metadata = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str),
-        )
+        if isinstance(metadata, MetadataByPartition):
+            self._metadata = metadata
+        else:
+            self._metadata = normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str),
+            )
 
     @property
-    def metadata(self) -> Mapping[str, MetadataValue]:
+    def metadata(self) -> Union[MetadataMapping, MetadataByPartition]:
         return self._metadata
+
+    def metadata_for_partition(self, partition_key: str) -> MetadataMapping:
+        if isinstance(self._metadata, MetadataByPartition):
+            return self._metadata.data.get(partition_key) or {}
+        else:
+            return self._metadata
 
     @public
     @property

@@ -34,6 +34,7 @@ from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import NO_PARTITION_MARKER_KEY
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -573,7 +574,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
         self._is_external_input_asset_version_info_loaded = False
-        self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
+        # asset key/partition key
+        self._data_version_cache: Dict[AssetKey, Dict[str, "DataVersion"]] = {}
 
         self._requires_typed_event_stream = False
         self._typed_event_stream_error_message = None
@@ -936,14 +938,24 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self.job_def.asset_layer.asset_checks_defs_by_node_handle.get(node_handle) is not None
         )
 
-    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
-        self._data_version_cache[asset_key] = data_version
+    def set_data_version(
+        self, asset_key: AssetKey, data_version: "DataVersion", partition_key: Optional[str] = None
+    ) -> None:
+        inner_key = partition_key or NO_PARTITION_MARKER_KEY
+        self._data_version_cache.setdefault(asset_key, {})[inner_key] = data_version
 
-    def has_data_version(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._data_version_cache
+    def has_data_version(self, asset_key: AssetKey, partition_key: Optional[str] = None) -> bool:
+        inner_key = partition_key or NO_PARTITION_MARKER_KEY
+        return (
+            asset_key in self._data_version_cache
+            and inner_key in self._data_version_cache[asset_key]
+        )
 
-    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
-        return self._data_version_cache[asset_key]
+    def get_data_version(
+        self, asset_key: AssetKey, partition_key: Optional[str] = None
+    ) -> "DataVersion":
+        inner_key = partition_key or NO_PARTITION_MARKER_KEY
+        return self._data_version_cache[asset_key][inner_key]
 
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["InputAssetVersionInfo"]]]:
