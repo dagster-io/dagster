@@ -23,8 +23,10 @@ from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 
-def _exec_asset(asset_def, selection=None, partition_key=None):
-    result = materialize([asset_def], selection=selection, partition_key=partition_key)
+def _exec_asset(asset_def, selection=None, partition_key=None, resources=None):
+    result = materialize(
+        [asset_def], selection=selection, partition_key=partition_key, resources=resources
+    )
     assert result.success
     return result.asset_materializations_for_node(asset_def.node_def.name)
 
@@ -275,23 +277,23 @@ def test_return_materialization_multi_asset():
 
 def test_materialize_result_output_typing():
     # Test that the return annotation MaterializeResult is interpreted as a Nothing type, since we
-    # coerce returned MaterializeResults to Output(None)
+    # coerce returned MaterializeResults to Output(None). Then tests that the I/O manager is not invoked.
 
     class TestingIOManager(IOManager):
         def handle_output(self, context, obj):
-            assert context.dagster_type.is_nothing
-            return None
+            assert False
 
         def load_input(self, context):
-            return 1
+            assert False
 
     @asset
     def asset_with_type_annotation() -> MaterializeResult:
         return MaterializeResult(metadata={"foo": "bar"})
 
-    assert materialize(
-        [asset_with_type_annotation], resources={"io_manager": TestingIOManager()}
-    ).success
+    mats = _exec_asset(asset_with_type_annotation, resources={"io_manager": TestingIOManager()})
+    assert len(mats) == 1, mats
+    assert "foo" in mats[0].metadata
+    assert mats[0].metadata["foo"].value == "bar"
 
     @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
     def multi_asset_with_outs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
@@ -307,15 +309,6 @@ def test_materialize_result_output_typing():
 
     assert materialize(
         [multi_asset_with_specs_and_type_annotation], resources={"io_manager": TestingIOManager()}
-    ).success
-
-    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_specs_and_no_type_annotation():
-        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
-
-    assert materialize(
-        [multi_asset_with_specs_and_no_type_annotation],
-        resources={"io_manager": TestingIOManager()},
     ).success
 
     @asset(
@@ -380,18 +373,110 @@ def test_materialize_result_output_typing():
     ).success
 
 
-@pytest.mark.skip(
-    "Generator return types are interpreted as Any. See"
-    " https://github.com/dagster-io/dagster/pull/16906"
-)
+def test_materialize_result_no_output_typing():
+    # Test that returned MaterializeResults bypass the I/O manager
+
+    class TestingIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert False
+
+    @asset
+    def asset_without_type_annotation():
+        return MaterializeResult(metadata={"foo": "bar"})
+
+    mats = _exec_asset(asset_without_type_annotation, resources={"io_manager": TestingIOManager()})
+    assert len(mats) == 1, mats
+    assert "foo" in mats[0].metadata
+    assert mats[0].metadata["foo"].value == "bar"
+
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def multi_asset_with_outs():
+        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
+
+    assert materialize(
+        [multi_asset_with_outs], resources={"io_manager": TestingIOManager()}
+    ).success
+
+    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    def multi_asset_with_specs():
+        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
+
+    assert materialize(
+        [multi_asset_with_specs], resources={"io_manager": TestingIOManager()}
+    ).success
+
+    @asset(
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="with_checks"),
+            AssetCheckSpec(name="check_two", asset="with_checks"),
+        ]
+    )
+    def with_checks(context: AssetExecutionContext):
+        return MaterializeResult(
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_one",
+                    passed=True,
+                ),
+                AssetCheckResult(
+                    check_name="check_two",
+                    passed=True,
+                ),
+            ]
+        )
+
+    assert materialize(
+        [with_checks],
+        resources={"io_manager": TestingIOManager()},
+    ).success
+
+    @multi_asset(
+        specs=[
+            AssetSpec("asset_one"),
+            AssetSpec("asset_two"),
+        ],
+        check_specs=[
+            AssetCheckSpec(name="check_one", asset="asset_one"),
+            AssetCheckSpec(name="check_two", asset="asset_two"),
+        ],
+    )
+    def multi_checks(context: AssetExecutionContext):
+        return MaterializeResult(
+            asset_key="asset_one",
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_one",
+                    passed=True,
+                    asset_key="asset_one",
+                ),
+            ],
+        ), MaterializeResult(
+            asset_key="asset_two",
+            check_results=[
+                AssetCheckResult(
+                    check_name="check_two",
+                    passed=True,
+                    asset_key="asset_two",
+                ),
+            ],
+        )
+
+    assert materialize(
+        [multi_checks],
+        resources={"io_manager": TestingIOManager()},
+    ).success
+
+
 def test_generator_return_type_annotation():
     class TestingIOManager(IOManager):
         def handle_output(self, context, obj):
-            assert context.dagster_type.is_nothing
-            return None
+            assert False
 
         def load_input(self, context):
-            return 1
+            assert False
 
     @asset
     def generator_asset() -> Generator[MaterializeResult, None, None]:
@@ -500,3 +585,43 @@ def test_materialize_result_with_partitions_direct_invocation():
 
     res = partitioned_asset(context)
     assert res.metadata["key"] == "red"
+
+
+def test_case_will_fail():
+    class TestingIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert False
+
+    @asset
+    def one():
+        return None
+
+    @asset
+    def two(one):
+        assert one is None
+        return 1
+
+    materialize([one, two], resources={"io_manager": TestingIOManager()})
+
+
+def test_other_case_will_fail():
+    class TestingIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert False
+
+    @asset
+    def one() -> None:
+        return None
+
+    @asset
+    def two(one):
+        assert one is None
+        return 1
+
+    materialize([one, two], resources={"io_manager": TestingIOManager()})

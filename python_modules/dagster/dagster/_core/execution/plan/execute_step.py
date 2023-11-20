@@ -706,8 +706,10 @@ def _store_output(
     # don't store asset check outputs or asset observation outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
     asset_key = step_output.properties.asset_key
-    if step_output.properties.asset_check_key or (
-        step_context.output_observes_source_asset(step_output_handle.output_name)
+    if (
+        step_output.properties.asset_check_key
+        or (step_context.output_observes_source_asset(step_output_handle.output_name))
+        or output.value is None
     ):
 
         def _no_op() -> Iterator[DagsterEvent]:

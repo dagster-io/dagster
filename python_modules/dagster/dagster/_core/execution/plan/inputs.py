@@ -820,20 +820,23 @@ def _load_input_with_input_manager(
 ) -> Iterator[object]:
     from dagster._core.execution.context.system import StepExecutionContext
 
-    step_context = cast(StepExecutionContext, context.step_context)
-    with op_execution_error_boundary(
-        DagsterExecutionLoadInputError,
-        msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',
-        step_context=step_context,
-        step_key=step_context.step.key,
-        input_name=context.name,
-    ):
-        value = input_manager.load_input(context)
-    # close user code boundary before returning value
-    for event in context.consume_events():
-        yield event
+    if context.upstream_output and context.upstream_output.dagster_type.is_nothing:
+        yield None
+    else:
+        step_context = cast(StepExecutionContext, context.step_context)
+        with op_execution_error_boundary(
+            DagsterExecutionLoadInputError,
+            msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',
+            step_context=step_context,
+            step_key=step_context.step.key,
+            input_name=context.name,
+        ):
+            value = input_manager.load_input(context)
+        # close user code boundary before returning value
+        for event in context.consume_events():
+            yield event
 
-    yield value
+        yield value
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
