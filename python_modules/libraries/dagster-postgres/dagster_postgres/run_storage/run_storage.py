@@ -248,9 +248,13 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 db.func.coalesce(
                     # try to get the priority tag value
                     db.func.cast(
-                        db.func.cast(RunsTable.c.run_body, db.JSON)
-                        .op("->")("tags")
-                        .op("->>")(PRIORITY_TAG),
+                        db.func.regexp_replace(
+                            db.func.cast(RunsTable.c.run_body, db.JSON)
+                            .op("->")("tags")
+                            .op("->>")(PRIORITY_TAG),
+                            r"^(?!-?\d+$).*",
+                            "0",
+                        ),
                         db.Integer,
                     ),
                     # default to a priority of 0

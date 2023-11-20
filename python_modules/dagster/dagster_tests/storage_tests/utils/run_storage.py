@@ -668,10 +668,29 @@ class TestRunStorage:
                 tags={PRIORITY_TAG: "100"},
             )
         )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id="bogus-priority",
+                job_name="some_pipeline",
+                tags={PRIORITY_TAG: "boom"},
+            )
+        )
 
         # Default sort is id desc
-        assert storage.get_run_ids() == ["high-priority", "2", "low-priority", "1"]
-        assert storage.get_run_ids(prioritized=True) == ["high-priority", "1", "2", "low-priority"]
+        assert storage.get_run_ids() == [
+            "bogus-priority",
+            "high-priority",
+            "2",
+            "low-priority",
+            "1",
+        ]
+        assert storage.get_run_ids(prioritized=True) == [
+            "high-priority",
+            "1",
+            "2",
+            "bogus-priority",
+            "low-priority",
+        ]
 
     def test_fetch_by_status(self, storage):
         assert storage
