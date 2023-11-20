@@ -605,7 +605,7 @@ def open_pipes_session(
             yield from pipes_session.get_results()
     """
     # if we are in the context of an asset, set up a defensive check to ensure the event stream got returned
-    if context.get_step_execution_context().is_sda_step:
+    if context.has_assets_def:
         context.set_requires_typed_event_stream(error_message=_FAIL_TO_YIELD_ERROR_MESSAGE)
 
     context_data = build_external_execution_context_data(context, extras)
