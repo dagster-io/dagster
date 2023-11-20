@@ -43,7 +43,7 @@ setup(
         "redshift": ["psycopg2-binary"],
         "pyspark": ["dagster-pyspark"],
         "test": [
-            "botocore!=1.32.1",
+            "botocore<1.32.1",
             "moto[s3,server]>=2.2.8",
             "requests-mock",
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
