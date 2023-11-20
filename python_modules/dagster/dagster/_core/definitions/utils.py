@@ -9,7 +9,7 @@ import yaml
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.storage.tags import check_reserved_tags
+from dagster._core.storage.tags import PRIORITY_TAG, check_reserved_tags
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -96,6 +96,14 @@ def validate_tags(
 ) -> Mapping[str, str]:
     valid_tags: Dict[str, str] = {}
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
+        if key == PRIORITY_TAG:
+            try:
+                int(value)
+            except ValueError:
+                raise DagsterInvalidDefinitionError(
+                    f'Invalid value for tag "{key}": "{value}". Priority tags must coerce to an integer'
+                )
+
         if not isinstance(value, str):
             valid = False
             err_reason = f'Could not JSON encode value "{value}"'

@@ -252,19 +252,6 @@ def test_priority(instance, workspace_context, job_handle, daemon):
     ]
 
 
-def test_priority_on_malformed_tag(instance, workspace_context, job_handle, daemon):
-    create_queued_run(
-        instance,
-        job_handle,
-        run_id="bad-pri-run",
-        tags={PRIORITY_TAG: "foobar"},
-    )
-
-    list(daemon.run_iteration(workspace_context))
-
-    assert get_run_ids(instance.run_launcher.queue()) == ["bad-pri-run"]
-
-
 @pytest.mark.parametrize(
     "use_threads",
     [False, True],
