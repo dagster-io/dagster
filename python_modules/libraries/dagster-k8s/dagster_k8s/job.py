@@ -303,9 +303,9 @@ class DagsterK8sJobConfig(
             image. Should not be specified if using userDeployments.
         volume_mounts (Optional[Sequence[Permissive]]): A list of volume mounts to include in the job's
             container. Default: ``[]``. See:
-            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+            https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
         volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
-            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+            https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
         labels (Optional[Mapping[str, str]]): Additional labels that should be included in the Job's Pod. See:
             https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
         resources (Optional[Mapping[str, Any]]) Compute resource requirements for the container. See:
@@ -521,6 +521,21 @@ class DagsterK8sJobConfig(
                     "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables"
                 ),
             ),
+            "env": Field(
+                Array(
+                    Permissive(
+                        {
+                            "name": str,
+                        }
+                    )
+                ),
+                is_required=False,
+                description=(
+                    "A list of Kubernetes EnvVar dictionaries to inject into the Job's main container. "
+                    "See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core"
+                ),
+                default_value=[],
+            ),
             "volume_mounts": Field(
                 Array(
                     # Can supply either snake_case or camelCase, but in typeaheads based on the
@@ -541,7 +556,7 @@ class DagsterK8sJobConfig(
                 description=(
                     "A list of volume mounts to include in the job's container. Default: ``[]``."
                     " See: "
-                    "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core"
+                    "https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core"
                 ),
             ),
             "volumes": Field(
@@ -557,7 +572,7 @@ class DagsterK8sJobConfig(
                 description=(
                     "A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
                     "possible volume source types that can be included, see: "
-                    "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core"
+                    "https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core"
                 ),
             ),
             "labels": Field(
@@ -632,17 +647,6 @@ class DagsterK8sJobConfig(
                     ),
                     is_required=False,
                     description="Raw Kubernetes configuration for launched code servers.",
-                ),
-                "env": Field(
-                    Array(
-                        Permissive(
-                            {
-                                "name": str,
-                            }
-                        )
-                    ),
-                    is_required=False,
-                    default_value=[],
                 ),
             },
         )

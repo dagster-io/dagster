@@ -161,6 +161,7 @@ def execute_k8s_job(
     job_spec_config: Optional[Dict[str, Any]] = None,
     k8s_job_name: Optional[str] = None,
     merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.SHALLOW,
+    env: Optional[Dict[str, Any]] = None,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
 
@@ -236,6 +237,8 @@ def execute_k8s_job(
             are shallowly merged - any shared values in the dictionaries will be replaced by the
             values set on this op. Setting it to DEEP will recursively merge the two dictionaries,
             appending list fields together andmerging dictionary fields.
+        env (Optional[Dict[str, Any]]): A list of Kubernetes EnvVar dictionaries to inject into
+            the Job's main container. See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core"
     """
     run_container_context = K8sContainerContext.create_for_run(
         context.dagster_run,
@@ -274,6 +277,7 @@ def execute_k8s_job(
                 "merge_behavior": merge_behavior.value,
             }
         ),
+        env=env,
     )
 
     container_context = run_container_context.merge(op_container_context)

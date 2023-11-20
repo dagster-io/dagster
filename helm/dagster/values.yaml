@@ -497,6 +497,19 @@ runLauncher:
       #   - "BAR_ENV_VAR=baz_value" (Will set the value of BAR_ENV_VAR to baz_value)
       envVars: []
 
+      # Additional environment variables to set using Kubernetes EnvVar dictionaries.
+      # These will be directly applied to the container.
+      # See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core"
+
+      # Example:
+      #
+      # env:
+      # - name: ENV_ONE
+      #   value: "one"
+      # - name: ENV_TWO
+      #   value: "two"
+      env: []
+
       # Additional volumes that should be included in the Job's Pod. See:
       # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
       #

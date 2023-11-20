@@ -151,6 +151,10 @@ config:
     {{- end }}
   {{- end }}
 
+  {{- if $k8sRunLauncherConfig.env }}
+  env: {{- $k8sRunLauncherConfig.env | toYaml | nindent 4 }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.runLauncher.custom" }}

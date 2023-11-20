@@ -67,6 +67,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         scheduler_name=None,
         security_context=None,
         run_k8s_config=None,
+        env=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -118,6 +119,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._scheduler_name = check.opt_str_param(scheduler_name, "scheduler_name")
         self._security_context = check.opt_dict_param(security_context, "security_context")
         self._run_k8s_config = check.opt_dict_param(run_k8s_config, "run_k8s_config")
+        self._env = check.opt_list_param(env, "env")
         super().__init__()
 
     @property
@@ -167,6 +169,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def env_vars(self) -> Sequence[str]:
         return self._env_vars
+
+    @property
+    def env(self) -> Sequence[Mapping[str, Any]]:
+        return self._env
 
     @property
     def labels(self) -> Mapping[str, str]:

@@ -231,6 +231,7 @@ class K8sContainerContext(
                     run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
                         run_launcher.run_k8s_config or {}
                     ),
+                    env=run_launcher.env,
                 )
             )
 

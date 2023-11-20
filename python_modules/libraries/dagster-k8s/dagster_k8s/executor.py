@@ -143,6 +143,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         # step_k8s_config feeds into the run_k8s_config field because it is merged
         # with any configuration for the run that was set on the run launcher or code location
         run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(exc_cfg.get("step_k8s_config", {})),
+        env=exc_cfg.get("env"),  # type: ignore
     )
 
     if "load_incluster_config" in exc_cfg:

@@ -75,7 +75,7 @@ deployments:
     volumeMounts: []
 
     # Additional environment variables to set.
-    # These will be directly applied to the daemon container. See
+    # These will be directly applied to the container. See
     # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
     #
     # Example:
