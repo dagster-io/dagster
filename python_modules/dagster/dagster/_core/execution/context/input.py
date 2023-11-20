@@ -21,7 +21,6 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindow,
 )
 from dagster._core.errors import DagsterInvariantViolationError
@@ -396,7 +395,8 @@ class InputContext:
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
-        - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
         """
         subset = self._asset_partitions_subset
 
@@ -405,20 +405,7 @@ class InputContext:
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        if not isinstance(subset, BaseTimeWindowPartitionsSubset):
-            check.failed(
-                "Tried to access asset_partitions_time_window, but the asset is not partitioned"
-                " with time windows.",
-            )
-
-        time_windows = subset.included_time_windows
-        if len(time_windows) != 1:
-            check.failed(
-                "Tried to access asset_partitions_time_window, but there are "
-                f"({len(time_windows)}) time windows associated with this input.",
-            )
-
-        return time_windows[0]
+        return self.step_context.asset_partitions_time_window_for_input(self.name)
 
     @public
     def get_identifier(self) -> Sequence[str]:

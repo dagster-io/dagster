@@ -11,11 +11,13 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    InputContext,
     IOManager,
     IOManagerDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    OutputContext,
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
@@ -682,6 +684,36 @@ def test_multipartition_range_single_run():
         MultiPartitionKey({"date": "2020-01-02", "abc": "a"}),
         MultiPartitionKey({"date": "2020-01-03", "abc": "a"}),
     }
+
+
+def test_multipartitioned_asset_partitions_time_window():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2023-01-01"),
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def multipartitioned_asset(context) -> None:
+        pass
+
+    class CustomIOManager(IOManager):
+        def handle_output(self, context: OutputContext, obj):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+            )
+
+        def load_input(self, context: InputContext):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+            )
+
+    assert materialize(
+        assets=[multipartitioned_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key="a|2023-01-01",
+    ).success
 
 
 def test_error_on_nonexistent_upstream_partition():
