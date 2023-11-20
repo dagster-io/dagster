@@ -3648,6 +3648,7 @@ export type RunOrError = PythonError | Run | RunNotFoundError;
 export type RunRequest = {
   __typename: 'RunRequest';
   assetSelection: Maybe<Array<AssetKey>>;
+  jobName: Maybe<Scalars['String']>;
   runConfigYaml: Scalars['String'];
   runKey: Maybe<Scalars['String']>;
   tags: Array<PipelineTag>;
@@ -11311,6 +11312,7 @@ export const buildRunRequest = (
     __typename: 'RunRequest',
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'saepe',
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'ut',
     runKey: overrides && overrides.hasOwnProperty('runKey') ? overrides.runKey! : 'eius',
