@@ -242,6 +242,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         page_size = 25
         for page in range(0, len(sorted_run_ids), page_size):
+            if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
+                break
+
             sorted_run_ids_page = sorted_run_ids[page : page + page_size]
             # Create a dict of runs keyed by id
             runs_by_id = dict(
