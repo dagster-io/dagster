@@ -21,7 +21,6 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindow,
 )
 from dagster._core.errors import DagsterInvariantViolationError
