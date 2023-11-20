@@ -503,7 +503,7 @@ class GrapheneRunRequest(graphene.ObjectType):
                 for asset_key in self._run_request.asset_selection
             ]
         return None
-    
+
     def resolve_jobName(self, _graphene_info: ResolveInfo):
         return self._run_request.job_name
 
