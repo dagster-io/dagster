@@ -1,5 +1,6 @@
 from typing import Optional, Tuple
 
+import mock
 from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
@@ -419,6 +420,71 @@ def test_launch_asset_backfill():
             assert (
                 single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
             )
+
+
+def test_remove_partitions_defs_after_backfill_backcompat():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
+
+        # Replace the asset backfill data with the backcompat serialization
+        backfill = instance.get_backfills()[0]
+        backcompat_backfill = backfill._replace(
+            asset_backfill_data=None,
+            serialized_asset_backfill_data=backfill.asset_backfill_data.serialize(
+                instance, asset_graph=repo.asset_graph
+            ),
+        )
+
+        with mock.patch(
+            "dagster._core.instance.DagsterInstance.get_backfills",
+            return_value=[backcompat_backfill],
+        ):
+            # When the partitions defs are unchanged, the backfill data can be fetched
+            with define_out_of_process_context(__file__, "get_repo", instance) as context:
+                get_backfills_result = execute_dagster_graphql(
+                    context, GET_PARTITION_BACKFILLS_QUERY, variables={}
+                )
+                assert not get_backfills_result.errors
+                assert get_backfills_result.data
+
+                backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+                assert len(backfill_results) == 1
+                assert backfill_results[0]["numPartitions"] == 2
+                assert backfill_results[0]["id"] == backfill_id
+                assert set(backfill_results[0]["partitionNames"]) == {"a", "b"}
+
+            # When the partitions defs are changed, the backfill data cannot be fetched
+            with define_out_of_process_context(
+                __file__, "get_repo_with_non_partitioned_asset", instance
+            ) as context:
+                get_backfills_result = execute_dagster_graphql(
+                    context, GET_PARTITION_BACKFILLS_QUERY, variables={}
+                )
+                assert not get_backfills_result.errors
+                assert get_backfills_result.data
+
+                backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+                assert len(backfill_results) == 1
+                assert backfill_results[0]["numPartitions"] == 0
+                assert backfill_results[0]["id"] == backfill_id
+                assert set(backfill_results[0]["partitionNames"]) == set()
 
 
 def test_remove_partitions_defs_after_backfill():

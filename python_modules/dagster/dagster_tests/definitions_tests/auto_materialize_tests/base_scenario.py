@@ -319,8 +319,8 @@ class AssetReconciliationScenario(
                     partitions_subsets_by_asset_key={},
                     non_partitioned_asset_keys=set(),
                 )
-                partition_ids_by_serialized_asset_key = {
-                    asset_key.to_string(): check.not_none(
+                partitions_defs_ids_by_asset_key = {
+                    asset_key: check.not_none(
                         repo.asset_graph.get_partitions_def(asset_key)
                     ).get_serializable_unique_identifier(dynamic_partitions_store=instance)
                     for asset_key in target_subset.partitions_subsets_by_asset_key.keys()
@@ -333,7 +333,7 @@ class AssetReconciliationScenario(
                     requested_subset=empty_subset,
                     failed_and_downstream_subset=empty_subset,
                     backfill_start_time=test_time,
-                    partitions_ids_by_serialized_asset_key=partition_ids_by_serialized_asset_key,
+                    partitions_defs_ids_by_asset_key=partitions_defs_ids_by_asset_key,
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",
