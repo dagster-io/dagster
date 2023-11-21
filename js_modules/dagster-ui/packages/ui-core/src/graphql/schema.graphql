@@ -689,7 +689,7 @@ type AssetNode {
   type: DagsterType
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
-  assetChecksOrError(limit: Int): AssetChecksOrError!
+  assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: Int
 }
 

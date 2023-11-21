@@ -38,6 +38,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset_observations,
 )
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.inputs import GraphenePipelineSelector
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
@@ -283,6 +284,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     assetChecksOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetChecksOrError),
         limit=graphene.Argument(graphene.Int),
+        pipeline=graphene.Argument(GraphenePipelineSelector),
     )
     currentAutoMaterializeEvaluationId = graphene.Int()
 
@@ -1142,10 +1144,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
 
     def resolve_assetChecksOrError(
-        self, graphene_info: ResolveInfo, limit=None
+        self,
+        graphene_info: ResolveInfo,
+        limit=None,
+        pipeline: Optional[GraphenePipelineSelector] = None,
     ) -> AssetChecksOrErrorUnion:
         return self._asset_checks_loader.get_checks_for_asset(
-            self._external_asset_node.asset_key, limit
+            self._external_asset_node.asset_key, limit, pipeline
         )
 
 

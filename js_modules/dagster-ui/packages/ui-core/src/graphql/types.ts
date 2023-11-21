@@ -382,6 +382,7 @@ export type AssetNode = {
 
 export type AssetNodeAssetChecksOrErrorArgs = {
   limit?: InputMaybe<Scalars['Int']>;
+  pipeline?: InputMaybe<PipelineSelector>;
 };
 
 export type AssetNodeAssetMaterializationUsedDataArgs = {
