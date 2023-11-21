@@ -75,7 +75,7 @@ snowflake_insights_definitions = create_snowflake_insights_asset_and_schedule(
 
 defs = Definitions(
   assets=[..., *snowflake_insights_definitions.assets],
-  schedules=[..., snowflake_insights_deifnitions.schedule],
+  schedules=[..., snowflake_insights_definitions.schedule],
   resources={
     ...,
     "snowflake_insights": InsightsSnowflakeResource(
