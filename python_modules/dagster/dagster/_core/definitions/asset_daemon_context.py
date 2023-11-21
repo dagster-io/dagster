@@ -135,6 +135,7 @@ class AssetDaemonContext:
         self._verbose_log_fn = (
             self._logger.info if os.getenv("ASSET_DAEMON_VERBOSE_LOGS") else self._logger.debug
         )
+        self.prefetch_updated_parents()
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -171,6 +172,21 @@ class AssetDaemonContext:
     @property
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
+
+    def prefetch_updated_parents(self) -> None:
+        """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
+        value is calculated a long time after we calculate the set of updated parents for a given
+        asset, as this can cause us to miss materializations.
+        """
+        for asset_key in self.target_asset_keys:
+            self.instance_queryer.asset_partitions_with_newly_updated_parents(
+                latest_storage_id=self.latest_storage_id, child_asset_key=asset_key
+            )
+        self.get_latest_storage_id()
+
+    @cached_method
+    def get_latest_storage_id(self) -> Optional[int]:
+        return self.instance_queryer.instance.event_log_storage.get_maximum_record_id()
 
     @cached_method
     def _get_never_handled_and_newly_handled_root_asset_partitions(
