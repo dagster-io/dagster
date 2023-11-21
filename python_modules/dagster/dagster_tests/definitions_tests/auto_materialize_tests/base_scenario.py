@@ -333,7 +333,7 @@ class AssetReconciliationScenario(
                     requested_subset=empty_subset,
                     failed_and_downstream_subset=empty_subset,
                     backfill_start_time=test_time,
-                    partitions_defs_ids_by_asset_key=partitions_defs_ids_by_asset_key,
+                    partitions_def_ids_by_asset_key=partitions_defs_ids_by_asset_key,
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",
