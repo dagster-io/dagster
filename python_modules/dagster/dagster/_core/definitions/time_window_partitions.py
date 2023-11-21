@@ -24,6 +24,7 @@ from typing import (
 )
 
 import pendulum
+import pytz
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -168,12 +169,15 @@ class DatetimeFieldSerializer(FieldSerializer):
         self, datetime: Optional[datetime], whitelist_map: WhitelistMap, descent_path: str
     ) -> Optional[Mapping[str, Any]]:
         if datetime:
+            check.invariant(datetime.tzinfo is not None)
+            pendulum_datetime = pendulum.instance(datetime, tz=datetime.tzinfo)
+            timezone_name = pendulum_datetime.timezone.name
+
+            # Assert that the timezone name is a IANA timezone
             check.invariant(
-                isinstance(datetime, pendulum.DateTime),
-                "Datetime must be a pendulum datetime",
+                timezone_name in pytz.all_timezones_set,
+                f"Timezone {timezone_name} is not a valid IANA timezone",
             )
-            timezone_name = cast(pendulum.DateTime, datetime).timezone.name
-            check.invariant(timezone_name in pendulum.timezones)
 
             return pack_value(
                 TimestampWithTimezone(datetime.timestamp(), timezone_name),

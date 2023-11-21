@@ -1451,7 +1451,7 @@ def test_datetime_field_serializer():
     utc_datetime_with_no_timezone = Foo(
         dt=utc_datetime_from_timestamp(pendulum.now("UTC").timestamp())
     )
-    with pytest.raises(CheckError, match="pendulum datetime"):
+    with pytest.raises(CheckError, match="not a valid IANA timezone"):
         serialize_value(utc_datetime_with_no_timezone)
 
 
