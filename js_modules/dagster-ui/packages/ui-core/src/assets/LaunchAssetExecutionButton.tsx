@@ -163,6 +163,7 @@ export const LaunchAssetExecutionButton = ({
   preferredJobName,
   additionalDropdownOptions,
   intent = 'primary',
+  showChangedAndMissingOption,
 }: {
   scope: AssetsInScope;
   intent?: 'primary' | 'none';
@@ -172,6 +173,7 @@ export const LaunchAssetExecutionButton = ({
     icon?: JSX.Element;
     onClick: () => void;
   }[];
+  showChangedAndMissingOption?: boolean;
 }) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
@@ -254,7 +256,7 @@ export const LaunchAssetExecutionButton = ({
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
-              {inScope.length && 'all' in scope ? (
+              {showChangedAndMissingOption && 'all' in scope ? (
                 <MenuItem
                   text="Materialize changed and missing"
                   icon="changes_present"

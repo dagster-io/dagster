@@ -598,6 +598,7 @@ const AssetGraphExplorerWithData = ({
                   ? {selected: selectedDefinitions}
                   : {all: allDefinitionsForMaterialize}
               }
+              showChangedAndMissingOption
             />
           </TopbarWrapper>
         </ErrorBoundary>
