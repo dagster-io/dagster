@@ -684,7 +684,7 @@ def _build_run_requests_with_backfill_policy(
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
     partition_key_ranges = partition_subset.get_partition_key_ranges(
-        dynamic_partitions_store=dynamic_partitions_store
+        partitions_def, dynamic_partitions_store=dynamic_partitions_store
     )
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.

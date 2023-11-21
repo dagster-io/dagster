@@ -3,10 +3,8 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {compactNumber} from '../../ui/formatters';
 
 import {EvaluationCounts} from './EvaluationCounts';
-import {EvaluationOrEmpty} from './types';
 import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 
@@ -18,7 +16,6 @@ interface Props extends ListProps {
 export const AutomaterializeLeftPanel = ({
   assetHasDefinedPartitions,
   evaluations,
-  evaluationsIncludingEmpty,
   paginationProps,
   onSelectEvaluation,
   selectedEvaluation,
@@ -27,7 +24,7 @@ export const AutomaterializeLeftPanel = ({
     <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
       <AutomaterializeLeftList
         assetHasDefinedPartitions={assetHasDefinedPartitions}
-        evaluationsIncludingEmpty={evaluationsIncludingEmpty}
+        evaluations={evaluations}
         onSelectEvaluation={onSelectEvaluation}
         selectedEvaluation={selectedEvaluation}
       />
@@ -42,18 +39,13 @@ export const AutomaterializeLeftPanel = ({
 
 interface ListProps {
   assetHasDefinedPartitions: boolean;
-  evaluationsIncludingEmpty: EvaluationOrEmpty[];
-  onSelectEvaluation: (evaluation: EvaluationOrEmpty) => void;
-  selectedEvaluation?: EvaluationOrEmpty;
+  evaluations: AutoMaterializeEvaluationRecordItemFragment[];
+  onSelectEvaluation: (evaluation: AutoMaterializeEvaluationRecordItemFragment) => void;
+  selectedEvaluation?: AutoMaterializeEvaluationRecordItemFragment;
 }
 
 export const AutomaterializeLeftList = (props: ListProps) => {
-  const {
-    assetHasDefinedPartitions,
-    evaluationsIncludingEmpty,
-    onSelectEvaluation,
-    selectedEvaluation,
-  } = props;
+  const {assetHasDefinedPartitions, evaluations, onSelectEvaluation, selectedEvaluation} = props;
 
   return (
     <Box
@@ -61,45 +53,8 @@ export const AutomaterializeLeftList = (props: ListProps) => {
       style={{flex: 1, minHeight: 0, overflowY: 'auto'}}
       flex={{grow: 1, direction: 'column'}}
     >
-      {evaluationsIncludingEmpty.map((evaluation) => {
+      {evaluations.map((evaluation) => {
         const isSelected = selectedEvaluation?.evaluationId === evaluation.evaluationId;
-        if (evaluation.__typename === 'no_conditions_met') {
-          return (
-            <EvaluationListItem
-              key={`skip-${evaluation.evaluationId}`}
-              onClick={() => {
-                onSelectEvaluation(evaluation);
-              }}
-              $selected={isSelected}
-            >
-              <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
-                <div>
-                  {evaluation.startTimestamp ? (
-                    evaluation.amount === 1 ? (
-                      '1 evaluation'
-                    ) : (
-                      `${compactNumber(evaluation.amount)} evaluations`
-                    )
-                  ) : (
-                    <>
-                      {evaluation.endTimestamp === 'now' ? (
-                        'Before now'
-                      ) : (
-                        <>
-                          Before <TimestampDisplay timestamp={evaluation.endTimestamp} />
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-                <Caption color={isSelected ? Colors.Blue700 : Colors.Gray700}>
-                  No conditions met
-                </Caption>
-              </Box>
-            </EvaluationListItem>
-          );
-        }
-
         const {numRequested, numSkipped, numDiscarded} = evaluation;
 
         return (

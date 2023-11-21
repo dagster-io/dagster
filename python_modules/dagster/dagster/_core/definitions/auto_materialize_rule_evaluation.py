@@ -92,7 +92,9 @@ class WaitingOnAssetsRuleEvaluationData(
     pass
 
 
-RuleEvaluationResults = Sequence[Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet]]
+RuleEvaluationResults = Sequence[
+    Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
+]
 
 
 @whitelist_for_serdes

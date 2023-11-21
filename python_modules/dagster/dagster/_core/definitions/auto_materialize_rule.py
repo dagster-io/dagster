@@ -1024,7 +1024,10 @@ class SkipOnRequiredButNonexistentParentsRule(
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         asset_partitions_by_evaluation_data = defaultdict(set)
 
-        candidates_to_evaluate = context.get_candidates_not_evaluated_by_rule_on_previous_tick()
+        candidates_to_evaluate = (
+            context.get_candidates_not_evaluated_by_rule_on_previous_tick()
+            | context.get_candidates_with_updated_or_will_update_parents()
+        )
         for candidate in candidates_to_evaluate:
             nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,

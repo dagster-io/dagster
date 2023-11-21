@@ -44,12 +44,12 @@ query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int) {
 """
 
 GET_ASSET_CHECK_NAMES_QUERY = """
-query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int) {
-    assetNodes(assetKeys: $assetKeys) {
+query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int, $pipelineSelector: PipelineSelector) {
+    assetNodes(assetKeys: $assetKeys, pipeline: $pipelineSelector) {
         assetKey {
             path
         }
-        assetChecksOrError(limit: $limit) {
+        assetChecksOrError(limit: $limit, pipeline: $pipelineSelector) {
             ... on AssetChecks {
                 checks {
                     name
@@ -352,6 +352,43 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
         ]
+
+    def test_asset_check_asset_node_job_selection(self, graphql_context: WorkspaceRequestContext):
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_NAMES_QUERY,
+            variables={
+                "pipelineSelector": infer_job_selector(
+                    graphql_context, "fail_partition_materialization_job"
+                )
+            },
+        )
+        assert res.data == {
+            "assetNodes": [
+                {
+                    "assetKey": {"path": ["fail_partition_materialization"]},
+                    "assetChecksOrError": {"checks": []},
+                }
+            ]
+        }
+
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_NAMES_QUERY,
+            variables={"pipelineSelector": infer_job_selector(graphql_context, "asset_check_job")},
+        )
+        assert res.data == {
+            "assetNodes": [
+                {
+                    "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+                    "assetKey": {"path": ["asset_1"]},
+                },
+                {
+                    "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+                    "assetKey": {"path": ["check_in_op_asset"]},
+                },
+            ]
+        }
 
     def test_asset_check_execution_cursoring(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()

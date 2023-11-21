@@ -2,7 +2,13 @@ from typing import AbstractSet, Mapping, Optional, Union, overload
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
+from dagster._core.definitions.decorators.asset_decorator import (
+    resolve_asset_key_and_name_for_decorator,
+)
+from dagster._core.definitions.events import (
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._core.definitions.metadata import (
     MetadataUserInput,
 )
@@ -20,6 +26,7 @@ def observable_source_asset(observe_fn: SourceAssetObserveFunction) -> SourceAss
 @overload
 def observable_source_asset(
     *,
+    key: Optional[CoercibleToAssetKey] = None,
     name: Optional[str] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     metadata: Optional[MetadataUserInput] = None,
@@ -39,6 +46,7 @@ def observable_source_asset(
 def observable_source_asset(
     observe_fn: Optional[SourceAssetObserveFunction] = None,
     *,
+    key: Optional[CoercibleToAssetKey] = None,
     name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     metadata: Optional[MetadataUserInput] = None,
@@ -88,6 +96,7 @@ def observable_source_asset(
         return _ObservableSourceAsset()(observe_fn)
 
     return _ObservableSourceAsset(
+        key,
         name,
         key_prefix,
         metadata,
@@ -105,6 +114,7 @@ def observable_source_asset(
 class _ObservableSourceAsset:
     def __init__(
         self,
+        key: Optional[CoercibleToAssetKey] = None,
         name: Optional[str] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         metadata: Optional[MetadataUserInput] = None,
@@ -117,6 +127,7 @@ class _ObservableSourceAsset:
         partitions_def: Optional[PartitionsDefinition] = None,
         auto_observe_interval_minutes: Optional[float] = None,
     ):
+        self.key = key
         self.name = name
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -134,8 +145,13 @@ class _ObservableSourceAsset:
         self.auto_observe_interval_minutes = auto_observe_interval_minutes
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
-        source_asset_name = self.name or observe_fn.__name__
-        source_asset_key = AssetKey([*self.key_prefix, source_asset_name])
+        source_asset_key, source_asset_name = resolve_asset_key_and_name_for_decorator(
+            key=self.key,
+            key_prefix=self.key_prefix,
+            name=self.name,
+            fn=observe_fn,
+            decorator="@observable_source_asset",
+        )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(observe_fn)}
         decorator_resource_keys = set(self.required_resource_keys or [])

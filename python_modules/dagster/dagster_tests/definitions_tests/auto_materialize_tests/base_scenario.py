@@ -166,7 +166,10 @@ class AssetReconciliationScenario(
             ("cursor_from", Optional["AssetReconciliationScenario"]),
             ("current_time", Optional[datetime.datetime]),
             ("asset_selection", Optional[AssetSelection]),
-            ("active_backfill_targets", Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]]),
+            (
+                "active_backfill_targets",
+                Optional[Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]],
+            ),
             ("dagster_runs", Optional[Sequence[DagsterRun]]),
             ("event_log_entries", Optional[Sequence[EventLogEntry]]),
             ("expected_run_requests", Optional[Sequence[RunRequest]]),
@@ -190,7 +193,9 @@ class AssetReconciliationScenario(
         cursor_from: Optional["AssetReconciliationScenario"] = None,
         current_time: Optional[datetime.datetime] = None,
         asset_selection: Optional[AssetSelection] = None,
-        active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None,
+        active_backfill_targets: Optional[
+            Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]
+        ] = None,
         dagster_runs: Optional[Sequence[DagsterRun]] = None,
         event_log_entries: Optional[Sequence[EventLogEntry]] = None,
         expected_run_requests: Optional[Sequence[RunRequest]] = None,
@@ -300,11 +305,18 @@ class AssetReconciliationScenario(
 
             # add any backfills to the instance
             for i, target in enumerate(self.active_backfill_targets or []):
-                target_subset = AssetGraphSubset(
-                    asset_graph=repo.asset_graph,
-                    partitions_subsets_by_asset_key=target,
-                    non_partitioned_asset_keys=set(),
-                )
+                if isinstance(target, Mapping):
+                    target_subset = AssetGraphSubset(
+                        asset_graph=repo.asset_graph,
+                        partitions_subsets_by_asset_key=target,
+                        non_partitioned_asset_keys=set(),
+                    )
+                else:
+                    target_subset = AssetGraphSubset(
+                        asset_graph=repo.asset_graph,
+                        partitions_subsets_by_asset_key={},
+                        non_partitioned_asset_keys=target,
+                    )
                 empty_subset = AssetGraphSubset(
                     asset_graph=repo.asset_graph,
                     partitions_subsets_by_asset_key={},

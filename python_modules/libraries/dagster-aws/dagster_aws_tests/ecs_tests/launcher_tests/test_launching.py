@@ -1100,8 +1100,8 @@ def test_status(
         assert failure_health_check.status == WorkerStatus.FAILED
         assert (
             failure_health_check.msg
-            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed."
+            == f"Task {task_arn} failed.\nStop code: None.\nStop reason: None.\nContainer 'run'"
+            " failed - exit code 1.\n"
         )
 
         assert not failure_health_check.transient
@@ -1126,8 +1126,8 @@ def test_status(
 
         assert (
             failure_health_check.msg
-            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed.\n\nRun worker logs:\nOops something bad happened"
+            == f"Task {task_arn} failed.\nStop code: None.\nStop reason: None.\nContainer 'run'"
+            " failed - exit code 1.\nRun worker logs:\nOops something bad happened"
         )
 
     task["lastStatus"] = "foo"

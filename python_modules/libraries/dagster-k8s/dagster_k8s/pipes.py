@@ -32,6 +32,7 @@ from dagster_pipes import (
     PipesExtras,
 )
 
+from dagster_k8s.client import DEFAULT_WAIT_BETWEEN_ATTEMPTS
 from dagster_k8s.utils import get_common_labels
 
 from .client import DagsterKubernetesClient, WaitForPodState
@@ -112,7 +113,9 @@ class _PipesK8sClient(PipesClient):
         kube_context (Optional[str]): The value to pass as the context argument to
             ``kubernetes.config.load_kube_config``.
             Default: None.
-
+        poll_interval (Optional[float]): How many seconds to wait between requests when
+            polling the kubernetes API
+            Default: 10.
     """
 
     def __init__(
@@ -123,6 +126,7 @@ class _PipesK8sClient(PipesClient):
         load_incluster_config: Optional[bool] = None,
         kubeconfig_file: Optional[str] = None,
         kube_context: Optional[str] = None,
+        poll_interval: Optional[float] = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.context_injector = (
@@ -150,6 +154,7 @@ class _PipesK8sClient(PipesClient):
         )
         self.kubeconfig_file = check.opt_str_param(kubeconfig_file, "kubeconfig_file")
         self.kube_context = check.opt_str_param(kube_context, "kube_context")
+        self.poll_interval = check.float_param(poll_interval, "poll_interval")
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -251,19 +256,20 @@ class _PipesK8sClient(PipesClient):
                         pod_name,
                         namespace,
                         wait_for_state=WaitForPodState.Ready,
+                        wait_time_between_attempts=self.poll_interval,
                     )
                     self.message_reader.consume_pod_logs(
                         core_api=client.core_api,
                         pod_name=pod_name,
                         namespace=namespace,
                     )
-                else:
-                    # if were not doing direct log reading, just wait for pod to finish
-                    client.wait_for_pod(
-                        pod_name,
-                        namespace,
-                        wait_for_state=WaitForPodState.Terminated,
-                    )
+
+                client.wait_for_pod(
+                    pod_name,
+                    namespace,
+                    wait_for_state=WaitForPodState.Terminated,
+                    wait_time_between_attempts=self.poll_interval,
+                )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
         return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))

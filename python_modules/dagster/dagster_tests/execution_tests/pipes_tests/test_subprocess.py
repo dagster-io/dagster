@@ -9,6 +9,7 @@ from typing import Any, Callable, Iterator
 
 import boto3
 import pytest
+from dagster import op
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
@@ -16,6 +17,7 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import (
@@ -608,3 +610,26 @@ def test_pipes_exception():
         assert len(pipes_msgs) == 2
         assert "successfully opened" in pipes_msgs[0]
         assert "external process pipes closed with exception" in pipes_msgs[1]
+
+
+def test_run_in_op():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as pipes:
+            pipes.log.info("hello there")
+
+    @op
+    def just_run(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            pipes_client.run(command=cmd, context=context)
+
+    @job
+    def sample_job():
+        just_run()
+
+    result = sample_job.execute_in_process(
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
+    assert result.success

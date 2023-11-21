@@ -292,6 +292,51 @@ partition_scenarios = [
         .assert_requested_runs(),
     ),
     AssetDaemonScenario(
+        id="hourly_to_daily_nonexistent_partitions_become_existent",
+        initial_state=hourly_to_daily.with_asset_properties(
+            keys=["B"], partitions_def=daily_partitions_def._replace(end_offset=1)
+        )
+        .with_current_time(time_partitions_start_str)
+        .with_current_time_advanced(hours=10)
+        .with_all_eager(),
+        execution_fn=lambda state: state.with_runs(
+            *(
+                run_request(
+                    ["A"], partition_key=hour_partition_key(time_partitions_start_datetime, delta=i)
+                )
+                for i in range(1, 11)
+            )
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(hours=10)
+        .with_runs(
+            *(
+                run_request(
+                    ["A"], partition_key=hour_partition_key(time_partitions_start_datetime, delta=i)
+                )
+                for i in range(11, 21)
+            )
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        # now all 24 hour partitions exist
+        .with_current_time_advanced(hours=5)
+        .with_runs(
+            *(
+                run_request(
+                    ["A"], partition_key=hour_partition_key(time_partitions_start_datetime, delta=i)
+                )
+                for i in range(21, 26)
+            )
+        )
+        .evaluate_tick()
+        # this asset can now kick off
+        .assert_requested_runs(
+            run_request(["B"], partition_key=day_partition_key(state.current_time, delta=1))
+        ),
+    ),
+    AssetDaemonScenario(
         id="time_dimension_multipartitioned",
         initial_state=one_asset.with_asset_properties(
             partitions_def=time_multipartitions_def,

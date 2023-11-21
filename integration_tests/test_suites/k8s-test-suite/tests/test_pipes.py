@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import kubernetes
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
+from dagster._core.instance import DagsterInstance
 from dagster._core.pipes.client import (
     PipesContextInjector,
 )
@@ -15,6 +16,8 @@ from dagster_pipes import PipesContextData, PipesDefaultContextLoader
 from dagster_test.test_project import (
     get_test_project_docker_image,
 )
+
+POLL_INTERVAL = 0.5
 
 
 @pytest.mark.default
@@ -50,6 +53,7 @@ def test_pipes_client(namespace, cluster_provider):
             "pipes_client": PipesK8sClient(
                 load_incluster_config=False,
                 kubeconfig_file=cluster_provider.kubeconfig_file,
+                poll_interval=POLL_INTERVAL,
             )
         },
         raise_on_error=False,
@@ -166,6 +170,7 @@ def test_pipes_client_file_inject(namespace, cluster_provider):
                 context_injector=injector,
                 load_incluster_config=False,
                 kubeconfig_file=cluster_provider.kubeconfig_file,
+                poll_interval=POLL_INTERVAL,
             )
         },
         raise_on_error=False,
@@ -227,3 +232,53 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
     mats = result.asset_materializations_for_node(number_y_job.op.name)
     assert "is_even" in mats[0].metadata
     assert mats[0].metadata["is_even"].value is True
+
+
+def test_error(namespace, cluster_provider):
+    docker_image = get_test_project_docker_image()
+
+    @asset
+    def check_failure(
+        context: AssetExecutionContext,
+        pipes_client: PipesK8sClient,
+    ):
+        return pipes_client.run(
+            context=context,
+            namespace=namespace,
+            image=docker_image,
+            command=[
+                "python",
+                "-m",
+                "error_example.sleep_and_fail",
+            ],
+            extras={
+                "sleep_seconds": 3 * POLL_INTERVAL,
+            },
+            env={
+                "PYTHONPATH": "/dagster_test/toys/external_execution/",
+            },
+        ).get_results()
+
+    instance = DagsterInstance.ephemeral()
+    result = materialize(
+        [check_failure],
+        resources={
+            "pipes_client": PipesK8sClient(
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+                poll_interval=POLL_INTERVAL,
+            )
+        },
+        instance=instance,
+        raise_on_error=False,
+    )
+    assert not result.success
+    conn = instance.get_records_for_run(result.run_id)
+    pipes_msgs = [
+        record.event_log_entry.user_message
+        for record in conn.records
+        if record.event_log_entry.user_message.startswith("[pipes]")
+    ]
+    assert len(pipes_msgs) == 2
+    assert "successfully opened" in pipes_msgs[0]
+    assert "external process pipes closed with exception" in pipes_msgs[1]
