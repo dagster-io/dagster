@@ -610,7 +610,7 @@ class AutoMaterializeAssetPartitionsFilter(
     def passes(
         self, context: RuleEvaluationContext, asset_partitions: Iterable[AssetKeyPartitionKey]
     ) -> Iterable[AssetKeyPartitionKey]:
-        if self.latest_run_required_tags is None:
+        if self.latest_run_required_tags is None or not asset_partitions:
             return asset_partitions
 
         will_update_asset_partitions: Set[AssetKeyPartitionKey] = set()
