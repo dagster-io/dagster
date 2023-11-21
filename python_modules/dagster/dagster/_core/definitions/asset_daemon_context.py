@@ -543,7 +543,7 @@ class AssetDaemonContext:
         return (
             run_requests,
             self.cursor.with_updates(
-                latest_storage_id=self.instance_queryer.instance.event_log_storage.get_maximum_record_id(),
+                latest_storage_id=self.get_latest_storage_id(),
                 to_materialize=to_materialize,
                 to_discard=to_discard,
                 asset_graph=self.asset_graph,
