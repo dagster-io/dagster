@@ -208,19 +208,28 @@ class InstigatorState(
         return self.origin.instigator_name
 
     @property
-    def repository_origin_id(self) -> str:
-        return self.origin.external_repository_origin.get_id()
-
-    @property
-    def repository_selector(self) -> RepositorySelector:
-        return RepositorySelector(
-            self.origin.external_repository_origin.code_location_origin.location_name,
-            self.origin.external_repository_origin.repository_name,
+    def repository_origin_id(self) -> Optional[str]:
+        return (
+            self.origin.external_repository_origin.get_id()
+            if self.origin.external_repository_origin
+            else None
         )
 
     @property
-    def repository_selector_id(self) -> str:
-        return create_snapshot_id(self.repository_selector)
+    def repository_selector(self) -> Optional[RepositorySelector]:
+        repository_origin = self.origin.external_repository_origin
+        return (
+            RepositorySelector(
+                repository_origin.code_location_origin.location_name,
+                repository_origin.repository_name,
+            )
+            if repository_origin
+            else None
+        )
+
+    @property
+    def repository_selector_id(self) -> Optional[str]:
+        return create_snapshot_id(self.repository_selector) if self.repository_selector else None
 
     @property
     def instigator_origin_id(self) -> str:
@@ -228,10 +237,15 @@ class InstigatorState(
 
     @property
     def selector_id(self) -> str:
+        if self.instigator_type == InstigatorType.AUTO_MATERIALIZE:
+            # auto-materialize instigators are not repo or location-scoped
+            return self.origin.instigator_name
+        else:
+            repository_origin = check.not_none(self.origin.external_repository_origin)
         return create_snapshot_id(
             InstigatorSelector(
-                self.origin.external_repository_origin.code_location_origin.location_name,
-                self.origin.external_repository_origin.repository_name,
+                repository_origin.code_location_origin.location_name,
+                repository_origin.repository_name,
                 self.origin.instigator_name,
             )
         )

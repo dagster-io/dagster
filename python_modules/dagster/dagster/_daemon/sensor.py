@@ -588,7 +588,7 @@ def _submit_run_request(
     code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
-        repository_name=sensor_origin.external_repository_origin.repository_name,
+        repository_name=check.not_none(sensor_origin.external_repository_origin).repository_name,
         job_name=target_data.job_name,
         op_selection=target_data.op_selection,
         asset_selection=run_request.asset_selection,
@@ -629,7 +629,7 @@ def _get_code_location_for_sensor(
 ):
     sensor_origin = external_sensor.get_external_origin()
     return workspace_process_context.create_request_context().get_code_location(
-        sensor_origin.external_repository_origin.code_location_origin.location_name
+        check.not_none(sensor_origin.external_repository_origin).code_location_origin.location_name
     )
 
 
@@ -907,7 +907,9 @@ def _fetch_existing_runs(
         elif (
             run.external_job_origin is not None
             and run.external_job_origin.external_repository_origin.get_selector_id()
-            == external_sensor.get_external_origin().external_repository_origin.get_selector_id()
+            == check.not_none(
+                external_sensor.get_external_origin().external_repository_origin
+            ).get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):
             valid_runs.append(run)

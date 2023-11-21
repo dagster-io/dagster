@@ -473,17 +473,22 @@ class ExternalJobOrigin(
 class ExternalInstigatorOrigin(
     NamedTuple(
         "_ExternalInstigatorOrigin",
-        [("external_repository_origin", ExternalRepositoryOrigin), ("instigator_name", str)],
+        [
+            ("external_repository_origin", Optional[ExternalRepositoryOrigin]),
+            ("instigator_name", str),
+        ],
     )
 ):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, instigator_name: str):
+    def __new__(
+        cls, external_repository_origin: Optional[ExternalRepositoryOrigin], instigator_name: str
+    ):
         return super(ExternalInstigatorOrigin, cls).__new__(
             cls,
-            check.inst_param(
+            check.opt_inst_param(
                 external_repository_origin,
                 "external_repository_origin",
                 ExternalRepositoryOrigin,

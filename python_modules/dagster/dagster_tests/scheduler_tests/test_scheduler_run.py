@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from typing import TYPE_CHECKING, Optional, Sequence, cast
 
+import dagster._check as check
 import pendulum
 import pytest
 from dagster import (
@@ -1423,7 +1424,9 @@ class TestSchedulerRun:
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         existing_origin = external_schedule.get_external_origin()
 
-        code_location_origin = existing_origin.external_repository_origin.code_location_origin
+        code_location_origin = check.not_none(
+            existing_origin.external_repository_origin
+        ).code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
             executable_path="/different/executable_path"
@@ -1431,7 +1434,9 @@ class TestSchedulerRun:
 
         # Change metadata on the origin that shouldn't matter for execution
         modified_origin = existing_origin._replace(
-            external_repository_origin=existing_origin.external_repository_origin._replace(
+            external_repository_origin=check.not_none(
+                existing_origin.external_repository_origin
+            )._replace(
                 code_location_origin=code_location_origin._replace(
                     loadable_target_origin=modified_loadable_target_origin
                 )
@@ -2123,7 +2128,9 @@ class TestSchedulerRun:
             # Swap out a new repository name
             invalid_repo_origin = ExternalInstigatorOrigin(
                 ExternalRepositoryOrigin(
-                    valid_schedule_origin.external_repository_origin.code_location_origin,
+                    check.not_none(
+                        valid_schedule_origin.external_repository_origin
+                    ).code_location_origin,
                     "invalid_repo_name",
                 ),
                 valid_schedule_origin.instigator_name,
@@ -2216,16 +2223,18 @@ class TestSchedulerRun:
             external_schedule = external_repo.get_external_schedule("simple_schedule")
             valid_schedule_origin = external_schedule.get_external_origin()
 
-            code_location_origin = (
-                valid_schedule_origin.external_repository_origin.code_location_origin
-            )
+            code_location_origin = check.not_none(
+                valid_schedule_origin.external_repository_origin
+            ).code_location_origin
             assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
 
             # Swap out a new location name
             invalid_repo_origin = ExternalInstigatorOrigin(
                 ExternalRepositoryOrigin(
                     code_location_origin._replace(location_name="missing_location"),
-                    valid_schedule_origin.external_repository_origin.repository_name,
+                    check.not_none(
+                        valid_schedule_origin.external_repository_origin
+                    ).repository_name,
                 ),
                 valid_schedule_origin.instigator_name,
             )

@@ -173,7 +173,7 @@ def get_sensor_next_tick(
 
     check.inst_param(sensor_state, "sensor_state", InstigatorState)
 
-    repository_origin = sensor_state.origin.external_repository_origin
+    repository_origin = check.not_none(sensor_state.origin.external_repository_origin)
     if not graphene_info.context.has_code_location(
         repository_origin.code_location_origin.location_name
     ):
