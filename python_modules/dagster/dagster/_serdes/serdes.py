@@ -18,7 +18,6 @@ from enum import Enum
 from functools import partial
 from inspect import Parameter, signature
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -48,9 +47,6 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.asset_key import AssetKey
 
 ###################################################################################################
 # Types
@@ -95,26 +91,28 @@ UnpackedValue: TypeAlias = Union[
     "UnknownSerdesValue",
 ]
 
+_K = TypeVar("_K")
 _V = TypeVar("_V")
 
 
-class AssetKeyMap(Mapping["AssetKey", _V]):
-    def __init__(self, mapping: Mapping["AssetKey", _V] = {}) -> None:
-        from dagster._core.definitions.asset_key import AssetKey
+class SerializableNonScalarKeyMapping(Mapping[_K, _V]):
+    """Wrapper class for non-scalar key mappings, used to performantly type check when serializing
+    without having to access types of specific keys.
+    """
 
-        check.mapping_param(mapping, "mapping", key_type=AssetKey)
-        self.mapping: Mapping[AssetKey, _V] = mapping
+    def __init__(self, mapping: Mapping[_K, _V] = {}) -> None:
+        self.mapping: Mapping[_K, _V] = mapping
 
-    def __setitem__(self, key, item):
-        raise NotImplementedError("AssetKeyMap is immutable")
+    def __setitem__(self, key: _K, item: _V):
+        raise NotImplementedError("SerializableNonScalarKeyMapping is immutable")
 
-    def __getitem__(self, item: "AssetKey") -> _V:
+    def __getitem__(self, item: _K) -> _V:
         return self.mapping[item]
 
     def __len__(self) -> int:
         return len(self.mapping)
 
-    def __iter__(self) -> Iterator["AssetKey"]:
+    def __iter__(self) -> Iterator[_K]:
         return iter(self.mapping)
 
 
@@ -708,18 +706,20 @@ def _pack_value(
             _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(cast(list, val))
         ]
-    if tval is AssetKeyMap:
-        return {
-            "__asset_key_map__": {
-                key.to_string(): _pack_value(value, whitelist_map, f"{descent_path}.{key}")
-                for key, value in cast(dict, val).items()
-            }
-        }
     if tval is dict:
-        dict_val = cast(dict, val)
         return {
             key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in dict_val.items()
+            for key, value in cast(dict, val).items()
+        }
+    if tval is SerializableNonScalarKeyMapping:
+        return {
+            "__non_scalar_key_mapping_items__": [
+                [
+                    _pack_value(k, whitelist_map, f"{descent_path}.{k}"),
+                    _pack_value(v, whitelist_map, f"{descent_path}.{k}"),
+                ]
+                for k, v in cast(dict, val).items()
+            ]
         }
 
     # inlined is_named_tuple_instance
@@ -891,12 +891,10 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
 
-    if "__asset_key_map__" in val:
-        from dagster._core.events import AssetKey
-
+    if "__non_scalar_key_mapping_items__" in val:
         return {
-            AssetKey.from_db_string(key): _unpack_value(value, whitelist_map, context)
-            for key, value in cast(dict, val["__asset_key_map__"]).items()
+            _unpack_value(k, whitelist_map, context): _unpack_value(v, whitelist_map, context)
+            for k, v in val["__non_scalar_key_mapping_items__"]
         }
 
     return val
