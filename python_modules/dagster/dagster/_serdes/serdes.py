@@ -97,7 +97,8 @@ _V = TypeVar("_V")
 
 class SerializableNonScalarKeyMapping(Mapping[_K, _V]):
     """Wrapper class for non-scalar key mappings, used to performantly type check when serializing
-    without having to access types of specific keys.
+    without impacting the performance of serializing the more common scalar key dicts.
+    May be replaceable with a different clever scheme.
     """
 
     def __init__(self, mapping: Mapping[_K, _V] = {}) -> None:
@@ -713,7 +714,7 @@ def _pack_value(
         }
     if tval is SerializableNonScalarKeyMapping:
         return {
-            "__non_scalar_key_mapping_items__": [
+            "__mapping_items__": [
                 [
                     _pack_value(k, whitelist_map, f"{descent_path}.{k}"),
                     _pack_value(v, whitelist_map, f"{descent_path}.{k}"),
@@ -891,10 +892,10 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
 
-    if "__non_scalar_key_mapping_items__" in val:
+    if "__mapping_items__" in val:
         return {
             _unpack_value(k, whitelist_map, context): _unpack_value(v, whitelist_map, context)
-            for k, v in val["__non_scalar_key_mapping_items__"]
+            for k, v in val["__mapping_items__"]
         }
 
     return val

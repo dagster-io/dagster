@@ -734,10 +734,7 @@ def test_serialize_non_scalar_key_mapping():
     non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
 
     serialized = serialize_value(non_scalar_key_mapping, whitelist_map=test_env)
-    assert (
-        serialized
-        == """{"__non_scalar_key_mapping_items__": [[{"__class__": "Bar", "color": "red"}, 1]]}"""
-    )
+    assert serialized == """{"__mapping_items__": [[{"__class__": "Bar", "color": "red"}, 1]]}"""
     assert non_scalar_key_mapping == deserialize_value(serialized, whitelist_map=test_env)
 
 
