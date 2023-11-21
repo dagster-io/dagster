@@ -24,6 +24,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generic,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -89,6 +90,31 @@ UnpackedValue: TypeAlias = Union[
     Enum,
     "UnknownSerdesValue",
 ]
+
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+class SerializableNonScalarKeyMapping(Mapping[_K, _V]):
+    """Wrapper class for non-scalar key mappings, used to performantly type check when serializing
+    without impacting the performance of serializing the more common scalar key dicts.
+    May be replaceable with a different clever scheme.
+    """
+
+    def __init__(self, mapping: Mapping[_K, _V] = {}) -> None:
+        self.mapping: Mapping[_K, _V] = mapping
+
+    def __setitem__(self, key: _K, item: _V):
+        raise NotImplementedError("SerializableNonScalarKeyMapping is immutable")
+
+    def __getitem__(self, item: _K) -> _V:
+        return self.mapping[item]
+
+    def __len__(self) -> int:
+        return len(self.mapping)
+
+    def __iter__(self) -> Iterator[_K]:
+        return iter(self.mapping)
 
 
 ###################################################################################################
@@ -686,6 +712,16 @@ def _pack_value(
             key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in cast(dict, val).items()
         }
+    if tval is SerializableNonScalarKeyMapping:
+        return {
+            "__mapping_items__": [
+                [
+                    _pack_value(k, whitelist_map, f"{descent_path}.{k}"),
+                    _pack_value(v, whitelist_map, f"{descent_path}.{k}"),
+                ]
+                for k, v in cast(dict, val).items()
+            ]
+        }
 
     # inlined is_named_tuple_instance
     if isinstance(val, tuple) and hasattr(val, "_fields"):
@@ -855,6 +891,12 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
     if "__frozenset__" in val:
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
+
+    if "__mapping_items__" in val:
+        return {
+            _unpack_value(k, whitelist_map, context): _unpack_value(v, whitelist_map, context)
+            for k, v in val["__mapping_items__"]
+        }
 
     return val
 
