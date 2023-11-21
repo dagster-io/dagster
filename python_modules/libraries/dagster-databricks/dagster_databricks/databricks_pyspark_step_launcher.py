@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 import zlib
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, cast, List
+from typing import Any, cast, Dict, Iterator, List, Mapping, Optional, Sequence
 
 from dagster import (
     Bool,
