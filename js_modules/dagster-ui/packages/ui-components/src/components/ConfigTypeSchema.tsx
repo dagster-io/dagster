@@ -9,6 +9,7 @@ import {
   colorBackgroundLight,
   colorBackgroundLighter,
   colorBorderDefault,
+  colorTextLighter,
   colorTextRed,
 } from '../theme/color';
 
@@ -48,7 +49,7 @@ type renderTypeRecursiveType = ((
 const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, props, typeName) => {
   if (!type) {
     return (
-      <span style={{color: colorTextRed(), opacity: 0.6}}>
+      <span style={{color: colorTextRed(), opacity: 0.8}}>
         type &quot;{typeName}&quot; not found
       </span>
     );
@@ -351,7 +352,7 @@ const DictEntryDiv = styled.div<{$hovered: boolean}>`
 `;
 
 const TypeSchemaContainer = styled.code`
-  color: ${colorBackgroundLight()};
+  color: ${colorTextLighter()};
   display: block;
   white-space: pre-wrap;
   font-size: 14px;
