@@ -308,6 +308,8 @@ def define_asset_job(
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
+            Only used if retry policy is not defined on the asset definition.
 
 
     Returns:
