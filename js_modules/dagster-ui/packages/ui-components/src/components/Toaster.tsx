@@ -3,15 +3,10 @@ import {IToasterProps, ToasterInstance, ToastProps} from '@blueprintjs/core';
 import React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import {
-  colorAccentBlue,
-  colorAccentGray,
-  colorAccentPrimary,
-  colorAccentRed,
-  colorTextDefault,
-} from '../theme/color';
+import {CoreColors} from '../palettes/Colors';
+import {colorAccentBlue, colorAccentGray, colorAccentPrimary, colorAccentRed} from '../theme/color';
 
-import {IconName, Icon} from './Icon';
+import {IconName, Icon, IconWrapper} from './Icon';
 import {createToaster} from './createToaster';
 
 export const GlobalToasterStyle = createGlobalStyle`
@@ -21,7 +16,7 @@ export const GlobalToasterStyle = createGlobalStyle`
       border-radius: 8px;
       font-size: 14px;
       line-height: 22px;
-      color: ${colorTextDefault()};
+      color: ${CoreColors.White};
       background-color: ${colorAccentGray()};
     }
 
@@ -34,6 +29,14 @@ export const GlobalToasterStyle = createGlobalStyle`
       align-items: center;
       padding: 6px;
       gap: 8px;
+    }
+
+    .bp4-icon-cross {
+      color: ${CoreColors.White} !important;
+    }
+
+    ${IconWrapper} {
+      background-color: ${CoreColors.White} !important;
     }
 
     .bp4-toast.bp4-intent-primary,
@@ -49,10 +52,6 @@ export const GlobalToasterStyle = createGlobalStyle`
     .bp4-toast.bp4-intent-warning,
     .bp4-toast.bp4-intent-warning .bp4-button {
       background-color: ${colorAccentGray()} !important;
-
-      .bp4-icon-cross {
-        color: ${colorAccentGray()} !important;
-      }
     }
 
     .bp4-toast.bp4-intent-danger,
