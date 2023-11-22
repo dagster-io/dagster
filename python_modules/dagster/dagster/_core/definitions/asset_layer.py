@@ -37,8 +37,8 @@ from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
-from .resource_definition import ResourceDefinition
 from .policy import RetryPolicy
+from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
