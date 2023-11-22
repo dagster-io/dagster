@@ -465,7 +465,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 {target.type === 'pureWithAnchorAsset' ? (
                   <span /> // we won't know until runtime
                 ) : (
-                  <span>{partitionCountString(keyCountInSelections(selections))}</span>
+                  <span>{partitionCountString(keysFiltered.length)}</span>
                 )}
               </Box>
             }
