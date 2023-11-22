@@ -2600,6 +2600,14 @@ type AssetMetadataEntry implements MetadataEntry {
   assetKey: AssetKey!
 }
 
+type JobMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  jobName: String!
+  repositoryName: String
+  locationName: String!
+}
+
 type NullMetadataEntry implements MetadataEntry {
   label: String!
   description: String
