@@ -1,9 +1,22 @@
+import mock
 import pytest
-from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
+from dagster import (
+    DagsterEvent,
+    DagsterInstance,
+    DagsterResourceFunctionError,
+    DagsterRun,
+    DagsterTypeCheckDidNotPass,
+    RunStatusSensorDefinition,
+    build_run_status_sensor_context,
+    build_sensor_context,
+    multiprocess_executor,
+)
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster._utils.temp_file import get_temp_dir
 from dagster_test.toys.branches import branch
@@ -23,11 +36,38 @@ from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import lots_of_resources, resource_ops
 from dagster_test.toys.retries import retry
 from dagster_test.toys.schedules import longitudinal_schedule
+from dagster_test.toys.sensors import get_toys_sensors
 from dagster_test.toys.sleepy import sleepy
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
+from slack_sdk.web.client import WebClient
+
+
+@pytest.fixture(name="instance")
+def instance():
+    with instance_for_test() as instance:
+        yield instance
+
+
+@pytest.mark.parametrize(
+    "sensor",
+    [sensor_def for sensor_def in get_toys_sensors()],
+    ids=[sensor_def.name for sensor_def in get_toys_sensors()],
+)
+@mock.patch.object(WebClient, "chat_postMessage", return_value=None)
+def test_sensor(_mock_method, instance: DagsterInstance, sensor: SensorDefinition) -> None:
+    sensor(
+        build_run_status_sensor_context(
+            sensor_name=sensor.name,
+            dagster_event=mock.MagicMock(spec=DagsterEvent),
+            dagster_instance=instance,
+            dagster_run=mock.MagicMock(spec=DagsterRun),
+        )
+        if isinstance(sensor, RunStatusSensorDefinition)
+        else build_sensor_context()
+    )
 
 
 @pytest.fixture(name="executor_def", params=[multiprocess_executor, test_step_delegating_executor])
