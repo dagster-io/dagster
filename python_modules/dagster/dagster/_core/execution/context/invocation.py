@@ -825,6 +825,7 @@ class DirectInvocationAssetExecutionContext(AssetExecutionContext, BaseDirectInv
 
         self._execution_props = ExecutionProperties(
             step_description=f'asset "{assets_def.node_def.name}"',
+            node_type="asset",
             op_execution_context=self._op_execution_context,
         )
 
