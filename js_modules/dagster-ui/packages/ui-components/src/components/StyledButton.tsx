@@ -6,7 +6,9 @@ import {FontFamily} from './styles';
 
 interface StyledButtonProps {
   $fillColor: string;
+  $fillColorHover?: string;
   $strokeColor: string;
+  $strokeColorHover?: string;
   $textColor: string;
   $iconColor: string;
 }
@@ -34,9 +36,13 @@ export const StyledButton = styled.button<StyledButtonProps>`
 
   box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
 
-  :hover {
-    box-shadow: ${({$strokeColor}) =>
-      `${$strokeColor} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
+  :hover:not(:disabled) {
+    background-color: ${({$fillColor, $fillColorHover}) =>
+      $fillColorHover || $fillColor || 'transparent'};
+    box-shadow: ${({$strokeColor, $strokeColorHover}) =>
+      `${
+        $strokeColorHover || $strokeColor
+      } inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
     color: ${({$textColor}) => $textColor};
     text-decoration: none;
   }
