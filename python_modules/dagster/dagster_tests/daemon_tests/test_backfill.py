@@ -1340,13 +1340,14 @@ def test_raise_error_on_partitions_defs_removed(
 
     instance.add_backfill(backfill)
 
-    errors = list(
-        execute_backfill_iteration(
+    errors = [
+        e
+        for e in execute_backfill_iteration(
             partitions_defs_changes_location_2_workspace_context,
             get_default_daemon_logger("BackfillDaemon"),
         )
-    )
-
+        if e is not None
+    ]
     assert len(errors) == 1
     assert ("had a PartitionsDefinition at storage-time, but no longer does") in errors[0].message
 

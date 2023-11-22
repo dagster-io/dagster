@@ -751,12 +751,15 @@ def _submit_runs_and_update_backfill_in_chunks(
     yield backfill_data_with_submitted_runs
 
 
-def _check_no_partitions_def_changes_to_asset(
+def _check_target_partitions_subset_is_valid(
     asset_key: AssetKey,
     asset_graph: AssetGraph,
     target_partitions_subset: Optional[PartitionsSubset],
     instance_queryer: CachingInstanceQueryer,
 ) -> None:
+    """Checks for any partitions definition changes since backfill launch that should mark
+    the backfill as failed.
+    """
     if asset_key not in asset_graph.all_asset_keys:
         raise DagsterDefinitionChangedDeserializationError(
             f"Asset {asset_key} existed at storage-time, but no longer does"
@@ -771,6 +774,8 @@ def _check_no_partitions_def_changes_to_asset(
                 " does"
             )
 
+        # If the asset was time-partitioned at storage time but the time partitions def
+        # has changed, mark the backfill as failed
         if isinstance(
             target_partitions_subset, TimeWindowPartitionsSubset
         ) and target_partitions_subset.partitions_def.get_serializable_unique_identifier(
@@ -783,6 +788,7 @@ def _check_no_partitions_def_changes_to_asset(
             )
 
         else:
+            # Check that all target partitions still exist. If so, the backfill can continue.
             for target_key in target_partitions_subset.get_partition_keys():
                 if not partitions_def.has_partition_key(
                     target_key, instance_queryer.evaluation_time, instance_queryer
@@ -799,37 +805,29 @@ def _check_no_partitions_def_changes_to_asset(
             )
 
 
-def _check_and_deserialize_asset_backfill_data(
+def _check_validity_and_deserialize_asset_backfill_data(
     workspace_context: BaseWorkspaceRequestContext,
     backfill: "PartitionBackfill",
     asset_graph: AssetGraph,
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
 ) -> Optional[AssetBackfillData]:
+    """Attempts to deserialize asset backfill data. If the asset backfill data is valid,
+    returns the deserialized data, else returns None.
+    """
     unloadable_locations = _get_unloadable_location_names(workspace_context, logger)
 
     try:
-        if backfill.serialized_asset_backfill_data:
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                backfill.serialized_asset_backfill_data,
+        asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
+        for asset_key in asset_backfill_data.target_subset.asset_keys:
+            _check_target_partitions_subset_is_valid(
+                asset_key,
                 asset_graph,
-                backfill.backfill_timestamp,
+                asset_backfill_data.target_subset.get_partitions_subset(asset_key)
+                if asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+                else None,
+                instance_queryer,
             )
-        elif backfill.asset_backfill_data:
-            asset_backfill_data = backfill.asset_backfill_data
-            for asset_key in asset_backfill_data.target_subset.asset_keys:
-                _check_no_partitions_def_changes_to_asset(
-                    asset_key,
-                    asset_graph,
-                    asset_backfill_data.target_subset.get_partitions_subset(asset_key)
-                    if asset_key
-                    in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
-                    else None,
-                    instance_queryer,
-                )
-        else:
-            check.failed("Backfill missing asset_backfill_data")
-
     except DagsterDefinitionChangedDeserializationError as ex:
         unloadable_locations_error = (
             "This could be because it's inside a code location that's failing to load:"
@@ -876,7 +874,7 @@ def execute_asset_backfill_iteration(
         instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_time
     )
 
-    previous_asset_backfill_data = _check_and_deserialize_asset_backfill_data(
+    previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
         workspace_context, backfill, asset_graph, instance_queryer, logger
     )
     if previous_asset_backfill_data is None:

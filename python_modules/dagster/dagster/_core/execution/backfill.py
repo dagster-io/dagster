@@ -117,14 +117,11 @@ class PartitionBackfill(
             self.serialized_asset_backfill_data is not None or self.asset_backfill_data is not None
         )
 
-    def get_asset_backfill_data(self, asset_graph: AssetGraph) -> Optional[AssetBackfillData]:
+    def get_asset_backfill_data(self, asset_graph: AssetGraph) -> AssetBackfillData:
         if self.serialized_asset_backfill_data:
-            try:
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    self.serialized_asset_backfill_data, asset_graph, self.backfill_timestamp
-                )
-            except DagsterDefinitionChangedDeserializationError:
-                return None
+            asset_backfill_data = AssetBackfillData.from_serialized(
+                self.serialized_asset_backfill_data, asset_graph, self.backfill_timestamp
+            )
         elif self.asset_backfill_data:
             asset_backfill_data = self.asset_backfill_data
         else:
@@ -175,12 +172,12 @@ class PartitionBackfill(
 
         if self.is_asset_backfill:
             asset_graph = ExternalAssetGraph.from_workspace(workspace)
-            asset_backfill_data = self.get_asset_backfill_data(asset_graph)
-            return (
-                asset_backfill_data.get_backfill_status_per_asset_key(asset_graph)
-                if asset_backfill_data
-                else []
-            )
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return []
+
+            return asset_backfill_data.get_backfill_status_per_asset_key(asset_graph)
         else:
             return []
 
@@ -192,12 +189,12 @@ class PartitionBackfill(
 
         if self.is_asset_backfill:
             asset_graph = ExternalAssetGraph.from_workspace(workspace)
-            asset_backfill_data = self.get_asset_backfill_data(asset_graph)
-            return (
-                asset_backfill_data.get_target_partitions_subset(asset_key)
-                if asset_backfill_data
-                else None
-            )
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
+            return asset_backfill_data.get_target_partitions_subset(asset_key)
         else:
             return None
 
@@ -209,12 +206,12 @@ class PartitionBackfill(
 
         if self.is_asset_backfill:
             asset_graph = ExternalAssetGraph.from_workspace(workspace)
-            asset_backfill_data = self.get_asset_backfill_data(asset_graph)
-            return (
-                asset_backfill_data.get_target_root_partitions_subset(asset_graph)
-                if asset_backfill_data
-                else None
-            )
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
+            return asset_backfill_data.get_target_root_partitions_subset(asset_graph)
         else:
             return None
 
@@ -224,8 +221,12 @@ class PartitionBackfill(
 
         if self.is_asset_backfill:
             asset_graph = ExternalAssetGraph.from_workspace(workspace)
-            asset_backfill_data = self.get_asset_backfill_data(asset_graph)
-            return asset_backfill_data.get_num_partitions() if asset_backfill_data else 0
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return 0
+
+            return asset_backfill_data.get_num_partitions()
         else:
             if self.partition_names is None:
                 check.failed("Non-asset backfills should have a non-null partition_names field")
@@ -238,8 +239,12 @@ class PartitionBackfill(
 
         if self.is_asset_backfill:
             asset_graph = ExternalAssetGraph.from_workspace(workspace)
-            asset_backfill_data = self.get_asset_backfill_data(asset_graph)
-            return asset_backfill_data.get_partition_names() if asset_backfill_data else None
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
+            return asset_backfill_data.get_partition_names()
         else:
             if self.partition_names is None:
                 check.failed("Non-asset backfills should have a non-null partition_names field")
