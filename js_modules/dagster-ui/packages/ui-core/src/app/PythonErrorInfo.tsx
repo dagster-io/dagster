@@ -1,5 +1,14 @@
 import {gql} from '@apollo/client';
-import {Button, Icon, FontFamily, colorKeylineDefault} from '@dagster-io/ui-components';
+import {
+  Button,
+  Icon,
+  FontFamily,
+  colorKeylineDefault,
+  colorAccentRed,
+  colorBackgroundRed,
+  colorTextLight,
+  colorTextRed,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -141,14 +150,14 @@ const CauseHeader = styled.h3`
 `;
 
 const ErrorHeader = styled.h3`
-  color: #b05c47;
+  color: ${colorTextRed()};
   font-weight: 400;
   margin: 0.5em 0 0.25em;
   white-space: pre-wrap;
 `;
 
 const Trace = styled.div`
-  color: rgb(41, 50, 56);
+  color: ${colorTextLight()};
   font-family: ${FontFamily.monospace};
   font-size: 1em;
   white-space: pre;
@@ -156,8 +165,8 @@ const Trace = styled.div`
 `;
 
 export const ErrorWrapper = styled.div`
-  background-color: #fdf2f4;
-  border: 1px solid #d17257;
+  background-color: ${colorBackgroundRed()};
+  border: 1px solid ${colorAccentRed()};
   border-radius: 3px;
   max-width: 90vw;
   max-height: calc(100vh - 250px);

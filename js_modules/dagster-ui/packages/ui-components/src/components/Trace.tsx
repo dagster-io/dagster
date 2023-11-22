@@ -1,11 +1,11 @@
 import styled from 'styled-components';
 
-import {colorBackgroundGray, colorTextLight} from '../theme/color';
+import {colorBackgroundLight, colorTextLight} from '../theme/color';
 
 import {FontFamily} from './styles';
 
 export const Trace = styled.div`
-  background-color: ${colorBackgroundGray()};
+  background-color: ${colorBackgroundLight()};
   color: ${colorTextLight()};
   font-family: ${FontFamily.monospace};
   font-size: 14px;

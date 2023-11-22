@@ -1,3 +1,4 @@
+import {colorBackgroundDefault, colorBackgroundGray} from '@dagster-io/ui-components';
 import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -12,7 +13,11 @@ const OverflowFade = styled.div`
   height: 40px;
   user-select: none;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(245, 248, 250, 0) 0%, rgba(245, 248, 250, 255) 100%);
+  background: linear-gradient(
+    to bottom,
+    ${colorBackgroundGray()} 0%,
+    ${colorBackgroundDefault()} 100%
+  );
 `;
 
 const OverflowButtonContainer = styled.div`
