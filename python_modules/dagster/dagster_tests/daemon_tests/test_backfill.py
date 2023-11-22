@@ -1262,7 +1262,7 @@ def test_raise_error_on_asset_backfill_partitions_defs_changes(
     partitions_defs_changes_location_2_workspace_context,
     backcompat_serialization: bool,
 ):
-    asset_selection = [AssetKey("one")]
+    asset_selection = [AssetKey("time_partitions_def_changes")]
     partition_keys = ["2023-01-01"]
     backfill_id = "dummy_backfill"
     asset_graph = ExternalAssetGraph.from_workspace(
@@ -1300,7 +1300,7 @@ def test_raise_error_on_asset_backfill_partitions_defs_changes(
     assert len(errors) == 1
     error_msg = check.not_none(errors[0]).message
     assert ("partitions definition has changed") in error_msg or (
-        "partitions definition for asset AssetKey(['one']) has changed"
+        "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
     ) in error_msg
 
 
@@ -1312,7 +1312,7 @@ def test_raise_error_on_partitions_defs_removed(
     partitions_defs_changes_location_2_workspace_context,
     backcompat_serialization: bool,
 ):
-    asset_selection = [AssetKey("two")]
+    asset_selection = [AssetKey("partitions_def_removed")]
     partition_keys = ["2023-01-01"]
     backfill_id = "dummy_backfill"
     asset_graph = ExternalAssetGraph.from_workspace(
@@ -1349,3 +1349,65 @@ def test_raise_error_on_partitions_defs_removed(
 
     assert len(errors) == 1
     assert ("had a PartitionsDefinition at storage-time, but no longer does") in errors[0].message
+
+
+def test_raise_error_on_target_static_partition_removed(
+    caplog,
+    instance,
+    partitions_defs_changes_location_1_workspace_context,
+    partitions_defs_changes_location_2_workspace_context,
+):
+    asset_selection = [AssetKey("static_partition_removed")]
+    partition_keys = ["a"]
+    asset_graph = ExternalAssetGraph.from_workspace(
+        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    )
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id="dummy_backfill",
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=partition_keys,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+    # When a static partitions def is changed, but all target partitions still exist,
+    # backfill executes successfully
+    errors = [
+        e
+        for e in execute_backfill_iteration(
+            partitions_defs_changes_location_2_workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+        )
+        if e is not None
+    ]
+    assert len(errors) == 0
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id="dummy_backfill_2",
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=["c"],
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+    # When a static partitions def is changed, but any target partitions is removed,
+    # error is raised
+    errors = [
+        e
+        for e in execute_backfill_iteration(
+            partitions_defs_changes_location_2_workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+        )
+        if e is not None
+    ]
+    assert len(errors) == 1
+    assert (
+        "Partition c for asset AssetKey(['static_partition_removed']) existed at storage-time, but no longer does."
+    ) in errors[0].message

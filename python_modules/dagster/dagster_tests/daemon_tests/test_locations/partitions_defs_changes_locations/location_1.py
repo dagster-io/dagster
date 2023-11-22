@@ -1,15 +1,22 @@
-from dagster import DailyPartitionsDefinition, asset
+from dagster import DailyPartitionsDefinition, StaticPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition("2023-01-01"),
 )
-def one():
+def time_partitions_def_changes():
     pass
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition("2023-01-01"),
 )
-def two():
+def partitions_def_removed():
+    pass
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
+)
+def static_partition_removed():
     pass
