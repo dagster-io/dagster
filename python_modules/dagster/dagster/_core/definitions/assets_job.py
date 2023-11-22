@@ -130,7 +130,7 @@ def build_assets_job(
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
-    asset_retry_policy: Optional[RetryPolicy] = None,
+    op_retry_policy: Optional[RetryPolicy] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -273,7 +273,7 @@ def build_assets_job(
         partitions_def=partitions_def,
         asset_layer=asset_layer,
         hooks=hooks,
-        op_retry_policy=asset_retry_policy,
+        op_retry_policy=op_retry_policy,
         _asset_selection_data=_asset_selection_data,
     )
 

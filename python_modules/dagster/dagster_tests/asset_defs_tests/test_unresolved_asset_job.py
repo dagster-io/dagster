@@ -832,5 +832,5 @@ def test_assets_retry_policy():
         return a + 1
 
     with pytest.raises(Exception, match="sources"):
-        define_asset_job("job", selection="*b", asset_retry_policy=retry_policy).resolve(
+        define_asset_job("job", selection="*b", op_retry_policy=retry_policy).resolve(
             asset_graph=AssetGraph.from_assets([a, b]))
