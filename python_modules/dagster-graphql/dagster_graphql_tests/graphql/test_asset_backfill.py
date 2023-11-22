@@ -284,7 +284,9 @@ def test_launch_asset_backfill_all_partitions_asset_selection():
                 target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
                 == all_partition_keys
             )
-            assert not target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys()
+            assert not target_subset.get_partitions_subset(
+                AssetKey("asset1"), asset_graph=repo.asset_graph
+            ).get_partition_keys()
 
 
 def test_launch_asset_backfill_partitions_by_asset():
@@ -536,9 +538,8 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
-            asset_graph = target_subset.asset_graph
+            asset_graph = repo.asset_graph
             assert target_subset == AssetGraphSubset(
-                target_subset.asset_graph,
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): asset_graph.get_partitions_def(
                         AssetKey("hourly")
@@ -605,9 +606,8 @@ def test_launch_asset_backfill_with_two_anchor_assets():
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
-            asset_graph = target_subset.asset_graph
+            asset_graph = repo.asset_graph
             assert target_subset == AssetGraphSubset(
-                target_subset.asset_graph,
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly1"): asset_graph.get_partitions_def(
                         AssetKey("hourly1")
@@ -663,9 +663,8 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                 launch_backfill_result, instance, repo
             )
             target_subset = asset_backfill_data.target_subset
-            asset_graph = target_subset.asset_graph
+            asset_graph = repo.asset_graph
             assert target_subset == AssetGraphSubset(
-                target_subset.asset_graph,
                 non_partitioned_asset_keys={AssetKey("non_partitioned")},
                 partitions_subsets_by_asset_key={
                     AssetKey("hourly"): (

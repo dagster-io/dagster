@@ -234,6 +234,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
     updated_backfill = backfill.with_asset_backfill_data(
         cast(AssetBackfillIterationResult, result).backfill_data,
         dynamic_partitions_store=graphql_context.instance,
+        asset_graph=asset_graph,
     )
     graphql_context.instance.update_backfill(updated_backfill)
 

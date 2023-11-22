@@ -438,7 +438,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if backfill.is_asset_backfill
         ]
 
-        result = AssetGraphSubset(self.asset_graph)
+        result = AssetGraphSubset()
         for asset_backfill in asset_backfills:
             if asset_backfill.serialized_asset_backfill_data is None:
                 check.failed("Asset backfill missing serialized_asset_backfill_data")

@@ -370,7 +370,7 @@ def test_asset_backfill_status_count_with_backfill_policies():
         fail_asset_partitions=set(),
     )
 
-    counts = completed_backfill_data.get_backfill_status_per_asset_key()
+    counts = completed_backfill_data.get_backfill_status_per_asset_key(asset_graph)
 
     assert counts[0].asset_key == unpartitioned_upstream_of_partitioned.key
     assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED
@@ -452,7 +452,7 @@ def test_backfill_run_contains_more_than_one_asset():
         fail_asset_partitions=set(),
     )
 
-    counts = completed_backfill_data.get_backfill_status_per_asset_key()
+    counts = completed_backfill_data.get_backfill_status_per_asset_key(asset_graph)
 
     assert counts[0].asset_key == upstream_a.key
     assert (
