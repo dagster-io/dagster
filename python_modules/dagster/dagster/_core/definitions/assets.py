@@ -1312,9 +1312,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @property
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
-        return hashlib.md5(
-            (json.dumps(sorted(self.keys))).encode("utf-8"), usedforsecurity=False
-        ).hexdigest()
+        try:
+            return hashlib.md5((json.dumps(sorted(self.keys))).encode("utf-8")).hexdigest()
+        except ValueError:  # `usedforsecurity` implemented only for python>=3.9
+            return hashlib.md5(
+                (json.dumps(sorted(self.keys))).encode("utf-8"), usedforsecurity=False
+            ).hexdigest()
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()
