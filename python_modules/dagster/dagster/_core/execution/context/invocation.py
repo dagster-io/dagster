@@ -404,9 +404,8 @@ class RunlessOpExecutionContext(OpExecutionContext):
             op_config=op_config,
             step_description=step_description,
         )
-
         self._execution_props = ExecutionProperties(
-            step_description=f'op "{op_def.name}"', op_execution_context=self
+            step_description=f'op "{op_def.name}"', node_type="op", op_execution_context=self
         )
         return self
 

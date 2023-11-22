@@ -193,7 +193,7 @@ def _yield_compute_results(
         yield _validate_event(event, step_context)
 
     if compute_context.execution_properties.op_execution_context.has_events():
-        yield from compute_context.consume_events()
+        yield from compute_context.execution_properties.op_execution_context.consume_events()
 
 
 def execute_core_compute(

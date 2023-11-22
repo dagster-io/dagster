@@ -71,6 +71,7 @@ class ExecutionProperties(
         "_ExecutionProperties",
         [
             ("step_description", PublicAttr[str]),
+            ("node_type", PublicAttr[str]),
             ("op_execution_context", PublicAttr["OpExecutionContext"]),
         ],
     )
@@ -79,9 +80,14 @@ class ExecutionProperties(
     You should not need to access these attributes directly.
     """
 
-    def __new__(cls, step_description: str, op_execution_context: "OpExecutionContext"):
+    def __new__(
+        cls, step_description: str, node_type: str, op_execution_context: "OpExecutionContext"
+    ):
         return super(ExecutionProperties, cls).__new__(
-            cls, step_description=step_description, op_execution_context=op_execution_context
+            cls,
+            step_description=step_description,
+            node_type=node_type,
+            op_execution_context=op_execution_context,
         )
 
 
@@ -1478,6 +1484,7 @@ class AssetExecutionContext(OpExecutionContext):
         if self._execution_props is None:
             self._execution_props = ExecutionProperties(
                 step_description=f"asset {self.op_execution_context.node_handle}",
+                node_type="asset",
                 op_execution_context=self._op_execution_context,
             )
         return self._execution_props

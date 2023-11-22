@@ -280,7 +280,10 @@ def validate_and_coerce_op_result_to_iterator(
     # results that will be registered in the instance, without additional fancy inference (like
     # wrapping `None` in an `Output`). We therefore skip any return-specific validation for this
     # mode and treat returned values as if they were yielded.
-    elif output_defs and context.requires_typed_event_stream:
+    elif (
+        output_defs
+        and context.execution_properties.op_execution_context.requires_typed_event_stream
+    ):
         # If nothing was returned, treat it as an empty tuple instead of a `(None,)`.
         # This is important for delivering the correct error message when an output is missing.
         if result is None:
@@ -294,7 +297,9 @@ def validate_and_coerce_op_result_to_iterator(
         for position, output_def, element in _zip_and_iterate_op_result(
             result, context, output_defs
         ):
-            annotation = _get_annotation_for_output_position(position, context.op_def, output_defs)
+            annotation = _get_annotation_for_output_position(
+                position, context.execution_properties.op_execution_context.op_def, output_defs
+            )
             if output_def.is_dynamic:
                 if not isinstance(element, list):
                     raise DagsterInvariantViolationError(
@@ -352,11 +357,11 @@ def validate_and_coerce_op_result_to_iterator(
                         f"Received instead an object of type {type(element)}."
                     )
                 if result is None and output_def.is_required is False:
-                    context.log.warning(
+                    context.execution_properties.op_execution_context.log.warning(
                         'Value "None" returned for non-required output '
                         f'"{output_def.name}" of {context.execution_properties.step_description}. '
                         "This value will be passed to downstream "
-                        f"{context.op_def.node_type_str}s. For conditional "
+                        f"{context.execution_properties.node_type}s. For conditional "
                         "execution, results must be yielded: "
                         "https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
                     )
