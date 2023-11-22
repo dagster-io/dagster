@@ -36,45 +36,41 @@ from .events import AssetKey, AssetKeyPartitionKey
 
 
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
+    """Serializes NamedTuples with fields that are mappings containing PartitionsSubsets.
+
+    This is necessary because PartitionKeysTimeWindowPartitionsSubsets are not serializable,
+    so we convert them to TimeWindowPartitionsSubsets.
+    """
+
     def before_pack(self, value: NamedTuple) -> NamedTuple:
         replaced_value_by_field_name = {}
         for field_name, field_value in value._asdict().items():
             if isinstance(field_value, Mapping) and all(
                 isinstance(v, PartitionsSubset) for v in field_value.values()
             ):
+                # PartitionKeysTimeWindowPartitionsSubsets are not serializable, so
+                # we convert them to TimeWindowPartitionsSubsets
                 subsets_by_key = {
                     k: v.to_time_window_partitions_subset()
                     if isinstance(v, PartitionKeysTimeWindowPartitionsSubset)
                     else v
                     for k, v in field_value.items()
                 }
-                replaced_value_by_field_name[field_name] = SerializableNonScalarKeyMapping(
-                    subsets_by_key
-                )
+
+                # If the mapping is keyed by AssetKey wrap it in a SerializableNonScalarKeyMapping
+                # so it can be serialized. This can be expanded to other key types in the future.
+                if all(isinstance(k, AssetKey) for k in subsets_by_key.keys()):
+                    replaced_value_by_field_name[field_name] = SerializableNonScalarKeyMapping(
+                        subsets_by_key
+                    )
 
         return value._replace(**replaced_value_by_field_name)
 
 
 @whitelist_for_serdes(serializer=PartitionsSubsetMappingNamedTupleSerializer)
-class AssetGraphSubset(
-    NamedTuple(
-        "_AssetGraphSubset",
-        [
-            ("partitions_subsets_by_asset_key", Mapping[AssetKey, PartitionsSubset]),
-            ("non_partitioned_asset_keys", AbstractSet[AssetKey]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        partitions_subsets_by_asset_key: Optional[Mapping[AssetKey, PartitionsSubset]] = None,
-        non_partitioned_asset_keys: Optional[AbstractSet[AssetKey]] = None,
-    ):
-        return super(AssetGraphSubset, cls).__new__(
-            cls,
-            partitions_subsets_by_asset_key=partitions_subsets_by_asset_key or {},
-            non_partitioned_asset_keys=non_partitioned_asset_keys or set(),
-        )
+class AssetGraphSubset(NamedTuple):
+    partitions_subsets_by_asset_key: Mapping[AssetKey, PartitionsSubset] = {}
+    non_partitioned_asset_keys: AbstractSet[AssetKey] = set()
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
