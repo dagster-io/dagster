@@ -148,6 +148,8 @@ def build_assets_job(
         resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
+            Only used if retry policy is not defined on the asset definition.
 
     Examples:
         .. code-block:: python
