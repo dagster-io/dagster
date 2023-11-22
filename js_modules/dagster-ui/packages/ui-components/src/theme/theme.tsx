@@ -1,6 +1,7 @@
 import memoize from 'lodash/memoize';
 
 import {DarkPalette} from '../palettes/DarkPalette';
+import {LegacyPalette} from '../palettes/LegacyPalette';
 import {LightPalette} from '../palettes/LightPalette';
 
 export enum DagsterTheme {
@@ -45,8 +46,9 @@ export const getPaletteForTheme = () => {
     case DagsterTheme.Dark:
       return DarkPalette;
     case DagsterTheme.Light:
-    // todo dish: Add Legacy
-    default:
       return LightPalette;
+    case DagsterTheme.Legacy:
+    default:
+      return LegacyPalette;
   }
 };
