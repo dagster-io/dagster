@@ -5,12 +5,12 @@ import {
   Icon,
   Spinner,
   FontFamily,
-  colorBackgroundGray,
   colorAccentGray,
   colorTextLight,
   colorTextLighter,
   colorBackgroundDefault,
   colorKeylineDefault,
+  LegacyColors,
 } from '@dagster-io/ui-components';
 import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import Fuse from 'fuse.js';
@@ -220,7 +220,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
         </SearchTrigger>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: colorBackgroundGray()}}}
+        backdropProps={{style: {backgroundColor: LegacyColors.WashGray}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}

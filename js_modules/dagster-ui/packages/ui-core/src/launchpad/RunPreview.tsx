@@ -491,7 +491,7 @@ export const RunPreview = (props: RunPreviewProps) => {
               top: 0,
               right: 0,
               padding: '12px 15px 0px 10px',
-              background: 'rgba(255,255,255,0.7)',
+              background: colorBackgroundLight(),
             }}
           >
             <Checkbox
