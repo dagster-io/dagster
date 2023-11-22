@@ -3,13 +3,17 @@ import React from 'react';
 import styled from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {GroupLayout} from './layout';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
   const name = `${group.groupName} `;
-  const location = `${group.repositoryName}@${group.repositoryLocationName}`;
+  const location = repoAddressAsHumanString({
+    name: group.repositoryName,
+    location: group.repositoryLocationName,
+  });
 
   if (minimal) {
     return (
