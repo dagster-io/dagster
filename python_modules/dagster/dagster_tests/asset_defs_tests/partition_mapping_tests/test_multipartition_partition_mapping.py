@@ -953,3 +953,26 @@ def test_dynamic_dimension_multipartition_mapping():
         dynamic_partitions_store=instance,
     )
     assert result.partitions_subset == foo_bar.empty_subset().with_partition_keys(["2|a", "1|a"])
+
+
+def test_description():
+    description = MultiPartitionMapping(
+        {
+            "abc": DimensionPartitionMapping(
+                dimension_name="abc", partition_mapping=IdentityPartitionMapping()
+            ),
+            "daily": DimensionPartitionMapping(
+                dimension_name="weekly",
+                partition_mapping=TimeWindowPartitionMapping(),
+            ),
+        }
+    ).description
+    assert (
+        "'abc' mapped to downstream dimension 'abc' using IdentityPartitionMapping" in description
+    )
+    assert (
+        "'daily' mapped to downstream dimension 'weekly' using TimeWindowPartitionMapping"
+        in description
+    )
+
+    assert MultiPartitionMapping({}).description == ""

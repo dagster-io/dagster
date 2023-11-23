@@ -167,7 +167,9 @@ class GrapheneAssetDependency(graphene.ObjectType):
             materialization_loader=self._latest_materialization_loader,
         )
 
-    def resolve_partitionMapping(self, _graphene_info: ResolveInfo):
+    def resolve_partitionMapping(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GraphenePartitionMapping]:
         if self._partition_mapping:
             return GraphenePartitionMapping(self._partition_mapping)
         return None

@@ -660,7 +660,7 @@ GET_ASSET_DEPENDENCIES_PARTITION_MAPPING = """
                         }
                     }
                     partitionMapping {
-                        name
+                        className
                         description
                     }
                 }
@@ -2414,7 +2414,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         dependencies = result.data["assetNodeOrError"]["dependencies"]
         assert len(dependencies) == 1
         assert dependencies[0]["asset"]["assetKey"]["path"] == ["upstream_time_partitioned_asset"]
-        assert dependencies[0]["partitionMapping"]["name"] == "TimeWindowPartitionMapping"
+        assert dependencies[0]["partitionMapping"]["className"] == "TimeWindowPartitionMapping"
         assert (
             dependencies[0]["partitionMapping"]["description"]
             == "Maps a downstream partition to any upstream partition with an overlapping time window."

@@ -717,7 +717,7 @@ type AssetDependency {
 }
 
 type PartitionMapping {
-  name: String!
+  className: String!
   description: String!
 }
 

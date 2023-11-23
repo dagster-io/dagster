@@ -2457,8 +2457,8 @@ export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializatio
 
 export type PartitionMapping = {
   __typename: 'PartitionMapping';
+  className: Scalars['String'];
   description: Scalars['String'];
-  name: Scalars['String'];
 };
 
 export type PartitionRangeSelector = {
@@ -9138,11 +9138,11 @@ export const buildPartitionMapping = (
   relationshipsToOmit.add('PartitionMapping');
   return {
     __typename: 'PartitionMapping',
+    className: overrides && overrides.hasOwnProperty('className') ? overrides.className! : 'quos',
     description:
       overrides && overrides.hasOwnProperty('description')
         ? overrides.description!
         : 'voluptatibus',
-    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'non',
   };
 };
 

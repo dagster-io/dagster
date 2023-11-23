@@ -1,6 +1,6 @@
 import collections.abc
 import itertools
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import datetime
 from typing import (
@@ -99,6 +99,10 @@ class PartitionMapping(ABC):
         when downstream_partitions_subset contains 2023-05-01 and 2023-06-01.
         """
 
+    @abstractproperty
+    def description(self) -> str:
+        """A human-readable description of the partition mapping, displayed in the Dagster UI"""
+
 
 @whitelist_for_serdes
 class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
@@ -159,7 +163,8 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
             list(downstream_partition_keys & upstream_partition_keys)
         )
 
-    def __str__(self) -> str:
+    @property
+    def description(self) -> str:
         return (
             "Assumes upstream and downstream assets share the same partitions definition. "
             "Maps each partition in the downstream asset to the same partition in the upstream asset."
@@ -197,7 +202,8 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     ) -> PartitionsSubset:
         raise NotImplementedError()
 
-    def __str__(self) -> str:
+    @property
+    def description(self) -> str:
         return "Each downstream partition depends on all partitions of the upstream asset."
 
 
@@ -245,7 +251,8 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         else:
             return downstream_partitions_def.empty_subset()
 
-    def __str__(self) -> str:
+    @property
+    def description(self) -> str:
         return "Each downstream partition depends on the last partition of the upstream asset."
 
 
@@ -304,7 +311,8 @@ class SpecificPartitionsPartitionMapping(
             )
         return downstream_partitions_def.empty_subset()
 
-    def __str__(self) -> str:
+    @property
+    def description(self) -> str:
         return f"Each downstream partition depends on the following upstream partitions: {self.partition_keys}"
 
 
@@ -594,13 +602,13 @@ class MultiToSingleDimensionPartitionMapping(
             ),
         )
 
-    def __str__(self):
-        description = (
+    @property
+    def description(self) -> str:
+        return (
             "Assumes that the single-dimension partitions definition is a dimension of the "
-            "multipartitions definition. For a single-dimension partition key X, any "
+            "multi-partitions definition. For a single-dimension partition key X, any "
             "multi-partition key with X in the matching dimension is a dependency."
         )
-        return description
 
     def get_dimension_dependencies(
         self,
@@ -751,17 +759,17 @@ class MultiPartitionMapping(
             ),
         )
 
-    def __str__(self) -> str:
-        description = "\n ".join(
+    @property
+    def description(self) -> str:
+        return "\n ".join(
             [
                 (
                     f"Upstream dimension '{upstream_dim}' mapped to downstream dimension "
-                    f"'{downstream_mapping.dimension_name}' using '{type(downstream_mapping).__name__}."
+                    f"'{downstream_mapping.dimension_name}' using {type(downstream_mapping.partition_mapping).__name__}."
                 )
                 for upstream_dim, downstream_mapping in self.downstream_mappings_by_upstream_dimension.items()
             ]
         )
-        return description
 
     def get_dimension_dependencies(
         self,
@@ -938,7 +946,8 @@ class StaticPartitionMapping(
 
         return UpstreamPartitionsResult(upstream_subset.with_partition_keys(upstream_keys), [])
 
-    def __str__(self) -> str:
+    @property
+    def description(self) -> str:
         return (
             f"Maps upstream partitions to their downstream dependencies according to the "
             f"following mapping: \n{self.downstream_partition_keys_by_upstream_partition_key}"
