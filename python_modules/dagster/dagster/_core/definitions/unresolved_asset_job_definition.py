@@ -85,7 +85,7 @@ class UnresolvedAssetJobDefinition(
             ),
             executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
             hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
-            op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
+            op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy),
         )
 
     @deprecated(

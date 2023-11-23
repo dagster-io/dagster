@@ -820,8 +820,7 @@ def test_job_partitions_def_unpartitioned_assets():
 
 
 def test_assets_retry_policy():
-
-    retry_policy = RetryPolicy(max_retries=3, delay=60)
+    ops_retry_policy = RetryPolicy(max_retries=3, delay=60)
 
     @asset
     def a(source):
@@ -832,5 +831,6 @@ def test_assets_retry_policy():
         return a + 1
 
     with pytest.raises(Exception, match="sources"):
-        define_asset_job("job", selection="*b", op_retry_policy=retry_policy).resolve(
-            asset_graph=AssetGraph.from_assets([a, b]))
+        define_asset_job("job", selection="*b", op_retry_policy=ops_retry_policy).resolve(
+            asset_graph=AssetGraph.from_assets([a, b])
+        )
