@@ -74,6 +74,7 @@ USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
             DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
             is_required=False,
         ),
+        "deployment_metadata": Permissive(),
     }
 )
 
@@ -94,6 +95,7 @@ class UserDefinedDagsterK8sConfig(
             ("job_metadata", Mapping[str, Any]),
             ("job_spec_config", Mapping[str, Any]),
             ("merge_behavior", K8sConfigMergeBehavior),
+            ("deployment_metadata", Mapping[str, Any]),
         ],
     )
 ):
@@ -105,6 +107,7 @@ class UserDefinedDagsterK8sConfig(
         job_config: Optional[Mapping[str, Any]] = None,
         job_metadata: Optional[Mapping[str, Any]] = None,
         job_spec_config: Optional[Mapping[str, Any]] = None,
+        deployment_metadata: Optional[Mapping[str, Any]] = None,
         merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.SHALLOW,
     ):
         container_config = check.opt_mapping_param(
@@ -117,6 +120,10 @@ class UserDefinedDagsterK8sConfig(
         job_config = check.opt_mapping_param(job_config, "job_config", key_type=str)
         job_metadata = check.opt_mapping_param(job_metadata, "job_metadata", key_type=str)
         job_spec_config = check.opt_mapping_param(job_spec_config, "job_spec_config", key_type=str)
+
+        deployment_metadata = check.opt_mapping_param(
+            deployment_metadata, "deployment_metadata", key_type=str
+        )
 
         if container_config:
             container_config = k8s_snake_case_dict(kubernetes.client.V1Container, container_config)
@@ -138,6 +145,11 @@ class UserDefinedDagsterK8sConfig(
         if job_spec_config:
             job_spec_config = k8s_snake_case_dict(kubernetes.client.V1JobSpec, job_spec_config)
 
+        if deployment_metadata:
+            deployment_metadata = k8s_snake_case_dict(
+                kubernetes.client.V1ObjectMeta, deployment_metadata
+            )
+
         return super(UserDefinedDagsterK8sConfig, cls).__new__(
             cls,
             container_config=container_config,
@@ -146,6 +158,7 @@ class UserDefinedDagsterK8sConfig(
             job_config=job_config,
             job_metadata=job_metadata,
             job_spec_config=job_spec_config,
+            deployment_metadata=deployment_metadata,
             merge_behavior=check.inst_param(
                 merge_behavior, "merge_behavior", K8sConfigMergeBehavior
             ),
@@ -159,6 +172,7 @@ class UserDefinedDagsterK8sConfig(
             "job_config": self.job_config,
             "job_metadata": self.job_metadata,
             "job_spec_config": self.job_spec_config,
+            "deployment_metadata": self.deployment_metadata,
             "merge_behavior": self.merge_behavior.value,
         }
 
@@ -171,6 +185,7 @@ class UserDefinedDagsterK8sConfig(
             job_config=config_dict.get("job_config"),
             job_metadata=config_dict.get("job_metadata"),
             job_spec_config=config_dict.get("job_spec_config"),
+            deployment_metadata=config_dict.get("deployment_metadata"),
             merge_behavior=K8sConfigMergeBehavior(
                 config_dict.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
             ),
@@ -231,6 +246,7 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
         job_config=user_defined_k8s_config.get("job_config"),
         job_metadata=user_defined_k8s_config.get("job_metadata"),
         job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        deployment_metadata=user_defined_k8s_config.get("deployment_metadata"),
         merge_behavior=K8sConfigMergeBehavior(
             user_defined_k8s_config.get("merge_behavior", K8sConfigMergeBehavior.SHALLOW.value)
         ),
@@ -624,6 +640,7 @@ class DagsterK8sJobConfig(
                             "container_config": Permissive(),
                             "pod_spec_config": Permissive(),
                             "pod_template_spec_metadata": Permissive(),
+                            "deployment_metadata": Permissive(),
                             "merge_behavior": Field(
                                 DagsterEnum.from_python_enum(K8sConfigMergeBehavior),
                                 is_required=False,

@@ -39,6 +39,7 @@ def container_context_config():
             "server_k8s_config": {
                 "container_config": {"command": ["echo", "SERVER"]},
                 "pod_template_spec_metadata": {"namespace": "my_pod_server_amespace"},
+                "deployment_metadata": {"labels": {"dep_label_key": "dep_label_val"}},
             },
             "run_k8s_config": {
                 "container_config": {"command": ["echo", "RUN"], "tty": True},
@@ -102,6 +103,12 @@ def other_container_context_config():
                 "limits": {"memory": "64Mi", "cpu": "250m"},
             },
             "scheduler_name": "my_other_scheduler",
+            "server_k8s_config": {
+                "deployment_metadata": {
+                    "namespace": "other_namespace",
+                    "labels": {"other_dep_label_key": "other_dep_label_val"},
+                },
+            },
             "run_k8s_config": {
                 "container_config": {
                     "command": ["REPLACED"],
@@ -332,6 +339,20 @@ def test_merge(empty_container_context, container_context, other_container_conte
     }
     assert merged.scheduler_name == "my_other_scheduler"
 
+    assert merged.server_k8s_config.to_dict() == {
+        "container_config": {"command": ["echo", "SERVER"]},
+        "pod_template_spec_metadata": {"namespace": "my_pod_server_amespace"},
+        "deployment_metadata": {
+            "namespace": "other_namespace",
+            "labels": {"other_dep_label_key": "other_dep_label_val"},
+        },
+        "job_metadata": {},
+        "job_spec_config": {},
+        "job_config": {},
+        "pod_spec_config": {},
+        "merge_behavior": K8sConfigMergeBehavior.SHALLOW.value,
+    }
+
     assert merged.run_k8s_config.to_dict() == {
         "container_config": {
             "command": ["REPLACED"],
@@ -363,6 +384,7 @@ def test_merge(empty_container_context, container_context, other_container_conte
         "job_spec_config": {"backoff_limit": 240},
         "job_config": {},
         "merge_behavior": K8sConfigMergeBehavior.SHALLOW.value,
+        "deployment_metadata": {},
     }
     _check_same_sorted(
         merged.env,
