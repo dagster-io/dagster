@@ -1,8 +1,12 @@
 import os
 from typing import Optional
+from unittest import mock
 
 import pytest
-from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_ephemeral_grpc
+from dagster._api.snapshot_sensor import (
+    sync_get_external_sensor_execution_data_ephemeral_grpc,
+    sync_get_external_sensor_execution_data_grpc,
+)
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
 from dagster._core.host_representation.external_data import ExternalSensorExecutionErrorData
@@ -23,6 +27,30 @@ def test_external_sensor_grpc(instance):
         run_request = result.run_requests[0]
         assert run_request.run_config == {"foo": "FOO"}
         assert run_request.tags == {"foo": "foo_tag"}
+
+
+def test_external_sensor_grpc_fallback_to_streaming(instance):
+    with get_bar_repo_handle(instance) as repository_handle:
+        origin = repository_handle.get_external_origin()
+        with ephemeral_grpc_api_client(
+            origin.code_location_origin.loadable_target_origin
+        ) as api_client:
+            with mock.patch("dagster._grpc.client.DagsterGrpcClient._query") as mock_method:
+                with mock.patch(
+                    "dagster._grpc.client.DagsterGrpcClient._is_unimplemented_error",
+                    return_value=True,
+                ):
+                    my_exception = Exception("Unimplemented")
+                    mock_method.side_effect = my_exception
+
+                    result = sync_get_external_sensor_execution_data_grpc(
+                        api_client, instance, repository_handle, "sensor_foo", None, None, None
+                    )
+                    assert isinstance(result, SensorExecutionData)
+                    assert len(result.run_requests) == 2
+                    run_request = result.run_requests[0]
+                    assert run_request.run_config == {"foo": "FOO"}
+                    assert run_request.tags == {"foo": "foo_tag"}
 
 
 def test_external_sensor_error(instance):
