@@ -63,4 +63,8 @@ export const DarkPalette = {
   [ColorName.AccentGrayHover]: CoreColors.Gray600,
   [ColorName.AccentWhite]: CoreColors.Gray150,
   [ColorName.DialogBackground]: TranslucentColors.Gray90,
+  [ColorName.TooltipBackground]: CoreColors.Gray850,
+  [ColorName.TooltipText]: CoreColors.White,
+  [ColorName.PopoverBackground]: CoreColors.Gray900,
+  [ColorName.PopoverBackgroundHover]: CoreColors.Gray850,
 };

@@ -70,3 +70,7 @@ export const colorAccentGray = () => color(ColorName.AccentGray);
 export const colorAccentGrayHover = () => color(ColorName.AccentGrayHover);
 export const colorAccentWhite = () => color(ColorName.AccentWhite);
 export const colorDialogBackground = () => color(ColorName.DialogBackground);
+export const colorTooltipBackground = () => color(ColorName.TooltipBackground);
+export const colorTooltipText = () => color(ColorName.TooltipText);
+export const colorPopoverBackground = () => color(ColorName.PopoverBackground);
+export const colorPopoverBackgroundHover = () => color(ColorName.PopoverBackgroundHover);

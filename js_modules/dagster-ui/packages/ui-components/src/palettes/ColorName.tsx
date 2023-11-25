@@ -60,4 +60,8 @@ export enum ColorName {
   AccentGrayHover = 'AccentGrayHover',
   AccentWhite = 'AccentWhite',
   DialogBackground = 'DialogBackground',
+  TooltipBackground = 'TooltipBackground',
+  TooltipText = 'TooltipText',
+  PopoverBackground = 'PopoverBackground',
+  PopoverBackgroundHover = 'PopoverBackgroundHover',
 }

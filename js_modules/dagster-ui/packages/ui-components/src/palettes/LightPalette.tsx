@@ -63,4 +63,8 @@ export const LightPalette = {
   [ColorName.AccentGrayHover]: CoreColors.Gray400,
   [ColorName.AccentWhite]: CoreColors.White,
   [ColorName.DialogBackground]: TranslucentColors.Gray50,
+  [ColorName.TooltipBackground]: CoreColors.Gray850,
+  [ColorName.TooltipText]: CoreColors.White,
+  [ColorName.PopoverBackground]: CoreColors.White,
+  [ColorName.PopoverBackgroundHover]: CoreColors.Gray50,
 };
