@@ -54,15 +54,17 @@ from dagster_airbyte.utils import is_basic_normalization_operation
 
 
 def gen_configured_stream_json(
-    source_stream: Mapping[str, Any], user_stream_config: Mapping[str, AirbyteSyncMode], enable_streams: Optional[bool] = False
+    source_stream: Mapping[str, Any],
+    user_stream_config: Mapping[str, AirbyteSyncMode],
+    enable_streams: Optional[bool] = False,
 ) -> Mapping[str, Any]:
     """Generates an Airbyte API stream defintiion based on the succinct user-provided config and the
     full stream definition from the source.
     """
-    config = user_stream_config[source_stream["stream"]["name"]]    
+    config = user_stream_config[source_stream["stream"]["name"]]
     if enable_streams:
         source_stream["config"]["selected"] = True
-    
+
     return deep_merge_dicts(
         source_stream,
         {"config": config.to_json()},
