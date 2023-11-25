@@ -14,7 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -39,7 +39,6 @@ from dagster_airbyte.asset_defs import (
     _clean_name,
 )
 from dagster_airbyte.managed.types import (
-    MANAGED_ELEMENTS_DEPRECATION_MSG,
     AirbyteConnection,
     AirbyteDestination,
     AirbyteDestinationNamespace,
@@ -54,12 +53,15 @@ from dagster_airbyte.utils import is_basic_normalization_operation
 
 
 def gen_configured_stream_json(
-    source_stream: Mapping[str, Any], user_stream_config: Mapping[str, AirbyteSyncMode]
+    source_stream: Mapping[str, Any], user_stream_config: Mapping[str, AirbyteSyncMode], enable_streams: Optional[bool] = False
 ) -> Mapping[str, Any]:
     """Generates an Airbyte API stream defintiion based on the succinct user-provided config and the
     full stream definition from the source.
     """
-    config = user_stream_config[source_stream["stream"]["name"]]
+    config = user_stream_config[source_stream["stream"]["name"]]    
+    if enable_streams:
+        source_stream["config"]["selected"] = True
+    
     return deep_merge_dicts(
         source_stream,
         {"config": config.to_json()},
@@ -637,7 +639,6 @@ def reconcile_connections_post(
 
 
 @experimental
-@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
     """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
@@ -742,7 +743,6 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
 
 
 @experimental
-@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     connections: Iterable[AirbyteConnection],

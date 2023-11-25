@@ -4,13 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
-
-MANAGED_ELEMENTS_DEPRECATION_MSG = (
-    "Dagster is deprecating support for ingestion-as-code."
-    " We suggest using the Airbyte terraform provider:"
-    " https://reference.airbyte.com/reference/using-the-terraform-provider."
-)
+from dagster._annotations import public
 
 
 class AirbyteSyncMode(ABC):
@@ -212,7 +206,6 @@ class AirbyteDestinationNamespace(Enum):
     DESTINATION_DEFAULT = "destination"
 
 
-@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteConnection:
     """A user-defined Airbyte connection, pairing an Airbyte source and destination and configuring
     which streams to sync.
@@ -261,6 +254,7 @@ class AirbyteConnection:
         destination: AirbyteDestination,
         stream_config: Mapping[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
+        enable_streams: Optional[bool] = None,
         destination_namespace: Optional[
             Union[AirbyteDestinationNamespace, str]
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
@@ -276,6 +270,7 @@ class AirbyteConnection:
         self.destination_namespace = check.opt_inst_param(
             destination_namespace, "destination_namespace", (str, AirbyteDestinationNamespace)
         )
+        self.enable_streams = check.opt_bool_param(enable_streams, "enable_streams")
         self.prefix = check.opt_str_param(prefix, "prefix")
 
     def must_be_recreated(self, other: Optional["AirbyteConnection"]) -> bool:
