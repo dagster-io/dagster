@@ -2,7 +2,7 @@ import {ColorName} from './ColorName';
 import {CoreColors, TranslucentColors} from './Colors';
 
 export const DarkPalette = {
-  [ColorName.KeylineDefault]: TranslucentColors.Gray20,
+  [ColorName.KeylineDefault]: TranslucentColors.Gray15,
   [ColorName.LinkDefault]: CoreColors.Blue200,
   [ColorName.LinkHover]: CoreColors.Blue400,
   [ColorName.LinkDisabled]: CoreColors.Gray750,
