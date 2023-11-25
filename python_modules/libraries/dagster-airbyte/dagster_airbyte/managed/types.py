@@ -4,7 +4,13 @@ from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
+
+MANAGED_ELEMENTS_DEPRECATION_MSG = (
+    "Dagster is deprecating support for ingestion-as-code."
+    " We suggest using the Airbyte terraform provider:"
+    " https://reference.airbyte.com/reference/using-the-terraform-provider."
+)
 
 
 class AirbyteSyncMode(ABC):
@@ -206,6 +212,7 @@ class AirbyteDestinationNamespace(Enum):
     DESTINATION_DEFAULT = "destination"
 
 
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteConnection:
     """A user-defined Airbyte connection, pairing an Airbyte source and destination and configuring
     which streams to sync.
