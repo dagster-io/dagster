@@ -155,4 +155,7 @@ export const TranslucentColors = {
   Gray20: 'rgba(156, 172, 151, 0.20)',
   Gray25: 'rgba(156, 172, 151, 0.25)',
   Gray30: 'rgba(156, 172, 151, 0.30)',
+  Gray50: 'rgba(13, 17, 33, 0.50)',
+  Gray90: 'rgba(13, 17, 33, 0.90)',
+
 };

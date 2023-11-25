@@ -63,4 +63,6 @@ export const LegacyPalette = {
   [ColorName.AccentGray]: LegacyColors.Gray500,
   [ColorName.AccentGrayHover]: LegacyColors.Gray400,
   [ColorName.AccentWhite]: LegacyColors.White,
+  [ColorName.DialogBackground]: LegacyColors.WashGray,
+
 };

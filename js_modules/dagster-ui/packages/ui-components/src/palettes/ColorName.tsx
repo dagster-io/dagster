@@ -59,4 +59,5 @@ export enum ColorName {
   AccentGray = 'AccentGray',
   AccentGrayHover = 'AccentGrayHover',
   AccentWhite = 'AccentWhite',
+  DialogBackground = 'DialogBackground',
 }

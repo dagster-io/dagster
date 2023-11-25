@@ -62,4 +62,5 @@ export const DarkPalette = {
   [ColorName.AccentGray]: CoreColors.Gray500,
   [ColorName.AccentGrayHover]: CoreColors.Gray600,
   [ColorName.AccentWhite]: CoreColors.Gray150,
+  [ColorName.DialogBackground]: TranslucentColors.Gray90,
 };
