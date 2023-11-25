@@ -5,10 +5,9 @@ import styled, {css} from 'styled-components';
 import {
   colorAccentBlue,
   colorAccentGray,
-  colorAccentPrimary,
+  colorAccentWhite,
   colorAccentReversed,
   colorBackgroundDefault,
-  colorBackgroundDisabled,
   colorBackgroundGray,
   colorBorderDefault,
   colorTextDefault,
@@ -119,7 +118,7 @@ const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) =>
       width="20"
       height="20"
       rx="10"
-      fill={disabled ? colorAccentPrimary() : colorAccentPrimary()}
+      fill={disabled ? colorAccentWhite() : colorAccentWhite()}
     />
   </svg>
 );

@@ -58,4 +58,5 @@ export enum ColorName {
   AccentLimeHover = 'AccentLimeHover',
   AccentGray = 'AccentGray',
   AccentGrayHover = 'AccentGrayHover',
+  AccentWhite = 'AccentWhite',
 }

@@ -68,3 +68,4 @@ export const colorAccentLime = () => color(ColorName.AccentLime);
 export const colorAccentLimeHover = () => color(ColorName.AccentLimeHover);
 export const colorAccentGray = () => color(ColorName.AccentGray);
 export const colorAccentGrayHover = () => color(ColorName.AccentGrayHover);
+export const colorAccentWhite = () => color(ColorName.AccentWhite);

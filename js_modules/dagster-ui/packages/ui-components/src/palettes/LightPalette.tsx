@@ -61,4 +61,5 @@ export const LightPalette = {
   [ColorName.AccentLimeHover]: CoreColors.Lime400,
   [ColorName.AccentGray]: CoreColors.Gray500,
   [ColorName.AccentGrayHover]: CoreColors.Gray400,
+  [ColorName.AccentWhite]: CoreColors.White,
 };

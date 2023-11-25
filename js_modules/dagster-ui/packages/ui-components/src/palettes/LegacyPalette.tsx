@@ -62,4 +62,5 @@ export const LegacyPalette = {
   [ColorName.AccentLimeHover]: LegacyColors.HighlightGreen, // No lime
   [ColorName.AccentGray]: LegacyColors.Gray500,
   [ColorName.AccentGrayHover]: LegacyColors.Gray400,
+  [ColorName.AccentWhite]: LegacyColors.White,
 };
