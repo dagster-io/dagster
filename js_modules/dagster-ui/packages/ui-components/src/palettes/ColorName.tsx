@@ -40,6 +40,7 @@ export enum ColorName {
   BorderDefault = 'BorderDefault',
   BorderHover = 'BorderHover',
   BorderDisabled = 'BorderDisabled',
+  BorderFocussed = 'BorderFocussed',
   AccentPrimary = 'AccentPrimary',
   AccentPrimaryHover = 'AccentPrimaryHover',
   AccentReversed = 'AccentReversed',

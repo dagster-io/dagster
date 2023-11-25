@@ -7,7 +7,9 @@ import {
   colorBackgroundDefault,
   colorBackgroundDisabled,
   colorBorderDefault,
+  colorBorderHover,
   colorBorderDisabled,
+  colorBorderFocussed,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
@@ -100,17 +102,16 @@ const RightContainer = styled.div`
 export const TextInputStyles = css`
   background-color: ${colorBackgroundDefault()};
   border: none;
+  outline: none;
   border-radius: 8px;
-  box-shadow:
-    ${colorBorderDefault()} inset 0px 0px 0px 1px,
-    ${colorKeylineDefault()} inset 2px 2px 1.5px;
   color: ${colorTextDefault()};
   flex-grow: 1;
   font-size: 14px;
   line-height: 20px;
   padding: 6px 6px 6px 12px;
+  box-shadow: none;
   margin: 0;
-  transition: box-shadow 150ms;
+  transition: border 150ms;
 
   ::placeholder {
     color: ${colorTextLighter()};
@@ -155,15 +156,15 @@ const StyledInput = styled.input<StyledInputProps>`
         `
       : null}
 
-  box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-    ${colorKeylineDefault()} inset 2px 2px 1.5px;
+  box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
-
+  :hover {
+    ${colorBorderHover()} inset 0px 0px 0px 1px;
+  }
   :focus {
     box-shadow:
-      ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-      ${colorKeylineDefault()} inset 2px 2px 1.5px,
-      rgba(58, 151, 212, 0.6) 0 0 0 3px;
+      ${colorBorderFocussed()} inset 0px 0px 0px 1px,
+      ${colorBorderFocussed()} 0px 0px 0px 1px;
   }
 `;
 
@@ -175,14 +176,14 @@ interface TextAreaProps {
 export const TextArea = styled.textarea<TextAreaProps>`
   ${TextInputStyles}
 
-  box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderDefault()} inset 0px 0px 0px 1px,
-    ${colorKeylineDefault()} inset 2px 2px 1.5px;
-
+  box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
+  :hover {
+    ${colorBorderHover()} inset 0px 0px 0px 1px;
+  }
   :focus {
     box-shadow:
-      ${({$strokeColor}) => $strokeColor || colorBorderDefault()} inset 0px 0px 0px 1px,
-      ${colorKeylineDefault()} inset 2px 2px 1.5px,
-      rgba(58, 151, 212, 0.6) 0 0 0 3px;
+      ${colorBorderFocussed()} inset 0px 0px 0px 1px,
+      ${colorBorderFocussed()} 0px 0px 0px 1px;
   }
 
   ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}

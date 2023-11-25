@@ -50,6 +50,7 @@ export const colorBackgroundGrayHover = () => color(ColorName.BackgroundGrayHove
 export const colorBorderDefault = () => color(ColorName.BorderDefault);
 export const colorBorderHover = () => color(ColorName.BorderHover);
 export const colorBorderDisabled = () => color(ColorName.BorderDisabled);
+export const colorBorderFocussed = () => color(ColorName.BorderFocussed);
 export const colorAccentPrimary = () => color(ColorName.AccentPrimary);
 export const colorAccentPrimaryHover = () => color(ColorName.AccentPrimaryHover);
 export const colorAccentReversed = () => color(ColorName.AccentReversed);
