@@ -13,7 +13,7 @@ export const DarkPalette = {
   [ColorName.TextRed]: CoreColors.Red300,
   [ColorName.TextYellow]: CoreColors.Yellow300,
   [ColorName.TextGreen]: CoreColors.Green300,
-  [ColorName.TextBlue]: CoreColors.Blue300,
+  [ColorName.TextBlue]: CoreColors.Blue200,
   [ColorName.TextOlive]: CoreColors.Olive300,
   [ColorName.TextCyan]: CoreColors.Cyan300,
   [ColorName.TextLime]: CoreColors.Lime300,
