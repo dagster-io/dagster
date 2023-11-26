@@ -60,6 +60,8 @@ export const LightPalette = {
   [ColorName.AccentCyanHover]: CoreColors.Cyan400,
   [ColorName.AccentLime]: CoreColors.Lime500,
   [ColorName.AccentLimeHover]: CoreColors.Lime400,
+  [ColorName.AccentLavender]: CoreColors.Blue200,
+  [ColorName.AccentLavenderHover]: CoreColors.Blue100,
   [ColorName.AccentGray]: CoreColors.Gray500,
   [ColorName.AccentGrayHover]: CoreColors.Gray400,
   [ColorName.AccentWhite]: CoreColors.White,

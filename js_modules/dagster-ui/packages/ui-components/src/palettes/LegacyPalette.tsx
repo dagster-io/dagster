@@ -24,7 +24,7 @@ export const LegacyPalette = {
   [ColorName.BackgroundLightHover]: LegacyColors.Gray100,
   [ColorName.BackgroundLighter]: LegacyColors.Gray10,
   [ColorName.BackgroundLighterHover]: LegacyColors.Gray50,
-  [ColorName.BackgroundDisabled]: LegacyColors.Gray100,
+  [ColorName.BackgroundDisabled]: LegacyColors.Gray200,
   [ColorName.BackgroundRed]: LegacyColors.Red50,
   [ColorName.BackgroundRedHover]: LegacyColors.Red50,
   [ColorName.BackgroundYellow]: LegacyColors.Yellow50,
@@ -63,6 +63,8 @@ export const LegacyPalette = {
   [ColorName.AccentLimeHover]: LegacyColors.HighlightGreen, // No lime
   [ColorName.AccentGray]: LegacyColors.Gray500,
   [ColorName.AccentGrayHover]: LegacyColors.Gray400,
+  [ColorName.AccentLavender]: LegacyColors.Blue200,
+  [ColorName.AccentLavenderHover]: LegacyColors.Blue100,
   [ColorName.AccentWhite]: LegacyColors.White,
   [ColorName.DialogBackground]: LegacyColors.WashGray,
   [ColorName.TooltipBackground]: LegacyColors.Dark,
