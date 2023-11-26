@@ -844,6 +844,7 @@ def build_output_context(
             output.
         partition_key: Optional[str]: String value representing partition key to execute with.
         step_context (Optional[StepExecutionContext]): The step context to use for this output context.
+            For internal use.
 
     Examples:
         .. code-block:: python
