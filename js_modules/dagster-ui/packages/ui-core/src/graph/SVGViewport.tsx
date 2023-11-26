@@ -607,7 +607,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   render() {
     const {children, onClick, interactor} = this.props;
     const {x, y, scale, isClickHeld} = this.state;
-    const dotsize = Math.max(7, 30 * scale);
+    const dotsize = Math.max(7, 22 * scale);
 
     return (
       <div
