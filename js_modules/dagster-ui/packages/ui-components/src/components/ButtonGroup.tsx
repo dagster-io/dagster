@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {
   colorBackgroundDefault,
-  colorBackgroundLighter,
+  colorBackgroundLighterHover,
   colorBorderDefault,
   colorTextDefault,
   colorTextLight,
@@ -36,7 +36,7 @@ export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
         const buttonElement = (
           <BaseButton
             key={id}
-            fillColor={isActive ? colorBackgroundLighter() : colorBackgroundDefault()}
+            fillColor={isActive ? colorBackgroundLighterHover() : colorBackgroundDefault()}
             textColor={isActive ? colorTextDefault() : colorTextLight()}
             iconColor={isActive ? colorTextDefault() : colorTextLight()}
             strokeColor={colorBorderDefault()}

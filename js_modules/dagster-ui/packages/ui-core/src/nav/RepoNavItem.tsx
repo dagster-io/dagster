@@ -171,14 +171,14 @@ const SummaryText = styled.div`
 `;
 
 const SingleRepoNameLink = styled(Link)<{$onlyRepo: boolean}>`
-  color: ${colorTextDefault()};
+  color: ${colorTextLight()};
   display: block;
   max-width: ${({$onlyRepo}) => ($onlyRepo ? '248px' : '192px')};
   overflow-x: hidden;
   text-overflow: ellipsis;
   transition: color 100ms linear;
 
-  && {
+  &&:hover {
     color: ${colorTextDefault()};
   }
 

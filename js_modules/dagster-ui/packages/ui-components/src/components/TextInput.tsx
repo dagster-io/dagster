@@ -15,6 +15,7 @@ import {
   colorTextDisabled,
   colorTextLight,
   colorTextLighter,
+  colorBackgroundDefaultHover,
 } from '../theme/color';
 
 import {IconName, Icon, IconWrapper} from './Icon';
@@ -158,13 +159,14 @@ const StyledInput = styled.input<StyledInputProps>`
 
   box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
+  transition: box-shadow 150ms;
   :hover {
-    ${colorBorderHover()} inset 0px 0px 0px 1px;
+    box-shadow: ${colorBorderHover()} inset 0px 0px 0px 1px;
   }
   :focus {
     box-shadow:
-      ${colorBorderFocussed()} inset 0px 0px 0px 1px,
       ${colorBorderFocussed()} 0px 0px 0px 1px;
+    background-color: ${colorBackgroundDefaultHover()};
   }
 `;
 
@@ -180,10 +182,13 @@ export const TextArea = styled.textarea<TextAreaProps>`
   :hover {
     ${colorBorderHover()} inset 0px 0px 0px 1px;
   }
+  :hover {
+    box-shadow: ${colorBorderHover()} inset 0px 0px 0px 1px;
+  }
   :focus {
     box-shadow:
-      ${colorBorderFocussed()} inset 0px 0px 0px 1px,
       ${colorBorderFocussed()} 0px 0px 0px 1px;
+    background-color: ${colorBackgroundDefaultHover()};
   }
 
   ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}
