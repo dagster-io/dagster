@@ -105,6 +105,20 @@ class TimeWindowPartitionMapping(
             ),
         )
 
+    @property
+    def description(self) -> str:
+        description_str = (
+            "Maps a downstream partition to any upstream partition with an overlapping time window."
+        )
+
+        if self.start_offset != 0 or self.end_offset != 0:
+            description_str += (
+                f" The start and end of the upstream time window is offsetted by "
+                f"{self.start_offset} and {self.end_offset} partitions respectively."
+            )
+
+        return description_str
+
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],

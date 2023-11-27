@@ -1,6 +1,6 @@
 import collections.abc
 import itertools
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import datetime
 from typing import (
@@ -99,6 +99,11 @@ class PartitionMapping(ABC):
         when downstream_partitions_subset contains 2023-05-01 and 2023-06-01.
         """
 
+    @abstractproperty
+    def description(self) -> str:
+        """A human-readable description of the partition mapping, displayed in the Dagster UI."""
+        raise NotImplementedError()
+
 
 @whitelist_for_serdes
 class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
@@ -159,6 +164,13 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
             list(downstream_partition_keys & upstream_partition_keys)
         )
 
+    @property
+    def description(self) -> str:
+        return (
+            "Assumes upstream and downstream assets share the same partitions definition. "
+            "Maps each partition in the downstream asset to the same partition in the upstream asset."
+        )
+
 
 @whitelist_for_serdes
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
@@ -190,6 +202,10 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
         raise NotImplementedError()
+
+    @property
+    def description(self) -> str:
+        return "Each downstream partition depends on all partitions of the upstream asset."
 
 
 @whitelist_for_serdes
@@ -235,6 +251,10 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
             )
         else:
             return downstream_partitions_def.empty_subset()
+
+    @property
+    def description(self) -> str:
+        return "Each downstream partition depends on the last partition of the upstream asset."
 
 
 @whitelist_for_serdes
@@ -291,6 +311,10 @@ class SpecificPartitionsPartitionMapping(
                 dynamic_partitions_store=dynamic_partitions_store
             )
         return downstream_partitions_def.empty_subset()
+
+    @property
+    def description(self) -> str:
+        return f"Each downstream partition depends on the following upstream partitions: {self.partition_keys}"
 
 
 class DimensionDependency(NamedTuple):
@@ -579,6 +603,14 @@ class MultiToSingleDimensionPartitionMapping(
             ),
         )
 
+    @property
+    def description(self) -> str:
+        return (
+            "Assumes that the single-dimension partitions definition is a dimension of the "
+            "multi-partitions definition. For a single-dimension partition key X, any "
+            "multi-partition key with X in the matching dimension is a dependency."
+        )
+
     def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
@@ -726,6 +758,18 @@ class MultiPartitionMapping(
                 key_type=str,
                 value_type=DimensionPartitionMapping,
             ),
+        )
+
+    @property
+    def description(self) -> str:
+        return "\n ".join(
+            [
+                (
+                    f"Upstream dimension '{upstream_dim}' mapped to downstream dimension "
+                    f"'{downstream_mapping.dimension_name}' using {type(downstream_mapping.partition_mapping).__name__}."
+                )
+                for upstream_dim, downstream_mapping in self.downstream_mappings_by_upstream_dimension.items()
+            ]
         )
 
     def get_dimension_dependencies(
@@ -902,6 +946,13 @@ class StaticPartitionMapping(
             upstream_keys.update(self._inverse_mapping[key])
 
         return UpstreamPartitionsResult(upstream_subset.with_partition_keys(upstream_keys), [])
+
+    @property
+    def description(self) -> str:
+        return (
+            f"Maps upstream partitions to their downstream dependencies according to the "
+            f"following mapping: \n{self.downstream_partition_keys_by_upstream_partition_key}"
+        )
 
 
 class InferSingleToMultiDimensionDepsResult(

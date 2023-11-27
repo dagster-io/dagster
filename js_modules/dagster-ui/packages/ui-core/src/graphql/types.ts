@@ -253,6 +253,7 @@ export type AssetDependency = {
   __typename: 'AssetDependency';
   asset: AssetNode;
   inputName: Scalars['String'];
+  partitionMapping: Maybe<PartitionMapping>;
 };
 
 export enum AssetEventType {
@@ -2453,6 +2454,12 @@ export type PartitionKeys = {
 };
 
 export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
+
+export type PartitionMapping = {
+  __typename: 'PartitionMapping';
+  className: Scalars['String'];
+  description: Scalars['String'];
+};
 
 export type PartitionRangeSelector = {
   end: Scalars['String'];
@@ -4896,6 +4903,12 @@ export const buildAssetDependency = (
         : buildAssetNode({}, relationshipsToOmit),
     inputName:
       overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'aspernatur',
+    partitionMapping:
+      overrides && overrides.hasOwnProperty('partitionMapping')
+        ? overrides.partitionMapping!
+        : relationshipsToOmit.has('PartitionMapping')
+        ? ({} as PartitionMapping)
+        : buildPartitionMapping({}, relationshipsToOmit),
   };
 };
 
@@ -9115,6 +9128,22 @@ export const buildPartitionKeys = (
     __typename: 'PartitionKeys',
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
+export const buildPartitionMapping = (
+  overrides?: Partial<PartitionMapping>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionMapping'} & PartitionMapping => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionMapping');
+  return {
+    __typename: 'PartitionMapping',
+    className: overrides && overrides.hasOwnProperty('className') ? overrides.className! : 'quos',
+    description:
+      overrides && overrides.hasOwnProperty('description')
+        ? overrides.description!
+        : 'voluptatibus',
   };
 };
 

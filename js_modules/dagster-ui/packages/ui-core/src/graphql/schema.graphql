@@ -713,6 +713,12 @@ enum BackfillPolicyType {
 type AssetDependency {
   asset: AssetNode!
   inputName: String!
+  partitionMapping: PartitionMapping
+}
+
+type PartitionMapping {
+  className: String!
+  description: String!
 }
 
 type AssetFreshnessInfo {

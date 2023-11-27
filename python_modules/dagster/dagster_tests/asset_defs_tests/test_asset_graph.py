@@ -240,6 +240,10 @@ def test_custom_unsupported_partition_mapping():
         ) -> PartitionsSubset:
             raise NotImplementedError()
 
+        @property
+        def description(self) -> str:
+            raise NotImplementedError()
+
     @asset(partitions_def=StaticPartitionsDefinition(["1", "2", "3"]))
     def parent():
         ...

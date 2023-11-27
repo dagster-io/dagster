@@ -312,6 +312,10 @@ def test_fs_io_manager_partitioned_no_partitions():
             ):
                 raise NotImplementedError()
 
+            @property
+            def description(self) -> str:
+                raise NotImplementedError()
+
         partitions_def = DailyPartitionsDefinition(start_date="2020-02-01")
 
         @asset(partitions_def=partitions_def)
