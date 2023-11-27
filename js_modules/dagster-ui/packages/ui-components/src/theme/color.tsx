@@ -50,6 +50,7 @@ export const colorBackgroundGrayHover = () => color(ColorName.BackgroundGrayHove
 export const colorBorderDefault = () => color(ColorName.BorderDefault);
 export const colorBorderHover = () => color(ColorName.BorderHover);
 export const colorBorderDisabled = () => color(ColorName.BorderDisabled);
+export const colorBorderFocussed = () => color(ColorName.BorderFocussed);
 export const colorAccentPrimary = () => color(ColorName.AccentPrimary);
 export const colorAccentPrimaryHover = () => color(ColorName.AccentPrimaryHover);
 export const colorAccentReversed = () => color(ColorName.AccentReversed);
@@ -66,5 +67,30 @@ export const colorAccentCyan = () => color(ColorName.AccentCyan);
 export const colorAccentCyanHover = () => color(ColorName.AccentCyanHover);
 export const colorAccentLime = () => color(ColorName.AccentLime);
 export const colorAccentLimeHover = () => color(ColorName.AccentLimeHover);
+export const colorAccentLavender = () => color(ColorName.AccentLavender);
+export const colorAccentLavenderHover = () => color(ColorName.AccentLavenderHover);
 export const colorAccentGray = () => color(ColorName.AccentGray);
 export const colorAccentGrayHover = () => color(ColorName.AccentGrayHover);
+export const colorAccentWhite = () => color(ColorName.AccentWhite);
+export const colorDialogBackground = () => color(ColorName.DialogBackground);
+export const colorTooltipBackground = () => color(ColorName.TooltipBackground);
+export const colorTooltipText = () => color(ColorName.TooltipText);
+export const colorPopoverBackground = () => color(ColorName.PopoverBackground);
+export const colorPopoverBackgroundHover = () => color(ColorName.PopoverBackgroundHover);
+//LINEAGE GRAPH COLORS
+export const colorLineageDots = () => color(ColorName.LineageDots);
+export const colorLineageEdge = () => color(ColorName.LineageEdge);
+export const colorLineageEdgeHighlighted = () => color(ColorName.LineageEdgeHighlighted);
+//GRAPH GROUPS
+export const colorLineageGroupNodeBackground = () => color(ColorName.LineageGroupNodeBackground);
+export const colorLineageGroupNodeBackgroundHover = () => color(ColorName.LineageGroupNodeBackgroundHover);
+export const colorLineageGroupNodeBorder = () => color(ColorName.LineageGroupNodeBorder);
+export const colorLineageGroupNodeBorderHover = () => color(ColorName.LineageGroupNodeBorderHover);
+export const colorLineageGroupBackground = () => color(ColorName.LineageGroupBackground);
+//GRAPH NODES
+export const colorLineageNodeBackground = () => color(ColorName.LineageNodeBackground);
+export const colorLineageNodeBackgroundHover = () => color(ColorName.LineageNodeBackgroundHover);
+export const colorLineageNodeBorder = () => color(ColorName.LineageNodeBorder);
+export const colorLineageNodeBorderHover = () => color(ColorName.LineageNodeBorderHover);
+export const colorLineageNodeBorderSelected = () => color(ColorName.LineageNodeBorderSelected);
+

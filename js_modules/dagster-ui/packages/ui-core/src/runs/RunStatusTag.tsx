@@ -4,7 +4,7 @@ import {
   Popover,
   Tag,
   colorAccentBlue,
-  colorAccentBlueHover,
+  colorAccentLavender,
   colorAccentGray,
   colorAccentGrayHover,
   colorAccentGreen,
@@ -87,7 +87,7 @@ export const runStatusToBackfillStateString = (status: RunStatus) => {
 };
 
 export const RUN_STATUS_COLORS = {
-  QUEUED: colorAccentBlueHover(),
+  QUEUED: colorAccentGray(),
   NOT_STARTED: colorAccentGrayHover(),
   MANAGED: colorAccentGray(),
   STARTED: colorAccentBlue(),
@@ -98,7 +98,7 @@ export const RUN_STATUS_COLORS = {
   CANCELED: colorAccentRed(),
 
   // Not technically a RunStatus, but useful.
-  SCHEDULED: colorAccentBlueHover(),
+  SCHEDULED: colorAccentGray(),
 };
 
 export const RunStatusTag = (props: {status: RunStatus}) => {

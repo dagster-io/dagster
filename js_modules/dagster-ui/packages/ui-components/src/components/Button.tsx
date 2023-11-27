@@ -21,6 +21,7 @@ import {
   colorBackgroundYellow,
   colorBorderDefault,
   colorBorderHover,
+  colorBackgroundLightHover,
 } from '../theme/color';
 
 import {BaseButton} from './BaseButton';
@@ -167,7 +168,7 @@ export const intentToFillColorHover = (intent: BlueprintIntent) => {
       return colorAccentYellowHover();
     case 'none':
     default:
-      return colorBackgroundGray();
+      return colorBackgroundLightHover();
   }
 };
 

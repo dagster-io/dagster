@@ -8,12 +8,14 @@ import {
   colorBackgroundDisabled,
   colorBackgroundGray,
   colorBackgroundLight,
+  colorBackgroundLightHover,
   colorBackgroundLighter,
   colorBackgroundLighterHover,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
   colorTextLight,
+  colorTextLighter,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -309,6 +311,7 @@ const Container = styled.div`
   height: 100%;
   overflow: auto;
   background-color: ${colorBackgroundLight()};
+
 `;
 
 interface CodeLocationNameRowProps {
@@ -492,7 +495,7 @@ const usePathMatch = () => {
 };
 
 const ItemTypeLabel = styled.div`
-  color: ${colorTextLight()};
+  color: ${colorTextLighter()};
   padding: 0 12px 4px;
   font-size: 12px;
 `;
@@ -501,7 +504,7 @@ const SectionHeader = styled.button<{
   $open: boolean;
   $showRepoLocation: boolean;
 }>`
-  background: ${colorBackgroundLighter()};
+  background: ${colorBackgroundLight()};
   border: 0;
   border-radius: 0;
   cursor: pointer;
@@ -513,6 +516,7 @@ const SectionHeader = styled.button<{
   text-align: left;
   user-select: none;
   white-space: nowrap;
+  transition: background 100ms linear;
 
   width: 100%;
   margin: 0;
@@ -525,7 +529,7 @@ const SectionHeader = styled.button<{
 
   :hover,
   :active {
-    background-color: ${colorBackgroundLighterHover()};
+    background-color: ${colorBackgroundLightHover()};
   }
 
   :disabled:hover,

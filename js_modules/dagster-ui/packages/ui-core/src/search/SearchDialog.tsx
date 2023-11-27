@@ -9,9 +9,9 @@ import {
   colorTextLight,
   colorTextLighter,
   colorBackgroundDefault,
-  colorKeylineDefault,
-  LegacyColors,
+  colorKeylineDefault
 } from '@dagster-io/ui-components';
+import {colorDialogBackground} from '@dagster-io/ui-components/src/theme/color';
 import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
@@ -220,7 +220,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
         </SearchTrigger>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: LegacyColors.WashGray}}}
+        backdropProps={{style: {backgroundColor: colorDialogBackground()}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
@@ -263,6 +263,11 @@ const SearchTrigger = styled.button`
   user-select: none;
   width: 188px;
   height: 32px;
+  transition: background-color 100ms linear;
+
+  :hover {
+    background-color: ${CoreColors.Gray850};
+  }
 
   :focus {
     border-color: ${CoreColors.Gray100};
@@ -311,7 +316,7 @@ const SearchInput = styled.input`
 `;
 
 const SlashShortcut = styled.div`
-  background-color: ${CoreColors.Gray900};
+  background-color: transparent;
   border-radius: 3px;
   color: ${CoreColors.White};
   font-size: 14px;

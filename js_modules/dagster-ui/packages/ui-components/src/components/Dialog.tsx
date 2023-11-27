@@ -3,7 +3,7 @@ import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 
-import {colorAccentPrimary, colorBackgroundDefault} from '../theme/color';
+import {colorAccentPrimary, colorBackgroundDefault, colorDialogBackground} from '../theme/color';
 
 import {Box} from './Box';
 import {LegacyColors} from './Colors';
@@ -100,7 +100,7 @@ export const DialogHeaderText = styled.div`
 
 export const GlobalDialogStyle = createGlobalStyle`
   .dagster-portal .bp4-overlay-backdrop {
-    background-color: ${LegacyColors.WashGray};
+    background-color: ${colorDialogBackground()};
   }
 
   .dagster-portal .bp4-dialog-container {
