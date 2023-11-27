@@ -116,6 +116,7 @@ setup(
             "docker",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mock==3.0.5",
+            "mypy-protobuf",
             "objgraph",
             "pytest-cov==2.10.1",
             "pytest-dependency==0.5.1",

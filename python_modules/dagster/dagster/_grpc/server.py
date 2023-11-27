@@ -407,21 +407,21 @@ class DagsterApiServer(DagsterApiServicer):
 
     def Ping(self, request, _context) -> api_pb2.PingReply:
         echo = request.echo
-        return api_pb2.PingReply(echo=echo)  # type: ignore  # (grpc generated)
+        return api_pb2.PingReply(echo=echo)
 
     def StreamingPing(self, request, _context) -> Iterator[api_pb2.StreamingPingEvent]:
         sequence_length = request.sequence_length
         echo = request.echo
         for sequence_number in range(sequence_length):
-            yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)  # type: ignore  # (grpc generated)
+            yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
 
     def Heartbeat(self, request, _context) -> api_pb2.PingReply:
         self.__last_heartbeat_time = time.time()
         echo = request.echo
-        return api_pb2.PingReply(echo=echo)  # type: ignore  # (grpc generated)
+        return api_pb2.PingReply(echo=echo)
 
     def GetServerId(self, _request, _context) -> api_pb2.GetServerIdReply:
-        return api_pb2.GetServerIdReply(server_id=self._server_id)  # type: ignore  # (grpc generated)
+        return api_pb2.GetServerIdReply(server_id=self._server_id)
 
     def ExecutionPlanSnapshot(self, request, _context) -> api_pb2.ExecutionPlanSnapshotReply:
         execution_plan_args = deserialize_value(
@@ -434,13 +434,13 @@ class DagsterApiServer(DagsterApiServicer):
             execution_plan_args.job_origin.job_name,
             execution_plan_args,
         )
-        return api_pb2.ExecutionPlanSnapshotReply(  # type: ignore  # (grpc generated)
+        return api_pb2.ExecutionPlanSnapshotReply(
             serialized_execution_plan_snapshot=serialize_value(execution_plan_snapshot_or_error)
         )
 
     def ListRepositories(self, request, _context) -> api_pb2.ListRepositoriesReply:
         if self._serializable_load_error:
-            return api_pb2.ListRepositoriesReply(  # type: ignore  # (grpc generated)
+            return api_pb2.ListRepositoriesReply(
                 serialized_list_repositories_response_or_error=serialize_value(
                     self._serializable_load_error
                 )
@@ -467,7 +467,7 @@ class DagsterApiServer(DagsterApiServicer):
                 serializable_error_info_from_exc_info(sys.exc_info())
             )
 
-        return api_pb2.ListRepositoriesReply(  # type: ignore  # (grpc generated)
+        return api_pb2.ListRepositoriesReply(
             serialized_list_repositories_response_or_error=serialized_response
         )
 
@@ -490,14 +490,14 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPartitionNamesReply(  # type: ignore  # (grpc generated)
+        return api_pb2.ExternalPartitionNamesReply(
             serialized_external_partition_names_or_external_partition_execution_error=serialized_response
         )
 
     def ExternalNotebookData(self, request, _context) -> api_pb2.ExternalNotebookDataReply:
         notebook_path = request.notebook_path
         check.str_param(notebook_path, "notebook_path")
-        return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))  # type: ignore  # (grpc generated)
+        return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
     def ExternalPartitionSetExecutionParams(self, request, _context):
         try:
@@ -546,7 +546,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPartitionConfigReply(  # type: ignore  # (grpc generated)
+        return api_pb2.ExternalPartitionConfigReply(
             serialized_external_partition_config_or_external_partition_execution_error=serialized_data
         )
 
@@ -573,7 +573,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPartitionTagsReply(  # type: ignore  # (grpc generated)
+        return api_pb2.ExternalPartitionTagsReply(
             serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
         )
 
@@ -603,7 +603,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPipelineSubsetSnapshotReply(  # type: ignore  # (grpc generated)
+        return api_pb2.ExternalPipelineSubsetSnapshotReply(
             serialized_external_pipeline_subset_result=serialized_external_pipeline_subset_result
         )
 
@@ -627,7 +627,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def ExternalRepository(self, request, _context) -> api_pb2.ExternalRepositoryReply:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
-        return api_pb2.ExternalRepositoryReply(  # type: ignore  # (grpc generated)
+        return api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialized_external_repository_data,
         )
 
@@ -640,9 +640,9 @@ class DagsterApiServer(DagsterApiServicer):
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
             ser_job_data = serialize_value(external_job_data_from_def(job_def))
-            return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)  # type: ignore  # (grpc generated)
+            return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:
-            return api_pb2.ExternalJobReply(  # type: ignore  # (grpc generated)
+            return api_pb2.ExternalJobReply(
                 serialized_error=serialize_value(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
@@ -664,7 +664,7 @@ class DagsterApiServer(DagsterApiServicer):
                 len(serialized_external_repository_data),
             )
 
-            yield api_pb2.StreamingExternalRepositoryEvent(  # type: ignore  # (grpc generated)
+            yield api_pb2.StreamingExternalRepositoryEvent(
                 sequence_number=i,
                 serialized_external_repository_chunk=serialized_external_repository_data[
                     start_index:end_index
@@ -682,7 +682,7 @@ class DagsterApiServer(DagsterApiServicer):
                 len(serialized_data),
             )
 
-            yield api_pb2.StreamingChunkEvent(  # type: ignore  # (grpc generated)
+            yield api_pb2.StreamingChunkEvent(
                 sequence_number=i,
                 serialized_chunk=serialized_data[start_index:end_index],
             )
@@ -740,14 +740,14 @@ class DagsterApiServer(DagsterApiServicer):
     def ShutdownServer(self, request, _context) -> api_pb2.ShutdownServerReply:
         try:
             self._shutdown_once_executions_finish_event.set()
-            return api_pb2.ShutdownServerReply(  # type: ignore  # (grpc generated)
+            return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(success=True, serializable_error_info=None)
                 )
             )
         except:
             self._logger.exception("Failed to shut down server")
-            return api_pb2.ShutdownServerReply(  # type: ignore  # (grpc generated)
+            return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(
                         success=False,
@@ -776,7 +776,7 @@ class DagsterApiServer(DagsterApiServicer):
         except:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
-        return api_pb2.CancelExecutionReply(  # type: ignore  # (grpc generated)
+        return api_pb2.CancelExecutionReply(
             serialized_cancel_execution_result=serialize_value(
                 CancelExecutionResult(
                     success=success,
@@ -797,7 +797,7 @@ class DagsterApiServer(DagsterApiServicer):
                 run_id in self._executions and not self._termination_events[run_id].is_set()
             )
 
-        return api_pb2.CanCancelExecutionReply(  # type: ignore  # (grpc generated)
+        return api_pb2.CanCancelExecutionReply(
             serialized_can_cancel_execution_result=serialize_value(
                 CanCancelExecutionResult(can_cancel=can_cancel)
             )
@@ -805,7 +805,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def StartRun(self, request, _context) -> api_pb2.StartRunReply:
         if self._shutdown_once_executions_finish_event.is_set():
-            return api_pb2.StartRunReply(  # type: ignore  # (grpc generated)
+            return api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
                         success=False,
@@ -831,7 +831,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         except:
-            return api_pb2.StartRunReply(  # type: ignore  # (grpc generated)
+            return api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
                         success=False,
@@ -906,7 +906,7 @@ class DagsterApiServer(DagsterApiServicer):
             with self._execution_lock:
                 self._clear_run(run_id)
 
-        return api_pb2.StartRunReply(  # type: ignore  # (grpc generated)
+        return api_pb2.StartRunReply(
             serialized_start_run_result=serialize_value(
                 StartRunResult(
                     success=success,
@@ -917,7 +917,7 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def GetCurrentImage(self, request, _context) -> api_pb2.GetCurrentImageReply:
-        return api_pb2.GetCurrentImageReply(  # type: ignore  # (grpc generated)
+        return api_pb2.GetCurrentImageReply(
             serialized_current_image=serialize_value(
                 GetCurrentImageResult(
                     current_image=self._container_image, serializable_error_info=None
@@ -927,7 +927,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def GetCurrentRuns(self, request, context) -> api_pb2.GetCurrentRunsReply:
         with self._execution_lock:
-            return api_pb2.GetCurrentRunsReply(  # type: ignore  # (grpc generated)
+            return api_pb2.GetCurrentRunsReply(
                 serialized_current_runs=serialize_value(
                     GetCurrentRunsResult(
                         current_runs=list(self._executions.keys()), serializable_error_info=None
