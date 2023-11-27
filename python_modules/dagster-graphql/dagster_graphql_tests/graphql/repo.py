@@ -698,7 +698,7 @@ def materialization_job():
                         other=["some constraint"],
                     ),
                 ),
-                "my job": MetadataValue.job("materialization_job"),
+                "my job": MetadataValue.job("materialization_job", location_name="test_location"),
             },
         )
         yield Output(None)
