@@ -56,4 +56,4 @@ class EnvFileLoader(SecretsLoader, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return EnvFileLoader(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)

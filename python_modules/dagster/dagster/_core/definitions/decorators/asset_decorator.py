@@ -1101,7 +1101,7 @@ def graph_asset(
                 return store_files(fetch_files_from_slack())
     """
     if compose_fn is None:
-        return lambda fn: graph_asset(  # type: ignore  # (decorator pattern)
+        return lambda fn: graph_asset(
             fn,
             name=name,
             description=description,

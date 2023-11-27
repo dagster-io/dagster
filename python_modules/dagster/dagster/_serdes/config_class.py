@@ -10,6 +10,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -27,6 +28,10 @@ from .serdes import (
 if TYPE_CHECKING:
     from dagster._config.config_schema import UserConfigSchema
 
+# This should have a bound of ConfigurableClass, but the type checker has difficulty with putting
+# the ConfigurableClass interface on our storage classes. The concrete implementations of these
+# classes end up implementing the ConfigurableClass interface without inheriting from it, so we
+# don't actually bound this var.
 T_ConfigurableClass = TypeVar("T_ConfigurableClass")
 
 
@@ -76,11 +81,11 @@ class ConfigurableClassData(
         }
 
     @overload
-    def rehydrate(self, as_type: Type[T_ConfigurableClass]) -> T_ConfigurableClass:
+    def rehydrate(self, as_type: None = ...) -> "ConfigurableClass":
         ...
 
     @overload
-    def rehydrate(self, as_type: None = ...) -> "ConfigurableClass":
+    def rehydrate(self, as_type: Type[T_ConfigurableClass]) -> T_ConfigurableClass:
         ...
 
     def rehydrate(
@@ -97,7 +102,12 @@ class ConfigurableClassData(
                 f"configurable class {self.module_name}.{self.class_name}"
             )
         try:
-            klass = getattr(module, self.class_name)
+            # All rehydrated classes are expected to implement the ConfigurableClass interface and
+            # will error when we call `klass.from_config_value` and `klass.config_type` below if
+            # they do not. However, not all rehydrated classes actually have `ConfigurableClass` as
+            # an ancestor due to some subtleties around multiple abstract classes that cause an
+            # error when `ConfigurableClass` is added as an ancestor to storage classes.
+            klass = cast(Type[ConfigurableClass], getattr(module, self.class_name))
         except AttributeError:
             check.failed(
                 f"Couldn't find class {self.class_name} in module when attempting to load the "

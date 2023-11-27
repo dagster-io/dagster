@@ -365,7 +365,7 @@ class Out(
 
     def __new__(
         cls,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Optional[Union[Type, DagsterType]] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,

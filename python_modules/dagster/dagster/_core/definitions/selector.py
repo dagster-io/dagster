@@ -1,7 +1,5 @@
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence
 
-from typing_extensions import Self
-
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
@@ -59,7 +57,7 @@ class JobSubsetSelector(
             "solidSelection": self.op_selection,
         }
 
-    def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> Self:
+    def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> "JobSubsetSelector":
         check.invariant(
             self.op_selection is None,
             f"Can not invoke with_op_selection when op_selection={self.op_selection} is"

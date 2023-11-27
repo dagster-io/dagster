@@ -1,12 +1,11 @@
 import inspect
 from dataclasses import dataclass
-from typing import Callable, Mapping, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
 
 from typing_extensions import Annotated, Final, TypeAlias
 
 from dagster import _check as check
 from dagster._core.decorator_utils import (
-    Decoratable,
     apply_pre_call_decorator,
     get_decorator_target,
     is_resource_def,
@@ -16,12 +15,16 @@ from dagster._utils.warnings import (
     experimental_warning,
 )
 
-# For the time being, Annotatable objects are the same as decoratable ones. It
-# is possible we might want to change this in the future if we want to annotate
-# non-callables like constants.
-Annotatable: TypeAlias = Decoratable
+# For the time being, `Annotatable` is set to `Any` even though it should be set to `Decoratable` to
+# avoid choking the type checker. Choking happens because of a niche scenario where
+# `ResourceDefinition`, which is part of `Decoratable`, is used as an argument to a function that
+# accepts `Annotatable`. There is a certain circularity here that current versions of pyright fail
+# on. It will likely be resolved by future versions of pyright, and then `Annotatable` should be set
+# to `Decoratable`.
+Annotatable: TypeAlias = Any
 
 T_Annotatable = TypeVar("T_Annotatable", bound=Annotatable)
+
 
 # ########################
 # ##### PUBLIC
@@ -166,9 +169,9 @@ def deprecated(
                 additional_warn_text=additional_warn_text,
                 stacklevel=_get_warning_stacklevel(__obj),
             )
-            return apply_pre_call_decorator(__obj, warning_fn)  # type: ignore  # (pyright bug)
+            return apply_pre_call_decorator(__obj, warning_fn)
         else:
-            return __obj  # type: ignore  # (pyright bug)
+            return __obj
 
 
 def is_deprecated(obj: Annotatable) -> bool:
@@ -265,9 +268,9 @@ def deprecated_param(
                 additional_warn_text=additional_warn_text,
                 stacklevel=4,
             )
-            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)  # type: ignore  # (pyright bug)
+            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)
         else:
-            return __obj  # type: ignore  # (pyright bug)
+            return __obj
 
 
 def has_deprecated_params(obj: Annotatable) -> bool:
@@ -376,9 +379,9 @@ def experimental(
                 additional_warn_text=additional_warn_text,
                 stacklevel=_get_warning_stacklevel(__obj),
             )
-            return apply_pre_call_decorator(__obj, warning_fn)  # type: ignore  # (pyright bug)
+            return apply_pre_call_decorator(__obj, warning_fn)
         else:
-            return __obj  # type: ignore  # (pyright bug)
+            return __obj
 
 
 def is_experimental(obj: Annotatable) -> bool:
@@ -469,9 +472,9 @@ def experimental_param(
                 additional_warn_text=additional_warn_text,
                 stacklevel=4,
             )
-            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)  # type: ignore  # (pyright bug)
+            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)
         else:
-            return __obj  # type: ignore  # (pyright bug)
+            return __obj
 
 
 def has_experimental_params(obj: Annotatable) -> bool:
@@ -550,9 +553,9 @@ def _get_subject(obj: Annotatable, param: Optional[str] = None) -> str:
             return f"Property `{obj.fget.__qualname__ if obj.fget else obj}`"
         # classmethod and staticmethod don't themselves get a `__qualname__` attr until Python 3.10.
         elif isinstance(obj, classmethod):
-            return f"Class method `{_get_annotation_target(obj).__qualname__}`"  # type: ignore
+            return f"Class method `{_get_annotation_target(obj).__qualname__}`"
         elif isinstance(obj, staticmethod):
-            return f"Static method `{_get_annotation_target(obj).__qualname__}`"  # type: ignore
+            return f"Static method `{_get_annotation_target(obj).__qualname__}`"
         elif inspect.isfunction(obj):
             return f"Function `{obj.__qualname__}`"
         elif is_resource_def(obj):

@@ -145,17 +145,6 @@ def get_child_as(node: nodes.Node, index: int, node_type: Type[T_Node]) -> T_Nod
     return child
 
 
-# def substitute_deprecated_text(app: Sphinx, doctree: nodes.Element, docname: str) -> None:
-#     # The `.. deprecated::` directive is rendered as a `versionmodified` node.
-#     # Find them all and replace the auto-generated text, which requires a version argument, with a
-#     # plain string "Deprecated".
-#     for node in doctree.findall(versionmodified):
-#         paragraph = get_child_as(node, 0, nodes.paragraph)
-#         inline = get_child_as(paragraph, 0, nodes.inline)
-#         text = get_child_as(inline, 0, nodes.Text)
-#         inline.replace(text, nodes.Text("Deprecated"))
-
-
 def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
     dagster_errors = getattr(app.env, "dagster_errors", [])
     if len(dagster_errors) > 0:
