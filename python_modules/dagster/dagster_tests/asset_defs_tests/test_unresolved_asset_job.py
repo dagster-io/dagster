@@ -13,6 +13,7 @@ from dagster import (
     IOManager,
     Out,
     Output,
+    RetryPolicy,
     SourceAsset,
     define_asset_job,
     graph,
@@ -816,3 +817,20 @@ def test_job_partitions_def_unpartitioned_assets():
     @repository
     def my_repo():
         return [my_asset, my_job]
+
+
+def test_assets_retry_policy():
+    ops_retry_policy = RetryPolicy(max_retries=3, delay=60)
+
+    @asset
+    def a(source):
+        raise Exception
+
+    @asset
+    def b(a):
+        return a + 1
+
+    with pytest.raises(Exception, match="sources"):
+        define_asset_job("job", selection="*b", op_retry_policy=ops_retry_policy).resolve(
+            asset_graph=AssetGraph.from_assets([a, b])
+        )
