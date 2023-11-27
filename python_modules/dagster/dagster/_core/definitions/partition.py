@@ -1028,6 +1028,9 @@ class PartitionsSubset(ABC, Generic[T_str]):
     ) -> "PartitionsSubset[T_str]":
         ...
 
+    def to_serializable_subset(self) -> "PartitionsSubset":
+        return self
+
 
 @whitelist_for_serdes
 class SerializedPartitionsSubset(NamedTuple):
@@ -1316,3 +1319,8 @@ class AllPartitionsSubset(
         self, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "PartitionsSubset[T_str]":
         check.failed("Cannot create an empty AllPartitionsSubset")
+
+    def to_serializable_subset(self) -> PartitionsSubset:
+        return self.partitions_def.subset_with_partition_keys(
+            self.get_partition_keys()
+        ).to_serializable_subset()
