@@ -2,13 +2,9 @@ import {
   Box,
   FontFamily,
   Icon,
-  colorAccentReversed,
   colorBackgroundLight,
   colorBackgroundLightHover,
   colorBackgroundLighter,
-  colorBorderDefault,
-  colorLineageGroupBackground,
-  colorLineageGroupNodeBackgroundHover,
   colorLineageGroupNodeBorder,
   colorTextLight,
   colorTextLighter,
@@ -39,7 +35,6 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
         >
           {withMiddleTruncation(name, {maxLength: 14})}
         </div>
-        {/* <div style={{fontSize: 20}}>{withMiddleTruncation(location, {maxLength: 21})}</div> */}
       </Box>
     );
   }
@@ -54,7 +49,9 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           {withMiddleTruncation(name, {maxLength: 22})}
         </div>
       </Box>
-      <Box style={{lineHeight: '1em', color: colorTextLight()}}>{withMiddleTruncation(location, {maxLength: 31})}</Box>
+      <Box style={{lineHeight: '1em', color: colorTextLight()}}>
+        {withMiddleTruncation(location, {maxLength: 31})}
+      </Box>
     </Box>
   );
 };
@@ -120,7 +117,9 @@ const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
 const CollapsedGroupNodeContainer = styled.div`
   user-select: none;
   padding: 4px;
-  transition: transform linear 200ms, gap linear 200ms;
+  transition:
+    transform linear 200ms,
+    gap linear 200ms;
   cursor: pointer;
   display: flex;
   flex-direction: column;

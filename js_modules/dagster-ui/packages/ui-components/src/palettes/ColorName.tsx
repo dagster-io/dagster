@@ -40,7 +40,7 @@ export enum ColorName {
   BorderDefault = 'BorderDefault',
   BorderHover = 'BorderHover',
   BorderDisabled = 'BorderDisabled',
-  BorderFocussed = 'BorderFocussed',
+  BorderFocused = 'BorderFocused',
   AccentPrimary = 'AccentPrimary',
   AccentPrimaryHover = 'AccentPrimaryHover',
   AccentReversed = 'AccentReversed',
@@ -67,7 +67,8 @@ export enum ColorName {
   TooltipText = 'TooltipText',
   PopoverBackground = 'PopoverBackground',
   PopoverBackgroundHover = 'PopoverBackgroundHover',
-  //Lineage Graph
+
+  // Lineage Graph
   LineageDots = 'LineageDots',
   LineageEdge = 'LineageEdge',
   LineageEdgeHighlighted = 'LineageEdgeHighlighted',
@@ -76,7 +77,6 @@ export enum ColorName {
   LineageGroupNodeBorder = 'LineageGroupNodeBorder',
   LineageGroupNodeBorderHover = 'LineageGroupNodeBorderHover',
   LineageGroupBackground = 'LineageGroupBackground',
-
   LineageNodeBackground = 'LineageNodeBackground',
   LineageNodeBackgroundHover = 'LineageNodeBackgroundHover',
   LineageNodeBorder = 'LineageNodeBorder',

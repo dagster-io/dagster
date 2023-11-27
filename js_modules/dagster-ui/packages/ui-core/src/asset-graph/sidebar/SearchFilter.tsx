@@ -1,4 +1,11 @@
-import {MenuItem, useViewport, Suggest, colorBorderFocussed, colorBorderHover, colorBorderDefault} from '@dagster-io/ui-components';
+import {
+  MenuItem,
+  useViewport,
+  Suggest,
+  colorBorderFocused,
+  colorBorderHover,
+  colorBorderDefault,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -72,9 +79,9 @@ const SuggestWrapper = styled.div`
       border: 1px solid ${colorBorderHover()};
     }
     :focus {
-      border: 1px solid ${colorBorderFocussed()};
+      border: 1px solid ${colorBorderFocused()};
       box-shadow: none;
-      outline:none;
+      outline: none;
     }
   }
 `;
