@@ -1409,6 +1409,4 @@ def test_raise_error_on_target_static_partition_removed(
         if e is not None
     ]
     assert len(errors) == 1
-    assert (
-        "Partition c for asset AssetKey(['static_partition_removed']) existed at storage-time, but no longer does."
-    ) in errors[0].message
+    assert ("The following partitions were removed: {'c'}.") in errors[0].message

@@ -35,7 +35,11 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    PartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector, PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partitions import (
@@ -788,15 +792,21 @@ def _check_target_partitions_subset_is_valid(
             )
 
         else:
-            # Check that all target partitions still exist. If so, the backfill can continue.
-            for target_key in target_partitions_subset.get_partition_keys():
-                if not partitions_def.has_partition_key(
-                    target_key, instance_queryer.evaluation_time, instance_queryer
-                ):
-                    raise DagsterDefinitionChangedDeserializationError(
-                        f"Partition {target_key} for asset {asset_key} existed at storage-time,"
-                        " but no longer does"
-                    )
+            # Check that all target partitions still exist. If so, the backfill can continue.a
+            existent_partitions_subset = (
+                AllPartitionsSubset(
+                    partitions_def,
+                    dynamic_partitions_store=instance_queryer,
+                    current_time=instance_queryer.evaluation_time,
+                )
+                & target_partitions_subset
+            )
+            removed_partitions_subset = target_partitions_subset - existent_partitions_subset
+            if len(removed_partitions_subset) > 0:
+                raise DagsterDefinitionChangedDeserializationError(
+                    f"Targeted partitions for asset {asset_key} have been removed since this backfill was stored. "
+                    f"The following partitions were removed: {removed_partitions_subset.get_partition_keys()}"
+                )
 
     else:  # Asset unpartitioned at storage time
         if partitions_def is not None:
