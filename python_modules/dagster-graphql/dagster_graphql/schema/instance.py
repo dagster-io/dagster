@@ -1,7 +1,11 @@
 import sys
+from typing import (
+    TYPE_CHECKING,
+)
 
 import dagster._check as check
 import graphene
+import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher.base import RunLauncher
 from dagster._core.storage.captured_log_manager import CapturedLogManager
@@ -11,6 +15,9 @@ from dagster._utils.concurrency import ClaimedSlotInfo, ConcurrencyKeyInfo, Pend
 
 from .errors import GraphenePythonError
 from .util import ResolveInfo, non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
 
 
 class GrapheneRunLauncher(graphene.ObjectType):
@@ -158,11 +165,38 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
         return [GraphenePendingConcurrencyStep(step) for step in self._pending_steps]
 
 
+class GrapheneRunQueueConfig(graphene.ObjectType):
+    maxConcurrentRuns = graphene.NonNull(graphene.Int)
+    tagConcurrencyLimitsYaml = graphene.String()
+
+    class Meta:
+        name = "RunQueueConfig"
+
+    def __init__(self, run_queue_config: "RunQueueConfig"):
+        super().__init__()
+        self._run_queue_config = run_queue_config
+
+    def resolve_maxConcurrentRuns(self, _graphene_info: ResolveInfo):
+        return self._run_queue_config.max_concurrent_runs
+
+    def resolve_tagConcurrencyLimitsYaml(self, _graphene_info: ResolveInfo):
+        if not self._run_queue_config.tag_concurrency_limits:
+            return None
+
+        return yaml.dump(
+            self._run_queue_config.tag_concurrency_limits,
+            default_flow_style=False,
+            allow_unicode=True,
+            sort_keys=True,
+        )
+
+
 class GrapheneInstance(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     info = graphene.Field(graphene.String)
     runLauncher = graphene.Field(GrapheneRunLauncher)
     runQueuingSupported = graphene.NonNull(graphene.Boolean)
+    runQueueConfig = graphene.Field(GrapheneRunQueueConfig)
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
     hasInfo = graphene.NonNull(graphene.Boolean)
@@ -170,6 +204,10 @@ class GrapheneInstance(graphene.ObjectType):
     autoMaterializePaused = graphene.NonNull(graphene.Boolean)
     supportsConcurrencyLimits = graphene.NonNull(graphene.Boolean)
     concurrencyLimits = non_null_list(GrapheneConcurrencyKeyInfo)
+    concurrencyLimit = graphene.Field(
+        graphene.NonNull(GrapheneConcurrencyKeyInfo),
+        concurrencyKey=graphene.Argument(graphene.String),
+    )
 
     class Meta:
         name = "Instance"
@@ -199,6 +237,14 @@ class GrapheneInstance(graphene.ObjectType):
 
         return isinstance(self._instance.run_coordinator, QueuedRunCoordinator)
 
+    def resolve_runQueueConfig(self, _graphene_info: ResolveInfo):
+        from dagster._core.run_coordinator import QueuedRunCoordinator
+
+        if isinstance(self._instance.run_coordinator, QueuedRunCoordinator):
+            return GrapheneRunQueueConfig(self._instance.run_coordinator.get_run_queue_config())
+        else:
+            return None
+
     def resolve_executablePath(self, _graphene_info: ResolveInfo):
         return sys.executable
 
@@ -220,3 +266,7 @@ class GrapheneInstance(graphene.ObjectType):
             key_info = self._instance.event_log_storage.get_concurrency_info(key)
             res.append(GrapheneConcurrencyKeyInfo(key_info))
         return res
+
+    def resolve_concurrencyLimit(self, _graphene_info: ResolveInfo, concurrencyKey):
+        key_info = self._instance.event_log_storage.get_concurrency_info(concurrencyKey)
+        return GrapheneConcurrencyKeyInfo(key_info)

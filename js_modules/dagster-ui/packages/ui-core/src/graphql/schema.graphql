@@ -2317,6 +2317,7 @@ type Instance {
   info: String
   runLauncher: RunLauncher
   runQueuingSupported: Boolean!
+  runQueueConfig: RunQueueConfig
   executablePath: String!
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
@@ -2324,6 +2325,12 @@ type Instance {
   autoMaterializePaused: Boolean!
   supportsConcurrencyLimits: Boolean!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
+  concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
+}
+
+type RunQueueConfig {
+  maxConcurrentRuns: Int!
+  tagConcurrencyLimitsYaml: String
 }
 
 type ConcurrencyKeyInfo {
@@ -3424,6 +3431,7 @@ type Mutation {
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   freeConcurrencySlotsForRun(runId: String!): Boolean!
+  freeConcurrencySlots(runId: String!, stepKey: String): Boolean!
 }
 
 input ReexecutionParams {

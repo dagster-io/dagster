@@ -1,8 +1,12 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
 import {
+  Subheading,
+  MetadataTableWIP,
+  StyledRawCodeMirror,
   PageHeader,
   Heading,
   Box,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -19,35 +23,39 @@ import {
   Button,
   NonIdealState,
   Page,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Redirect} from 'react-router-dom';
+import {Link, Redirect} from 'react-router-dom';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {doneStatuses} from '../runs/RunStatuses';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {RunTableRunFragment} from '../runs/types/RunTable.types';
+import {RunStatusDot} from '../runs/RunStatusDots';
+import {failedStatuses} from '../runs/RunStatuses';
+import {titleForRun} from '../runs/RunUtils';
+import {TimeElapsed} from '../runs/TimeElapsed';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {
+  ConcurrencyKeyDetailsQuery,
+  ConcurrencyKeyDetailsQueryVariables,
+  ConcurrencyLimitFragment,
+  ConcurrencyStepFragment,
+  FreeConcurrencySlotsMutation,
+  FreeConcurrencySlotsMutationVariables,
   InstanceConcurrencyLimitsQuery,
   InstanceConcurrencyLimitsQueryVariables,
-  ConcurrencyLimitFragment,
-  SetConcurrencyLimitMutation,
-  SetConcurrencyLimitMutationVariables,
   RunsForConcurrencyKeyQuery,
   RunsForConcurrencyKeyQueryVariables,
-  FreeConcurrencySlotsForRunMutation,
-  FreeConcurrencySlotsForRunMutationVariables,
+  RunQueueConfigFragment,
+  SetConcurrencyLimitMutation,
+  SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
-
-const RUNS_LIMIT = 25;
 
 const InstanceConcurrencyPage = React.memo(() => {
   useTrackPageView();
@@ -65,7 +73,7 @@ const InstanceConcurrencyPage = React.memo(() => {
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
 
-  const content = data ? (
+  const opConcurrencyContent = data ? (
     flagInstanceConcurrencyLimits ? (
       <ConcurrencyLimits
         instanceConfig={data.instance.info}
@@ -88,7 +96,23 @@ const InstanceConcurrencyPage = React.memo(() => {
         title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="concurrency" refreshState={refreshState} />}
       />
-      {content}
+      <Box margin={{bottom: 64}}>
+        <RunConcurrencyContent
+          hasRunQueue={!!data?.instance.runQueuingSupported}
+          runQueueConfig={data?.instance.runQueueConfig}
+        />
+      </Box>
+      <Box>
+        <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
+          <Subheading>
+            <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+              <span>Global op/asset concurrency</span>
+              <Tag>Experimental</Tag>
+            </Box>
+          </Subheading>
+        </Box>
+        {opConcurrencyContent}
+      </Box>
     </Page>
   );
 });
@@ -112,6 +136,87 @@ type DialogAction =
     }
   | undefined;
 
+const RunConcurrencyContent = ({
+  hasRunQueue,
+  runQueueConfig,
+}: {
+  hasRunQueue: boolean;
+  runQueueConfig: RunQueueConfigFragment | null | undefined;
+}) => {
+  if (!hasRunQueue) {
+    return (
+      <>
+        <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+          <Subheading>Run concurrency</Subheading>
+        </Box>
+        <div>
+          Run concurrency is not supported with this run coordinator. To enable run concurrency
+          limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
+          <Mono>dagster.yaml</Mono>. See the{' '}
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href="https://docs.dagster.io/deployment/dagster-instance#queuedruncoordinator"
+          >
+            QueuedRunCoordinator documentation
+          </a>{' '}
+          for more information.
+        </div>
+      </>
+    );
+  }
+
+  const info_content = (
+    <Box padding={{vertical: 16, horizontal: 24}}>
+      Run concurrency can be set in your run queue settings. See the{' '}
+      <a
+        target="_blank"
+        rel="noreferrer"
+        href="https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines#configuring-run-level-concurrency"
+      >
+        run concurrency documentation
+      </a>{' '}
+      for more information.
+    </Box>
+  );
+
+  const settings_content = runQueueConfig ? (
+    <MetadataTableWIP>
+      <tbody>
+        <tr>
+          <td>Max concurrent runs:</td>
+          <td>
+            <Mono>{runQueueConfig.maxConcurrentRuns}</Mono>
+          </td>
+        </tr>
+        <tr>
+          <td>Tag concurrency limits:</td>
+          <td>
+            {runQueueConfig.tagConcurrencyLimitsYaml ? (
+              <StyledRawCodeMirror
+                value={runQueueConfig.tagConcurrencyLimitsYaml}
+                options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
+              />
+            ) : (
+              '-'
+            )}
+          </td>
+        </tr>
+      </tbody>
+    </MetadataTableWIP>
+  ) : null;
+
+  return (
+    <>
+      <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+        <Subheading>Run concurrency</Subheading>
+      </Box>
+      {info_content}
+      {settings_content}
+    </>
+  );
+};
+
 export const ConcurrencyLimits = ({
   instanceConfig,
   hasSupport,
@@ -124,12 +229,10 @@ export const ConcurrencyLimits = ({
   hasSupport?: boolean;
 }) => {
   const [action, setAction] = React.useState<DialogAction>();
-  const [selectedRuns, setSelectedRuns] = React.useState<string[] | undefined>(undefined);
   const [selectedKey, setSelectedKey] = React.useState<string | undefined>(undefined);
-  const onRunsDialogClose = React.useCallback(() => {
-    setSelectedRuns(undefined);
+  const onConcurrencyStepsDialogClose = React.useCallback(() => {
     setSelectedKey(undefined);
-  }, [setSelectedKey, setSelectedRuns]);
+  }, [setSelectedKey]);
 
   const limitsByKey = Object.fromEntries(
     limits.map(({concurrencyKey, slotCount}) => [concurrencyKey, slotCount]),
@@ -199,9 +302,10 @@ export const ConcurrencyLimits = ({
             <thead>
               <tr>
                 <th style={{width: '260px'}}>Concurrency key</th>
-                <th style={{width: '20%'}}>Occupied slots</th>
                 <th style={{width: '20%'}}>Total slots</th>
-                <th>Active runs</th>
+                <th style={{width: '20%'}}>Assigned steps</th>
+                <th style={{width: '20%'}}>Pending steps</th>
+                <th style={{width: '20%'}}>All steps</th>
                 <th></th>
               </tr>
             </thead>
@@ -209,24 +313,20 @@ export const ConcurrencyLimits = ({
               {limits.map((limit) => (
                 <tr key={limit.concurrencyKey}>
                   <td>{limit.concurrencyKey}</td>
-                  <td>{limit.activeSlotCount}</td>
                   <td>{limit.slotCount}</td>
+                  <td>{limit.pendingSteps.filter((x) => !!x.assignedTimestamp).length}</td>
+                  <td>{limit.pendingSteps.filter((x) => !x.assignedTimestamp).length}</td>
                   <td>
-                    {limit.activeRunIds.length === 0 ? (
-                      <>&mdash;</>
-                    ) : (
-                      <Tag intent="primary" interactive>
-                        <ButtonLink
-                          onClick={() => {
-                            setSelectedKey(limit.concurrencyKey);
-                            setSelectedRuns(limit.activeRunIds);
-                          }}
-                        >
-                          {limit.activeRunIds.length}{' '}
-                          {limit.activeRunIds.length === 1 ? 'run' : 'runs'}
-                        </ButtonLink>
-                      </Tag>
-                    )}
+                    <span style={{marginRight: 16}}>{limit.pendingSteps.length}</span>
+                    <Tag intent="primary" interactive>
+                      <ButtonLink
+                        onClick={() => {
+                          setSelectedKey(limit.concurrencyKey);
+                        }}
+                      >
+                        View all
+                      </ButtonLink>
+                    </Tag>
                   </td>
                   <td>
                     <ConcurrencyLimitActionMenu
@@ -258,14 +358,15 @@ export const ConcurrencyLimits = ({
         onComplete={refetch}
         concurrencyKey={action?.actionType === 'edit' ? action.concurrencyKey : ''}
       />
-      <ConcurrencyRunsDialog
+      <ConcurrencyStepsDialog
         title={
           <span>
-            Active runs for <strong>{selectedKey}</strong>
+            Concurrency steps for <strong>{selectedKey}</strong>
           </span>
         }
-        onClose={onRunsDialogClose}
-        runIds={selectedRuns}
+        onClose={onConcurrencyStepsDialogClose}
+        concurrencyKey={selectedKey}
+        onUpdate={refetch}
       />
     </>
   );
@@ -512,91 +613,112 @@ const DeleteConcurrencyLimitDialog = ({
   );
 };
 
-const ConcurrencyRunsDialog = ({
-  runIds,
+const ConcurrencyActionMenu = ({
+  pendingStep,
+  onUpdate,
+}: {
+  pendingStep: ConcurrencyStepFragment;
+  onUpdate: () => void;
+}) => {
+  const [freeSlots] = useMutation<
+    FreeConcurrencySlotsMutation,
+    FreeConcurrencySlotsMutationVariables
+  >(FREE_CONCURRENCY_SLOTS_MUTATION);
+
+  return (
+    <Popover
+      content={
+        <Menu>
+          <MenuItem
+            key="free-concurrency-slots-step"
+            icon="status"
+            text="Free concurrency slot for step"
+            onClick={async () => {
+              const resp = await freeSlots({
+                variables: {runId: pendingStep.runId, stepKey: pendingStep.stepKey},
+              });
+              if (resp.data?.freeConcurrencySlots) {
+                onUpdate();
+                await showSharedToaster({
+                  intent: 'success',
+                  icon: 'copy_to_clipboard_done',
+                  message: 'Freed concurrency slot',
+                });
+              }
+            }}
+          />
+          <MenuItem
+            key="free-concurrency-slots-run"
+            icon="status"
+            text="Free all concurrency slots for run"
+            onClick={async () => {
+              await showSharedToaster({message: 'Freeing concurrency slots...'});
+              const resp = await freeSlots({variables: {runId: pendingStep.runId}});
+              if (resp.data?.freeConcurrencySlots) {
+                onUpdate();
+                await showSharedToaster({
+                  intent: 'success',
+                  icon: 'copy_to_clipboard_done',
+                  message: 'Freed concurrency slots',
+                });
+              }
+            }}
+          />
+        </Menu>
+      }
+      position="bottom-right"
+    >
+      <Button rightIcon={<Icon name="expand_more" />}>Actions</Button>
+    </Popover>
+  );
+};
+
+const ConcurrencyStepsDialog = ({
+  concurrencyKey,
   onClose,
   title,
+  onUpdate,
 }: {
-  runIds?: string[];
+  concurrencyKey?: string;
   title: string | React.ReactNode;
   onClose: () => void;
+  onUpdate: () => void;
 }) => {
-  const {data} = useQuery<RunsForConcurrencyKeyQuery, RunsForConcurrencyKeyQueryVariables>(
-    RUNS_FOR_CONCURRENCY_KEY_QUERY,
+  const queryResult = useQuery<ConcurrencyKeyDetailsQuery, ConcurrencyKeyDetailsQueryVariables>(
+    CONCURRENCY_KEY_DETAILS_QUERY,
     {
       variables: {
-        limit: RUNS_LIMIT,
-        filter: {
-          runIds: runIds || [],
-        },
+        concurrencyKey: concurrencyKey || '',
       },
-      skip: !runIds || !runIds.length,
+      skip: !concurrencyKey,
     },
   );
-
-  const [freeSlots] = useMutation<
-    FreeConcurrencySlotsForRunMutation,
-    FreeConcurrencySlotsForRunMutationVariables
-  >(FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION);
-
-  const freeSlotsActionMenuItem = React.useCallback(
-    (run: RunTableRunFragment) => {
-      return doneStatuses.has(run.status)
-        ? [
-            <MenuItem
-              key="free-concurrency-slots"
-              icon="status"
-              text="Free concurrency slots for run"
-              onClick={async () => {
-                const resp = await freeSlots({variables: {runId: run.id}});
-                if (resp.data?.freeConcurrencySlotsForRun) {
-                  await showSharedToaster({
-                    intent: 'success',
-                    icon: 'copy_to_clipboard_done',
-                    message: 'Freed concurrency slots',
-                  });
-                }
-                onClose();
-              }}
-            />,
-          ]
-        : [];
-    },
-    [freeSlots, onClose],
-  );
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const {data} = queryResult;
+  const refetch = React.useCallback(() => {
+    queryResult.refetch();
+    onUpdate();
+  }, [queryResult, onUpdate]);
 
   return (
     <Dialog
-      isOpen={!!runIds && runIds.length > 0}
+      isOpen={!!concurrencyKey}
       title={title}
       onClose={onClose}
-      style={{minWidth: '400px', maxWidth: 'calc(100% - 40px)', width: 'fit-content'}}
+      style={{
+        minWidth: '400px',
+        maxWidth: '1000px',
+        width: '90vw',
+        maxHeight: '90vh',
+      }}
     >
-      <Box padding={{vertical: 16}}>
+      <Box padding={{vertical: 16}} flex={{grow: 1}} style={{overflowY: 'auto'}}>
         {!data ? (
           <Box padding={{vertical: 64}}>
             <Spinner purpose="section" />
           </Box>
-        ) : data.pipelineRunsOrError.__typename === 'Runs' ? (
-          <div style={{overflow: 'auto'}}>
-            <RunTable
-              runs={data.pipelineRunsOrError.results}
-              additionalActionsForRun={freeSlotsActionMenuItem}
-            />
-          </div>
         ) : (
-          <Box padding={{vertical: 64}}>
-            <NonIdealState
-              icon="error"
-              title="Query Error"
-              description={
-                data.pipelineRunsOrError.__typename === 'PythonError'
-                  ? data.pipelineRunsOrError.message
-                  : 'There was a problem querying for these runs.'
-              }
-            />
-            ;
-          </Box>
+          <PendingStepsTable keyInfo={data.instance.concurrencyLimit} refresh={refetch} />
         )}
       </Box>
       <DialogFooter>
@@ -608,12 +730,197 @@ const ConcurrencyRunsDialog = ({
   );
 };
 
+const PendingStepsTable = ({
+  keyInfo,
+  refresh,
+}: {
+  keyInfo: ConcurrencyLimitFragment;
+  refresh: () => void;
+}) => {
+  const runIds = [...new Set(keyInfo.pendingSteps.map((step) => step.runId))];
+  const queryResult = useQuery<RunsForConcurrencyKeyQuery, RunsForConcurrencyKeyQueryVariables>(
+    RUNS_FOR_CONCURRENCY_KEY_QUERY,
+    {
+      variables: {
+        filter: {runIds},
+      },
+      skip: !keyInfo.pendingSteps.length,
+    },
+  );
+  const statusByRunId: {[id: string]: RunStatus} = {};
+  const runs =
+    queryResult.data?.pipelineRunsOrError.__typename === 'Runs'
+      ? queryResult.data.pipelineRunsOrError.results
+      : [];
+  runs.forEach((run) => {
+    statusByRunId[run.id] = run.status;
+  });
+
+  const steps = [...keyInfo.pendingSteps];
+  steps.sort((a, b) => {
+    if (a.priority && b.priority && a.priority !== b.priority) {
+      return a.priority - b.priority;
+    }
+    return a.enqueuedTimestamp - b.enqueuedTimestamp;
+  });
+  const assignedSteps = steps.filter((step) => !!step.assignedTimestamp);
+  const pendingSteps = steps.filter((step) => !step.assignedTimestamp);
+
+  const tableHeader = (
+    <thead>
+      <tr>
+        <th>Run ID</th>
+        <th>Step key</th>
+        <th>Assigned</th>
+        <th>Queued</th>
+        <th>
+          <Box flex={{alignItems: 'center', direction: 'row', gap: 4}}>
+            Priority
+            <Tooltip
+              placement="top"
+              content="Priority can be set on each op/asset using the 'dagster/priority' tag. Higher priority steps will be assigned slots first."
+            >
+              <Icon name="info" color={Colors.Gray500} />
+            </Tooltip>
+          </Box>
+        </th>
+        <th></th>
+      </tr>
+    </thead>
+  );
+
+  if (!steps.length) {
+    return (
+      <Table>
+        {tableHeader}
+        <tbody>
+          <tr>
+            <td colSpan={6}>
+              <Box
+                flex={{alignItems: 'center', justifyContent: 'center'}}
+                style={{color: Colors.Gray500}}
+                padding={16}
+              >
+                There are no active or pending steps for this concurrency key.
+              </Box>
+            </td>
+          </tr>
+        </tbody>
+      </Table>
+    );
+  }
+
+  return (
+    <Table>
+      {tableHeader}
+      <tbody style={{backgroundColor: Colors.Yellow50}}>
+        {assignedSteps.map((step) => (
+          <PendingStepRow
+            key={step.runId + step.stepKey}
+            step={step}
+            statusByRunId={statusByRunId}
+            onUpdate={refresh}
+          />
+        ))}
+      </tbody>
+      <tbody>
+        {pendingSteps.map((step) => (
+          <PendingStepRow
+            key={step.runId + step.stepKey}
+            step={step}
+            statusByRunId={statusByRunId}
+            onUpdate={refresh}
+          />
+        ))}
+      </tbody>
+    </Table>
+  );
+};
+
+const PendingStepRow = ({
+  step,
+  statusByRunId,
+  onUpdate,
+}: {
+  step: ConcurrencyStepFragment;
+  statusByRunId: {[id: string]: RunStatus};
+  onUpdate: () => void;
+}) => {
+  const runStatus = statusByRunId[step.runId];
+  return (
+    <tr>
+      <td>
+        {runStatus ? (
+          <Link to={`/runs/${step.runId}`}>
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+              <RunStatusDot status={runStatus} size={10} />
+              <Mono>{titleForRun({id: step.runId})}</Mono>
+              {failedStatuses.has(runStatus) ? (
+                <Tooltip
+                  placement="top"
+                  content="Slots for canceled / failed runs can automatically be freed by configuring a run monitoring setting."
+                >
+                  <Icon name="info" color={Colors.Gray500} />
+                </Tooltip>
+              ) : null}
+            </Box>
+          </Link>
+        ) : (
+          <Mono>{titleForRun({id: step.runId})}</Mono>
+        )}
+      </td>
+      <td>
+        <Mono>{step.stepKey}</Mono>
+      </td>
+      <td>
+        {step.assignedTimestamp ? (
+          <TimeElapsed startUnix={step.assignedTimestamp} endUnix={null} />
+        ) : (
+          '-'
+        )}
+      </td>
+      <td>
+        {step.enqueuedTimestamp ? (
+          <TimeElapsed startUnix={step.enqueuedTimestamp} endUnix={null} />
+        ) : (
+          '-'
+        )}
+      </td>
+      <td>{step.priority}</td>
+      <td>
+        <ConcurrencyActionMenu pendingStep={step} onUpdate={onUpdate} />
+      </td>
+    </tr>
+  );
+};
+
+export const CONCURRENCY_STEP_FRAGMENT = gql`
+  fragment ConcurrencyStepFragment on PendingConcurrencyStep {
+    runId
+    stepKey
+    enqueuedTimestamp
+    assignedTimestamp
+    priority
+  }
+`;
 export const CONCURRENCY_LIMIT_FRAGMENT = gql`
   fragment ConcurrencyLimitFragment on ConcurrencyKeyInfo {
     concurrencyKey
     slotCount
-    activeRunIds
-    activeSlotCount
+    claimedSlots {
+      runId
+      stepKey
+    }
+    pendingSteps {
+      ...ConcurrencyStepFragment
+    }
+  }
+  ${CONCURRENCY_STEP_FRAGMENT}
+`;
+export const RUN_QUEUE_CONFIG_FRAGMENT = gql`
+  fragment RunQueueConfigFragment on RunQueueConfig {
+    maxConcurrentRuns
+    tagConcurrencyLimitsYaml
   }
 `;
 
@@ -623,6 +930,10 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
       id
       info
       supportsConcurrencyLimits
+      runQueuingSupported
+      runQueueConfig {
+        ...RunQueueConfigFragment
+      }
       concurrencyLimits {
         ...ConcurrencyLimitFragment
       }
@@ -630,6 +941,7 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
   }
 
   ${CONCURRENCY_LIMIT_FRAGMENT}
+  ${RUN_QUEUE_CONFIG_FRAGMENT}
 `;
 
 const SET_CONCURRENCY_LIMIT_MUTATION = gql`
@@ -638,10 +950,22 @@ const SET_CONCURRENCY_LIMIT_MUTATION = gql`
   }
 `;
 
-export const FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION = gql`
-  mutation FreeConcurrencySlotsForRun($runId: String!) {
-    freeConcurrencySlotsForRun(runId: $runId)
+export const FREE_CONCURRENCY_SLOTS_MUTATION = gql`
+  mutation FreeConcurrencySlots($runId: String!, $stepKey: String) {
+    freeConcurrencySlots(runId: $runId, stepKey: $stepKey)
   }
+`;
+
+const CONCURRENCY_KEY_DETAILS_QUERY = gql`
+  query ConcurrencyKeyDetailsQuery($concurrencyKey: String!) {
+    instance {
+      id
+      concurrencyLimit(concurrencyKey: $concurrencyKey) {
+        ...ConcurrencyLimitFragment
+      }
+    }
+  }
+  ${CONCURRENCY_LIMIT_FRAGMENT}
 `;
 
 const RUNS_FOR_CONCURRENCY_KEY_QUERY = gql`
@@ -650,17 +974,9 @@ const RUNS_FOR_CONCURRENCY_KEY_QUERY = gql`
       ... on Runs {
         results {
           id
-          ... on PipelineRun {
-            ...RunTableRunFragment
-          }
+          status
         }
-      }
-      ... on PythonError {
-        ...PythonErrorFragment
       }
     }
   }
-
-  ${RUN_TABLE_RUN_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
 `;
