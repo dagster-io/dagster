@@ -118,7 +118,7 @@ const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) =>
       width="20"
       height="20"
       rx="10"
-      fill={disabled ? colorAccentWhite() : colorAccentWhite()}
+      fill={colorAccentWhite()}
     />
   </svg>
 );

@@ -11,7 +11,7 @@ import {
   colorBackgroundGray,
   colorBackgroundYellow,
   colorBorderDefault,
-  colorBorderFocussed,
+  colorBorderFocused,
   colorBorderHover,
   colorTextDefault,
   colorTextYellow,
@@ -761,10 +761,10 @@ const GanttChartContainer = styled.div`
       box-shadow ${CSS_DURATION}ms linear;
 
     &.focused {
-      box-shadow: 0 0 0 2px ${colorBorderFocussed()};
+      box-shadow: 0 0 0 2px ${colorBorderFocused()};
     }
     &.hovered {
-      box-shadow: 0 0 0 2px ${colorBorderFocussed()};
+      box-shadow: 0 0 0 2px ${colorBorderFocused()};
     }
     &.dynamic {
       filter: brightness(115%);
