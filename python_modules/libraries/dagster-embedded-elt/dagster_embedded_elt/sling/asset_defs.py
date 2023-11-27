@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Any, Dict, List, Optional, Union
 
@@ -9,8 +10,9 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import experimental
+from dagster._utils.env import environ
 
-from dagster_embedded_elt.sling.resources import SlingMode, SlingResource
+from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingMode, SlingResource
 
 
 @experimental
@@ -99,3 +101,17 @@ def build_sling_asset(
         )
 
     return sync
+
+
+@experimental
+def build_assets_from_sling_stream(source: SlingConnectionResource, target: SlingConnectionResource, source_stream: str) -> AssetsDefinition:
+
+    sling_resource = SlingResource(
+        source_connection=source,
+        target_connection=target,
+    )
+
+    @multi_asset
+    def _sling_assets():
+
+        
