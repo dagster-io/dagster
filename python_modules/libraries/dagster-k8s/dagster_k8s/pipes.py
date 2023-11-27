@@ -272,7 +272,7 @@ class _PipesK8sClient(PipesClient):
                 )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)
-        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
+        return PipesClientCompletedInvocation(pipes_session)
 
 
 def build_pod_body(

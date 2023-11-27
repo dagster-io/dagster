@@ -619,6 +619,7 @@ def open_pipes_session(
                 message_handler=message_handler,
                 context_injector_params=ci_params,
                 message_reader_params=mr_params,
+                context=context,
             )
     finally:
         if not message_handler.received_opened_message:
