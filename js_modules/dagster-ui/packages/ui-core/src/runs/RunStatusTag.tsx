@@ -4,7 +4,6 @@ import {
   Popover,
   Tag,
   colorAccentBlue,
-  colorAccentLavender,
   colorAccentGray,
   colorAccentGrayHover,
   colorAccentGreen,

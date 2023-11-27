@@ -2,9 +2,6 @@ import {
   Box,
   Icon,
   colorLineageGroupBackground,
-  colorBackgroundLight,
-  colorBackgroundLightHover,
-  colorBorderDefault,
   colorLineageGroupNodeBorder,
   colorLineageGroupNodeBackground,
   colorLineageGroupNodeBackgroundHover,
@@ -74,13 +71,12 @@ const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
   border-bottom-right-radius: 0;
   border-bottom: 0;
   position: relative;
-  transition: 
+  transition:
     background 100ms linear,
     border-color 100ms linear;
 
   &:hover {
     background: ${colorLineageGroupNodeBackgroundHover()};
     border-color: ${colorLineageGroupNodeBorderHover()};
-
   }
 `;
