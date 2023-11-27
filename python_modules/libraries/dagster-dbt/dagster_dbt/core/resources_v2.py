@@ -896,7 +896,7 @@ class DbtCliResource(ConfigurableResource):
                 and dagster_dbt_translator.settings.enable_asset_checks
             ):
                 logger.info(
-                    "Setting environment variable `DBT_INDIRECT_SELECTION` to 'empty' When dbt "
+                    "Setting environment variable `DBT_INDIRECT_SELECTION` to 'empty'. When dbt "
                     "tests are modeled as asset checks, they are executed through explicit selection."
                 )
                 env["DBT_INDIRECT_SELECTION"] = "empty"
