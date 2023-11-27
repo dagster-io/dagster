@@ -49,7 +49,7 @@ class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
             ):
                 # PartitionKeysTimeWindowPartitionsSubsets are not serializable, so
                 # we convert them to TimeWindowPartitionsSubsets
-                subsets_by_key = {k: v.to_serializable_susbet() for k, v in field_value.items()}
+                subsets_by_key = {k: v.to_serializable_subset() for k, v in field_value.items()}
 
                 # If the mapping is keyed by AssetKey wrap it in a SerializableNonScalarKeyMapping
                 # so it can be serialized. This can be expanded to other key types in the future.
