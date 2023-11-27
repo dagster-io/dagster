@@ -1,8 +1,11 @@
 import {
   colorAccentBlue,
-  colorAccentBlueHover,
+  colorAccentLavender,
   colorAccentGreen,
   colorAccentRed,
+  colorAccentCyan,
+  colorAccentGray,
+  colorBackgroundDisabled,
 } from '@dagster-io/ui-components';
 
 import {queuedStatuses, inProgressStatuses, failedStatuses, successStatuses} from './RunStatuses';
@@ -13,15 +16,15 @@ type BackgroundStatus = 'inProgress' | 'queued' | 'failed' | 'succeeded' | 'sche
 const statusToColor = (status: BackgroundStatus) => {
   switch (status) {
     case 'queued':
-      return colorAccentBlueHover();
+      return colorBackgroundDisabled();
+    case 'scheduled':
+      return colorBackgroundDisabled();
     case 'inProgress':
       return colorAccentBlue();
     case 'failed':
       return colorAccentRed();
     case 'succeeded':
       return colorAccentGreen();
-    case 'scheduled':
-      return colorAccentBlueHover();
   }
 };
 

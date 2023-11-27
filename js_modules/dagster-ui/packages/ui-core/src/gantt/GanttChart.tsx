@@ -11,7 +11,9 @@ import {
   colorBackgroundGray,
   colorBackgroundYellow,
   colorBorderDefault,
+  colorBorderFocussed,
   colorBorderHover,
+  colorTextDefault,
   colorTextYellow,
   FontFamily,
   Group,
@@ -744,7 +746,6 @@ const GanttChartContainer = styled.div`
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
     padding: 3px;
     padding-right: 1px;
-    border: 1px solid transparent;
     border-radius: 2px;
     white-space: nowrap;
     font-family: ${FontFamily.monospace};
@@ -756,14 +757,14 @@ const GanttChartContainer = styled.div`
       top ${CSS_DURATION}ms linear,
       left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear,
-      height ${CSS_DURATION}ms linear;
+      height ${CSS_DURATION}ms linear,
+      box-shadow ${CSS_DURATION}ms linear;
 
     &.focused {
-      border: 1px solid ${colorBorderDefault()};
-      box-shadow: 0 0 0 2px ${colorAccentYellow()};
+      box-shadow: 0 0 0 2px ${colorBorderFocussed()};
     }
     &.hovered {
-      border: 1px solid ${colorBorderHover()};
+      box-shadow: 0 0 0 2px ${colorBorderFocussed()};
     }
     &.dynamic {
       filter: brightness(115%);
