@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Iterator
 
-import boto3
 import pytest
 from dagster import op
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
@@ -50,9 +49,7 @@ from dagster._core.pipes.utils import (
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils.env import environ
-from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
 from dagster_pipes import DagsterPipesError
-from moto.server import ThreadedMotoServer
 
 _PYTHON_EXECUTABLE = shutil.which("python")
 
@@ -67,47 +64,16 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
         yield file.name
 
 
-_S3_TEST_BUCKET = "ext-testing"
-_S3_SERVER_PORT = 5193
-_S3_SERVER_URL = f"http://localhost:{_S3_SERVER_PORT}"
-
-
 @pytest.fixture
 def external_script() -> Iterator[str]:
     # This is called in an external process and so cannot access outer scope
     def script_fn():
-        import os
-        import time
-
         from dagster_pipes import (
-            PipesS3ContextLoader,
-            PipesS3MessageWriter,
             open_dagster_pipes,
         )
 
-        context_injector_spec = os.getenv("CONTEXT_INJECTOR_SPEC")
-        message_reader_spec = os.getenv("MESSAGE_READER_SPEC")
-
-        context_loader = None
-        message_writer = None
-        if context_injector_spec == "user/s3" or message_reader_spec == "user/s3":
-            import boto3
-
-            client = boto3.client(
-                "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
-            )
-            if context_injector_spec == "user/s3":
-                context_loader = PipesS3ContextLoader(client=client)
-            if message_reader_spec == "user/s3":
-                message_writer = PipesS3MessageWriter(client, interval=0.001)
-
-        with open_dagster_pipes(
-            context_loader=context_loader, message_writer=message_writer
-        ) as context:
+        with open_dagster_pipes() as context:
             context.log.info("hello world")
-            time.sleep(
-                0.1
-            )  # sleep to make sure that we encompass multiple intervals for blob store IO
             context.report_asset_materialization(
                 metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
                 data_version="alpha",
@@ -126,32 +92,19 @@ def external_script() -> Iterator[str]:
         yield script_path
 
 
-@pytest.fixture
-def s3_client() -> Iterator[boto3.client]:
-    # We need to use the moto server for cross-process communication
-    server = ThreadedMotoServer(port=5193)  # on localhost:5000 by default
-    server.start()
-    client = boto3.client("s3", region_name="us-east-1", endpoint_url=_S3_SERVER_URL)
-    client.create_bucket(Bucket=_S3_TEST_BUCKET)
-    yield client
-    server.stop()
-
-
 @pytest.mark.parametrize(
     ("context_injector_spec", "message_reader_spec"),
     [
         ("default", "default"),
         ("default", "user/file"),
-        ("default", "user/s3"),
         ("user/file", "default"),
         ("user/file", "user/file"),
         ("user/env", "default"),
         ("user/env", "user/file"),
-        ("user/s3", "default"),
     ],
 )
 def test_pipes_subprocess(
-    capsys, tmpdir, external_script, s3_client, context_injector_spec, message_reader_spec
+    capsys, tmpdir, external_script, context_injector_spec, message_reader_spec
 ):
     if context_injector_spec == "default":
         context_injector = None
@@ -159,8 +112,6 @@ def test_pipes_subprocess(
         context_injector = PipesTempFileContextInjector()
     elif context_injector_spec == "user/env":
         context_injector = PipesEnvContextInjector()
-    elif context_injector_spec == "user/s3":
-        context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
     else:
         assert False, "Unreachable"
 
@@ -168,10 +119,7 @@ def test_pipes_subprocess(
         message_reader = None
     elif message_reader_spec == "user/file":
         message_reader = PipesTempFileMessageReader()
-    elif message_reader_spec == "user/s3":
-        message_reader = PipesS3MessageReader(
-            bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001
-        )
+
     else:
         assert False, "Unreachable"
 
