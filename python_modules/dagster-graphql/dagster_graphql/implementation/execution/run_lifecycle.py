@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple, cast
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.host_representation import CodeLocation
 from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -60,6 +61,7 @@ def create_valid_pipeline_run(
     graphene_info: "ResolveInfo",
     external_pipeline: ExternalJob,
     execution_params: ExecutionParams,
+    code_location: CodeLocation,
 ) -> DagsterRun:
     ensure_valid_config(external_pipeline, execution_params.run_config)
 
@@ -110,6 +112,7 @@ def create_valid_pipeline_run(
         status=DagsterRunStatus.NOT_STARTED,
         external_job_origin=external_pipeline.get_external_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
+        code_location=code_location,
     )
 
     return dagster_run

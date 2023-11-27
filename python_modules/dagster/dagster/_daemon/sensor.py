@@ -1093,4 +1093,5 @@ def _create_sensor_run(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
         asset_check_selection=None,
+        code_location=code_location,
     )

@@ -223,6 +223,7 @@ def test_successful_run_from_pending(
         asset_selection=None,
         op_selection=None,
         asset_check_selection=None,
+        code_location=code_location,
     )
 
     run_id = created_run.run_id

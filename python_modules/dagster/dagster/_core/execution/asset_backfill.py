@@ -1101,9 +1101,8 @@ def submit_run_request(
 
     selector_id = hash_collection(pipeline_selector)
 
+    code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
     if selector_id not in pipeline_and_execution_plan_cache:
-        code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
-
         external_job = code_location.get_external_job(pipeline_selector)
 
         external_execution_plan = code_location.get_external_execution_plan(
@@ -1138,6 +1137,7 @@ def submit_run_request(
         job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection),
         asset_check_selection=None,
+        code_location=code_location,
     )
 
     instance.submit_run(run.run_id, workspace)

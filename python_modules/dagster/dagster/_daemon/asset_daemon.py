@@ -609,6 +609,7 @@ def submit_asset_run(
             job_code_origin=external_job.get_python_origin(),
             asset_selection=frozenset(asset_keys),
             asset_check_selection=None,
+            code_location=code_location,
         )
 
     check_for_debug_crash(debug_crash_flags, "RUN_CREATED")

@@ -1108,6 +1108,7 @@ class DagsterInstance(DynamicPartitionsStore):
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
+        code_location: Optional["CodeLocation"] = None,
     ) -> DagsterRun:
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
@@ -1168,6 +1169,7 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_job_snapshot=job_def.get_parent_job_snapshot(),
             external_job_origin=external_job_origin,
             job_code_origin=job_code_origin,
+            code_location=code_location,
         )
 
     def _construct_run_with_snapshots(
@@ -1308,8 +1310,12 @@ class DagsterInstance(DynamicPartitionsStore):
         return execution_plan_snapshot_id
 
     def _log_asset_planned_events(
-        self, dagster_run: DagsterRun, execution_plan_snapshot: "ExecutionPlanSnapshot"
+        self,
+        dagster_run: DagsterRun,
+        execution_plan_snapshot: "ExecutionPlanSnapshot",
+        code_location: Optional["CodeLocation"],
     ) -> None:
+        from dagster._core.definitions.partition_key_range import PartitionKeyRange
         from dagster._core.events import (
             AssetMaterializationPlannedData,
             DagsterEvent,
@@ -1346,24 +1352,41 @@ class DagsterInstance(DynamicPartitionsStore):
 
                             # TODO: resolve which partitions are in the range, and emit an event for each
 
-                        partition = (
-                            partition_tag
-                            if check.not_none(output.properties).is_asset_partitioned
-                            else None
-                        )
+                            if code_location is None:
+                                raise DagsterInvariantViolationError(
+                                    "Must provide a code location to create_run when creating "
+                                    "a run with a partition range."
+                                )
 
-                        event = DagsterEvent(
-                            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                            job_name=job_name,
-                            message=(
-                                f"{job_name} intends to materialize asset {asset_key.to_string()}"
-                            ),
-                            event_specific_data=AssetMaterializationPlannedData(
-                                asset_key, partition=partition
-                            ),
-                            step_key=step.key,
-                        )
-                        self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
+                            external_asset_node = code_location.get_external_asset_node(asset_key)
+                            partition_keys = (
+                                check.not_none(external_asset_node.partitions_def_data)
+                                .get_partitions_definition()
+                                .get_partition_keys_in_range(
+                                    PartitionKeyRange(partition_range_start, partition_range_end)
+                                )
+                            )
+                        else:
+                            partition = (
+                                partition_tag
+                                if check.not_none(output.properties).is_asset_partitioned
+                                else None
+                            )
+                            partition_keys = [partition]
+
+                        for partition_key in partition_keys:
+                            event = DagsterEvent(
+                                event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                                job_name=job_name,
+                                message=(
+                                    f"{job_name} intends to materialize asset {asset_key.to_string()}"
+                                ),
+                                event_specific_data=AssetMaterializationPlannedData(
+                                    asset_key, partition=partition_key
+                                ),
+                                step_key=step.key,
+                            )
+                            self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
                     if check.not_none(output.properties).asset_check_key:
                         asset_check_key = check.not_none(
@@ -1407,7 +1430,9 @@ class DagsterInstance(DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["ExternalJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
+        code_location: Optional["CodeLocation"],
     ) -> DagsterRun:
+        # here
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.definitions.utils import validate_tags
         from dagster._core.host_representation.origin import ExternalJobOrigin
@@ -1537,7 +1562,7 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_run = self._run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot:
-            self._log_asset_planned_events(dagster_run, execution_plan_snapshot)
+            self._log_asset_planned_events(dagster_run, execution_plan_snapshot, code_location)
 
         return dagster_run
 
@@ -1626,6 +1651,7 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_check_selection=parent_run.asset_check_selection,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
+            code_location=code_location,
         )
 
     def register_managed_run(
