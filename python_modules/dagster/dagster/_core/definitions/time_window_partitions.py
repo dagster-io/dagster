@@ -96,7 +96,7 @@ def is_second_ambiguous_time(dt: datetime, tz: str):
         timedelta,
         (tzinfo.utcoffset(dt) if dt.fold else tzinfo.utcoffset(dt.replace(fold=1))),
     )
-    return offset_before > offset_after and dt.fold > 0
+    return offset_before > offset_after
 
 
 def dst_safe_fmt(fmt: str) -> str:
