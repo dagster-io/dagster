@@ -599,8 +599,8 @@ class AutoMaterializeAssetPartitionsFilter(
 
     Attributes:
         latest_run_required_tags (Optional[Sequence[str]]): `passes` returns
-            True if the run responsible for the latest materialization of the asset partition does
-            not have all of these tags.
+            True if the run responsible for the latest materialization of the asset partition
+            has all of these tags.
     """
 
     @property
