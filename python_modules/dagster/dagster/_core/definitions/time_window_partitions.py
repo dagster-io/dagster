@@ -1142,7 +1142,7 @@ def daily_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[DailyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -1278,7 +1278,7 @@ def hourly_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[HourlyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -1422,7 +1422,7 @@ def monthly_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[MonthlyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -1571,7 +1571,7 @@ def weekly_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[WeeklyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -2281,7 +2281,7 @@ def _flatten(
 
 
 def fetch_flattened_time_window_ranges(
-    subsets: Mapping[PartitionRangeStatus, BaseTimeWindowPartitionsSubset]
+    subsets: Mapping[PartitionRangeStatus, BaseTimeWindowPartitionsSubset],
 ) -> Sequence[PartitionTimeWindowStatus]:
     """Given potentially overlapping subsets, return a flattened list of timewindows where the highest priority status wins
     on overlaps.

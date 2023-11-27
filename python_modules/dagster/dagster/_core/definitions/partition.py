@@ -812,7 +812,7 @@ def static_partitioned_config(
     )
 
     def inner(
-        fn: Callable[[str], Mapping[str, Any]]
+        fn: Callable[[str], Mapping[str, Any]],
     ) -> PartitionedConfig[StaticPartitionsDefinition]:
         return PartitionedConfig(
             partitions_def=StaticPartitionsDefinition(partition_keys),

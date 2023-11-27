@@ -58,7 +58,7 @@ from ..temp_file import (
 
 
 def create_test_pipeline_execution_context(
-    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None
+    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
 ) -> PlanExecutionContext:
     loggers = check.opt_mapping_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition

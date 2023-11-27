@@ -399,7 +399,7 @@ class AutoMaterializeRule(ABC):
     @public
     @staticmethod
     def materialize_on_parent_updated(
-        updated_parent_filter: Optional["AutoMaterializeAssetPartitionsFilter"] = None
+        updated_parent_filter: Optional["AutoMaterializeAssetPartitionsFilter"] = None,
     ) -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.

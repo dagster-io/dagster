@@ -358,7 +358,7 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
 
 
 def default_metadata_from_dbt_resource_props(
-    dbt_resource_props: Mapping[str, Any]
+    dbt_resource_props: Mapping[str, Any],
 ) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
     columns = dbt_resource_props.get("columns", {})
@@ -399,7 +399,7 @@ def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any])
 
 
 def group_from_dbt_resource_props_fallback_to_directory(
-    dbt_resource_props: Mapping[str, Any]
+    dbt_resource_props: Mapping[str, Any],
 ) -> Optional[str]:
     """Get the group name for a dbt node.
 
@@ -456,7 +456,7 @@ def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Option
 
 
 def _legacy_freshness_policy_fn(
-    freshness_policy_config: Mapping[str, Any]
+    freshness_policy_config: Mapping[str, Any],
 ) -> Optional[FreshnessPolicy]:
     if freshness_policy_config:
         return FreshnessPolicy(
@@ -468,7 +468,7 @@ def _legacy_freshness_policy_fn(
 
 
 def default_auto_materialize_policy_fn(
-    dbt_resource_props: Mapping[str, Any]
+    dbt_resource_props: Mapping[str, Any],
 ) -> Optional[AutoMaterializePolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
@@ -496,7 +496,7 @@ def default_auto_materialize_policy_fn(
 
 
 def _auto_materialize_policy_fn(
-    auto_materialize_policy_config: Mapping[str, Any]
+    auto_materialize_policy_config: Mapping[str, Any],
 ) -> Optional[AutoMaterializePolicy]:
     if auto_materialize_policy_config.get("type") == "eager":
         return AutoMaterializePolicy.eager()

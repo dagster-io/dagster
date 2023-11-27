@@ -60,7 +60,7 @@ def load_asset_checks_from_modules(
 
 
 def load_asset_checks_from_current_module(
-    asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None
+    asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[AssetChecksDefinition]:
     """Constructs a list of asset checks from the module where this function is called. This is most
     often used in conjunction with a call to `load_assets_from_current_module`.

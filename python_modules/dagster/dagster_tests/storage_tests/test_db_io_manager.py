@@ -380,7 +380,7 @@ def test_asset_schema_defaults():
     assert table_slice.schema == "public"
 
     asset_key = AssetKey(["schema1", "table1"])
-    output_context = output_context = build_output_context(
+    output_context = build_output_context(
         asset_key=asset_key, metadata={"schema": "schema2"}, resource_config=resource_config
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
@@ -388,7 +388,7 @@ def test_asset_schema_defaults():
     assert table_slice.schema == "schema2"
 
     asset_key = AssetKey(["table1"])
-    output_context = output_context = build_output_context(
+    output_context = build_output_context(
         asset_key=asset_key, metadata={"schema": "schema1"}, resource_config=resource_config
     )
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001

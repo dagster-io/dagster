@@ -154,7 +154,7 @@ def instance_cm(stub_aws, stub_ecs_metadata) -> Callable[..., ContextManager[Dag
 
 @pytest.fixture
 def instance(
-    instance_cm: Callable[..., ContextManager[DagsterInstance]]
+    instance_cm: Callable[..., ContextManager[DagsterInstance]],
 ) -> Iterator[DagsterInstance]:
     with instance_cm(
         {
@@ -177,7 +177,7 @@ def instance_with_log_group(
 
 @pytest.fixture
 def instance_with_resources(
-    instance_cm: Callable[..., ContextManager[DagsterInstance]]
+    instance_cm: Callable[..., ContextManager[DagsterInstance]],
 ) -> Iterator[DagsterInstance]:
     with instance_cm(
         config={
@@ -216,7 +216,7 @@ def instance_dont_use_current_task(
 
 @pytest.fixture
 def instance_fargate_spot(
-    instance_cm: Callable[..., ContextManager[DagsterInstance]]
+    instance_cm: Callable[..., ContextManager[DagsterInstance]],
 ) -> Iterator[DagsterInstance]:
     with instance_cm(
         config={
@@ -331,7 +331,7 @@ def custom_instance_cm(stub_aws, stub_ecs_metadata):
 
 @pytest.fixture
 def custom_instance(
-    custom_instance_cm: Callable[..., ContextManager[DagsterInstance]]
+    custom_instance_cm: Callable[..., ContextManager[DagsterInstance]],
 ) -> Iterator[DagsterInstance]:
     with custom_instance_cm() as dagster_instance:
         yield dagster_instance
