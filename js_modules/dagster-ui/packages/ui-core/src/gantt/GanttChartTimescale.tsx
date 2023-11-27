@@ -228,7 +228,7 @@ const TimescaleContainer = styled.div`
   }
   & .line {
     position: absolute;
-    border-left: 1px solid ${colorBorderDefault()};
+    border-left: 1px solid ${colorKeylineDefault()};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;

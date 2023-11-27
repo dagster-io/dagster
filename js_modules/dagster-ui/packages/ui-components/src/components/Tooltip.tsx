@@ -5,6 +5,7 @@ import React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
 import {CoreColors} from '../palettes/Colors';
+import {colorTooltipBackground, colorTooltipText} from '../theme/color';
 
 import {FontFamily} from './styles';
 
@@ -13,8 +14,8 @@ export const GlobalTooltipStyle = createGlobalStyle`
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
-      background: ${CoreColors.Gray900};
-      color: ${CoreColors.Gray50};
+      background: ${colorTooltipBackground()};
+      color: ${colorTooltipText()};
       padding: 8px 16px;
   }
 

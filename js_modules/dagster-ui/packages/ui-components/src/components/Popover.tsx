@@ -13,6 +13,8 @@ import {
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
+  colorPopoverBackground,
+  colorPopoverBackgroundHover,
 } from '../theme/color';
 
 import {FontFamily} from './styles';
@@ -25,11 +27,11 @@ export const GlobalPopoverStyle = createGlobalStyle`
 
   .dagster-popover .bp4-popover2-content,
   .dagster-popover .bp4-popover-content {
-    background-color: ${colorBackgroundDefault()};
+    background-color: ${colorPopoverBackground()};
     border-radius: 4px;
 
     .bp4-menu {
-      background-color: ${colorBackgroundDefault()};
+      background-color: ${colorPopoverBackground()};
       color: ${colorTextDefault()};
     }
 
@@ -49,7 +51,7 @@ export const GlobalPopoverStyle = createGlobalStyle`
       }
         
       .bp4-input {
-        background-color: ${colorBackgroundDefault()};
+        background-color: ${colorPopoverBackground()};
         border: none;
         border-radius: 8px;
         box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px, ${colorKeylineDefault()} inset 2px 2px 1.5px;
@@ -73,12 +75,12 @@ export const GlobalPopoverStyle = createGlobalStyle`
   }
 
   .dagster-popover .bp4-popover2-arrow-fill {
-    fill: ${colorBackgroundDefault()};
+    fill: ${colorPopoverBackground()};
   }
 
   .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
   .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
-    background-color: ${colorBackgroundDefault()};
+    background-color: ${colorPopoverBackground()};
   }
 `;
 

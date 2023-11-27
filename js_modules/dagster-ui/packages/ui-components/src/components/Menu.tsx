@@ -20,6 +20,10 @@ import {
   colorKeylineDefault,
   colorTextDefault,
   colorTextLight,
+  colorPopoverBackground,
+  colorBackgroundCyan,
+  colorPopoverBackgroundHover,
+  colorBackgroundBlue,
 } from '../theme/color';
 
 import {IconName, Icon, IconWrapper} from './Icon';
@@ -132,7 +136,7 @@ export const MenuDivider = styled(BlueprintMenuDivider)`
 `;
 
 const StyledMenu = styled(BlueprintMenu)`
-  background-color: ${colorBackgroundDefault()};
+  background-color: ${colorPopoverBackground()};
   border-radius: 4px;
   padding: 8px 4px;
 `;
@@ -162,11 +166,11 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
 
   &.bp4-active,
   &.bp4-active:hover {
-    background-color: ${colorAccentBlue()};
-    color: ${colorAccentReversed()};
+    background-color: ${colorBackgroundBlue()};
+    color: ${colorTextDefault()};
 
     ${IconWrapper} {
-      background-color: ${colorAccentReversed()};
+      background-color: ${colorTextDefault()};
     }
   }
 
@@ -175,7 +179,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   }
 
   &.bp4-active ${IconWrapper} {
-    color: ${colorAccentReversed()};
+    color: ${colorTextDefault()};
   }
 
   ${IconWrapper}:first-child {
@@ -183,7 +187,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   }
 
   &:hover {
-    background: ${colorBackgroundGray()};
+    background: ${colorPopoverBackgroundHover()};
     color: ${({$textColor}) => $textColor};
   }
 

@@ -6,6 +6,7 @@ import {
   UnstyledButton,
   colorAccentGray,
   colorBackgroundBlue,
+  colorBackgroundLightHover,
   colorBackgroundLight,
   colorKeylineDefault,
 } from '@dagster-io/ui-components';
@@ -217,8 +218,9 @@ const GrayOnHoverBox = styled(UnstyledButton)`
   flex-shrink: 1;
   &:hover,
   &:focus-within {
-    background: ${colorBackgroundLight()};
+    background: ${colorBackgroundLightHover()};
     transition: background 100ms linear;
+    box-shadow: none;
     ${ExpandMore} {
       visibility: visible;
     }
