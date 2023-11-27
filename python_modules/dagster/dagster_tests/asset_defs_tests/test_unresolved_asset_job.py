@@ -819,18 +819,23 @@ def test_job_partitions_def_unpartitioned_assets():
         return [my_asset, my_job]
 
 
-def test_assets_retry_policy():
-    ops_retry_policy = RetryPolicy(max_retries=3, delay=60)
+def test_op_retry_policy():
+    ops_retry_policy = RetryPolicy(max_retries=2)
+    tries = {"a": 0, "b": 0}
 
     @asset
-    def a(source):
-        raise Exception
+    def a():
+        tries["a"] += 1
+        raise Exception()
 
-    @asset
-    def b(a):
-        return a + 1
+    @asset(retry_policy=RetryPolicy(max_retries=3))
+    def b():
+        tries["b"] += 1
+        raise Exception()
 
-    with pytest.raises(Exception, match="sources"):
-        define_asset_job("job", selection="*b", op_retry_policy=ops_retry_policy).resolve(
-            asset_graph=AssetGraph.from_assets([a, b])
-        )
+    job1 = define_asset_job("job", op_retry_policy=ops_retry_policy)
+    assert job1.op_retry_policy == ops_retry_policy
+    job1_resolved = job1.resolve(asset_graph=AssetGraph.from_assets([a, b]))
+    job1_resolved.execute_in_process(raise_on_error=False)
+
+    assert tries == {"a": 3, "b": 4}
