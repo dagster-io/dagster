@@ -13,7 +13,6 @@ import {
   Table,
   DialogBody,
   CaptionMono,
-  MiddleTruncate,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -26,6 +25,7 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {TableMetadataEntry} from '../graphql/types';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
@@ -183,26 +183,22 @@ export const MetadataEntry = ({
         </MetadataEntryLink>
       );
     case 'JobMetadataEntry':
-      const repositoryName = entry.repositoryName || '__repository__';
+      const repositoryName = entry.repositoryName || DUNDER_REPO_NAME;
       const workspacePath = workspacePathFromAddress(
-        {name: repositoryName, location: entry.locationName},
+        buildRepoAddress(repositoryName, entry.locationName),
         `/jobs/${entry.jobName}`,
       );
       return (
         <Box
           flex={{
             direction: 'row',
-            alignItems: 'center',
-            display: 'inline-flex',
             gap: 8,
           }}
           style={{maxWidth: '100%'}}
         >
           <Icon name="job" color={Colors.Gray400} />
 
-          <Link to={workspacePath}>
-            <MiddleTruncate text={entry.jobName} />
-          </Link>
+          <MetadataEntryLink to={workspacePath}>{entry.jobName}</MetadataEntryLink>
         </Box>
       );
     case 'TableMetadataEntry':

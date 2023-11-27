@@ -445,7 +445,8 @@ class MetadataValue(ABC, Generic[T_Packable]):
     @staticmethod
     def job(
         job_name: str,
-        location_name: Optional[str] = None,
+        location_name: str,
+        *,
         repository_name: Optional[str] = None,
     ) -> "DagsterJobMetadataValue":
         """Static constructor for a metadata value referencing a Dagster job, by name.
@@ -465,14 +466,13 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
         Args:
             job_name (str): The name of the job.
-            location_name (Optional[str]): The location name of the job. If not provided, the job is
-                assumed to be in the same location as this object.
-            repository_name (Optional[str]): The repository name of the job. If not provided, the
-                job is assumed to be in the same repository as this object.
+            location_name (Optional[str]): The code location name for the job.
+            repository_name (Optional[str]): The repository name of the job, if different from the
+                default.
         """
         return DagsterJobMetadataValue(
             job_name=check.str_param(job_name, "job_name"),
-            location_name=check.opt_str_param(location_name, "location_name"),
+            location_name=check.str_param(location_name, "location_name"),
             repository_name=check.opt_str_param(repository_name, "repository_name"),
         )
 

@@ -92,7 +92,7 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         entry = mat["metadataEntries"][14]
         assert entry["__typename"] == "JobMetadataEntry"
         assert entry["jobName"]
-        
+
         non_engine_event_logs = [
             message for message in logs if message["__typename"] != "EngineEvent"
         ]

@@ -202,7 +202,7 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_job',
         jobName: 'my_job',
-        locationName: null,
+        locationName: 'my_location_name',
         repositoryName: null,
       };
     case 'TableMetadataEntry':
