@@ -1,10 +1,7 @@
 import {
   colorAccentBlue,
-  colorAccentLavender,
   colorAccentGreen,
   colorAccentRed,
-  colorAccentCyan,
-  colorAccentGray,
   colorBackgroundDisabled,
 } from '@dagster-io/ui-components';
 

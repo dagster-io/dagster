@@ -1,9 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
-import {JoinedButtons, TokenizingFieldValue, colorBackgroundGray} from '@dagster-io/ui-components';
+import {
+  JoinedButtons,
+  TokenizingFieldValue,
+  colorBackgroundLighterHover,
+  colorTextDefault,
+  colorBackgroundDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -103,11 +110,26 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
 };
 
 export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
-  ${(props) =>
-    props.$active &&
-    `
-    background-color: ${colorBackgroundGray()};
-  `}
+  color: ${colorTextLight()};
+
+  &&:hover {
+    color: ${colorTextLight()};
+  }
+
+  ${({$active}) =>
+    $active
+      ? css`
+          background-color: ${colorBackgroundLighterHover()};
+          color: ${colorTextDefault()};
+
+          &&:hover {
+            background-color: ${colorBackgroundLighterHover()};
+            color: ${colorTextDefault()};
+          }
+        `
+      : css`
+          background-color: ${colorBackgroundDefault()};
+        `}
 `;
 
 export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {

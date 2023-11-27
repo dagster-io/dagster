@@ -9,6 +9,7 @@ import {
   Spinner,
   TextInput,
   colorBackgroundLight,
+  colorPopoverBackground,
   colorTextLight,
 } from '@dagster-io/ui-components';
 import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
@@ -383,16 +384,21 @@ const TextInputWrapper = styled.div`
   display: flex;
   flex-direction: row;
   flex-gap: 12px;
+
   > *:first-child {
     flex-grow: 1;
   }
+
   input {
+    background-color: ${colorPopoverBackground()};
     padding: 12px 16px;
+
     &,
     :focus,
     :active,
     :hover {
       box-shadow: none;
+      background-color: ${colorPopoverBackground()};
     }
   }
 `;

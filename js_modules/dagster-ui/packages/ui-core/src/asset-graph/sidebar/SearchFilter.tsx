@@ -1,11 +1,4 @@
-import {
-  MenuItem,
-  useViewport,
-  Suggest,
-  colorBorderFocused,
-  colorBorderHover,
-  colorBorderDefault,
-} from '@dagster-io/ui-components';
+import {MenuItem, useViewport, Suggest, colorTextLighter} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -71,17 +64,9 @@ export const SearchFilter = <T,>({
 const SuggestWrapper = styled.div`
   .bp4-input-group.dagster-suggest-input {
     width: 100%;
-    border-radius: 8px;
-    transition: border 200ms;
-    box-shadow: none;
-    border: 1px solid ${colorBorderDefault()};
-    :hover {
-      border: 1px solid ${colorBorderHover()};
-    }
-    :focus {
-      border: 1px solid ${colorBorderFocused()};
-      box-shadow: none;
-      outline: none;
+
+    ::placeholder {
+      color: ${colorTextLighter()};
     }
   }
 `;

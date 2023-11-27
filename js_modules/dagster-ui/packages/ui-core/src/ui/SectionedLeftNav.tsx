@@ -9,12 +9,10 @@ import {
   colorBackgroundGray,
   colorBackgroundLight,
   colorBackgroundLightHover,
-  colorBackgroundLighter,
   colorBackgroundLighterHover,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
-  colorTextLight,
   colorTextLighter,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -311,7 +309,6 @@ const Container = styled.div`
   height: 100%;
   overflow: auto;
   background-color: ${colorBackgroundLight()};
-
 `;
 
 interface CodeLocationNameRowProps {

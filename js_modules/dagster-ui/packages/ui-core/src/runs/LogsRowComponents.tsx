@@ -2,7 +2,6 @@ import {
   FontFamily,
   MetadataTable,
   Tooltip,
-  colorBackgroundBlue,
   colorBackgroundDefault,
   colorBackgroundRed,
   colorBackgroundYellow,

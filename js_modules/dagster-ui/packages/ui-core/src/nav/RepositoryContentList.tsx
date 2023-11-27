@@ -1,6 +1,6 @@
 import {
   colorBackgroundBlue,
-  colorBackgroundLight,
+  colorBackgroundLighter,
   colorBorderDefault,
   colorTextBlue,
   colorTextDefault,
@@ -26,7 +26,8 @@ export const Item = styled(Link)<{$active: boolean}>`
 
   &:hover {
     text-decoration: none;
-    background-color: ${({$active}) => ($active ? colorBackgroundBlue() : colorBackgroundLight())};
+    background-color: ${({$active}) =>
+      $active ? colorBackgroundBlue() : colorBackgroundLighter()};
   }
 
   &:focus {
