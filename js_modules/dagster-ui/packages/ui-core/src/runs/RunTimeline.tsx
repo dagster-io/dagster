@@ -16,6 +16,7 @@ import {
   colorTextDefault,
   colorBackgroundDefault,
   colorBackgroundDefaultHover,
+  colorAccentPrimary,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -441,7 +442,7 @@ const TimeDividers = (props: TimeDividersProps) => {
         {now >= start && now <= end ? (
           <>
             <NowMarker style={{left: nowLeft}}>Now</NowMarker>
-            <DividerLine style={{left: nowLeft, backgroundColor: colorAccentBlue(), zIndex: 1}} />
+            <DividerLine style={{left: nowLeft, backgroundColor: colorAccentPrimary(), zIndex: 1}} />
           </>
         ) : null}
       </DividerLines>
@@ -505,7 +506,7 @@ const DividerLine = styled.div`
 `;
 
 const NowMarker = styled.div`
-  background-color: ${colorAccentBlue()};
+  background-color: ${colorAccentPrimary()};
   border-radius: 1px;
   color: ${colorAccentReversed()};
   cursor: default;
@@ -518,7 +519,7 @@ const NowMarker = styled.div`
   user-select: none;
 `;
 
-const MIN_CHUNK_WIDTH = 2;
+const MIN_CHUNK_WIDTH = 4;
 const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
@@ -671,6 +672,7 @@ const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   right: 0;
   top: 0;
   overflow: hidden;
+  transition: background-color 100ms linear;
 
   :hover {
     background-color: ${colorBackgroundDefaultHover()};
@@ -705,16 +707,20 @@ interface ChunkProps {
 const RunChunk = styled.div<ChunkProps>`
   align-items: center;
   background: ${({$background}) => $background};
-  border-radius: 2px;
-  height: ${ROW_HEIGHT - 4}px;
+  border-radius: 1px;
+  height: ${ROW_HEIGHT - 8}px;
   position: absolute;
-  top: 2px;
+  top: 4px;
   ${({$multiple}) => ($multiple ? `min-width: ${MIN_WIDTH_FOR_MULTIPLE}px` : null)};
 
   transition:
-    background-color 300ms linear,
-    width 300ms ease-in-out;
-
+    background 200ms linear,
+    opacity 200ms linear,
+    width 200ms ease-in-out;
+    
+  :hover{
+    opacity: 0.7;
+  }
   .chunk-popover-target {
     display: block;
     height: 100%;

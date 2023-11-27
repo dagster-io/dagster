@@ -6,7 +6,6 @@ import {
   Spinner,
   Tooltip,
   colorAccentBlue,
-  colorAccentBlueHover,
   colorAccentCyan,
   colorAccentGray,
   colorAccentGrayHover,
@@ -19,6 +18,14 @@ import {
   colorBackgroundLight,
   colorTextDefault,
   colorTextLight,
+  colorTextLighter,
+  colorBorderDefault,
+  colorLineageEdgeHighlighted,
+  colorLineageNodeBorder,
+  colorLineageNodeBorderSelected,
+  colorLineageNodeBorderHover,
+  colorLineageNodeBackground,
+  colorLineageNodeBackgroundHover,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
@@ -94,8 +101,8 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
           {(liveData?.assetChecks || []).length > 0 && (
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
-          <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
         </AssetNodeBox>
+        <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
@@ -121,8 +128,8 @@ const AssetNodeRowBox = styled(Box)`
     text-decoration: none;
   }
   &:last-child {
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 `;
 
@@ -309,7 +316,9 @@ const AssetNodeChecksRow = ({
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
       border="top"
-      background={colorBackgroundLight()}
+      background={colorBackgroundLight()
+      }
+      
     >
       Checks
       <Link
@@ -408,7 +417,8 @@ const AssetInsetForHoverEffect = styled.div`
 const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
+  overflow: clip;
 `;
 
 const AssetNodeShowOnHover = styled.span`
@@ -419,18 +429,20 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
       ? `border: 2px dashed ${p.$selected ? colorAccentGrayHover() : colorAccentGray()}`
-      : `border: 2px solid ${p.$selected ? colorAccentBlueHover() : colorAccentBlue()}`};
-
+      : `border: 2px solid ${p.$selected ? colorLineageNodeBorderSelected() : colorLineageNodeBorder()}`};
   ${(p) =>
-    p.$isSource
-      ? `outline: 3px solid ${p.$selected ? colorAccentBlue() : 'transparent'}`
-      : `outline: 3px solid ${p.$selected ? colorAccentCyan() : 'transparent'}`};
+    p.$selected && `outline: 2px solid ${colorLineageNodeBorderSelected()}`};
 
   background: ${colorBackgroundDefault()};
-  border-radius: 8px;
+  border-radius: 10px;
   position: relative;
+  transition: all 150ms linear;
   &:hover {
+    ${(p) =>
+      !p.$selected && `border: 2px solid ${colorLineageNodeBorderHover()};`};
+    
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+    scale: 1.03;
     ${AssetNodeShowOnHover} {
       display: initial;
     }
@@ -454,21 +466,21 @@ export const NameTooltipCSS: CSSObject = {
 
 export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundBlue(),
-  border: `1px solid ${colorAccentBlue()}`,
+  background: colorLineageNodeBackground(),
+  border: `none`,
 });
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
   background: colorBackgroundGray(),
-  border: `1px solid ${colorAccentGray()}`,
+  border: `none`,
 });
 
 const AssetName = styled.div<{$isSource: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
-  background: ${(p) => (p.$isSource ? colorBackgroundLight() : colorBackgroundBlue())};
+  background: ${(p) => (p.$isSource ? colorBackgroundLight() : colorLineageNodeBackground())};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
@@ -495,18 +507,14 @@ const MinimalAssetNodeBox = styled.div<{
   ${(p) =>
     p.$isSource
       ? `border: 4px dashed ${p.$selected ? colorAccentGray() : p.$border}`
-      : `border: 4px solid ${p.$selected ? colorAccentBlue() : p.$border}`};
+      : `border: 4px solid ${p.$selected ? colorLineageNodeBorderSelected() : p.$border}`};
 
-  ${(p) =>
-    p.$isSource
-      ? `outline: 8px solid ${p.$selected ? colorAccentGrayHover() : 'transparent'}`
-      : `outline: 8px solid ${p.$selected ? colorAccentCyan() : 'transparent'}`};
 
-  border-radius: 10px;
+  border-radius: 16px;
   position: relative;
   padding: 4px;
   height: 100%;
-  min-height: 46px;
+  min-height: 86px;
   &:hover {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
   }
@@ -526,7 +534,7 @@ export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${(p) => p.$color};
+  color: ${colorTextLighter()};
   font-size: 12px;
 `;
 

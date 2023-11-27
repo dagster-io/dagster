@@ -2,10 +2,11 @@ import {
   FontFamily,
   MetadataTable,
   Tooltip,
+  colorBackgroundBlue,
   colorBackgroundDefault,
   colorBackgroundRed,
   colorBackgroundYellow,
-  colorBackgroundYellowHover,
+  colorBackgroundLightHover,
   colorKeylineDefault,
   colorTextDefault,
   colorTextLight,
@@ -50,7 +51,7 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   overflow: hidden;
   border-top: 1px solid ${colorKeylineDefault()};
   background-color: ${({highlighted, level}) =>
-    highlighted ? colorBackgroundYellowHover() : bgcolorForLevel(level)};
+    highlighted ? colorBackgroundLightHover() : bgcolorForLevel(level)};
 
   color: ${(props) =>
     ({

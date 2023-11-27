@@ -5,6 +5,7 @@ import {
   colorAccentGray,
   colorBackgroundGrayHover,
   colorBackgroundLight,
+  colorBackgroundLightHover,
   colorKeylineDefault,
   colorTextLight,
   colorTextLighter,
@@ -75,7 +76,7 @@ const SectionHeaderButton = styled.button<{$open: boolean}>`
   }
 
   :hover {
-    background-color: ${colorBackgroundGrayHover()};
+    background-color: ${colorBackgroundLightHover()};
   }
 
   ${IconWrapper}[aria-label="arrow_drop_down"] {

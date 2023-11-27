@@ -70,6 +70,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
                   loading={reloading}
                   disabled={!hasReloadPermission}
                   icon={<Icon name="refresh" />}
+                  outlined
                 >
                   Reload definitions
                 </Button>

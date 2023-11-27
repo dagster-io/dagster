@@ -26,7 +26,7 @@ export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
   if (!canReloadWorkspace) {
     return (
       <Tooltip content={disabledReasons.canReloadWorkspace}>
-        <Button icon={<Icon name="refresh" />} disabled intent="none">
+        <Button outlined icon={<Icon name="refresh" />} disabled>
           {label}
         </Button>
       </Tooltip>
@@ -35,7 +35,7 @@ export const ReloadAllButton = ({label = 'Reload all'}: {label?: string}) => {
 
   return (
     <>
-      <Button onClick={tryReload} icon={<Icon name="refresh" />} loading={reloading} intent="none">
+      <Button outlined onClick={tryReload} icon={<Icon name="refresh" />} loading={reloading}>
         {label}
       </Button>
       {errorLocationId ? (
