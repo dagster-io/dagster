@@ -17,7 +17,6 @@ import {
   Tag,
   colorKeylineDefault,
   colorLinkDefault,
-  colorAccentPrimary,
   colorAccentGreen,
   colorAccentRed,
   colorAccentYellow,
@@ -124,7 +123,7 @@ const intentToStrokeColor = (intent: Intent | undefined) => {
     case 'none':
     case 'primary':
     default:
-      return colorAccentPrimary();
+      return colorBorderDefault();
   }
 };
 

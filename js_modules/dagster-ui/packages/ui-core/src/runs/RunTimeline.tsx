@@ -10,7 +10,6 @@ import {
   MiddleTruncate,
   useViewport,
   colorKeylineDefault,
-  colorAccentBlue,
   colorTextLighter,
   colorAccentReversed,
   colorTextDefault,
@@ -442,7 +441,9 @@ const TimeDividers = (props: TimeDividersProps) => {
         {now >= start && now <= end ? (
           <>
             <NowMarker style={{left: nowLeft}}>Now</NowMarker>
-            <DividerLine style={{left: nowLeft, backgroundColor: colorAccentPrimary(), zIndex: 1}} />
+            <DividerLine
+              style={{left: nowLeft, backgroundColor: colorAccentPrimary(), zIndex: 1}}
+            />
           </>
         ) : null}
       </DividerLines>
@@ -472,13 +473,22 @@ const DividerLabels = styled.div`
   font-size: 12px;
   width: 100%;
   overflow: hidden;
+
+  :first-child {
+    box-shadow:
+      inset 1px 0 0 ${colorKeylineDefault()},
+      inset -1px 0 0 ${colorKeylineDefault()};
+  }
 `;
 
 const DateLabel = styled.div`
   position: absolute;
   padding: 8px 0;
-  box-shadow: inset 1px 0 0 ${colorKeylineDefault()};
   white-space: nowrap;
+
+  :not(:first-child) {
+    box-shadow: inset 1px 0 0 ${colorKeylineDefault()};
+  }
 `;
 
 const TimeLabel = styled.div`
@@ -717,8 +727,8 @@ const RunChunk = styled.div<ChunkProps>`
     background 200ms linear,
     opacity 200ms linear,
     width 200ms ease-in-out;
-    
-  :hover{
+
+  :hover {
     opacity: 0.7;
   }
   .chunk-popover-target {

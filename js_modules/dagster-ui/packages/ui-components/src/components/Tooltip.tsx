@@ -4,7 +4,6 @@ import deepmerge from 'deepmerge';
 import React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
-import {CoreColors} from '../palettes/Colors';
 import {colorTooltipBackground, colorTooltipText} from '../theme/color';
 
 import {FontFamily} from './styles';

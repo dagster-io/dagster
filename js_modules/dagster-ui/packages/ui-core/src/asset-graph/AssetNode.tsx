@@ -5,27 +5,21 @@ import {
   Icon,
   Spinner,
   Tooltip,
-  colorAccentBlue,
-  colorAccentCyan,
   colorAccentGray,
   colorAccentGrayHover,
   colorAccentGreen,
   colorAccentRed,
   colorAccentYellow,
-  colorBackgroundBlue,
   colorBackgroundDefault,
   colorBackgroundGray,
   colorBackgroundLight,
   colorTextDefault,
   colorTextLight,
   colorTextLighter,
-  colorBorderDefault,
-  colorLineageEdgeHighlighted,
   colorLineageNodeBorder,
   colorLineageNodeBorderSelected,
   colorLineageNodeBorderHover,
   colorLineageNodeBackground,
-  colorLineageNodeBackgroundHover,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
@@ -316,9 +310,7 @@ const AssetNodeChecksRow = ({
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
       border="top"
-      background={colorBackgroundLight()
-      }
-      
+      background={colorBackgroundLight()}
     >
       Checks
       <Link
@@ -429,18 +421,18 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
       ? `border: 2px dashed ${p.$selected ? colorAccentGrayHover() : colorAccentGray()}`
-      : `border: 2px solid ${p.$selected ? colorLineageNodeBorderSelected() : colorLineageNodeBorder()}`};
-  ${(p) =>
-    p.$selected && `outline: 2px solid ${colorLineageNodeBorderSelected()}`};
+      : `border: 2px solid ${
+          p.$selected ? colorLineageNodeBorderSelected() : colorLineageNodeBorder()
+        }`};
+  ${(p) => p.$selected && `outline: 2px solid ${colorLineageNodeBorderSelected()}`};
 
   background: ${colorBackgroundDefault()};
   border-radius: 10px;
   position: relative;
   transition: all 150ms linear;
   &:hover {
-    ${(p) =>
-      !p.$selected && `border: 2px solid ${colorLineageNodeBorderHover()};`};
-    
+    ${(p) => !p.$selected && `border: 2px solid ${colorLineageNodeBorderHover()};`};
+
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
     scale: 1.03;
     ${AssetNodeShowOnHover} {
@@ -508,7 +500,6 @@ const MinimalAssetNodeBox = styled.div<{
     p.$isSource
       ? `border: 4px dashed ${p.$selected ? colorAccentGray() : p.$border}`
       : `border: 4px solid ${p.$selected ? colorLineageNodeBorderSelected() : p.$border}`};
-
 
   border-radius: 16px;
   position: relative;

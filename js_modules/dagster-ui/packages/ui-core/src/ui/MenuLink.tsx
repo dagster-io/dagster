@@ -6,7 +6,7 @@ import {
   iconWithColor,
   MenuItem,
   colorTextDefault,
-  colorBackgroundLight,
+  colorBackgroundLighter,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
@@ -70,6 +70,6 @@ const StyledMenuLink = styled(Link)`
   }
 
   &&&:hover {
-    background: ${colorBackgroundLight()};
+    background: ${colorBackgroundLighter()};
   }
 `;

@@ -8,13 +8,11 @@ import {createGlobalStyle} from 'styled-components';
 import searchSVG from '../icon-svgs/search.svg';
 import {
   colorAccentGray,
-  colorBackgroundDefault,
   colorBorderDefault,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
   colorPopoverBackground,
-  colorPopoverBackgroundHover,
 } from '../theme/color';
 
 import {FontFamily} from './styles';

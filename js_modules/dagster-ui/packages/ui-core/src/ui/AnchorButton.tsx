@@ -17,7 +17,7 @@ export const AnchorButton = React.forwardRef(
     const {children, icon, intent, outlined, rightIcon, ...rest} = props;
 
     const {fillColor, fillColorHover, textColor, iconColor, strokeColor, strokeColorHover} =
-      React.useMemo(() => buildColorSet(intent, outlined), [intent, outlined]);
+      React.useMemo(() => buildColorSet({intent, outlined}), [intent, outlined]);
 
     return (
       <StyledButton
