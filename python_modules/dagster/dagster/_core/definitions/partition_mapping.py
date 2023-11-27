@@ -101,7 +101,8 @@ class PartitionMapping(ABC):
 
     @abstractproperty
     def description(self) -> str:
-        """A human-readable description of the partition mapping, displayed in the Dagster UI"""
+        """A human-readable description of the partition mapping, displayed in the Dagster UI."""
+        raise NotImplementedError()
 
 
 @whitelist_for_serdes

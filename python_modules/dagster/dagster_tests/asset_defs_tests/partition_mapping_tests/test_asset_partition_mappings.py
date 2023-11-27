@@ -91,6 +91,10 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         ) -> PartitionsSubset:
             raise NotImplementedError()
 
+        @property
+        def description(self) -> str:
+            raise NotImplementedError()
+
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert context.asset_partition_key == "2"
