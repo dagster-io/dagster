@@ -3,15 +3,8 @@ import {
   FontFamily,
   IconWrapper,
   colorAccentPrimary,
-  colorAccentReversed,
-  colorAccentWhite,
-  colorBackgroundDefault,
   colorBackgroundGray,
-  colorBackgroundLight,
-  colorBackgroundLighter,
-  colorBackgroundLighterHover,
   colorLineageNodeBackground,
-  colorTextDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -428,8 +421,6 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
         const text = known?.content || tag.label;
         const color = known?.color || colorTextLight();
         const reversed = known && 'reversed' in known ? known.reversed : false;
-        const textcolor =
-          known && 'reversed' in known ? colorTextDefault() : colorAccentWhite();
         return (
           <Box
             key={tag.label}
@@ -447,7 +438,6 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
                 $size={16}
                 $img={known.icon.src}
                 $color={reversed ? colorAccentPrimary() : color}
-                // $color={reduceColor ? color : textcolor}
                 $rotation={null}
                 aria-label={tag.label}
               />

@@ -9,7 +9,7 @@ import {
   colorBorderDefault,
   colorBorderHover,
   colorBorderDisabled,
-  colorBorderFocussed,
+  colorBorderFocused,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
@@ -112,7 +112,7 @@ export const TextInputStyles = css`
   padding: 6px 6px 6px 12px;
   box-shadow: none;
   margin: 0;
-  transition: border 150ms;
+  transition: box-shadow 150ms;
 
   ::placeholder {
     color: ${colorTextLighter()};
@@ -160,12 +160,13 @@ const StyledInput = styled.input<StyledInputProps>`
   box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
   transition: box-shadow 150ms;
+
   :hover {
     box-shadow: ${colorBorderHover()} inset 0px 0px 0px 1px;
   }
+
   :focus {
-    box-shadow:
-      ${colorBorderFocussed()} 0px 0px 0px 1px;
+    box-shadow: ${colorBorderFocused()} 0px 0px 0px 1px;
     background-color: ${colorBackgroundDefaultHover()};
   }
 `;
@@ -179,15 +180,16 @@ export const TextArea = styled.textarea<TextAreaProps>`
   ${TextInputStyles}
 
   box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
+
   :hover {
-    ${colorBorderHover()} inset 0px 0px 0px 1px;
+    box-shadow: ${colorBorderHover()} inset 0px 0px 0px 1px;
   }
+
   :hover {
     box-shadow: ${colorBorderHover()} inset 0px 0px 0px 1px;
   }
   :focus {
-    box-shadow:
-      ${colorBorderFocussed()} 0px 0px 0px 1px;
+    box-shadow: ${colorBorderFocused()} 0px 0px 0px 1px;
     background-color: ${colorBackgroundDefaultHover()};
   }
 
