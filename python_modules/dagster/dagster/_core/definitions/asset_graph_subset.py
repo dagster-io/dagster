@@ -20,7 +20,6 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.definitions.time_window_partitions import PartitionKeysTimeWindowPartitionsSubset
 from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
 )
@@ -50,12 +49,7 @@ class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
             ):
                 # PartitionKeysTimeWindowPartitionsSubsets are not serializable, so
                 # we convert them to TimeWindowPartitionsSubsets
-                subsets_by_key = {
-                    k: v.to_time_window_partitions_subset()
-                    if isinstance(v, PartitionKeysTimeWindowPartitionsSubset)
-                    else v
-                    for k, v in field_value.items()
-                }
+                subsets_by_key = {k: v.to_serializable_susbet() for k, v in field_value.items()}
 
                 # If the mapping is keyed by AssetKey wrap it in a SerializableNonScalarKeyMapping
                 # so it can be serialized. This can be expanded to other key types in the future.
