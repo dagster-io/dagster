@@ -7,7 +7,6 @@ import {
   colorAccentGray,
   colorBackgroundBlue,
   colorBackgroundLightHover,
-  colorBackgroundLight,
   colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import React from 'react';

@@ -3,7 +3,6 @@ import {
   Icon,
   IconWrapper,
   colorAccentGray,
-  colorBackgroundGrayHover,
   colorBackgroundLight,
   colorBackgroundLightHover,
   colorKeylineDefault,

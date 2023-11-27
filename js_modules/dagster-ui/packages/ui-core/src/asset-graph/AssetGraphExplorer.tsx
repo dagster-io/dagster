@@ -9,7 +9,6 @@ import {
   TextInputContainer,
   Box,
   colorKeylineDefault,
-  colorAccentGray,
   colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
@@ -434,7 +433,6 @@ const AssetGraphExplorerWithData = ({
                         : filterEdges(layout.edges, allowGroupsOnlyZoomLevel, scale, assetGraphData)
                     }
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-
                   />
 
                   {Object.values(layout.groups)

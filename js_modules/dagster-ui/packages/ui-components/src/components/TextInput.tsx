@@ -103,6 +103,7 @@ const RightContainer = styled.div`
 export const TextInputStyles = css`
   background-color: ${colorBackgroundDefault()};
   border: none;
+  box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
   outline: none;
   border-radius: 8px;
   color: ${colorTextDefault()};
@@ -110,9 +111,8 @@ export const TextInputStyles = css`
   font-size: 14px;
   line-height: 20px;
   padding: 6px 6px 6px 12px;
-  box-shadow: none;
   margin: 0;
-  transition: box-shadow 150ms;
+  transition: box-shadow linear 150ms;
 
   ::placeholder {
     color: ${colorTextLighter()};
@@ -157,16 +157,17 @@ const StyledInput = styled.input<StyledInputProps>`
         `
       : null}
 
-  box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
+  box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
-  transition: box-shadow 150ms;
 
   :hover {
-    box-shadow: ${colorBorderHover()} inset 0px 0px 0px 1px;
+    box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderHover()} 0px 0px 0px 1px;
   }
 
   :focus {
-    box-shadow: ${colorBorderFocused()} 0px 0px 0px 1px;
+    box-shadow:
+      ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px,
+      rgba(58, 151, 212, 0.6) 0 0 0 3px;
     background-color: ${colorBackgroundDefaultHover()};
   }
 `;

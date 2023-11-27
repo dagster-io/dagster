@@ -182,7 +182,8 @@ export const intentToTextAndIconColor = (intent: BlueprintIntent) => {
   return CoreColors.White;
 };
 
-export const buildColorSet = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
+export const buildColorSet = (config: {intent?: BlueprintIntent; outlined: BlueprintOutlined}) => {
+  const {intent, outlined} = config;
   const fillColor = outlined ? outlinedIntentToFillColor() : intentToFillColor(intent);
   const fillColorHover = outlined
     ? outlinedIntentToFillColorHover(intent)
@@ -221,7 +222,7 @@ export const Button = React.forwardRef(
     }
 
     const {fillColor, fillColorHover, textColor, iconColor, strokeColor, strokeColorHover} =
-      React.useMemo(() => buildColorSet(intent, outlined), [intent, outlined]);
+      React.useMemo(() => buildColorSet({intent, outlined}), [intent, outlined]);
 
     return (
       <BaseButton
@@ -270,7 +271,7 @@ export const ExternalAnchorButton = React.forwardRef(
     const {children, icon, intent, outlined, rightIcon, ...rest} = props;
 
     const {fillColor, fillColorHover, textColor, iconColor, strokeColor, strokeColorHover} =
-      React.useMemo(() => buildColorSet(intent, outlined), [intent, outlined]);
+      React.useMemo(() => buildColorSet({intent, outlined}), [intent, outlined]);
 
     return (
       <StyledButton
