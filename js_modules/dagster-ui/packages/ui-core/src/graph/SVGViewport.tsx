@@ -7,7 +7,7 @@ import {
   colorBackgroundDefault,
   colorBackgroundLight,
   colorBorderDefault,
-  colorKeylineDefault,
+  colorLineageDots,
 } from '@dagster-io/ui-components';
 import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import animate from 'amator';
@@ -650,7 +650,7 @@ const SVGViewportStyles: React.CSSProperties = {
   overflow: 'hidden',
   userSelect: 'none',
   outline: 'none',
-  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='${colorKeylineDefault()}' cx='5' cy='5' r='5' /></svg>") repeat`,
+  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='${colorLineageDots()}' cx='5' cy='5' r='5' /></svg>") repeat`,
 };
 
 const ZoomSliderContainer = styled.div`

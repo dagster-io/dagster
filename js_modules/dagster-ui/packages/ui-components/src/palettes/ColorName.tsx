@@ -67,4 +67,19 @@ export enum ColorName {
   TooltipText = 'TooltipText',
   PopoverBackground = 'PopoverBackground',
   PopoverBackgroundHover = 'PopoverBackgroundHover',
+  //Lineage Graph
+  LineageDots = 'LineageDots',
+  LineageEdge = 'LineageEdge',
+  LineageEdgeHighlighted = 'LineageEdgeHighlighted',
+  LineageGroupNodeBackground = 'LineageGroupNodeBackground',
+  LineageGroupNodeBackgroundHover = 'LineageGroupNodeBackgroundHover',
+  LineageGroupNodeBorder = 'LineageGroupNodeBorder',
+  LineageGroupNodeBorderHover = 'LineageGroupNodeBorderHover',
+  LineageGroupBackground = 'LineageGroupBackground',
+
+  LineageNodeBackground = 'LineageNodeBackground',
+  LineageNodeBackgroundHover = 'LineageNodeBackgroundHover',
+  LineageNodeBorder = 'LineageNodeBorder',
+  LineageNodeBorderHover = 'LineageNodeBorderHover',
+  LineageNodeBorderSelected = 'LineageNodeBorderSelected',
 }

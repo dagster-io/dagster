@@ -4,8 +4,10 @@ import {
   IconWrapper,
   colorAccentPrimary,
   colorAccentReversed,
+  colorAccentWhite,
   colorBackgroundDefault,
   colorBackgroundLight,
+  colorTextDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -429,7 +431,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
         const text = known?.content || tag.label;
         const color = known?.color || colorTextLight();
         const textcolor =
-          known && 'reversed' in known ? colorAccentPrimary() : colorAccentReversed();
+          known && 'reversed' in known ? colorTextDefault() : colorAccentWhite();
         return (
           <Box
             key={tag.label}
@@ -485,6 +487,7 @@ const OpTagsContainer = styled.div`
   gap: 6px;
   position: absolute;
   display: flex;
+  margin-right: 14px;
 
   & > div {
     padding: 0 8px;

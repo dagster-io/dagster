@@ -71,5 +71,19 @@ export const LegacyPalette = {
   [ColorName.TooltipText]: LegacyColors.White,
   [ColorName.PopoverBackground]: LegacyColors.White,
   [ColorName.PopoverBackgroundHover]: LegacyColors.Gray100,
+  //Lineage Graph
+  [ColorName.LineageDots]: LegacyColors.KeylineGray,
+  [ColorName.LineageEdge]: LegacyColors.Gray200,
+  [ColorName.LineageEdgeHighlighted]: LegacyColors.Blue500,
+  [ColorName.LineageGroupNodeBackground]: LegacyColors.Gray100,
+  [ColorName.LineageGroupNodeBackgroundHover]: LegacyColors.KeylineGray,
+  [ColorName.LineageGroupNodeBorder]: LegacyColors.Gray100,
+  [ColorName.LineageGroupNodeBorderHover]: LegacyColors.Gray10,
+  [ColorName.LineageGroupBackground]: LegacyColors.Gray10,
+  [ColorName.LineageNodeBackground]: LegacyColors.Blue50,
+  [ColorName.LineageNodeBackgroundHover]: LegacyColors.Blue50,
+  [ColorName.LineageNodeBorder]: LegacyColors.Blue200,
+  [ColorName.LineageNodeBorderHover]: LegacyColors.Blue200,
+  [ColorName.LineageNodeBorderSelected]: LegacyColors.Blue500,
 };
 

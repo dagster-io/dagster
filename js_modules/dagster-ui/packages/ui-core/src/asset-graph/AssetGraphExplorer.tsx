@@ -434,11 +434,7 @@ const AssetGraphExplorerWithData = ({
                         : filterEdges(layout.edges, allowGroupsOnlyZoomLevel, scale, assetGraphData)
                     }
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-                    baseColor={
-                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
-                        ? colorAccentGray()
-                        : colorKeylineDefault()
-                    }
+
                   />
 
                   {Object.values(layout.groups)

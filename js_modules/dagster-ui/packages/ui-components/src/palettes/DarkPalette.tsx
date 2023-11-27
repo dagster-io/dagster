@@ -70,4 +70,19 @@ export const DarkPalette = {
   [ColorName.TooltipText]: CoreColors.White,
   [ColorName.PopoverBackground]: CoreColors.Gray900,
   [ColorName.PopoverBackgroundHover]: CoreColors.Gray850,
+  //Lineage Graph
+  [ColorName.LineageDots]: TranslucentColors.Gray12,
+  [ColorName.LineageEdge]: CoreColors.Gray850,
+  [ColorName.LineageEdgeHighlighted]: CoreColors.Gray500,
+  [ColorName.LineageGroupNodeBackground]: CoreColors.Gray900,
+  [ColorName.LineageGroupNodeBackgroundHover]: CoreColors.Gray850,
+  [ColorName.LineageGroupNodeBorder]: CoreColors.Gray900,
+  [ColorName.LineageGroupNodeBorderHover]: CoreColors.Gray850,
+  [ColorName.LineageGroupBackground]: TranslucentColors.DarkWash,
+  
+  [ColorName.LineageNodeBackground]: CoreColors.Gray850,
+  [ColorName.LineageNodeBackgroundHover]: CoreColors.Gray800,
+  [ColorName.LineageNodeBorder]: CoreColors.Gray700,
+  [ColorName.LineageNodeBorderHover]: CoreColors.Gray400,
+  [ColorName.LineageNodeBorderSelected]: CoreColors.Blue300,
 };

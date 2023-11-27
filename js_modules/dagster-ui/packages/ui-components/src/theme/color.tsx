@@ -77,3 +77,20 @@ export const colorTooltipBackground = () => color(ColorName.TooltipBackground);
 export const colorTooltipText = () => color(ColorName.TooltipText);
 export const colorPopoverBackground = () => color(ColorName.PopoverBackground);
 export const colorPopoverBackgroundHover = () => color(ColorName.PopoverBackgroundHover);
+//LINEAGE GRAPH COLORS
+export const colorLineageDots = () => color(ColorName.LineageDots);
+export const colorLineageEdge = () => color(ColorName.LineageEdge);
+export const colorLineageEdgeHighlighted = () => color(ColorName.LineageEdgeHighlighted);
+//GRAPH GROUPS
+export const colorLineageGroupNodeBackground = () => color(ColorName.LineageGroupNodeBackground);
+export const colorLineageGroupNodeBackgroundHover = () => color(ColorName.LineageGroupNodeBackgroundHover);
+export const colorLineageGroupNodeBorder = () => color(ColorName.LineageGroupNodeBorder);
+export const colorLineageGroupNodeBorderHover = () => color(ColorName.LineageGroupNodeBorderHover);
+export const colorLineageGroupBackground = () => color(ColorName.LineageGroupBackground);
+//GRAPH NODES
+export const colorLineageNodeBackground = () => color(ColorName.LineageNodeBackground);
+export const colorLineageNodeBackgroundHover = () => color(ColorName.LineageNodeBackgroundHover);
+export const colorLineageNodeBorder = () => color(ColorName.LineageNodeBorder);
+export const colorLineageNodeBorderHover = () => color(ColorName.LineageNodeBorderHover);
+export const colorLineageNodeBorderSelected = () => color(ColorName.LineageNodeBorderSelected);
+

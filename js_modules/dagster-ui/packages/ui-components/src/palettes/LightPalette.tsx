@@ -70,4 +70,19 @@ export const LightPalette = {
   [ColorName.TooltipText]: CoreColors.White,
   [ColorName.PopoverBackground]: CoreColors.White,
   [ColorName.PopoverBackgroundHover]: CoreColors.Gray50,
+  //Lineage Graph
+  [ColorName.LineageDots]: TranslucentColors.Gray20,
+  [ColorName.LineageEdge]: CoreColors.Gray100,
+  [ColorName.LineageEdgeHighlighted]: CoreColors.Gray400,
+  [ColorName.LineageGroupNodeBackground]: CoreColors.Gray10,
+  [ColorName.LineageGroupNodeBackgroundHover]: CoreColors.Gray50,
+  [ColorName.LineageGroupNodeBorder]: CoreColors.Gray50,
+  [ColorName.LineageGroupNodeBorderHover]: CoreColors.Gray50,
+  [ColorName.LineageGroupBackground]: TranslucentColors.LightWash,
+
+  [ColorName.LineageNodeBackground]: CoreColors.Gray50,
+  [ColorName.LineageNodeBackgroundHover]: CoreColors.Gray100,
+  [ColorName.LineageNodeBorder]: CoreColors.Gray150,
+  [ColorName.LineageNodeBorderHover]: CoreColors.Gray300,
+  [ColorName.LineageNodeBorderSelected]: CoreColors.Blue500,
 };
