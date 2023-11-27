@@ -39,7 +39,7 @@ const GroupOutline = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;
-  background: ${Colors.White};
+  background: rgba(255, 255, 255, 0.35);
   width: 100%;
   border-radius: 10px;
   border-top-left-radius: 0;

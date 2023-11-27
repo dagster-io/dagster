@@ -82,11 +82,7 @@ import {
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {
-  PartitionDimensionSelection,
-  keyCountInSelections,
-  usePartitionHealthData,
-} from './usePartitionHealthData';
+import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
@@ -465,7 +461,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 {target.type === 'pureWithAnchorAsset' ? (
                   <span /> // we won't know until runtime
                 ) : (
-                  <span>{partitionCountString(keyCountInSelections(selections))}</span>
+                  <span>{partitionCountString(keysFiltered.length)}</span>
                 )}
               </Box>
             }
