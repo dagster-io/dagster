@@ -1,6 +1,6 @@
 // We've observed that Firefox's DOM APIs and Canvas APIs do not return
 // identical values given the same rendered text, in particular when the DOM
-// element is inside a flexbox. They're floating point numbers off by ~0.05.
+// element is inside a flexbox. They're floating point numbers off by ~0.5.
 const FIREFOX_WIDTH_VARIANCE = 0.5;
 
 /**
