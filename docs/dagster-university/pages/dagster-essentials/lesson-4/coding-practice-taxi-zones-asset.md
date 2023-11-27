@@ -27,20 +27,20 @@ The asset you built should look similar to the following code. Click **View answ
 
 ```python {% obfuscated="true" %}
 @asset(
-	deps=["taxi_zones_file"]
+  deps=["taxi_zones_file"]
 )
 def taxi_zones():
-    sql_query = f"""
-        create or replace table zones as (
-            select
-                LocationID as zone_id,
-                zone,
-                borough,
-                the_geom as geometry
-            from '{constants.TAXI_ZONES_FILE_PATH}'
-        );
-    """
+  sql_query = f"""
+    create or replace table zones as (
+      select
+        LocationID as zone_id,
+        zone,
+        borough,
+        the_geom as geometry
+      from '{constants.TAXI_ZONES_FILE_PATH}'
+    );
+  """
 
-		conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-		conn.execute(sql_query)
+  conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+  conn.execute(sql_query)
 ```
