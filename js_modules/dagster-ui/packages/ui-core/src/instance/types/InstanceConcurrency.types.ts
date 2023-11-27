@@ -26,6 +26,12 @@ export type ConcurrencyLimitFragment = {
   }>;
 };
 
+export type RunQueueConfigFragment = {
+  __typename: 'RunQueueConfig';
+  maxConcurrentRuns: number;
+  tagConcurrencyLimitsYaml: string | null;
+};
+
 export type InstanceConcurrencyLimitsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type InstanceConcurrencyLimitsQuery = {

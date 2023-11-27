@@ -42,18 +42,19 @@ import {TimeElapsed} from '../runs/TimeElapsed';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {
-  InstanceConcurrencyLimitsQuery,
-  InstanceConcurrencyLimitsQueryVariables,
-  ConcurrencyLimitFragment,
-  SetConcurrencyLimitMutation,
-  SetConcurrencyLimitMutationVariables,
   ConcurrencyKeyDetailsQuery,
   ConcurrencyKeyDetailsQueryVariables,
+  ConcurrencyLimitFragment,
   ConcurrencyStepFragment,
-  RunsForConcurrencyKeyQuery,
-  RunsForConcurrencyKeyQueryVariables,
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
+  InstanceConcurrencyLimitsQuery,
+  InstanceConcurrencyLimitsQueryVariables,
+  RunsForConcurrencyKeyQuery,
+  RunsForConcurrencyKeyQueryVariables,
+  RunQueueConfigFragment,
+  SetConcurrencyLimitMutation,
+  SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
 
 const InstanceConcurrencyPage = React.memo(() => {
@@ -72,7 +73,7 @@ const InstanceConcurrencyPage = React.memo(() => {
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
 
-  const op_concurrency_content = data ? (
+  const opConcurrencyContent = data ? (
     flagInstanceConcurrencyLimits ? (
       <ConcurrencyLimits
         instanceConfig={data.instance.info}
@@ -110,7 +111,7 @@ const InstanceConcurrencyPage = React.memo(() => {
             </Box>
           </Subheading>
         </Box>
-        {op_concurrency_content}
+        {opConcurrencyContent}
       </Box>
     </Page>
   );
@@ -140,7 +141,7 @@ const RunConcurrencyContent = ({
   runQueueConfig,
 }: {
   hasRunQueue: boolean;
-  runQueueConfig: any;
+  runQueueConfig: RunQueueConfigFragment | null | undefined;
 }) => {
   if (!hasRunQueue) {
     return (
@@ -148,15 +149,19 @@ const RunConcurrencyContent = ({
         <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <Subheading>Run concurrency</Subheading>
         </Box>
-        <Box>
+        <div>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
           limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
           <Mono>dagster.yaml</Mono>. See the{' '}
-          <a href="https://docs.dagster.io/deployment/dagster-instance#queuedruncoordinator">
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href="https://docs.dagster.io/deployment/dagster-instance#queuedruncoordinator"
+          >
             QueuedRunCoordinator documentation
           </a>{' '}
           for more information.
-        </Box>
+        </div>
       </>
     );
   }
@@ -164,7 +169,11 @@ const RunConcurrencyContent = ({
   const info_content = (
     <Box padding={{vertical: 16, horizontal: 24}}>
       Run concurrency can be set in your run queue settings. See the{' '}
-      <a href="https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines#configuring-run-level-concurrency">
+      <a
+        target="_blank"
+        rel="noreferrer"
+        href="https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines#configuring-run-level-concurrency"
+      >
         run concurrency documentation
       </a>{' '}
       for more information.
@@ -643,6 +652,7 @@ const ConcurrencyActionMenu = ({
             icon="status"
             text="Free all concurrency slots for run"
             onClick={async () => {
+              await showSharedToaster({message: 'Freeing concurrency slots...'});
               const resp = await freeSlots({variables: {runId: pendingStep.runId}});
               if (resp.data?.freeConcurrencySlots) {
                 onUpdate();
@@ -697,7 +707,7 @@ const ConcurrencyStepsDialog = ({
       onClose={onClose}
       style={{
         minWidth: '400px',
-        maxWidth: 'calc(100% - 40px)',
+        maxWidth: '1000px',
         width: '90vw',
         maxHeight: '90vh',
       }}
@@ -734,7 +744,7 @@ const PendingStepsTable = ({
       variables: {
         filter: {runIds},
       },
-      skip: !runIds,
+      skip: !keyInfo.pendingSteps.length,
     },
   );
   const statusByRunId: {[id: string]: RunStatus} = {};
@@ -756,7 +766,7 @@ const PendingStepsTable = ({
   const assignedSteps = steps.filter((step) => !!step.assignedTimestamp);
   const pendingSteps = steps.filter((step) => !step.assignedTimestamp);
 
-  const table_header = (
+  const tableHeader = (
     <thead>
       <tr>
         <th>Run ID</th>
@@ -782,7 +792,7 @@ const PendingStepsTable = ({
   if (!steps.length) {
     return (
       <Table>
-        {table_header}
+        {tableHeader}
         <tbody>
           <tr>
             <td colSpan={6}>
@@ -802,7 +812,7 @@ const PendingStepsTable = ({
 
   return (
     <Table>
-      {table_header}
+      {tableHeader}
       <tbody style={{backgroundColor: Colors.Yellow50}}>
         {assignedSteps.map((step) => (
           <PendingStepRow
@@ -838,7 +848,7 @@ const PendingStepRow = ({
 }) => {
   const runStatus = statusByRunId[step.runId];
   return (
-    <tr key={step.runId + step.stepKey}>
+    <tr>
       <td>
         {runStatus ? (
           <Link to={`/runs/${step.runId}`}>
@@ -856,9 +866,7 @@ const PendingStepRow = ({
             </Box>
           </Link>
         ) : (
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-            <Mono>{titleForRun({id: step.runId})}</Mono>
-          </Box>
+          <Mono>{titleForRun({id: step.runId})}</Mono>
         )}
       </td>
       <td>
@@ -909,6 +917,12 @@ export const CONCURRENCY_LIMIT_FRAGMENT = gql`
   }
   ${CONCURRENCY_STEP_FRAGMENT}
 `;
+export const RUN_QUEUE_CONFIG_FRAGMENT = gql`
+  fragment RunQueueConfigFragment on RunQueueConfig {
+    maxConcurrentRuns
+    tagConcurrencyLimitsYaml
+  }
+`;
 
 export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
   query InstanceConcurrencyLimitsQuery {
@@ -918,8 +932,7 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
       supportsConcurrencyLimits
       runQueuingSupported
       runQueueConfig {
-        maxConcurrentRuns
-        tagConcurrencyLimitsYaml
+        ...RunQueueConfigFragment
       }
       concurrencyLimits {
         ...ConcurrencyLimitFragment
@@ -928,6 +941,7 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
   }
 
   ${CONCURRENCY_LIMIT_FRAGMENT}
+  ${RUN_QUEUE_CONFIG_FRAGMENT}
 `;
 
 const SET_CONCURRENCY_LIMIT_MUTATION = gql`
