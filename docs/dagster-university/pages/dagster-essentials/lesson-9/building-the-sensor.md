@@ -40,7 +40,7 @@ Now that cursors have been explained, let’s start writing the sensor.
    ```python
    from dagster import (
      RunRequest,
-   		SensorResult,
+     SensorResult,
      sensor
    )
 
@@ -114,22 +114,22 @@ Now that cursors have been explained, let’s start writing the sensor.
 
        # if the file is new or has been modified since the last run, add it to the request queue
        if filename not in previous_state or previous_state[filename] != last_modified:
-   					    with open(file_path, "r") as f:
-           request_config = json.load(f)
+         with open(file_path, "r") as f:
+         request_config = json.load(f)
 
-           runs_to_request.append(RunRequest(
-             run_key=f"adhoc_request_{filename}_{last_modified}",
-             run_config={
-               "ops": {
-                 "adhoc_request": {
-                   "config": {
-                     "filename": filename,
-                     **request_config
-                   }
+         runs_to_request.append(RunRequest(
+           run_key=f"adhoc_request_{filename}_{last_modified}",
+           run_config={
+             "ops": {
+               "adhoc_request": {
+                 "config": {
+                   "filename": filename,
+                   **request_config
                  }
                }
              }
-           ))
+           }
+         ))
    ```
 
    - Using `os.listdir` , iterate through the `data/requests` directory, look at every JSON file, and see if it’s been updated or looked at it before in `previous_state`

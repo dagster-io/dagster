@@ -28,28 +28,28 @@ from dagster import asset
 ... # other assets
 
 @asset(
-	deps=["taxi_trips_file"],
+  deps=["taxi_trips_file"],
 )
 def taxi_trips():
-	sql_query = """
-		create or replace table taxi_trips as (
-			select
-				VendorID as vendor_id,
-				PULocationID as pickup_zone_id,
-				DOLocationID as dropoff_zone_id,
-				RatecodeID as rate_code_id,
-				payment_type as payment_type,
-				tpep_dropoff_datetime as dropoff_datetime,
-				tpep_pickup_datetime as pickup_datetime,
-				trip_distance as trip_distance,
-				passenger_count as passenger_count,
-				total_amount as total_amount
-			from 'data/raw/taxi_trips_2023-03.parquet'
-		);
-	"""
+  sql_query = """
+    create or replace table taxi_trips as (
+      select
+        VendorID as vendor_id,
+        PULocationID as pickup_zone_id,
+        DOLocationID as dropoff_zone_id,
+        RatecodeID as rate_code_id,
+        payment_type as payment_type,
+        tpep_dropoff_datetime as dropoff_datetime,
+        tpep_pickup_datetime as pickup_datetime,
+        trip_distance as trip_distance,
+        passenger_count as passenger_count,
+        total_amount as total_amount
+      from 'data/raw/taxi_trips_2023-03.parquet'
+    );
+  """
 
-	conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-	conn.execute(sql_query)
+  conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+  conn.execute(sql_query)
 ```
 
 ---
@@ -70,28 +70,28 @@ from dagster import asset
 
 
 @asset(
-	deps=["taxi_trips_file"],
+  deps=["taxi_trips_file"],
 )
 def taxi_trips(database: DuckDBResource):
-	sql_query = """
-		create or replace table taxi_trips as (
-			select
-				VendorID as vendor_id,
-				PULocationID as pickup_zone_id,
-				DOLocationID as dropoff_zone_id,
-				RatecodeID as rate_code_id,
-				payment_type as payment_type,
-				tpep_dropoff_datetime as dropoff_datetime,
-				tpep_pickup_datetime as pickup_datetime,
-				trip_distance as trip_distance,
-				passenger_count as passenger_count,
-				total_amount as total_amount
-			from 'data/raw/taxi_trips_2023-03.parquet'
-		);
-	"""
+sql_query = """
+    create or replace table taxi_trips as (
+      select
+        VendorID as vendor_id,
+        PULocationID as pickup_zone_id,
+        DOLocationID as dropoff_zone_id,
+        RatecodeID as rate_code_id,
+        payment_type as payment_type,
+        tpep_dropoff_datetime as dropoff_datetime,
+        tpep_pickup_datetime as pickup_datetime,
+        trip_distance as trip_distance,
+        passenger_count as passenger_count,
+        total_amount as total_amount
+      from 'data/raw/taxi_trips_2023-03.parquet'
+    );
+  """
 
-	with database.get_connection() as conn:
-		conn.execute(sql_query)
+  with database.get_connection() as conn:
+    conn.execute(sql_query)
 ```
 
 To refactor `taxi_trips` to use the `database` resource, we had to:
@@ -109,7 +109,7 @@ To refactor `taxi_trips` to use the `database` resource, we had to:
 
    ```python
    with database.get_connection() as conn:
-   	conn.execute(query)
+    conn.execute(query)
    ```
 
 ---

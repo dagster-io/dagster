@@ -17,16 +17,16 @@ from dagster import asset
 
 @asset
 def taxi_trips_file():
-    """
-        The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
-    """
-    month_to_fetch = '2023-03'
-    raw_trips = requests.get(
-        f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
-    )
+  """
+    The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+  """
+  month_to_fetch = '2023-03'
+  raw_trips = requests.get(
+    f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+  )
 
-    with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
-        output_file.write(raw_trips.content)
+  with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
+    output_file.write(raw_trips.content)
 ```
 
 In the Dagster UI, navigate to the **Global asset lineage** page and click Materialize again to try materializing the `taxi_trips_file` asset. As expected, the run will fail, resulting in the asset looking like this in the graph:

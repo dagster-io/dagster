@@ -14,15 +14,15 @@ Starting with `taxi_trips_file`, the asset code should currently look like this:
 @asset
 def taxi_trips_file():
     """
-        The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+      The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
     """
     month_to_fetch = '2023-03'
     raw_trips = requests.get(
-        f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+      f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
     )
 
     with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
-        output_file.write(raw_trips.content)
+      output_file.write(raw_trips.content)
 ```
 
 In this asset, `month_to_fetch` is set to `2023-03` to retrieve trip data for March 2023. Using the `monthly_partition`, you can update the asset to use the partition to retrieve three months of data.
@@ -85,16 +85,16 @@ from ..partitions import monthly_partition
 )
 def taxi_trips_file(context):
   """
-      The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+    The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
   """
 
   partition_date_str = context.asset_partition_key_for_output()
   month_to_fetch = partition_date_str[:-3]
 
   raw_trips = requests.get(
-      f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+    f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
   )
 
   with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
-      output_file.write(raw_trips.content)
+    output_file.write(raw_trips.content)
 ```

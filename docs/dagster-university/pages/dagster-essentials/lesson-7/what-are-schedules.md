@@ -62,8 +62,8 @@ For more info on asset selection, refer to the [asset selection syntax guide in 
 
    ```python
    trip_update_job = define_asset_job(
-       name="trip_update_job",
-       selection=AssetSelection.all() - trips_by_week
+     name="trip_update_job",
+     selection=AssetSelection.all() - trips_by_week
    )
    ```
 
@@ -77,8 +77,8 @@ from dagster import AssetSelection, define_asset_job
 trips_by_week = AssetSelection.keys("trips_by_week")
 
 trip_update_job = define_asset_job(
-    name="trip_update_job",
-    selection=AssetSelection.all() - trips_by_week
+  name="trip_update_job",
+  selection=AssetSelection.all() - trips_by_week
 )
 ```
 

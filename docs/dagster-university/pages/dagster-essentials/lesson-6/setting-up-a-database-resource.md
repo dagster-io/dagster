@@ -10,7 +10,7 @@ Throughout this module, you’ve used DuckDB to store and transform your data. E
 
 ```python
 @asset(
-	deps=["taxi_trips_file"],
+  deps=["taxi_trips_file"],
 )
 def taxi_trips():
     ...
@@ -39,7 +39,7 @@ Copy and paste the following code into `resources/__init__.py:`
 from dagster_duckdb import DuckDBResource
 
 database_resource = DuckDBResource(
-    database="data/staging/data.duckdb"
+  database="data/staging/data.duckdb"
 )
 ```
 
@@ -62,7 +62,7 @@ from dagster_duckdb import DuckDBResource
 from dagster import EnvVar
 
 database_resource = DuckDBResource(
-    database=EnvVar("DUCKDB_DATABASE")      # replaced with environment variable
+  database=EnvVar("DUCKDB_DATABASE")      # replaced with environment variable
 )
 ```
 
@@ -93,10 +93,10 @@ Update `dagster_university/__init__.py` with the following changes:
 
    ```python
    defs = Definitions(
-       assets=[*trip_assets, *metric_assets],
-       resources={
-           "database": database_resource,
-       },
+     assets=[*trip_assets, *metric_assets],
+     resources={
+       "database": database_resource,
+     },
    )
    ```
 

@@ -18,13 +18,13 @@ In Dagster, the `Definitions` object is located in the project’s top-level `__
 # __init__.py
 
 defs = Definitions(
-    assets=[
-        dry_ingredients,
-        wet_ingredients,
-        chocolate_chips,
-        cookie_dough,
-        chocolate_chip_cookie_dough,
-        chocolate_chip_cookies,
+  assets=[
+    dry_ingredients,
+    wet_ingredients,
+    chocolate_chips,
+    cookie_dough,
+    chocolate_chip_cookie_dough,
+    chocolate_chip_cookies,
 ])
 ```
 
@@ -86,6 +86,6 @@ The `Definitions` object takes multiple arguments, one for each of the possible 
 
 ```python
 defs = Definitions(
-    assets=[*trip_assets, *metric_assets],
+  assets=[*trip_assets, *metric_assets],
 )
 ```

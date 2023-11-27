@@ -43,47 +43,47 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
 
      # count the number of trips that picked up in a given borough, aggregated by time of day and hour of day
      query = f"""
-         select
-           date_part('hour', pickup_datetime) as hour_of_day,
-           date_part('dayofweek', pickup_datetime) as day_of_week_num,
-           case date_part('dayofweek', pickup_datetime)
-             when 0 then 'Sunday'
-             when 1 then 'Monday'
-             when 2 then 'Tuesday'
-             when 3 then 'Wednesday'
-             when 4 then 'Thursday'
-             when 5 then 'Friday'
-             when 6 then 'Saturday'
-           end as day_of_week,
-           count(*) as num_trips
-         from trips
-         left join zones on trips.pickup_zone_id = zones.zone_id
-         where pickup_datetime >= '{config.start_date}'
-         and pickup_datetime < '{config.end_date}'
-         and pickup_zone_id in (
-           select zone_id
-           from zones
-           where borough = '{config.borough}'
-         )
-         group by 1, 2
-         order by 1, 2 asc
+       select
+         date_part('hour', pickup_datetime) as hour_of_day,
+         date_part('dayofweek', pickup_datetime) as day_of_week_num,
+         case date_part('dayofweek', pickup_datetime)
+           when 0 then 'Sunday'
+           when 1 then 'Monday'
+           when 2 then 'Tuesday'
+           when 3 then 'Wednesday'
+           when 4 then 'Thursday'
+           when 5 then 'Friday'
+           when 6 then 'Saturday'
+         end as day_of_week,
+         count(*) as num_trips
+       from trips
+       left join zones on trips.pickup_zone_id = zones.zone_id
+       where pickup_datetime >= '{config.start_date}'
+       and pickup_datetime < '{config.end_date}'
+       and pickup_zone_id in (
+         select zone_id
+         from zones
+         where borough = '{config.borough}'
+       )
+       group by 1, 2
+       order by 1, 2 asc
      """
 
      with database.get_connection() as conn:
        results = conn.execute(query).fetch_df()
 
      fig = px.bar(
-           results,
-           x="hour_of_day",
-           y="num_trips",
-           color="day_of_week",
-           barmode="stack",
-           title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-           labels={
-               "hour_of_day": "Hour of Day",
-               "day_of_week": "Day of Week",
-               "num_trips": "Number of Trips"
-         }
+       results,
+       x="hour_of_day",
+       y="num_trips",
+       color="day_of_week",
+       barmode="stack",
+       title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
+       labels={
+           "hour_of_day": "Hour of Day",
+           "day_of_week": "Day of Week",
+           "num_trips": "Number of Trips"
+     }
      )
 
      pio.write_image(fig, file_path)
@@ -159,47 +159,47 @@ def adhoc_request(context**,** config: AdhocRequestConfig, taxi_zones, taxi_trip
 
   # count the number of trips that picked up in a given borough, aggregated by time of day and hour of day
   query = f"""
-      select
-        date_part('hour', pickup_datetime) as hour_of_day,
-        date_part('dayofweek', pickup_datetime) as day_of_week_num,
-        case date_part('dayofweek', pickup_datetime)
-          when 0 then 'Sunday'
-          when 1 then 'Monday'
-          when 2 then 'Tuesday'
-          when 3 then 'Wednesday'
-          when 4 then 'Thursday'
-          when 5 then 'Friday'
-          when 6 then 'Saturday'
-        end as day_of_week,
-        count(*) as num_trips
-      from trips
-      left join zones on trips.pickup_zone_id = zones.zone_id
-      where pickup_datetime >= '{config.start_date}'
-      and pickup_datetime < '{config.end_date}'
-      and pickup_zone_id in (
-        select zone_id
-        from zones
-        where borough = '{config.borough}'
-      )
-      group by 1, 2
-      order by 1, 2 asc
+    select
+      date_part('hour', pickup_datetime) as hour_of_day,
+      date_part('dayofweek', pickup_datetime) as day_of_week_num,
+      case date_part('dayofweek', pickup_datetime)
+        when 0 then 'Sunday'
+        when 1 then 'Monday'
+        when 2 then 'Tuesday'
+        when 3 then 'Wednesday'
+        when 4 then 'Thursday'
+        when 5 then 'Friday'
+        when 6 then 'Saturday'
+      end as day_of_week,
+      count(*) as num_trips
+    from trips
+    left join zones on trips.pickup_zone_id = zones.zone_id
+    where pickup_datetime >= '{config.start_date}'
+    and pickup_datetime < '{config.end_date}'
+    and pickup_zone_id in (
+      select zone_id
+      from zones
+      where borough = '{config.borough}'
+    )
+    group by 1, 2
+    order by 1, 2 asc
   """
 
   with database.get_connection() as conn:
     results = conn.execute(query).fetch_df()
 
   fig = px.bar(
-        results,
-        x="hour_of_day",
-        y="num_trips",
-        color="day_of_week",
-        barmode="stack",
-        title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-        labels={
-          "hour_of_day": "Hour of Day",
-          "day_of_week": "Day of Week",
-          "num_trips": "Number of Trips"
-      }
+    results,
+    x="hour_of_day",
+    y="num_trips",
+    color="day_of_week",
+    barmode="stack",
+    title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
+    labels={
+      "hour_of_day": "Hour of Day",
+      "day_of_week": "Day of Week",
+      "num_trips": "Number of Trips"
+  }
   )
 
   pio.write_image(fig, file_path)
@@ -224,8 +224,6 @@ After all that work, let’s check out what this looks like in the UI!
 1. Navigate to the **Global Asset Lineage** page.
 2. Click **Reload definitions.**
 3. After the metadata code is updated, simulate a tick of the sensor.
-
-<!-- TODO: Add link to Thinkific sensors lesson here? -->
 
 On the right-hand side of the screen, you’ll see `preview`, which was the label given to the Markdown plot value:
 

@@ -28,7 +28,7 @@ We’ll assume your code looks like the following for the rest of the module. If
 # assets/trips.py
 
 @asset(
-   deps=["taxi_zones_file"],
+  deps=["taxi_zones_file"],
 )
 def taxi_zones(database: DuckDBResource):
   """

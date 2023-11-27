@@ -48,15 +48,15 @@ Having all of your assets in one file becomes difficult to manage. Let’s separ
    )
    def manhattan_stats():
      query = """
-         select
-           zones.zone,
-           zones.borough,
-           zones.geometry,
-           count(1) as num_trips,
-         from trips
-         left join zones on trips.pickup_zone_id = zones.zone_id
-         where borough = 'Manhattan' and geometry is not null
-         group by zone, borough, geometry
+       select
+         zones.zone,
+         zones.borough,
+         zones.geometry,
+         count(1) as num_trips,
+       from trips
+       left join zones on trips.pickup_zone_id = zones.zone_id
+       where borough = 'Manhattan' and geometry is not null
+       group by zone, borough, geometry
      """
 
      conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))

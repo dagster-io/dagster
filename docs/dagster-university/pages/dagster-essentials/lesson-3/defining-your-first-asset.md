@@ -23,16 +23,16 @@ Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yello
 
    ```python
    def taxi_trips_file():
-       """
-           The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
-       """
-       month_to_fetch = '2023-03'
-       raw_trips = requests.get(
-           f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
-       )
+     """
+       The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+     """
+     month_to_fetch = '2023-03'
+     raw_trips = requests.get(
+         f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+     )
 
-       with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
-           output_file.write(raw_trips.content)
+     with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
+         output_file.write(raw_trips.content)
    ```
 
 4. To turn the function into an asset in Dagster, you’ll need to do two things:
@@ -52,16 +52,16 @@ Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yello
 
       @asset
       def taxi_trips_file():
-          """
-              The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
-          """
-          month_to_fetch = '2023-03'
-          raw_trips = requests.get(
-              f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
-          )
+        """
+          The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+        """
+        month_to_fetch = '2023-03'
+        raw_trips = requests.get(
+            f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+        )
 
-          with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
-              output_file.write(raw_trips.content)
+        with open(constants.TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch), "wb") as output_file:
+            output_file.write(raw_trips.content)
       ```
 
 That’s it - you’ve created your first Dagster asset! Using the `@asset` decorator, you can easily turn any existing Python function into a Dagster asset.
