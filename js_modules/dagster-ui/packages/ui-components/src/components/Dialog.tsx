@@ -6,7 +6,6 @@ import styled, {createGlobalStyle} from 'styled-components';
 import {colorAccentPrimary, colorBackgroundDefault, colorDialogBackground} from '../theme/color';
 
 import {Box} from './Box';
-import {LegacyColors} from './Colors';
 import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
 import {IconName, Icon} from './Icon';
