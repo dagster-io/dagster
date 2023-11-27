@@ -429,7 +429,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
         an active asset backfill.
         """
-        from dagster._core.execution.asset_backfill import AssetBackfillData
         from dagster._core.execution.backfill import BulkActionStatus
 
         asset_backfills = [
@@ -440,15 +439,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         result = AssetGraphSubset()
         for asset_backfill in asset_backfills:
-            if asset_backfill.serialized_asset_backfill_data is None:
-                check.failed("Asset backfill missing serialized_asset_backfill_data")
-
             try:
-                asset_backfill_data = AssetBackfillData.from_serialized(
-                    asset_backfill.serialized_asset_backfill_data,
-                    self.asset_graph,
-                    asset_backfill.backfill_timestamp,
-                )
+                asset_backfill_data = asset_backfill.get_asset_backfill_data(self.asset_graph)
             except DagsterDefinitionChangedDeserializationError:
                 self._logger.warning(
                     f"Not considering assets in backfill {asset_backfill.backfill_id} since its"

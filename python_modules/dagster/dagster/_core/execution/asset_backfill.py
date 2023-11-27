@@ -35,10 +35,17 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    PartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector, PartitionsByAssetSelector
-from dagster._core.definitions.time_window_partitions import DatetimeFieldSerializer
+from dagster._core.definitions.time_window_partitions import (
+    DatetimeFieldSerializer,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.errors import (
     DagsterAssetBackfillDataLoadError,
     DagsterBackfillFailedError,
@@ -389,7 +396,11 @@ class AssetBackfillData(NamedTuple):
 
     @classmethod
     def empty(
-        cls, target_subset: AssetGraphSubset, backfill_start_time: datetime
+        cls,
+        target_subset: AssetGraphSubset,
+        backfill_start_time: datetime,
+        asset_graph: AssetGraph,
+        dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "AssetBackfillData":
         return cls(
             target_subset=target_subset,
@@ -482,7 +493,7 @@ class AssetBackfillData(NamedTuple):
             partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
             non_partitioned_asset_keys=non_partitioned_asset_keys,
         )
-        return cls.empty(target_subset, backfill_start_time)
+        return cls.empty(target_subset, backfill_start_time, asset_graph, dynamic_partitions_store)
 
     @classmethod
     def from_asset_partitions(
@@ -546,7 +557,7 @@ class AssetBackfillData(NamedTuple):
         else:
             check.failed("Either partition_names must not be None or all_partitions must be True")
 
-        return cls.empty(target_subset, backfill_start_time)
+        return cls.empty(target_subset, backfill_start_time, asset_graph, dynamic_partitions_store)
 
     def serialize(
         self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: AssetGraph
@@ -744,6 +755,109 @@ def _submit_runs_and_update_backfill_in_chunks(
     yield backfill_data_with_submitted_runs
 
 
+def _check_target_partitions_subset_is_valid(
+    asset_key: AssetKey,
+    asset_graph: AssetGraph,
+    target_partitions_subset: Optional[PartitionsSubset],
+    instance_queryer: CachingInstanceQueryer,
+) -> None:
+    """Checks for any partitions definition changes since backfill launch that should mark
+    the backfill as failed.
+    """
+    if asset_key not in asset_graph.all_asset_keys:
+        raise DagsterDefinitionChangedDeserializationError(
+            f"Asset {asset_key} existed at storage-time, but no longer does"
+        )
+
+    partitions_def = asset_graph.get_partitions_def(asset_key)
+
+    if target_partitions_subset:  # Asset was partitioned at storage time
+        if partitions_def is None:
+            raise DagsterDefinitionChangedDeserializationError(
+                f"Asset {asset_key} had a PartitionsDefinition at storage-time, but no longer"
+                " does"
+            )
+
+        # If the asset was time-partitioned at storage time but the time partitions def
+        # has changed, mark the backfill as failed
+        if isinstance(
+            target_partitions_subset, TimeWindowPartitionsSubset
+        ) and target_partitions_subset.partitions_def.get_serializable_unique_identifier(
+            instance_queryer
+        ) != partitions_def.get_serializable_unique_identifier(instance_queryer):
+            raise DagsterDefinitionChangedDeserializationError(
+                f"This partitions definition for asset {asset_key} has changed since this backfill"
+                " was stored. Changing the partitions definition for a time-partitioned "
+                "asset during a backfill is not supported."
+            )
+
+        else:
+            # Check that all target partitions still exist. If so, the backfill can continue.a
+            existent_partitions_subset = (
+                AllPartitionsSubset(
+                    partitions_def,
+                    dynamic_partitions_store=instance_queryer,
+                    current_time=instance_queryer.evaluation_time,
+                )
+                & target_partitions_subset
+            )
+            removed_partitions_subset = target_partitions_subset - existent_partitions_subset
+            if len(removed_partitions_subset) > 0:
+                raise DagsterDefinitionChangedDeserializationError(
+                    f"Targeted partitions for asset {asset_key} have been removed since this backfill was stored. "
+                    f"The following partitions were removed: {removed_partitions_subset.get_partition_keys()}"
+                )
+
+    else:  # Asset unpartitioned at storage time
+        if partitions_def is not None:
+            raise DagsterDefinitionChangedDeserializationError(
+                f"Asset {asset_key} was not partitioned at storage-time, but is now"
+            )
+
+
+def _check_validity_and_deserialize_asset_backfill_data(
+    workspace_context: BaseWorkspaceRequestContext,
+    backfill: "PartitionBackfill",
+    asset_graph: AssetGraph,
+    instance_queryer: CachingInstanceQueryer,
+    logger: logging.Logger,
+) -> Optional[AssetBackfillData]:
+    """Attempts to deserialize asset backfill data. If the asset backfill data is valid,
+    returns the deserialized data, else returns None.
+    """
+    unloadable_locations = _get_unloadable_location_names(workspace_context, logger)
+
+    try:
+        asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
+        for asset_key in asset_backfill_data.target_subset.asset_keys:
+            _check_target_partitions_subset_is_valid(
+                asset_key,
+                asset_graph,
+                asset_backfill_data.target_subset.get_partitions_subset(asset_key)
+                if asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+                else None,
+                instance_queryer,
+            )
+    except DagsterDefinitionChangedDeserializationError as ex:
+        unloadable_locations_error = (
+            "This could be because it's inside a code location that's failing to load:"
+            f" {unloadable_locations}"
+            if unloadable_locations
+            else ""
+        )
+        if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
+            logger.warning(
+                f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
+                " partition in the asset graph. The backfill will resume once it is available"
+                f" again.\n{ex}. {unloadable_locations_error}"
+            )
+            return None
+        else:
+            raise DagsterAssetBackfillDataLoadError(f"{ex}. {unloadable_locations_error}")
+
+    return asset_backfill_data
+
+
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
     logger: logging.Logger,
@@ -759,39 +873,22 @@ def execute_asset_backfill_iteration(
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
     workspace_context = workspace_process_context.create_request_context()
-    unloadable_locations = _get_unloadable_location_names(workspace_context, logger)
+
     asset_graph = ExternalAssetGraph.from_workspace(workspace_context)
 
-    if backfill.serialized_asset_backfill_data is None:
-        check.failed("Asset backfill missing serialized_asset_backfill_data")
+    if not backfill.is_asset_backfill:
+        check.failed("Backfill must be an asset backfill")
 
-    try:
-        previous_asset_backfill_data = AssetBackfillData.from_serialized(
-            backfill.serialized_asset_backfill_data, asset_graph, backfill.backfill_timestamp
-        )
-    except DagsterDefinitionChangedDeserializationError as ex:
-        unloadable_locations_error = (
-            "This could be because it's inside a code location that's failing to load:"
-            f" {unloadable_locations}"
-            if unloadable_locations
-            else ""
-        )
-        if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
-            logger.warning(
-                f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
-                " partition in the asset graph. The backfill will resume once it is available"
-                f" again.\n{ex}. {unloadable_locations_error}"
-            )
-            yield None
-            return
-        else:
-            raise DagsterAssetBackfillDataLoadError(f"{ex}. {unloadable_locations_error}")
-
-    backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
-
+    backfill_start_time = pendulum.from_timestamp(backfill.backfill_timestamp, "UTC")
     instance_queryer = CachingInstanceQueryer(
         instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_time
     )
+
+    previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
+        workspace_context, backfill, asset_graph, instance_queryer, logger
+    )
+    if previous_asset_backfill_data is None:
+        return
 
     if backfill.status == BulkActionStatus.REQUESTED:
         result = None
@@ -835,7 +932,9 @@ def execute_asset_backfill_iteration(
         # Refetch, in case the backfill was canceled in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
         updated_backfill = backfill.with_asset_backfill_data(
-            updated_asset_backfill_data, dynamic_partitions_store=instance, asset_graph=asset_graph
+            updated_asset_backfill_data,
+            dynamic_partitions_store=instance,
+            asset_graph=asset_graph,
         )
         if updated_asset_backfill_data.is_complete():
             # The asset backfill is complete when all runs to be requested have finished (success,
@@ -886,7 +985,9 @@ def execute_asset_backfill_iteration(
             )
 
         updated_backfill = backfill.with_asset_backfill_data(
-            updated_asset_backfill_data, dynamic_partitions_store=instance, asset_graph=asset_graph
+            updated_asset_backfill_data,
+            dynamic_partitions_store=instance,
+            asset_graph=asset_graph,
         )
         # The asset backfill is successfully canceled when all requested runs have finished (success,
         # failure, or cancellation). Since the AssetBackfillData object stores materialization states
