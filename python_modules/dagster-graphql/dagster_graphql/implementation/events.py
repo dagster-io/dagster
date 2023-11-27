@@ -6,6 +6,7 @@ import dagster._seven as seven
 from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
+    DagsterJobMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -44,6 +45,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneBoolMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
+        GrapheneJobMetadataEntry,
         GrapheneJsonMetadataEntry,
         GrapheneMarkdownMetadataEntry,
         GrapheneNotebookMetadataEntry,
@@ -137,6 +139,13 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
             yield GrapheneAssetMetadataEntry(
                 label=key,
                 assetKey=value.asset_key,
+            )
+        elif isinstance(value, DagsterJobMetadataValue):
+            yield GrapheneJobMetadataEntry(
+                label=key,
+                jobName=value.job_name,
+                repositoryName=value.repository_name,
+                locationName=value.location_name,
             )
         elif isinstance(value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(

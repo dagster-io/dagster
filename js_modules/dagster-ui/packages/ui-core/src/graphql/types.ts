@@ -1706,6 +1706,15 @@ export type JobSolidHandlesArgs = {
   parentHandleID?: InputMaybe<Scalars['String']>;
 };
 
+export type JobMetadataEntry = MetadataEntry & {
+  __typename: 'JobMetadataEntry';
+  description: Maybe<Scalars['String']>;
+  jobName: Scalars['String'];
+  label: Scalars['String'];
+  locationName: Scalars['String'];
+  repositoryName: Maybe<Scalars['String']>;
+};
+
 export type JobOrPipelineSelector = {
   assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
@@ -7687,6 +7696,25 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
     solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+  };
+};
+
+export const buildJobMetadataEntry = (
+  overrides?: Partial<JobMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'JobMetadataEntry'} & JobMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('JobMetadataEntry');
+  return {
+    __typename: 'JobMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'id',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'eum',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'illo',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'quidem',
+    repositoryName:
+      overrides && overrides.hasOwnProperty('repositoryName') ? overrides.repositoryName! : 'eos',
   };
 };
 

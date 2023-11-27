@@ -73,6 +73,14 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
+          label: string;
+          description: string | null;
+        }
+      | {
           __typename: 'JsonMetadataEntry';
           jsonString: string;
           label: string;
@@ -213,6 +221,14 @@ export type LogsRowStructuredFragment_EngineEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -348,6 +364,14 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
+          label: string;
+          description: string | null;
+        }
+      | {
           __typename: 'JsonMetadataEntry';
           jsonString: string;
           label: string;
@@ -468,6 +492,14 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -593,6 +625,14 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -697,6 +737,14 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -878,6 +926,14 @@ export type LogsRowStructuredFragment_HandledOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1033,6 +1089,14 @@ export type LogsRowStructuredFragment_LoadedInputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1170,6 +1234,14 @@ export type LogsRowStructuredFragment_MaterializationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1282,6 +1354,14 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -1406,6 +1486,14 @@ export type LogsRowStructuredFragment_ObservationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1519,6 +1607,14 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1649,6 +1745,14 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1761,6 +1865,14 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1964,6 +2076,14 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
+          label: string;
+          description: string | null;
+        }
+      | {
           __typename: 'JsonMetadataEntry';
           jsonString: string;
           label: string;
@@ -2086,6 +2206,14 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -2198,6 +2326,14 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }

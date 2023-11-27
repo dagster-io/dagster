@@ -60,6 +60,11 @@ fragment metadataEntryFragment on MetadataEntry {
       path
     }
   }
+  ... on JobMetadataEntry {
+    jobName
+    repositoryName
+    locationName
+  }
   ... on TableMetadataEntry  {
     table {
       records
