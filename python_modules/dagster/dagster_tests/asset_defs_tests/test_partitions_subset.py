@@ -159,6 +159,10 @@ def test_all_partitions_subset_static_partitions_def() -> None:
     assert all_subset - abc_subset == DefaultPartitionsSubset({"d"})
     assert abc_subset - all_subset == DefaultPartitionsSubset(set())
 
+    round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))  # type: ignore
+    assert isinstance(round_trip_subset, DefaultPartitionsSubset)
+    assert set(round_trip_subset.get_partition_keys()) == set(all_subset.get_partition_keys())
+
 
 def test_all_partitions_subset_time_window_partitions_def() -> None:
     with pendulum.test(create_pendulum_time(2020, 1, 6, hour=10)):
@@ -188,3 +192,7 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
         assert subset - all_subset == PartitionKeysTimeWindowPartitionsSubset(
             time_window_partitions_def, included_partition_keys=set()
         )
+
+        round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))  # type: ignore
+        assert isinstance(round_trip_subset, TimeWindowPartitionsSubset)
+        assert set(round_trip_subset.get_partition_keys()) == set(all_subset.get_partition_keys())

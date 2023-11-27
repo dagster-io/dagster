@@ -1321,4 +1321,6 @@ class AllPartitionsSubset(
         check.failed("Cannot create an empty AllPartitionsSubset")
 
     def to_serializable_subset(self) -> PartitionsSubset:
-        return self.partitions_def.subset_with_partition_keys(self.get_partition_keys())
+        return self.partitions_def.subset_with_partition_keys(
+            self.get_partition_keys()
+        ).to_serializable_subset()
