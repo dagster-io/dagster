@@ -69,6 +69,9 @@ export const FlexboxContainerUsage = () => {
         'yoyo_multidim_other_order',
         'activity_daily_stats',
         'asset_that_supports_partition_ranges',
+        'asset_downstream',
+        'asset_weekly_root',
+        'asset_weekly',
       ].map((text) => (
         <Box key={text} style={{maxWidth: '100%'}} flex={{direction: 'row', gap: 8}}>
           <Box>
