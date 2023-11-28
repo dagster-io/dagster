@@ -1,5 +1,4 @@
-import {Box, Icon, IconWrapper, Tooltip} from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
+import {Box, Icon, IconWrapper, Tooltip, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components';

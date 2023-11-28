@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ButtonLink} from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
+import {Box, ButtonLink, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';

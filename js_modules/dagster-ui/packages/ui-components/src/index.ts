@@ -56,6 +56,9 @@ export * from './components/useDelayedState';
 export * from './components/ifPlural';
 export * from './theme/color';
 
+// todo dish: Delete this
+export * from './palettes/Colors';
+
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />
 export * from './fonts/GlobalInconsolata';

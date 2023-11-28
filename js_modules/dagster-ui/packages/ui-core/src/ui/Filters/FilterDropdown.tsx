@@ -11,8 +11,8 @@ import {
   colorBackgroundLight,
   colorPopoverBackground,
   colorTextLight,
+  CoreColors,
 } from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState, useRef} from 'react';
 import styled, {createGlobalStyle} from 'styled-components';

@@ -8,8 +8,8 @@ import {
   colorBackgroundLight,
   colorBorderDefault,
   colorLineageDots,
+  CoreColors,
 } from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import animate from 'amator';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
