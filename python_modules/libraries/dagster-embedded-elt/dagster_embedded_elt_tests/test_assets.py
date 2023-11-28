@@ -23,6 +23,7 @@ from dagster_embedded_elt.sling.resources import (
 def test_csv():
     return os.path.abspath(file_relative_path(__file__, "test.csv"))
 
+
 @pytest.fixture
 def test_staging_csv():
     return os.path.abspath(file_relative_path(__file__, "staging_test.csv"))
@@ -48,6 +49,7 @@ def sling_sqlite_resource(temp_db):
 @pytest.fixture
 def sling_file_connection():
     return SlingConnectionResource(type="file")
+
 
 @pytest.fixture
 def sling_staging_file_connection():
@@ -238,6 +240,7 @@ def test_build_assets_from_sling_stream(
         counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
     assert counts == expected
 
+
 def test_reuse_sling_connection_resource(
     test_csv: str,
     test_staging_csv: str,
@@ -279,6 +282,7 @@ def test_reuse_sling_connection_resource(
     assert res.success
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
     assert sqlite_connection.execute("SELECT count(1) FROM main.staging_tbl").fetchone()[0] == 4
+
 
 def test_update_mode_from_stream(
     test_csv: str,
