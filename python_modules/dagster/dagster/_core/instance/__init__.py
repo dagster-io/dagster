@@ -28,6 +28,7 @@ from typing import (
     cast,
 )
 
+import pendulum
 import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
@@ -2629,11 +2630,19 @@ class DagsterInstance(DynamicPartitionsStore):
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
-                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
+                    SensorInstigatorData(
+                        min_interval=external_sensor.min_interval_seconds,
+                        last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    ),
                 )
             )
         else:
-            return self.update_instigator_state(stored_state.with_status(InstigatorStatus.RUNNING))
+            data = cast(SensorInstigatorData, stored_state.instigator_data)
+            return self.update_instigator_state(
+                stored_state.with_status(InstigatorStatus.RUNNING).with_data(
+                    data.with_sensor_start_timestamp(pendulum.now("UTC").timestamp())
+                )
+            )
 
     def stop_sensor(
         self,

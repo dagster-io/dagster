@@ -171,6 +171,9 @@ class SensorLaunchContext:
                 self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
             )
             last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
+            last_sensor_start_timestamp = (
+                state.instigator_data.last_sensor_start_timestamp if state.instigator_data else None  # type: ignore  # (possible none)
+            )
             if self._tick.run_keys and should_update_cursor_and_last_run_key:
                 last_run_key = self._tick.run_keys[-1]
 
@@ -190,6 +193,7 @@ class SensorLaunchContext:
                         min_interval=self._external_sensor.min_interval_seconds,
                         cursor=cursor,
                         last_tick_start_timestamp=marked_timestamp,
+                        last_sensor_start_timestamp=last_sensor_start_timestamp,
                     )
                 )
             )
@@ -397,7 +401,10 @@ def execute_sensor_iteration(
                 external_sensor.get_external_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.AUTOMATICALLY_RUNNING,
-                SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
+                SensorInstigatorData(
+                    min_interval=external_sensor.min_interval_seconds,
+                    last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                ),
             )
             instance.add_instigator_state(sensor_state)
         elif _is_under_min_interval(sensor_state, external_sensor):
@@ -654,6 +661,7 @@ def _evaluate_sensor(
         instigator_data.last_tick_timestamp if instigator_data else None,
         instigator_data.last_run_key if instigator_data else None,
         instigator_data.cursor if instigator_data else None,
+        instigator_data.last_sensor_start_timestamp if instigator_data else None,
     )
 
     yield
