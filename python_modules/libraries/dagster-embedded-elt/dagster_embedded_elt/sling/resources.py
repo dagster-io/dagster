@@ -411,7 +411,7 @@ class SlingStreamReplicator(SlingSyncBase):
 
             sling_cli = Sling(**config)
             logger.info("Starting Sling sync with mode: %s", mode)
-            cmd = sling_cli._prep_cmd()
+            cmd = sling_cli._prep_cmd() # noqa: SLF001
 
             # `_prep_cmd` only works with the Single Task command, so we need to replace it with the Replication command
             # cmd = cmd.replace(" -c ", " -r ")
