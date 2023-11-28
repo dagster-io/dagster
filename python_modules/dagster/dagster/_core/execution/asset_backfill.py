@@ -1137,7 +1137,9 @@ def submit_run_request(
         job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection),
         asset_check_selection=None,
-        code_location=code_location,
+        external_partitions_definition_data=code_location.get_external_partitions_def_data_for_job(
+            external_job
+        ),  # TODO store this in the pipeline_and_execution_plan_cache?
     )
 
     instance.submit_run(run.run_id, workspace)

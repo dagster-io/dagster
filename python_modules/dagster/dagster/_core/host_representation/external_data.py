@@ -226,7 +226,15 @@ class ExternalRepositoryData(
 
         check.failed("Could not find external schedule data named " + name)
 
-    def get_external_partition_set_data(self, name):
+    def has_external_partition_set_data(self, name) -> bool:
+        check.str_param(name, "name")
+        for external_partition_set_data in self.external_partition_set_datas:
+            if external_partition_set_data.name == name:
+                return True
+
+        return False
+
+    def get_external_partition_set_data(self, name) -> "ExternalPartitionSetData":
         check.str_param(name, "name")
 
         for external_partition_set_data in self.external_partition_set_datas:
@@ -1909,6 +1917,24 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         execution_timezone=schedule_def.execution_timezone,
         description=schedule_def.description,
         default_status=schedule_def.default_status,
+    )
+
+
+def can_build_external_partitions_definition_from_def(partitions_def: PartitionsDefinition):
+    return (
+        isinstance(partitions_def, TimeWindowPartitionsDefinition)
+        or isinstance(partitions_def, StaticPartitionsDefinition)
+        or (
+            isinstance(partitions_def, MultiPartitionsDefinition)
+            and all(
+                can_build_external_partitions_definition_from_def(dimension.partitions_def)
+                for dimension in partitions_def.partitions_defs
+            )
+        )
+        or (
+            isinstance(partitions_def, DynamicPartitionsDefinition)
+            and partitions_def.name is not None
+        )
     )
 
 

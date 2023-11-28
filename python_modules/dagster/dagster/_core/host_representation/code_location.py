@@ -20,7 +20,6 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -35,11 +34,12 @@ from dagster._core.host_representation.external import (
     ExternalRepository,
 )
 from dagster._core.host_representation.external_data import (
-    ExternalAssetNode,
     ExternalPartitionNamesData,
+    ExternalPartitionsDefinitionData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
     external_repository_data_from_def,
+    external_partition_set_name_for_job_name,
 )
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
@@ -223,19 +223,20 @@ class CodeLocation(AbstractContextManager):
     ) -> "SensorExecutionData":
         pass
 
-    def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
-        for external_repository in self.get_repositories().values():
-            external_asset_nodes = (
-                external_repository.external_repository_data.external_asset_graph_data
-            )
+    def get_external_partitions_def_data_for_job(
+        self, external_job: ExternalJob
+    ) -> Optional[ExternalPartitionsDefinitionData]:
+        external_repository_data = self.get_repository(
+            external_job.repository_handle.repository_name
+        ).external_repository_data
+        external_partition_set_name = external_partition_set_name_for_job_name(external_job.name)
 
-            for external_asset_node in external_asset_nodes:
-                if external_asset_node.asset_key == asset_key:
-                    return external_asset_node
+        if external_repository_data.has_external_partition_set_data(external_partition_set_name):
+            return external_repository_data.get_external_partition_set_data(
+                external_partition_set_name
+            ).external_partitions_data
 
-            # TODO get correct asset when assets conflict?
-
-        raise DagsterInvariantViolationError(f"Unable to find asset node for asset key {asset_key}")
+        return None
 
     @abstractmethod
     def get_external_notebook_data(self, notebook_path: str) -> bytes:

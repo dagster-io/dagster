@@ -136,6 +136,7 @@ if TYPE_CHECKING:
         HistoricalJob,
     )
     from dagster._core.host_representation.external import ExternalSchedule
+    from dagster._core.host_representation.external_data import ExternalPartitionsDefinitionData
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
@@ -1108,11 +1109,14 @@ class DagsterInstance(DynamicPartitionsStore):
         external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
-        code_location: Optional["CodeLocation"] = None,
     ) -> DagsterRun:
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.execution.plan.plan import ExecutionPlan
+        from dagster._core.host_representation.external_data import (
+            can_build_external_partitions_definition_from_def,
+            external_partitions_definition_from_def,
+        )
         from dagster._core.snap import snapshot_from_execution_plan
 
         check.inst_param(job_def, "pipeline_def", JobDefinition)
@@ -1169,7 +1173,12 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_job_snapshot=job_def.get_parent_job_snapshot(),
             external_job_origin=external_job_origin,
             job_code_origin=job_code_origin,
-            code_location=code_location,
+            external_partitions_definition_data=external_partitions_definition_from_def(
+                job_def.partitions_def
+            )
+            if job_def.partitions_def
+            and can_build_external_partitions_definition_from_def(job_def.partitions_def)
+            else None,
         )
 
     def _construct_run_with_snapshots(
@@ -1313,7 +1322,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
-        code_location: Optional["CodeLocation"],
+        external_partitions_def_data: Optional["ExternalPartitionsDefinitionData"],
     ) -> None:
         from dagster._core.definitions.partition_key_range import PartitionKeyRange
         from dagster._core.events import (
@@ -1350,21 +1359,17 @@ class DagsterInstance(DynamicPartitionsStore):
                                     f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
                                 )
 
-                            # TODO: resolve which partitions are in the range, and emit an event for each
-
-                            if code_location is None:
+                            if external_partitions_def_data is None:
                                 raise DagsterInvariantViolationError(
-                                    "Must provide a code location to create_run when creating "
+                                    "Must provide external_partitions_def_data to create_run when creating "
                                     "a run with a partition range."
                                 )
 
-                            external_asset_node = code_location.get_external_asset_node(asset_key)
-                            partition_keys = (
-                                check.not_none(external_asset_node.partitions_def_data)
-                                .get_partitions_definition()
-                                .get_partition_keys_in_range(
-                                    PartitionKeyRange(partition_range_start, partition_range_end)
-                                )
+                            partitions_def = (
+                                external_partitions_def_data.get_partitions_definition()
+                            )
+                            partition_keys = partitions_def.get_partition_keys_in_range(
+                                PartitionKeyRange(partition_range_start, partition_range_end)
                             )
                         else:
                             partition = (
@@ -1430,7 +1435,7 @@ class DagsterInstance(DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["ExternalJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
-        code_location: Optional["CodeLocation"],
+        external_partitions_definition_data: Optional["ExternalPartitionsDefinitionData"] = None,
     ) -> DagsterRun:
         # here
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -1562,7 +1567,9 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_run = self._run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot:
-            self._log_asset_planned_events(dagster_run, execution_plan_snapshot, code_location)
+            self._log_asset_planned_events(
+                dagster_run, execution_plan_snapshot, external_partitions_definition_data
+            )
 
         return dagster_run
 
@@ -1651,7 +1658,9 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_check_selection=parent_run.asset_check_selection,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
-            code_location=code_location,
+            external_partitions_definition_data=code_location.get_external_partitions_def_data_for_job(
+                external_job
+            ),
         )
 
     def register_managed_run(
