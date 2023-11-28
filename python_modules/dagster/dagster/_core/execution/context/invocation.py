@@ -55,6 +55,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import deprecation_warning
 
 from .compute import OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
@@ -136,7 +137,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         partition_key: Optional[str],
         partition_key_range: Optional[PartitionKeyRange],
         mapping_key: Optional[str],
-        assets_def: Optional[AssetsDefinition],
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_job import initialize_console_manager
@@ -171,11 +171,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         )
         self._partition_key = partition_key
         self._partition_key_range = partition_key_range
-        # self._user_events: List[UserEvent] = []
-
-        self._assets_def = check.opt_inst_param(
-            assets_def, "assets_def", AssetsDefinition
-        )  # TODO - is this even used?
 
         # Maintains the properties on the context that are bound to a particular invocation
         # of an op
@@ -188,7 +183,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         # ctx._bound_properties.alias is "my_op", must call ctx.unbind() to unbind
         self._bound_properties = None
 
-        # Maintians the properties on the context that are modified during invocation
+        # Maintains the properties on the context that are modified during invocation
         self._invocation_properties = None
 
     def __enter__(self):
@@ -723,6 +718,16 @@ def build_op_context(
             "legacy version, ``config``. Please provide one or the other."
         )
 
+    if _assets_def:
+        deprecation_warning(
+            subject="build_op_context",
+            additional_warn_text=(
+                "Parameter '_assets_def' was passed to build_op_context. This parameter was intended for internal use only, and has been deprecated "
+            ),
+            breaking_version="1.8.0",
+            stacklevel=1,
+        )
+
     op_config = op_config if op_config else config
     return DirectInvocationOpExecutionContext(
         resources_dict=check.opt_mapping_param(resources, "resources", key_type=str),
@@ -736,7 +741,6 @@ def build_op_context(
             partition_key_range, "partition_key_range", PartitionKeyRange
         ),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
-        assets_def=check.opt_inst_param(_assets_def, "_assets_def", AssetsDefinition),
     )
 
 
