@@ -535,7 +535,11 @@ class GrapheneInstigationState(graphene.ObjectType):
         limit=graphene.Int(),
     )
     runsCount = graphene.NonNull(graphene.Int)
-    tick = graphene.Field(GrapheneInstigationTick, timestamp=graphene.Float())
+    tick = graphene.Field(
+        GrapheneInstigationTick,
+        timestamp=graphene.Float(),
+        tickId=graphene.Int(),
+    )
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
         dayRange=graphene.Int(),
@@ -659,7 +663,20 @@ class GrapheneInstigationState(graphene.ObjectType):
             filters = RunsFilter.for_schedule(self._instigator_state)
         return graphene_info.context.instance.get_runs_count(filters=filters)
 
-    def resolve_tick(self, graphene_info: ResolveInfo, timestamp):
+    def resolve_tick(
+        self,
+        graphene_info: ResolveInfo,
+        timestamp: Optional[float] = None,
+        tickId: Optional[int] = None,
+    ):
+        if tickId:
+            schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
+            tick = schedule_storage.get_tick(tickId)
+
+            return GrapheneInstigationTick(tick)
+
+        timestamp = check.float_param(timestamp, "timestamp")
+
         matches = graphene_info.context.instance.get_ticks(
             self._instigator_state.instigator_origin_id,
             self._instigator_state.selector_id,
