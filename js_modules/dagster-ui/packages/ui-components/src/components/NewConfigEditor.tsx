@@ -16,7 +16,7 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
-import {colorBackgroundDefault} from '../theme/color';
+import {colorBackgroundLight} from '../theme/color';
 
 import {StyledRawCodeMirror} from './StyledRawCodeMirror';
 import {patchLint} from './configeditor/codemirror-yaml/lint';
@@ -65,7 +65,7 @@ const performInitialPass = (
 
 const ConfigEditorStyle = createGlobalStyle`
   .CodeMirror.cm-s-config-editor {
-    background-color: ${colorBackgroundDefault()};
+    background-color: ${colorBackgroundLight()};
     height: initial;
     position: absolute;
     inset: 0;

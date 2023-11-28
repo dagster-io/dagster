@@ -16,6 +16,7 @@ import {
   colorTextLight,
   colorAccentRed,
   colorBackgroundLight,
+  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -491,11 +492,11 @@ export const RunPreview = (props: RunPreviewProps) => {
               top: 0,
               right: 0,
               padding: '12px 15px 0px 10px',
-              background: colorBackgroundLight(),
+              background: colorBackgroundDefault(),
             }}
           >
             <Checkbox
-              label="Errors Only"
+              label="Errors only"
               checked={errorsOnly}
               onChange={() => setErrorsOnly(!errorsOnly)}
             />
