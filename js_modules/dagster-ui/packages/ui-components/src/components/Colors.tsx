@@ -44,4 +44,5 @@ export const LegacyColors = {
   Olive50: 'rgba(236, 237, 236, 1)',
 };
 
-export const Colors = LegacyColors;
+// export const Colors = LegacyColors;
+export const Colors = {};

@@ -201,8 +201,7 @@ export const MetadataEntry = ({
           }}
           style={{maxWidth: '100%'}}
         >
-          <Icon name="job" color={Colors.Gray400} />
-
+          <Icon name="job" color={colorAccentGray()} />
           <MetadataEntryLink to={workspacePath}>{entry.jobName}</MetadataEntryLink>
         </Box>
       );
