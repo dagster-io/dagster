@@ -226,11 +226,7 @@ def run_cursor_sensor(context):
 @sensor(job_name="the_job")
 def start_skip_sensor(context):
     # skips the first tick after a start
-    if (
-        not context.last_completion_time
-        or context.last_start_time
-        and context.last_start_time > context.last_completion_time
-    ):
+    if context.is_first_tick_since_sensor_start:
         return SkipReason()
     return RunRequest()
 

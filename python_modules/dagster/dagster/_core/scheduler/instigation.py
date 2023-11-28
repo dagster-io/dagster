@@ -113,15 +113,15 @@ class SensorInstigatorData(
             check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
         )
 
-    def with_start_time(self, start_time: float) -> "SensorInstigatorData":
-        check.float_param(start_time, "start_time")
+    def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
+        check.float_param(start_timestamp, "start_timestamp")
         return SensorInstigatorData(
             self.last_tick_timestamp,
             self.last_run_key,
             self.min_interval,
             self.cursor,
             self.last_tick_start_timestamp,
-            start_time,
+            start_timestamp,
         )
 
 

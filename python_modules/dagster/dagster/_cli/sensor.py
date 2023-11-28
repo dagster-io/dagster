@@ -283,7 +283,7 @@ def execute_preview_command(
                         since,
                         last_run_key,
                         cursor,
-                        last_start_time=None,
+                        last_sensor_start_time=None,
                     )
                 except Exception:
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())

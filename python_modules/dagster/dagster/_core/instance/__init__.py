@@ -2640,7 +2640,7 @@ class DagsterInstance(DynamicPartitionsStore):
             data = cast(SensorInstigatorData, stored_state.instigator_data)
             return self.update_instigator_state(
                 stored_state.with_status(InstigatorStatus.RUNNING).with_data(
-                    data.with_start_time(pendulum.now("UTC").timestamp())
+                    data.with_sensor_start_timestamp(pendulum.now("UTC").timestamp())
                 )
             )
 

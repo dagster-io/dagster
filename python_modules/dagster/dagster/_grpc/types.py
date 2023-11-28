@@ -582,7 +582,7 @@ class SensorExecutionArgs(
             ("last_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
             ("cursor", Optional[str]),
-            ("last_start_time", Optional[float]),
+            ("last_sensor_start_time", Optional[float]),
         ],
     )
 ):
@@ -594,7 +594,7 @@ class SensorExecutionArgs(
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
-        last_start_time: Optional[float],
+        last_sensor_start_time: Optional[float],
     ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
@@ -608,7 +608,9 @@ class SensorExecutionArgs(
             ),
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
             cursor=check.opt_str_param(cursor, "cursor"),
-            last_start_time=check.opt_float_param(last_start_time, "last_start_time"),
+            last_sensor_start_time=check.opt_float_param(
+                last_sensor_start_time, "last_sensor_start_time"
+            ),
         )
 
 
