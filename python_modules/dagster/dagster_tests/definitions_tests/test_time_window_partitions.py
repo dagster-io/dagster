@@ -1060,6 +1060,28 @@ def test_dst_transition_15_minute_partitions() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "timezone, partition_key, expected",
+    [
+        ("US/Pacific", "2020-11-01-01:00", True),
+        ("US/Pacific", "2020-11-01-01:00-0800", True),
+        ("US/Pacific", "2020-11-01-02:00", True),
+        ("US/Pacific", "2020-11-01-01:00-0700", False),
+        ("US/Pacific", "2020-11-01-02:00-0800", False),
+        (None, "2020-11-01-01:00", True),
+        (None, "2020-11-01-02:00", True),
+        (None, "2020-11-01-01:00-0700", False),
+        (None, "2020-11-01-01:00-0800", False),
+        (None, "2020-11-01-02:00-0800", False),
+    ],
+)
+def test_dst_transition_has_partition_key(
+    timezone: Optional[str], partition_key: str, expected: bool
+) -> None:
+    partitions_def = HourlyPartitionsDefinition("2020-10-01-00:00", timezone=timezone)
+    assert partitions_def.has_partition_key(partition_key) == expected
+
+
 def test_dst_transition_hourly_partitions() -> None:
     partitions_def = HourlyPartitionsDefinition(
         start_date="2020-10-31-23:00", end_date="2020-11-01-5:00", timezone="US/Pacific"

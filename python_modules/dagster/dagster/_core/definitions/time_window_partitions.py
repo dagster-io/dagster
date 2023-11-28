@@ -70,19 +70,31 @@ from .partition import (
 from .partition_key_range import PartitionKeyRange
 
 
-def is_ambiguous_time(dt: datetime):
-    """Returns if a datetime is ambiguous due to DST transitions."""
-    tz = check.not_none(dt.tzinfo)
+def is_second_ambiguous_time(dt: datetime, tz: str):
+    """Returns if a datetime is the second instance of an ambiguous time in the given timezone due
+    to DST transitions.
+    """
     # UTC is never ambiguous
-    if tz.tzname(None) == "UTC":
+    if tz.upper() == "UTC":
         return False
+
+    # Ensure that the datetime is in the correct timezone
+    tzinfo = check.not_none(dt.tzinfo)
+    if tzinfo.tzname(None) != tz:
+        dt = to_timezone(dt, tz)
+        tzinfo = check.not_none(dt.tzinfo)
+
+    # Only interested in the second instance of an ambiguous time
+    if dt.fold == 0:
+        return False
+
     offset_before = cast(
         timedelta,
-        (tz.utcoffset(dt.replace(fold=0)) if dt.fold else tz.utcoffset(dt)),
+        (tzinfo.utcoffset(dt.replace(fold=0)) if dt.fold else tzinfo.utcoffset(dt)),
     )
     offset_after = cast(
         timedelta,
-        (tz.utcoffset(dt) if dt.fold else tz.utcoffset(dt.replace(fold=1))),
+        (tzinfo.utcoffset(dt) if dt.fold else tzinfo.utcoffset(dt.replace(fold=1))),
     )
     return offset_before > offset_after
 
@@ -96,7 +108,7 @@ def dst_safe_fmt(fmt: str) -> str:
     return fmt + "%z"
 
 
-def dst_safe_strftime(dt: datetime, fmt: str, cron_schedule: str) -> str:
+def dst_safe_strftime(dt: datetime, tz: str, fmt: str, cron_schedule: str) -> str:
     """A method for converting a datetime to a string which will append a suffix in cases where
     the resulting timestamp would be ambiguous due to DST transitions.
     """
@@ -110,7 +122,8 @@ def dst_safe_strftime(dt: datetime, fmt: str, cron_schedule: str) -> str:
     if not cron_string_repeats_every_hour(cron_schedule):
         return time_str
 
-    if is_ambiguous_time(dt) and dt.fold > 0:
+    # if the datetime is the second instance of an ambiguous time, then we append the UTC offset
+    if is_second_ambiguous_time(dt, tz):
         return dt.strftime(dst_safe_fmt(fmt))
     return time_str
 
@@ -125,9 +138,9 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
         dt = datetime.strptime(date_string, dst_safe_fmt(fmt))
 
     # the datetime object may have timezone information on it, depending on the format used. If it
-    # does, no extra timezone information needs to be added and we can make a simple conversion
+    # does, we simply ensure that this timestamp is in the correct timezone.
     if dt.tzinfo:
-        return pendulum.instance(dt)
+        return pendulum.from_timestamp(dt.timestamp(), tz=tz)
     # otherwise, ensure that we assume the pre-transition timezone
     else:
         # Pendulum 1.x erroneously believes that there are two instances of the *second* hour after
@@ -399,7 +412,9 @@ class TimeWindowPartitionsDefinition(
             ):
                 if idx >= start_idx and idx < end_idx:
                     partition_keys.append(
-                        dst_safe_strftime(time_window.start, self.fmt, self.cron_schedule)
+                        dst_safe_strftime(
+                            time_window.start, self.timezone, self.fmt, self.cron_schedule
+                        )
                     )
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
@@ -430,7 +445,9 @@ class TimeWindowPartitionsDefinition(
                 or partitions_past_current_time < self.end_offset
             ):
                 partition_keys.append(
-                    dst_safe_strftime(time_window.start, self.fmt, self.cron_schedule)
+                    dst_safe_strftime(
+                        time_window.start, self.timezone, self.fmt, self.cron_schedule
+                    )
                 )
 
                 if time_window.end.timestamp() > current_timestamp:
@@ -447,7 +464,7 @@ class TimeWindowPartitionsDefinition(
         schedule_str = (
             self.schedule_type.value.capitalize() if self.schedule_type else self.cron_schedule
         )
-        partition_def_str = f"{schedule_str}, starting {dst_safe_strftime(self.start, self.fmt, self.cron_schedule)} {self.timezone}."
+        partition_def_str = f"{schedule_str}, starting {dst_safe_strftime(self.start, self.timezone, self.fmt, self.cron_schedule)} {self.timezone}."
         if self.end_offset != 0:
             partition_def_str += (
                 " End offsetted by"
@@ -498,7 +515,10 @@ class TimeWindowPartitionsDefinition(
         partition_key_time_windows: List[TimeWindow] = []
         for partition_key in sorted_pks:
             next_window = next(cur_windows_iterator)
-            if dst_safe_strftime(next_window.start, self.fmt, self.cron_schedule) == partition_key:
+            if (
+                dst_safe_strftime(next_window.start, self.timezone, self.fmt, self.cron_schedule)
+                == partition_key
+            ):
                 partition_key_time_windows.append(next_window)
             else:
                 cur_windows_iterator = iter(
@@ -552,7 +572,7 @@ class TimeWindowPartitionsDefinition(
         if start_time.timestamp() >= last_partition_window.end.timestamp():
             return None
         else:
-            return dst_safe_strftime(start_time, self.fmt, self.cron_schedule)
+            return dst_safe_strftime(start_time, self.timezone, self.fmt, self.cron_schedule)
 
     def get_next_partition_window(
         self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
@@ -678,7 +698,7 @@ class TimeWindowPartitionsDefinition(
         if first_window is None:
             return None
 
-        return dst_safe_strftime(first_window.start, self.fmt, self.cron_schedule)
+        return dst_safe_strftime(first_window.start, self.timezone, self.fmt, self.cron_schedule)
 
     def get_last_partition_key(
         self,
@@ -689,7 +709,7 @@ class TimeWindowPartitionsDefinition(
         if last_window is None:
             return None
 
-        return dst_safe_strftime(last_window.start, self.fmt, self.cron_schedule)
+        return dst_safe_strftime(last_window.start, self.timezone, self.fmt, self.cron_schedule)
 
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
@@ -700,7 +720,9 @@ class TimeWindowPartitionsDefinition(
         for partition_time_window in self._iterate_time_windows(time_window.start):
             if partition_time_window.start.timestamp() < time_window.end.timestamp():
                 result.append(
-                    dst_safe_strftime(partition_time_window.start, self.fmt, self.cron_schedule)
+                    dst_safe_strftime(
+                        partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
+                    )
                 )
             else:
                 break
@@ -910,9 +932,9 @@ class TimeWindowPartitionsDefinition(
         prev_next = next(iterator)
 
         if end_closed or prev_next.timestamp() > timestamp:
-            return dst_safe_strftime(prev, self.fmt, self.cron_schedule)
+            return dst_safe_strftime(prev, self.timezone, self.fmt, self.cron_schedule)
         else:
-            return dst_safe_strftime(prev_next, self.fmt, self.cron_schedule)
+            return dst_safe_strftime(prev_next, self.timezone, self.fmt, self.cron_schedule)
 
     def less_than(self, partition_key1: str, partition_key2: str) -> bool:
         """Returns true if the partition_key1 is earlier than partition_key2."""
@@ -958,7 +980,7 @@ class TimeWindowPartitionsDefinition(
             # partition starts after the last valid partition
             or partition_start_timestamp > last_partition_window.start.timestamp()
             # partition key string does not represent the start of an actual partition
-            or dst_safe_strftime(partition_start_time, self.fmt, self.cron_schedule)
+            or dst_safe_strftime(partition_start_time, self.timezone, self.fmt, self.cron_schedule)
             != partition_key
         )
 
