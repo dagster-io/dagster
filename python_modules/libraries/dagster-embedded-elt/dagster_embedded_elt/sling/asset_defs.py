@@ -118,6 +118,9 @@ def build_assets_from_sling_stream(
     source_options: Optional[Dict[str, Any]] = None,
     target_options: Optional[Dict[str, Any]] = None,
 ) -> AssetsDefinition:
+    if primary_key is not None and not isinstance(primary_key, list):
+        primary_key = [primary_key]
+
     sling_replicator = SlingStreamReplicator(
         source_connection=source,
         target_connection=target,
