@@ -96,8 +96,7 @@ class SlingTargetConnection(PermissiveConfig):
     )
 
 
-class SlingSyncBase():
-
+class SlingSyncBase:
     def process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
         """Process stdout from the Sling CLI."""
         ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
@@ -118,7 +117,86 @@ class SlingSyncBase():
             proc.wait()
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
-            
+
+    def sync(
+        self,
+        source_stream: str,
+        target_object: str,
+        mode: SlingMode,
+        primary_key: Optional[List[str]] = None,
+        update_key: Optional[str] = None,
+        source_options: Optional[Dict[str, Any]] = None,
+        target_options: Optional[Dict[str, Any]] = None,
+    ) -> Generator[str, None, None]:
+        """Initiate a Sling Sync between a source stream and a target object.
+
+        Args:
+            source_stream (str):  The source stream to read from. For database sources, the source stream can be either
+                a table name, a SQL statement or a path to a SQL file e.g. `TABLE1` or `SCHEMA1.TABLE2` or
+                `SELECT * FROM TABLE`. For file sources, the source stream is a path or an url to a file.
+                For file targets, the target object is a path or a url to a file, e.g. file:///tmp/file.csv or
+                s3://my_bucket/my_folder/file.csv
+            target_object (str): The target object to write into. For database targets, the target object is a table
+                name, e.g. TABLE1, SCHEMA1.TABLE2. For file targets, the target object is a path or an url to a file.
+            mode (SlingMode): The Sling mode to use when syncing, i.e. incremental, full-refresh
+                See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
+            primary_key (List[str]): For incremental syncs, a primary key is used during merge statements to update
+                existing rows.
+            update_key (str): For incremental syncs, an update key is used to stream records after max(update_key)
+            source_options (Dict[str, Any]): Other source options to pass to Sling,
+                see https://docs.slingdata.io/sling-cli/running-tasks#source-options-src-options-flag-source.options-key
+                for details
+            target_options (Dict[str, Any[): Other target options to pass to Sling,
+                see https://docs.slingdata.io/sling-cli/running-tasks#target-options-tgt-options-flag-target.options-key
+                for details
+
+        Examples:
+            Sync from a source file to a sqlite database:
+
+            .. code-block:: python
+
+                sqllite_path = "/path/to/sqlite.db"
+                csv_path = "/path/to/file.csv"
+
+                @asset
+                def run_sync(context, sling: SlingResource):
+                    res = sling.sync(
+                        source_stream=csv_path,
+                        target_object="events",
+                        mode=SlingMode.FULL_REFRESH,
+                    )
+                    for stdout in res:
+                        context.log.debug(stdout)
+                    counts = sqlite3.connect(sqllitepath).execute("SELECT count(1) FROM events").fetchone()
+                    assert counts[0] == 3
+
+                source = SlingSourceConnection(
+                    type="file",
+                )
+                target = SlingTargetConnection(type="sqlite", instance=sqllitepath)
+
+                materialize(
+                    [run_sync],
+                    resources={
+                        "sling": SlingResource(
+                            source_connection=source,
+                            target_connection=target,
+                            mode=SlingMode.TRUNCATE,
+                        )
+                    },
+                )
+
+        """
+        yield from self._sync(
+            source_stream=source_stream,
+            target_object=target_object,
+            mode=mode,
+            primary_key=primary_key,
+            update_key=update_key,
+            source_options=source_options,
+            target_options=target_options,
+        )
+
     @abstractmethod
     def _sync(
         self,
@@ -135,6 +213,7 @@ class SlingSyncBase():
         output lines from the Sling CLI.
         """
         raise NotImplementedError()
+
 
 @experimental
 class SlingResource(ConfigurableResource, SlingSyncBase):
@@ -226,6 +305,7 @@ class SlingResource(ConfigurableResource, SlingSyncBase):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
+
 class SlingConnectionResource(ConfigurableResource):
     """A representation a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling sync.
 
@@ -253,6 +333,7 @@ class SlingConnectionResource(ConfigurableResource):
             source = SlingConnectionResource(type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
             source = SlingConnectionResource(type="snowflake", host=EnvVar("SNOWFLAKE_HOST"), user=EnvVar("SNOWFLAKE_USER"), database=EnvVar("SNOWFLAKE_DATABASE"), password=EnvVar("SNOWFLAKE_PASSWORD"), role=EnvVar("SNOWFLAKE_ROLE"))
     """
+
     model_config = ConfigDict(extra=Extra.allow)
 
     type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
@@ -260,6 +341,7 @@ class SlingConnectionResource(ConfigurableResource):
         description="The connection string for the source database.",
         default=None,
     )
+
 
 class SlingStreamReplicator(SlingSyncBase):
     """A utility class for running a Sling sync from outside of a Dagster resource to enable parity between the SlingResource and SlingStreamSync.
@@ -275,9 +357,6 @@ class SlingStreamReplicator(SlingSyncBase):
         self.source_connection = source_connection
         self.target_connection = target_connection
 
-    # TODO: Finish implementing this to:
-    # TODO: - mirror the SlingResource setup_config to set the env using SlingConnectionResources (rather than SlingSource/TaargetConnections)
-    # TODO: - Afterwards, finish the factory function to use this class.
     # TODO: - use the Replication command rather than Single Task,  modify the log parsing to parse that stdout instead
     def _sync(
         self,
@@ -302,24 +381,39 @@ class SlingStreamReplicator(SlingSyncBase):
         sling_source = self.source_connection.dict()
         sling_target = self.target_connection.dict()
 
-        config = {
-            "mode": mode,
-            "source": {
-                "conn": "SLING_SOURCE",
-                "stream": source_stream,
-                "primary_key": primary_key,
-                "update_key": update_key,
-                "options": source_options,
-            },
-            "target": {
-                "conn": "SLING_TARGET",
-                "object": target_object,
-                "options": target_options,
-            },
-        }
-        config["source"] = {k: v for k, v in config["source"].items() if v is not None}
-        config["target"] = {k: v for k, v in config["target"].items() if v is not None}
+        if self.source_connection.connection_string:
+            sling_source["url"] = self.source_connection.connection_string
+        if self.target_connection.connection_string:
+            sling_target["url"] = self.target_connection.connection_string
+        with environ(
+            {
+                "SLING_SOURCE": json.dumps(sling_source),
+                "SLING_TARGET": json.dumps(sling_target),
+            }
+        ):
+            config = {
+                "mode": mode,
+                "source": {
+                    "conn": "SLING_SOURCE",
+                    "stream": source_stream,
+                    "primary_key": primary_key,
+                    "update_key": update_key,
+                    "options": source_options,
+                },
+                "target": {
+                    "conn": "SLING_TARGET",
+                    "object": target_object,
+                    "options": target_options,
+                },
+            }
+            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
+            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
 
-        sling_cli = Sling(**config)
-        logger.info("Starting Sling sync with mode: %s", mode)
-        cmd = sling_cli._prep_cmd()
+            sling_cli = Sling(**config)
+            logger.info("Starting Sling sync with mode: %s", mode)
+            cmd = sling_cli._prep_cmd()
+
+            # `_prep_cmd` only works with the Single Task command, so we need to replace it with the Replication command
+            # cmd = cmd.replace(" -c ", " -r ")
+
+            yield from self._exec_sling_cmd(cmd, encoding=encoding)

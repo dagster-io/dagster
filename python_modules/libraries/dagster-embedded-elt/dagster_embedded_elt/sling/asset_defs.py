@@ -1,4 +1,3 @@
-import json
 import re
 from typing import Any, Dict, List, Optional, Union
 
@@ -10,9 +9,13 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import experimental
-from dagster._utils.env import environ
 
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingMode, SlingResource
+from dagster_embedded_elt.sling.resources import (
+    SlingConnectionResource,
+    SlingMode,
+    SlingResource,
+    SlingStreamReplicator,
+)
 
 
 @experimental
@@ -104,14 +107,55 @@ def build_sling_asset(
 
 
 @experimental
-def build_assets_from_sling_stream(source: SlingConnectionResource, target: SlingConnectionResource, source_stream: str) -> AssetsDefinition:
-
-    sling_resource = SlingResource(
+def build_assets_from_sling_stream(
+    source: SlingConnectionResource,
+    target: SlingConnectionResource,
+    stream: str,
+    target_object: str = "{ {{target_schema}}.{{stream_schema}}_{{stream_table}} }",
+    mode: SlingMode = SlingMode.FULL_REFRESH,
+    primary_key: Optional[Union[str, List[str]]] = None,
+    update_key: Optional[str] = None,
+    source_options: Optional[Dict[str, Any]] = None,
+    target_options: Optional[Dict[str, Any]] = None,
+) -> AssetsDefinition:
+    sling_replicator = SlingStreamReplicator(
         source_connection=source,
         target_connection=target,
     )
 
-    @multi_asset
-    def _sling_assets():
+    asset_name = [stream]
+    if stream.startswith("file://"):
+        asset_name = stream.split("/")[-1].replace(".", "_")
 
-        
+    specs = [AssetSpec(asset_name)]
+
+    @multi_asset(
+        name=f"sling_sync__{asset_name}",
+        compute_kind="sling",
+        specs=specs,
+        # required_resource_keys={source.???, target.???}, TODO: How do you get the resource key at this point in time?
+    )
+    def _sling_assets(context: AssetExecutionContext) -> MaterializeResult:
+        last_row_count_observed = None
+
+        for stdout_line in sling_replicator.sync(
+            source_stream=stream,
+            target_object=target_object,
+            mode=mode,
+            primary_key=primary_key,
+            update_key=update_key,
+            source_options=source_options,
+            target_options=target_options,
+        ):
+            match = re.search(r"(\d+) rows", stdout_line)
+            if match:
+                last_row_count_observed = int(match.group(1))
+            context.log.info(stdout_line)
+
+        return MaterializeResult(
+            metadata=(
+                {} if last_row_count_observed is None else {"row_count": last_row_count_observed}
+            )
+        )
+
+    return _sling_assets
