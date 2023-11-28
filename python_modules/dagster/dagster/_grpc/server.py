@@ -768,6 +768,7 @@ class DagsterApiServer(DagsterApiServicer):
                     args.last_completion_time,
                     args.last_run_key,
                     args.cursor,
+                    args.last_sensor_start_time,
                 )
             )
         except Exception:

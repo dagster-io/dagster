@@ -283,6 +283,7 @@ def execute_preview_command(
                         since,
                         last_run_key,
                         cursor,
+                        last_sensor_start_time=None,
                     )
                 except Exception:
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -373,6 +374,8 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                             last_run_key=job_state.instigator_data.last_run_key,
                             min_interval=external_sensor.min_interval_seconds,
                             cursor=cursor_value,
+                            last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,
+                            last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,
                         ),
                     )
                 )

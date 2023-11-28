@@ -21,6 +21,7 @@ def sync_get_external_sensor_execution_data_ephemeral_grpc(
     last_completion_time: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
+    last_sensor_start_time: Optional[float] = None,
     timeout: Optional[int] = DEFAULT_GRPC_TIMEOUT,
 ) -> SensorExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
@@ -37,6 +38,7 @@ def sync_get_external_sensor_execution_data_ephemeral_grpc(
             last_completion_time,
             last_run_key,
             cursor,
+            last_sensor_start_time,
             timeout=timeout,
         )
 
@@ -50,10 +52,12 @@ def sync_get_external_sensor_execution_data_grpc(
     last_run_key: Optional[str],
     cursor: Optional[str],
     timeout: Optional[int] = None,
+    last_sensor_start_time: Optional[float] = None,
 ) -> SensorExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(sensor_name, "sensor_name")
     check.opt_float_param(last_completion_time, "last_completion_time")
+    check.opt_float_param(last_sensor_start_time, "last_sensor_start_time")
     check.opt_str_param(last_run_key, "last_run_key")
     check.opt_str_param(cursor, "cursor")
 
@@ -69,6 +73,7 @@ def sync_get_external_sensor_execution_data_grpc(
                 last_run_key=last_run_key,
                 cursor=cursor,
                 timeout=timeout,
+                last_sensor_start_time=last_sensor_start_time,
             ),
         ),
         (SensorExecutionData, ExternalSensorExecutionErrorData),
