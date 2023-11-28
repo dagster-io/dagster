@@ -4,7 +4,6 @@ You can use generate Dagster ops that integrate with [Great Expectations](https:
 
 View this example in the Dagster docs at https://docs.dagster.io/integrations/great-expectations.
 
-
 ## Getting started
 
 ```bash

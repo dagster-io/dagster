@@ -4,7 +4,6 @@ In this example, we'll define some tables with dependencies on each other. We ha
 
 View this example in the Dagster docs at [Software-Defined Assets with Pandas and PySpark](https://docs.dagster.io/guides/dagster/software-defined-assets).
 
-
 ## Getting started
 
 Bootstrap your own Dagster project with this example:
