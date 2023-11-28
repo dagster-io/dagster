@@ -98,10 +98,10 @@ def validate_tags(
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
         if key == PRIORITY_TAG:
             try:
-                int(value)
+                float(value)
             except ValueError:
                 raise DagsterInvalidDefinitionError(
-                    f'Invalid value for tag "{key}": "{value}". Priority tags must coerce to an integer'
+                    f'Invalid value for tag "{key}": "{value}". Priority tags must coerce to a float'
                 )
 
         if not isinstance(value, str):
