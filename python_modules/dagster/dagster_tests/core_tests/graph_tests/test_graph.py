@@ -41,6 +41,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
+from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import json_console_logger
 
@@ -693,6 +694,22 @@ def test_job_and_graph_tags():
         assert result.success
         run = instance.get_runs()[0]
         assert run.tags == {"a": "y", "b": "z", "c": "q"}
+
+
+def test_tags_validation():
+    with pytest.raises(Exception):
+
+        @graph(tags={PRIORITY_TAG: "important"})
+        def tagged_with_str_priority():
+            pass
+
+    @graph(tags={PRIORITY_TAG: "1"})
+    def tagged_with_int_priority():
+        pass
+
+    @graph(tags={PRIORITY_TAG: "1.0"})
+    def tagged_with_float_priority():
+        pass
 
 
 def test_output_for_node_non_standard_name():
