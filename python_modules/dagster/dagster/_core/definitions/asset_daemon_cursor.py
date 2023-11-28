@@ -51,8 +51,8 @@ class AssetDaemonAssetCursor(NamedTuple):
         )
         newly_materialized_requested_or_discarded_subset = AssetSubset.from_asset_partitions_set(
             self.asset_key,
-            newly_materialized_requested_or_discarded_asset_partitions,
             asset_graph.get_partitions_def(self.asset_key),
+            newly_materialized_requested_or_discarded_asset_partitions,
         )
         return self._replace(
             materialized_requested_or_discarded_subset=self.materialized_requested_or_discarded_subset

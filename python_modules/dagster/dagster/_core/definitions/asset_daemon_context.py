@@ -1,4 +1,3 @@
-import dataclasses
 import datetime
 import itertools
 import logging
@@ -24,6 +23,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -251,7 +251,12 @@ class AssetDaemonContext:
             data_time_resolver=self.data_time_resolver,
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
-            candidates=set(),
+            candidate_subset=AssetSubset.all(
+                asset_key=asset_key,
+                partitions_def=self.asset_graph.get_partitions_def(asset_key),
+                dynamic_partitions_store=self.instance_queryer,
+                current_time=self.instance_queryer.evaluation_time,
+            ),
             daemon_context=self,
         )
 
@@ -274,7 +279,7 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._verbose_log_fn("Done evaluating materialize rule")
 
-        skip_context = dataclasses.replace(materialize_context, candidates=to_materialize)
+        skip_context = materialize_context.with_candidate_subset(to_materialize)
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
@@ -303,7 +308,7 @@ class AssetDaemonContext:
             self._verbose_log_fn(f"Evaluating discard rule: {rule_snapshot}")
 
             for evaluation_data, asset_partitions in rule.evaluate_for_asset(
-                dataclasses.replace(skip_context, candidates=to_materialize)
+                skip_context.with_candidate_subset(to_materialize)
             ):
                 all_results.append(
                     (
