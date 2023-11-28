@@ -648,17 +648,17 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
     @property
     def requires_typed_event_stream(self) -> bool:
         self._check_bound(fn_name="requires_typed_event_stream", fn_type="property")
-        return self._requires_typed_event_stream
+        return self._bound_properties.requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
         self._check_bound(fn_name="typed_event_stream_error_message", fn_type="property")
-        return self._typed_event_stream_error_message
+        return self._bound_properties.typed_event_stream_error_message
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
         self._check_bound(fn_name="set_requires_typed_event_stream", fn_type="method")
-        self._requires_typed_event_stream = True
-        self._typed_event_stream_error_message = error_message
+        self._bound_properties.requires_typed_event_stream = True
+        self._bound_properties.typed_event_stream_error_message = error_message
 
 
 def _validate_resource_requirements(
