@@ -198,7 +198,6 @@ class AssetDaemonContext:
                         AssetKeyPartitionKey(asset_key=asset_key)
                     )
                     for asset_key in self.target_asset_keys_and_parents
-                    if not self.asset_graph.is_source(asset_key)
                 ),
             ),
             default=None,
