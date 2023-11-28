@@ -11,6 +11,8 @@ import {
   colorBorderDefault,
   colorTextLighter,
   colorTextRed,
+  colorTooltipBackground,
+  colorTooltipText,
 } from '../theme/color';
 
 import {Popover} from './Popover';
@@ -202,15 +204,15 @@ const ConfigContent = React.memo(({value}: {value: string}) => (
 ));
 
 const ConfigHeader = styled.div`
-  background-color: ${colorAccentPrimary()};
-  color: ${colorAccentReversed()};
+  background-color: ${colorTooltipBackground()};
+  color: ${colorTooltipText()};
   font-size: 13px;
   padding: 8px;
 `;
 
 const ConfigJSON = styled.pre`
-  background-color: ${colorAccentPrimary()};
-  color: ${colorAccentReversed()};
+  background-color: ${colorTooltipBackground()};
+  color: ${colorTooltipText()};
   whitespace: pre-wrap;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
