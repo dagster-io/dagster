@@ -1,6 +1,5 @@
 import {gql, useQuery, useSubscription} from '@apollo/client';
-import {Box, Icon} from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
+import {Box, Icon, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
