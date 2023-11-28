@@ -1,4 +1,6 @@
+import operator
 from enum import Enum
+from functools import reduce
 from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -11,6 +13,7 @@ from dagster._serdes.serdes import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_automation_evaluator import AssetAutomationEvaluator
     from dagster._core.definitions.auto_materialize_rule import (
         AutoMaterializeRule,
         AutoMaterializeRuleSnapshot,
@@ -132,6 +135,7 @@ class AutoMaterializePolicy(
             "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
             " to None. To disable auto materializing, remove the policy.",
         )
+        check.param_invariant(len(rules) > 0, "rules", "Must specify at least one rule.")
 
         return super(AutoMaterializePolicy, cls).__new__(
             cls,
@@ -250,3 +254,31 @@ class AutoMaterializePolicy(
     @property
     def rule_snapshots(self) -> Sequence["AutoMaterializeRuleSnapshot"]:
         return [rule.to_snapshot() for rule in self.rules]
+
+    def to_auto_materialize_policy_evaluator(self) -> "AssetAutomationEvaluator":
+        """Converts a set of materialize / skip rules into a single binary expression."""
+        from .asset_automation_evaluator import AssetAutomationEvaluator, RuleCondition
+
+        materialize_condition = (
+            reduce(
+                operator.or_,
+                [RuleCondition(rule) for rule in self.materialize_rules],
+            )
+            if self.materialize_rules
+            else None
+        )
+        skip_condition = (
+            ~reduce(
+                operator.or_,
+                [RuleCondition(rule) for rule in self.skip_rules],
+            )
+            if self.skip_rules
+            else None
+        )
+        # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn)
+        condition = reduce(operator.and_, filter(None, [materialize_condition, skip_condition]))
+        check.invariant(condition is not None, "must have at least one rule")
+        return AssetAutomationEvaluator(
+            condition=condition,
+            max_materializations_per_minute=self.max_materializations_per_minute,
+        )
