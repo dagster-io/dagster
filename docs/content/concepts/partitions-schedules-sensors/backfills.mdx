@@ -41,10 +41,16 @@ By default, if you launch a backfill that covers `N` partitions, Dagster will la
 
 Dagster supports backfills that execute as a single run that covers a range of partitions, such as executing a backfill as a single Snowflake query. After the run completes, Dagster will track that all the partitions have been filled.
 
+<Note>
+  Single-run backfills only work for backfills that target assets directly, i.e.
+  those launched from the asset graph or asset page. Backfills launched from the
+  Job page will not respect the backfill policies of assets included in the job.
+</Note>
+
 To get this behavior, you need to:
 
 - **Set the asset's `backfill_policy`** to <PyObject object="BackfillPolicy" method="single_run" />
-- **Write code that operates a range of partitions** instead of just single partitions. This means that, if your code uses the `partition_key` context property, you'll need to update it to use one of the following properties instead:
+- **Write code that operates on a range of partitions** instead of just single partitions. This means that, if your code uses the `partition_key` context property, you'll need to update it to use one of the following properties instead:
 
   - [`partition_time_window`](/\_apidocs/execution#dagster.OpExecutionContext.partition_time_window)
   - [`partition_key_range`](/\_apidocs/execution#dagster.OpExecutionContext.partition_key_range)
