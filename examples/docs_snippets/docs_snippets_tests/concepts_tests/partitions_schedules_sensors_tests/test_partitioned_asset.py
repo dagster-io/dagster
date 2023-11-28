@@ -9,9 +9,9 @@ from docs_snippets.concepts.partitions_schedules_sensors.partitioned_asset impor
 @patch("urllib.request.urlretrieve")
 def test_partitioned_asset(mock_urlretrieve):
     assert materialize_to_memory(
-        [my_daily_partitioned_asset], partition_key="2022-01-01"
+        [my_daily_partitioned_asset], partition_key="2023-10-01"
     ).success
     assert mock_urlretrieve.call_args[0] == (
-        "coolweatherwebsite.com/weather_obs&date=2022-01-01",
-        "weather_observations/2022-01-01.csv",
+        "https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date=",
+        "nasa/2023-10-01.csv",
     )
