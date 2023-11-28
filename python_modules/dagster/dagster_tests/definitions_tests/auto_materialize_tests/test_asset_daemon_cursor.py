@@ -35,16 +35,12 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat() -> None:
 
     c2 = c.with_updates(
         21,
-        set(),
-        set(),
-        {AssetKey("my_asset")},
-        {AssetKey("my_asset"): {"a"}},
         1,
-        asset_graph,
         [],
         0,
         [],
         datetime.datetime.now(),
+        [],
     )
 
     serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)
