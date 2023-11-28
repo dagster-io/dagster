@@ -351,7 +351,7 @@ class SqlRunStorage(RunStorage):
                     # try to get the priority tag value
                     db.func.cast(
                         db.func.json_extract(RunsTable.c.run_body, f'$.tags."{PRIORITY_TAG}"'),
-                        db.Integer,
+                        db.Float,
                     ),
                     # default to a priority of 0
                     0,

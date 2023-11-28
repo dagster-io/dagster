@@ -251,7 +251,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                         db.func.cast(RunsTable.c.run_body, db.JSON)
                         .op("->")("tags")
                         .op("->>")(PRIORITY_TAG),
-                        db.Integer,
+                        db.Float,
                     ),
                     # default to a priority of 0
                     0,
