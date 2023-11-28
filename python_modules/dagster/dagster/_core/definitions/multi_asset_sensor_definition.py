@@ -228,7 +228,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         instance: Optional[DagsterInstance] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         definitions: Optional["Definitions"] = None,
-        last_sensor_start_time: Optional[float] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -280,7 +279,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
             repository_def=repository_def,
             resources=resource_defs,
-            last_sensor_start_time=last_sensor_start_time,
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
@@ -955,7 +953,6 @@ def build_multi_asset_sensor_context(
     cursor_from_latest_materializations: bool = False,
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
-    last_sensor_start_time: Optional[float] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -1004,7 +1001,6 @@ def build_multi_asset_sensor_context(
     )
 
     check.bool_param(cursor_from_latest_materializations, "cursor_from_latest_materializations")
-    check.opt_float_param(last_sensor_start_time, "last_sensor_start_time")
 
     if cursor_from_latest_materializations:
         if cursor:
@@ -1042,7 +1038,6 @@ def build_multi_asset_sensor_context(
         monitored_assets=monitored_assets,
         repository_def=repository_def,
         resource_defs=wrap_resources_for_execution(resources),
-        last_sensor_start_time=last_sensor_start_time,
     )
 
 
