@@ -10,8 +10,8 @@ import {
   colorTextLighter,
   colorBackgroundDefault,
   colorKeylineDefault,
+  CoreColors,
 } from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 import {colorDialogBackground} from '@dagster-io/ui-components/src/theme/color';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';

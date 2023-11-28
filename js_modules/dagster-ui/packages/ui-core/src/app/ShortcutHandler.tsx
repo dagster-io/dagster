@@ -1,4 +1,4 @@
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
+import {CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';

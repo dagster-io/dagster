@@ -1,5 +1,11 @@
-import {Group, Icon, Spinner, FontFamily, colorAccentYellow} from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
+import {
+  Group,
+  Icon,
+  Spinner,
+  FontFamily,
+  colorAccentYellow,
+  CoreColors,
+} from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
