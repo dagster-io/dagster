@@ -4234,7 +4234,7 @@ class TestEventLogStorage:
         assert mats
         assert mats[key].asset_materialization.metadata["was"].value == "here"
 
-    def test_large_asset_metadata(self, storage):
+    def test_large_asset_metadata(self, storage, test_run_id):
         key = AssetKey("test_asset")
 
         large_metadata = {
@@ -4245,7 +4245,7 @@ class TestEventLogStorage:
                 error_info=None,
                 user_message="",
                 level="debug",
-                run_id=make_new_run_id(),
+                run_id=test_run_id,
                 timestamp=time.time(),
                 dagster_event=DagsterEvent(
                     event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
