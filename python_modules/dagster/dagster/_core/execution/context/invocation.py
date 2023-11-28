@@ -25,6 +25,7 @@ from dagster._core.definitions.events import (
     ExpectationResult,
     UserEvent,
 )
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
@@ -63,6 +64,62 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     return (
         f"The {prop_name} {method_name} is not set on the context when an op is directly invoked."
     )
+
+
+class BoundProperties(
+    NamedTuple(
+        "_BoundProperties",
+        [
+            ("op_def", OpDefinition),
+            ("tags", Mapping[Any, Any]),
+            ("hook_defs", Optional[AbstractSet[HookDefinition]]),
+            ("alias", str),
+            ("assets_def", Optional[AssetsDefinition]),
+            ("resources", Resources),
+            ("op_config", Dict[str, Any]),
+            ("requires_typed_event_stream", bool),
+            ("typed_event_stream_error_message", Optional[str]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        op_def: OpDefinition,
+        tags: Mapping[Any, Any],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
+        alias: str,
+        assets_def: Optional[AssetsDefinition],
+        resources: Resources,
+        op_config: Dict[str, Any],
+    ):
+        return super(BoundProperties, cls).__new__(
+            cls,
+            op_def=op_def,
+            tags=tags,
+            hook_defs=hook_defs,
+            alias=alias,
+            assets_def=assets_def,
+            resources=resources,
+            op_config=op_config,
+            requires_typed_event_stream=False,
+            typed_event_stream_error_message=None,
+        )
+
+
+class InvocationProperties(
+    NamedTuple(
+        "_InvocationProperties",
+        [
+            ("user_events", List[UserEvent]),
+            ("seen_outputs", Dict[str, Union[Set[str], str]]),
+            ("output_metadata", Dict[str, Any]),
+        ],
+    )
+):
+    def __new__(cls):
+        return super(InvocationProperties, cls).__new__(
+            cls, user_events=[], seen_outputs={}, output_metadata={}
+        )
 
 
 class DirectInvocationOpExecutionContext(OpExecutionContext):
@@ -114,31 +171,25 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         )
         self._partition_key = partition_key
         self._partition_key_range = partition_key_range
-        self._user_events: List[UserEvent] = []
-        self._output_metadata: Dict[str, Any] = {}
+        # self._user_events: List[UserEvent] = []
 
-        self._assets_def = check.opt_inst_param(assets_def, "assets_def", AssetsDefinition)
+        self._assets_def = check.opt_inst_param(
+            assets_def, "assets_def", AssetsDefinition
+        )  # TODO - is this even used?
 
-        # These attributes will be set when the context is bound to an op invocation
-        self._op_def = None
-        self._alias = None
-        self._hook_defs = None
-        self._tags = {}
-        self._seen_outputs = {}
-
-        # maintain init time versions of these values so we can unbind the context
-        self._init_op_config = op_config
-        self._init_resources = self._resources
-
-        # Indicates whether the context has been bound to a particular invocation of an op
+        # Maintains the properties on the context that are bound to a particular invocation
+        # of an op
         # @op
         # def my_op(context):
-        #     # context._bound is True
+        #     # context._bound_properties.alias is "my_op"
         #     ...
-        # ctx = build_op_context() # ctx._bound is False
+        # ctx = build_op_context() # ctx._bound_properties is None
         # my_op(ctx)
-        # ctx._bound is True, must call ctx.unbind() to unbind
-        self._bound = False
+        # ctx._bound_properties.alias is "my_op", must call ctx.unbind() to unbind
+        self._bound_properties = None
+
+        # Maintians the properties on the context that are modified during invocation
+        self._invocation_properties = None
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -151,7 +202,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._exit_stack.close()
 
     def _check_bound(self, fn_name: str, fn_type: str):
-        if not self._bound:
+        if self._bound_properties is None:
             raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
 
     def bind(
@@ -164,7 +215,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
     ) -> "DirectInvocationOpExecutionContext":
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
-        if self._bound:
+        if self._bound_properties is not None:
             warnings.warn(
                 f"This context was already used to execute {self.alias}. The information about"
                 f" {self.alias} will be cleared, including user events and output metadata."
@@ -175,20 +226,15 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
             self.unbind()
 
         # update the bound context with properties relevant to the execution of the op
-        self._op_def = op_def
 
         invocation_tags = (
             pending_invocation.tags
             if isinstance(pending_invocation, PendingNodeInvocation)
             else None
         )
-        self._tags = (
-            merge_dicts(self._op_def.tags, invocation_tags)
-            if invocation_tags
-            else self._op_def.tags
-        )
+        tags = merge_dicts(op_def.tags, invocation_tags) if invocation_tags else op_def.tags
 
-        self._hook_defs = (
+        hook_defs = (
             pending_invocation.hook_defs
             if isinstance(pending_invocation, PendingNodeInvocation)
             else None
@@ -198,9 +244,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
             if isinstance(pending_invocation, PendingNodeInvocation)
             else None
         )
-        self._alias = invocation_alias if invocation_alias else self._op_def.name
-
-        self._assets_def = assets_def
+        alias = invocation_alias if invocation_alias else op_def.name
 
         if resources_from_args:
             if self._resource_defs:
@@ -209,7 +253,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 )
             resource_defs = wrap_resources_for_execution(resources_from_args)
             # add new resources context to the stack to be cleared on exit
-            self._resources = self._exit_stack.enter_context(
+            resources = self._exit_stack.enter_context(
                 build_resources(resource_defs, self.instance)
             )
         elif assets_def and assets_def.resource_defs:
@@ -224,12 +268,12 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 {**self._resource_defs, **assets_def.resource_defs}
             )
             # add new resources context to the stack to be cleared on exit
-            self._resources = self._exit_stack.enter_context(
+            resources = self._exit_stack.enter_context(
                 build_resources(resource_defs, self.instance, self._resources_config)
             )
         else:
             # this runs the check in resources() to ensure we are in a context manager if necessary
-            self._resources = self.resources
+            resources = self.resources
 
             resource_defs = self._resource_defs
 
@@ -237,26 +281,24 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
         if self.op_config and config_from_args:
             raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
-        self._op_config = resolve_bound_config(config_from_args or self.op_config, op_def)
+        op_config = resolve_bound_config(config_from_args or self.op_config, op_def)
 
-        self._requires_typed_event_stream = False
-        self._typed_event_stream_error_message = None
-        self._bound = True
+        self._bound_properties = BoundProperties(
+            op_def=op_def,
+            tags=tags,
+            hook_defs=hook_defs,
+            alias=alias,
+            assets_def=assets_def,
+            resources=resources,
+            op_config=op_config,
+        )
 
+        self._invocation_properties = InvocationProperties()
         return self
 
     def unbind(self):
-        self._op_def = None
-        self._alias = None
-        self._hook_defs = None
-        self._tags = {}
-        self._seen_outputs = {}
-        self._resources = self._init_resources
-        self._op_config = self._init_op_config
-        self._user_events = []
-        self._output_metadata = {}
-
-        self._bound = False
+        self._bound_properties = None
+        self._invocation_properties = None
 
     @property
     def op_config(self) -> Any:
@@ -268,8 +310,8 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
     @property
     def resources(self) -> Resources:
-        if self._bound:
-            return self._resources
+        if self._bound_properties is not None:
+            return self._bound_properties.resources
         if self._resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
@@ -317,8 +359,10 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._check_bound(fn_name="run_config", fn_type="property")
 
         run_config: Dict[str, object] = {}
-        if self._op_config and self._op_def:
-            run_config["ops"] = {self._op_def.name: {"config": self._op_config}}
+        if self._op_config and self._bound_properties.op_def:
+            run_config["ops"] = {
+                self._bound_properties.op_def.name: {"config": self._bound_properties.op_config}
+            }
         run_config["resources"] = self._resources_config
         return run_config
 
@@ -350,22 +394,22 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
     @property
     def op_def(self) -> OpDefinition:
         self._check_bound(fn_name="op_def", fn_type="property")
-        return cast(OpDefinition, self._op_def)
+        return cast(OpDefinition, self._bound_properties.op_def)
 
     @property
     def has_assets_def(self) -> bool:
         self._check_bound(fn_name="has_assets_def", fn_type="property")
-        return self._assets_def is not None
+        return self._bound_properties.assets_def is not None
 
     @property
     def assets_def(self) -> AssetsDefinition:
         self._check_bound(fn_name="assets_def", fn_type="property")
 
-        if self._assets_def is None:
+        if self._bound_properties.assets_def is None:
             raise DagsterInvalidPropertyError(
                 f"Op {self.op_def.name} does not have an assets definition."
             )
-        return self._assets_def
+        return self._bound_properties.assets_def
 
     @property
     def has_partition_key(self) -> bool:
@@ -396,16 +440,16 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
     def has_tag(self, key: str) -> bool:
         self._check_bound(fn_name="has_tag", fn_type="method")
-        return key in self._tags
+        return key in self._bound_properties.tags
 
     def get_tag(self, key: str) -> Optional[str]:
         self._check_bound(fn_name="get_tag", fn_type="method")
-        return self._tags.get(key)
+        return self._bound_properties.tags.get(key)
 
     @property
     def alias(self) -> str:
         self._check_bound(fn_name="alias", fn_type="property")
-        return cast(str, self._alias)
+        return cast(str, self._bound_properties.alias)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "method"))
@@ -431,7 +475,8 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
                 ...
         """
-        return self._user_events
+        self._check_bound(fn_name="get_events", fn_type="method")
+        return self._invocation_properties.user_events
 
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None
@@ -447,7 +492,8 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         Returns:
             Optional[Mapping[str, Any]]: The metadata values present for the output_name/mapping_key combination, if present.
         """
-        metadata = self._output_metadata.get(output_name)
+        self._check_bound(fn_name="get_output_metadata", fn_type="method")
+        metadata = self._invocation_properties.output_metadata.get(output_name)
         if mapping_key and metadata:
             return metadata.get(mapping_key)
         return metadata
@@ -479,24 +525,25 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
             "event",
             (AssetMaterialization, AssetObservation, ExpectationResult),
         )
-        self._user_events.append(event)
+        self._invocation_properties.user_events.append(event)
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         self._check_bound(fn_name="observe_output", fn_type="method")
         if mapping_key:
-            if output_name not in self._seen_outputs:
-                self._seen_outputs[output_name] = set()
-            cast(Set[str], self._seen_outputs[output_name]).add(mapping_key)
+            if output_name not in self._invocation_properties.seen_outputs:
+                self._invocation_properties.seen_outputs[output_name] = set()
+            cast(Set[str], self._invocation_properties.seen_outputs[output_name]).add(mapping_key)
         else:
-            self._seen_outputs[output_name] = "seen"
+            self._invocation_properties.seen_outputs[output_name] = "seen"
 
     def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
         self._check_bound(fn_name="has_seen_output", fn_type="method")
         if mapping_key:
             return (
-                output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
+                output_name in self._invocation_properties.seen_outputs
+                and mapping_key in self._invocation_properties.seen_outputs[output_name]
             )
-        return output_name in self._seen_outputs
+        return output_name in self._invocation_properties.seen_outputs
 
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         self._check_bound(fn_name="asset_partitions_time_window_for_output", fn_type="method")
@@ -584,19 +631,22 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
             )
 
         output_name = output_def.name
-        if output_name in self._output_metadata:
-            if not mapping_key or mapping_key in self._output_metadata[output_name]:
+        if output_name in self._invocation_properties.output_metadata:
+            if (
+                not mapping_key
+                or mapping_key in self._invocation_properties.output_metadata[output_name]
+            ):
                 raise DagsterInvariantViolationError(
                     f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log"
                     f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
-            if output_name not in self._output_metadata:
-                self._output_metadata[output_name] = {}
-            self._output_metadata[output_name][mapping_key] = metadata
+            if output_name not in self._invocation_properties.output_metadata:
+                self._invocation_properties.output_metadata[output_name] = {}
+            self._invocation_properties.output_metadata[output_name][mapping_key] = metadata
 
         else:
-            self._output_metadata[output_name] = metadata
+            self._invocation_properties.output_metadata[output_name] = metadata
 
     # In bound mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.
