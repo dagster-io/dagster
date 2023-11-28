@@ -1,7 +1,6 @@
 import {createGlobalStyle} from 'styled-components';
 
 import {
-  colorAccentBlue,
   colorAccentRed,
   colorBorderDefault,
   colorBackgroundDefault,
@@ -19,16 +18,14 @@ import {
   colorTextRed,
   colorTextYellow,
   colorTextDefault,
+  colorBackgroundLight,
+  colorBackgroundBlueHover,
 } from '../theme/color';
 
 import {Icons} from './Icon';
 import {FontFamily} from './styles';
 
 export const DagsterCodeMirrorStyle = createGlobalStyle`
-  .CodeMirror {
-    color: ${colorTextDefault()};
-  }
-
   .CodeMirror-gutter-elt {
     .CodeMirror-lint-marker-error {
       background-image: none;
@@ -53,6 +50,9 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   }
 
   .CodeMirror.cm-s-dagster {
+    background-color: ${colorBackgroundLight()};
+    color: ${colorTextDefault()};
+
     font-family: ${FontFamily.monospace};
     font-size: 16px;
 
@@ -94,7 +94,7 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
     }
 
     .CodeMirror-selected {
-      background-color: ${colorAccentBlue()};
+      background-color: ${colorBackgroundBlueHover()};
     }
 
     .CodeMirror-gutters {
