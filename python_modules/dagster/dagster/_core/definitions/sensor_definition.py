@@ -331,6 +331,7 @@ class SensorEvaluationContext:
     @public
     @property
     def is_first_tick_since_sensor_start(self) -> bool:
+        """Flag representing if this is the first tick since the sensor was started."""
         return not self._last_tick_completion_time or (
             self._last_sensor_start_time is not None
             and self._last_sensor_start_time > self._last_tick_completion_time
