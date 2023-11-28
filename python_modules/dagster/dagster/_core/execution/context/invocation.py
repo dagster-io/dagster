@@ -274,9 +274,9 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
         _validate_resource_requirements(resource_defs, op_def)
 
-        if self.op_config and config_from_args:
+        if self._op_config and config_from_args:
             raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
-        op_config = resolve_bound_config(config_from_args or self.op_config, op_def)
+        op_config = resolve_bound_config(config_from_args or self._op_config, op_def)
 
         self._bound_properties = BoundProperties(
             op_def=op_def,
@@ -297,7 +297,9 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
     @property
     def op_config(self) -> Any:
-        return self._op_config
+        if self._bound_properties is None:
+            return self._op_config
+        return self._bound_properties.op_config
 
     @property
     def resource_keys(self) -> AbstractSet[str]:
