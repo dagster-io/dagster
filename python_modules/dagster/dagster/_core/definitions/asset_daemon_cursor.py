@@ -1,7 +1,6 @@
 import datetime
 import json
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Mapping,
     NamedTuple,
@@ -21,12 +20,8 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
 from .asset_graph import AssetGraph
-from .partition import (
-    PartitionsSubset,
-)
-
-if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
+from .asset_subset import AssetSubset
+from .partition import PartitionsDefinition, PartitionsSubset
 
 
 class AssetDaemonAssetCursor(NamedTuple):
@@ -38,32 +33,7 @@ class AssetDaemonAssetCursor(NamedTuple):
     latest_storage_id: Optional[int]
     latest_evaluation_timestamp: Optional[float]
     latest_evaluation: Optional[AutoMaterializeAssetEvaluation]
-    materialized_requested_or_discarded: Optional[bool] = None
-    materialized_requested_or_discarded_subset: Optional[PartitionsSubset] = None
-
-    def get_unhandled_asset_partitions(
-        self,
-        asset_graph: AssetGraph,
-        dynamic_partitions_store: "DynamicPartitionsStore",
-        current_time: datetime.datetime,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        partitions_def = asset_graph.get_partitions_def(self.asset_key)
-        if partitions_def is None:
-            return (
-                {AssetKeyPartitionKey(self.asset_key, None)}
-                if not self.materialized_requested_or_discarded
-                else set()
-            )
-
-        subset = self.materialized_requested_or_discarded_subset or partitions_def.empty_subset()
-        return {
-            AssetKeyPartitionKey(self.asset_key, partition_key)
-            for partition_key in subset.get_partition_keys_not_in_subset(
-                partitions_def=partitions_def,
-                current_time=current_time,
-                dynamic_partitions_store=dynamic_partitions_store,
-            )
-        }
+    materialized_requested_or_discarded_subset: AssetSubset
 
     def with_updates(
         self,
@@ -74,26 +44,19 @@ class AssetDaemonAssetCursor(NamedTuple):
     ) -> "AssetDaemonAssetCursor":
         if self.asset_key not in asset_graph.root_asset_keys:
             return self
-        materialized_requested_or_discarded = (
+        newly_materialized_requested_or_discarded_asset_partitions = (
             newly_materialized_asset_partitions
             | requested_asset_partitions
             | discarded_asset_partitions
         )
-        partitions_def = asset_graph.get_partitions_def(self.asset_key)
-        if partitions_def is None:
-            return self._replace(
-                materialized_requested_or_discarded=bool(materialized_requested_or_discarded),
-            )
+        newly_materialized_requested_or_discarded_subset = AssetSubset.from_asset_partitions_set(
+            self.asset_key,
+            newly_materialized_requested_or_discarded_asset_partitions,
+            asset_graph.get_partitions_def(self.asset_key),
+        )
         return self._replace(
-            materialized_requested_or_discarded_subset=(
-                self.materialized_requested_or_discarded_subset or partitions_def.empty_subset()
-            ).with_partition_keys(
-                (
-                    asset_partition.partition_key
-                    for asset_partition in materialized_requested_or_discarded
-                    if asset_partition.partition_key is not None
-                )
-            )
+            materialized_requested_or_discarded_subset=self.materialized_requested_or_discarded_subset
+            | newly_materialized_requested_or_discarded_subset
         )
 
 
@@ -127,16 +90,22 @@ class AssetDaemonCursor(NamedTuple):
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
         return asset_key in self.handled_root_asset_keys
 
-    def asset_cursor_for_key(self, asset_key: AssetKey) -> AssetDaemonAssetCursor:
+    def asset_cursor_for_key(
+        self, asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
+    ) -> AssetDaemonAssetCursor:
+        handled_partitions_subset = self.handled_root_partitions_by_asset_key.get(asset_key)
+        if handled_partitions_subset is not None:
+            handled_subset = AssetSubset(asset_key=asset_key, value=handled_partitions_subset)
+        elif asset_key in self.handled_root_asset_keys:
+            handled_subset = AssetSubset(asset_key=asset_key, value=True)
+        else:
+            handled_subset = AssetSubset.empty(asset_key, partitions_def)
         return AssetDaemonAssetCursor(
             asset_key=asset_key,
             latest_storage_id=self.latest_storage_id,
             latest_evaluation_timestamp=self.latest_evaluation_timestamp,
             latest_evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
-            materialized_requested_or_discarded=asset_key in self.handled_root_asset_keys,
-            materialized_requested_or_discarded_subset=self.handled_root_partitions_by_asset_key.get(
-                asset_key
-            ),
+            materialized_requested_or_discarded_subset=handled_subset,
         )
 
     def with_updates(
@@ -178,12 +147,13 @@ class AssetDaemonCursor(NamedTuple):
             handled_root_asset_keys={
                 cursor.asset_key
                 for cursor in asset_cursors
-                if cursor.materialized_requested_or_discarded
+                if not cursor.materialized_requested_or_discarded_subset.is_partitioned
+                and cursor.materialized_requested_or_discarded_subset.bool_value
             },
             handled_root_partitions_by_asset_key={
-                cursor.asset_key: cursor.materialized_requested_or_discarded_subset
+                cursor.asset_key: cursor.materialized_requested_or_discarded_subset.subset_value
                 for cursor in asset_cursors
-                if cursor.materialized_requested_or_discarded_subset is not None
+                if cursor.materialized_requested_or_discarded_subset.is_partitioned
             },
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,

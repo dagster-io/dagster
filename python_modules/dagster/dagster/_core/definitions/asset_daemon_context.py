@@ -242,7 +242,9 @@ class AssetDaemonContext:
         to_skip: Set[AssetKeyPartitionKey] = set()
         to_discard: Set[AssetKeyPartitionKey] = set()
 
-        asset_cursor = self.cursor.asset_cursor_for_key(asset_key)
+        asset_cursor = self.cursor.asset_cursor_for_key(
+            asset_key, self.asset_graph.get_partitions_def(asset_key)
+        )
 
         materialize_context = RuleEvaluationContext(
             asset_key=asset_key,

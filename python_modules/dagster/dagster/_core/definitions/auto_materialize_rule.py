@@ -34,6 +34,7 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
@@ -72,6 +73,10 @@ class RuleEvaluationContext:
     @property
     def asset_graph(self) -> AssetGraph:
         return self.instance_queryer.asset_graph
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self.asset_graph.get_partitions_def(self.asset_key)
 
     @property
     def evaluation_time(self) -> datetime.datetime:
@@ -200,11 +205,11 @@ class RuleEvaluationContext:
         if self.asset_key not in self.asset_graph.root_asset_keys:
             return set()
         newly_materialized = set()
-        for asset_partition in self.cursor.get_unhandled_asset_partitions(
-            self.asset_graph,
+        for asset_partition in self.cursor.materialized_requested_or_discarded_subset.inverse(
+            self.partitions_def,
             dynamic_partitions_store=self.instance_queryer,
             current_time=self.instance_queryer.evaluation_time,
-        ):
+        ).asset_partitions:
             if self.instance_queryer.asset_partition_has_materialization_or_observation(
                 asset_partition
             ):
@@ -219,11 +224,11 @@ class RuleEvaluationContext:
         if self.asset_key not in self.asset_graph.root_asset_keys:
             return set()
         return (
-            self.cursor.get_unhandled_asset_partitions(
-                self.asset_graph,
+            self.cursor.materialized_requested_or_discarded_subset.inverse(
+                self.partitions_def,
                 dynamic_partitions_store=self.instance_queryer,
                 current_time=self.instance_queryer.evaluation_time,
-            )
+            ).asset_partitions
             - self.newly_materialized_root_partitions
         )
 
