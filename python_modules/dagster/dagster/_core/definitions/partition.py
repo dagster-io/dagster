@@ -940,7 +940,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @abstractmethod
     @public
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[T_str]:
+    def get_partition_keys(self) -> Iterable[T_str]:
         ...
 
     @abstractmethod
@@ -1096,7 +1096,7 @@ class DefaultPartitionsSubset(
             )
         ) - set(self.subset)
 
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+    def get_partition_keys(self) -> Iterable[str]:
         return self.subset
 
     def get_partition_key_ranges(
