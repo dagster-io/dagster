@@ -70,12 +70,12 @@ def get_asset_check_execution_statuses_by_id(
         # Asset checks stay in PLANNED status until the evaluation event arrives. Check if the run is
         # still active, and if not, return the actual status.
         elif record_status == AssetCheckExecutionRecordStatus.PLANNED:
-            check.invariant(
-                execution.run_id in planned_execution_runs_by_run_id, "Check run not found"
-            )
-            run = planned_execution_runs_by_run_id[execution.run_id]
+            run = planned_execution_runs_by_run_id.get(execution.run_id)
 
-            if run.is_finished:
+            if not run:
+                # The run was deleted before it finished
+                return AssetCheckExecutionResolvedStatus.SKIPPED
+            elif run.is_finished:
                 if run.status == DagsterRunStatus.FAILURE:
                     return AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
                 else:
