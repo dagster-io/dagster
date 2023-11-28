@@ -671,7 +671,12 @@ class TestRunStorage:
 
         # Default sort is id desc
         assert storage.get_run_ids() == ["high-priority", "2", "low-priority", "1"]
-        assert storage.get_run_ids(prioritized=True) == ["high-priority", "1", "2", "low-priority"]
+        assert storage.get_prioritized_run_ids() == [
+            "high-priority",
+            "1",
+            "2",
+            "low-priority",
+        ]
 
     def test_fetch_by_status(self, storage):
         assert storage

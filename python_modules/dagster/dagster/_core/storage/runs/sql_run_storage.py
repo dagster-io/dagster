@@ -368,12 +368,15 @@ class SqlRunStorage(RunStorage):
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        prioritized: Optional[bool] = False,
     ) -> Sequence[str]:
         query = self._runs_query(filters=filters, cursor=cursor, limit=limit, columns=["run_id"])
 
-        if prioritized:
-            query = self._order_by_run_priority(query)
+        rows = self.fetchall(query)
+        return [row["run_id"] for row in rows]
+
+    def get_prioritized_run_ids(self, filters: Optional[RunsFilter] = None):
+        query = self._runs_query(filters=filters, columns=["run_id"])
+        query = self._order_by_run_priority(query)
 
         rows = self.fetchall(query)
         return [row["run_id"] for row in rows]

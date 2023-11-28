@@ -89,7 +89,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        prioritized: bool = False,
     ) -> Sequence[str]:
         """Return all the run IDs for runs present in the storage that match the given filters.
 
@@ -99,12 +98,27 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
-            prioritized (bool): Order ids using priority tags.
-                https://docs.dagster.io/guides/customizing-run-queue-priority
-                Defaults to False.
 
         Returns:
             Sequence[str]
+        """
+
+    @abstractmethod
+    def get_prioritized_run_ids(
+        self,
+        filters: Optional[RunsFilter] = None,
+    ) -> Sequence[str]:
+        """Return run ids in priority order.
+
+        https://docs.dagster.io/guides/customizing-run-queue-priority
+
+        Args:
+            filters (Optional[RunsFilter]) -- The
+                :py:class:`~dagster._core.storage.pipeline_run.RunsFilter` by which to filter
+                runs
+
+        Returns:
+            Sequences[str]
         """
 
     @abstractmethod
