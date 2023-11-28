@@ -1,5 +1,5 @@
-import urllib.request
 import os
+import urllib.request
 
 # Create a new 'nasa' directory if needed
 dir_name = "nasa"
