@@ -9,6 +9,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
@@ -95,6 +96,14 @@ class AssetSelection(ABC):
     def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
         """Returns a selection that includes all of the provided assets and asset checks that target them."""
         return KeysAssetSelection(*(key for assets_def in assets_defs for key in assets_def.keys))
+
+    @public
+    @staticmethod
+    def cacheable_assets(
+        *cacheable_assets_defs: CacheableAssetsDefinition
+    ) -> "CacheableAssetSelection":
+        """Returns a selection that includes all of the provided assets and asset checks that target them."""
+        return CacheableAssetSelection(*cacheable_assets_defs)
 
     @public
     @staticmethod
@@ -626,3 +635,25 @@ class SourceAssetSelection(AssetSelection):
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph)
         return {key for key in all_upstream if key in asset_graph.source_asset_keys}
+
+
+class CacheableAssetSelection(AssetSelection):
+    def __init__(self, *cacheable_assets_defs: CacheableAssetsDefinition):
+        self._unique_ids = set(
+            cacheable_assets_def.unique_id for cacheable_assets_def in cacheable_assets_defs
+        )
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        check.param_invariant(
+            isinstance(asset_graph, InternalAssetGraph),
+            "asset_graph",
+            "CacheableAssetSelection requires an InternalAssetGraph in order to be resolved",
+        )
+        asset_graph = cast(InternalAssetGraph, asset_graph)
+        return set().union(
+            *(
+                assets_def.keys
+                for assets_def in asset_graph.assets
+                if assets_def.cacheable_assets_definition_unique_id in self._unique_ids
+            )
+        )

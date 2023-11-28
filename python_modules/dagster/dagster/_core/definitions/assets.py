@@ -93,6 +93,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
+    _cacheable_assets_definition_unique_id: Optional[str]
     _is_subset: bool
 
     def __init__(
@@ -115,6 +116,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
+        cacheable_assets_definition_unique_id: Optional[str] = None,
         is_subset: bool = False,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
@@ -314,6 +316,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             partitions_def=self._partitions_def,
         )
 
+        self._cacheable_assets_definition_unique_id = check.opt_str_param(
+            cacheable_assets_definition_unique_id, "cacheable_assets_definition_unique_id"
+        )
         self._is_subset = check.bool_param(is_subset, "is_subset")
 
     @staticmethod
@@ -336,6 +341,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+        cacheable_assets_definition_unique_id: Optional[str],
         is_subset: bool,
     ) -> "AssetsDefinition":
         return AssetsDefinition(
@@ -356,6 +362,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             descriptions_by_key=descriptions_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys,
+            cacheable_assets_definition_unique_id=cacheable_assets_definition_unique_id,
             is_subset=is_subset,
         )
 
@@ -714,6 +721,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,
+            cacheable_assets_definition_unique_id=None,
             is_subset=False,
         )
 
@@ -880,6 +888,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return self._partition_mappings
 
+    @property
+    def cacheable_assets_definition_unique_id(self) -> Optional[str]:
+        return self._cacheable_assets_definition_unique_id
+
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
         """Returns the partition mapping between keys in this AssetsDefinition and a given input
@@ -979,6 +991,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        cacheable_assets_definition_unique_id: Optional[str] = None,
         is_subset: bool = False,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
@@ -1126,6 +1139,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             descriptions_by_key=replaced_descriptions_by_key,
+            cacheable_assets_definition_unique_id=cacheable_assets_definition_unique_id
+            if cacheable_assets_definition_unique_id
+            else self.cacheable_assets_definition_unique_id,
             is_subset=is_subset,
             check_specs_by_output_name=check_specs_by_output_name
             if check_specs_by_output_name
@@ -1378,6 +1394,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             descriptions_by_key=self._descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self._selected_asset_check_keys,
+            cacheable_assets_definition_unique_id=self._cacheable_assets_definition_unique_id,
         )
 
 

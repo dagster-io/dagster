@@ -454,12 +454,15 @@ class PendingRepositoryDefinition:
                     "No metadata found for CacheableAssetsDefinition with unique_id"
                     f" {defn.unique_id}.",
                 )
-                # use the emtadata to generate definitions
-                resolved_definitions.extend(
-                    defn.build_definitions(
-                        data=repository_load_data.cached_data_by_key[defn.unique_id]
+                # use the metadata to generate definitions
+                for assets_def in defn.build_definitions(
+                    data=repository_load_data.cached_data_by_key[defn.unique_id]
+                ):
+                    resolved_definitions.append(
+                        assets_def.with_attributes(
+                            cacheable_assets_definition_unique_id=defn.unique_id
+                        )
                     )
-                )
             else:
                 resolved_definitions.append(defn)
 

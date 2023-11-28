@@ -18,6 +18,12 @@ from dagster import (
 )
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
+from dagster._core.definitions.decorators.op_decorator import op
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from typing_extensions import TypeAlias
 
@@ -373,4 +379,42 @@ def test_from_coercible_tuple():
     assert AssetSelection.from_coercible((foo, bar)).resolve([foo, bar]) == {
         AssetKey("foo"),
         AssetKey("bar"),
+    }
+
+
+def test_cacheable_asset_selection() -> None:
+    class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+        def compute_cacheable_data(self):
+            return [
+                AssetsDefinitionCacheableData(
+                    keys_by_input_name={}, keys_by_output_name={"result": AssetKey(self.unique_id)}
+                )
+            ]
+
+        def build_definitions(self, data):
+            @op(name=self.unique_id)
+            def my_op():
+                return 1
+
+            return [
+                AssetsDefinition.from_op(
+                    my_op,
+                    keys_by_input_name=cd.keys_by_input_name,
+                    keys_by_output_name=cd.keys_by_output_name,
+                )
+                for cd in data
+            ]
+
+    foo_cacheable = MyCacheableAssetsDefinition("foo").with_prefix_for_all("b")
+    bar_cacheable = MyCacheableAssetsDefinition("bar").with_prefix_for_all("b")
+
+    defs = Definitions(assets=[foo_cacheable, bar_cacheable])
+    asset_graph = defs.get_asset_graph()
+
+    assert AssetSelection.cacheable_assets(foo_cacheable).resolve(asset_graph) == {
+        AssetKey(["b", "foo"])
+    }
+    assert AssetSelection.cacheable_assets(foo_cacheable, bar_cacheable).resolve(asset_graph) == {
+        AssetKey(["b", "foo"]),
+        AssetKey(["b", "bar"]),
     }
