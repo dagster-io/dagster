@@ -463,7 +463,7 @@ def validate_and_get_schedule_resource_dict(
                 f"Resource with key '{k}' required by schedule '{schedule_name}' was not provided."
             )
 
-    return {k: getattr(resources, k) for k in required_resource_keys}
+    return {k: resources._original_resource_dict.get(k) for k in required_resource_keys}  # noqa:SLF001
 
 
 @deprecated_param(
