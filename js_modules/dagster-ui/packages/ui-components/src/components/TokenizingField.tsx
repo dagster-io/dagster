@@ -4,12 +4,12 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {
+  colorBackgroundDefault,
   colorBackgroundGray,
   colorBackgroundGreen,
   colorBackgroundRed,
   colorBackgroundYellow,
   colorBorderDefault,
-  colorKeylineDefault,
   colorTextDefault,
   colorTextGreen,
   colorTextRed,
@@ -460,28 +460,31 @@ export const TokenizingField = ({
 };
 
 export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
+  background-color: ${colorBackgroundDefault()};
   border: none;
   border-radius: 8px;
-  box-shadow:
-    ${colorBorderDefault()} inset 0px 0px 0px 1px,
-    ${colorKeylineDefault()} inset 2px 2px 1.5px;
+  box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
+  color: ${colorTextDefault()};
   min-width: 400px;
   max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
-  &.bp4-active {
-    box-shadow:
-      ${colorBorderDefault()} inset 0px 0px 0px 1px,
-      ${colorKeylineDefault()} inset 2px 2px 1.5px,
-      rgba(58, 151, 212, 0.6) 0 0 0 3px;
-  }
-
   input {
+    background-color: ${colorBackgroundDefault()};
+    color: ${colorTextDefault()};
     font-size: 14px;
     font-weight: 400;
     padding-left: 4px;
     padding-bottom: 2px;
     padding-top: 2px;
+  }
+
+  &&.bp4-tag-input.bp4-active {
+    background-color: ${colorBackgroundDefault()};
+    color: ${colorTextDefault()};
+    box-shadow:
+      ${colorBorderDefault()} inset 0px 0px 0px 1px,
+      rgba(58, 151, 212, 0.6) 0 0 0 3px;
   }
 
   && .bp4-tag-input-values:first-child .bp4-input-ghost:first-child {
