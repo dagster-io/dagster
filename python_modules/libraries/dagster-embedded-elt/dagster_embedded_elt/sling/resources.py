@@ -357,7 +357,6 @@ class SlingStreamReplicator(SlingSyncBase):
         self.source_connection = source_connection
         self.target_connection = target_connection
 
-    # TODO: - use the Replication command rather than Single Task,  modify the log parsing to parse that stdout instead
     def _sync(
         self,
         source_stream: str,
@@ -414,6 +413,8 @@ class SlingStreamReplicator(SlingSyncBase):
             cmd = sling_cli._prep_cmd() # noqa: SLF001
 
             # `_prep_cmd` only works with the Single Task command, so we need to replace it with the Replication command
+            # TODO: Unfortunately, _prep_cmd doesn't expose a way to add streams, so we'll need to override it ourselves
+            # We'll also need to parse the logs differently, since the output is different
             # cmd = cmd.replace(" -c ", " -r ")
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
