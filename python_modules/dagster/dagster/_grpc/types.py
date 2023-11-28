@@ -594,7 +594,7 @@ class SensorExecutionArgs(
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
-        last_sensor_start_time: Optional[float],
+        last_sensor_start_time: Optional[float] = None,
     ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
