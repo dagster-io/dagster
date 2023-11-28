@@ -283,13 +283,11 @@ def test_multipartitions_subset_addition(initial, added):
             "static": StaticPartitionsDefinition(static_keys),
         }
     )
-    full_date_set_keys = daily_partitions_def.get_partition_keys(
-        current_time=datetime(year=2015, month=1, day=30)
-    )[: max(len(keys) for keys in initial)]
+    full_date_set_keys = daily_partitions_def.get_partition_keys()[
+        : max(len(keys) for keys in initial)
+    ]
     current_day = datetime.strptime(
-        daily_partitions_def.get_partition_keys(current_time=datetime(year=2015, month=1, day=30))[
-            : max(len(keys) for keys in initial) + 1
-        ][-1],
+        daily_partitions_def.get_partition_keys()[: max(len(keys) for keys in initial) + 1][-1],
         daily_partitions_def.fmt,
     )
 
@@ -316,10 +314,8 @@ def test_multipartitions_subset_addition(initial, added):
     initial_subset = multipartitions_def.empty_subset().with_partition_keys(initial_subset_keys)
     added_subset = initial_subset.with_partition_keys(added_subset_keys)
 
-    assert initial_subset.get_partition_keys(current_time=current_day) == set(initial_subset_keys)
-    assert added_subset.get_partition_keys(current_time=current_day) == set(
-        added_subset_keys + initial_subset_keys
-    )
+    assert initial_subset.get_partition_keys() == set(initial_subset_keys)
+    assert added_subset.get_partition_keys() == set(added_subset_keys + initial_subset_keys)
     assert added_subset.get_partition_keys_not_in_subset(
         multipartitions_def, current_time=current_day
     ) == set(expected_keys_not_in_updated_subset)

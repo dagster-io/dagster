@@ -747,15 +747,11 @@ def test_dst_transition_with_daily_partitions(
     upstream = time_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
         subset, partitions_def, partitions_def, current_time=current_time
     )
-    assert upstream.partitions_subset.get_partition_keys(current_time=current_time) == [
-        expected_upstream_partition_key
-    ]
+    assert upstream.partitions_subset.get_partition_keys() == [expected_upstream_partition_key]
     downstream = time_partition_mapping.get_downstream_partitions_for_partitions(
         subset, partitions_def, partitions_def, current_time=current_time
     )
-    assert downstream.get_partition_keys(current_time=current_time) == [
-        expected_downstream_partition_key
-    ]
+    assert downstream.get_partition_keys() == [expected_downstream_partition_key]
 
 
 def test_mar_2024_dst_transition_with_hourly_partitions():
