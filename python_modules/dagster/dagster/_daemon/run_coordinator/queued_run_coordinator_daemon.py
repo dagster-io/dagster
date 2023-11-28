@@ -276,7 +276,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
     def _get_queued_run_ids(self, instance: DagsterInstance) -> Sequence[str]:
         queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
-        return instance.get_run_ids(filters=queued_runs_filter, prioritized=True)
+        return instance.run_storage.get_prioritized_run_ids(filters=queued_runs_filter)
 
     def _get_in_progress_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
