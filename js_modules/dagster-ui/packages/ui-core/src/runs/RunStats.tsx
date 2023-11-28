@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Spinner} from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
+import {Box, Spinner, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';

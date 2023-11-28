@@ -1,5 +1,4 @@
-import {colorBackgroundDefault, colorBackgroundGray} from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
+import {colorBackgroundDefault, colorBackgroundGray, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
