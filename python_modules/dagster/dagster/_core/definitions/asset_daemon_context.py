@@ -32,6 +32,7 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._utils.cached_method import cached_method
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
@@ -48,10 +49,7 @@ from .auto_materialize_rule_evaluation import (
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
-from .partition import (
-    PartitionsDefinition,
-    ScheduleType,
-)
+from .partition import PartitionsDefinition, ScheduleType
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
