@@ -147,20 +147,16 @@ class SensorEvaluationContext:
         sensor_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
         definitions: Optional["Definitions"] = None,
-        last_sensor_start_time: Optional[float] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
-        self._last_tick_completion_time = check.opt_float_param(
+        self._last_completion_time = check.opt_float_param(
             last_completion_time, "last_completion_time"
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
-        self._last_sensor_start_time = check.opt_float_param(
-            last_sensor_start_time, "last_sensor_start_time"
-        )
         self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._repository_def = normalize_to_repository(
@@ -219,7 +215,7 @@ class SensorEvaluationContext:
 
         return SensorEvaluationContext(
             instance_ref=self._instance_ref,
-            last_completion_time=self._last_tick_completion_time,
+            last_completion_time=self._last_completion_time,
             last_run_key=self._last_run_key,
             cursor=self._cursor,
             repository_name=self._repository_name,
@@ -230,7 +226,6 @@ class SensorEvaluationContext:
                 **(self._resource_defs or {}),
                 **wrap_resources_for_execution(resources_dict),
             },
-            last_sensor_start_time=self._last_sensor_start_time,
         )
 
     @public
@@ -309,33 +304,9 @@ class SensorEvaluationContext:
 
     @public
     @property
-    def last_tick_completion_time(self) -> Optional[float]:
-        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation."""
-        return self._last_tick_completion_time
-
-    @public
-    @property
     def last_completion_time(self) -> Optional[float]:
-        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation. Legacy alias of last_tick_completion_time, renamed for clarity."""
-        return self._last_tick_completion_time
-
-    @public
-    @property
-    def last_sensor_start_time(self) -> Optional[float]:
-        """Optional[float]: Timestamp representing the last time this sensor was started. Can be
-        used in concert with last_completion_time to determine if this is the first tick since the
-        sensor was started.
-        """
-        return self._last_sensor_start_time
-
-    @public
-    @property
-    def is_first_tick_since_sensor_start(self) -> bool:
-        """Flag representing if this is the first tick since the sensor was started."""
-        return not self._last_tick_completion_time or (
-            self._last_sensor_start_time is not None
-            and self._last_sensor_start_time > self._last_tick_completion_time
-        )
+        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation."""
+        return self._last_completion_time
 
     @public
     @property
@@ -1091,7 +1062,6 @@ def build_sensor_context(
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
     instance_ref: Optional["InstanceRef"] = None,
-    last_sensor_start_time: Optional[float] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -1112,7 +1082,6 @@ def build_sensor_context(
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
-        last_sensor_start_time (Optional[float]): The last time the sensor was started.
 
     Examples:
         .. code-block:: python
@@ -1144,7 +1113,6 @@ def build_sensor_context(
         repository_def=repository_def,
         sensor_name=sensor_name,
         resources=wrap_resources_for_execution(resources),
-        last_sensor_start_time=last_sensor_start_time,
     )
 
 
