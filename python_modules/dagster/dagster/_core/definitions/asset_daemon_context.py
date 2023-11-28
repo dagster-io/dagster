@@ -40,12 +40,10 @@ from .asset_daemon_cursor import AssetDaemonAssetCursor, AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import (
     AutoMaterializeRule,
-    DiscardOnMaxMaterializationsExceededRule,
     RuleEvaluationContext,
 )
 from .auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
-    AutoMaterializeRuleEvaluation,
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
@@ -227,122 +225,29 @@ class AssetDaemonContext:
             - The set of AssetKeyPartitionKeys that should be materialized.
             - The set of AssetKeyPartitionKeys that should be discarded.
         """
-        auto_materialize_policy = check.not_none(
+        # convert the legacy AutoMaterializePolicy to an Evaluator
+        auto_materialize_policy_evaluator = check.not_none(
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
-        )
+        ).to_auto_materialize_policy_evaluator()
 
-        # the results of evaluating individual rules
-        all_results: List[
-            Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
-        ] = []
-        # a set of asset partitions that should be materialized, skipped, or discarded
-        to_materialize: Set[AssetKeyPartitionKey] = set()
-        to_skip: Set[AssetKeyPartitionKey] = set()
-        to_discard: Set[AssetKeyPartitionKey] = set()
-
-        asset_cursor = self.cursor.asset_cursor_for_key(
-            asset_key, self.asset_graph.get_partitions_def(asset_key)
-        )
-
-        materialize_context = RuleEvaluationContext(
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
+        context = RuleEvaluationContext(
             asset_key=asset_key,
-            cursor=asset_cursor,
+            cursor=self.cursor.asset_cursor_for_key(asset_key, partitions_def),
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
             candidate_subset=AssetSubset.all(
                 asset_key=asset_key,
-                partitions_def=self.asset_graph.get_partitions_def(asset_key),
+                partitions_def=partitions_def,
                 dynamic_partitions_store=self.instance_queryer,
                 current_time=self.instance_queryer.evaluation_time,
             ),
             daemon_context=self,
         )
 
-        for materialize_rule in auto_materialize_policy.materialize_rules:
-            rule_snapshot = materialize_rule.to_snapshot()
-
-            self._verbose_log_fn(f"Evaluating materialize rule: {rule_snapshot}")
-            for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
-                materialize_context
-            ):
-                all_results.append(
-                    (
-                        AutoMaterializeRuleEvaluation(
-                            rule_snapshot=rule_snapshot, evaluation_data=evaluation_data
-                        ),
-                        asset_partitions,
-                    )
-                )
-                self._verbose_log_fn(f"Rule returned {len(asset_partitions)} partitions")
-                to_materialize.update(asset_partitions)
-            self._verbose_log_fn("Done evaluating materialize rule")
-
-        skip_context = materialize_context.with_candidate_subset(to_materialize)
-
-        for skip_rule in auto_materialize_policy.skip_rules:
-            rule_snapshot = skip_rule.to_snapshot()
-            self._verbose_log_fn(f"Evaluating skip rule: {rule_snapshot}")
-            for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
-                all_results.append(
-                    (
-                        AutoMaterializeRuleEvaluation(
-                            rule_snapshot=rule_snapshot, evaluation_data=evaluation_data
-                        ),
-                        asset_partitions,
-                    )
-                )
-                self._verbose_log_fn(f"Rule returned {len(asset_partitions)} partitions")
-                to_skip.update(asset_partitions)
-            self._verbose_log_fn("Done evaluating skip rule")
-        to_materialize.difference_update(to_skip)
-
-        # this is treated separately from other rules, for now
-        if auto_materialize_policy.max_materializations_per_minute is not None:
-            rule = DiscardOnMaxMaterializationsExceededRule(
-                limit=auto_materialize_policy.max_materializations_per_minute
-            )
-            rule_snapshot = rule.to_snapshot()
-
-            self._verbose_log_fn(f"Evaluating discard rule: {rule_snapshot}")
-
-            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
-                skip_context.with_candidate_subset(to_materialize)
-            ):
-                all_results.append(
-                    (
-                        AutoMaterializeRuleEvaluation(
-                            rule_snapshot=rule_snapshot, evaluation_data=evaluation_data
-                        ),
-                        asset_partitions,
-                    )
-                )
-                self._verbose_log_fn(f"Discard rule returned {len(asset_partitions)} partitions")
-                to_discard.update(asset_partitions)
-            self._verbose_log_fn("Done evaluating discard rule")
-
-        to_materialize.difference_update(to_discard)
-        to_skip.difference_update(to_discard)
-
-        return (
-            AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
-                asset_key=asset_key,
-                asset_graph=self.asset_graph,
-                asset_partitions_by_rule_evaluation=all_results,
-                num_requested=len(to_materialize),
-                num_skipped=len(to_skip),
-                num_discarded=len(to_discard),
-                dynamic_partitions_store=self.instance_queryer,
-            ),
-            asset_cursor.with_updates(
-                self.asset_graph,
-                materialize_context.newly_materialized_root_subset,
-                to_materialize,
-                to_discard,
-            ),
-            to_materialize,
-        )
+        return auto_materialize_policy_evaluator.evaluate(context, from_legacy=True)
 
     def get_auto_materialize_asset_evaluations(
         self,

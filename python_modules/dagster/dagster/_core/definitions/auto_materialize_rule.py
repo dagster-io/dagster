@@ -72,15 +72,8 @@ class RuleEvaluationContext:
     candidate_subset: AssetSubset
     daemon_context: "AssetDaemonContext"
 
-    def with_candidate_subset(
-        self, candidate_subset: AbstractSet[AssetKeyPartitionKey]
-    ) -> "RuleEvaluationContext":
-        return dataclasses.replace(
-            self,
-            candidate_subset=AssetSubset.from_asset_partitions_set(
-                self.asset_key, self.partitions_def, candidate_subset
-            ),
-        )
+    def with_candidate_subset(self, candidate_subset: AssetSubset) -> "RuleEvaluationContext":
+        return dataclasses.replace(self, candidate_subset=candidate_subset)
 
     @property
     def asset_graph(self) -> AssetGraph:
