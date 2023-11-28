@@ -109,6 +109,24 @@ class AssetSubset(NamedTuple):
                 ),
             )
 
+    def inverse(
+        self,
+        partitions_def: Optional[PartitionsDefinition],
+        current_time: Optional[datetime.datetime] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
+    ) -> "AssetSubset":
+        if partitions_def is None:
+            return self._replace(value=not self.bool_value)
+        else:
+            value = partitions_def.subset_with_partition_keys(
+                self.subset_value.get_partition_keys_not_in_subset(
+                    partitions_def,
+                    current_time=current_time,
+                    dynamic_partitions_store=dynamic_partitions_store,
+                )
+            )
+            return self._replace(value=value)
+
     def _oper(self, other: "AssetSubset", oper: Callable) -> "AssetSubset":
         value = oper(self.value, other.value)
         return self._replace(value=value)

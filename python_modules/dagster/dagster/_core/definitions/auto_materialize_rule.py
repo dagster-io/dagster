@@ -34,6 +34,7 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
@@ -53,16 +54,13 @@ from .asset_graph import AssetGraph, sort_key_for_asset_partition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
-    from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-    from dagster._core.definitions.auto_materialize_rule_evaluation import (
-        AutoMaterializeAssetEvaluation,
-    )
+    from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
 
 
 @dataclass(frozen=True)
 class RuleEvaluationContext:
     asset_key: AssetKey
-    cursor: "AssetDaemonCursor"
+    cursor: "AssetDaemonAssetCursor"
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
     # Tracks which asset partitions are already slated for materialization in this tick. The asset
@@ -77,9 +75,8 @@ class RuleEvaluationContext:
         return self.instance_queryer.asset_graph
 
     @property
-    def previous_tick_evaluation(self) -> Optional["AutoMaterializeAssetEvaluation"]:
-        """Returns the evaluation of the asset on the previous tick."""
-        return self.cursor.latest_evaluation_by_asset_key.get(self.asset_key)
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self.asset_graph.get_partitions_def(self.asset_key)
 
     @property
     def evaluation_time(self) -> datetime.datetime:
@@ -98,9 +95,9 @@ class RuleEvaluationContext:
         self,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions that were requested or discarded on the previous tick."""
-        if not self.previous_tick_evaluation:
+        if not self.cursor.latest_evaluation:
             return set()
-        return self.previous_tick_evaluation.get_requested_or_discarded_asset_partitions(
+        return self.cursor.latest_evaluation.get_requested_or_discarded_asset_partitions(
             asset_graph=self.asset_graph
         )
 
@@ -109,17 +106,17 @@ class RuleEvaluationContext:
         self,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions that were evaluated on the previous tick."""
-        if not self.previous_tick_evaluation:
+        if not self.cursor.latest_evaluation:
             return set()
-        return self.previous_tick_evaluation.get_evaluated_asset_partitions(
+        return self.cursor.latest_evaluation.get_evaluated_asset_partitions(
             asset_graph=self.asset_graph
         )
 
     def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
         """Returns the results that were calculated for a given rule on the previous tick."""
-        if not self.previous_tick_evaluation:
+        if not self.cursor.latest_evaluation:
             return []
-        return self.previous_tick_evaluation.get_rule_evaluation_results(
+        return self.cursor.latest_evaluation.get_rule_evaluation_results(
             rule_snapshot=rule.to_snapshot(), asset_graph=self.asset_graph
         )
 
@@ -202,6 +199,38 @@ class RuleEvaluationContext:
             if parent not in self.will_materialize_mapping.get(parent.asset_key, set())
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
+
+    @functools.cached_property
+    def newly_materialized_root_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
+            return set()
+        newly_materialized = set()
+        for asset_partition in self.cursor.materialized_requested_or_discarded_subset.inverse(
+            self.partitions_def,
+            dynamic_partitions_store=self.instance_queryer,
+            current_time=self.instance_queryer.evaluation_time,
+        ).asset_partitions:
+            if self.instance_queryer.asset_partition_has_materialization_or_observation(
+                asset_partition
+            ):
+                newly_materialized.add(asset_partition)
+
+        return newly_materialized
+
+    @functools.cached_property
+    def never_materialized_requested_or_discarded_root_partitions(
+        self
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
+            return set()
+        return (
+            self.cursor.materialized_requested_or_discarded_subset.inverse(
+                self.partitions_def,
+                dynamic_partitions_store=self.instance_queryer,
+                current_time=self.instance_queryer.evaluation_time,
+            ).asset_partitions
+            - self.newly_materialized_root_partitions
+        )
 
     @functools.cached_property
     def asset_partitions_with_updated_parents_since_previous_tick(
@@ -799,9 +828,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         asset_partitions_by_evaluation_data = defaultdict(set)
 
         missing_asset_partitions = set(
-            context.daemon_context.get_never_handled_root_asset_partitions_for_key(
-                context.asset_key
-            )
+            context.never_materialized_requested_or_discarded_root_partitions
         )
         # in addition to missing root asset partitions, check any asset partitions with updated
         # parents to see if they're missing
