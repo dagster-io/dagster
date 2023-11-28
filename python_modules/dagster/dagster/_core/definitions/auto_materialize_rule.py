@@ -202,7 +202,7 @@ class RuleEvaluationContext:
 
     @functools.cached_property
     def newly_materialized_root_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        if self.asset_key not in self.asset_graph.root_asset_keys:
+        if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
             return set()
         newly_materialized = set()
         for asset_partition in self.cursor.materialized_requested_or_discarded_subset.inverse(
@@ -221,7 +221,7 @@ class RuleEvaluationContext:
     def never_materialized_requested_or_discarded_root_partitions(
         self
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        if self.asset_key not in self.asset_graph.root_asset_keys:
+        if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
             return set()
         return (
             self.cursor.materialized_requested_or_discarded_subset.inverse(
