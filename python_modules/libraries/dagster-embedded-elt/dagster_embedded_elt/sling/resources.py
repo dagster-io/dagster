@@ -118,6 +118,14 @@ class SlingSyncBase:
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
 
+    def _override_config(self, cmd: str, config: Dict[str, Any]) -> None:
+        """Override the config file for the Sling CLI with the given config."""
+        _sling_bin, _run, _c, temp_file = cmd.split(" ")
+        temp_file = temp_file[1:-1]
+
+        with open(temp_file, "w") as f:
+            json.dump(config, f)
+
     def sync(
         self,
         source_stream: str,
@@ -390,31 +398,36 @@ class SlingStreamReplicator(SlingSyncBase):
                 "SLING_TARGET": json.dumps(sling_target),
             }
         ):
-            config = {
-                "mode": mode,
-                "source": {
-                    "conn": "SLING_SOURCE",
-                    "stream": source_stream,
+            stream_config = {
+                "source": "SLING_SOURCE",
+                "target": "SLING_TARGET",
+                "envvars": {
+                    "SLING_SOURCE": json.dumps(sling_source),
+                    "SLING_TARGET": json.dumps(sling_target),
+                },
+                "defaults": {
+                    "mode": mode,
+                    "object": target_object,
                     "primary_key": primary_key,
                     "update_key": update_key,
-                    "options": source_options,
+                    "source_options": source_options,
+                    "target_options": target_options,
                 },
-                "target": {
-                    "conn": "SLING_TARGET",
-                    "object": target_object,
-                    "options": target_options,
-                },
+                "streams": {f"{source_stream}": None},
             }
-            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
-            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
+            stream_config["defaults"] = {
+                k: v for k, v in stream_config["defaults"].items() if v is not None
+            }
 
-            sling_cli = Sling(**config)
+            sling_cli = Sling()
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
 
-            # `_prep_cmd` only works with the Single Task command, so we need to replace it with the Replication command
-            # TODO: Unfortunately, _prep_cmd doesn't expose a way to add streams, so we'll need to override it ourselves
-            # We'll also need to parse the logs differently, since the output is different
-            # cmd = cmd.replace(" -c ", " -r ")
+            # write the SLING_TARGET and SLING_SOURCE to a file in cwd
+            with open("sling_config.json", "w") as f:
+                json.dump(stream_config, f)
+
+            self._override_config(cmd, stream_config)
+            cmd = cmd.replace(" -c ", " -r ")
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
