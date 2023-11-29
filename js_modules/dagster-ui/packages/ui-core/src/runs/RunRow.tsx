@@ -8,7 +8,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Icon,
   Mono,
   Tag,
 } from '@dagster-io/ui-components';
@@ -21,8 +20,8 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineTag} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {CreatedByTagCell} from './CreatedByTag';
@@ -163,36 +162,7 @@ export const RunRow = ({
       </td>
       <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
-          {isHiddenAssetGroupJob(run.pipelineName) ? (
-            <Box flex={{gap: 16}}>
-              <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
-              <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
-            </Box>
-          ) : (
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <PipelineReference
-                isJob={isJob}
-                showIcon
-                pipelineName={run.pipelineName}
-                pipelineHrefContext="no-link"
-              />
-              <Link
-                to={
-                  repo
-                    ? workspacePipelinePath({
-                        repoName: repo.match.repository.name,
-                        repoLocation: repo.match.repositoryLocation.name,
-                        pipelineName: run.pipelineName,
-                        isJob,
-                      })
-                    : workspacePipelinePathGuessRepo(run.pipelineName)
-                }
-                target="_blank"
-              >
-                <Icon name="open_in_new" color={Colors.Blue500} />
-              </Link>
-            </Box>
-          )}
+          <RunTargetLink isJob={isJob} run={run} repoAddress={repoAddressGuess} />
           <Box
             flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
             style={{gap: '4px 8px'}}
@@ -291,3 +261,27 @@ const RunTagsWrapper = styled.div`
     display: contents;
   }
 `;
+
+const RunTargetLink = ({
+  run,
+  isJob,
+  repoAddress,
+}: {
+  isJob: boolean;
+  run: RunTableRunFragment;
+  repoAddress: RepoAddress | null;
+}) => {
+  return isHiddenAssetGroupJob(run.pipelineName) ? (
+    <Box flex={{gap: 16, alignItems: 'end', wrap: 'wrap'}}>
+      <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
+      <AssetCheckTagCollection assetChecks={run.assetCheckSelection} />
+    </Box>
+  ) : (
+    <PipelineReference
+      isJob={isJob}
+      showIcon
+      pipelineName={run.pipelineName}
+      pipelineHrefContext={repoAddress || 'repo-unknown'}
+    />
+  );
+};

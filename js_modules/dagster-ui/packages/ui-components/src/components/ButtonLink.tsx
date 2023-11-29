@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
+import {Box} from './Box';
 import {Colors} from './Colors';
 
 type Color =
@@ -51,6 +52,9 @@ const textDecoration = (underline: Underline) => {
       return css`
         &:hover {
           text-decoration: underline;
+          & > ${Box} {
+            text-decoration: underline;
+          }
         }
       `;
     case 'never':
