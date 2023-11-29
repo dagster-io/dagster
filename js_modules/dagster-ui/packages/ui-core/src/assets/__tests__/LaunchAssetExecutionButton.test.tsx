@@ -344,8 +344,19 @@ describe('LaunchAssetExecutionButton', () => {
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
 
+      // verify that the preview option is not shown
+      expect(screen.queryByTestId('backfill-preview-button')).toBeNull();
+
       // verify that checking "missing only" triggers the mutation with fewer partitions
       await userEvent.click(screen.getByTestId('missing-only-checkbox'));
+
+      // Verify that the preview option is now shown
+      const preview = await screen.findByTestId('backfill-preview-button');
+      await preview.click();
+
+      // Expect the modal to be displayed. We have separate test coverage for
+      // for the content of this modal
+      await screen.findByTestId('backfill-preview-modal-content');
 
       // verify that the executed mutation is correct
       await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
