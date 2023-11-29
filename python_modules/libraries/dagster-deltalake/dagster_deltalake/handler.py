@@ -16,6 +16,7 @@ from typing import (
 
 import pyarrow as pa
 import pyarrow.compute as pc
+import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -121,10 +122,17 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             )
             if partition_filters is not None:
                 partition_expr = _filters_to_expression([partition_filters])
-        scanner = table.to_pyarrow_dataset().scanner(
-            columns=table_slice.columns, filter=partition_expr
-        )
 
+        dataset = table.to_pyarrow_dataset()
+        if partition_expr is not None:
+            dataset = dataset.filter(expression=partition_expr)
+
+        if context.dagster_type.typing_type == ds.Dataset:
+            if table_slice.columns is not None:
+                raise ValueError("Cannot select columns when loading as Dataset.")
+            return dataset
+
+        scanner = dataset.scanner(columns=table_slice.columns)
         return self.from_arrow(scanner.to_reader(), context.dagster_type.typing_type)
 
 
@@ -137,11 +145,13 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
     def to_arrow(self, obj: ArrowTypes) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
         if isinstance(obj, pa.Table):
             return obj.to_reader(), {}
+        if isinstance(obj, ds.Dataset):
+            return obj.scanner().to_reader(), {}
         return obj, {}
 
     @property
     def supported_types(self) -> Sequence[Type[object]]:
-        return [pa.Table, pa.RecordBatchReader]
+        return [pa.Table, pa.RecordBatchReader, ds.Dataset]
 
 
 def partition_dimensions_to_dnf(
