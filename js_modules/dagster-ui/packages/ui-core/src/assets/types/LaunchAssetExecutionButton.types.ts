@@ -59,6 +59,7 @@ export type LaunchAssetExecutionAssetNodeFragment = {
           __typename: 'AssetCheck';
           name: string;
           canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+          jobNames: Array<string>;
         }>;
       };
   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
@@ -667,6 +668,7 @@ export type LaunchAssetLoaderQuery = {
             __typename: 'AssetCheck';
             name: string;
             canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+            jobNames: Array<string>;
           }>;
         };
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
@@ -1290,6 +1292,7 @@ export type LaunchAssetLoaderJobQuery = {
             __typename: 'AssetCheck';
             name: string;
             canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+            jobNames: Array<string>;
           }>;
         };
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
