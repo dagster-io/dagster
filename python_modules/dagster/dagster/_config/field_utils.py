@@ -1,7 +1,18 @@
 # encoding: utf-8
 import hashlib
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 import dagster._check as check
 from dagster._annotations import public
@@ -553,3 +564,13 @@ class EnvVar(str):
         environment variable is not set. If no default is provided, None will be returned.
         """
         return os.getenv(self.env_var_name, default=default)
+
+
+DagsterEnvVar = Union[EnvVar, IntEnvVar]
+
+
+def env_var_to_config_dict(value: DagsterEnvVar) -> Dict[str, Any]:
+    if isinstance(value, EnvVar):
+        return {"env": value.env_var_name}
+    else:
+        return {"env": value.name}
