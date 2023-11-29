@@ -1,12 +1,13 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PIPES_METADATA_TYPE_INFER,
+    Method,
     PipesContextData,
     PipesDataProvenance,
     PipesException,
@@ -137,15 +138,16 @@ class PipesMessageHandler:
         if self._received_closed_msg:
             self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
 
-        if message["method"] == "opened":
+        method = cast(Method, message["method"])
+        if method == "opened":
             self._handle_opened(message["params"])  # type: ignore
-        elif message["method"] == "closed":
+        elif method == "closed":
             self._handle_closed(message["params"])
-        elif message["method"] == "report_asset_materialization":
+        elif method == "report_asset_materialization":
             self._handle_report_asset_materialization(**message["params"])  # type: ignore
-        elif message["method"] == "report_asset_check":
+        elif method == "report_asset_check":
             self._handle_report_asset_check(**message["params"])  # type: ignore
-        elif message["method"] == "log":
+        elif method == "log":
             self._handle_log(**message["params"])  # type: ignore
         else:
             raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
