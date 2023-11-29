@@ -246,6 +246,47 @@ def test_build_assets_from_sling_streams(
     assert counts == expected
 
 
+def test_multiple_streams(
+    test_csv: str,
+    test_staging_csv: str,
+    sling_file_connection: SlingConnectionResource,
+    sling_staging_file_connection: SlingConnectionResource,
+    sling_sqlite_connection: SlingConnectionResource,
+    sqlite_connection: sqlite3.Connection,
+):
+    """Create two assets that target the same SlingConnectionResource."""
+    asset_def = build_assets_from_sling_streams(
+        sling_staging_file_connection,
+        sling_sqlite_connection,
+        streams=[
+            {
+                "stream_name": f"file://{test_csv}",
+                "object": "main.tbl",
+            },
+            {
+                "stream_name": f"file://{test_staging_csv}",
+                "object": "main.staging_tbl",
+            },
+        ],
+        mode=SlingMode.FULL_REFRESH,
+    )
+
+    sling_job = build_assets_job(
+        "sling_job",
+        [asset_def],
+        resource_defs={
+            "sling_file_connection": sling_file_connection,
+            "sling_staging_file_connection": sling_staging_file_connection,
+            "sling_sqlite_connection": sling_sqlite_connection,
+        },
+    )
+
+    res = sling_job.execute_in_process()
+    assert res.success
+    assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
+    assert sqlite_connection.execute("SELECT count(1) FROM main.staging_tbl").fetchone()[0] == 4
+
+
 def test_reuse_sling_connection_resource(
     test_csv: str,
     test_staging_csv: str,

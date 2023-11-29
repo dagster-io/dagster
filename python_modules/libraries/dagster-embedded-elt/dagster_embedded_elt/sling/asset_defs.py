@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -138,7 +138,7 @@ def build_assets_from_sling_streams(
         specs=specs,
         # required_resource_keys={source.???, target.???}, TODO: How do you get the resource key at this point in time?
     )
-    def _sling_assets(context: AssetExecutionContext) -> MaterializeResult:
+    def _sling_assets(context: AssetExecutionContext) -> Generator[MaterializeResult, None, None]:
         last_row_count_observed = None
 
         for stdout_line in sling_replicator.sync(
@@ -153,10 +153,14 @@ def build_assets_from_sling_streams(
                 last_row_count_observed = int(match.group(1))
             context.log.info(stdout_line)
 
-        return MaterializeResult(
-            metadata=(
-                {} if last_row_count_observed is None else {"row_count": last_row_count_observed}
+        for spec in specs:
+            yield MaterializeResult(
+                asset_key=spec.key,
+                metadata=(
+                    {}
+                    if last_row_count_observed is None
+                    else {"row_count": last_row_count_observed}
+                ),
             )
-        )
 
     return _sling_assets
