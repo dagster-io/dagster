@@ -193,12 +193,13 @@ class AssetDaemonContext:
         return max(
             filter(
                 None,
-                (
+                [
                     self.instance_queryer.get_latest_materialization_or_observation_storage_id(
                         AssetKeyPartitionKey(asset_key=asset_key)
                     )
                     for asset_key in self.target_asset_keys_and_parents
-                ),
+                ]
+                + [self.cursor.latest_storage_id],
             ),
             default=None,
         )
