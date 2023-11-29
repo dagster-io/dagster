@@ -412,8 +412,18 @@ def downstream_asset():
     return 1
 
 
-just_checks_job = define_asset_job(
-    name="just_checks_job",
+checks_included_job = define_asset_job(
+    name="checks_included_job",
+    selection=AssetSelection.assets(checked_asset),
+)
+
+checks_excluded_job = define_asset_job(
+    name="checks_excluded_job",
+    selection=AssetSelection.assets(checked_asset).without_checks(),
+)
+
+checks_only_job = define_asset_job(
+    name="checks_only_job",
     selection=AssetSelection.checks_for_assets(checked_asset),
 )
 
@@ -438,5 +448,7 @@ def get_checks_and_assets():
         asset_with_1000_checks,
         many_tests_graph_asset,
         many_tests_graph_multi_asset,
-        just_checks_job,
+        checks_included_job,
+        checks_excluded_job,
+        checks_only_job,
     ]
