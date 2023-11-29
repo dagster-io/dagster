@@ -108,7 +108,7 @@ export type AssetAssetObservationsArgs = {
 export type AssetBackfillData = {
   __typename: 'AssetBackfillData';
   assetBackfillStatuses: Array<AssetBackfillStatus>;
-  rootTargetedPartitions: AssetBackfillTargetPartitions;
+  rootTargetedPartitions: Maybe<AssetBackfillTargetPartitions>;
 };
 
 export type AssetBackfillPreviewParams = {

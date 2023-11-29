@@ -2711,7 +2711,7 @@ type PartitionKeyRange {
 
 type AssetBackfillData {
   assetBackfillStatuses: [AssetBackfillStatus!]!
-  rootTargetedPartitions: AssetBackfillTargetPartitions!
+  rootTargetedPartitions: AssetBackfillTargetPartitions
 }
 
 union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
