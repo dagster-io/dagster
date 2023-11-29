@@ -6,6 +6,10 @@
     "isDefaultOpen": true,
     "children": [
       {
+        "title": "Overview",
+        "path": "/getting-started/overview"
+      },
+      {
         "title": "Hello Dagster",
         "path": "/getting-started/hello-dagster"
       },
