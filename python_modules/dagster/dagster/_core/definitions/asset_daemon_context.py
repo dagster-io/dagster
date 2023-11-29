@@ -337,7 +337,7 @@ class AssetDaemonContext:
             ),
             asset_cursor.with_updates(
                 self.asset_graph,
-                materialize_context.newly_materialized_root_partitions,
+                materialize_context.newly_materialized_root_subset,
                 to_materialize,
                 to_discard,
             ),

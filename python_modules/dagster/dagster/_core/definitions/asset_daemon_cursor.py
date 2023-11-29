@@ -38,14 +38,14 @@ class AssetDaemonAssetCursor(NamedTuple):
     def with_updates(
         self,
         asset_graph: AssetGraph,
-        newly_materialized_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        newly_materialized_subset: AssetSubset,
         requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         discarded_asset_partitions: AbstractSet[AssetKeyPartitionKey],
     ) -> "AssetDaemonAssetCursor":
         if self.asset_key not in asset_graph.root_asset_keys:
             return self
         newly_materialized_requested_or_discarded_asset_partitions = (
-            newly_materialized_asset_partitions
+            newly_materialized_subset.asset_partitions
             | requested_asset_partitions
             | discarded_asset_partitions
         )
