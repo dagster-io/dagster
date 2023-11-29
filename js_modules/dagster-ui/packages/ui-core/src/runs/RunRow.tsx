@@ -8,7 +8,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Icon,
   Mono,
   Tag,
 } from '@dagster-io/ui-components';
@@ -20,11 +19,9 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineTag} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {TagActionsPopover} from '../ui/TagActions';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {CreatedByTagCell} from './CreatedByTag';
