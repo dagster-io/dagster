@@ -96,7 +96,9 @@ class SlingTargetConnection(PermissiveConfig):
     )
 
 
-class SlingSyncBase:
+class _SlingSyncBase:
+    """Base class for Sling syncs. Handles the execution of the Sling CLI and processing of the output. Classes that inherit from this class must implement how to sync themselves ,but can use the `_exec_sling_cmd` and `process_stdout` methods to handle the execution and processing of the output."""
+
     def process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
         """Process stdout from the Sling CLI."""
         ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
@@ -216,7 +218,7 @@ class SlingSyncBase:
 
 
 @experimental
-class SlingResource(ConfigurableResource, SlingSyncBase):
+class SlingResource(ConfigurableResource, _SlingSyncBase):
     """Resource for interacting with the Sling package.
 
     Examples:
@@ -343,10 +345,10 @@ class SlingConnectionResource(ConfigurableResource):
     )
 
 
-class SlingStreamReplicator(SlingSyncBase):
+class SlingStreamReplicator(_SlingSyncBase):
     """A utility class for running a Sling sync from outside of a Dagster resource to enable parity between the SlingResource and SlingStreamSync.
 
-    Inherits from :py:class:`~dagster_elt.sling.SlingSyncBase` and implements `_sync` to run a sync using 2 SlingConnectionResources and no SlingResource.
+    Inherits from :py:class:`~dagster_elt.sling._SlingSyncBase` and implements `_sync` to run a sync using 2 SlingConnectionResources and no SlingResource.
     """
 
     def __init__(
