@@ -1,6 +1,10 @@
 import re
 import uuid
+<<<<<<< HEAD
 from typing import Any, Dict, Generator, List, Optional, Union
+=======
+from typing import Any, Dict, List, Optional, Union
+>>>>>>> cb080be97a (refactored to pass multiple streams into a builder to parallelize replication)
 
 from dagster import (
     AssetExecutionContext,
@@ -117,11 +121,60 @@ def build_assets_from_sling_streams(
     source_options: Optional[Dict[str, Any]] = None,
     target_options: Optional[Dict[str, Any]] = None,
 ) -> AssetsDefinition:
+<<<<<<< HEAD
+=======
+    """Asset Factory for using Sling to sync data from a source stream to a target object.
+
+    Args:
+        source (SlingConnectionResource): The source SlingConnectionResource to use.
+        target (SlingConnectionResource): The target SlingConnectionResource to use.
+        stream (str): The source stream to sync from. This can be a table, a query, or a path.
+        target_object (str, optional): The target object to sync to. This can be a table, or a path. Defaults to the template of "{{target_schema}}.{{stream_schema}}_{{stream_table}}". See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/replication
+        mode (SlingMode, optional): The sync mode to use when syncing. Defaults to `full-refresh`.
+        primary_key (Optional[Union[str, List[str]]], optional): The optional primary key to use when syncing.
+        update_key (Optional[str], optional): The optional update key to use when syncing.
+        source_options (Optional[Dict[str, Any]], optional): Any optional Sling source options to use when syncing.
+        target_options (Optional[Dict[str, Any]], optional): Any optional target options to use when syncing.
+
+    Examples:
+        Creating a Sling asset that syncs from a database to a data warehouse:
+
+        .. code-block:: python
+
+            source = SlingConnectionResource(
+                type="postgres",
+                host=EnvVar("POSTGRES_HOST"),
+                port=EnvVar("POSTGRES_PORT"),
+                user=EnvVar("POSTGRES_USER"),
+                password=EnvVar("POSTGRES_PASSWORD"),
+                database=EnvVar("POSTGRES_DATABASE"),
+            )
+
+            target = SlingConnectionResource(
+                type="snowflake",
+                account=EnvVar("SNOWFLAKE_ACCOUNT"),
+                user=EnvVar("SNOWFLAKE_USER"),
+                password=EnvVar("SNOWFLAKE_PASSWORD"),
+                database=EnvVar("SNOWFLAKE_DATABASE"),
+                warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
+            )
+
+            asset_def = build_assets_from_sling_stream(
+                    source=source,
+                    target=target,
+                    stream="main.orders",
+                    target_object="main.orders",
+                    mode=SlingMode.INCREMENTAL,
+                    primary_key="id"
+            )
+    """
+>>>>>>> cb080be97a (refactored to pass multiple streams into a builder to parallelize replication)
     sling_replicator = SlingStreamReplicator(
         source_connection=source,
         target_connection=target,
     )
 
+<<<<<<< HEAD
     asset_names = []
     specs = []
     for stream in streams:
@@ -139,6 +192,27 @@ def build_assets_from_sling_streams(
         # required_resource_keys={source.???, target.???}, TODO: How do you get the resource key at this point in time?
     )
     def _sling_assets(context: AssetExecutionContext) -> Generator[MaterializeResult, None, None]:
+=======
+ 
+    asset_names = []
+    specs = []
+    for stream in streams:
+        # sanitize the stream name to a valid asset name, matching the regex A-Za-z0-9
+        asset_name = stream["stream_name"].replace(".", "_")
+
+        if asset_name.startswith("file://"):
+            asset_name = asset_name.split("/")[-1]
+        asset_names.append(asset_name)
+
+    specs = [AssetSpec(asset_name) for asset_name in asset_names]
+
+    @multi_asset(
+        name=f"sling_sync__{str(uuid.uuid4())[:8]}",
+        compute_kind="sling",
+        specs=specs
+    )
+    def _sling_assets(context: AssetExecutionContext) -> MaterializeResult:
+>>>>>>> cb080be97a (refactored to pass multiple streams into a builder to parallelize replication)
         last_row_count_observed = None
 
         for stdout_line in sling_replicator.sync(

@@ -427,10 +427,13 @@ class SlingStreamReplicator(SlingSyncBase):
                 "streams": {
                     **stream_config,
                 },
+<<<<<<< HEAD
                 "streams": {f"{source_stream}": None},
             }
             stream_config["defaults"] = {
                 k: v for k, v in stream_config["defaults"].items() if v is not None
+=======
+>>>>>>> cb080be97a (refactored to pass multiple streams into a builder to parallelize replication)
             }
             config["defaults"] = {k: v for k, v in config["defaults"].items() if v is not None}
 
