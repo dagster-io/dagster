@@ -9,7 +9,7 @@ from dagster._core.definitions import build_assets_job
 from dagster_embedded_elt.sling import (
     SlingMode,
     SlingResource,
-    build_assets_from_sling_stream,
+    build_assets_from_sling_streams,
     build_sling_asset,
 )
 from dagster_embedded_elt.sling.resources import (
@@ -204,9 +204,9 @@ def test_non_unicode_stdout(text, encoding, expected, sling_sqlite_resource: Sli
 
 
 @pytest.mark.parametrize(
-    "mode,runs,expected", [(SlingMode.INCREMENTAL, 1, 3), (SlingMode.SNAPSHOT, 2, 6)]
+    "mode,runs,expected", [(SlingMode.FULL_REFRESH, 1, 3), (SlingMode.SNAPSHOT, 2, 6)]
 )
-def test_build_assets_from_sling_stream(
+def test_build_assets_from_sling_streams(
     test_csv: str,
     sling_file_connection: SlingConnectionResource,
     sling_sqlite_connection: SlingConnectionResource,
@@ -215,13 +215,18 @@ def test_build_assets_from_sling_stream(
     expected: int,
     sqlite_connection: sqlite3.Connection,
 ):
-    asset_def = build_assets_from_sling_stream(
+    asset_def = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
-        stream=f"file://{test_csv}",
-        target_object="main.tbl",
+        streams=[
+            {
+                "stream_name": f"file://{test_csv}",
+                "object": "main.tbl7",
+                "primary_key": "SPECIES_CODE",
+                "update_key": "UPDATED_AT",
+            }
+        ],
         mode=mode,
-        primary_key="SPECIES_CODE",
     )
 
     sling_job = build_assets_job(
@@ -237,7 +242,7 @@ def test_build_assets_from_sling_stream(
     for _ in range(runs):
         res = sling_job.execute_in_process()
         assert res.success
-        counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0]
+        counts = sqlite_connection.execute("SELECT count(1) FROM main.tbl7").fetchone()[0]
     assert counts == expected
 
 
@@ -250,22 +255,20 @@ def test_reuse_sling_connection_resource(
     sqlite_connection: sqlite3.Connection,
 ):
     """Create two assets that target the same SlingConnectionResource."""
-    asset_def = build_assets_from_sling_stream(
+    asset_def = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
-        stream=f"file://{test_csv}",
+        streams=[{"stream_name": f"file://{test_csv}", "primary_key": "SPECIES_CODE"}],
         target_object="main.tbl",
         mode=SlingMode.FULL_REFRESH,
-        primary_key="SPECIES_CODE",
     )
 
-    asset_def_two = build_assets_from_sling_stream(
+    asset_def_two = build_assets_from_sling_streams(
         sling_staging_file_connection,
         sling_sqlite_connection,
-        stream=f"file://{test_staging_csv}",
+        streams=[{"stream_name": f"file://{test_staging_csv}", "primary_key": "SPECIES_CODE"}],
         target_object="main.staging_tbl",
         mode=SlingMode.FULL_REFRESH,
-        primary_key="SPECIES_CODE",
     )
 
     sling_job = build_assets_job(
@@ -293,22 +296,26 @@ def test_update_mode_from_stream(
     """Creates a Sling sync using Full Refresh, manually increments the UPDATE KEY to be a higher value,
     which should cause the next run not to append new rows.
     """
-    asset_def_base = build_assets_from_sling_stream(
+    asset_def_base = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
-        stream=f"file://{test_csv}",
+        streams=[{"stream_name": f"file://{test_csv}"}],
         target_object="main.tbl",
         mode=SlingMode.FULL_REFRESH,
     )
 
-    asset_def_update = build_assets_from_sling_stream(
+    asset_def_update = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
-        stream=f"file://{test_csv}",
+        streams=[
+            {
+                "stream_name": f"file://{test_csv}",
+                "primary_key": "SPECIES_NAME",
+                "update_key": "UPDATED_AT",
+            }
+        ],
         target_object="main.tbl",
         mode=SlingMode.INCREMENTAL,
-        primary_key="SPECIES_NAME",
-        update_key="UPDATED_AT",
     )
 
     sling_job_base = build_assets_job(

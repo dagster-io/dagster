@@ -1,4 +1,5 @@
 import re
+import uuid
 from typing import Any, Dict, List, Optional, Union
 
 from dagster import (
@@ -107,33 +108,32 @@ def build_sling_asset(
 
 
 @experimental
-def build_assets_from_sling_stream(
+def build_assets_from_sling_streams(
     source: SlingConnectionResource,
     target: SlingConnectionResource,
-    stream: str,
-    target_object: str = "{ {{target_schema}}.{{stream_schema}}_{{stream_table}} }",
+    streams: List[Dict[str, Any]],
     mode: SlingMode = SlingMode.FULL_REFRESH,
-    primary_key: Optional[Union[str, List[str]]] = None,
-    update_key: Optional[str] = None,
+    target_object: str = "{target_schema}.{stream_schema}_{stream_table}",
     source_options: Optional[Dict[str, Any]] = None,
     target_options: Optional[Dict[str, Any]] = None,
 ) -> AssetsDefinition:
-    if primary_key is not None and not isinstance(primary_key, list):
-        primary_key = [primary_key]
-
     sling_replicator = SlingStreamReplicator(
         source_connection=source,
         target_connection=target,
     )
 
-    asset_name = [stream]
-    if stream.startswith("file://"):
-        asset_name = stream.split("/")[-1].replace(".", "_")
+    asset_names = []
+    specs = []
+    for stream in streams:
+        asset_name = stream["stream_name"]
+        if stream["stream_name"].startswith("file://"):
+            asset_name = asset_name.split("/")[-1].replace(".", "_")
+        asset_names.append(asset_name)
 
-    specs = [AssetSpec(asset_name)]
+    specs = [AssetSpec(asset_name) for asset_name in asset_names]
 
     @multi_asset(
-        name=f"sling_sync__{asset_name}",
+        name=f"sling_sync__{str(uuid.uuid4())[:8]}",
         compute_kind="sling",
         specs=specs,
         # required_resource_keys={source.???, target.???}, TODO: How do you get the resource key at this point in time?
@@ -142,11 +142,9 @@ def build_assets_from_sling_stream(
         last_row_count_observed = None
 
         for stdout_line in sling_replicator.sync(
-            source_stream=stream,
-            target_object=target_object,
+            streams=streams,
             mode=mode,
-            primary_key=primary_key,
-            update_key=update_key,
+            target_object=target_object,
             source_options=source_options,
             target_options=target_options,
         ):
