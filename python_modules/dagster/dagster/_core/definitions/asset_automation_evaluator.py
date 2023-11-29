@@ -21,6 +21,45 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
+class ConditionCursor(ABC):
+    ...
+
+
+class ParentUpdatedConditionCursor(
+    ConditionCursor,
+    NamedTuple(
+        "_ParentUpdatedConditionCursor",
+        [
+            ("latest_storage_id", Optional[float]),
+            ("has_updated_parent_subset", Optional[AssetSubset]),
+        ],
+    ),
+):
+    ...
+
+
+class CronConditionCursor(
+    ConditionCursor,
+    NamedTuple(
+        "_CronConditionCursor",
+        [
+            ("previous_evaluation_timestamp", Optional[float]),
+            ("materialized_or_requested_subset", Optional[AssetSubset]),
+        ],
+    ),
+):
+    ...
+
+
+class MissingConditionCursor(
+    ConditionCursor,
+    NamedTuple(
+        "_MissingConditionCursor", [("materialized_or_requested_subset", Optional[AssetSubset])]
+    ),
+):
+    ...
+
+
 class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
@@ -28,6 +67,7 @@ class ConditionEvaluation(NamedTuple):
     true_subset: AssetSubset
     results: RuleEvaluationResults = []
     children: Sequence["ConditionEvaluation"] = []
+    condition_cursor: Optional[ConditionCursor] = None
 
     @property
     def all_results(
