@@ -427,23 +427,12 @@ class SlingStreamReplicator(SlingSyncBase):
                 "streams": {
                     **stream_config,
                 },
-<<<<<<< HEAD
-                "streams": {f"{source_stream}": None},
-            }
-            stream_config["defaults"] = {
-                k: v for k, v in stream_config["defaults"].items() if v is not None
-=======
->>>>>>> cb080be97a (refactored to pass multiple streams into a builder to parallelize replication)
             }
             config["defaults"] = {k: v for k, v in config["defaults"].items() if v is not None}
 
             sling_cli = Sling()
             logger.info("Starting Sling sync with mode: %s", mode)
             cmd = sling_cli._prep_cmd()  # noqa: SLF001
-
-            # write the SLING_TARGET and SLING_SOURCE to a file in cwd
-            with open("sling_config.json", "w") as f:
-                json.dump(config, f)
 
             self._override_config(cmd, config)
             cmd = cmd.replace(" -c ", " -r ")

@@ -125,9 +125,9 @@ def build_assets_from_sling_streams(
     asset_names = []
     specs = []
     for stream in streams:
-        asset_name = stream["stream_name"]
+        asset_name = stream["stream_name"].replace(".", "_")
         if stream["stream_name"].startswith("file://"):
-            asset_name = asset_name.split("/")[-1].replace(".", "_")
+            asset_name = asset_name.split("/")[-1]
         asset_names.append(asset_name)
 
     specs = [AssetSpec(asset_name) for asset_name in asset_names]
