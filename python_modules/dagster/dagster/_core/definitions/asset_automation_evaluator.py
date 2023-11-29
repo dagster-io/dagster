@@ -6,6 +6,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
+from .asset_automation_condition_cursor import AssetAutomationConditionCursor
 from .asset_subset import AssetSubset
 from .auto_materialize_rule import (
     DiscardOnMaxMaterializationsExceededRule,
@@ -21,43 +22,20 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
-class ConditionCursor(ABC):
+class AssetAutomationConditionSnapshot(ABC):
     ...
 
 
-class ParentUpdatedConditionCursor(
-    ConditionCursor,
-    NamedTuple(
-        "_ParentUpdatedConditionCursor",
-        [
-            ("latest_storage_id", Optional[float]),
-            ("has_updated_parent_subset", Optional[AssetSubset]),
-        ],
-    ),
-):
+class AssetAutomationConditionCursor:
     ...
 
 
-class CronConditionCursor(
-    ConditionCursor,
-    NamedTuple(
-        "_CronConditionCursor",
-        [
-            ("previous_evaluation_timestamp", Optional[float]),
-            ("materialized_or_requested_subset", Optional[AssetSubset]),
-        ],
-    ),
-):
+class AssetAutomationConditionLeafCursor(AssetAutomationConditionCursor):
     ...
 
 
-class MissingConditionCursor(
-    ConditionCursor,
-    NamedTuple(
-        "_MissingConditionCursor", [("materialized_or_requested_subset", Optional[AssetSubset])]
-    ),
-):
-    ...
+class AssetAutomationConditionEvaluation(NamedTuple):
+    result: AssetAutomationConditionResult
 
 
 class ConditionEvaluation(NamedTuple):
@@ -116,6 +94,9 @@ class ConditionEvaluation(NamedTuple):
             num_discarded=to_discard.size,
             dynamic_partitions_store=instance_queryer,
         )
+
+    def to_asset_cursor(self) -> AssetDaemonAssetCursor:
+        ...
 
 
 class AutomationCondition(ABC):

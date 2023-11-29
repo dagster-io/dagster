@@ -12,13 +12,14 @@ import dagster._check as check
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
 )
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
+from .asset_automation_condition_cursor import AssetAutomationConditionCursor
 from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
 from .partition import PartitionsDefinition, PartitionsSubset
@@ -30,34 +31,13 @@ class AssetDaemonAssetCursor(NamedTuple):
     """
 
     asset_key: AssetKey
-    latest_storage_id: Optional[int]
-    latest_evaluation_timestamp: Optional[float]
     latest_evaluation: Optional[AutoMaterializeAssetEvaluation]
-    materialized_requested_or_discarded_subset: AssetSubset
+    condition_cursor: Optional[AssetAutomationConditionCursor]
 
-    def with_updates(
-        self,
-        asset_graph: AssetGraph,
-        newly_materialized_subset: AssetSubset,
-        requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
-        discarded_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    def with_condition_cursor(
+        self, condition_cursor: AssetAutomationConditionCursor
     ) -> "AssetDaemonAssetCursor":
-        if self.asset_key not in asset_graph.root_asset_keys:
-            return self
-        newly_materialized_requested_or_discarded_asset_partitions = (
-            newly_materialized_subset.asset_partitions
-            | requested_asset_partitions
-            | discarded_asset_partitions
-        )
-        newly_materialized_requested_or_discarded_subset = AssetSubset.from_asset_partitions_set(
-            self.asset_key,
-            asset_graph.get_partitions_def(self.asset_key),
-            newly_materialized_requested_or_discarded_asset_partitions,
-        )
-        return self._replace(
-            materialized_requested_or_discarded_subset=self.materialized_requested_or_discarded_subset
-            | newly_materialized_requested_or_discarded_subset
-        )
+        return self._replace(condition_cursor=condition_cursor)
 
 
 class AssetDaemonCursor(NamedTuple):
