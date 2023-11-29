@@ -501,18 +501,18 @@ def test_direct_invocation_resource_context_manager():
 def test_bound_state():
     @asset
     def my_asset(context):
-        assert context._bound  # noqa: SLF001
+        assert context._bound_properties is not None  # noqa: SLF001
 
     ctx = build_op_context()
-    assert not ctx._bound  # noqa: SLF001
+    assert ctx._bound_properties is None  # noqa: SLF001
 
     my_asset(ctx)
-    assert ctx._bound  # noqa: SLF001
+    assert ctx._bound_properties is not None  # noqa: SLF001
 
     ctx.unbind()
-    assert not ctx._bound  # noqa: SLF001
+    assert ctx._bound_properties is None  # noqa: SLF001
     my_asset(ctx)
-    assert ctx._bound  # noqa: SLF001
+    assert ctx._bound_properties is not None  # noqa: SLF001
 
 
 def test_bound_state_warning():
@@ -521,13 +521,13 @@ def test_bound_state_warning():
 
     @asset
     def my_asset(context):
-        assert context._bound  # noqa: SLF001
+        assert context._bound_properties is not None  # noqa: SLF001
 
     ctx = build_op_context()
-    assert not ctx._bound  # noqa: SLF001
+    assert ctx._bound_properties is None  # noqa: SLF001
 
     my_asset(ctx)
-    assert ctx._bound  # noqa: SLF001
+    assert ctx._bound_properties is not None  # noqa: SLF001
 
     with pytest.raises(UserWarning, match="This context was already used to execute my_asset"):
         my_asset(ctx)

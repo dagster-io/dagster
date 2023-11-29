@@ -67,24 +67,9 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class BoundProperties(
-    NamedTuple(
-        "_BoundProperties",
-        [
-            ("op_def", OpDefinition),
-            ("tags", Mapping[Any, Any]),
-            ("hook_defs", Optional[AbstractSet[HookDefinition]]),
-            ("alias", str),
-            ("assets_def", Optional[AssetsDefinition]),
-            ("resources", Resources),
-            ("op_config", Dict[str, Any]),
-            ("requires_typed_event_stream", bool),
-            ("typed_event_stream_error_message", Optional[str]),
-        ],
-    )
-):
-    def __new__(
-        cls,
+class BoundProperties:
+    def __init__(
+        self,
         op_def: OpDefinition,
         tags: Mapping[Any, Any],
         hook_defs: Optional[AbstractSet[HookDefinition]],
@@ -93,18 +78,19 @@ class BoundProperties(
         resources: Resources,
         op_config: Dict[str, Any],
     ):
-        return super(BoundProperties, cls).__new__(
-            cls,
-            op_def=op_def,
-            tags=tags,
-            hook_defs=hook_defs,
-            alias=alias,
-            assets_def=assets_def,
-            resources=resources,
-            op_config=op_config,
-            requires_typed_event_stream=False,
-            typed_event_stream_error_message=None,
-        )
+        """Maintains the properties of the context that are provided at bind time.
+        This class is not implemented as a NamedTuple because requires_typed_event_stream
+        and type_event_stream_error_message should be mutable.
+        """
+        self.op_def = check.inst_param(op_def, "op_def", OpDefinition)
+        self.tags = check.dict_param(tags, "tags", Any, Any)
+        self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
+        self.alias = check.str_param(alias, "alias")
+        self.assets_def = check.inst_param(assets_def, "assets_def", AssetsDefinition)
+        self.resources = check.inst_param(resources, "resources", Resources)
+        self.op_config = check.dict_param(op_config, "op_config", str, Any)
+        self.requires_typed_event_stream = False
+        self.typed_event_stream_error_message = None
 
 
 class InvocationProperties(
