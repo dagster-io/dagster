@@ -417,7 +417,7 @@ def validate_and_get_resource_dict(
                 f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
             )
 
-    return {k: getattr(resources, k) for k in required_resource_keys}
+    return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
 def _check_dynamic_partitions_requests(
