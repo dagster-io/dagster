@@ -427,6 +427,10 @@ class SlingStreamReplicator(SlingSyncBase):
                 "streams": {
                     **stream_config,
                 },
+                "streams": {f"{source_stream}": None},
+            }
+            stream_config["defaults"] = {
+                k: v for k, v in stream_config["defaults"].items() if v is not None
             }
             config["defaults"] = {k: v for k, v in config["defaults"].items() if v is not None}
 
