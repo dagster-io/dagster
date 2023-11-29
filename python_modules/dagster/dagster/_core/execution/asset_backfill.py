@@ -845,7 +845,10 @@ def _check_validity_and_deserialize_asset_backfill_data(
             if unloadable_locations
             else ""
         )
-        if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
+        if (
+            os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR")
+            and unloadable_locations
+        ):
             logger.warning(
                 f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
                 " partition in the asset graph. The backfill will resume once it is available"
