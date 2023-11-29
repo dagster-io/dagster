@@ -852,7 +852,7 @@ def test_multiple_nested_optional_resources_complex() -> None:
             .execute_in_process()
             .success
         )
-        assert executed["my_asset"] == None
+        assert executed["my_asset"] is None
         executed.clear()
 
     main_resource = MainResource(
