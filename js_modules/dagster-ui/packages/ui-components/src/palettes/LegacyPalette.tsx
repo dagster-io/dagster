@@ -1,4 +1,4 @@
-import {LegacyColors} from '../components/Colors';
+import {LegacyColors} from '../components/LegacyColors';
 
 import {ColorName} from './ColorName';
 
