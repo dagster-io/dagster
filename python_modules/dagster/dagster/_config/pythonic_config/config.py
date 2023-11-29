@@ -330,13 +330,13 @@ def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], valu
     """Converts a config value to a dictionary representation. If a field is provided, it will be used
     to determine the appropriate dictionary representation in the case of discriminated unions.
     """
-    from dagster._config.field_utils import DagsterEnvVar, env_var_to_config_dict
+    from dagster._config.field_utils import env_var_to_config_dict, is_dagster_env_var
 
     if isinstance(value, dict):
         return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}
     elif isinstance(value, list):
         return [_config_value_to_dict_representation(None, v) for v in value]
-    elif isinstance(value, DagsterEnvVar):
+    elif is_dagster_env_var(value):
         return env_var_to_config_dict(value)
     if isinstance(value, Config):
         if field and field.discriminator:

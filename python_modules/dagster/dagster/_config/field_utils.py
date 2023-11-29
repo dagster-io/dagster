@@ -14,6 +14,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import TypeGuard
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidConfigDefinitionError
@@ -567,6 +569,10 @@ class EnvVar(str):
 
 
 DagsterEnvVar = Union[EnvVar, IntEnvVar]
+
+
+def is_dagster_env_var(value: Any) -> TypeGuard[DagsterEnvVar]:
+    return isinstance(value, (EnvVar, IntEnvVar))
 
 
 def env_var_to_config_dict(value: DagsterEnvVar) -> Dict[str, Any]:
