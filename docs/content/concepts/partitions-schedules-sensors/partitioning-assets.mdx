@@ -57,8 +57,8 @@ A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinitio
 The following example demonstrates creating an asset that has a partition for each day since October 1st, 2023. Materializing partition `2023-11-13` of this asset would result in fetching data from the URL `https://api.nasa.gov/planetary/apod?date=2023-11-13` and storing it at the path `nasa/2023-11-13.csv`. Note that `api_key=DEMO_KEY` is used but has a limited number of calls:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
-import urllib.request
 import os
+import urllib.request
 
 # Create a new 'nasa' directory if needed
 dir_name = "nasa"
