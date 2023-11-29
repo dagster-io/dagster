@@ -76,7 +76,7 @@ class BoundProperties:
         alias: str,
         assets_def: Optional[AssetsDefinition],
         resources: Resources,
-        op_config: Dict[str, Any],
+        op_config: Optional[Dict[str, Any]],
     ):
         """Maintains the properties of the context that are provided at bind time.
         This class is not implemented as a NamedTuple because requires_typed_event_stream
@@ -86,9 +86,9 @@ class BoundProperties:
         self.tags = check.dict_param(tags, "tags", Any, Any)
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
         self.alias = check.str_param(alias, "alias")
-        self.assets_def = check.inst_param(assets_def, "assets_def", AssetsDefinition)
+        self.assets_def = check.opt_inst_param(assets_def, "assets_def", AssetsDefinition)
         self.resources = check.inst_param(resources, "resources", Resources)
-        self.op_config = check.dict_param(op_config, "op_config", str, Any)
+        self.op_config = check.opt_dict_param(op_config, "op_config", str, Any)
         self.requires_typed_event_stream = False
         self.typed_event_stream_error_message = None
 
@@ -197,6 +197,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
         if self._bound_properties is not None:
+            # if self._completed:
             warnings.warn(
                 f"This context was already used to execute {self.alias}. The information about"
                 f" {self.alias} will be cleared, including user events and output metadata."
@@ -205,6 +206,8 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 f" information about {self.alias} using the unbind() method."
             )
             self.unbind()
+            # else:
+            #     raise DagsterInvalidInvocationError(f"This context is currently being used to execute {self.alias}. The context cannot be used to execute another op until {self.alias} has finished executing.")
 
         # update the bound context with properties relevant to the execution of the op
 
