@@ -1,0 +1,215 @@
+---
+title: "Integrating AWS Lambda with Dagster Pipes | Dagster Docs"
+description: "Learn to integrate Dagster Pipes with AWS Lambda to launch external code from Dagster assets."
+---
+
+# Integrating Amazon Web Services Lambda with Dagster Pipes
+
+<Note>
+  <strong>Heads up!</strong> This guide focuses on using an out-of-the-box
+  Amazon Web Services Lambda resource. For further customization, use the{" "}
+  <a href="/guides/dagster-pipes/customizing-dagster-pipes-protocols">
+    <code>open_pipes_session</code> approach
+  </a>{" "}
+  instead.
+</Note>
+
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/dagster-pipes) with Dagster’s Amazon Web Services (AWS) Lambda integration to invoke a Lambda function and execute external code.
+
+Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
+
+**Note**: Dagster Pipes is currently **experimental**.
+
+---
+
+## Prerequisites
+
+To use Dagster Pipes with AWS Lambda, you’ll need:
+
+- **In the orchestration environment**, you'll need to install the following packages:
+
+  ```shell
+  pip install dagster dagster-webserver dagster-aws
+  ```
+
+  Refer to the [Dagster installation guide](/getting-started/install) for more info.
+
+- **In AWS Lambda**: TODO
+   - Permission to use the [`lambda:InvokeFunction` action](https://docs.aws.amazon.com/IAM/latest/UserGuide/list_awslambda.html)
+   - An existing boto3 client (TODO: What do users need to know/do here?)
+
+---
+
+## Step 1: Write a Lambda function
+
+TODO
+
+### Step 1.1: Write a Python script
+
+First, you'll TODO
+
+```python
+# my_python_script.py
+
+from dagster_pipes import open_dagster_pipes
+
+with open_dagster_pipes() as pipes:
+    # Stream log message back to Dagster
+    pipes.log.info(f"Using some_parameter value: {some_parameter_value}")
+
+    # ... your code that computes and persists the asset
+
+    # Stream asset materialization metadata and data version back to Dagster.
+    # This should be called after you've computed and stored the asset value. We
+    # omit the asset key here because there is only one asset in scope, but for
+    # multi-assets you can pass an `asset_key` parameter.
+    pipes.report_asset_materialization(
+        metadata={
+            "some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}
+        },
+        data_version="alpha",
+    )
+```
+
+<!-- TODO: Figure out the MessageWriter and ContextLoader we're using -->
+
+Let's review what this code does:
+
+- Imports <PyObject object="open_dagster_pipes" module="dagster_pipes" /> from `dagster_pipes`
+
+- **Initializes the Dagster Pipes context (<PyObject object="open_dagster_pipes" module="dagster_pipes" />), which yields an instance of <PyObject object="PipesContext" module="dagster_pipes" /> called `pipes`.**
+
+  We're using the default context loader (<PyObject object="PipesDefaultContextLoader" module="dagster_pipes" />) and message writer (<PyObject object="PipesDefaultMessageWriter" module="dagster_pipes" />) in this example. These objects establish communication between the orchestration and external process. On the orchestration end, these match a corresponding `PipesLambdaEventContextInjector` and `PipesLambdaLogsMessageReader`, which are instantiated inside the <PyObject module="dagster_aws" object="PipesLambdaClient" />.
+
+- **Inside the body of the context manager (<PyObject object="open_dagster_pipes" module="dagster_pipes" />), retrieve a log and report an asset materialization.** These calls use the temporary communications channels established by <PyObject object="PipesDefaultContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDefaultMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes documentation](/guides/dagster-pipes).
+
+At this point you can execute the rest of your AWS Lambda code as normal, invoking various <PyObject object="PipesContext" module="dagster_pipes" /> APIs as needed.
+
+---
+
+## Step 2: Create the Dagster objects
+
+In this step, you’ll create a Dagster asset that, when materialized, opens a Dagster pipes session and TODO.
+
+### Step 2.1: Define the Dagster asset
+
+In your Dagster project, create a file named `dagster_lambda_pipes.py` and paste in the following code:
+
+```python
+# dagster_lambda_pipes.py
+
+from dagster import AssetExecutionContext, Definitions, asset
+from dagster_aws import PipesLambdaClient
+
+
+@asset
+def lambda_pipes_asset(context: AssetExecutionContext, lambda_pipes_client: PipesLambdaClient):
+  return lambda_pipes_client.run(
+      context: context,
+      client: "",
+      function_name: "",
+      event: "",
+  ).get_materialize_result()
+```
+
+Here’s what we did in this example:
+
+- Created an asset named `lambda_pipes_asset`
+
+- Provided <PyObject object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
+
+- Specified a resource for the asset to use, <PyObject module="dagster_aws" object="PipesLambdaClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with AWS Lambda.
+
+  We also specified the following for the resource:
+
+  - `context` - The asset's `context` (<PyObject object="AssetExecutionContext" />) data
+  - `client` - A boto client
+  - `function_name` - The name or ARN of the function to invoke
+  - `event` - TODO: A JSON-serializable object to pass as input
+
+  This argument is passed to the `run` method of <PyObject module="dagster_aws" object="PipesLambdaClient" />, which submits the provided information to the [boto `invoke` API](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda/client/invoke.html) and then invokes the specified function (`function_name`).
+
+- Returned a <PyObject object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject module="dagster_pipes" object="PipesClientCompletedInvocation" /> object returned by `run` after the execution in AWS Lambda has completed.
+
+### Step 2.2: Create Dagster Definitions
+
+Next, you’ll add the asset and AWS Lambda resource to your project’s code location via the <PyObject object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/concepts/code-locations).
+
+Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
+
+```python
+# dagster_lambda_pipes.py
+
+defs = Definitions(
+  assets=[lambda_pipes_asset],
+  resources={
+    "lambda_pipes_client": PipesLambdaClient(),
+  },
+)
+```
+
+At this point, `dagster_lambda_pipes.py` should look like the following:
+
+```python
+# dagster_lambda_pipes.py
+
+from dagster import AssetExecutionContext, Definitions, asset
+from dagster_aws import PipesLambdaClient
+
+
+@asset
+def lambda_pipes_asset(context: AssetExecutionContext, lambda_pipes_client: PipesLambdaClient):
+  return lambda_pipes_client.run(
+      TODO,
+  ).get_materialize_result()
+
+
+defs = Definitions(
+  assets=[lambda_pipes_asset],
+  resources={
+    "lambda_pipes_client": PipesLambdaClient(),
+  },
+)
+```
+
+---
+
+## Step 3: Invoke the AWS Lambda function from the Dagster UI
+
+In this step, you’ll invoke the AWS Lambda function you defined in [Step 1](#TODO) from the Dagster UI.
+
+1. In a new command line session, run the following to start the UI:
+
+   ```python
+   dagster dev -f dagster_lambda_pipes.py
+   ```
+
+2. Navigate to [localhost:3000](http://localhost:3000/), where you should see the UI.
+
+3. Click **Materialize** near the top right corner of the page, then click **View** on the **Launched Run** popup. Wait for the run to complete, and the event log should look like this:
+
+   <Image
+   alt="Event log for AWS Lambda run"
+   src="/images/guides/dagster-pipes/kubernetes/run.png"
+   width={1784}
+   height={1495}
+   />
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Pipes"
+    href="/guides/dagster-pipes"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster Pipes details and customization"
+    href="/guides/dagster-pipes/dagster-pipes-details-and-customization"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-aws API reference"
+    href="/_apidocs/libraries/dagster-aws"
+  ></ArticleListItem>
+</ArticleList>
