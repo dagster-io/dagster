@@ -4,11 +4,11 @@
 
 ### New
 
+- Added a new `MetadataValue.job` metadata type, which can be used to link to a Dagster job from other objects in the UI.
 - [asset backfills] Previously, when partitions definitions were changed after backfill launch, the asset backfill page would be blank. Now, when partitions definitions are changed, the backfill page will display statuses by asset.
 - [dagster-bigquery, dagster-duckdb, dagster-snowflake]. The BigQuery, DuckDB, and Snowflake I/O Managers will now determine the schema (dataset for BigQuery) in the following order of precedence: `schema` metadata set on the `asset` or `op`, I/O manager `schema`/ `dataset` configuration, `key_prefix` set on the `asset`. Previously, all methods for setting the schema/dataset were mutually exclusive, and setting more than one would raise an exception.
 - [dagster-shell] Added option to exclude the shell command from logs.
 - [dagster-dbt] When running `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev` in a new scaffolded project from `dagster-dbt project scaffold`, dbt artifacts for loading the project are now created in a static `target/` directory.
-- Added a new `MetadataValue.job` metadata type, which can be used to link to a Dagster job from other objects in the UI.
 
 ### Bugfixes
 
@@ -16,12 +16,12 @@
 - It's now possible to use the logger of `ScheduleEvaluationContext` when testing via `build_schedule_context`.
 - The `metadata` from a `Failure` exception is now hoisted up to the failure that culminates when retry limits are exceeded.
 - Fixed bug in which the second instance of an hour partition at a DST boundary would never be shown as “materialized” in certain UI views.
+- Fixed an issue where backfilling an hourly partition that occurred during a fall Daylight Savings Time transition sometimes raised an error.
 - [auto-materialize] Fix issue where assets which were skipped because required parent partitions did not exist would not be materialized once those partitions came into existence.
 - [dagster ecs] The exit code of failed containers is now included in the failure message.
 - [dagster pipes] The `PipesK8sClient` now correctly raises on failed containers.
 - [dagster pipes] Using pipes within ops instead of assets no longer enforces problematic constraints.
 - [helm] Added `maxCatchupRuns` and `maxTickRetries` configuration options for the scheduler in the Helm chart.
-- Fixed an issue where backfilling an hourly partition that occurred during a fall Daylight Savings Time transition sometimes raised an error.
 - [embedded-elt] Fixed crashes for non-unicode logs.
 - [UI] Fixed an issue where the test sensor dialog for a sensor that targeted multiple jobs would claim that all of the runs were targeting the same job.
 - [UI] Asset keys, job names, and other strings in Dagster UI no longer truncate unnecessarily in Firefox in some scenarios
@@ -54,7 +54,7 @@
 
 - Added information about `EnvVar` vs. `os.getenv` to the [Environment variables documentation](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets).
 - Updates to the [Asset selection syntax reference](https://docs.dagster.io/concepts/assets/asset-selection-syntax), including expanded examples for Python, the CLI, and the Dagster UI.
-- Added Experimental tags to all Dagster Cloud Insights docs
+- Added Experimental tags to all Dagster Cloud Insights docs.
 - Updated the [Helm - Migrating a Dagster instance while upgrading guide](https://docs.dagster.io/deployment/guides/kubernetes/how-to-migrate-your-instance) to include a prerequisites section.
 
 ### Dagster Cloud
