@@ -74,9 +74,9 @@ def test_downstream_managed_deps():
 
     @asset
     def downstream(returns_none):
-        assert returns_none is None
+        assert returns_none == 1
 
-    io_mgr = TestIOManager()
+    io_mgr = TestIOManager(return_value=1)
 
     materialize([returns_none, downstream], resources={"io_manager": io_mgr})
 
@@ -85,44 +85,59 @@ def test_downstream_managed_deps():
 
 
 def test_downstream_managed_deps_with_type_annotation():
-    # this tests a kind of funny case where the return type annotation is -> None for the first
-    # asset, thus bypassing the I/O manager, but a downstream asset wants to load the value for the
-    # first asset. In practice, this would likely cause an error because the I/O manager will be looking for
-    # a storage location that was never created. In this test we just manually set what we want the
-    # I/O manager to return and then confirm that it happens as expected
-
     @asset
     def returns_none() -> None:
         return None
 
     @asset
     def downstream(returns_none) -> None:
-        assert returns_none == 1
+        assert returns_none is None
 
     io_mgr = TestIOManager(return_value=1)
 
     materialize([returns_none, downstream], resources={"io_manager": io_mgr})
 
     assert not io_mgr.handled_output
-    assert io_mgr.loaded_input
+    assert not io_mgr.loaded_input
 
 
-def test_ops():
+def test_ops_no_type_annotation():
     @op
     def returns_none():
         return None
 
     @op
     def asserts_none(x):
+        assert x == 1
+
+    @job
+    def return_none_job():
+        asserts_none(returns_none())
+
+    io_mgr = TestIOManager(return_value=1)
+
+    result = return_none_job.execute_in_process(resources={"io_manager": io_mgr})
+    assert result.success
+    assert io_mgr.handled_output
+    assert io_mgr.loaded_input
+
+
+def test_ops_with_type_annotation():
+    @op
+    def returns_none() -> None:
+        return None
+
+    @op
+    def asserts_none(x) -> None:
         assert x is None
 
     @job
     def return_none_job():
         asserts_none(returns_none())
 
-    io_mgr = TestIOManager()
+    io_mgr = TestIOManager(return_value=1)
 
     result = return_none_job.execute_in_process(resources={"io_manager": io_mgr})
     assert result.success
-    assert io_mgr.handled_output
-    assert io_mgr.loaded_input
+    assert not io_mgr.handled_output
+    assert not io_mgr.loaded_input
