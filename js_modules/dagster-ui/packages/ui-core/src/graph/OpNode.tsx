@@ -7,6 +7,8 @@ import {
   colorBackgroundDefault,
   colorBackgroundLight,
   colorAccentYellow,
+  colorBackgroundLighter,
+  colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -352,7 +354,7 @@ const NodeContainer = styled.div<{
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
         ? `2px solid ${colorAccentBlue()}55`
-        : '2px solid #dcd5ca'};
+        : `2px solid ${colorKeylineDefault()}`};
 
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 8px;
@@ -366,7 +368,7 @@ const NodeContainer = styled.div<{
   }
   .dynamic-marker {
     transform: translate(-5px, -5px);
-    border: ${(p) => (p.$minified ? '3px' : '2px')} solid #dcd5ca;
+    border: ${(p) => (p.$minified ? '3px' : '2px')} solid ${colorKeylineDefault()};
     border-radius: 3px;
   }
   .config-marker {
@@ -400,7 +402,7 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
+    background: ${colorBackgroundLighter()};
     font-size: 12px;
     display: flex;
     gap: 4px;
@@ -413,8 +415,8 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
-    border-top: 1px solid #e6e1d8;
+    background: ${colorBackgroundLighter()};
+    border-top: ${colorKeylineDefault()} 1px solid;
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
     font-size: 12px;

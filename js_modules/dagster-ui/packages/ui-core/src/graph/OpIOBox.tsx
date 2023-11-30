@@ -2,6 +2,7 @@ import {
   FontFamily,
   colorAccentBlue,
   colorAccentGray,
+  colorBackgroundDefault,
   colorTextBlue,
   colorTextLight,
 } from '@dagster-io/ui-components';
@@ -95,7 +96,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   align-items: center;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
-  background: ${(p) => (p.$highlighted ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.75)')};
+  background: ${(p) => (p.$highlighted ? colorBackgroundDefault() : colorBackgroundDefault())};
   font-size: 12px;
 
   &:last-child {

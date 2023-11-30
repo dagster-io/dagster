@@ -40,7 +40,7 @@ export enum ColorName {
   BorderDefault = 'BorderDefault',
   BorderHover = 'BorderHover',
   BorderDisabled = 'BorderDisabled',
-  BorderFocused = 'BorderFocused',
+  FocusRing = 'FocusRing',
   AccentPrimary = 'AccentPrimary',
   AccentPrimaryHover = 'AccentPrimaryHover',
   AccentReversed = 'AccentReversed',
@@ -67,6 +67,14 @@ export enum ColorName {
   TooltipText = 'TooltipText',
   PopoverBackground = 'PopoverBackground',
   PopoverBackgroundHover = 'PopoverBackgroundHover',
+
+  // Header
+  NavBackground = 'NavBackground',
+  NavText = 'NavText',
+  NavTextHover = 'NavTextHover',
+  NavTextSelected = 'NavTextSelected',
+  NavButton = 'NavButton',
+  NavButtonHover = 'NavButtonHover',
 
   // Lineage Graph
   LineageDots = 'LineageDots',

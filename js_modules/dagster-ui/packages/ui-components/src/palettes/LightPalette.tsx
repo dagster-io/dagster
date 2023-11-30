@@ -43,7 +43,7 @@ export const LightPalette = {
   [ColorName.BorderDefault]: CoreColors.Gray200,
   [ColorName.BorderHover]: CoreColors.Gray300,
   [ColorName.BorderDisabled]: CoreColors.Gray500,
-  [ColorName.BorderFocused]: CoreColors.Gray950,
+  [ColorName.FocusRing]: TranslucentColors.Blue30,
   [ColorName.AccentPrimary]: CoreColors.Gray950,
   [ColorName.AccentPrimaryHover]: CoreColors.Gray800,
   [ColorName.AccentReversed]: CoreColors.Gray10,
@@ -70,6 +70,14 @@ export const LightPalette = {
   [ColorName.TooltipText]: CoreColors.White,
   [ColorName.PopoverBackground]: CoreColors.White,
   [ColorName.PopoverBackgroundHover]: CoreColors.Gray50,
+
+  // Nav
+  [ColorName.NavBackground]: CoreColors.Gray990,
+  [ColorName.NavText]: CoreColors.Gray400,
+  [ColorName.NavTextHover]: CoreColors.Gray300,
+  [ColorName.NavTextSelected]: CoreColors.White,
+  [ColorName.NavButton]: CoreColors.Gray900,
+  [ColorName.NavButtonHover]: CoreColors.Gray850,
 
   // Lineage Graph
   [ColorName.LineageDots]: TranslucentColors.Gray20,

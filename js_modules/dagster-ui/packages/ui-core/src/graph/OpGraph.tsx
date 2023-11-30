@@ -1,6 +1,8 @@
 import {gql} from '@apollo/client';
 import {
   colorAccentBlue,
+  colorBackgroundBlue,
+  colorBackgroundBlueHover,
   colorBackgroundYellow,
   colorKeylineDefault,
 } from '@dagster-io/ui-components';
@@ -111,8 +113,8 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
         <rect
           key={idx}
           {...box}
-          stroke="rgb(230, 219, 238)"
-          fill="rgba(230, 219, 238, 0.2)"
+          stroke={colorBackgroundBlue()}
+          fill={colorBackgroundBlueHover()}
           strokeWidth={2}
         />
       ))}

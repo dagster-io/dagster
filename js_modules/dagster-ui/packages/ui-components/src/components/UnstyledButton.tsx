@@ -1,6 +1,6 @@
 import styled, {css} from 'styled-components';
 
-import {colorTextDefault} from '../theme/color';
+import {colorTextDefault, colorFocusRing} from '../theme/color';
 
 interface Props {
   $expandedClickPx?: number;
@@ -33,7 +33,10 @@ export const UnstyledButton = styled.button<Props>`
   :active {
     outline: none;
     ${({$showFocusOutline}) =>
-      $showFocusOutline ? `box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;` : null}
+      $showFocusOutline
+        ? `box-shadow: ${colorFocusRing()} 0 0 0 2px;
+      `
+        : null}
   }
 
   &:disabled {
