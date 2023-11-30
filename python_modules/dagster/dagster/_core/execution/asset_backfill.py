@@ -36,7 +36,6 @@ from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import (
-    AllPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
 )
@@ -794,10 +793,9 @@ def _check_target_partitions_subset_is_valid(
         else:
             # Check that all target partitions still exist. If so, the backfill can continue.a
             existent_partitions_subset = (
-                AllPartitionsSubset(
-                    partitions_def,
-                    dynamic_partitions_store=instance_queryer,
+                partitions_def.subset_with_all_partitions(
                     current_time=instance_queryer.evaluation_time,
+                    dynamic_partitions_store=instance_queryer,
                 )
                 & target_partitions_subset
             )
