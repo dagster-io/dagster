@@ -299,17 +299,17 @@ def test_materialize_result_output_typing():
     def multi_asset_with_outs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
         return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
-    assert materialize(
-        [multi_asset_with_outs_and_type_annotation], resources={"io_manager": TestingIOManager()}
-    ).success
+    _exec_asset(
+        multi_asset_with_outs_and_type_annotation, resources={"io_manager": TestingIOManager()}
+    )
 
     @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def multi_asset_with_specs_and_type_annotation() -> Tuple[MaterializeResult, MaterializeResult]:
         return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
-    assert materialize(
-        [multi_asset_with_specs_and_type_annotation], resources={"io_manager": TestingIOManager()}
-    ).success
+    _exec_asset(
+        multi_asset_with_specs_and_type_annotation, resources={"io_manager": TestingIOManager()}
+    )
 
     @asset(
         check_specs=[
@@ -331,10 +331,10 @@ def test_materialize_result_output_typing():
             ]
         )
 
-    assert materialize(
-        [with_checks],
+    _exec_asset(
+        with_checks,
         resources={"io_manager": TestingIOManager()},
-    ).success
+    )
 
     @multi_asset(
         specs=[
@@ -367,46 +367,48 @@ def test_materialize_result_output_typing():
             ],
         )
 
-    assert materialize(
-        [multi_checks],
+    _exec_asset(
+        multi_checks,
         resources={"io_manager": TestingIOManager()},
-    ).success
+    )
 
 
-def test_materialize_result_no_output_typing():
-    # Test that returned MaterializeResults bypass the I/O manager
+def test_materialize_result_no_output_typing_warning():
+    """Returning MaterializeResult from a vanilla asset or a multi asset that does not use
+    AssetSpecs AND with no return type annotation results in an Any typing type for the
+    Output. In this case we emit a warning, then call the I/O manager.
+    """
+    # warnings.resetwarnings()
+    # warnings.filterwarnings("error")
 
     class TestingIOManager(IOManager):
+        def __init__(self):
+            self.handle_output_calls = 0
+            self.handle_input_calls = 0
+
         def handle_output(self, context, obj):
-            assert False
+            self.handle_output_calls += 1
 
         def load_input(self, context):
-            assert False
+            self.load_input_calls += 1
 
     @asset
     def asset_without_type_annotation():
         return MaterializeResult(metadata={"foo": "bar"})
 
-    mats = _exec_asset(asset_without_type_annotation, resources={"io_manager": TestingIOManager()})
-    assert len(mats) == 1, mats
-    assert "foo" in mats[0].metadata
-    assert mats[0].metadata["foo"].value == "bar"
+    io_mgr = TestingIOManager()
+    _exec_asset(asset_without_type_annotation, resources={"io_manager": io_mgr})
+    assert io_mgr.handle_output_calls == 1
 
     @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
     def multi_asset_with_outs():
         return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
-    assert materialize(
-        [multi_asset_with_outs], resources={"io_manager": TestingIOManager()}
-    ).success
+    io_mgr = TestingIOManager()
+    _exec_asset(multi_asset_with_outs, resources={"io_manager": io_mgr})
+    assert io_mgr.handle_output_calls == 2
 
-    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_specs():
-        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
-
-    assert materialize(
-        [multi_asset_with_specs], resources={"io_manager": TestingIOManager()}
-    ).success
+    io_mgr = TestingIOManager()
 
     @asset(
         check_specs=[
@@ -428,10 +430,37 @@ def test_materialize_result_no_output_typing():
             ]
         )
 
-    assert materialize(
-        [with_checks],
-        resources={"io_manager": TestingIOManager()},
-    ).success
+    _exec_asset(
+        with_checks,
+        resources={"io_manager": io_mgr},
+    )
+    assert io_mgr.handle_output_calls == 1
+
+    io_mgr = TestingIOManager()
+
+    @asset
+    def generator_asset() -> Generator[MaterializeResult, None, None]:
+        yield MaterializeResult(metadata={"foo": "bar"})
+
+    _exec_asset(generator_asset, resources={"io_manager": io_mgr})
+    io_mgr.handle_output_calls == 1
+
+
+def test_materialize_result_implicit_output_typing():
+    # Test that returned MaterializeResults bypass the I/O manager when the return type is Nothing
+
+    class TestingIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert False
+
+    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    def multi_asset_with_specs():
+        return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
+
+    _exec_asset(multi_asset_with_specs, resources={"io_manager": TestingIOManager()})
 
     @multi_asset(
         specs=[
@@ -464,25 +493,10 @@ def test_materialize_result_no_output_typing():
             ],
         )
 
-    assert materialize(
-        [multi_checks],
+    _exec_asset(
+        multi_checks,
         resources={"io_manager": TestingIOManager()},
-    ).success
-
-
-def test_generator_return_type_annotation():
-    class TestingIOManager(IOManager):
-        def handle_output(self, context, obj):
-            assert False
-
-        def load_input(self, context):
-            assert False
-
-    @asset
-    def generator_asset() -> Generator[MaterializeResult, None, None]:
-        yield MaterializeResult(metadata={"foo": "bar"})
-
-    materialize([generator_asset], resources={"io_manager": TestingIOManager()})
+    )
 
 
 def test_materialize_result_generators():
