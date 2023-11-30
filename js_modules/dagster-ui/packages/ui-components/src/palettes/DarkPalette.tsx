@@ -1,5 +1,5 @@
 import {ColorName} from './ColorName';
-import {CoreColors, TranslucentColors} from './Colors';
+import {CoreColors, DataVizColors, TranslucentColors} from './Colors';
 
 export const DarkPalette = {
   [ColorName.KeylineDefault]: TranslucentColors.Gray15,
@@ -85,4 +85,32 @@ export const DarkPalette = {
   [ColorName.LineageNodeBorder]: CoreColors.Gray700,
   [ColorName.LineageNodeBorderHover]: CoreColors.Gray400,
   [ColorName.LineageNodeBorderSelected]: CoreColors.Blue300,
+
+  // Dataviz
+  [ColorName.DataVizBlue]: DataVizColors.Blue200,
+  [ColorName.DataVizBlueAlt]: DataVizColors.Blue100,
+  [ColorName.DataVizBlurple]: DataVizColors.Blurple200,
+  [ColorName.DataVizBlurpleAlt]: DataVizColors.Blurple100,
+  [ColorName.DataVizBrown]: DataVizColors.Brown200,
+  [ColorName.DataVizBrownAlt]: DataVizColors.Brown100,
+  [ColorName.DataVizCyan]: DataVizColors.Cyan200,
+  [ColorName.DataVizCyanAlt]: DataVizColors.Cyan100,
+  [ColorName.DataVizGray]: DataVizColors.Gray200,
+  [ColorName.DataVizGrayAlt]: DataVizColors.Gray100,
+  [ColorName.DataVizGreen]: DataVizColors.Green200,
+  [ColorName.DataVizGreenAlt]: DataVizColors.Green100,
+  [ColorName.DataVizLime]: DataVizColors.Lime200,
+  [ColorName.DataVizLimeAlt]: DataVizColors.Lime100,
+  [ColorName.DataVizOrange]: DataVizColors.Orange200,
+  [ColorName.DataVizOrangeAlt]: DataVizColors.Orange100,
+  [ColorName.DataVizPink]: DataVizColors.Pink200,
+  [ColorName.DataVizPinkAlt]: DataVizColors.Pink100,
+  [ColorName.DataVizRed]: DataVizColors.Red200,
+  [ColorName.DataVizRedAlt]: DataVizColors.Red100,
+  [ColorName.DataVizTeal]: DataVizColors.Teal200,
+  [ColorName.DataVizTealAlt]: DataVizColors.Teal100,
+  [ColorName.DataVizViolet]: DataVizColors.Violet200,
+  [ColorName.DataVizVioletAlt]: DataVizColors.Violet100,
+  [ColorName.DataVizYellow]: DataVizColors.Yellow200,
+  [ColorName.DataVizYellowAlt]: DataVizColors.Yellow100,
 };

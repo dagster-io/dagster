@@ -78,22 +78,46 @@ export const colorTooltipText = () => color(ColorName.TooltipText);
 export const colorPopoverBackground = () => color(ColorName.PopoverBackground);
 export const colorPopoverBackgroundHover = () => color(ColorName.PopoverBackgroundHover);
 
-// LINEAGE GRAPH COLORS
+// Lineage graph
 export const colorLineageDots = () => color(ColorName.LineageDots);
 export const colorLineageEdge = () => color(ColorName.LineageEdge);
 export const colorLineageEdgeHighlighted = () => color(ColorName.LineageEdgeHighlighted);
-
-// GRAPH GROUPS
 export const colorLineageGroupNodeBackground = () => color(ColorName.LineageGroupNodeBackground);
 export const colorLineageGroupNodeBackgroundHover = () =>
   color(ColorName.LineageGroupNodeBackgroundHover);
 export const colorLineageGroupNodeBorder = () => color(ColorName.LineageGroupNodeBorder);
 export const colorLineageGroupNodeBorderHover = () => color(ColorName.LineageGroupNodeBorderHover);
 export const colorLineageGroupBackground = () => color(ColorName.LineageGroupBackground);
-
-// GRAPH NODES
 export const colorLineageNodeBackground = () => color(ColorName.LineageNodeBackground);
 export const colorLineageNodeBackgroundHover = () => color(ColorName.LineageNodeBackgroundHover);
 export const colorLineageNodeBorder = () => color(ColorName.LineageNodeBorder);
 export const colorLineageNodeBorderHover = () => color(ColorName.LineageNodeBorderHover);
 export const colorLineageNodeBorderSelected = () => color(ColorName.LineageNodeBorderSelected);
+
+// Dataviz
+export const colorDataVizBlue = () => color(ColorName.DataVizBlue);
+export const colorDataVizBlueAlt = () => color(ColorName.DataVizBlueAlt);
+export const colorDataVizBlurple = () => color(ColorName.DataVizBlurple);
+export const colorDataVizBlurpleAlt = () => color(ColorName.DataVizBlurpleAlt);
+export const colorDataVizBrown = () => color(ColorName.DataVizBrown);
+export const colorDataVizBrownAlt = () => color(ColorName.DataVizBrownAlt);
+export const colorDataVizCyan = () => color(ColorName.DataVizCyan);
+export const colorDataVizCyanAlt = () => color(ColorName.DataVizCyanAlt);
+export const colorDataVizGray = () => color(ColorName.DataVizGray);
+export const colorDataVizGrayAlt = () => color(ColorName.DataVizGrayAlt);
+export const colorDataVizGreen = () => color(ColorName.DataVizGreen);
+export const colorDataVizGreenAlt = () => color(ColorName.DataVizGreenAlt);
+export const colorDataVizLime = () => color(ColorName.DataVizLime);
+export const colorDataVizLimeAlt = () => color(ColorName.DataVizLimeAlt);
+export const colorDataVizOrange = () => color(ColorName.DataVizOrange);
+export const colorDataVizOrangeAlt = () => color(ColorName.DataVizOrangeAlt);
+export const colorDataVizPink = () => color(ColorName.DataVizPink);
+export const colorDataVizPinkAlt = () => color(ColorName.DataVizPinkAlt);
+export const colorDataVizRed = () => color(ColorName.DataVizRed);
+export const colorDataVizRedAlt = () => color(ColorName.DataVizRedAlt);
+export const colorDataVizTeal = () => color(ColorName.DataVizTeal);
+export const colorDataVizTealAlt = () => color(ColorName.DataVizTealAlt);
+export const colorDataVizViolet = () => color(ColorName.DataVizViolet);
+export const colorDataVizVioletAlt = () => color(ColorName.DataVizVioletAlt);
+export const colorDataVizYellow = () => color(ColorName.DataVizYellow);
+export const colorDataVizYellowAlt = () => color(ColorName.DataVizYellowAlt);
