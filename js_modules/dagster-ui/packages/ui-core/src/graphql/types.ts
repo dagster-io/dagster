@@ -108,7 +108,7 @@ export type AssetAssetObservationsArgs = {
 export type AssetBackfillData = {
   __typename: 'AssetBackfillData';
   assetBackfillStatuses: Array<AssetBackfillStatus>;
-  rootTargetedPartitions: AssetBackfillTargetPartitions;
+  rootTargetedPartitions: Maybe<AssetBackfillTargetPartitions>;
 };
 
 export type AssetBackfillPreviewParams = {
@@ -130,6 +130,7 @@ export type AssetCheck = {
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
+  jobNames: Array<Scalars['String']>;
   name: Scalars['String'];
 };
 
@@ -4684,6 +4685,7 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetCheckExecution')
         ? ({} as AssetCheckExecution)
         : buildAssetCheckExecution({}, relationshipsToOmit),
+    jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
   };
 };

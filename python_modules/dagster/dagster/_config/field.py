@@ -289,6 +289,11 @@ class Field:
                 "required arguments should not specify default values",
             )
 
+        from dagster._config.field_utils import env_var_to_config_dict, is_dagster_env_var
+
+        if is_dagster_env_var(default_value):
+            default_value = env_var_to_config_dict(default_value)
+
         self._default_value = default_value
 
         # check explicit default value

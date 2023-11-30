@@ -13,7 +13,7 @@ export const TargetPartitionsDisplay = ({
   targetPartitions,
 }: {
   targetPartitionCount?: number;
-  targetPartitions?: Pick<AssetBackfillTargetPartitions, 'partitionKeys' | 'ranges'>;
+  targetPartitions?: Pick<AssetBackfillTargetPartitions, 'partitionKeys' | 'ranges'> | null;
 }) => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
@@ -95,6 +95,12 @@ export const TargetPartitionsDisplay = ({
   }
 
   return (
-    <div>{targetPartitionCount === 1 ? '1 partition' : `${targetPartitionCount} partitions`}</div>
+    <div>
+      {targetPartitionCount === 0
+        ? '-'
+        : targetPartitionCount === 1
+        ? '1 partition'
+        : `${targetPartitionCount} partitions`}
+    </div>
   );
 };

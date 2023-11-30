@@ -285,22 +285,20 @@ export const getAssetNodeDimensions = (def: {
 }) => {
   const width = 265;
 
-  if (def.isSource && !def.isObservable) {
-    return {width, height: 102};
+  let height = 100; // top tags area + name + description
+
+  if (def.isSource && def.isObservable) {
+    height += 30; // status row
+  } else if (def.isSource) {
+    height += 0; // no status row
   } else {
-    let height = 100; // top tags area + name + description
-
-    if (def.isSource) {
-      height += 30; // last observed
-    } else {
-      height += 26; // status row
-      if (def.isPartitioned) {
-        height += 40;
-      }
+    height += 26; // status row
+    if (def.isPartitioned) {
+      height += 40;
     }
-
-    height += 30; // tags beneath
-
-    return {width, height};
   }
+
+  height += 30; // tags beneath
+
+  return {width, height};
 };

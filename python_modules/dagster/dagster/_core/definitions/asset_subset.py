@@ -92,8 +92,8 @@ class AssetSubset(NamedTuple):
     @staticmethod
     def from_asset_partitions_set(
         asset_key: AssetKey,
-        asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
         partitions_def: Optional[PartitionsDefinition],
+        asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
     ) -> "AssetSubset":
         if partitions_def is None:
             return AssetSubset(asset_key=asset_key, value=bool(asset_partitions_set))
