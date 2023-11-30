@@ -3,12 +3,10 @@ import {
   Icon,
   IconWrapper,
   Tooltip,
-  CoreColors,
   colorNavBackground,
   colorNavText,
   colorNavTextSelected,
   colorNavTextHover,
-  colorBackgroundDefaultHover,
   colorBackgroundLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';

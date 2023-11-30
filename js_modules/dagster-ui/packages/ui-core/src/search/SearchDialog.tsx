@@ -14,7 +14,6 @@ import {
 } from '@dagster-io/ui-components';
 import {
   colorDialogBackground,
-  colorNavBackground,
   colorNavButton,
   colorNavButtonHover,
   colorNavText,

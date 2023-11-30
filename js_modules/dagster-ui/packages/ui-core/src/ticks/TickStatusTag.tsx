@@ -8,7 +8,6 @@ import {
   Box,
   ButtonLink,
   Tooltip,
-  colorBackgroundOlive,
   colorBackgroundLighter,
 } from '@dagster-io/ui-components';
 import React from 'react';

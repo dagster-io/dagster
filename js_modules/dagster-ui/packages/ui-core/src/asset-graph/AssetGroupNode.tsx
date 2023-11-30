@@ -3,7 +3,6 @@ import {
   FontFamily,
   Icon,
   Mono,
-  colorAccentBlue,
   colorLineageGroupNodeBorder,
   colorTextLight,
 } from '@dagster-io/ui-components';
