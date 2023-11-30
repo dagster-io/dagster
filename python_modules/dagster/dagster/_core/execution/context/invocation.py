@@ -75,7 +75,7 @@ class BoundProperties:
         alias: str,
         assets_def: Optional[AssetsDefinition],
         resources: Resources,
-        op_config: Optional[Dict[str, Any]],
+        op_config: Any,
     ):
         """Maintains the properties of the context that are provided at bind time.
         This class is not implemented as a NamedTuple because requires_typed_event_stream
@@ -87,7 +87,7 @@ class BoundProperties:
         self.alias = check.str_param(alias, "alias")
         self.assets_def = check.opt_inst_param(assets_def, "assets_def", AssetsDefinition)
         self.resources = check.inst_param(resources, "resources", Resources)
-        self.op_config = check.opt_dict_param(op_config, "op_config")
+        self.op_config = op_config
         self.requires_typed_event_stream = False
         self.typed_event_stream_error_message = None
 
@@ -174,7 +174,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         self._bound_properties = None
 
         # Maintains the properties on the context that are modified during invocation
-        self._invocation_properties = None
+        self._invocation_properties = InvocationProperties()
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -466,7 +466,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
                 expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
                 ...
         """
-        self._check_bound(fn_name="get_events", fn_type="method")
         return self._invocation_properties.user_events
 
     def get_output_metadata(
@@ -483,7 +482,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         Returns:
             Optional[Mapping[str, Any]]: The metadata values present for the output_name/mapping_key combination, if present.
         """
-        self._check_bound(fn_name="get_output_metadata", fn_type="method")
         metadata = self._invocation_properties.output_metadata.get(output_name)
         if mapping_key and metadata:
             return metadata.get(mapping_key)
@@ -528,7 +526,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
             self._invocation_properties.seen_outputs[output_name] = "seen"
 
     def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
-        self._check_bound(fn_name="has_seen_output", fn_type="method")
         if mapping_key:
             return (
                 output_name in self._invocation_properties.seen_outputs
