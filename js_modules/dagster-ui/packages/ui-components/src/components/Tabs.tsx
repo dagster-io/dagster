@@ -101,7 +101,7 @@ export const tabCSS = css<TabStyleProps>`
     a {
       text-decoration: none;
       color: ${({selected, disabled}) =>
-        selected ? colorAccentBlue() : disabled ? colorTextDisabled() : colorTextLight()};
+        selected ? colorAccentBlue() : disabled ? colorTextDisabled() : colorAccentBlue()};
     }
 
     ${({disabled}) => (disabled ? `color: ${colorTextDisabled()};` : null)}
