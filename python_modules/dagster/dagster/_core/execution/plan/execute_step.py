@@ -61,12 +61,12 @@ from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.execution.plan.compute import execute_core_compute
-from dagster._core.execution.plan.inputs import FromStepOutput, StepInputData
+from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
-from dagster._core.types.dagster_type import DagsterType, Nothing
+from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
 from dagster._utils.warnings import (
@@ -122,8 +122,10 @@ def _process_user_event(
             yield from _process_user_event(step_context, check_result)
 
         # If a MaterializeResult was returned from an asset with no type annotation, the type will be
-        # interpreted as Any. We want to switch to Nothing, so that the I/O manager gets skipped
-        assets_def.op.output_dict[output_name]._dagster_type = Nothing  # noqa: SLF001
+        # interpreted as Any and the I/O manager will be invoked. Raise a warning to alert the user.
+        step_context.log.warn(
+            f"MaterializeResult for asset {asset_key} returned from an asset with an inferred return type of Any. This will cause the I/O manager to run. To ensure that the I/O manager does not run, annotate your asset with the return type MaterializeResult."
+        )
 
         yield Output(
             value=None,
@@ -444,13 +446,6 @@ def core_dagster_event_sequence_for_step(
         if dagster_type.is_nothing:
             continue
 
-        if (
-            isinstance(step_input.source, FromStepOutput)
-            and step_input.source.output_dagster_type_is_nothing
-        ):
-            inputs[step_input.name] = None
-            continue
-
         for event_or_input_value in step_input.source.load_input_object(step_context, input_def):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
@@ -714,19 +709,14 @@ def _store_output(
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
 
-    used_io_manager = True
-
-    # don't store asset check outputs or asset observation outputs
+    # don't store asset check outputs, asset observation outputs, or Nothing type outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
-    asset_key = step_output.properties.asset_key
     if (
-        step_output.properties.asset_check_key
-        or (step_context.output_observes_source_asset(step_output_handle.output_name))
+        step_output.properties.asset_check_key  # don't store asset checks
         or (
-            output_context.has_asset_key
-            and output_context.dagster_type.is_nothing
-            and output.value is None
-        )
+            step_context.output_observes_source_asset(step_output_handle.output_name)
+        )  # don't store source asset observations
+        or output_context.dagster_type.is_nothing  # don't store Nothing outputs # TODO - maybe need to scope this to just assets
     ):
         yield from _log_asset_materialization_events_for_asset(
             step_context=step_context,
