@@ -2,6 +2,7 @@ include README.md
 include LICENSE
 include COPYING
 include dagster/py.typed
+include dagster/_grpc/__generated__/api_pb2.pyi
 recursive-include dagster *.md
 recursive-include dagster/_core/storage/alembic *
 recursive-include dagster/_core/storage/event_log/sqlite/alembic *

@@ -290,17 +290,33 @@ SELECT *
 
 You may want to have different assets stored in different Snowflake schemas. The Snowflake I/O manager allows you to specify the schema in several ways.
 
-If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, like we did in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+You can specify the default schema where data will be stored as configuration to the I/O manager, like we did in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-If you want to store assets in different schemas, you can specify the schema as part of the the asset's asset key:
+If you want to store assets in different schemas, you can specify the schema as metadata:
 
-```python file=/integrations/snowflake/schema.py startafter=start_asset_key endbefore=end_asset_key
-import pandas as pd
+```python file=/integrations/snowflake/schema.py startafter=start_metadata endbefore=end_metadata dedent=4
+daffodil_dataset = SourceAsset(
+    key=["daffodil_dataset"], metadata={"schema": "daffodil"}
+)
 
-from dagster import SourceAsset, asset
+@asset(metadata={"schema": "iris"})
+def iris_dataset() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+```
 
+You can also specify the schema as part of the asset's asset key:
+
+```python file=/integrations/snowflake/schema.py startafter=start_asset_key endbefore=end_asset_key dedent=4
 daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
-
 
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
@@ -319,11 +335,20 @@ def iris_dataset() -> pd.DataFrame:
 In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
 
 <Note>
-  The two options for specifying schema are mutually exclusive. If you provide{" "}
-  <code>schema</code> configuration to the I/O manager, you cannot also provide
-  it via the asset key and vice versa. If no <code>schema</code> is provided,
-  either from configuration or asset keys, the default schema{" "}
-  <code>PUBLIC</code> will be used.
+  The schema is determined in this order:
+  <ol>
+    <li>If the schema is set via metadata, that schema will be used</li>
+    <li>
+      Otherwise, the schema set as configuration on the I/O manager will be used
+    </li>
+    <li>
+      Otherwise, if there is a <code>key_prefix</code>, that schema will be used
+    </li>
+    <li>
+      If none of the above are provided, the default schema will be{" "}
+      <code>PUBLIC</code>
+    </li>
+  </ol>
 </Note>
 
 ---

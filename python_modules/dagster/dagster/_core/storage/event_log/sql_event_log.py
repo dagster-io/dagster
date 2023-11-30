@@ -77,9 +77,11 @@ from dagster._utils import (
     utc_datetime_from_timestamp,
 )
 from dagster._utils.concurrency import (
+    ClaimedSlotInfo,
     ConcurrencyClaimStatus,
     ConcurrencyKeyInfo,
     ConcurrencySlotStatus,
+    PendingStepInfo,
 )
 
 from ..dagster_run import DagsterRunStatsSnapshot
@@ -2474,59 +2476,49 @@ class SqlEventLogStorage(EventLogStorage):
                 db_select(
                     [
                         ConcurrencySlotsTable.c.run_id,
+                        ConcurrencySlotsTable.c.step_key,
                         ConcurrencySlotsTable.c.deleted,
-                        db.func.count().label("count"),
                     ]
                 )
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
-                .group_by(ConcurrencySlotsTable.c.run_id, ConcurrencySlotsTable.c.deleted)
             )
             slot_rows = db_fetch_mappings(conn, slot_query)
             pending_query = (
                 db_select(
                     [
                         PendingStepsTable.c.run_id,
-                        db_case(
-                            [(PendingStepsTable.c.assigned_timestamp.is_(None), False)],
-                            else_=True,
-                        ).label("is_assigned"),
-                        db.func.count().label("count"),
+                        PendingStepsTable.c.step_key,
+                        PendingStepsTable.c.assigned_timestamp,
+                        PendingStepsTable.c.create_timestamp,
+                        PendingStepsTable.c.priority,
                     ]
                 )
                 .select_from(PendingStepsTable)
                 .where(PendingStepsTable.c.concurrency_key == concurrency_key)
-                .group_by(PendingStepsTable.c.run_id, "is_assigned")
             )
             pending_rows = db_fetch_mappings(conn, pending_query)
 
             return ConcurrencyKeyInfo(
                 concurrency_key=concurrency_key,
-                slot_count=sum(
-                    [
-                        cast(int, slot_row["count"])
-                        for slot_row in slot_rows
-                        if not slot_row["deleted"]
-                    ]
-                ),
-                active_slot_count=sum(
-                    [cast(int, slot_row["count"]) for slot_row in slot_rows if slot_row["run_id"]]
-                ),
-                active_run_ids={
-                    cast(str, slot_row["run_id"]) for slot_row in slot_rows if slot_row["run_id"]
-                },
-                pending_step_count=sum(
-                    [cast(int, row["count"]) for row in pending_rows if not row["is_assigned"]]
-                ),
-                pending_run_ids={
-                    cast(str, row["run_id"]) for row in pending_rows if not row["is_assigned"]
-                },
-                assigned_step_count=sum(
-                    [cast(int, row["count"]) for row in pending_rows if row["is_assigned"]]
-                ),
-                assigned_run_ids={
-                    cast(str, row["run_id"]) for row in pending_rows if row["is_assigned"]
-                },
+                slot_count=len([slot_row for slot_row in slot_rows if not slot_row["deleted"]]),
+                claimed_slots=[
+                    ClaimedSlotInfo(slot_row["run_id"], slot_row["step_key"])
+                    for slot_row in slot_rows
+                    if slot_row["run_id"]
+                ],
+                pending_steps=[
+                    PendingStepInfo(
+                        run_id=row["run_id"],
+                        step_key=row["step_key"],
+                        enqueued_timestamp=utc_datetime_from_naive(row["create_timestamp"]),
+                        assigned_timestamp=utc_datetime_from_naive(row["assigned_timestamp"])
+                        if row["assigned_timestamp"]
+                        else None,
+                        priority=row["priority"],
+                    )
+                    for row in pending_rows
+                ],
             )
 
     def get_concurrency_run_ids(self) -> Set[str]:

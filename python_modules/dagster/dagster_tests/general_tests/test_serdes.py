@@ -11,6 +11,7 @@ from dagster._serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
+    SerializableNonScalarKeyMapping,
     SetToSequenceFieldSerializer,
     UnpackContext,
     WhitelistMap,
@@ -721,3 +722,57 @@ def test_enum_custom_serializer():
     assert serialized == '{"__enum__": "Foo.BLUE"}'
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == Foo.RED
+
+
+def test_serialize_non_scalar_key_mapping():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
+
+    serialized = serialize_value(non_scalar_key_mapping, whitelist_map=test_env)
+    assert serialized == """{"__mapping_items__": [[{"__class__": "Bar", "color": "red"}, 1]]}"""
+    assert non_scalar_key_mapping == deserialize_value(serialized, whitelist_map=test_env)
+
+
+def test_serializable_non_scalar_key_mapping():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
+
+    assert len(non_scalar_key_mapping) == 1
+    assert non_scalar_key_mapping[Bar("red")] == 1
+    assert list(iter(non_scalar_key_mapping)) == list(iter([Bar("red")]))
+
+    with pytest.raises(NotImplementedError, match="SerializableNonScalarKeyMapping is immutable"):
+        non_scalar_key_mapping["foo"] = None
+
+
+def test_serializable_non_scalar_key_mapping_in_named_tuple():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class Bar(NamedTuple):
+        color: str
+
+    @_whitelist_for_serdes(test_env)
+    class Foo(NamedTuple("_Foo", [("keyed_by_non_scalar", Mapping[Bar, int])])):
+        def __new__(cls, keyed_by_non_scalar):
+            return super(Foo, cls).__new__(
+                cls, SerializableNonScalarKeyMapping(keyed_by_non_scalar)
+            )
+
+    named_tuple = Foo(keyed_by_non_scalar={Bar("red"): 1})
+    assert (
+        deserialize_value(
+            serialize_value(named_tuple, whitelist_map=test_env), whitelist_map=test_env
+        )
+        == named_tuple
+    )

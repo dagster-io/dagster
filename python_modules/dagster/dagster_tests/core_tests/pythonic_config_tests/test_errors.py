@@ -188,14 +188,22 @@ def test_annotate_with_resource_factory() -> None:
         def create_resource(self, context: None) -> str:
             return "hello"
 
+    # https://github.com/dagster-io/dagster/issues/18017
+    if USING_PYDANTIC_2:  # pydantic 2 causing issues with Generic
+        target = "an unknown"  # should be "a '<class 'str'>'"
+        ttype = "Any"  # should be "str"
+    else:
+        target = "a '<class 'str'>'"
+        ttype = "str"
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
             "Resource param 'my_string' is annotated as '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 
@@ -209,8 +217,8 @@ def test_annotate_with_resource_factory() -> None:
             "Resource param 'my_string' is annotated as '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 
@@ -260,6 +268,14 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
         def create_resource(self, context: None) -> str:
             return "hello"
 
+    # https://github.com/dagster-io/dagster/issues/18017
+    if USING_PYDANTIC_2:  # pydantic 2 causing issues with Generic
+        target = "an unknown"  # should be "a '<class 'str'>'"
+        ttype = "Any"  # should be "str"
+    else:
+        target = "a '<class 'str'>'"
+        ttype = "str"
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
@@ -267,8 +283,8 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 
@@ -283,8 +299,8 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 

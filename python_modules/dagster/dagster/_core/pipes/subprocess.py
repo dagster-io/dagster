@@ -113,7 +113,7 @@ class _PipesSubprocess(PipesClient):
                 raise DagsterPipesExecutionError(
                     f"External execution process failed with code {process.returncode}"
                 )
-        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
+        return PipesClientCompletedInvocation(pipes_session)
 
 
 PipesSubprocessClient = ResourceParam[_PipesSubprocess]

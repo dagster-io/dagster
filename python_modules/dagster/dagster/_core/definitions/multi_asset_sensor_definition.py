@@ -718,6 +718,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         downstream_partition_key_subset = (
             partition_mapping.get_downstream_partitions_for_partitions(
                 from_asset.partitions_def.empty_subset().with_partition_keys([partition_key]),
+                from_asset.partitions_def,
                 downstream_partitions_def=to_partitions_def,
                 dynamic_partitions_store=self.instance,
             )

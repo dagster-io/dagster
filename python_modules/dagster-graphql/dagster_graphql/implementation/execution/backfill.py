@@ -95,7 +95,7 @@ def get_asset_backfill_preview(
 
     asset_partitions = []
 
-    for asset_key in asset_backfill_data.get_targeted_asset_keys_topological_order():
+    for asset_key in asset_backfill_data.get_targeted_asset_keys_topological_order(asset_graph):
         if asset_graph.get_partitions_def(asset_key):
             partitions_subset = asset_backfill_data.target_subset.partitions_subsets_by_asset_key[
                 asset_key
@@ -300,7 +300,7 @@ def cancel_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    if backfill.serialized_asset_backfill_data:
+    if backfill.is_asset_backfill:
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
         _assert_permission_for_asset_graph(
             graphene_info,

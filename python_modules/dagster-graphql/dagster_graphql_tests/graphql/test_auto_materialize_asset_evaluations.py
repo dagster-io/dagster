@@ -207,6 +207,11 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
 
 QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+    assetNodeOrError(assetKey: $assetKey) {
+        ... on AssetNode {
+            currentAutoMaterializeEvaluationId
+        }
+    }
     autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AutoMaterializeAssetEvaluationRecords {
             records {
@@ -255,7 +260,6 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     path
                 }
             }
-            currentEvaluationId
         }
     }
 }
@@ -311,7 +315,6 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
                     path
                 }
             }
-            currentEvaluationId
         }
     }
 }
@@ -459,6 +462,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
 
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": None,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
@@ -482,8 +488,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                     }
                 ],
-                "currentEvaluationId": None,
-            }
+            },
         }
 
     def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
@@ -493,7 +498,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "autoMaterializeAssetEvaluationsOrError": {"records": [], "currentEvaluationId": None}
+            "autoMaterializeAssetEvaluationsOrError": {"records": []},
         }
 
         check.not_none(
@@ -567,6 +572,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": None,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
@@ -576,8 +584,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         "rulesWithRuleEvaluations": [],
                     }
                 ],
-                "currentEvaluationId": None,
-            }
+            },
         }
 
         results = execute_dagster_graphql(
@@ -586,6 +593,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": None,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
@@ -605,8 +615,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-                "currentEvaluationId": None,
-            }
+            },
         }
 
         results = execute_dagster_graphql(
@@ -615,6 +624,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_three"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": None,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
@@ -636,8 +648,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-                "currentEvaluationId": None,
-            }
+            },
         }
 
         results = execute_dagster_graphql(
@@ -646,6 +657,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_four"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": None,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
@@ -668,8 +682,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-                "currentEvaluationId": None,
-            }
+            },
         }
 
     def _test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
@@ -683,7 +696,10 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert results.data == {
-            "autoMaterializeAssetEvaluationsOrError": {"records": [], "currentEvaluationId": None}
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": None,
+            },
+            "autoMaterializeAssetEvaluationsOrError": {"records": []},
         }
 
         check.not_none(
@@ -796,6 +812,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": None,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
@@ -820,8 +839,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         ],
                     }
                 ],
-                "currentEvaluationId": None,
-            }
+            },
         }
 
         results_by_evaluation_id = execute_dagster_graphql(
@@ -848,10 +866,12 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": 0,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [],
-                "currentEvaluationId": 0,
-            }
+            },
         }
 
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
@@ -870,8 +890,10 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
+            "assetNodeOrError": {
+                "currentAutoMaterializeEvaluationId": 42,
+            },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [],
-                "currentEvaluationId": 42,
-            }
+            },
         }

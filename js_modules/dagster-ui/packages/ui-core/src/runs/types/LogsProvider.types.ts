@@ -92,6 +92,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -246,6 +254,14 @@ export type PipelineRunLogsSubscription = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -405,6 +421,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -543,6 +567,14 @@ export type PipelineRunLogsSubscription = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -686,6 +718,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -810,6 +850,14 @@ export type PipelineRunLogsSubscription = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -1009,6 +1057,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1184,6 +1240,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1342,6 +1406,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1474,6 +1546,14 @@ export type PipelineRunLogsSubscription = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -1616,6 +1696,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -1749,6 +1837,14 @@ export type PipelineRunLogsSubscription = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -1899,6 +1995,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -2031,6 +2135,14 @@ export type PipelineRunLogsSubscription = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -2254,6 +2366,14 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -2394,6 +2514,14 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -2526,6 +2654,14 @@ export type PipelineRunLogsSubscription = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -2708,6 +2844,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -2863,6 +3007,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3013,6 +3165,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -3148,6 +3308,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 __typename: 'IntMetadataEntry';
                 intValue: number | null;
                 intRepr: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
                 label: string;
                 description: string | null;
               }
@@ -3288,6 +3456,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3407,6 +3583,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 __typename: 'IntMetadataEntry';
                 intValue: number | null;
                 intRepr: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
                 label: string;
                 description: string | null;
               }
@@ -3603,6 +3787,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3773,6 +3965,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3926,6 +4126,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4053,6 +4261,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 __typename: 'IntMetadataEntry';
                 intValue: number | null;
                 intRepr: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
                 label: string;
                 description: string | null;
               }
@@ -4192,6 +4408,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4320,6 +4544,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -4465,6 +4697,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -4592,6 +4832,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -4810,6 +5058,14 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -4947,6 +5203,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -5074,6 +5338,14 @@ export type RunLogsSubscriptionSuccessFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -5269,6 +5541,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -5423,6 +5703,14 @@ export type RunLogsQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -5582,6 +5870,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -5720,6 +6016,14 @@ export type RunLogsQuery = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -5863,6 +6167,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -5987,6 +6299,14 @@ export type RunLogsQuery = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -6186,6 +6506,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6361,6 +6689,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6519,6 +6855,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6651,6 +6995,14 @@ export type RunLogsQuery = {
                       __typename: 'IntMetadataEntry';
                       intValue: number | null;
                       intRepr: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
                       label: string;
                       description: string | null;
                     }
@@ -6793,6 +7145,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6926,6 +7286,14 @@ export type RunLogsQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -7076,6 +7444,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -7208,6 +7584,14 @@ export type RunLogsQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -7431,6 +7815,14 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'JobMetadataEntry';
+                      jobName: string;
+                      repositoryName: string | null;
+                      locationName: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'JsonMetadataEntry';
                       jsonString: string;
                       label: string;
@@ -7571,6 +7963,14 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -7703,6 +8103,14 @@ export type RunLogsQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }

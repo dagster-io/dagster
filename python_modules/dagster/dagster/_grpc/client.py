@@ -5,7 +5,6 @@ from threading import Event
 from typing import Any, Iterator, Optional, Sequence, Tuple
 
 import grpc
-from google.protobuf.reflection import GeneratedProtocolMessageType
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
@@ -72,6 +71,7 @@ class DagsterGrpcClient:
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
     ):
         self.port = check.opt_int_param(port, "port")
+
         self.socket = check.opt_str_param(socket, "socket")
         self.host = check.opt_str_param(host, "host")
         self._use_ssl = check.bool_param(use_ssl, "use_ssl")
@@ -156,7 +156,7 @@ class DagsterGrpcClient:
     def _query(
         self,
         method: str,
-        request_type: GeneratedProtocolMessageType,
+        request_type: Any,
         timeout=DEFAULT_GRPC_TIMEOUT,
         custom_timeout_message=None,
         **kwargs,

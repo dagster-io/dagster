@@ -16,7 +16,7 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.compute import OpExecutionContext
 
-from .context import PipesExecutionResult
+from .context import PipesExecutionResult, PipesSession
 
 if TYPE_CHECKING:
     from .context import PipesMessageHandler
@@ -54,19 +54,34 @@ class PipesClient(ABC):
 
 @experimental
 class PipesClientCompletedInvocation:
-    def __init__(self, results: Sequence["PipesExecutionResult"]):
-        self._results = results
+    def __init__(
+        self,
+        session: PipesSession,
+    ):
+        self._session = session
 
-    def get_results(self) -> Sequence["PipesExecutionResult"]:
+    def get_results(
+        self,
+        *,
+        implicit_materializations=True,
+    ) -> Sequence["PipesExecutionResult"]:
         """Get the stream of results as a Sequence of a completed pipes
-        client invocation. For each "report" call in the external process,
-        one result object will be in the list.
+        client invocation.
+
+        Args:
+            implicit_materializations (bool): Create MaterializeResults for expected assets
+                even if nothing was reported from the external process.
+
 
         Returns: Sequence[PipesExecutionResult]
         """
-        return tuple(self._results)
+        return self._session.get_results(implicit_materializations=implicit_materializations)
 
-    def get_materialize_result(self) -> MaterializeResult:
+    def get_materialize_result(
+        self,
+        *,
+        implicit_materialization=True,
+    ) -> MaterializeResult:
         """Get a single materialize result for a pipes invocation. This coalesces
         the materialization result and any separately reported asset check results from
         the external process.
@@ -74,9 +89,16 @@ class PipesClientCompletedInvocation:
         This does not work on invocations that materialize multiple assets and will fail
         in that case. For multiple assets use `get_results` instead to get the result stream.
 
+        Args:
+            implicit_materializations (bool): Create MaterializeResults for expected asset
+                even if nothing was reported from the external process.
+
+
         Returns: MaterializeResult
         """
-        return materialize_result_from_pipes_results(self.get_results())
+        return materialize_result_from_pipes_results(
+            self.get_results(implicit_materializations=implicit_materialization)
+        )
 
     def get_asset_check_result(self) -> AssetCheckResult:
         """Get a single asset check result for a pipes invocation.
@@ -165,7 +187,9 @@ def materialize_result_from_pipes_results(
         check_result for check_result in all_results if isinstance(check_result, AssetCheckResult)
     ]
 
-    check.invariant(len(mat_results) > 0, "No materialization results received. Internal error?")
+    if len(mat_results) == 0:
+        raise DagsterPipesError("No materialization results received from external process.")
+
     if len(mat_results) > 1:
         raise DagsterPipesError(
             "Multiple materialize results returned with asset keys"

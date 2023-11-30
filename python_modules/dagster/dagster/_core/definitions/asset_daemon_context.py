@@ -1,4 +1,3 @@
-import dataclasses
 import datetime
 import itertools
 import logging
@@ -24,6 +23,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -36,7 +36,7 @@ from dagster._utils.cached_method import cached_method
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_daemon_cursor import AssetDaemonCursor
+from .asset_daemon_cursor import AssetDaemonAssetCursor, AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import (
     AutoMaterializeRule,
@@ -49,10 +49,7 @@ from .auto_materialize_rule_evaluation import (
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
-from .partition import (
-    PartitionsDefinition,
-    ScheduleType,
-)
+from .partition import PartitionsDefinition, ScheduleType
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -92,6 +89,7 @@ def get_implicit_auto_materialize_policy(
 class AssetDaemonContext:
     def __init__(
         self,
+        evaluation_id: int,
         instance: "DagsterInstance",
         asset_graph: AssetGraph,
         cursor: AssetDaemonCursor,
@@ -105,6 +103,7 @@ class AssetDaemonContext:
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+        self._evaluation_id = evaluation_id
         self._instance_queryer = CachingInstanceQueryer(
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
@@ -133,6 +132,7 @@ class AssetDaemonContext:
         self._verbose_log_fn = (
             self._logger.info if os.getenv("ASSET_DAEMON_VERBOSE_LOGS") else self._logger.debug
         )
+        self.prefetch_updated_parents()
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -170,126 +170,21 @@ class AssetDaemonContext:
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
 
-    @cached_method
-    def _get_never_handled_and_newly_handled_root_asset_partitions(
-        self,
-    ) -> Tuple[
-        Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
-        AbstractSet[AssetKey],
-        Mapping[AssetKey, AbstractSet[str]],
-    ]:
-        """Finds asset partitions that have never been materialized or requested and that have no
-        parents.
-
-        Returns:
-        - Asset (partition)s that have never been materialized or requested.
-        - Non-partitioned assets that had never been materialized or requested up to the previous cursor
-            but are now materialized.
-        - Asset (partition)s that had never been materialized or requested up to the previous cursor but
-            are now materialized.
+    def prefetch_updated_parents(self) -> None:
+        """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
+        value is calculated a long time after we calculate the set of updated parents for a given
+        asset, as this can cause us to miss materializations.
         """
-        never_handled = defaultdict(set)
-        newly_materialized_root_asset_keys = set()
-        newly_materialized_root_partitions_by_asset_key = defaultdict(set)
-
-        for asset_key in (
-            self.target_asset_keys & self.asset_graph.root_materializable_or_observable_asset_keys
-        ):
-            if self.asset_graph.is_partitioned(asset_key):
-                for partition_key in self.cursor.get_unhandled_partitions(
-                    asset_key,
-                    self.asset_graph,
-                    dynamic_partitions_store=self.instance_queryer,
-                    current_time=self.instance_queryer.evaluation_time,
-                ):
-                    asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
-                        asset_partition
-                    ):
-                        newly_materialized_root_partitions_by_asset_key[asset_key].add(
-                            partition_key
-                        )
-                    else:
-                        never_handled[asset_key].add(asset_partition)
-            else:
-                if not self.cursor.was_previously_handled(asset_key):
-                    asset_partition = AssetKeyPartitionKey(asset_key)
-                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
-                        asset_partition
-                    ):
-                        newly_materialized_root_asset_keys.add(asset_key)
-                    else:
-                        never_handled[asset_key].add(asset_partition)
-
-        return (
-            never_handled,
-            newly_materialized_root_asset_keys,
-            newly_materialized_root_partitions_by_asset_key,
-        )
-
-    def get_never_handled_root_asset_partitions_for_key(
-        self, asset_key: AssetKey
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of root asset partitions that have never been handled for a given asset
-        key. If the input asset key is not a root asset, this will always be an empty set.
-        """
-        never_handled, _, _ = self._get_never_handled_and_newly_handled_root_asset_partitions()
-        return never_handled.get(asset_key, set())
-
-    def get_newly_updated_roots(
-        self,
-    ) -> Tuple[AbstractSet[AssetKey], Mapping[AssetKey, AbstractSet[str]]]:
-        """Returns the set of unpartitioned root asset keys that have been updated since the last
-        tick, and a mapping from partitioned root asset keys to the set of partition keys that have
-        been materialized since the last tick.
-        """
-        (
-            _,
-            newly_handled_keys,
-            newly_handled_partitions_by_key,
-        ) = self._get_never_handled_and_newly_handled_root_asset_partitions()
-        return newly_handled_keys, newly_handled_partitions_by_key
+        self.get_latest_storage_id()
+        for asset_key in self.target_asset_keys:
+            self.instance_queryer.asset_partitions_with_newly_updated_parents(
+                latest_storage_id=self.latest_storage_id, child_asset_key=asset_key
+            )
 
     @cached_method
-    def _get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id(
-        self,
-    ) -> Tuple[Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]], Optional[int]]:
-        """Returns a mapping from asset keys to the set of asset partitions that have newly updated
-        parents, and the new latest storage ID.
-        """
-        (
-            asset_partitions,
-            new_latest_storage_id,
-        ) = self.instance_queryer.asset_partitions_with_newly_updated_parents_and_new_latest_storage_id(
-            latest_storage_id=self.latest_storage_id,
-            target_asset_keys=frozenset(self.target_asset_keys),
-            target_asset_keys_and_parents=frozenset(self.target_asset_keys_and_parents),
-            map_old_time_partitions=False,
-        )
-        ret = defaultdict(set)
-        for asset_partition in asset_partitions:
-            ret[asset_partition.asset_key].add(asset_partition)
-        return ret, new_latest_storage_id
-
-    def get_new_latest_storage_id(self) -> Optional[int]:
-        """Returns the latest storage of all target asset keys since the last tick."""
-        (
-            _,
-            new_latest_storage_id,
-        ) = self._get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id()
-        return new_latest_storage_id
-
-    def get_asset_partitions_with_newly_updated_parents_for_key(
-        self, asset_key: AssetKey
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of asset partitions whose parents have been updated since the last tick
-        for a given asset key.
-        """
-        (
-            updated_parent_mapping,
-            _,
-        ) = self._get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id()
-        return updated_parent_mapping.get(asset_key, set())
+    def get_latest_storage_id(self) -> Optional[int]:
+        """Get the latest storage id across all records."""
+        return self.instance_queryer.instance.event_log_storage.get_maximum_record_id()
 
     def evaluate_asset(
         self,
@@ -298,7 +193,7 @@ class AssetDaemonContext:
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> Tuple[
         AutoMaterializeAssetEvaluation,
-        AbstractSet[AssetKeyPartitionKey],
+        AssetDaemonAssetCursor,
         AbstractSet[AssetKeyPartitionKey],
     ]:
         """Evaluates the auto materialize policy of a given asset key.
@@ -331,14 +226,23 @@ class AssetDaemonContext:
         to_skip: Set[AssetKeyPartitionKey] = set()
         to_discard: Set[AssetKeyPartitionKey] = set()
 
+        asset_cursor = self.cursor.asset_cursor_for_key(
+            asset_key, self.asset_graph.get_partitions_def(asset_key)
+        )
+
         materialize_context = RuleEvaluationContext(
             asset_key=asset_key,
-            cursor=self.cursor,
+            cursor=asset_cursor,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
-            candidates=set(),
+            candidate_subset=AssetSubset.all(
+                asset_key=asset_key,
+                partitions_def=self.asset_graph.get_partitions_def(asset_key),
+                dynamic_partitions_store=self.instance_queryer,
+                current_time=self.instance_queryer.evaluation_time,
+            ),
             daemon_context=self,
         )
 
@@ -361,7 +265,7 @@ class AssetDaemonContext:
                 to_materialize.update(asset_partitions)
             self._verbose_log_fn("Done evaluating materialize rule")
 
-        skip_context = dataclasses.replace(materialize_context, candidates=to_materialize)
+        skip_context = materialize_context.with_candidate_subset(to_materialize)
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
@@ -390,7 +294,7 @@ class AssetDaemonContext:
             self._verbose_log_fn(f"Evaluating discard rule: {rule_snapshot}")
 
             for evaluation_data, asset_partitions in rule.evaluate_for_asset(
-                dataclasses.replace(skip_context, candidates=to_materialize)
+                skip_context.with_candidate_subset(to_materialize)
             ):
                 all_results.append(
                     (
@@ -417,25 +321,31 @@ class AssetDaemonContext:
                 num_discarded=len(to_discard),
                 dynamic_partitions_store=self.instance_queryer,
             ),
+            asset_cursor.with_updates(
+                self.asset_graph,
+                materialize_context.newly_materialized_root_subset,
+                to_materialize,
+                to_discard,
+            ),
             to_materialize,
-            to_discard,
         )
 
     def get_auto_materialize_asset_evaluations(
         self,
     ) -> Tuple[
         Mapping[AssetKey, AutoMaterializeAssetEvaluation],
-        AbstractSet[AssetKeyPartitionKey],
+        Sequence[AssetDaemonAssetCursor],
         AbstractSet[AssetKeyPartitionKey],
     ]:
-        """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
-        well as sets of all asset partitions that should be materialized or discarded this tick.
+        """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
+        sequence of new per-asset cursors, and the set of all asset partitions that should be
+        materialized or discarded this tick.
         """
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
+        asset_cursors: List[AssetDaemonAssetCursor] = []
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
             set
         )
-        to_discard: Set[AssetKeyPartitionKey] = set()
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         visited_multi_asset_keys = set()
 
@@ -460,8 +370,8 @@ class AssetDaemonContext:
 
             (
                 evaluation,
+                asset_cursor_for_asset,
                 to_materialize_for_asset,
-                to_discard_for_asset,
             ) = self.evaluate_asset(asset_key, will_materialize_mapping, expected_data_time_mapping)
 
             log_fn = (
@@ -484,8 +394,8 @@ class AssetDaemonContext:
             )
 
             evaluations_by_key[asset_key] = evaluation
+            asset_cursors.append(asset_cursor_for_asset)
             will_materialize_mapping[asset_key] = to_materialize_for_asset
-            to_discard.update(to_discard_for_asset)
 
             expected_data_time = get_expected_data_time_for_asset_key(
                 self.asset_graph,
@@ -511,22 +421,18 @@ class AssetDaemonContext:
                     to_materialize_for_neighbor = {
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }
-                    to_discard_for_neighbor = {
-                        ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset
-                    }
 
                     evaluations_by_key[neighbor_key] = evaluation._replace(
                         asset_key=neighbor_key,
                         rule_snapshots=auto_materialize_policy.rule_snapshots,  # Neighbors can have different rule snapshots
                     )
                     will_materialize_mapping[neighbor_key] = to_materialize_for_neighbor
-                    to_discard.update(to_discard_for_neighbor)
 
                     expected_data_time_mapping[neighbor_key] = expected_data_time
                     visited_multi_asset_keys.add(neighbor_key)
 
         to_materialize = set().union(*will_materialize_mapping.values())
-        return (evaluations_by_key, to_materialize, to_discard)
+        return (evaluations_by_key, asset_cursors, to_materialize)
 
     def evaluate(
         self,
@@ -545,8 +451,8 @@ class AssetDaemonContext:
 
         (
             evaluations_by_asset_key,
+            asset_cursors,
             to_materialize,
-            to_discard,
         ) = self.get_auto_materialize_asset_evaluations()
 
         run_requests = [
@@ -558,21 +464,11 @@ class AssetDaemonContext:
             *auto_observe_run_requests,
         ]
 
-        (
-            newly_materialized_root_asset_keys,
-            newly_materialized_root_partitions_by_asset_key,
-        ) = self.get_newly_updated_roots()
-
         return (
             run_requests,
             self.cursor.with_updates(
-                latest_storage_id=self.get_new_latest_storage_id(),
-                to_materialize=to_materialize,
-                to_discard=to_discard,
-                asset_graph=self.asset_graph,
-                newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
-                newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-                evaluation_id=self.cursor.evaluation_id + 1,
+                latest_storage_id=self.get_latest_storage_id(),
+                evaluation_id=self._evaluation_id,
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests
@@ -581,6 +477,7 @@ class AssetDaemonContext:
                 observe_request_timestamp=observe_request_timestamp,
                 evaluations=list(evaluations_by_asset_key.values()),
                 evaluation_time=self.instance_queryer.evaluation_time,
+                asset_cursors=asset_cursors,
             ),
             # only record evaluations where something changed
             [
@@ -723,7 +620,7 @@ def _build_run_requests_with_backfill_policy(
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
     partition_key_ranges = partition_subset.get_partition_key_ranges(
-        dynamic_partitions_store=dynamic_partitions_store
+        partitions_def, dynamic_partitions_store=dynamic_partitions_store
     )
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.

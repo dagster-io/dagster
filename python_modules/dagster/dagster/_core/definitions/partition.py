@@ -1,14 +1,14 @@
 import copy
 import hashlib
 import json
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import (
     datetime,
-    timedelta,
 )
 from enum import Enum
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -18,13 +18,11 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Set,
     Type,
     Union,
     cast,
 )
 
-from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeVar
 
 import dagster._check as check
@@ -110,19 +108,6 @@ class ScheduleType(Enum):
     def ordinal(self):
         return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
 
-    @property
-    def delta(self):
-        if self == ScheduleType.HOURLY:
-            return timedelta(hours=1)
-        elif self == ScheduleType.DAILY:
-            return timedelta(days=1)
-        elif self == ScheduleType.WEEKLY:
-            return timedelta(weeks=1)
-        elif self == ScheduleType.MONTHLY:
-            return relativedelta(months=1)
-        else:
-            check.failed(f"Unexpected ScheduleType {self}")
-
     def __gt__(self, other: "ScheduleType") -> bool:
         check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
         return self.ordinal > other.ordinal
@@ -139,8 +124,8 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     """
 
     @property
-    def partitions_subset_class(self) -> Type["PartitionsSubset[T_str]"]:
-        return DefaultPartitionsSubset[T_str]
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+        return DefaultPartitionsSubset
 
     @abstractmethod
     @public
@@ -217,26 +202,24 @@ class PartitionsDefinition(ABC, Generic[T_str]):
             + 1
         ]
 
-    def empty_subset(self) -> "PartitionsSubset[T_str]":
+    def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
 
-    def subset_with_partition_keys(
-        self, partition_keys: Iterable[str]
-    ) -> "PartitionsSubset[T_str]":
+    def subset_with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         return self.empty_subset().with_partition_keys(partition_keys)
 
     def subset_with_all_partitions(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> "PartitionsSubset[T_str]":
+    ) -> "PartitionsSubset":
         return self.subset_with_partition_keys(
             self.get_partition_keys(
                 current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
             )
         )
 
-    def deserialize_subset(self, serialized: str) -> "PartitionsSubset[T_str]":
+    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return self.partitions_subset_class.from_serialized(self, serialized)
 
     def can_deserialize_subset(
@@ -949,6 +932,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @abstractmethod
     def get_partition_keys_not_in_subset(
         self,
+        partitions_def: PartitionsDefinition[T_str],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[T_str]:
@@ -956,12 +940,13 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @abstractmethod
     @public
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[T_str]:
+    def get_partition_keys(self) -> Iterable[T_str]:
         ...
 
     @abstractmethod
     def get_partition_key_ranges(
         self,
+        partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
@@ -973,11 +958,12 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     def with_partition_key_range(
         self,
+        partitions_def: PartitionsDefinition[T_str],
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset[T_str]":
         return self.with_partition_keys(
-            self.partitions_def.get_partition_keys_in_range(
+            partitions_def.get_partition_keys_in_range(
                 partition_key_range, dynamic_partitions_store=dynamic_partitions_store
             )
         )
@@ -989,15 +975,15 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
         if self is other:
-            return self.partitions_def.empty_subset()
-        return self.partitions_def.empty_subset().with_partition_keys(
+            return self.empty_subset(self.partitions_def)
+        return self.empty_subset(self.partitions_def).with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
         )
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
         if self is other:
             return self
-        return self.partitions_def.empty_subset().with_partition_keys(
+        return self.empty_subset(self.partitions_def).with_partition_keys(
             set(self.get_partition_keys()) & set(other.get_partition_keys())
         )
 
@@ -1023,9 +1009,8 @@ class PartitionsSubset(ABC, Generic[T_str]):
     ) -> bool:
         ...
 
-    @property
-    @abstractmethod
-    def partitions_def(self) -> PartitionsDefinition[T_str]:
+    @abstractproperty
+    def partitions_def(self) -> Optional[PartitionsDefinition[T_str]]:
         ...
 
     @abstractmethod
@@ -1038,8 +1023,13 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @classmethod
     @abstractmethod
-    def empty_subset(cls, partitions_def: PartitionsDefinition[T_str]) -> "PartitionsSubset[T_str]":
+    def empty_subset(
+        cls, partitions_def: Optional[PartitionsDefinition] = None
+    ) -> "PartitionsSubset[T_str]":
         ...
+
+    def to_serializable_subset(self) -> "PartitionsSubset":
+        return self
 
 
 @whitelist_for_serdes
@@ -1078,48 +1068,51 @@ class SerializedPartitionsSubset(NamedTuple):
         return partitions_def.deserialize_subset(self.serialized_subset)
 
 
-class DefaultPartitionsSubset(PartitionsSubset[T_str]):
+@whitelist_for_serdes
+class DefaultPartitionsSubset(
+    PartitionsSubset,
+    NamedTuple("_DefaultPartitionsSubset", [("subset", AbstractSet[str])]),
+):
     # Every time we change the serialization format, we should increment the version number.
     # This will ensure that we can gracefully degrade when deserializing old data.
     SERIALIZATION_VERSION = 1
 
-    def __init__(
-        self, partitions_def: PartitionsDefinition[T_str], subset: Optional[Set[T_str]] = None
+    def __new__(
+        cls,
+        subset: Optional[AbstractSet[str]] = None,
     ):
         check.opt_set_param(subset, "subset")
-        self._partitions_def = partitions_def
-        self._subset = subset or set()
+        return super(DefaultPartitionsSubset, cls).__new__(cls, subset or set())
 
     def get_partition_keys_not_in_subset(
         self,
+        partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
-        return (
-            set(
-                self._partitions_def.get_partition_keys(
-                    current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-                )
+        return set(
+            partitions_def.get_partition_keys(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
             )
-            - self._subset
-        )
+        ) - set(self.subset)
 
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
-        return self._subset
+    def get_partition_keys(self) -> Iterable[str]:
+        return self.subset
 
     def get_partition_key_ranges(
         self,
+        partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        partition_keys = self._partitions_def.get_partition_keys(
+        partition_keys = partitions_def.get_partition_keys(
             current_time, dynamic_partitions_store=dynamic_partitions_store
         )
         cur_range_start = None
         cur_range_end = None
         result = []
         for partition_key in partition_keys:
-            if partition_key in self._subset:
+            if partition_key in self.subset:
                 if cur_range_start is None:
                     cur_range_start = partition_key
                 cur_range_end = partition_key
@@ -1133,12 +1126,9 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
 
         return result
 
-    def with_partition_keys(
-        self, partition_keys: Iterable[T_str]
-    ) -> "DefaultPartitionsSubset[T_str]":
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
-            self._partitions_def,
-            self._subset | set(partition_keys),
+            self.subset | set(partition_keys),
         )
 
     def serialize(self) -> str:
@@ -1148,32 +1138,32 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
             {
                 "version": self.SERIALIZATION_VERSION,
                 # sort to ensure that equivalent partition subsets have identical serialized forms
-                "subset": sorted(list(self._subset)),
+                "subset": sorted(list(self.subset)),
             }
         )
 
     @classmethod
     def from_serialized(
-        cls, partitions_def: PartitionsDefinition[T_str], serialized: str
-    ) -> "PartitionsSubset[T_str]":
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "PartitionsSubset":
         # Check the version number, so only valid versions can be deserialized.
         data = json.loads(serialized)
 
         if isinstance(data, list):
             # backwards compatibility
-            return cls(subset=set(data), partitions_def=partitions_def)
+            return cls(subset=set(data))
         else:
             if data.get("version") != cls.SERIALIZATION_VERSION:
                 raise DagsterInvalidDeserializationVersionError(
                     f"Attempted to deserialize partition subset with version {data.get('version')},"
                     f" but only version {cls.SERIALIZATION_VERSION} is supported."
                 )
-            return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
+            return cls(subset=set(data.get("subset")))
 
     @classmethod
     def can_deserialize(
         cls,
-        partitions_def: PartitionsDefinition[T_str],
+        partitions_def: PartitionsDefinition,
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
@@ -1187,27 +1177,150 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
         )
 
     @property
-    def partitions_def(self) -> PartitionsDefinition[T_str]:
-        return self._partitions_def
+    def partitions_def(self) -> Optional[PartitionsDefinition[T_str]]:
+        return None
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, DefaultPartitionsSubset) and self.subset == other.subset
+
+    def __len__(self) -> int:
+        return len(self.subset)
+
+    def __contains__(self, value) -> bool:
+        return value in self.subset
+
+    def __repr__(self) -> str:
+        return f"DefaultPartitionsSubset(subset={self.subset})"
+
+    @classmethod
+    def empty_subset(
+        cls, partitions_def: Optional[PartitionsDefinition] = None
+    ) -> "DefaultPartitionsSubset":
+        return cls()
+
+
+class AllPartitionsSubset(
+    NamedTuple(
+        "_AllPartitionsSubset",
+        [
+            ("partitions_def", PartitionsDefinition),
+            ("dynamic_partitions_store", "DynamicPartitionsStore"),
+            ("current_time", datetime),
+        ],
+    ),
+    PartitionsSubset,
+):
+    """This is an in-memory (i.e. not serializable) convenience class that represents all partitions
+    of a given PartitionsDefinition, allowing set operations to be taken without having to load
+    all partition keys immediately.
+    """
+
+    def __new__(
+        cls,
+        partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
+    ):
+        return super().__new__(
+            cls,
+            partitions_def=partitions_def,
+            dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
+        )
+
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
+        check.param_invariant(current_time is None, "current_time")
+        return self.partitions_def.get_partition_keys(
+            self.current_time, self.dynamic_partitions_store
+        )
+
+    def get_partition_keys_not_in_subset(
+        self,
+        partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Iterable[str]:
+        return set()
+
+    def get_partition_key_ranges(
+        self,
+        partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[PartitionKeyRange]:
+        check.param_invariant(current_time is None, "current_time")
+        check.param_invariant(dynamic_partitions_store is None, "dynamic_partitions_store")
+        first_key = partitions_def.get_first_partition_key(
+            self.current_time, self.dynamic_partitions_store
+        )
+        last_key = partitions_def.get_last_partition_key(
+            self.current_time, self.dynamic_partitions_store
+        )
+        if first_key and last_key:
+            return [PartitionKeyRange(first_key, last_key)]
+        return []
+
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "AllPartitionsSubset":
+        return self
 
     def __eq__(self, other: object) -> bool:
         return (
-            isinstance(other, DefaultPartitionsSubset)
-            and self._partitions_def == other._partitions_def
-            and self._subset == other._subset
+            isinstance(other, AllPartitionsSubset) and other.partitions_def == self.partitions_def
         )
+
+    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        return other.empty_subset(other.partitions_def).with_partition_keys(
+            set(self.get_partition_keys()) & set(other.get_partition_keys())
+        )
+
+    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self == other:
+            return self.partitions_def.empty_subset()
+        return self.partitions_def.empty_subset().with_partition_keys(
+            set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
+        )
+
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        return self
 
     def __len__(self) -> int:
-        return len(self._subset)
+        return len(self.get_partition_keys())
 
     def __contains__(self, value) -> bool:
-        return value in self._subset
-
-    def __repr__(self) -> str:
-        return (
-            f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
+        return self.partitions_def.has_partition_key(
+            partition_key=value,
+            current_time=self.current_time,
+            dynamic_partitions_store=self.dynamic_partitions_store,
         )
 
+    def __repr__(self) -> str:
+        return f"AllPartitionsSubset(partitions_def={self.partitions_def})"
+
     @classmethod
-    def empty_subset(cls, partitions_def: PartitionsDefinition[T_str]) -> "PartitionsSubset[T_str]":
-        return cls(partitions_def=partitions_def)
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        return False
+
+    def serialize(self) -> str:
+        raise NotImplementedError()
+
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: PartitionsDefinition[T_str], serialized: str
+    ) -> "PartitionsSubset[T_str]":
+        raise NotImplementedError()
+
+    def empty_subset(
+        self, partitions_def: Optional[PartitionsDefinition] = None
+    ) -> PartitionsSubset:
+        return self.partitions_def.empty_subset()
+
+    def to_serializable_subset(self) -> PartitionsSubset:
+        return self.partitions_def.subset_with_partition_keys(
+            self.get_partition_keys()
+        ).to_serializable_subset()

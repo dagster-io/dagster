@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import functools
 from abc import ABC, abstractmethod, abstractproperty
@@ -8,6 +9,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -18,7 +20,7 @@ from typing import (
 import pytz
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluationData,
@@ -33,9 +35,12 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
+from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
@@ -47,95 +52,144 @@ from dagster._utils.schedules import (
 )
 
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
+from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
-    from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-    from dagster._core.definitions.auto_materialize_rule_evaluation import (
-        AutoMaterializeAssetEvaluation,
-    )
+    from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
 
 
 @dataclass(frozen=True)
 class RuleEvaluationContext:
     asset_key: AssetKey
-    cursor: "AssetDaemonCursor"
+    cursor: "AssetDaemonAssetCursor"
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
     # Tracks which asset partitions are already slated for materialization in this tick. The asset
     # keys in the values match the asset key in the corresponding key.
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
-    candidates: AbstractSet[AssetKeyPartitionKey]
+    candidate_subset: AssetSubset
     daemon_context: "AssetDaemonContext"
+
+    def with_candidate_subset(
+        self, candidate_subset: AbstractSet[AssetKeyPartitionKey]
+    ) -> "RuleEvaluationContext":
+        return dataclasses.replace(
+            self,
+            candidate_subset=AssetSubset.from_asset_partitions_set(
+                self.asset_key, self.partitions_def, candidate_subset
+            ),
+        )
 
     @property
     def asset_graph(self) -> AssetGraph:
         return self.instance_queryer.asset_graph
 
     @property
-    def previous_tick_evaluation(self) -> Optional["AutoMaterializeAssetEvaluation"]:
-        """Returns the evaluation of the asset on the previous tick."""
-        return self.cursor.latest_evaluation_by_asset_key.get(self.asset_key)
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self.asset_graph.get_partitions_def(self.asset_key)
 
     @property
     def evaluation_time(self) -> datetime.datetime:
         """Returns the time at which this rule is being evaluated."""
         return self.instance_queryer.evaluation_time
 
+    @property
+    def auto_materialize_run_tags(self) -> Mapping[str, str]:
+        return {
+            AUTO_MATERIALIZE_TAG: "true",
+            **self.instance_queryer.instance.auto_materialize_run_tags,
+        }
+
     @functools.cached_property
-    def previous_tick_requested_or_discarded_asset_partitions(
-        self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    def previous_tick_requested_or_discarded_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were requested or discarded on the previous tick."""
-        if not self.previous_tick_evaluation:
-            return set()
-        return self.previous_tick_evaluation.get_requested_or_discarded_asset_partitions(
+        if not self.cursor.latest_evaluation:
+            return self.empty_subset()
+        return self.cursor.latest_evaluation.get_requested_or_discarded_subset(
             asset_graph=self.asset_graph
         )
 
     @functools.cached_property
-    def previous_tick_evaluated_asset_partitions(
-        self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    def previous_tick_evaluated_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were evaluated on the previous tick."""
-        if not self.previous_tick_evaluation:
-            return set()
-        return self.previous_tick_evaluation.get_evaluated_asset_partitions(
-            asset_graph=self.asset_graph
-        )
+        if not self.cursor.latest_evaluation:
+            return self.empty_subset()
+        return self.cursor.latest_evaluation.get_evaluated_subset(asset_graph=self.asset_graph)
 
-    def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
-        """Returns the results that were calculated for a given rule on the previous tick."""
-        if not self.previous_tick_evaluation:
-            return []
-        return self.previous_tick_evaluation.get_rule_evaluation_results(
-            rule_snapshot=rule.to_snapshot(), asset_graph=self.asset_graph
-        )
-
-    def get_candidates_not_evaluated_by_rule_on_previous_tick(
-        self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        """Returns the set of candidates that were not evaluated by the rule that is currently being
-        evaluated on the previous tick.
-
-        Any asset partition that was evaluated by any rule on the previous tick must have been
-        evaluated by *all* skip rules.
-        """
-        return self.candidates - self.previous_tick_evaluated_asset_partitions
-
-    def get_candidates_with_updated_or_will_update_parents(
-        self,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    @functools.cached_property
+    def candidate_has_parents_that_have_or_will_update_subset(self) -> AssetSubset:
         """Returns the set of candidate asset partitions whose parents have been updated since the
         last tick or will be requested on this tick.
 
         Many rules depend on the state of the asset's parents, so this function is useful for
         finding asset partitions that should be re-evaluated.
         """
-        updated_parents = self.get_asset_partitions_with_updated_parents_since_previous_tick()
-        will_update_parents = set(self.get_will_update_parent_mapping().keys())
-        return self.candidates & (updated_parents | will_update_parents)
+        subset_with_parents_which_will_update = AssetSubset.from_asset_partitions_set(
+            self.asset_key, self.partitions_def, set(self.get_will_update_parent_mapping().keys())
+        )
+        return self.candidate_subset & (
+            self.subset_with_updated_parents_since_previous_tick
+            | subset_with_parents_which_will_update
+        )
+
+    @functools.cached_property
+    def candidate_not_evaluated_on_previous_tick_subset(self) -> AssetSubset:
+        """Returns the set of candidates that were not evaluated by the rule that is currently being
+        evaluated on the previous tick.
+
+        Any asset partition that was evaluated by any rule on the previous tick must have been
+        evaluated by *all* skip rules.
+        """
+        return self.candidate_subset - self.previous_tick_evaluated_subset
+
+    @functools.cached_property
+    def newly_materialized_root_subset(self) -> AssetSubset:
+        if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
+            return self.empty_subset()
+        newly_materialized = set()
+        for asset_partition in self.cursor.materialized_requested_or_discarded_subset.inverse(
+            self.partitions_def,
+            dynamic_partitions_store=self.instance_queryer,
+            current_time=self.instance_queryer.evaluation_time,
+        ).asset_partitions:
+            if self.instance_queryer.asset_partition_has_materialization_or_observation(
+                asset_partition
+            ):
+                newly_materialized.add(asset_partition)
+
+        return AssetSubset.from_asset_partitions_set(
+            self.asset_key, self.partitions_def, newly_materialized
+        )
+
+    @functools.cached_property
+    def never_materialized_requested_or_discarded_root_subset(self) -> AssetSubset:
+        if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
+            return self.empty_subset()
+
+        never_materialized = self.cursor.materialized_requested_or_discarded_subset.inverse(
+            self.partitions_def,
+            dynamic_partitions_store=self.instance_queryer,
+            current_time=self.instance_queryer.evaluation_time,
+        ).asset_partitions
+        return (
+            AssetSubset.from_asset_partitions_set(
+                self.asset_key, self.partitions_def, never_materialized
+            )
+            - self.newly_materialized_root_subset
+        )
+
+    def empty_subset(self) -> AssetSubset:
+        return AssetSubset.empty(self.asset_key, self.partitions_def)
+
+    def get_previous_tick_results(self, rule: "AutoMaterializeRule") -> "RuleEvaluationResults":
+        """Returns the results that were calculated for a given rule on the previous tick."""
+        if not self.cursor.latest_evaluation:
+            return []
+        return self.cursor.latest_evaluation.get_rule_evaluation_results(
+            rule_snapshot=rule.to_snapshot(), asset_graph=self.asset_graph
+        )
 
     def materialized_requested_or_discarded_since_previous_tick(
         self, asset_partition: AssetKeyPartitionKey
@@ -143,7 +197,7 @@ class RuleEvaluationContext:
         """Returns whether an asset partition has been materialized, requested, or discarded since
         the last tick.
         """
-        if asset_partition in self.previous_tick_requested_or_discarded_asset_partitions:
+        if asset_partition in self.previous_tick_requested_or_discarded_subset:
             return True
         return self.instance_queryer.asset_partition_has_materialization_or_observation(
             asset_partition, after_cursor=self.cursor.latest_storage_id
@@ -193,14 +247,19 @@ class RuleEvaluationContext:
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
-    def get_asset_partitions_with_updated_parents_since_previous_tick(
-        self
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    @functools.cached_property
+    def subset_with_updated_parents_since_previous_tick(self) -> AssetSubset:
         """Returns the set of asset partitions for the current key which have parents that updated
         since the last tick.
         """
-        return self.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
-            self.asset_key
+        return AssetSubset.from_asset_partitions_set(
+            self.asset_key,
+            self.partitions_def,
+            self.instance_queryer.asset_partitions_with_newly_updated_parents(
+                latest_storage_id=self.cursor.latest_storage_id,
+                child_asset_key=self.asset_key,
+                map_old_time_partitions=False,
+            ),
         )
 
     def get_will_update_parent_mapping(
@@ -223,9 +282,13 @@ class RuleEvaluationContext:
 
         return will_update_parents_by_asset_partition
 
+    def will_update_asset_partition(self, asset_partition: AssetKeyPartitionKey) -> bool:
+        return asset_partition in self.will_materialize_mapping.get(
+            asset_partition.asset_key, set()
+        )
+
     def get_asset_partitions_by_asset_key(
-        self,
-        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
     ) -> Mapping[AssetKey, Set[AssetKeyPartitionKey]]:
         asset_partitions_by_asset_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for parent in asset_partitions:
@@ -338,14 +401,21 @@ class AutoMaterializeRule(ABC):
 
     @public
     @staticmethod
-    def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
+    def materialize_on_parent_updated(
+        updated_parent_filter: Optional["AutoMaterializeAssetPartitionsFilter"] = None
+    ) -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.
 
         Note: For time-partitioned or dynamic-partitioned assets downstream of an unpartitioned
         asset, this rule will only fire for the most recent partition of the downstream.
+
+        Args:
+            updated_parent_filter (Optional[AutoMaterializeAssetPartitionsFilter]): Filter to apply
+                to updated parents. If a parent was updated but does not pass the filter criteria,
+                then it won't count as updated for the sake of this rule.
         """
-        return MaterializeOnParentUpdatedRule()
+        return MaterializeOnParentUpdatedRule(updated_parent_filter=updated_parent_filter)
 
     @public
     @staticmethod
@@ -562,32 +632,112 @@ class MaterializeOnCronRule(
 
 
 @whitelist_for_serdes
-class MaterializeOnParentUpdatedRule(
-    AutoMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
+@experimental
+class AutoMaterializeAssetPartitionsFilter(
+    NamedTuple(
+        "_AutoMaterializeAssetPartitionsFilter",
+        [("latest_run_required_tags", Optional[Mapping[str, str]])],
+    )
 ):
+    """A filter that can be applied to an asset partition, during auto-materialize evaluation, and
+    returns a boolean for whether it passes.
+
+    Attributes:
+        latest_run_required_tags (Optional[Sequence[str]]): `passes` returns
+            True if the run responsible for the latest materialization of the asset partition
+            has all of these tags.
+    """
+
+    @property
+    def description(self) -> str:
+        return f"latest run includes required tags: {self.latest_run_required_tags}"
+
+    def passes(
+        self, context: RuleEvaluationContext, asset_partitions: Iterable[AssetKeyPartitionKey]
+    ) -> Iterable[AssetKeyPartitionKey]:
+        if self.latest_run_required_tags is None:
+            return asset_partitions
+
+        will_update_asset_partitions: Set[AssetKeyPartitionKey] = set()
+
+        asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
+        for asset_partition in asset_partitions:
+            if context.will_update_asset_partition(asset_partition):
+                will_update_asset_partitions.add(asset_partition)
+            else:
+                record = context.instance_queryer.get_latest_materialization_or_observation_record(
+                    asset_partition
+                )
+
+                if record is None:
+                    raise RuntimeError(
+                        f"No materialization record found for asset partition {asset_partition}"
+                    )
+
+                asset_partitions_by_latest_run_id[record.run_id].add(asset_partition)
+
+        if len(asset_partitions_by_latest_run_id) > 0:
+            run_ids_with_required_tags = context.instance_queryer.instance.get_run_ids(
+                filters=RunsFilter(
+                    run_ids=list(asset_partitions_by_latest_run_id.keys()),
+                    tags=self.latest_run_required_tags,
+                )
+            )
+        else:
+            run_ids_with_required_tags = set()
+
+        updated_partitions_with_required_tags = {
+            asset_partition
+            for run_id, run_id_asset_partitions in asset_partitions_by_latest_run_id.items()
+            if run_id in run_ids_with_required_tags
+            for asset_partition in run_id_asset_partitions
+        }
+
+        if self.latest_run_required_tags.items() <= context.auto_materialize_run_tags.items():
+            return will_update_asset_partitions | updated_partitions_with_required_tags
+        else:
+            return updated_partitions_with_required_tags
+
+    def __hash__(self):
+        return hash(frozenset((self.latest_run_required_tags or {}).items()))
+
+
+@whitelist_for_serdes
+class MaterializeOnParentUpdatedRule(
+    AutoMaterializeRule,
+    NamedTuple(
+        "_MaterializeOnParentUpdatedRule",
+        [("updated_parent_filter", Optional[AutoMaterializeAssetPartitionsFilter])],
+    ),
+):
+    def __new__(cls, updated_parent_filter: Optional[AutoMaterializeAssetPartitionsFilter] = None):
+        return super().__new__(cls, updated_parent_filter=updated_parent_filter)
+
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
     @property
     def description(self) -> str:
-        return "upstream data has changed since latest materialization"
+        base = "upstream data has changed since latest materialization"
+        if self.updated_parent_filter is not None:
+            return f"{base} and matches filter '{self.updated_parent_filter.description}'"
+        else:
+            return base
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
-        asset_partitions_by_evaluation_data = defaultdict(set)
+        asset_partitions_by_updated_parents: Mapping[
+            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
+        ] = defaultdict(set)
+        asset_partitions_by_will_update_parents: Mapping[
+            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
+        ] = defaultdict(set)
 
-        will_update_parents_by_asset_partition = context.get_will_update_parent_mapping()
-
-        # the set of asset partitions whose parents have been updated since last tick, or will be
-        # requested this tick.
-        has_or_will_update = (
-            context.get_asset_partitions_with_updated_parents_since_previous_tick()
-            | set(will_update_parents_by_asset_partition.keys())
-        )
-        for asset_partition in has_or_will_update:
+        subset_to_evaluate = context.candidate_has_parents_that_have_or_will_update_subset
+        for asset_partition in subset_to_evaluate.asset_partitions:
             parent_asset_partitions = context.asset_graph.get_parents_partitions(
                 dynamic_partitions_store=context.instance_queryer,
                 current_time=context.instance_queryer.evaluation_time,
@@ -601,21 +751,63 @@ class MaterializeOnParentUpdatedRule(
                 # do a precise check for updated parents, factoring in data versions, as long as
                 # we're within reasonable limits on the number of partitions to check
                 respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
-                and len(parent_asset_partitions | has_or_will_update) < 100,
+                and len(parent_asset_partitions) + subset_to_evaluate.size < 100,
                 # ignore self-dependencies when checking for updated parents, to avoid historical
                 # rematerializations from causing a chain of materializations to be kicked off
                 ignored_parent_keys={context.asset_key},
             )
-            updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
-            will_update_parents = will_update_parents_by_asset_partition[asset_partition]
+            for parent in updated_parent_asset_partitions:
+                asset_partitions_by_updated_parents[parent].add(asset_partition)
 
-            if updated_parents or will_update_parents:
-                asset_partitions_by_evaluation_data[
-                    ParentUpdatedRuleEvaluationData(
-                        updated_asset_keys=frozenset(updated_parents),
-                        will_update_asset_keys=frozenset(will_update_parents),
-                    )
-                ].add(asset_partition)
+            for parent in parent_asset_partitions:
+                if context.will_update_asset_partition(parent):
+                    asset_partitions_by_will_update_parents[parent].add(asset_partition)
+
+        updated_and_will_update_parents = (
+            asset_partitions_by_updated_parents.keys()
+            | asset_partitions_by_will_update_parents.keys()
+        )
+        filtered_updated_and_will_update_parents = (
+            self.updated_parent_filter.passes(context, updated_and_will_update_parents)
+            if self.updated_parent_filter
+            else updated_and_will_update_parents
+        )
+
+        updated_parent_assets_by_asset_partition: Dict[
+            AssetKeyPartitionKey, Set[AssetKey]
+        ] = defaultdict(set)
+        will_update_parent_assets_by_asset_partition: Dict[
+            AssetKeyPartitionKey, Set[AssetKey]
+        ] = defaultdict(set)
+
+        for updated_or_will_update_parent in filtered_updated_and_will_update_parents:
+            for child in asset_partitions_by_updated_parents.get(updated_or_will_update_parent, []):
+                updated_parent_assets_by_asset_partition[child].add(
+                    updated_or_will_update_parent.asset_key
+                )
+
+            for child in asset_partitions_by_will_update_parents.get(
+                updated_or_will_update_parent, []
+            ):
+                will_update_parent_assets_by_asset_partition[child].add(
+                    updated_or_will_update_parent.asset_key
+                )
+
+        asset_partitions_by_evaluation_data = defaultdict(set)
+        for asset_partition in (
+            updated_parent_assets_by_asset_partition.keys()
+            | will_update_parent_assets_by_asset_partition.keys()
+        ):
+            asset_partitions_by_evaluation_data[
+                ParentUpdatedRuleEvaluationData(
+                    updated_asset_keys=frozenset(
+                        updated_parent_assets_by_asset_partition.get(asset_partition, [])
+                    ),
+                    will_update_asset_keys=frozenset(
+                        will_update_parent_assets_by_asset_partition.get(asset_partition, [])
+                    ),
+                )
+            ].add(asset_partition)
 
         return self.add_evaluation_data_from_previous_tick(
             context,
@@ -644,17 +836,11 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         asset_partitions_by_evaluation_data = defaultdict(set)
 
         missing_asset_partitions = set(
-            context.daemon_context.get_never_handled_root_asset_partitions_for_key(
-                context.asset_key
-            )
+            context.never_materialized_requested_or_discarded_root_subset.asset_partitions
         )
         # in addition to missing root asset partitions, check any asset partitions with updated
         # parents to see if they're missing
-        for (
-            candidate
-        ) in context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
-            context.asset_key
-        ):
+        for candidate in context.subset_with_updated_parents_since_previous_tick.asset_partitions:
             if not context.instance_queryer.asset_partition_has_materialization_or_observation(
                 candidate
             ):
@@ -685,11 +871,11 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         asset_partitions_by_evaluation_data = defaultdict(set)
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
-        candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_by_rule_on_previous_tick()
-            | context.get_candidates_with_updated_or_will_update_parents()
+        subset_to_evaluate = (
+            context.candidate_not_evaluated_on_previous_tick_subset
+            | context.candidate_has_parents_that_have_or_will_update_subset
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in subset_to_evaluate.asset_partitions:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
@@ -710,7 +896,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate,
+            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
         )
 
 
@@ -731,11 +917,11 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         asset_partitions_by_evaluation_data = defaultdict(set)
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
-        candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_by_rule_on_previous_tick()
-            | context.get_candidates_with_updated_or_will_update_parents()
+        subset_to_evaluate = (
+            context.candidate_not_evaluated_on_previous_tick_subset
+            | context.candidate_has_parents_that_have_or_will_update_subset
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in subset_to_evaluate.asset_partitions:
             missing_parent_asset_keys = set()
             for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
@@ -757,7 +943,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate,
+            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
         )
 
 
@@ -798,11 +984,11 @@ class SkipOnNotAllParentsUpdatedRule(
         asset_partitions_by_evaluation_data = defaultdict(set)
 
         # only need to evaluate net-new candidates and candidates whose parents have changed
-        candidates_to_evaluate = (
-            context.get_candidates_not_evaluated_by_rule_on_previous_tick()
-            | context.get_candidates_with_updated_or_will_update_parents()
+        subset_to_evaluate = (
+            context.candidate_not_evaluated_on_previous_tick_subset
+            | context.candidate_has_parents_that_have_or_will_update_subset
         )
-        for candidate in candidates_to_evaluate:
+        for candidate in subset_to_evaluate.asset_partitions:
             parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -854,7 +1040,7 @@ class SkipOnNotAllParentsUpdatedRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate,
+            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
         )
 
 
@@ -873,8 +1059,11 @@ class SkipOnRequiredButNonexistentParentsRule(
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         asset_partitions_by_evaluation_data = defaultdict(set)
 
-        candidates_to_evaluate = context.get_candidates_not_evaluated_by_rule_on_previous_tick()
-        for candidate in candidates_to_evaluate:
+        subset_to_evaluate = (
+            context.candidate_not_evaluated_on_previous_tick_subset
+            | context.candidate_has_parents_that_have_or_will_update_subset
+        )
+        for candidate in subset_to_evaluate.asset_partitions:
             nonexistent_parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -891,7 +1080,7 @@ class SkipOnRequiredButNonexistentParentsRule(
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in candidates_to_evaluate,
+            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
         )
 
 
@@ -920,12 +1109,14 @@ class SkipOnBackfillInProgressRule(
         if self.all_partitions:
             backfill_in_progress_candidates = {
                 candidate
-                for candidate in context.candidates
+                for candidate in context.candidate_subset.asset_partitions
                 if candidate.asset_key in backfilling_subset.asset_keys
             }
         else:
             backfill_in_progress_candidates = {
-                candidate for candidate in context.candidates if candidate in backfilling_subset
+                candidate
+                for candidate in context.candidate_subset.asset_partitions
+                if candidate in backfilling_subset
             }
 
         if backfill_in_progress_candidates:
@@ -950,7 +1141,7 @@ class DiscardOnMaxMaterializationsExceededRule(
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
             sorted(
-                context.candidates,
+                context.candidate_subset.asset_partitions,
                 key=lambda x: sort_key_for_asset_partition(context.asset_graph, x),
             )[self.limit :]
         )

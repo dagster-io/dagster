@@ -436,23 +436,6 @@ class DagsterRun(
         return {BACKFILL_ID_TAG: backfill_id}
 
 
-class RunsFilterSerializer(NamedTupleSerializer["RunsFilter"]):
-    def before_unpack(
-        self,
-        context,
-        unpacked_dict: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        # We store empty run ids as [] but only accept None
-        if "run_ids" in unpacked_dict and unpacked_dict["run_ids"] == []:
-            unpacked_dict["run_ids"] = None
-        return unpacked_dict
-
-
-@whitelist_for_serdes(
-    serializer=RunsFilterSerializer,
-    old_storage_names={"PipelineRunsFilter"},
-    storage_field_names={"job_name": "pipeline_name"},
-)
 class RunsFilter(
     NamedTuple(
         "_RunsFilter",

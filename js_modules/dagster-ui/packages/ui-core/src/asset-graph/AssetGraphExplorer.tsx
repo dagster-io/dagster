@@ -41,7 +41,7 @@ import {Loading} from '../ui/Loading';
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
-import {AssetNode, AssetNodeMinimal} from './AssetNode';
+import {AssetNode, AssetNodeMinimal, AssetNodeContextMenuWrapper} from './AssetNode';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ExpandedGroupNode} from './ExpandedGroupNode';
 import {AssetNodeLink} from './ForeignNode';
@@ -487,6 +487,13 @@ const AssetGraphExplorerWithData = ({
                         return;
                       }
 
+                      const contextMenuProps = {
+                        graphData: fullAssetGraphData,
+                        node: graphNode,
+                        explorerPath,
+                        onChangeExplorerPath,
+                        selectNode: selectNodeById,
+                      };
                       return (
                         <foreignObject
                           {...bounds}
@@ -503,15 +510,20 @@ const AssetGraphExplorerWithData = ({
                           {!graphNode ? (
                             <AssetNodeLink assetKey={{path}} />
                           ) : scale < MINIMAL_SCALE ? (
-                            <AssetNodeMinimal
-                              definition={graphNode.definition}
-                              selected={selectedGraphNodes.includes(graphNode)}
-                            />
+                            <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                              <AssetNodeMinimal
+                                definition={graphNode.definition}
+                                selected={selectedGraphNodes.includes(graphNode)}
+                                height={bounds.height}
+                              />
+                            </AssetNodeContextMenuWrapper>
                           ) : (
-                            <AssetNode
-                              definition={graphNode.definition}
-                              selected={selectedGraphNodes.includes(graphNode)}
-                            />
+                            <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                              <AssetNode
+                                definition={graphNode.definition}
+                                selected={selectedGraphNodes.includes(graphNode)}
+                              />
+                            </AssetNodeContextMenuWrapper>
                           )}
                         </foreignObject>
                       );
@@ -587,6 +599,7 @@ const AssetGraphExplorerWithData = ({
                   ? {selected: selectedDefinitions}
                   : {all: allDefinitionsForMaterialize}
               }
+              showChangedAndMissingOption
             />
           </TopbarWrapper>
         </ErrorBoundary>

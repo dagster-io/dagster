@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
@@ -154,6 +154,10 @@ export const AssetMaterializationUpstreamData = ({
     variables: {assetKey: {path: assetKey.path}, timestamp},
     skip: !timestamp,
   });
+
+  if (!timestamp) {
+    return <Caption color={Colors.Gray500}>None</Caption>;
+  }
 
   const data =
     result.data?.assetNodeOrError.__typename === 'AssetNode'

@@ -379,15 +379,6 @@ export const KNOWN_TAGS = {
   expand: {color: '#D7A540', content: 'Expand'},
 };
 
-function generateColorForLabel(label = '') {
-  return `hsl(${
-    label
-      .split('')
-      .map((c) => c.charCodeAt(0))
-      .reduce((n, a) => n + a, 0) % 360
-  }, 75%, 45%)`;
-}
-
 // google-sheets to googlesheets, Duckdb to duckdb
 function coerceToStandardLabel(label: string) {
   return label.replace(/[ _-]/g, '').toLowerCase();
@@ -427,7 +418,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
         const text = known?.content || tag.label;
-        const color = known?.color || generateColorForLabel(tag.label);
+        const color = known?.color || Colors.Gray600;
         const textcolor = known && 'reversed' in known ? Colors.Gray900 : Colors.White;
         return (
           <Box

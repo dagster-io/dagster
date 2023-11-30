@@ -949,7 +949,10 @@
           {
             "title": "Dagster Pipes + Databricks",
             "path": "/guides/dagster-pipes/databricks"
-
+          },
+          {
+            "title": "Dagster Pipes + Kubernetes",
+            "path": "/guides/dagster-pipes/kubernetes"
           },
           {
             "title": "Details and customization",
@@ -1019,10 +1022,6 @@
           {
             "title": "Experimental features",
             "children": [
-              {
-                "title": "Using custom run coordinators",
-                "path": "/guides/dagster/run-attribution"
-              },
               {
                 "title": "Airbyte ingestion as code",
                 "path": "/guides/dagster/airbyte-ingestion-as-code"

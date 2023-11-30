@@ -417,7 +417,7 @@ def validate_and_get_resource_dict(
                 f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
             )
 
-    return {k: getattr(resources, k) for k in required_resource_keys}
+    return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
 def _check_dynamic_partitions_requests(
@@ -753,11 +753,13 @@ class SensorDefinition(IHasInternalInit):
                 )
                 dynamic_partitions_requests = item.dynamic_partitions_requests or []
 
-                if item.cursor and context.cursor_updated:
+                if context.cursor_updated and item.cursor:
                     raise DagsterInvariantViolationError(
                         "SensorResult.cursor cannot be set if context.update_cursor() was called."
                     )
-                updated_cursor = item.cursor
+                elif item.cursor:
+                    updated_cursor = item.cursor  # overwrite value set from context above
+
                 asset_events = item.asset_events
 
             elif isinstance(item, RunRequest):

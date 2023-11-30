@@ -188,7 +188,7 @@ class _PipesDockerClient(PipesClient):
                     raise DagsterPipesError(f"Container exited with non-zero status code: {result}")
             finally:
                 container.stop()
-        return PipesClientCompletedInvocation(tuple(pipes_session.get_results()))
+        return PipesClientCompletedInvocation(pipes_session)
 
     def _create_container(
         self,

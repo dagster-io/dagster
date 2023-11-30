@@ -679,10 +679,12 @@ def test_asset_check_multiple_jobs():
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-
+    assert external_repo_data.external_asset_checks
     assert len(external_repo_data.external_asset_checks) == 2
     assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
     assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
+    assert external_repo_data.external_asset_checks[0].job_names == ["__ASSET_JOB"]
+    assert external_repo_data.external_asset_checks[1].job_names == ["__ASSET_JOB", "my_job"]
 
 
 def test_repository_snap_definitions_resources_schedule_sensor_usage():

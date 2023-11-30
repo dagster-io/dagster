@@ -12,6 +12,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
 from .metadata import RawMetadataValue
+from .policy import RetryPolicy
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
@@ -44,6 +45,7 @@ class UnresolvedAssetJobDefinition(
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("executor_def", Optional["ExecutorDefinition"]),
             ("hooks", Optional[AbstractSet["HookDefinition"]]),
+            ("op_retry_policy", Optional["RetryPolicy"]),
         ],
     )
 ):
@@ -60,6 +62,7 @@ class UnresolvedAssetJobDefinition(
         partitions_def: Optional["PartitionsDefinition"] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet["HookDefinition"]] = None,
+        op_retry_policy: Optional["RetryPolicy"] = None,
     ):
         from dagster._core.definitions import (
             AssetSelection,
@@ -82,6 +85,7 @@ class UnresolvedAssetJobDefinition(
             ),
             executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
             hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
+            op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy),
         )
 
     @deprecated(
@@ -229,6 +233,7 @@ class UnresolvedAssetJobDefinition(
             partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
             hooks=self.hooks,
+            op_retry_policy=self.op_retry_policy,
             resource_defs=resource_defs,
         )
 
@@ -245,6 +250,7 @@ def define_asset_job(
     partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet["HookDefinition"]] = None,
+    op_retry_policy: Optional["RetryPolicy"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
@@ -302,6 +308,8 @@ def define_asset_job(
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
+            Only used if retry policy is not defined on the asset definition.
 
 
     Returns:
@@ -376,4 +384,5 @@ def define_asset_job(
         partitions_def=partitions_def,
         executor_def=executor_def,
         hooks=hooks,
+        op_retry_policy=op_retry_policy,
     )

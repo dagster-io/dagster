@@ -68,7 +68,7 @@ export const AssetEventDetail = ({
         {event.partition && (
           <Box flex={{gap: 4, direction: 'column'}}>
             <Subheading>Partition</Subheading>
-            <Box flex={{gap: 4}}>{event.partition}</Box>
+            <Link to={`?view=partitions&partition=${event.partition}`}>{event.partition}</Link>
           </Box>
         )}
         <Box flex={{gap: 4, direction: 'column'}} style={{minHeight: 64}}>

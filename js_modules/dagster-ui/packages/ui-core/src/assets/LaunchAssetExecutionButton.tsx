@@ -163,6 +163,7 @@ export const LaunchAssetExecutionButton = ({
   preferredJobName,
   additionalDropdownOptions,
   intent = 'primary',
+  showChangedAndMissingOption,
 }: {
   scope: AssetsInScope;
   intent?: 'primary' | 'none';
@@ -172,6 +173,7 @@ export const LaunchAssetExecutionButton = ({
     icon?: JSX.Element;
     onClick: () => void;
   }[];
+  showChangedAndMissingOption?: boolean;
 }) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
@@ -254,7 +256,7 @@ export const LaunchAssetExecutionButton = ({
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
-              {inScope.length && 'all' in scope ? (
+              {showChangedAndMissingOption && 'all' in scope ? (
                 <MenuItem
                   text="Materialize changed and missing"
                   icon="changes_present"
@@ -535,7 +537,9 @@ async function stateForLaunchingAssets(
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
         assetChecksAvailable: assets.flatMap((a) =>
           a.assetChecksOrError.__typename === 'AssetChecks'
-            ? a.assetChecksOrError.checks.map((check) => ({...check, assetKey: a.assetKey}))
+            ? a.assetChecksOrError.checks
+                .filter((check) => check.jobNames.includes(jobName))
+                .map((check) => ({...check, assetKey: a.assetKey}))
             : [],
         ),
         includeSeparatelyExecutableChecks: true,
@@ -654,7 +658,7 @@ export function executionParamsForAssetJob(
       repositoryName: repoAddress.name,
       pipelineName: jobName,
       assetSelection: assets.map(asAssetKeyInput),
-      assetCheckSelection: getAssetCheckHandleInputs(assets),
+      assetCheckSelection: getAssetCheckHandleInputs(assets, jobName),
     },
   };
 }
@@ -729,6 +733,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
         checks {
           name
           canExecuteIndividually
+          jobNames
         }
       }
     }

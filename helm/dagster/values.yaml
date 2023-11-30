@@ -1,4 +1,3 @@
-# yamllint disable rule:line-length
 # README:
 # - If using a fixed tag for images, changing the image pull policy to anything other than "Always"
 #   will use a cached/stale image.
@@ -424,15 +423,20 @@ scheduler:
   #   CustomScheduler,
   #  ]
   type: DagsterDaemonScheduler
+  config:
+    {}
+    ## This configuration will only be used if the DagsterDaemonScheduler is selected.
+    # daemonScheduler:
+    #   maxCatchupRuns: 5
+    #   maxTickRetries: 0
 
-  config: {}
-  ## Uncomment this configuration will only be used if the CustomScheduler is selected.
-  ## Using this setting requires a custom webserver image that defines the user specified
-  ## scheduler in an installed python module.
-  #   customScheduler:
-  #     module: ~
-  #     class: ~
-  #     config: {}
+    ## This configuration will only be used if the CustomScheduler is selected.
+    ## Using this setting requires a custom webserver image that defines the user specified
+    ## scheduler in an installed python module.
+    #   customScheduler:
+    #     module: ~
+    #     class: ~
+    #     config: {}
 
 ####################################################################################################
 # Run Launcher: Configuration for run launcher

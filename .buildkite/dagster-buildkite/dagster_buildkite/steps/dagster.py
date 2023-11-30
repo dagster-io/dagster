@@ -13,7 +13,9 @@ from ..utils import (
     is_feature_branch,
     is_release_branch,
     safe_getenv,
+    skip_if_no_non_docs_markdown_changes,
     skip_if_no_python_changes,
+    skip_if_no_yaml_changes,
 )
 from .helm import build_helm_steps
 from .integration import build_integration_steps
@@ -31,6 +33,7 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
         *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
+        *build_repo_wide_prettier_steps(),
     ]
 
 
@@ -66,6 +69,21 @@ def build_repo_wide_ruff_steps() -> List[CommandStep]:
         )
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_python_changes())
+        .build(),
+    ]
+
+
+def build_repo_wide_prettier_steps() -> List[CommandStep]:
+    return [
+        CommandStepBuilder(":prettier: prettier")
+        .run(
+            "pushd js_modules/dagster-ui/packages/eslint-config",
+            "yarn install",
+            "popd",
+            "make check_prettier",
+        )
+        .on_test_image(AvailablePythonVersion.get_default())
+        .with_skip(skip_if_no_yaml_changes() and skip_if_no_non_docs_markdown_changes())
         .build(),
     ]
 

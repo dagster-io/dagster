@@ -14,6 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
@@ -92,7 +93,9 @@ class WaitingOnAssetsRuleEvaluationData(
     pass
 
 
-RuleEvaluationResults = Sequence[Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet]]
+RuleEvaluationResults = Sequence[
+    Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
+]
 
 
 @whitelist_for_serdes
@@ -194,22 +197,15 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         rule_evaluation: AutoMaterializeRuleEvaluation,
         serialized_subset: Optional[SerializedPartitionsSubset],
         asset_graph: AssetGraph,
-    ) -> Optional[
-        Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
-    ]:
+    ) -> Optional[Tuple[Optional[AutoMaterializeRuleEvaluationData], AssetSubset]]:
         partitions_def = asset_graph.get_partitions_def(self.asset_key)
         if serialized_subset is None:
             if partitions_def is None:
-                return (rule_evaluation.evaluation_data, {AssetKeyPartitionKey(self.asset_key)})
+                return (rule_evaluation.evaluation_data, AssetSubset(self.asset_key, True))
         elif serialized_subset.can_deserialize(partitions_def) and partitions_def is not None:
             return (
                 rule_evaluation.evaluation_data,
-                {
-                    AssetKeyPartitionKey(self.asset_key, partition_key)
-                    for partition_key in serialized_subset.deserialize(
-                        partitions_def=partitions_def
-                    ).get_partition_keys()
-                },
+                AssetSubset(self.asset_key, serialized_subset.deserialize(partitions_def)),
             )
         # old serialized result is no longer valid
         return None
@@ -227,14 +223,14 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 rule_evaluation, serialized_subset, asset_graph
             )
             if deserialized_result:
-                results.append(deserialized_result)
+                results.append((deserialized_result[0], deserialized_result[1].asset_partitions))
         return results
 
-    def _get_asset_partitions_with_decision_type(
+    def _get_subset_with_decision_type(
         self, decision_type: AutoMaterializeDecisionType, asset_graph: AssetGraph
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> AssetSubset:
         """Returns the set of asset partitions with a given decision type applied to them."""
-        asset_partitions = set()
+        subset = AssetSubset.empty(self.asset_key, asset_graph.get_partitions_def(self.asset_key))
         for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
             if rule_evaluation.rule_snapshot.decision_type != decision_type:
                 continue
@@ -243,32 +239,28 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             )
             if deserialized_result is None:
                 continue
-            asset_partitions.update(deserialized_result[1])
-        return asset_partitions
+            subset |= deserialized_result[1]
+        return subset
 
-    def get_requested_or_discarded_asset_partitions(
-        self, asset_graph: AssetGraph
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    def get_requested_or_discarded_subset(self, asset_graph: AssetGraph) -> AssetSubset:
         """Returns the set of asset partitions which were either requested or discarded on this
         evaluation.
         """
-        to_materialize = self._get_asset_partitions_with_decision_type(
-            AutoMaterializeDecisionType.MATERIALIZE, asset_graph
+        to_materialize = self._get_subset_with_decision_type(
+            AutoMaterializeDecisionType.MATERIALIZE,
+            asset_graph,
         )
-        if not to_materialize:
-            return set()
-        to_skip = self._get_asset_partitions_with_decision_type(
-            AutoMaterializeDecisionType.SKIP, asset_graph
+        to_skip = self._get_subset_with_decision_type(
+            AutoMaterializeDecisionType.SKIP,
+            asset_graph,
         )
         return to_materialize - to_skip
 
-    def get_evaluated_asset_partitions(
-        self, asset_graph: AssetGraph
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    def get_evaluated_subset(self, asset_graph: AssetGraph) -> AssetSubset:
         """Returns the set of asset partitions which were evaluated by any rule on this evaluation."""
         # no asset partition can be evaluated by SKIP or DISCARD rules without having at least one
         # materialize rule evaluation
-        return self._get_asset_partitions_with_decision_type(
+        return self._get_subset_with_decision_type(
             AutoMaterializeDecisionType.MATERIALIZE, asset_graph
         )
 

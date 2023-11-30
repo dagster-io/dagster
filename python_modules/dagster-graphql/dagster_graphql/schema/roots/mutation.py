@@ -831,6 +831,29 @@ class GrapheneSetConcurrencyLimitMutation(graphene.Mutation):
         return True
 
 
+class GrapheneFreeConcurrencySlotsMutation(graphene.Mutation):
+    """Frees concurrency slots."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "FreeConcurrencySlotsMutation"
+
+    class Arguments:
+        runId = graphene.Argument(graphene.NonNull(graphene.String))
+        stepKey = graphene.Argument(graphene.String)
+
+    @capture_error
+    @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
+    def mutate(self, graphene_info, runId: str, stepKey: Optional[str] = None):
+        event_log_storage = graphene_info.context.instance.event_log_storage
+        if stepKey:
+            event_log_storage.free_concurrency_slot_for_step(runId, stepKey)
+        else:
+            event_log_storage.free_concurrency_slots_for_run(runId)
+        return True
+
+
 class GrapheneFreeConcurrencySlotsForRunMutation(graphene.Mutation):
     """Frees the concurrency slots occupied by a specific run."""
 
@@ -885,3 +908,4 @@ class GrapheneMutation(graphene.ObjectType):
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
     freeConcurrencySlotsForRun = GrapheneFreeConcurrencySlotsForRunMutation.Field()
+    freeConcurrencySlots = GrapheneFreeConcurrencySlotsMutation.Field()

@@ -25,6 +25,8 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {TableMetadataEntry} from '../graphql/types';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
+import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntry.types';
@@ -180,6 +182,25 @@ export const MetadataEntry = ({
           {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );
+    case 'JobMetadataEntry':
+      const repositoryName = entry.repositoryName || DUNDER_REPO_NAME;
+      const workspacePath = workspacePathFromAddress(
+        buildRepoAddress(repositoryName, entry.locationName),
+        `/jobs/${entry.jobName}`,
+      );
+      return (
+        <Box
+          flex={{
+            direction: 'row',
+            gap: 8,
+          }}
+          style={{maxWidth: '100%'}}
+        >
+          <Icon name="job" color={Colors.Gray400} />
+
+          <MetadataEntryLink to={workspacePath}>{entry.jobName}</MetadataEntryLink>
+        </Box>
+      );
     case 'TableMetadataEntry':
       return <TableMetadataEntryComponent entry={entry} />;
 
@@ -266,6 +287,11 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       assetKey {
         path
       }
+    }
+    ... on JobMetadataEntry {
+      jobName
+      repositoryName
+      locationName
     }
     ... on TableMetadataEntry {
       table {

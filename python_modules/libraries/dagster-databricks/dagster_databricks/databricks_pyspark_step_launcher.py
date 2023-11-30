@@ -43,6 +43,7 @@ from dagster_databricks.databricks import (
 )
 
 from .configs import (
+    define_azure_credentials,
     define_databricks_env_variables,
     define_databricks_permissions,
     define_databricks_secrets_config,
@@ -74,8 +75,8 @@ DAGSTER_SYSTEM_ENV_VARS = {
         "run_config": define_databricks_submit_run_config(),
         "permissions": define_databricks_permissions(),
         "databricks_host": Field(
-            StringSource,
-            is_required=True,
+            Noneable(StringSource),
+            default_value=None,
             description="Databricks host, e.g. uksouth.azuredatabricks.com",
         ),
         "databricks_token": Field(
@@ -84,6 +85,7 @@ DAGSTER_SYSTEM_ENV_VARS = {
             description="Databricks access token",
         ),
         "oauth_credentials": define_oauth_credentials(),
+        "azure_credentials": define_azure_credentials(),
         "env_variables": define_databricks_env_variables(),
         "secrets_to_env_variables": define_databricks_secrets_config(),
         "storage": define_databricks_storage_config(),
@@ -194,13 +196,14 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self,
         run_config: Mapping[str, Any],
         permissions: Mapping[str, Any],
-        databricks_host: str,
+        databricks_host: Optional[str],
         secrets_to_env_variables: Sequence[Mapping[str, Any]],
         staging_prefix: str,
         wait_for_logs: bool,
         max_completion_wait_time_seconds: int,
         databricks_token: Optional[str] = None,
         oauth_credentials: Optional[Mapping[str, str]] = None,
+        azure_credentials: Optional[Mapping[str, str]] = None,
         env_variables: Optional[Mapping[str, str]] = None,
         storage: Optional[Mapping[str, Any]] = None,
         poll_interval_sec: int = 5,
@@ -212,19 +215,16 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.run_config = check.mapping_param(run_config, "run_config")
         self.permissions = check.mapping_param(permissions, "permissions")
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
-
-        check.invariant(
-            databricks_token is not None or oauth_credentials is not None,
-            "Must provide either databricks_token or oauth_credentials",
-        )
-        check.invariant(
-            databricks_token is None or oauth_credentials is None,
-            "Must provide either databricks_token or oauth_credentials, but cannot provide both",
-        )
         self.databricks_token = check.opt_str_param(databricks_token, "databricks_token")
         oauth_credentials = check.opt_mapping_param(
             oauth_credentials,
             "oauth_credentials",
+            key_type=str,
+            value_type=str,
+        )
+        azure_credentials = check.opt_mapping_param(
+            azure_credentials,
+            "azure_credentials",
             key_type=str,
             value_type=str,
         )
@@ -257,6 +257,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             token=databricks_token,
             oauth_client_id=oauth_credentials.get("client_id"),
             oauth_client_secret=oauth_credentials.get("client_secret"),
+            azure_client_id=azure_credentials.get("azure_client_id"),
+            azure_client_secret=azure_credentials.get("azure_client_secret"),
+            azure_tenant_id=azure_credentials.get("azure_tenant_id"),
             poll_interval_sec=poll_interval_sec,
             max_wait_time_sec=max_completion_wait_time_seconds,
         )

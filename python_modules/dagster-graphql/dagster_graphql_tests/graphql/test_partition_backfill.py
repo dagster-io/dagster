@@ -13,7 +13,6 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.asset_backfill import (
-    AssetBackfillData,
     AssetBackfillIterationResult,
     execute_asset_backfill_iteration,
     execute_asset_backfill_iteration_inner,
@@ -209,9 +208,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
     However, does not execute side effects i.e. launching runs.
     """
     backfill = graphql_context.instance.get_backfill(backfill_id)
-    asset_backfill_data = AssetBackfillData.from_serialized(
-        backfill.serialized_asset_backfill_data, asset_graph, backfill.backfill_timestamp
-    )
+    asset_backfill_data = backfill.asset_backfill_data
     result = None
     for result in execute_asset_backfill_iteration_inner(
         backfill_id=backfill_id,
@@ -234,6 +231,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
     updated_backfill = backfill.with_asset_backfill_data(
         cast(AssetBackfillIterationResult, result).backfill_data,
         dynamic_partitions_store=graphql_context.instance,
+        asset_graph=asset_graph,
     )
     graphql_context.instance.update_backfill(updated_backfill)
 

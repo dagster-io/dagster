@@ -4,13 +4,16 @@ import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutio
 
 export function getAssetCheckHandleInputs(
   assets: Pick<LaunchAssetExecutionAssetNodeFragment, 'assetKey' | 'assetChecksOrError'>[],
+  jobName?: string,
 ): AssetCheckHandleInput[] {
   return assets.flatMap((a) =>
     a.assetChecksOrError.__typename === 'AssetChecks'
-      ? a.assetChecksOrError.checks.map((check) => ({
-          name: check.name,
-          assetKey: {path: a.assetKey.path},
-        }))
+      ? a.assetChecksOrError.checks
+          .filter((check) => !jobName || check.jobNames.includes(jobName))
+          .map((check) => ({
+            name: check.name,
+            assetKey: {path: a.assetKey.path},
+          }))
       : [],
   );
 }

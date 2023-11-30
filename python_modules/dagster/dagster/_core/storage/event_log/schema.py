@@ -15,7 +15,7 @@ SqlEventLogStorageTable = db.Table(
         autoincrement=True,
     ),
     db.Column("run_id", db.String(255)),
-    db.Column("event", db.Text, nullable=False),
+    db.Column("event", MySQLCompatabilityTypes.LongText, nullable=False),
     db.Column("dagster_event_type", db.Text),
     db.Column("timestamp", db.types.TIMESTAMP),
     db.Column("step_key", db.Text),
@@ -56,7 +56,7 @@ AssetKeyTable = db.Table(
         autoincrement=True,
     ),
     db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, unique=True),
-    db.Column("last_materialization", db.Text),
+    db.Column("last_materialization", MySQLCompatabilityTypes.LongText),
     db.Column("last_run_id", db.String(255)),
     db.Column("asset_details", db.Text),
     db.Column("wipe_timestamp", db.types.TIMESTAMP),  # guarded by secondary index check

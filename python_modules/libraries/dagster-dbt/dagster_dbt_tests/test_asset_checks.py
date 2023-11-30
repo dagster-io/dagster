@@ -4,7 +4,15 @@ from pathlib import Path
 from typing import List, Optional
 
 import pytest
-from dagster import AssetCheckResult, AssetExecutionContext, AssetKey, AssetSelection, materialize
+from dagster import (
+    AssetCheckKey,
+    AssetCheckResult,
+    AssetExecutionContext,
+    AssetKey,
+    AssetSelection,
+    ExecuteInProcessResult,
+    materialize,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
@@ -30,7 +38,7 @@ dagster_dbt_translator_with_checks = DagsterDbtTranslator(
 )
 
 
-@pytest.fixture(params=[[["build"]], [["seed"], ["run"], ["test"]]])
+@pytest.fixture(params=[[["build"]], [["seed"], ["run"], ["test"]]], ids=["build", "seed-run-test"])
 def dbt_commands(request):
     return request.param
 
@@ -110,37 +118,9 @@ def test_enable_asset_checks_with_custom_translator() -> None:
     assert pass_through_translator.settings.enable_asset_checks
 
 
-@pytest.mark.parametrize(
-    "selection",
-    [
-        None,
-        pytest.param(
-            AssetSelection.keys(AssetKey(["customers"])),
-            marks=pytest.mark.xfail(
-                is_dbt_1_4,
-                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-            ),
-        ),
-        pytest.param(
-            AssetSelection.keys(AssetKey(["customers"])).without_checks(),
-            marks=pytest.mark.xfail(
-                is_dbt_1_4,
-                reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
-            ),
-        ),
-        AssetSelection.keys(AssetKey(["customers"]))
-        - AssetSelection.keys(AssetKey(["customers"])).without_checks(),
-    ],
-    ids=[
-        "no selection",
-        "select customers with checks",
-        "select customers without checks",
-        "select only checks for customers",
-    ],
-)
-def test_asset_check_materialize(
+def _materialize_dbt_assets(
     dbt_commands: List[List[str]], selection: Optional[AssetSelection]
-) -> None:
+) -> ExecuteInProcessResult:
     dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks)
@@ -157,6 +137,45 @@ def test_asset_check_materialize(
     )
 
     assert result.success
+    return result
+
+
+def test_materialize_no_selection(dbt_commands: List[List[str]]) -> None:
+    result = _materialize_dbt_assets(dbt_commands, selection=None)
+    assert len(result.get_asset_materialization_events()) == 8
+    assert len(result.get_asset_check_evaluations()) == 20
+
+
+@pytest.mark.xfail(
+    is_dbt_1_4,
+    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+)
+def test_materialize_asset_and_checks(dbt_commands: List[List[str]]) -> None:
+    result = _materialize_dbt_assets(dbt_commands, AssetSelection.keys(AssetKey(["customers"])))
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 2
+
+
+@pytest.mark.xfail(
+    is_dbt_1_4,
+    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+)
+def test_materialize_asset_no_checks(dbt_commands: List[List[str]]) -> None:
+    result = _materialize_dbt_assets(
+        dbt_commands, AssetSelection.keys(AssetKey(["customers"])).without_checks()
+    )
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 0
+
+
+def test_materialize_checks_no_asset(dbt_commands: List[List[str]]) -> None:
+    result = _materialize_dbt_assets(
+        dbt_commands,
+        AssetSelection.keys(AssetKey(["customers"]))
+        - AssetSelection.keys(AssetKey(["customers"])).without_checks(),
+    )
+    assert len(result.get_asset_materialization_events()) == 0
+    assert len(result.get_asset_check_evaluations()) == 2
 
 
 def test_asset_checks_are_logged_from_resource(
@@ -216,3 +235,39 @@ def test_asset_checks_are_logged_from_resource(
         )
         in events
     )
+
+
+@pytest.mark.xfail(
+    is_dbt_1_4,
+    reason="DBT_INDIRECT_SELECTION=empty is not supported in dbt 1.4",
+)
+@pytest.mark.parametrize(
+    "selection",
+    [
+        "customers",
+        "tag:customer_info",
+    ],
+)
+def test_select_model_with_tests(dbt_commands: List[List[str]], selection):
+    dbt = DbtCliResource(project_dir=os.fspath(test_asset_checks_dbt_project_dir))
+
+    @dbt_assets(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
+        select=selection,
+    )
+    def my_dbt_assets(context, dbt: DbtCliResource):
+        for dbt_command in dbt_commands:
+            yield from dbt.cli(dbt_command, context=context).stream()
+
+    assert my_dbt_assets.keys == {AssetKey(["customers"])}
+    assert my_dbt_assets.check_keys == {
+        AssetCheckKey(asset_key=AssetKey(["customers"]), name="unique_customers_customer_id"),
+        AssetCheckKey(asset_key=AssetKey(["customers"]), name="not_null_customers_customer_id"),
+    }
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 2

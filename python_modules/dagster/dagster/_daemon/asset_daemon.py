@@ -325,6 +325,10 @@ class AssetDaemon(IntervalDaemon):
         if retry_tick:
             tick = retry_tick
         else:
+            # Evaluation ID will always be monotonically increasing, but will not always
+            # be auto-incrementing by 1 once there are multiple AMP evaluations happening in
+            # parallel
+            next_evaluation_id = stored_cursor.evaluation_id + 1
             tick = instance.create_tick(
                 TickData(
                     instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
@@ -333,7 +337,7 @@ class AssetDaemon(IntervalDaemon):
                     status=TickStatus.STARTED,
                     timestamp=evaluation_time.timestamp(),
                     selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
-                    auto_materialize_evaluation_id=stored_cursor.evaluation_id + 1,
+                    auto_materialize_evaluation_id=next_evaluation_id,
                 )
             )
 
@@ -365,6 +369,7 @@ class AssetDaemon(IntervalDaemon):
                     evaluations_by_asset_key = {}
             else:
                 run_requests, new_cursor, evaluations = AssetDaemonContext(
+                    evaluation_id=evaluation_id,
                     asset_graph=asset_graph,
                     target_asset_keys=target_asset_keys,
                     instance=instance,

@@ -11,6 +11,6 @@ configuration:
   username: BEN_DEMO
   warehouse: AIRBYTE
   credentials:
-    password: '**********'
+    password: "**********"
   loading_method:
     method: Internal Staging

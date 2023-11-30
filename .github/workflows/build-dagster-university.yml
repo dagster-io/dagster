@@ -35,9 +35,6 @@ jobs:
       - name: Checkout PR branch
         if: github.event.pull_request
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25

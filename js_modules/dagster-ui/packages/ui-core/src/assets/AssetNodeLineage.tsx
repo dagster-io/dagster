@@ -75,6 +75,7 @@ export const AssetNodeLineage = ({
           <LaunchAssetExecutionButton
             intent="none"
             scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
+            showChangedAndMissingOption
           />
         ) : (
           <Button icon={<Icon name="materialization" />} disabled>

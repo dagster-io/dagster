@@ -16,6 +16,7 @@ from dagster import (
     AssetCheckResult,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetIn,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -59,6 +60,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
+    TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     _check as check,
     asset,
@@ -696,6 +698,7 @@ def materialization_job():
                         other=["some constraint"],
                     ),
                 ),
+                "my job": MetadataValue.job("materialization_job", location_name="test_location"),
             },
         )
         yield Output(None)
@@ -1464,7 +1467,12 @@ def upstream_time_partitioned_asset():
     return 1
 
 
-@asset(partitions_def=hourly_partition)
+@asset(
+    partitions_def=hourly_partition,
+    ins={
+        "upstream_time_partitioned_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping())
+    },
+)
 def downstream_time_partitioned_asset(
     upstream_time_partitioned_asset,
 ):
