@@ -842,6 +842,11 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             return nux_enabled_by_default
 
+    @property
+    def is_cloud_instance(self) -> bool:
+        # TODO change this to False
+        return True
+
     # run monitoring
 
     @property
@@ -1342,24 +1347,51 @@ class DagsterInstance(DynamicPartitionsStore):
 
                             # TODO: resolve which partitions are in the range, and emit an event for each
 
-                        partition = (
-                            partition_tag
-                            if check.not_none(output.properties).is_asset_partitioned
-                            else None
-                        )
+                            # For now, yielding materialization planned events for single run backfills
+                            # is only supported on cloud
+                            if self.is_cloud_instance:
+                                partitions_def = (
+                                    external_partitions_def_data.get_partitions_definition()
+                                )
+                                partitions_subset = partitions_def.subset_with_partition_keys(
+                                    partitions_def.get_partition_keys_in_range(
+                                        PartitionKeyRange(
+                                            partition_range_start, partition_range_end
+                                        )
+                                    )
+                                ).to_serializable_subset()
 
-                        event = DagsterEvent(
-                            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                            job_name=job_name,
-                            message=(
-                                f"{job_name} intends to materialize asset {asset_key.to_string()}"
-                            ),
-                            event_specific_data=AssetMaterializationPlannedData(
-                                asset_key, partition=partition
-                            ),
-                            step_key=step.key,
-                        )
-                        self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
+                                event = DagsterEvent(
+                                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                                    job_name=job_name,
+                                    message=(
+                                        f"{job_name} intends to materialize asset {asset_key.to_string()}"
+                                    ),
+                                    event_specific_data=AssetMaterializationPlannedData(
+                                        asset_key, partitions_subset=partitions_subset
+                                    ),
+                                    step_key=step.key,
+                                )
+                                self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
+                        else:
+                            partition = (
+                                partition_tag
+                                if check.not_none(output.properties).is_asset_partitioned
+                                else None
+                            )
+
+                            event = DagsterEvent(
+                                event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                                job_name=job_name,
+                                message=(
+                                    f"{job_name} intends to materialize asset {asset_key.to_string()}"
+                                ),
+                                event_specific_data=AssetMaterializationPlannedData(
+                                    asset_key, partition=partition
+                                ),
+                                step_key=step.key,
+                            )
+                            self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
                     if check.not_none(output.properties).asset_check_key:
                         asset_check_key = check.not_none(
@@ -1919,6 +1951,16 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
+        from dagster._core.events import DagsterEventType
+
+        if self.is_cloud_instance:
+            if (
+                event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+                and event_records_filter.asset_partitions
+            ):
+                # TODO: Raise warning that events targeting multiple partitions will not be returned
+                pass
+
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 
     @public

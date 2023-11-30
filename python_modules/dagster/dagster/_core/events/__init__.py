@@ -38,7 +38,8 @@ from dagster._core.definitions.metadata import (
     RawMetadataValue,
     normalize_metadata,
 )
-from dagster._core.errors import HookExecutionError
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.errors import DagsterInvariantViolationError, HookExecutionError
 from dagster._core.execution.context.system import IPlanContext, IStepContext, StepExecutionContext
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.inputs import StepInputData
@@ -694,6 +695,12 @@ class DagsterEvent(
             return self.asset_materialization_planned_data.partition
         else:
             return None
+
+    @property
+    def partitions_subset(self) -> Optional[PartitionsSubset]:
+        if self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
+            return self.asset_materialization_planned_data.partitions_subset
+        return None
 
     @property
     def step_input_data(self) -> "StepInputData":
@@ -1504,14 +1511,31 @@ class StepMaterializationData(
 class AssetMaterializationPlannedData(
     NamedTuple(
         "_AssetMaterializationPlannedData",
-        [("asset_key", AssetKey), ("partition", Optional[str])],
+        [
+            ("asset_key", AssetKey),
+            ("partition", Optional[str]),
+            ("partitions_subset", Optional["PartitionsSubset"]),
+        ],
     )
 ):
-    def __new__(cls, asset_key: AssetKey, partition: Optional[str] = None):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+        partitions_subset: Optional["PartitionsSubset"] = None,
+    ):
+        if partitions_subset and partition:
+            raise DagsterInvariantViolationError(
+                "Cannot provide both partition and partitions_subset"
+            )
+
         return super(AssetMaterializationPlannedData, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             partition=check.opt_str_param(partition, "partition"),
+            partitions_subset=check.opt_inst_param(
+                partitions_subset, "partitions_subset", PartitionsSubset
+            ),
         )
 
 
