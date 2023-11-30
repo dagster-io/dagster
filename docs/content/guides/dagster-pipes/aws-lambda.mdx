@@ -35,6 +35,7 @@ To use Dagster Pipes with AWS Lambda, you’ll need:
   Refer to the [Dagster installation guide](/getting-started/install) for more info.
 
 - **In AWS**:
+
   - An existing AWS account with access to Lambda
   - Permissions that allow you to create and modify Lambda functions
 
@@ -48,7 +49,7 @@ First, you'll create a Lambda function using the AWS UI.
 
 ### Step 1.1: Create the function in the AWS UI
 
-Note: There are other ways to do this, but we're going to use the UI for simplicity.
+For simplicity we're demonstrating this step using the UI, but you can also do this programmatically. Refer to the [AWS Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/API_CreateFunction.html) for more info.
 
 1. Sign into the AWS console.
 2. Navigate to Lambda.
@@ -70,6 +71,15 @@ height={1153}
 ### Step 1.2: Add a dagster-pipes file
 
 Next, you'll add `dagster-pipes` to the function.
+
+<Note>
+  <strong>Heads up!</strong> For simplicity, we're going to copy the contents of
+  the single Dagster Pipes file and add it to the function. While this means we
+  won't automatically receive future updates, Dagster aims to only make changes
+  that are backwards-compatible. This means we'll have to periodically check for
+  updates, but it's unlikely we'll have to update our code in any significant
+  way.
+</Note>
 
 1. In the **Code source** section of the page, add a new file. This can be accomplished with **File > New file** or by clicking the green **+** icon next to the open `lambda_function` tab:
 
