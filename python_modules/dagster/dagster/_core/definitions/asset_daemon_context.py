@@ -186,23 +186,8 @@ class AssetDaemonContext:
 
     @cached_method
     def get_latest_storage_id(self) -> Optional[int]:
-        """Get the latest storage id across all target assets and parents. Use this method instead
-        of get_maximum_record_id() as this can generally be calculated from information already
-        cached in the instance queryer, and so does not require an additional query.
-        """
-        return max(
-            filter(
-                None,
-                [
-                    self.instance_queryer.get_latest_materialization_or_observation_storage_id(
-                        AssetKeyPartitionKey(asset_key=asset_key)
-                    )
-                    for asset_key in self.target_asset_keys_and_parents
-                ]
-                + [self.cursor.latest_storage_id],
-            ),
-            default=None,
-        )
+        """Get the latest storage id across all records."""
+        return self.instance_queryer.instance.event_log_storage.get_maximum_record_id()
 
     @cached_method
     def _get_never_handled_and_newly_handled_root_asset_partitions(
