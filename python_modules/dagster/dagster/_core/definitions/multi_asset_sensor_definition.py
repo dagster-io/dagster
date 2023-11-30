@@ -202,7 +202,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key
             strings to a stringified tuple of (latest_event_partition, latest_event_storage_id,
             trailing_unconsumed_partitioned_event_ids).
-        last_tick_completion_time (Optional[float]): The last time that the sensor was consumed (UTC).
+        last_tick_completion_time (Optional[float]): The last time that the sensor was evaluated for
+            a tick (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.

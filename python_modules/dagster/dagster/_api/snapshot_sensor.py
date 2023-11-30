@@ -51,8 +51,8 @@ def sync_get_external_sensor_execution_data_grpc(
     last_tick_completion_time: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
-    timeout: Optional[int] = None,
     last_sensor_start_time: Optional[float] = None,
+    timeout: Optional[int] = None,
 ) -> SensorExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(sensor_name, "sensor_name")
