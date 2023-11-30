@@ -1,5 +1,6 @@
 import {ColorName} from './ColorName';
-import {CoreColors, TranslucentColors} from './Colors';
+
+import {CoreColors, DataVizColors, TranslucentColors} from './Colors';
 
 export const LightPalette = {
   [ColorName.KeylineDefault]: TranslucentColors.Gray15,
@@ -43,6 +44,7 @@ export const LightPalette = {
   [ColorName.BorderDefault]: CoreColors.Gray200,
   [ColorName.BorderHover]: CoreColors.Gray300,
   [ColorName.BorderDisabled]: CoreColors.Gray500,
+
   [ColorName.BorderFocused]: TranslucentColors.Blue30,
   [ColorName.AccentPrimary]: CoreColors.Gray950,
   [ColorName.AccentPrimaryHover]: CoreColors.Gray800,
@@ -70,6 +72,7 @@ export const LightPalette = {
   [ColorName.TooltipText]: CoreColors.White,
   [ColorName.PopoverBackground]: CoreColors.White,
   [ColorName.PopoverBackgroundHover]: CoreColors.Gray50,
+
   // Nav
   [ColorName.NavBackground]: CoreColors.Gray990,
   [ColorName.NavText]: CoreColors.Gray400,
@@ -77,6 +80,7 @@ export const LightPalette = {
   [ColorName.NavTextSelected]: CoreColors.White,
   [ColorName.NavButton]: CoreColors.Gray900,
   [ColorName.NavButtonHover]: CoreColors.Gray850,
+        
   // Lineage Graph
   [ColorName.LineageDots]: TranslucentColors.Gray20,
   [ColorName.LineageEdge]: CoreColors.Gray100,
@@ -91,4 +95,32 @@ export const LightPalette = {
   [ColorName.LineageNodeBorder]: CoreColors.Gray150,
   [ColorName.LineageNodeBorderHover]: CoreColors.Gray300,
   [ColorName.LineageNodeBorderSelected]: CoreColors.Blue500,
+
+  // Dataviz
+  [ColorName.DataVizBlue]: DataVizColors.Blue200,
+  [ColorName.DataVizBlueAlt]: DataVizColors.Blue300,
+  [ColorName.DataVizBlurple]: DataVizColors.Blurple200,
+  [ColorName.DataVizBlurpleAlt]: DataVizColors.Blurple300,
+  [ColorName.DataVizBrown]: DataVizColors.Brown200,
+  [ColorName.DataVizBrownAlt]: DataVizColors.Brown300,
+  [ColorName.DataVizCyan]: DataVizColors.Cyan200,
+  [ColorName.DataVizCyanAlt]: DataVizColors.Cyan300,
+  [ColorName.DataVizGray]: DataVizColors.Gray200,
+  [ColorName.DataVizGrayAlt]: DataVizColors.Gray300,
+  [ColorName.DataVizGreen]: DataVizColors.Green200,
+  [ColorName.DataVizGreenAlt]: DataVizColors.Green300,
+  [ColorName.DataVizLime]: DataVizColors.Lime200,
+  [ColorName.DataVizLimeAlt]: DataVizColors.Lime300,
+  [ColorName.DataVizOrange]: DataVizColors.Orange200,
+  [ColorName.DataVizOrangeAlt]: DataVizColors.Orange300,
+  [ColorName.DataVizPink]: DataVizColors.Pink200,
+  [ColorName.DataVizPinkAlt]: DataVizColors.Pink300,
+  [ColorName.DataVizRed]: DataVizColors.Red200,
+  [ColorName.DataVizRedAlt]: DataVizColors.Red300,
+  [ColorName.DataVizTeal]: DataVizColors.Teal200,
+  [ColorName.DataVizTealAlt]: DataVizColors.Teal300,
+  [ColorName.DataVizViolet]: DataVizColors.Violet200,
+  [ColorName.DataVizVioletAlt]: DataVizColors.Violet300,
+  [ColorName.DataVizYellow]: DataVizColors.Yellow200,
+  [ColorName.DataVizYellowAlt]: DataVizColors.Yellow300,
 };

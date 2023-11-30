@@ -1085,3 +1085,30 @@ def define_oauth_credentials():
         ),
         default_value=None,
     )
+
+
+def define_azure_credentials():
+    return Field(
+        Noneable(
+            Shape(
+                fields={
+                    "azure_client_id": Field(
+                        str, is_required=True, description="Azure service principal client ID"
+                    ),
+                    "azure_client_secret": Field(
+                        str, is_required=True, description="Azure service principal client secret"
+                    ),
+                    "azure_tenant_id": Field(
+                        str, is_required=True, description="Azure service principal tenant ID"
+                    ),
+                }
+            ),
+        ),
+        description=(
+            "Azure service principal oauth credentials for interacting with the Databricks REST API"
+            " via a service"
+            " principal. See"
+            " https://learn.microsoft.com/en-us/azure/databricks/administration-guide/users-groups/service-principals"
+        ),
+        default_value=None,
+    )

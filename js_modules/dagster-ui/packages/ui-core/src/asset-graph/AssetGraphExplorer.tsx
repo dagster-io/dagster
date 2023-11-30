@@ -510,6 +510,7 @@ const AssetGraphExplorerWithData = ({
                               <AssetNodeMinimal
                                 definition={graphNode.definition}
                                 selected={selectedGraphNodes.includes(graphNode)}
+                                height={bounds.height}
                               />
                             </AssetNodeContextMenuWrapper>
                           ) : (

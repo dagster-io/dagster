@@ -54,20 +54,26 @@ Before continuing, you should be familiar with:
 
 A Software-defined Asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
-The following example demonstrates creating an asset that has a partition for each day since the first day of 2022. Materializing partition `2022-07-23` of this asset would result in fetching data from the URL `coolweatherwebsite.com/weather_obs\&=2022-07-23`and storing it at the path `weather_observations/2022-07-23.csv`:
+The following example demonstrates creating an asset that has a partition for each day since October 1st, 2023. Materializing partition `2023-11-13` of this asset would result in fetching data from the URL `https://api.nasa.gov/planetary/apod?date=2023-11-13` and storing it at the path `nasa/2023-11-13.csv`. Note that `api_key=DEMO_KEY` is used but has a limited number of calls:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
+import os
 import urllib.request
+
+# Create a new 'nasa' directory if needed
+dir_name = "nasa"
+if not os.path.exists(dir_name):
+    os.makedirs(dir_name)
 
 from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
-@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+@asset(partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"))
 def my_daily_partitioned_asset(context: AssetExecutionContext) -> None:
     partition_date_str = context.asset_partition_key_for_output()
 
-    url = f"coolweatherwebsite.com/weather_obs&date={partition_date_str}"
-    target_location = f"weather_observations/{partition_date_str}.csv"
+    url = f"https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date={partition_date_str}"
+    target_location = f"nasa/{partition_date_str}.csv"
 
     urllib.request.urlretrieve(url, target_location)
 ```

@@ -67,6 +67,7 @@ export enum ColorName {
   TooltipText = 'TooltipText',
   PopoverBackground = 'PopoverBackground',
   PopoverBackgroundHover = 'PopoverBackgroundHover',
+
   // Header
   NavBackground = 'NavBackground',
   NavText = 'NavText',
@@ -74,6 +75,7 @@ export enum ColorName {
   NavTextSelected = 'NavTextSelected',
   NavButton = 'NavButton',
   NavButtonHover = 'NavButtonHover',
+        
   // Lineage Graph
   LineageDots = 'LineageDots',
   LineageEdge = 'LineageEdge',
@@ -88,4 +90,31 @@ export enum ColorName {
   LineageNodeBorder = 'LineageNodeBorder',
   LineageNodeBorderHover = 'LineageNodeBorderHover',
   LineageNodeBorderSelected = 'LineageNodeBorderSelected',
-}
+
+  // Dataviz
+  DataVizBlue = 'DataVizBlue',
+  DataVizBlueAlt = 'DataVizBlueAlt',
+  DataVizBlurple = 'DataVizBlurple',
+  DataVizBlurpleAlt = 'DataVizBlurpleAlt',
+  DataVizBrown = 'DataVizBrown',
+  DataVizBrownAlt = 'DataVizBrownAlt',
+  DataVizCyan = 'DataVizCyan',
+  DataVizCyanAlt = 'DataVizCyanAlt',
+  DataVizGray = 'DataVizGray',
+  DataVizGrayAlt = 'DataVizGrayAlt',
+  DataVizGreen = 'DataVizGreen',
+  DataVizGreenAlt = 'DataVizGreenAlt',
+  DataVizLime = 'DataVizLime',
+  DataVizLimeAlt = 'DataVizLimeAlt',
+  DataVizOrange = 'DataVizOrange',
+  DataVizOrangeAlt = 'DataVizOrangeAlt',
+  DataVizPink = 'DataVizPink',
+  DataVizPinkAlt = 'DataVizPinkAlt',
+  DataVizRed = 'DataVizRed',
+  DataVizRedAlt = 'DataVizRedAlt',
+  DataVizTeal = 'DataVizTeal',
+  DataVizTealAlt = 'DataVizTealAlt',
+  DataVizViolet = 'DataVizViolet',
+  DataVizVioletAlt = 'DataVizVioletAlt',
+  DataVizYellow = 'DataVizYellow',
+  DataVizYellowAlt = 'DataVizYellowAlt',

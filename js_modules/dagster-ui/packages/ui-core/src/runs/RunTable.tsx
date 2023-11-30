@@ -4,49 +4,24 @@ import {
   Checkbox,
   Icon,
   NonIdealState,
-  Table,
-  Mono,
-  Tag,
-  Button,
-  Dialog,
-  DialogBody,
-  DialogFooter,
-  ButtonLink,
   ProductTour,
   ProductTourPosition,
   Caption,
   colorTextLighter,
   colorLinkDefault,
+  Table,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
-import {CreatedByTagCell} from './CreatedByTag';
-import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
-import {RunStatusTagWithStats} from './RunStatusTag';
-import {DagsterTag, TagType} from './RunTag';
-import {RunTags} from './RunTags';
-import {
-  assetKeysForRun,
-  RunStateSummary,
-  RunTime,
-  RUN_TIME_FRAGMENT,
-  titleForRun,
-} from './RunUtils';
-import {RunFilterToken, runsPathWithFilters} from './RunsFilterInput';
+import {RunBulkActionsMenu} from './RunActionsMenu';
+import {RunRow} from './RunRow';
+import {RUN_TIME_FRAGMENT} from './RunUtils';
+import {RunFilterToken} from './RunsFilterInput';
 import ShowAndHideTagsMP4 from './ShowAndHideRunTags.mp4';
 import {RunTableRunFragment} from './types/RunTable.types';
 
@@ -249,6 +224,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
   ${RUN_TIME_FRAGMENT}
   ${RUN_TAGS_FRAGMENT}
 `;
+
 
 const RunRow = ({
   run,
@@ -536,7 +512,6 @@ const Row = styled.tr<{highlighted: boolean}>`
   ${({highlighted}) =>
     highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null}
 `;
-
 function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode}) {
   return (
     <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
@@ -555,31 +530,6 @@ function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNod
       ) : null}
     </Box>
   );
-}
-
-const RunTagsWrapper = styled.div`
-  display: contents;
-  > * {
-    display: contents;
-  }
-`;
-
-function isUnpinnedByDefaultSystemTag(key: string) {
-  return (
-    (key.startsWith(DagsterTag.Namespace) &&
-      key !== DagsterTag.Partition &&
-      key !== DagsterTag.Backfill) ||
-    key === 'mode'
-  );
-}
-
-function toggleTag(tagsArr: string[] | undefined, tagKey: string): string[] {
-  const tags = tagsArr || [];
-  if (tags.indexOf(tagKey) !== -1) {
-    return tags.filter((key) => key !== tagKey);
-  } else {
-    return [...tags, tagKey];
-  }
 }
 
 function TargetHeader() {

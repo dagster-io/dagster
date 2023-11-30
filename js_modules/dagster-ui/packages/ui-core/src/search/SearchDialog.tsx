@@ -12,6 +12,7 @@ import {
   colorKeylineDefault,
   CoreColors,
 } from '@dagster-io/ui-components';
+
 import {colorDialogBackground, colorNavBackground, colorNavButton, colorNavButtonHover, colorNavText} from '@dagster-io/ui-components/src/theme/color';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
