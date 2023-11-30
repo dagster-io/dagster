@@ -377,7 +377,6 @@ class FromStepOutput(
         [
             ("step_output_handle", StepOutputHandle),
             ("fan_in", bool),
-            ("output_dagster_type_is_nothing", bool),
             # deprecated, preserved for back-compat
             ("node_handle", NodeHandle),
             ("input_name", str),
@@ -393,7 +392,6 @@ class FromStepOutput(
         cls,
         step_output_handle: StepOutputHandle,
         fan_in: bool,
-        output_dagster_type_is_nothing: bool = False,
         # deprecated, preserved for back-compat
         node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
@@ -404,9 +402,6 @@ class FromStepOutput(
                 step_output_handle, "step_output_handle", StepOutputHandle
             ),
             fan_in=check.bool_param(fan_in, "fan_in"),
-            output_dagster_type_is_nothing=check.bool_param(
-                output_dagster_type_is_nothing, "output_dagster_type_is_nothing"
-            ),
             # add placeholder values for back-compat
             node_handle=check.opt_inst_param(
                 node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
@@ -825,20 +820,27 @@ def _load_input_with_input_manager(
 ) -> Iterator[object]:
     from dagster._core.execution.context.system import StepExecutionContext
 
-    step_context = cast(StepExecutionContext, context.step_context)
-    with op_execution_error_boundary(
-        DagsterExecutionLoadInputError,
-        msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',
-        step_context=step_context,
-        step_key=step_context.step.key,
-        input_name=context.name,
+    if (
+        context.upstream_output
+        and context.upstream_output.dagster_type
+        and context.upstream_output.dagster_type.is_nothing
     ):
-        value = input_manager.load_input(context)
-    # close user code boundary before returning value
-    for event in context.consume_events():
-        yield event
+        yield None
+    else:
+        step_context = cast(StepExecutionContext, context.step_context)
+        with op_execution_error_boundary(
+            DagsterExecutionLoadInputError,
+            msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',
+            step_context=step_context,
+            step_key=step_context.step.key,
+            input_name=context.name,
+        ):
+            value = input_manager.load_input(context)
+        # close user code boundary before returning value
+        for event in context.consume_events():
+            yield event
 
-    yield value
+        yield value
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
@@ -895,7 +897,6 @@ class FromPendingDynamicStepOutput(
                 output_name=self.step_output_handle.output_name,
                 mapping_key=mapping_key,
             ),
-            output_dagster_type_is_nothing=False,
             fan_in=False,
         )
 
@@ -957,7 +958,6 @@ class FromUnresolvedStepOutput(
         return FromStepOutput(
             step_output_handle=self.unresolved_step_output_handle.resolve(mapping_key),
             fan_in=False,
-            output_dagster_type_is_nothing=False,
         )
 
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
@@ -1020,7 +1020,6 @@ class FromDynamicCollect(
                     output_name=self.resolved_by_output_name,
                 ),
                 fan_in=False,
-                output_dagster_type_is_nothing=False,
             )
         return FromMultipleSources(
             sources=[self.source.resolve(map_key) for map_key in mapping_keys],

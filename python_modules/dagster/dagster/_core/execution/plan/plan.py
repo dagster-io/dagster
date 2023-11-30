@@ -461,7 +461,6 @@ def get_step_input_source(
         return FromStepOutput(
             step_output_handle=step_output_handle,
             fan_in=False,
-            output_dagster_type_is_nothing=node_output_handle.output_def.dagster_type.is_nothing,
         )
 
     if dependency_structure.has_fan_in_deps(input_handle):
@@ -566,7 +565,6 @@ def _step_input_source_from_multi_dep_def(
                 FromStepOutput(
                     step_output_handle=step_output_handle,
                     fan_in=True,
-                    output_dagster_type_is_nothing=False,
                 )
             )
         else:
@@ -614,11 +612,7 @@ def _step_input_source_from_blocking_asset_checks_dep_def(
                     "should have been caught at definition time."
                 )
 
-            source = FromStepOutput(
-                step_output_handle=step_output_handle,
-                fan_in=True,
-                output_dagster_type_is_nothing=node_output.output_def.dagster_type.is_nothing,
-            )
+            source = FromStepOutput(step_output_handle=step_output_handle, fan_in=True)
             sources.append(source)
             if (
                 dep_def.other_dependency is not None
