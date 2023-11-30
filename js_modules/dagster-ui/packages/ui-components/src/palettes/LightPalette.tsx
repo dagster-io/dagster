@@ -43,7 +43,6 @@ export const LightPalette = {
   [ColorName.BorderDefault]: CoreColors.Gray200,
   [ColorName.BorderHover]: CoreColors.Gray300,
   [ColorName.BorderDisabled]: CoreColors.Gray500,
-
   [ColorName.FocusRing]: TranslucentColors.Blue30,
   [ColorName.AccentPrimary]: CoreColors.Gray950,
   [ColorName.AccentPrimaryHover]: CoreColors.Gray800,
@@ -79,7 +78,7 @@ export const LightPalette = {
   [ColorName.NavTextSelected]: CoreColors.White,
   [ColorName.NavButton]: CoreColors.Gray900,
   [ColorName.NavButtonHover]: CoreColors.Gray850,
-
+        
   // Lineage Graph
   [ColorName.LineageDots]: TranslucentColors.Gray20,
   [ColorName.LineageEdge]: CoreColors.Gray100,

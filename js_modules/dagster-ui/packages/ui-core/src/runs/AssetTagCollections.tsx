@@ -143,9 +143,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
           <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
               <Icon color={colorAccentGray()} name="asset" size={16} />
-              <Box style={{flex: 1}} flex={{wrap: 'wrap', display: 'inline-flex'}}>
-                {`${assetKeys.length} assets`}
-              </Box>
+              {`${assetKeys.length} assets`}
             </Box>
           </ButtonLink>
         )}
@@ -217,9 +215,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
           <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
               <Icon color={colorAccentGray()} name="asset_check" size={16} />
-              <Box style={{flex: 1}} flex={{wrap: 'wrap', display: 'inline-flex'}}>
-                {`${assetChecks.length} asset checks`}
-              </Box>
+              {`${assetChecks.length} asset checks`}
             </Box>
           </ButtonLink>
         )}

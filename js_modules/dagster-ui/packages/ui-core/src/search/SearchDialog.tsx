@@ -276,7 +276,6 @@ const SearchTrigger = styled.button`
 
   :focus {
     border-color: ${colorNavText()};
-  }
 `;
 
 const Container = styled.div`
