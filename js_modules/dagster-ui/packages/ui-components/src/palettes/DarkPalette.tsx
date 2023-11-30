@@ -43,7 +43,7 @@ export const DarkPalette = {
   [ColorName.BorderDefault]: CoreColors.Gray800,
   [ColorName.BorderHover]: CoreColors.Gray700,
   [ColorName.BorderDisabled]: CoreColors.Gray600,
-  [ColorName.BorderFocused]: CoreColors.Blue700,
+  [ColorName.FocusRing]: CoreColors.Blue700,
   [ColorName.AccentPrimary]: CoreColors.Gray150,
   [ColorName.AccentPrimaryHover]: CoreColors.Gray50,
   [ColorName.AccentReversed]: CoreColors.Gray950,

@@ -44,7 +44,7 @@ export const LightPalette = {
   [ColorName.BorderHover]: CoreColors.Gray300,
   [ColorName.BorderDisabled]: CoreColors.Gray500,
 
-  [ColorName.BorderFocused]: TranslucentColors.Blue30,
+  [ColorName.FocusRing]: TranslucentColors.Blue30,
   [ColorName.AccentPrimary]: CoreColors.Gray950,
   [ColorName.AccentPrimaryHover]: CoreColors.Gray800,
   [ColorName.AccentReversed]: CoreColors.Gray10,

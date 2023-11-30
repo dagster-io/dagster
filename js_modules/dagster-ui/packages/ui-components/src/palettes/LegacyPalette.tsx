@@ -45,7 +45,7 @@ export const LegacyPalette = {
   [ColorName.BorderDefault]: LegacyColors.Gray300,
   [ColorName.BorderHover]: LegacyColors.Gray200,
   [ColorName.BorderDisabled]: LegacyColors.Gray100,
-  [ColorName.BorderFocused]: LegacyColors.Gray300,
+  [ColorName.FocusRing]: LegacyColors.Blue200,
   [ColorName.AccentPrimary]: LegacyColors.Gray900,
   [ColorName.AccentPrimaryHover]: LegacyColors.Gray800,
   [ColorName.AccentReversed]: LegacyColors.White,

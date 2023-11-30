@@ -1,6 +1,6 @@
 import styled, {css} from 'styled-components';
 
-import {colorTextDefault, colorBorderFocused} from '../theme/color';
+import {colorTextDefault, colorFocusRing} from '../theme/color';
 
 interface Props {
   $expandedClickPx?: number;
@@ -34,7 +34,7 @@ export const UnstyledButton = styled.button<Props>`
     outline: none;
     ${({$showFocusOutline}) =>
       $showFocusOutline
-        ? `box-shadow: ${colorBorderFocused()} 0 0 0 2px;
+        ? `box-shadow: ${colorFocusRing()} 0 0 0 2px;
       `
         : null}
   }

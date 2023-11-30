@@ -9,7 +9,7 @@ import {
   colorBorderDefault,
   colorBorderHover,
   colorBorderDisabled,
-  colorBorderFocused,
+  colorFocusRing,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
@@ -134,7 +134,7 @@ export const TextInputStyles = css`
     box-shadow:
       ${colorBorderDefault()} inset 0px 0px 0px 1px,
       ${colorKeylineDefault()} inset 2px 2px 1.5px,
-      ${colorBorderFocused()} 0 0 0 2px;
+      ${colorFocusRing()} 0 0 0 2px;
     outline: none;
   }
 `;
@@ -165,8 +165,9 @@ const StyledInput = styled.input<StyledInputProps>`
   }
 
   :focus {
-    box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px,
-    ${colorBorderFocused()} 0 0 0 2px;
+    box-shadow:
+      ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px,
+      ${colorFocusRing()} 0 0 0 2px;
     background-color: ${colorBackgroundDefaultHover()};
   }
 `;
@@ -189,7 +190,7 @@ export const TextArea = styled.textarea<TextAreaProps>`
     box-shadow: ${colorBorderHover()} inset 0px 0px 0px 1px;
   }
   :focus {
-    box-shadow: ${colorBorderFocused()} 0px 0px 0px 1px;
+    box-shadow: ${colorFocusRing()} 0px 0px 0px 1px;
     background-color: ${colorBackgroundDefaultHover()};
   }
 
