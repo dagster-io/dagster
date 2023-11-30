@@ -167,6 +167,8 @@ def my_directory_sensor_cursor(context):
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
 
+Note also that in the example above, both a `run_key` _and_ cursor are being used. This means that if the cursor is reset but the target files don't change, new runs will not be launched because the run keys have not changed. If you want the ability to fully reset the state of your sensor by resetting the cursor, then you should not set `run_key` on `RunRequest`.
+
 ---
 
 ## Evaluation interval
