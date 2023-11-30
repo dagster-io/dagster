@@ -244,6 +244,11 @@ class OutputContext:
 
     @public
     @property
+    def has_dagster_type(self) -> bool:
+        return self._dagster_type is not None
+
+    @public
+    @property
     def dagster_type(self) -> "DagsterType":
         """The type of this output."""
         if self._dagster_type is None:
