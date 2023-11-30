@@ -165,7 +165,7 @@ const StyledInput = styled.input<StyledInputProps>`
   }
 
   :focus {
-    box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px;
+    box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px,
     ${colorBorderFocused()} 0 0 0 2px;
     background-color: ${colorBackgroundDefaultHover()};
   }
