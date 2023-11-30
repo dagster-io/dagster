@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.5.10",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
         "dbt-core<1.8",
         "Jinja2",
