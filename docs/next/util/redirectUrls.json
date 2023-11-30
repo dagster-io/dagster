@@ -5,6 +5,11 @@
     "statusCode": 302
   },
   {
+    "source": "/getting-started/project-file-reference",
+    "destination": "/guides/understanding-dagster-project-files",
+    "statusCode": 302
+  },
+  {
     "source": "/install",
     "destination": "/getting-started",
     "statusCode": 302
