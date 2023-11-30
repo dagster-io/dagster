@@ -118,3 +118,4 @@ export enum ColorName {
   DataVizVioletAlt = 'DataVizVioletAlt',
   DataVizYellow = 'DataVizYellow',
   DataVizYellowAlt = 'DataVizYellowAlt',
+}
