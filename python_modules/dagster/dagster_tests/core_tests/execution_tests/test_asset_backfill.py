@@ -1449,3 +1449,43 @@ def test_asset_backfill_serialization_deserialization():
         deserialize_value(serialize_value(asset_backfill_data), AssetBackfillData)
         == asset_backfill_data
     )
+
+
+def test_all_partitions_mapping_speed():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=DailyPartitionsDefinition("2020-01-01"))
+    def int_guilds_datelist():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2020-01-01"),
+        ins={
+            "int_guilds_datelist": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(
+                    start_offset=-3499, end_offset=0, allow_nonexistent_upstream_partitions=True
+                )
+            )
+        },
+    )
+    def dim_guilds_growth_accounting(int_guilds_datelist):
+        pass
+
+    assets_by_repo_name = {"repo": [int_guilds_datelist, dim_guilds_growth_accounting]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        asset_selection=[int_guilds_datelist.key, dim_guilds_growth_accounting.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=pendulum.datetime(2023, 11, 29, 0, 0, 0),
+        partition_names=None,
+    )
+
+    import time
+
+    start_time = time.time()
+    run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
+    print("total time ", time.time() - start_time)
+    assert False
