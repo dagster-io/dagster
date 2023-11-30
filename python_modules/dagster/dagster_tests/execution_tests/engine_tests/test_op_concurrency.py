@@ -318,8 +318,8 @@ def test_multi_run_concurrency(instance, workspace, two_tier_job_def):
     run_two = _create_run(instance, workspace, two_tier_job_def)
     instance.launch_run(run_id=run_one.run_id, workspace=workspace)
     instance.launch_run(run_id=run_two.run_id, workspace=workspace)
-    run_one = poll_for_finished_run(instance, run_one.run_id)
-    run_two = poll_for_finished_run(instance, run_two.run_id)
+    run_one = poll_for_finished_run(instance, run_one.run_id, timeout=60)
+    run_two = poll_for_finished_run(instance, run_two.run_id, timeout=60)
 
     assert run_one.status == DagsterRunStatus.SUCCESS
     assert run_two.status == DagsterRunStatus.SUCCESS

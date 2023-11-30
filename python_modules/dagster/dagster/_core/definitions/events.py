@@ -189,32 +189,6 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         else:
             return AssetKey.from_coercible(arg)
 
-    # @staticmethod
-    # def from_coercible_to_asset_dep(arg: "CoercibleToAssetDep") -> "AssetKey":
-    #     from dagster._core.definitions.asset_dep import AssetDep
-    #     from dagster._core.definitions.asset_spec import AssetSpec
-    #     from dagster._core.definitions.assets import AssetsDefinition
-    #     from dagster._core.definitions.source_asset import SourceAsset
-
-    #     if isinstance(arg, AssetsDefinition):
-    #         if len(arg.keys) > 1:
-    #             # Only AssetsDefinition with a single asset can be passed
-    #             raise DagsterInvalidDefinitionError(
-    #                 "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-    #                 " Instead, specify dependencies on the assets created by the multi_asset"
-    #                 f" via AssetKeys or strings. For the multi_asset {arg.node_def.name}, the"
-    #                 f" available keys are: {arg.keys}."
-    #             )
-    #         return arg.key
-    #     elif isinstance(arg, SourceAsset):
-    #         return arg.key
-    #     elif isinstance(arg, AssetDep):
-    #         return arg.asset_key
-    #     elif isinstance(arg, AssetSpec):
-    #         return arg.asset_key
-    #     else:
-    #         return AssetKey.from_coercible(arg)
-
     def has_prefix(self, prefix: Sequence[str]) -> bool:
         return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
 
@@ -274,7 +248,7 @@ T = TypeVar("T")
 
 @experimental_param(param="data_version")
 class Output(Generic[T]):
-    """Event corresponding to one of a op's outputs.
+    """Event corresponding to one of an op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
     one output, or when they also yield events of other types, or when defining a op using the
@@ -289,7 +263,7 @@ class Output(Generic[T]):
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
         data_version (Optional[DataVersion]): (Experimental) A data version to manually set

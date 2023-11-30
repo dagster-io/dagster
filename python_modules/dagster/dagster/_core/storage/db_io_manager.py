@@ -26,7 +26,6 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
@@ -174,28 +173,16 @@ class DbIOManager(IOManager):
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
-            if output_context_metadata.get("schema") and self._schema:
-                raise DagsterInvalidDefinitionError(
-                    f"Schema {output_context_metadata.get('schema')} "
-                    "specified via output metadata, but conflicting schema "
-                    f"{self._schema} was provided via run_config. "
-                    "Schema can only be specified one way."
-                )
-            elif output_context_metadata.get("schema"):
+            # schema order of precedence: metadata, I/O manager 'schema' config, key_prefix
+            if output_context_metadata.get("schema"):
                 schema = cast(str, output_context_metadata["schema"])
-            elif len(asset_key_path) > 1 and self._schema:
-                raise DagsterInvalidDefinitionError(
-                    f"Asset {asset_key_path} specifies a schema with "
-                    f"its key prefixes {asset_key_path[:-1]}, but schema  "
-                    f"{self._schema} was also provided via run config. "
-                    "Schema can only be specified one way."
-                )
-            elif len(asset_key_path) > 1:
-                schema = asset_key_path[-2]
             elif self._schema:
                 schema = self._schema
+            elif len(asset_key_path) > 1:
+                schema = asset_key_path[-2]
             else:
                 schema = "public"
+
             if context.has_asset_partitions:
                 partition_expr = output_context_metadata.get("partition_expr")
                 if partition_expr is None:
@@ -253,14 +240,7 @@ class DbIOManager(IOManager):
                     )
         else:
             table = output_context.name
-            if output_context_metadata.get("schema") and self._schema:
-                raise DagsterInvalidDefinitionError(
-                    f"Schema {output_context_metadata.get('schema')} "
-                    "specified via output metadata, but conflicting schema "
-                    f"{self._schema} was provided via run_config. "
-                    "Schema can only be specified one way."
-                )
-            elif output_context_metadata.get("schema"):
+            if output_context_metadata.get("schema"):
                 schema = cast(str, output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema

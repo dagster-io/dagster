@@ -20,6 +20,7 @@ import {
   ASSET_DAILY_PARTITION_KEYS_MISSING,
   ASSET_WEEKLY,
   ASSET_WEEKLY_ROOT,
+  CHECKED_ASSET,
   LaunchAssetCheckUpstreamWeeklyRootMock,
   LaunchAssetLoaderResourceJob7Mock,
   LaunchAssetLoaderResourceJob8Mock,
@@ -33,6 +34,7 @@ import {
   buildConfigPartitionSelectionLatestPartitionMock,
   buildExpectedLaunchBackfillMutation,
   buildExpectedLaunchSingleRunMutation,
+  buildLaunchAssetLoaderGenericJobMock,
   buildLaunchAssetLoaderMock,
   buildLaunchAssetWarningsMock,
 } from '../__fixtures__/LaunchAssetExecutionButton.fixtures';
@@ -157,6 +159,52 @@ describe('LaunchAssetExecutionButton', () => {
       });
       await clickMaterializeButton();
       await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
+    });
+
+    describe('assets with checks', () => {
+      it('should not include checks if the job in context is marked without_checks', async () => {
+        const launchMock = buildExpectedLaunchSingleRunMutation({
+          mode: 'default',
+          executionMetadata: {tags: []},
+          runConfigData: '{}',
+          selector: {
+            repositoryLocationName: 'test.py',
+            repositoryName: 'repo',
+            pipelineName: 'checks_excluded_job',
+            assetSelection: [{path: ['checked_asset']}],
+            assetCheckSelection: [],
+          },
+        });
+        renderButton({
+          scope: {all: [CHECKED_ASSET]},
+          preferredJobName: 'checks_excluded_job',
+          launchMock,
+        });
+        await clickMaterializeButton();
+        await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
+      });
+
+      it('should include checks if the job in context includes them', async () => {
+        const launchMock = buildExpectedLaunchSingleRunMutation({
+          mode: 'default',
+          executionMetadata: {tags: []},
+          runConfigData: '{}',
+          selector: {
+            repositoryLocationName: 'test.py',
+            repositoryName: 'repo',
+            pipelineName: 'checks_included_job',
+            assetSelection: [{path: ['checked_asset']}],
+            assetCheckSelection: [{name: 'CHECK_1', assetKey: {path: ['checked_asset']}}],
+          },
+        });
+        renderButton({
+          scope: {all: [CHECKED_ASSET]},
+          preferredJobName: 'checks_included_job',
+          launchMock,
+        });
+        await clickMaterializeButton();
+        await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
+      });
     });
 
     describe('permissions', () => {
@@ -296,8 +344,19 @@ describe('LaunchAssetExecutionButton', () => {
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
 
+      // verify that the preview option is not shown
+      expect(screen.queryByTestId('backfill-preview-button')).toBeNull();
+
       // verify that checking "missing only" triggers the mutation with fewer partitions
       await userEvent.click(screen.getByTestId('missing-only-checkbox'));
+
+      // Verify that the preview option is now shown
+      const preview = await screen.findByTestId('backfill-preview-button');
+      await preview.click();
+
+      // Expect the modal to be displayed. We have separate test coverage for
+      // for the content of this modal
+      await screen.findByTestId('backfill-preview-modal-content');
 
       // verify that the executed mutation is correct
       await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
@@ -534,6 +593,8 @@ function renderButton({
   const mocks: MockedResponse<Record<string, any>>[] = [
     LaunchAssetLoaderResourceJob7Mock,
     LaunchAssetLoaderResourceJob8Mock,
+    buildLaunchAssetLoaderGenericJobMock('checks_excluded_job'),
+    buildLaunchAssetLoaderGenericJobMock('checks_included_job'),
     LaunchAssetLoaderResourceMyAssetJobMock,
     LaunchAssetCheckUpstreamWeeklyRootMock,
     ...PartitionHealthAssetMocks,

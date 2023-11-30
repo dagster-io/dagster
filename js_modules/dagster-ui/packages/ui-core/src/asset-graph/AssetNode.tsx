@@ -3,6 +3,7 @@ import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-co
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
@@ -13,11 +14,13 @@ import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
+import {useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {AssetLatestRunSpinner} from './AssetRunLinking';
-import {LiveDataForNode} from './Utils';
+import {GraphData, GraphNode, LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
@@ -36,7 +39,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
       <AssetTopTags definition={definition} liveData={liveData} />
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
-          <Name $isSource={isSource}>
+          <AssetName $isSource={isSource}>
             <span style={{marginTop: 1}}>
               <Icon name={isSource ? 'source_asset' : 'asset'} />
             </span>
@@ -50,14 +53,14 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
               })}
             </div>
             <div style={{flex: 1}} />
-          </Name>
+          </AssetName>
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
-              <Description $color={Colors.Gray800}>
+              <AssetDescription $color={Colors.Gray800}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
-              </Description>
+              </AssetDescription>
             ) : (
-              <Description $color={Colors.Gray400}>No description</Description>
+              <AssetDescription $color={Colors.Gray400}>No description</AssetDescription>
             )}
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
@@ -161,6 +164,100 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
 ];
 
+export const AssetNodeContextMenuWrapper = React.memo(
+  ({
+    children,
+    graphData,
+    explorerPath,
+    onChangeExplorerPath,
+    selectNode,
+    node,
+  }: {
+    children: React.ReactNode;
+    graphData: GraphData;
+    node: GraphNode;
+    selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+    explorerPath?: ExplorerPath;
+    onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  }) => {
+    const [menuVisible, setMenuVisible] = React.useState(false);
+    const [menuPosition, setMenuPosition] = React.useState<{top: number; left: number}>({
+      top: 0,
+      left: 0,
+    });
+
+    const showMenu = (e: React.MouseEvent) => {
+      e.preventDefault();
+      setMenuVisible(true);
+      setMenuPosition({top: e.pageY, left: e.pageX});
+    };
+
+    const hideMenu = () => {
+      setMenuVisible(false);
+    };
+    const ref = React.useRef<HTMLDivElement | null>(null);
+    React.useEffect(() => {
+      const node = ref.current;
+      const listener = (e: MouseEvent) => {
+        if (ref.current && e.target && !ref.current.contains(e.target as Node)) {
+          hideMenu();
+        }
+      };
+      const keydownListener = (e: KeyboardEvent) => {
+        if (ref.current && e.code === 'Escape') {
+          hideMenu();
+        }
+      };
+      if (menuVisible && node) {
+        document.body.addEventListener('click', listener);
+        document.body.addEventListener('keydown', keydownListener);
+      }
+      return () => {
+        if (node) {
+          document.body.removeEventListener('click', listener);
+          document.body.removeEventListener('keydown', keydownListener);
+        }
+      };
+    }, [menuVisible]);
+    const {dialog, menu} = useAssetNodeMenu({
+      graphData,
+      explorerPath,
+      onChangeExplorerPath,
+      selectNode,
+      node,
+    });
+    return (
+      <div ref={ref}>
+        <div onContextMenu={showMenu} onClick={hideMenu}>
+          {children}
+        </div>
+        {dialog}
+        {menuVisible
+          ? ReactDOM.createPortal(
+              <div
+                style={{
+                  position: 'absolute',
+                  top: menuPosition.top,
+                  left: menuPosition.left,
+                  backgroundColor: '#fff',
+                  border: '1px solid #ccc',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  zIndex: 10,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {menu}
+              </div>,
+              document.body,
+            )
+          : null}
+      </div>
+    );
+  },
+);
+
 const AssetNodeChecksRow = ({
   definition,
   liveData,
@@ -215,9 +312,11 @@ const AssetNodeChecksRow = ({
 export const AssetNodeMinimal = ({
   selected,
   definition,
+  height,
 }: {
   selected: boolean;
   definition: AssetNodeFragment;
+  height: number;
 }) => {
   const {isSource, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
@@ -226,7 +325,7 @@ export const AssetNodeMinimal = ({
 
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: (height - 64) / 2}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -239,15 +338,9 @@ export const AssetNodeMinimal = ({
             $background={background}
             $border={border}
           >
-            <div
-              style={{
-                top: '50%',
-                position: 'absolute',
-                transform: 'translate(8px, -16px)',
-              }}
-            >
+            <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-            </div>
+            </AssetNodeSpinnerContainer>
             <MinimalName style={{fontSize: 30}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 14})}
             </MinimalName>
@@ -334,7 +427,7 @@ const NameCSS: CSSObject = {
   fontWeight: 600,
 };
 
-const NameTooltipCSS: CSSObject = {
+export const NameTooltipCSS: CSSObject = {
   ...NameCSS,
   top: -9,
   left: -12,
@@ -353,7 +446,7 @@ const NameTooltipStyleSource = JSON.stringify({
   border: `1px solid ${Colors.Gray200}`,
 });
 
-const Name = styled.div<{$isSource: boolean}>`
+const AssetName = styled.div<{$isSource: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
@@ -362,9 +455,13 @@ const Name = styled.div<{$isSource: boolean}>`
   border-top-right-radius: 8px;
 `;
 
+const AssetNodeSpinnerContainer = styled.div`
+  top: 50%;
+  position: absolute;
+  transform: translate(8px, -16px);
+`;
+
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  padding-top: 30px;
-  padding-bottom: 42px;
   height: 100%;
 `;
 
@@ -395,7 +492,7 @@ const MinimalAssetNodeBox = styled.div<{
   }
 `;
 
-const MinimalName = styled(Name)`
+const MinimalName = styled(AssetName)`
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
@@ -405,7 +502,7 @@ const MinimalName = styled(Name)`
   transform: translate(-50%, -50%);
 `;
 
-const Description = styled.div<{$color: string}>`
+export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

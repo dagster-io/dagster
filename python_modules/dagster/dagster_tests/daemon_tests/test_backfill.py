@@ -3,8 +3,8 @@ import random
 import string
 import sys
 import time
-from typing import cast
 
+import dagster._check as check
 import mock
 import pendulum
 import pytest
@@ -41,7 +41,7 @@ from dagster._core.definitions.selector import (
     PartitionsByAssetSelector,
     PartitionsSelector,
 )
-from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE, AssetBackfillData
+from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepository,
@@ -1109,11 +1109,7 @@ def test_asset_backfill_mid_iteration_cancel(
     # Check that the requested subset only contains runs that were submitted
     updated_backfill = instance.get_backfill(backfill_id)
     assert updated_backfill
-    updated_asset_backfill_data = AssetBackfillData.from_serialized(
-        cast(str, updated_backfill.serialized_asset_backfill_data),
-        asset_graph,
-        backfill.backfill_timestamp,
-    )
+    updated_asset_backfill_data = check.not_none(backfill.asset_backfill_data)
     assert all(
         len(partitions_subset) == RUN_CHUNK_SIZE
         for partitions_subset in updated_asset_backfill_data.requested_subset.partitions_subsets_by_asset_key.values()
@@ -1211,12 +1207,11 @@ def test_asset_backfill_with_multi_run_backfill_policy(
 
     updated_backfill = instance.get_backfill(backfill_id)
     assert updated_backfill
-    updated_asset_backfill_data = AssetBackfillData.from_serialized(
-        cast(str, updated_backfill.serialized_asset_backfill_data),
-        asset_graph,
-        backfill.backfill_timestamp,
-    )
-    assert list(updated_asset_backfill_data.requested_subset.iterate_asset_partitions()) == [
+    assert list(
+        check.not_none(
+            updated_backfill.asset_backfill_data
+        ).requested_subset.iterate_asset_partitions()
+    ) == [
         AssetKeyPartitionKey(asset_with_multi_run_backfill_policy.key, partition)
         for partition in partitions
     ]
@@ -1252,8 +1247,207 @@ def test_error_code_location(
 
     assert len(errors) == 1
     assert (
-        "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset asset_a existed at"
+        "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset AssetKey(['asset_a']) existed at"
         " storage-time, but no longer does. This could be because it's inside a code location"
         " that's failing to load" in errors[0].message
     )
     assert "Failure loading location" in caplog.text
+
+
+@pytest.mark.parametrize("backcompat_serialization", [True, False])
+def test_raise_error_on_asset_backfill_partitions_defs_changes(
+    caplog,
+    instance,
+    partitions_defs_changes_location_1_workspace_context,
+    partitions_defs_changes_location_2_workspace_context,
+    backcompat_serialization: bool,
+):
+    asset_selection = [AssetKey("time_partitions_def_changes")]
+    partition_keys = ["2023-01-01"]
+    backfill_id = "dummy_backfill"
+    asset_graph = ExternalAssetGraph.from_workspace(
+        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    )
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=partition_keys,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+
+    if backcompat_serialization:
+        backfill = backfill._replace(
+            serialized_asset_backfill_data=check.not_none(backfill.asset_backfill_data).serialize(
+                instance, asset_graph
+            ),
+            asset_backfill_data=None,
+        )
+
+    instance.add_backfill(backfill)
+
+    errors = list(
+        execute_backfill_iteration(
+            partitions_defs_changes_location_2_workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+        )
+    )
+
+    assert len(errors) == 1
+    error_msg = check.not_none(errors[0]).message
+    assert ("partitions definition has changed") in error_msg or (
+        "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
+    ) in error_msg
+
+
+@pytest.mark.parametrize("backcompat_serialization", [True, False])
+def test_raise_error_on_partitions_defs_removed(
+    caplog,
+    instance,
+    partitions_defs_changes_location_1_workspace_context,
+    partitions_defs_changes_location_2_workspace_context,
+    backcompat_serialization: bool,
+):
+    asset_selection = [AssetKey("partitions_def_removed")]
+    partition_keys = ["2023-01-01"]
+    backfill_id = "dummy_backfill"
+    asset_graph = ExternalAssetGraph.from_workspace(
+        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    )
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=partition_keys,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+
+    if backcompat_serialization:
+        backfill = backfill._replace(
+            serialized_asset_backfill_data=check.not_none(backfill.asset_backfill_data).serialize(
+                instance, asset_graph
+            ),
+            asset_backfill_data=None,
+        )
+
+    instance.add_backfill(backfill)
+
+    errors = [
+        e
+        for e in execute_backfill_iteration(
+            partitions_defs_changes_location_2_workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+        )
+        if e is not None
+    ]
+    assert len(errors) == 1
+    assert ("had a PartitionsDefinition at storage-time, but no longer does") in errors[0].message
+
+
+def test_raise_error_on_target_static_partition_removed(
+    caplog,
+    instance,
+    partitions_defs_changes_location_1_workspace_context,
+    partitions_defs_changes_location_2_workspace_context,
+):
+    asset_selection = [AssetKey("static_partition_removed")]
+    partition_keys = ["a"]
+    asset_graph = ExternalAssetGraph.from_workspace(
+        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    )
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id="dummy_backfill",
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=partition_keys,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+    # When a static partitions def is changed, but all target partitions still exist,
+    # backfill executes successfully
+    errors = [
+        e
+        for e in execute_backfill_iteration(
+            partitions_defs_changes_location_2_workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+        )
+        if e is not None
+    ]
+    assert len(errors) == 0
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id="dummy_backfill_2",
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=["c"],
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+    # When a static partitions def is changed, but any target partitions is removed,
+    # error is raised
+    errors = [
+        e
+        for e in execute_backfill_iteration(
+            partitions_defs_changes_location_2_workspace_context,
+            get_default_daemon_logger("BackfillDaemon"),
+        )
+        if e is not None
+    ]
+    assert len(errors) == 1
+    assert ("The following partitions were removed: {'c'}.") in errors[0].message
+
+
+def test_partitions_def_changed_backfill_retry_envvar_set(
+    caplog,
+    instance,
+    partitions_defs_changes_location_1_workspace_context,
+    partitions_defs_changes_location_2_workspace_context,
+):
+    asset_selection = [AssetKey("time_partitions_def_changes")]
+    partition_keys = ["2023-01-01"]
+    backfill_id = "dummy_backfill"
+    asset_graph = ExternalAssetGraph.from_workspace(
+        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    )
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=partition_keys,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+
+    instance.add_backfill(backfill)
+
+    with environ({"DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR": "1"}):
+        errors = list(
+            execute_backfill_iteration(
+                partitions_defs_changes_location_2_workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+            )
+        )
+
+        assert len(errors) == 1
+        error_msg = check.not_none(errors[0]).message
+        assert ("partitions definition has changed") in error_msg or (
+            "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
+        ) in error_msg

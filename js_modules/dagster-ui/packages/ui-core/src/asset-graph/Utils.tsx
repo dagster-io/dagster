@@ -1,4 +1,5 @@
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
+import memoize from 'lodash/memoize';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
@@ -37,6 +38,10 @@ export function isHiddenAssetGroupJob(jobName: string) {
 //
 export type GraphId = string;
 export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
+export const fromGraphID = (graphId: GraphId): AssetNodeKeyFragment => ({
+  path: JSON.parse(graphId),
+  __typename: 'AssetKey',
+});
 
 export interface GraphNode {
   id: GraphId;
@@ -48,6 +53,7 @@ export interface GraphData {
   nodes: {[assetId: GraphId]: GraphNode};
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
+  expandedGroups?: string[];
 }
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
@@ -117,7 +123,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
+export const buildSVGPath = featureEnabled(FeatureFlag.flagDAGSidebar)
   ? pathHorizontalDiagonal({
       source: (s: any) => s.source,
       target: (s: any) => s.target,
@@ -251,20 +257,31 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
 
-export function walkTreeUpwards(
-  nodeId: string,
-  graphData: GraphData,
-  callback: (nodeId: string) => void,
-) {
-  // TODO
-  console.log({nodeId, graphData, callback});
-}
+export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:[^@:]+$/.test(str);
 
-export function walkTreeDownwards(
-  nodeId: string,
-  graphData: GraphData,
-  callback: (nodeId: string) => void,
-) {
-  // TODO
-  console.log({nodeId, graphData, callback});
-}
+export const groupIdForNode = (node: GraphNode) =>
+  [
+    node.definition.repository.name,
+    '@',
+    node.definition.repository.location.name,
+    ':',
+    node.definition.groupName,
+  ].join('');
+
+// Inclusive
+export const getUpstreamNodes = memoize(
+  (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
+    const upstream = Object.keys(graphData.upstream[toGraphId(assetKey)] || {});
+    const currentUpstream = upstream.map((graphId) => fromGraphID(graphId));
+    return [
+      assetKey,
+      ...currentUpstream,
+      ...currentUpstream.map((graphId) => getUpstreamNodes(graphId, graphData)).flat(),
+    ].filter(
+      (key, index, arr) =>
+        // Filter out non uniques
+        arr.findIndex((key2) => JSON.stringify(key2) === JSON.stringify(key)) === index,
+    );
+  },
+  (key, data) => JSON.stringify({key, data}),
+);

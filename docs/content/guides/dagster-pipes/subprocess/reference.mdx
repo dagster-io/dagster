@@ -88,6 +88,8 @@ defs = Definitions(
 </TabItem>
 </TabGroup>
 
+---
+
 ## Working with @asset_check
 
 Sometimes, you may not want to materialize an asset, but instead want to report a data quality check result. When your asset has data quality checks defined in <PyObject object="asset_check" decorator />:
@@ -130,6 +132,7 @@ On Dagster's side, the `PipesClientCompletedInvocation` object returned from `Pi
 import shutil
 
 from dagster import (
+    AssetCheckResult,
     AssetExecutionContext,
     Definitions,
     MaterializeResult,
@@ -138,7 +141,6 @@ from dagster import (
     asset_check,
     file_relative_path,
 )
-from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 
 @asset
@@ -148,7 +150,7 @@ def my_asset():
 
 @asset_check(asset="my_asset")
 def no_empty_order_check(
-    context, pipes_subprocess_client: PipesSubprocessClient
+    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
 ) -> AssetCheckResult:
     cmd = [
         shutil.which("python"),

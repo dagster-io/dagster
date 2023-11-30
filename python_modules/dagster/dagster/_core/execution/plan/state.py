@@ -294,6 +294,10 @@ def _derive_state_of_past_run(
         if parent_run.step_keys_to_execute and step_snap.key not in parent_run.step_keys_to_execute:
             continue
 
+        # Dont retry steps that we already skipped in the parent run
+        if _in_tracking_dict(step_handle, skipped_steps_in_parent_run_logs):
+            continue
+
         for output in step_snap.outputs:
             if output.properties.is_dynamic:
                 if step_key in dynamic_outputs and output.name in dynamic_outputs[step_key]:

@@ -177,7 +177,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
         """Returns a partially initialized copy of the IO manager, with remaining config fields
         set at runtime.
         """
-        return PartialIOManager(cls, data=kwargs)
+        return PartialIOManager(resource_cls=cls, data=kwargs)
 
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
@@ -206,14 +206,10 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
         return None
 
 
-class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
-    def __init__(
-        self,
-        resource_cls: Type[ConfigurableResourceFactory[TResValue]],
-        data: Dict[str, Any],
-    ):
-        PartialResource.__init__(self, resource_cls, data)
-
+class PartialIOManager(
+    PartialResource[TResValue],
+    Generic[TResValue],
+):
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         input_config_schema = None

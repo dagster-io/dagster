@@ -46,11 +46,13 @@ from dagster._core.definitions import (
     SourceAsset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -1101,6 +1103,7 @@ class ExternalAssetCheck(
             ("asset_key", AssetKey),
             ("description", Optional[str]),
             ("atomic_execution_unit_id", Optional[str]),
+            ("job_names", Sequence[str]),
         ],
     )
 ):
@@ -1112,6 +1115,7 @@ class ExternalAssetCheck(
         asset_key: AssetKey,
         description: Optional[str],
         atomic_execution_unit_id: Optional[str] = None,
+        job_names: Optional[Sequence[str]] = None,
     ):
         return super(ExternalAssetCheck, cls).__new__(
             cls,
@@ -1121,6 +1125,7 @@ class ExternalAssetCheck(
             atomic_execution_unit_id=check.opt_str_param(
                 atomic_execution_unit_id, "automic_execution_unit_id"
             ),
+            job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
         )
 
     @property
@@ -1441,30 +1446,56 @@ def external_repository_data_from_def(
 def external_asset_checks_from_defs(
     job_defs: Sequence[JobDefinition],
 ) -> Sequence[ExternalAssetCheck]:
-    # put specs in a dict to dedupe, since the same check can exist in multiple jobs
-    check_specs_dict = {}
+    nodes_by_check_key: Dict[
+        AssetCheckKey, List[Union[AssetsDefinition, AssetChecksDefinition]]
+    ] = {}
+    job_names_by_check_key: Dict[AssetCheckKey, List[str]] = {}
+
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
-
-        # checks defined with @asset_check
         for asset_check_def in asset_layer.asset_checks_defs:
             for spec in asset_check_def.specs:
-                check_specs_dict[(spec.asset_key, spec.name)] = ExternalAssetCheck(
-                    name=spec.name, asset_key=spec.asset_key, description=spec.description
-                )
-
-        # checks defined on @asset
+                nodes_by_check_key.setdefault(spec.key, []).append(asset_check_def)
+                job_names_by_check_key.setdefault(spec.key, []).append(job_def.name)
         for asset_def in asset_layer.assets_defs_by_key.values():
             for spec in asset_def.check_specs:
-                atomic_execution_unit_id = asset_def.unique_id if not asset_def.can_subset else None
-                check_specs_dict[(spec.asset_key, spec.name)] = ExternalAssetCheck(
-                    name=spec.name,
-                    asset_key=spec.asset_key,
-                    description=spec.description,
-                    atomic_execution_unit_id=atomic_execution_unit_id,
-                )
+                nodes_by_check_key.setdefault(spec.key, []).append(asset_def)
+                job_names_by_check_key.setdefault(spec.key, []).append(job_def.name)
 
-    return sorted(check_specs_dict.values(), key=lambda check: (check.asset_key, check.name))
+    external_checks = []
+    for check_key, nodes in nodes_by_check_key.items():
+        first_node = nodes[0]
+        # The same check may appear multiple times in different jobs, but it should come from the
+        # same definition.
+        if isinstance(first_node, AssetChecksDefinition):
+            check.is_list(
+                nodes,
+                of_type=AssetChecksDefinition,
+                additional_message=f"Check {check_key} is redefined in an AssetsDefinition and an AssetChecksDefinition",
+            )
+            atomic_execution_unit_id = None
+        elif isinstance(first_node, AssetsDefinition):
+            check.is_list(
+                nodes,
+                of_type=AssetsDefinition,
+                additional_message=f"Check {check_key} is redefined in an AssetsDefinition and an AssetChecksDefinition",
+            )
+            atomic_execution_unit_id = first_node.unique_id if not first_node.can_subset else None
+        else:
+            check.failed(f"Unexpected node type {first_node}")
+
+        spec = first_node.get_spec_for_check_key(check_key)
+        external_checks.append(
+            ExternalAssetCheck(
+                name=check_key.name,
+                asset_key=check_key.asset_key,
+                description=spec.description,
+                atomic_execution_unit_id=atomic_execution_unit_id,
+                job_names=job_names_by_check_key[check_key],
+            )
+        )
+
+    return sorted(external_checks, key=lambda check: (check.asset_key, check.name))
 
 
 def external_asset_nodes_from_defs(

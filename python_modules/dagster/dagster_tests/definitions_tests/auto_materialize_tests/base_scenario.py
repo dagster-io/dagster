@@ -52,10 +52,10 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
     AutoMaterializeDecisionType,
-    AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
@@ -166,7 +166,10 @@ class AssetReconciliationScenario(
             ("cursor_from", Optional["AssetReconciliationScenario"]),
             ("current_time", Optional[datetime.datetime]),
             ("asset_selection", Optional[AssetSelection]),
-            ("active_backfill_targets", Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]]),
+            (
+                "active_backfill_targets",
+                Optional[Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]],
+            ),
             ("dagster_runs", Optional[Sequence[DagsterRun]]),
             ("event_log_entries", Optional[Sequence[EventLogEntry]]),
             ("expected_run_requests", Optional[Sequence[RunRequest]]),
@@ -190,7 +193,9 @@ class AssetReconciliationScenario(
         cursor_from: Optional["AssetReconciliationScenario"] = None,
         current_time: Optional[datetime.datetime] = None,
         asset_selection: Optional[AssetSelection] = None,
-        active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None,
+        active_backfill_targets: Optional[
+            Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]
+        ] = None,
         dagster_runs: Optional[Sequence[DagsterRun]] = None,
         event_log_entries: Optional[Sequence[EventLogEntry]] = None,
         expected_run_requests: Optional[Sequence[RunRequest]] = None,
@@ -300,13 +305,17 @@ class AssetReconciliationScenario(
 
             # add any backfills to the instance
             for i, target in enumerate(self.active_backfill_targets or []):
-                target_subset = AssetGraphSubset(
-                    asset_graph=repo.asset_graph,
-                    partitions_subsets_by_asset_key=target,
-                    non_partitioned_asset_keys=set(),
-                )
+                if isinstance(target, Mapping):
+                    target_subset = AssetGraphSubset(
+                        partitions_subsets_by_asset_key=target,
+                        non_partitioned_asset_keys=set(),
+                    )
+                else:
+                    target_subset = AssetGraphSubset(
+                        partitions_subsets_by_asset_key={},
+                        non_partitioned_asset_keys=target,
+                    )
                 empty_subset = AssetGraphSubset(
-                    asset_graph=repo.asset_graph,
                     partitions_subsets_by_asset_key={},
                     non_partitioned_asset_keys=set(),
                 )
@@ -326,7 +335,7 @@ class AssetReconciliationScenario(
                     tags={},
                     backfill_timestamp=test_time.timestamp(),
                     serialized_asset_backfill_data=asset_backfill_data.serialize(
-                        dynamic_partitions_store=instance
+                        dynamic_partitions_store=instance, asset_graph=repo.asset_graph
                     ),
                 )
                 instance.add_backfill(backfill)
@@ -414,6 +423,7 @@ class AssetReconciliationScenario(
             )
 
             run_requests, cursor, evaluations = AssetDaemonContext(
+                evaluation_id=cursor.evaluation_id + 1,
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
@@ -600,11 +610,12 @@ def run_request(
     asset_keys: Sequence[CoercibleToAssetKey],
     partition_key: Optional[str] = None,
     fail_keys: Optional[Sequence[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> RunRequest:
     return RunRequest(
         asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
         partition_key=partition_key,
-        tags={FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {},
+        tags={**(tags or {}), **({FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {})},
     )
 
 

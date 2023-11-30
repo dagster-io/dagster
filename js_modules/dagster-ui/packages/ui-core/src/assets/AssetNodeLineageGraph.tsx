@@ -1,14 +1,17 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
+import uniq from 'lodash/uniq';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {useFeatureFlags} from '../app/Flags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
-import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
+import {AssetNodeMinimal, AssetNode, AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
+import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, toGraphId} from '../asset-graph/Utils';
+import {GraphData, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
@@ -29,13 +32,18 @@ export const AssetNodeLineageGraph = ({
   assetGraphData: GraphData;
   params: AssetViewParams;
 }) => {
-  const assetGraphId = toGraphId(assetKey);
+  const {flagDAGSidebar} = useFeatureFlags();
 
+  const assetGraphId = toGraphId(assetKey);
+  const allGroups = React.useMemo(
+    () => uniq(Object.values(assetGraphData.nodes).map((g) => groupIdForNode(g))),
+    [assetGraphData],
+  );
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
   // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
   // and so that different assets dont invalidate each others layout
-  const {layout, loading} = useAssetLayout(assetGraphData);
+  const {layout, loading} = useAssetLayout(assetGraphData, allGroups);
   const viewportEl = React.useRef<SVGViewport>();
   const history = useHistory();
 
@@ -76,6 +84,20 @@ export const AssetNodeLineageGraph = ({
       {({scale}, viewportRect) => (
         <SVGContainer width={layout.width} height={layout.height}>
           {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
+
+          {Object.values(layout.groups)
+            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .sort((a, b) => a.id.length - b.id.length)
+            .map((group) => (
+              <foreignObject {...group.bounds} key={group.id}>
+                {flagDAGSidebar ? (
+                  <ExpandedGroupNode group={group} minimal={scale < MINIMAL_SCALE} />
+                ) : (
+                  <AssetGroupNode group={group} scale={scale} />
+                )}
+              </foreignObject>
+            ))}
+
           <AssetEdges
             selected={null}
             highlighted={highlighted}
@@ -83,20 +105,16 @@ export const AssetNodeLineageGraph = ({
             viewportRect={viewportRect}
           />
 
-          {Object.values(layout.groups)
-            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-            .sort((a, b) => a.id.length - b.id.length)
-            .map((group) => (
-              <foreignObject {...group.bounds} key={group.id}>
-                <AssetGroupNode group={group} scale={scale} />
-              </foreignObject>
-            ))}
-
           {Object.values(layout.nodes)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
             .map(({id, bounds}) => {
               const graphNode = assetGraphData.nodes[id];
               const path = JSON.parse(id);
+
+              const contextMenuProps = {
+                graphData: assetGraphData,
+                node: graphNode!,
+              };
 
               return (
                 <foreignObject
@@ -114,15 +132,20 @@ export const AssetNodeLineageGraph = ({
                   {!graphNode ? (
                     <AssetNodeLink assetKey={{path}} />
                   ) : scale < MINIMAL_SCALE ? (
-                    <AssetNodeMinimal
-                      definition={graphNode.definition}
-                      selected={graphNode.id === assetGraphId}
-                    />
+                    <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                      <AssetNodeMinimal
+                        definition={graphNode.definition}
+                        selected={graphNode.id === assetGraphId}
+                        height={bounds.height}
+                      />
+                    </AssetNodeContextMenuWrapper>
                   ) : (
-                    <AssetNode
-                      definition={graphNode.definition}
-                      selected={graphNode.id === assetGraphId}
-                    />
+                    <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                      <AssetNode
+                        definition={graphNode.definition}
+                        selected={graphNode.id === assetGraphId}
+                      />
+                    </AssetNodeContextMenuWrapper>
                   )}
                 </foreignObject>
               );

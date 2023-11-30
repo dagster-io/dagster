@@ -46,24 +46,26 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const {data} = queryResult;
+  const pipeline =
+    data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError : undefined;
 
   const {schedules, sensors} = React.useMemo(() => {
-    if (data?.pipelineOrError.__typename === 'Pipeline') {
-      const {schedules, sensors} = data.pipelineOrError;
+    if (pipeline) {
+      const {schedules, sensors} = pipeline;
       return {schedules, sensors};
     }
     return {schedules: [], sensors: []};
-  }, [data]);
+  }, [pipeline]);
 
   const latestRuns = React.useMemo(() => {
-    if (data?.pipelineOrError.__typename === 'Pipeline') {
-      const runs = data.pipelineOrError.runs;
+    if (pipeline) {
+      const {runs} = pipeline;
       if (runs.length) {
         return [...runs];
       }
     }
     return [];
-  }, [data]);
+  }, [pipeline]);
 
   return (
     <Row $height={height} $start={start}>
@@ -74,11 +76,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
               <MiddleTruncate text={name} />
             </Link>
           </div>
-          <CaptionText>
-            {data?.pipelineOrError.__typename === 'Pipeline'
-              ? data.pipelineOrError.description
-              : ''}
-          </CaptionText>
+          <CaptionText>{pipeline?.description || ''}</CaptionText>
         </RowCell>
         <RowCell>
           {schedules.length || sensors.length ? (
@@ -119,7 +117,11 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
         </RowCell>
         <RowCell>
           <Box flex={{justifyContent: 'flex-end'}} style={{marginTop: '-2px'}}>
-            <JobMenu job={{isJob, name, runs: latestRuns}} repoAddress={repoAddress} />
+            <JobMenu
+              job={{name, isJob, runs: latestRuns}}
+              isAssetJob={pipeline ? pipeline.isAssetJob : 'loading'}
+              repoAddress={repoAddress}
+            />
           </Box>
         </RowCell>
       </RowGrid>
@@ -169,6 +171,7 @@ const SINGLE_JOB_QUERY = gql`
         id
         name
         isJob
+        isAssetJob
         description
         runs(limit: 5) {
           id

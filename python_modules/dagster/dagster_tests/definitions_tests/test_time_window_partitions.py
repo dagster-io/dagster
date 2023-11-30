@@ -1,6 +1,7 @@
+import pickle
 import random
 from datetime import datetime
-from typing import Optional, Sequence, cast
+from typing import NamedTuple, Optional, Sequence, cast
 
 import pendulum.parser
 import pytest
@@ -19,11 +20,17 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
+    DatetimeFieldSerializer,
+    PartitionKeysTimeWindowPartitionsSubset,
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -31,7 +38,8 @@ DATE_FORMAT = "%Y-%m-%d"
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, pendulum.parser.parse(start)), cast(datetime, pendulum.parser.parse(end))
+        cast(datetime, pendulum.parser.parse(start)),
+        cast(datetime, pendulum.parser.parse(end)),
     )
 
 
@@ -350,7 +358,14 @@ def assert_expected_partition_keys(
             datetime(year=2021, month=1, day=1),
             1,
             create_pendulum_time(2021, 1, 6, 1, 20),
-            ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05", "2021-01-06"],
+            [
+                "2021-01-01",
+                "2021-01-02",
+                "2021-01-03",
+                "2021-01-04",
+                "2021-01-05",
+                "2021-01-06",
+            ],
             None,
         ),
         (
@@ -416,7 +431,8 @@ def test_time_partitions_daily_partitions(
     )
 
     assert_expected_partition_keys(
-        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
+        partitions_def.get_partition_keys(current_time=current_time),
+        expected_partition_keys,
     )
 
 
@@ -478,7 +494,8 @@ def test_time_partitions_monthly_partitions(
     )
 
     assert_expected_partition_keys(
-        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
+        partitions_def.get_partition_keys(current_time=current_time),
+        expected_partition_keys,
     )
 
 
@@ -513,7 +530,14 @@ def test_time_partitions_monthly_partitions(
             datetime(year=2021, month=1, day=1),
             2,
             create_pendulum_time(2021, 1, 31, 1, 20),
-            ["2021-01-03", "2021-01-10", "2021-01-17", "2021-01-24", "2021-01-31", "2021-02-07"],
+            [
+                "2021-01-03",
+                "2021-01-10",
+                "2021-01-17",
+                "2021-01-24",
+                "2021-01-31",
+                "2021-02-07",
+            ],
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -538,7 +562,8 @@ def test_time_partitions_weekly_partitions(
     partitions_def = WeeklyPartitionsDefinition(start_date=start, end_offset=partition_weeks_offset)
 
     assert_expected_partition_keys(
-        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
+        partitions_def.get_partition_keys(current_time=current_time),
+        expected_partition_keys,
     )
 
 
@@ -653,7 +678,7 @@ def test_time_partitions_weekly_partitions(
             [
                 "2021-11-07-00:00",
                 "2021-11-07-01:00",
-                "2021-11-07-01:00",
+                "2021-11-07-01:00-0600",
                 "2021-11-07-02:00",
                 "2021-11-07-03:00",
             ],
@@ -672,7 +697,8 @@ def test_time_partitions_hourly_partitions(
     )
 
     assert_expected_partition_keys(
-        partitions_def.get_partition_keys(current_time=current_time), expected_partition_keys
+        partitions_def.get_partition_keys(current_time=current_time),
+        expected_partition_keys,
     )
 
 
@@ -742,6 +768,10 @@ def test_start_not_aligned():
 
 
 @pytest.mark.parametrize(
+    "partitions_subset_class",
+    [PartitionKeysTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+)
+@pytest.mark.parametrize(
     "case_str",
     [
         "+",
@@ -757,7 +787,9 @@ def test_start_not_aligned():
         "--+++---+++--",
     ],
 )
-def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
+def test_partition_subset_get_partition_keys_not_in_subset(
+    case_str: str, partitions_subset_class: BaseTimeWindowPartitionsSubset
+):
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     full_set_keys = partitions_def.get_partition_keys(
         current_time=datetime(year=2015, month=1, day=30)
@@ -771,13 +803,15 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
             expected_keys_not_in_subset.append(full_set_keys[i])
 
     subset = cast(
-        TimeWindowPartitionsSubset, partitions_def.empty_subset().with_partition_keys(subset_keys)
+        BaseTimeWindowPartitionsSubset,
+        partitions_subset_class.empty_subset(partitions_def).with_partition_keys(subset_keys),
     )
     for partition_key in subset_keys:
         assert partition_key in subset
     assert (
         subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+            partitions_def=partitions_def,
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
         )
         == expected_keys_not_in_subset
     )
@@ -811,6 +845,10 @@ def test_time_partitions_subset_identical_serialization():
     assert serialized1 == serialized2
 
 
+@pytest.mark.parametrize(
+    "partitions_subset_class",
+    [PartitionKeysTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+)
 @pytest.mark.parametrize(
     "initial, added",
     [
@@ -880,7 +918,9 @@ def test_time_partitions_subset_identical_serialization():
         ),
     ],
 )
-def test_partition_subset_with_partition_keys(initial: str, added: str):
+def test_partition_subset_with_partition_keys(
+    initial: str, added: str, partitions_subset_class: BaseTimeWindowPartitionsSubset
+):
     assert len(initial) == len(added)
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     full_set_keys = partitions_def.get_partition_keys(
@@ -899,13 +939,18 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         if initial[i] != "+" and added[i] != "+":
             expected_keys_not_in_updated_subset.append(full_set_keys[i])
 
-    subset = partitions_def.empty_subset().with_partition_keys(initial_subset_keys)
+    subset = partitions_subset_class.empty_subset(partitions_def).with_partition_keys(
+        initial_subset_keys
+    )
     assert all(partition_key in subset for partition_key in initial_subset_keys)
-    updated_subset = cast(TimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys))
+    updated_subset = cast(
+        BaseTimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys)
+    )
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
     assert (
         updated_subset.get_partition_keys_not_in_subset(
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+            partitions_def=partitions_def,
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
         )
         == expected_keys_not_in_updated_subset
     )
@@ -981,6 +1026,133 @@ def test_time_window_partitions_contains():
     assert "2015-01-05" not in subset
     assert "2015-01-09" not in subset
     assert "2015-01-11" not in subset
+
+
+def test_dst_transition_15_minute_partitions() -> None:
+    partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="*/15 * * * *",
+        start="2020-11-01-00:30",
+        end="2020-11-01-2:30",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-11-01-00:30",
+        "2020-11-01-00:45",
+        "2020-11-01-01:00",
+        "2020-11-01-01:15",
+        "2020-11-01-01:30",
+        "2020-11-01-01:45",
+        "2020-11-01-01:00-0800",
+        "2020-11-01-01:15-0800",
+        "2020-11-01-01:30-0800",
+        "2020-11-01-01:45-0800",
+        "2020-11-01-02:00",
+        "2020-11-01-02:15",
+    }
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
+        == []
+    )
+
+
+@pytest.mark.parametrize(
+    "timezone, partition_key, expected",
+    [
+        ("US/Pacific", "2020-11-01-01:00", True),
+        ("US/Pacific", "2020-11-01-01:00-0800", True),
+        ("US/Pacific", "2020-11-01-02:00", True),
+        ("US/Pacific", "2020-11-01-01:00-0700", False),
+        ("US/Pacific", "2020-11-01-02:00-0800", False),
+        (None, "2020-11-01-01:00", True),
+        (None, "2020-11-01-02:00", True),
+        (None, "2020-11-01-01:00-0700", False),
+        (None, "2020-11-01-01:00-0800", False),
+        (None, "2020-11-01-02:00-0800", False),
+    ],
+)
+def test_dst_transition_has_partition_key(
+    timezone: Optional[str], partition_key: str, expected: bool
+) -> None:
+    partitions_def = HourlyPartitionsDefinition("2020-10-01-00:00", timezone=timezone)
+    assert partitions_def.has_partition_key(partition_key) == expected
+
+
+def test_dst_transition_hourly_partitions() -> None:
+    partitions_def = HourlyPartitionsDefinition(
+        start_date="2020-10-31-23:00", end_date="2020-11-01-5:00", timezone="US/Pacific"
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-31-23:00",
+        "2020-11-01-00:00",
+        "2020-11-01-01:00",
+        "2020-11-01-01:00-0800",
+        "2020-11-01-02:00",
+        "2020-11-01-03:00",
+        "2020-11-01-04:00",
+    }
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
+        == []
+    )
+
+
+def test_dst_transition_hourly_partitions_with_utc_offset() -> None:
+    partitions_def = HourlyPartitionsDefinition(
+        start_date="2020-10-31-23:00:00-0700",
+        end_date="2020-11-01-5:00:00-0800",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M:%S%z",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-31-23:00:00-0700",
+        "2020-11-01-00:00:00-0700",
+        "2020-11-01-01:00:00-0700",
+        "2020-11-01-01:00:00-0800",
+        "2020-11-01-02:00:00-0800",
+        "2020-11-01-03:00:00-0800",
+        "2020-11-01-04:00:00-0800",
+    }
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
+        == []
+    )
+
+
+def test_dst_transition_daily_partitions() -> None:
+    partitions_def = DailyPartitionsDefinition(
+        start_date="2020-10-30-01:00",
+        end_date="2020-11-03-01:00",
+        timezone="US/Pacific",
+        hour_offset=1,
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    subset = partitions_def.subset_with_all_partitions()
+    assert set(subset.get_partition_keys()) == {
+        "2020-10-30-01:00",
+        "2020-10-31-01:00",
+        "2020-11-01-01:00",
+        "2020-11-02-01:00",
+    }
+    assert subset.get_partition_keys_not_in_subset(partitions_def) == []
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).get_partition_keys_not_in_subset(
+            partitions_def
+        )
+        == []
+    )
 
 
 def test_unique_identifier():
@@ -1212,7 +1384,10 @@ def test_has_partition_key():
         ),
         (
             WeeklyPartitionsDefinition(start_date="2022-01-01", end_date="2022-02-01"),
-            ["2022-01-02", "2022-01-09"],  # 2022-01-02 is Sunday, weekly cron starts from Sunday
+            [
+                "2022-01-02",
+                "2022-01-09",
+            ],  # 2022-01-02 is Sunday, weekly cron starts from Sunday
             ["2022-01-23", "2022-01-30"],
             4,
             "%Y-%m-%d",
@@ -1252,7 +1427,6 @@ def test_partition_with_end_date(
         == last_partition_window_
     )
     assert not partitions_def.get_next_partition_window(last_partition_window_.end)
-    # get_partition_keys
     assert len(partitions_def.get_partition_keys()) == number_of_partitions
     assert partitions_def.get_partition_keys()[0] == first_partition_window[0]
     assert partitions_def.get_partition_keys()[-1] == last_partition_window[0]
@@ -1268,3 +1442,62 @@ def test_partition_with_end_date(
     assert partitions_def.has_partition_key(first_partition_window[0])
     assert partitions_def.has_partition_key(last_partition_window[0])
     assert not partitions_def.has_partition_key(last_partition_window[1])
+
+
+@pytest.mark.parametrize(
+    "partitions_def",
+    [
+        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+        (DailyPartitionsDefinition("2023-01-01")),
+    ],
+)
+def test_time_window_partitions_def_serialization(partitions_def):
+    time_window_partitions_def = TimeWindowPartitionsDefinition(
+        start=partitions_def.start,
+        end=partitions_def.end,
+        cron_schedule="0 0 * * *",
+        fmt="%Y-%m-%d",
+        timezone=partitions_def.timezone,
+        end_offset=partitions_def.end_offset,
+    )
+    deserialized = deserialize_value(serialize_value(time_window_partitions_def))
+    assert deserialized == time_window_partitions_def
+    assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo
+
+
+def test_datetime_field_serializer():
+    @whitelist_for_serdes(field_serializers={"dt": DatetimeFieldSerializer})
+    class Foo(NamedTuple):
+        dt: datetime
+
+    utc_datetime_with_no_timezone = Foo(
+        dt=utc_datetime_from_timestamp(pendulum.now("UTC").timestamp())
+    )
+    with pytest.raises(CheckError, match="not a valid IANA timezone"):
+        serialize_value(utc_datetime_with_no_timezone)
+
+
+def test_cannot_pickle_time_window_partitions_def():
+    import datetime
+
+    partitions_def = TimeWindowPartitionsDefinition(
+        datetime.datetime(2021, 1, 1), "America/Los_Angeles", cron_schedule="0 0 * * *"
+    )
+
+    with pytest.raises(DagsterInvariantViolationError, match="not pickleable"):
+        pickle.loads(pickle.dumps(partitions_def))
+
+
+def test_time_window_partitions_subset_add_partition_to_front():
+    partitions_def = DailyPartitionsDefinition("2023-01-01")
+    partition_keys_subset = PartitionKeysTimeWindowPartitionsSubset(partitions_def, {"2023-01-01"})
+    time_windows_subset = TimeWindowPartitionsSubset(
+        partitions_def,
+        num_partitions=1,
+        included_time_windows=[time_window("2023-01-02", "2023-01-03")],
+    )
+
+    combined = time_windows_subset | partition_keys_subset
+    assert combined == PartitionKeysTimeWindowPartitionsSubset(
+        partitions_def, {"2023-01-01", "2023-01-02"}
+    )

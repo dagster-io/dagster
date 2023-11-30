@@ -18,6 +18,7 @@ from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
 from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
@@ -129,6 +130,7 @@ def build_assets_job(
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
+    op_retry_policy: Optional[RetryPolicy] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -146,6 +148,8 @@ def build_assets_job(
         resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
+            Only used if retry policy is not defined on the asset definition.
 
     Examples:
         .. code-block:: python
@@ -271,6 +275,7 @@ def build_assets_job(
         partitions_def=partitions_def,
         asset_layer=asset_layer,
         hooks=hooks,
+        op_retry_policy=op_retry_policy,
         _asset_selection_data=_asset_selection_data,
     )
 

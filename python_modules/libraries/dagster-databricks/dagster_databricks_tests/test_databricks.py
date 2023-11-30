@@ -5,11 +5,15 @@ import dagster_databricks
 import dagster_pyspark
 import pytest
 from dagster import build_op_context
-from dagster_databricks.databricks import DatabricksClient, DatabricksError, DatabricksJobRunner
-from dagster_databricks.types import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
+from dagster_databricks import DatabricksClientResource
+from dagster_databricks.databricks import (
+    AuthTypeEnum,
+    DatabricksClient,
+    DatabricksError,
+    DatabricksJobRunner,
+    WorkspaceClientFactory,
 )
+from dagster_databricks.resources import AzureServicePrincipalCredentials, OauthCredentials
 from databricks.sdk.service import compute, jobs
 from pytest_mock import MockerFixture
 
@@ -41,11 +45,17 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
             )
         ),
     ]
+    expected_health = [
+        jobs.JobsHealthRule.from_dict(h) for h in databricks_run_config["job_health_settings"]
+    ]
 
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
+        health=expected_health,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"],
     )
 
     databricks_run_config["install_default_libraries"] = False
@@ -55,6 +65,9 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     mock_submit_run.assert_called_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
+        health=expected_health,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"],
     )
 
 
@@ -72,6 +85,37 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         "nodes": {"node_types": {"node_type_id": "Standard_DS3_v2"}},
     }
     databricks_run_config["cluster"] = {"new": NEW_CLUSTER}
+
+    databricks_run_config.update(
+        {
+            "email_notifications": {
+                "on_duration_warning_threshold_exceeded": ["user@alerts.com"],
+                "on_failure": ["user@alerts.com"],
+                "on_start": ["user@alerts.com"],
+                "on_success": ["user@alerts.com"],
+                "no_alert_for_skipped_runs": True,
+            },
+            "notification_settings": {
+                "no_alert_for_canceled_runs": True,
+                "no_alert_for_skipped_runs": True,
+            },
+            "webhook_notifications": {
+                "on_duration_warning_threshold_exceeded": [{"id": "abc123"}],
+                "on_failure": [{"id": "abc123"}],
+                "on_start": [{"id": "abc123"}],
+                "on_success": [{"id": "abc123"}],
+            },
+            "job_health_settings": [
+                {
+                    "metric": "RUN_DURATION_SECONDS",
+                    "op": "GREATER_THAN",
+                    "value": 100,
+                }
+            ],
+            "idempotency_token": "abc123",
+            "timeout_seconds": 100,
+        },
+    )
 
     task = databricks_run_config.pop("task")
     expected_task = jobs.SubmitTask.from_dict(task)
@@ -96,10 +140,28 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         ),
     ]
 
+    expected_email_notifications = jobs.JobEmailNotifications.from_dict(
+        databricks_run_config["email_notifications"]
+    )
+    expected_notification_settings = jobs.JobNotificationSettings.from_dict(
+        databricks_run_config["notification_settings"]
+    )
+    expected_webhook_notifications = jobs.WebhookNotifications.from_dict(
+        databricks_run_config["webhook_notifications"]
+    )
+    expected_job_health_settings = [
+        jobs.JobsHealthRule.from_dict(j) for j in databricks_run_config["job_health_settings"]
+    ]
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_once_with(
         run_name=databricks_run_config["run_name"],
         tasks=[expected_task],
+        health=expected_job_health_settings,
+        email_notifications=expected_email_notifications,
+        notification_settings=expected_notification_settings,
+        webhook_notifications=expected_webhook_notifications,
+        idempotency_token=databricks_run_config["idempotency_token"],
+        timeout_seconds=databricks_run_config["timeout_seconds"],
     )
 
 
@@ -118,27 +180,27 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
         "num_calls": 0,
         "final_state": jobs.Run(
             state=jobs.RunState(
-                result_state=DatabricksRunResultState.SUCCESS,
-                life_cycle_state=DatabricksRunLifeCycleState.TERMINATED,
+                result_state=jobs.RunResultState.SUCCESS,
+                life_cycle_state=jobs.RunLifeCycleState.TERMINATED,
                 state_message="Finished",
             ),
         ),
     }
 
-    def _get_run(*args, **kwargs) -> dict:
+    def _get_run(*args, **kwargs):
         calls["num_calls"] += 1
 
         if calls["num_calls"] == 1:
             return jobs.Run(
                 state=jobs.RunState(
-                    life_cycle_state=DatabricksRunLifeCycleState.PENDING,
+                    life_cycle_state=jobs.RunLifeCycleState.PENDING,
                     state_message="",
                 ),
             )
         elif calls["num_calls"] == 2:
             return jobs.Run(
                 state=jobs.RunState(
-                    life_cycle_state=DatabricksRunLifeCycleState.RUNNING,
+                    life_cycle_state=jobs.RunLifeCycleState.RUNNING,
                     state_message="",
                 ),
             )
@@ -159,7 +221,7 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
     calls["final_state"] = jobs.Run(
         state=jobs.RunState(
             result_state=None,
-            life_cycle_state=DatabricksRunLifeCycleState.SKIPPED,
+            life_cycle_state=jobs.RunLifeCycleState.SKIPPED,
             state_message="Skipped",
         ),
     )
@@ -175,8 +237,8 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
     calls["num_calls"] = 0
     calls["final_state"] = jobs.Run(
         state=jobs.RunState(
-            result_state=DatabricksRunResultState.FAILED,
-            life_cycle_state=DatabricksRunLifeCycleState.TERMINATED,
+            result_state=jobs.RunResultState.FAILED,
+            life_cycle_state=jobs.RunLifeCycleState.TERMINATED,
             state_message="Failed",
         ),
     )
@@ -203,3 +265,77 @@ def test_dagster_databricks_user_agent() -> None:
     assert "dagster-databricks" in databricks_client.client.client.default_headers["user-agent"]
 
     assert "dagster-databricks" in databricks_client.workspace_client.config.user_agent
+
+
+class TestGetAuthType:
+    @pytest.mark.parametrize(
+        "input_params, expected",
+        [
+            (("my_token", None, None, None, None, None), AuthTypeEnum.PAT),
+            ((None, "client_id", "client_secret", None, None, None), AuthTypeEnum.OAUTH_M2M),
+            (
+                (None, None, None, "client_id", "client_secret", "tenant_id"),
+                AuthTypeEnum.AZURE_CLIENT_SECRET,
+            ),
+        ],
+    )
+    def test_auth_type(self, input_params, expected):
+        assert WorkspaceClientFactory._get_auth_type(*input_params) == expected  # noqa: SLF001
+
+    @pytest.mark.parametrize(
+        "input_params",
+        [
+            ("client_id", None, None, None, None),
+            (None, "client_secret", None, None, None),
+            (None, None, "azure_client_id", None, None),
+            (None, None, None, "azure_client_secret", None),
+        ],
+    )
+    def test_bad_combinations(self, input_params):
+        with pytest.raises(ValueError):
+            WorkspaceClientFactory._assert_valid_credentials_combos(*input_params)  # noqa: SLF001
+
+
+class TestDatabricksClientHasCredentials:
+    def test_given_multiple_creds_raises_ValueError(self):
+        with pytest.raises(ValueError):
+            DatabricksClientResource(
+                host="https://some.host",
+                token="something",
+                oauth_credentials=OauthCredentials(
+                    client_id="test-client-id", client_secret="test-client-secret"
+                ),
+            )
+
+    def test_given_token_instantiates_correctly(self):
+        client = DatabricksClientResource(host="https://some.host", token="something")
+        assert client.token == "something"
+        assert client.oauth_credentials is None
+        assert client.azure_credentials is None
+
+    def test_given_oauth_instantiates_correctly(self):
+        client = DatabricksClientResource(
+            host="https://some.host",
+            oauth_credentials=OauthCredentials(
+                client_id="test-client-id", client_secret="test-client-secret"
+            ),
+        )
+        assert client.oauth_credentials.client_id == "test-client-id"
+        assert client.oauth_credentials.client_secret == "test-client-secret"
+        assert client.token is None
+        assert client.azure_credentials is None
+
+    def test_given_azure_instantiates_correctly(self):
+        client = DatabricksClientResource(
+            host="https://some.host",
+            azure_credentials=AzureServicePrincipalCredentials(
+                azure_client_id="test-client-id",
+                azure_client_secret="test-client-secret",
+                azure_tenant_id="test-tenant-id",
+            ),
+        )
+        assert client.azure_credentials.azure_client_id == "test-client-id"
+        assert client.azure_credentials.azure_client_secret == "test-client-secret"
+        assert client.azure_credentials.azure_tenant_id == "test-tenant-id"
+        assert client.token is None
+        assert client.oauth_credentials is None

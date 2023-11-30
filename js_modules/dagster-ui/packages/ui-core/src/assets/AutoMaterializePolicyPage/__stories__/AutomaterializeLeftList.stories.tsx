@@ -5,8 +5,7 @@ import {
   buildEvaluationRecordsWithPartitions,
   buildEvaluationRecordsWithoutPartitions,
 } from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
-import {getEvaluationsWithEmptyAdded} from '../getEvaluationsWithEmptyAdded';
-import {EvaluationOrEmpty} from '../types';
+import {AutoMaterializeEvaluationRecordItemFragment} from '../types/GetEvaluationsQuery.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -16,24 +15,19 @@ export default {
 
 export const WithPartitions = () => {
   const [selectedEvaluation, setSelectedEvaluation] = React.useState<
-    EvaluationOrEmpty | undefined
+    AutoMaterializeEvaluationRecordItemFragment | undefined
   >();
 
   const evaluations = buildEvaluationRecordsWithPartitions();
-  const evaluationsWithEmpty = getEvaluationsWithEmptyAdded({
-    evaluations,
-    currentEvaluationId: evaluations[0]!.evaluationId,
-    isLastPage: true,
-    isFirstPage: true,
-    isLoading: false,
-  });
 
   return (
     <div style={{width: '320px'}}>
       <AutomaterializeLeftList
         assetHasDefinedPartitions
-        evaluationsIncludingEmpty={evaluationsWithEmpty}
-        onSelectEvaluation={(evaluation: EvaluationOrEmpty) => setSelectedEvaluation(evaluation)}
+        evaluations={evaluations}
+        onSelectEvaluation={(evaluation: AutoMaterializeEvaluationRecordItemFragment) =>
+          setSelectedEvaluation(evaluation)
+        }
         selectedEvaluation={selectedEvaluation}
       />
     </div>
@@ -42,24 +36,19 @@ export const WithPartitions = () => {
 
 export const NoPartitions = () => {
   const [selectedEvaluation, setSelectedEvaluation] = React.useState<
-    EvaluationOrEmpty | undefined
+    AutoMaterializeEvaluationRecordItemFragment | undefined
   >();
 
   const evaluations = buildEvaluationRecordsWithoutPartitions();
-  const evaluationsWithEmpty = getEvaluationsWithEmptyAdded({
-    evaluations,
-    currentEvaluationId: evaluations[0]!.evaluationId,
-    isLastPage: true,
-    isFirstPage: true,
-    isLoading: false,
-  });
 
   return (
     <div style={{width: '320px'}}>
       <AutomaterializeLeftList
         assetHasDefinedPartitions={false}
-        evaluationsIncludingEmpty={evaluationsWithEmpty}
-        onSelectEvaluation={(evaluation: EvaluationOrEmpty) => setSelectedEvaluation(evaluation)}
+        evaluations={evaluations}
+        onSelectEvaluation={(evaluation: AutoMaterializeEvaluationRecordItemFragment) =>
+          setSelectedEvaluation(evaluation)
+        }
         selectedEvaluation={selectedEvaluation}
       />
     </div>

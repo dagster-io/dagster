@@ -417,7 +417,7 @@ def validate_and_get_resource_dict(
                 f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
             )
 
-    return {k: getattr(resources, k) for k in required_resource_keys}
+    return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
 def _check_dynamic_partitions_requests(
@@ -753,11 +753,13 @@ class SensorDefinition(IHasInternalInit):
                 )
                 dynamic_partitions_requests = item.dynamic_partitions_requests or []
 
-                if item.cursor and context.cursor_updated:
+                if context.cursor_updated and item.cursor:
                     raise DagsterInvariantViolationError(
                         "SensorResult.cursor cannot be set if context.update_cursor() was called."
                     )
-                updated_cursor = item.cursor
+                elif item.cursor:
+                    updated_cursor = item.cursor  # overwrite value set from context above
+
                 asset_events = item.asset_events
 
             elif isinstance(item, RunRequest):
@@ -1164,6 +1166,7 @@ def get_sensor_context_from_args_or_kwargs(
 def get_or_create_sensor_context(
     fn: Callable,
     *args: Any,
+    context_type: Type = SensorEvaluationContext,
     **kwargs: Any,
 ) -> SensorEvaluationContext:
     """Based on the passed resource function and the arguments passed to it, returns the
@@ -1173,12 +1176,7 @@ def get_or_create_sensor_context(
     function requires a context parameter but none is passed.
     """
     context = (
-        get_sensor_context_from_args_or_kwargs(
-            fn,
-            args,
-            kwargs,
-            context_type=SensorEvaluationContext,
-        )
+        get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
         or build_sensor_context()
     )
     resource_args_from_kwargs = {}

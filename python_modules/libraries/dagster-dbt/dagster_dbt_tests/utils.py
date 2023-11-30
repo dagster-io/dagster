@@ -12,7 +12,12 @@ def assert_assets_match_project(
     assert len(dbt_assets) == 1
     assets_op = dbt_assets[0].op
     assert assets_op.tags == {"kind": "dbt"}
-    assert len(assets_op.input_defs) == int(has_non_argument_deps)
+
+    # this is the set of keys which are "true" inputs to the op, rather than placeholder inputs
+    # which will not be used if this op is run without subsetting
+    non_subset_input_keys = set(dbt_assets[0].keys_by_input_name.values()) - dbt_assets[0].keys
+    assert len(non_subset_input_keys) == bool(has_non_argument_deps)
+
     def_outputs = sorted(set(assets_op.output_dict.keys()))
     expected_outputs = sorted(
         [

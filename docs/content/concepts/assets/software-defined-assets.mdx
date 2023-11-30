@@ -402,6 +402,8 @@ To view a graph of all assets and their dependencies, you can:
 - Click **View global asset lineage** in the [**Asset catalog**](#asset-catalog)
 - Click the **Lineage tab** in the [**Asset details** page](#asset-details)
 
+To show a subset of assets in the graph, use the **search bar** next to the **Filter** button. Refer to the [Asset selection syntax reference](/concepts/assets/asset-selection-syntax) for more info and examples using the query syntax.
+
 <!-- ![Asset lineage graph](/images/concepts/webserver/global-asset-lineage.png) -->
 
 <Image
@@ -553,7 +555,7 @@ Consider the following asset that uses a context object:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_with_context_asset endbefore=end_with_context_asset
 @asset
-def uses_context(context):
+def uses_context(context: AssetExecutionContext):
     context.log.info(context.run_id)
     return "bar"
 ```

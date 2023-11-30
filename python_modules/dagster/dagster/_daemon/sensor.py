@@ -243,7 +243,7 @@ def execute_sensor_iteration_loop(
     submit_threadpool_executor = None
     threadpool_executor = None
     with ExitStack() as stack:
-        settings = workspace_process_context.instance.get_settings("sensors")
+        settings = workspace_process_context.instance.get_sensor_settings()
         if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
                 InheritContextThreadPoolExecutor(

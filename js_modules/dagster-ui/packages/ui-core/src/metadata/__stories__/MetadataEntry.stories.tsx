@@ -30,6 +30,7 @@ const MetadataEntryTypes: MetadataEntryFragment['__typename'][] = [
   'NullMetadataEntry',
   'PipelineRunMetadataEntry',
   'AssetMetadataEntry',
+  'JobMetadataEntry',
   'TableMetadataEntry',
   'TableSchemaMetadataEntry',
   'NotebookMetadataEntry',
@@ -194,6 +195,15 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_asset',
         assetKey: {__typename: 'AssetKey', path: ['asset_1']},
+      };
+    case 'JobMetadataEntry':
+      return {
+        __typename: 'JobMetadataEntry',
+        description: 'This is the description',
+        label: 'my_job',
+        jobName: 'my_job',
+        locationName: 'my_location_name',
+        repositoryName: null,
       };
     case 'TableMetadataEntry':
       return {

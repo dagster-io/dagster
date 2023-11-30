@@ -1,3 +1,4 @@
+import gzip
 import json
 import os
 import re
@@ -15,6 +16,11 @@ def read_json(filename: str) -> Dict[str, object]:
 def write_json(filename: str, data: object) -> None:
     with open(filename, "w", encoding="utf8") as f:
         json.dump(data, f, sort_keys=True)
+
+
+def write_json_gz(filename: str, data: object) -> None:
+    with gzip.open(filename, "wt", encoding="utf-8") as gz_f:
+        json.dump(data, gz_f, sort_keys=True)
 
 
 def extract_route_from_path(path_to_folder: str, root: str, file: str) -> List[str]:
@@ -90,30 +96,30 @@ def copy_searchindex(
     src_dir: str,
     dest_dir: str,
     src_file: str = "searchindex.json",
-    dest_file: str = "searchindex.json",
+    dest_file: str = "searchindex.json.gz",
 ) -> None:
     """Copy searchindex.json built by Sphinx to the next directory."""
-    write_json(os.path.join(src_dir, src_file), read_json(os.path.join(dest_dir, dest_file)))
+    write_json_gz(os.path.join(dest_dir, dest_file), read_json(os.path.join(src_dir, src_file)))
 
 
 def main() -> None:
-    json_directory = os.path.join(os.path.dirname(__file__), "../sphinx/_build/json")
-    content_dir = os.path.join(os.path.dirname(__file__), "../content/api")
+    sphinx_out_dir = os.path.join(os.path.dirname(__file__), "../sphinx/_build/json")
+    saved_copy_dir = os.path.join(os.path.dirname(__file__), "../content/api")
 
     directories_to_pack = {
-        os.path.join(json_directory, "sections"): "sections.json",
-        os.path.join(json_directory, "_modules"): "modules.json",
+        os.path.join(saved_copy_dir, "sections"): "sections.json.gz",
+        os.path.join(saved_copy_dir, "_modules"): "modules.json.gz",
     }
 
     for directory, output_file in directories_to_pack.items():
         data = pack_directory_json(directory)
-        write_json(os.path.join(content_dir, output_file), data)
+        write_json_gz(os.path.join(sphinx_out_dir, output_file), data)
 
-    copy_searchindex(content_dir, json_directory)
+    copy_searchindex(src_dir=sphinx_out_dir, dest_dir=saved_copy_dir)
 
     # objects.inv
     shutil.copyfile(
-        os.path.join(json_directory, "objects.inv"),
+        os.path.join(sphinx_out_dir, "objects.inv"),
         os.path.join(os.path.dirname(__file__), "../next/public/objects.inv"),
     )
 

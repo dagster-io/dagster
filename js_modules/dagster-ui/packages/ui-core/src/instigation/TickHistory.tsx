@@ -26,7 +26,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {
   DynamicPartitionsRequestType,
@@ -141,6 +141,8 @@ export const TicksTable = ({
     query: JOB_TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
+
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const state = queryResult?.data?.instigationStateOrError;
   const ticks = React.useMemo(

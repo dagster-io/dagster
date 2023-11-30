@@ -9,7 +9,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
 )
 from dagster._core.definitions.time_window_partitions import (

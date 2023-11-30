@@ -16,7 +16,7 @@ def scope_compile_dbt_manifest(manifest):
     # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
     # Otherwise, we expect a manifest to be present in the project's target directory.
     if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-        dbt_parse_invocation = dbt.cli(["parse"]).wait()
+        dbt_parse_invocation = dbt.cli(["parse"], target_path=Path("target")).wait()
         dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
     else:
         dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
@@ -144,7 +144,7 @@ def scope_upstream_multi_asset():
             ).items()
         }
     )
-    def jaffle_shop(context):
+    def jaffle_shop(context: AssetExecutionContext):
         output_names = list(context.selected_output_names)
         yield Output(value=..., output_name=output_names[0])
         yield Output(value=..., output_name=output_names[1])

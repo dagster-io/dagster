@@ -6,6 +6,7 @@ from .config_class import (
 from .serdes import (
     EnumSerializer as EnumSerializer,
     NamedTupleSerializer as NamedTupleSerializer,
+    SerializableNonScalarKeyMapping as SerializableNonScalarKeyMapping,
     WhitelistMap as WhitelistMap,
     deserialize_value as deserialize_value,
     pack_value as pack_value,

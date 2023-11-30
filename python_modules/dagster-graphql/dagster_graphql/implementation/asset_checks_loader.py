@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterable, List, Mapping, Optional, cast
+from typing import Iterable, Iterator, List, Mapping, Optional, Tuple, cast
 
 from dagster import (
     _check as check,
@@ -7,6 +7,10 @@ from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluatio
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.selector import RepositorySelector
+from dagster._core.host_representation.code_location import CodeLocation
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -26,14 +30,12 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetCheckNeedsUserCodeUpgrade,
     GrapheneAssetChecks,
 )
+from dagster_graphql.schema.inputs import GraphenePipelineSelector
 
 from ..schema.asset_checks import (
     GrapheneAssetCheckExecution,
 )
 from .fetch_asset_checks import asset_checks_iter
-
-if TYPE_CHECKING:
-    from dagster._core.host_representation.external_data import ExternalAssetCheck
 
 
 class AssetChecksLoader:
@@ -44,9 +46,24 @@ class AssetChecksLoader:
         self._asset_keys = list(asset_keys)
         self._checks: Optional[Mapping[AssetKey, AssetChecksOrErrorUnion]] = None
         self._limit_per_asset = None
+        self._pipeline = None
+
+    def _get_external_checks(
+        self, pipeline: Optional[GraphenePipelineSelector]
+    ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
+        if pipeline is None:
+            yield from asset_checks_iter(self._context)
+        else:
+            job_name = cast(str, pipeline.pipelineName)
+            repo_sel = RepositorySelector.from_graphql_input(pipeline)
+            location = self._context.get_code_location(repo_sel.location_name)
+            repo = location.get_repository(repo_sel.repository_name)
+            external_asset_nodes = repo.get_external_asset_checks(job_name=job_name)
+            for external_asset_node in external_asset_nodes:
+                yield (location, repo, external_asset_node)
 
     def _fetch_checks(
-        self, limit_per_asset: Optional[int]
+        self, limit_per_asset: Optional[int], pipeline: Optional[GraphenePipelineSelector]
     ) -> Mapping[AssetKey, AssetChecksOrErrorUnion]:
         instance = self._context.instance
         asset_check_support = instance.get_asset_check_support()
@@ -73,7 +90,7 @@ class AssetChecksLoader:
         external_checks_by_asset_key: Mapping[AssetKey, List[ExternalAssetCheck]] = {}
         errors: Mapping[AssetKey, GrapheneAssetCheckNeedsUserCodeUpgrade] = {}
 
-        for location, _, external_check in asset_checks_iter(self._context):
+        for location, _, external_check in self._get_external_checks(pipeline=pipeline):
             if external_check.asset_key in self._asset_keys:
                 # check if the code location is too old to support executing asset checks individually
                 code_location_version = (location.get_dagster_library_versions() or {}).get(
@@ -138,15 +155,19 @@ class AssetChecksLoader:
         return graphene_checks
 
     def get_checks_for_asset(
-        self, asset_key: AssetKey, limit: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        limit: Optional[int] = None,
+        pipeline: Optional[GraphenePipelineSelector] = None,
     ) -> AssetChecksOrErrorUnion:
         if self._checks is None:
             self._limit_per_asset = limit
-            self._checks = self._fetch_checks(limit_per_asset=limit)
+            self._pipeline = pipeline
+            self._checks = self._fetch_checks(limit_per_asset=limit, pipeline=pipeline)
         else:
             check.invariant(
-                self._limit_per_asset == limit,
-                "Limit must be the same for all calls to this loader",
+                self._limit_per_asset == limit and self._pipeline == pipeline,
+                "Limit and pipeline must be the same for all calls to this loader",
             )
 
         check.invariant(

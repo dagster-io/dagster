@@ -39,12 +39,16 @@ When Dagster Pipes is invoked, several steps will be carried out in **Dagster's 
 
 When Dagster Pipes is called in a Dagster asset or op, Dagster launches the external process with parameters and context information (ex: `partition_key`, `asset_key`, etc.)
 
-<Image
-alt="Diagram explaining the Dagster Pipes process"
-src="/images/guides/dagster-pipes/dagster-pipes-process.png"
-width={1000}
-height={393}
-/>
+<!-- ![Diagram explaining the Dagster Pipes process](/images/guides/dagster-pipes/dagster-pipes-process.png) -->
+
+<center>
+  <Image
+    alt="Diagram explaining the Dagster Pipes process"
+    src="/images/guides/dagster-pipes/dagster-pipes-process.png"
+    width={1122}
+    height={388}
+  />
+</center>
 
 ### In the external process
 
@@ -68,6 +72,13 @@ While Dagster Pipes is lightweight and flexible, there are a few limitations to 
 
 ## Usage
 
-Ready to get started with Dagster Pipes? Check out the [Dagster Pipes tutorial](/guides/dagster-pipes/subprocess) to get up and running!
+Ready to get started with Dagster Pipes? Depending on what your goal is, how you approach using Dagster Pipes can differ.
 
-If you'd prefer to create a custom solution using Dagster Pipes, check out the [Dagster Pipes details and customization guide](/guides/dagster-pipes/dagster-pipes-details-and-customization) to learn how.
+- **If you’re writing scripts that are being orchestrated**, all you’ll need to do is lightly modify your existing scripts. Check out the [Dagster Pipes tutorial](/guides/dagster-pipes/subprocess) to get up and running.
+
+- **If you need to orchestrate scripts others have written**, you can use our ready-to-go integrations to execute scripts in your chosen technology:
+
+  - [Databricks](/guides/dagster-pipes/databricks)
+  - [Kubernetes](/guides/dagster-pipes/kubernetes)
+
+- **If you don’t see your integration or you want to fully customize your Pipes experience**, check out the [Dagster Pipes details and customization guide](/guides/dagster-pipes/dagster-pipes-details-and-customization) to learn how to create a custom experience.

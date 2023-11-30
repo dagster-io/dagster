@@ -295,6 +295,7 @@ def test_fs_io_manager_partitioned_no_partitions():
             def get_upstream_mapped_partitions_result_for_partitions(
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
+                downstream_partitions_def: Optional[PartitionsDefinition],
                 upstream_partitions_def: PartitionsDefinition,
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -304,10 +305,15 @@ def test_fs_io_manager_partitioned_no_partitions():
             def get_downstream_partitions_for_partitions(
                 self,
                 upstream_partitions_subset,
+                upstream_partitions_def,
                 downstream_partitions_def,
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ):
+                raise NotImplementedError()
+
+            @property
+            def description(self) -> str:
                 raise NotImplementedError()
 
         partitions_def = DailyPartitionsDefinition(start_date="2020-02-01")

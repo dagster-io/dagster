@@ -10,15 +10,20 @@ from dagster import (
     BackfillPolicy,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    Definitions,
+    DependencyDefinition,
     FreshnessPolicy,
     LastPartitionMapping,
+    NodeInvocation,
     PartitionMapping,
     PartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
 
@@ -34,6 +39,13 @@ test_dagster_metadata_manifest_path = (
     .resolve()
 )
 test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
+
+test_python_interleaving_manifest_path = (
+    Path(__file__)
+    .joinpath("..", "dbt_projects", "test_dagster_dbt_python_interleaving", "manifest.json")
+    .resolve()
+)
+test_python_interleaving_manifest = json.loads(test_python_interleaving_manifest_path.read_bytes())
 
 
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
@@ -323,7 +335,10 @@ def test_with_asset_key_replacements() -> None:
     def my_dbt_assets():
         ...
 
-    assert my_dbt_assets.keys_by_input_name == {}
+    assert my_dbt_assets.keys_by_input_name == {
+        "__subset_input__cereals": AssetKey(["prefix", "cereals"]),
+        "__subset_input__sort_by_calories": AssetKey(["prefix", "sort_by_calories"]),
+    }
     assert set(my_dbt_assets.keys_by_output_name.values()) == {
         AssetKey(["prefix", "cereals"]),
         AssetKey(["prefix", "cold_schema", "sort_cold_cereals_by_calories"]),
@@ -373,7 +388,7 @@ def test_with_partition_mappings(partition_mapping: Optional[PartitionMapping]) 
         AssetKey("customers"),
     }
     dependencies_without_self_dependencies = set(my_dbt_assets.dependency_keys).difference(
-        dependencies_with_self_dependencies
+        my_dbt_assets.keys
     )
 
     assert dependencies_without_self_dependencies
@@ -503,9 +518,9 @@ def test_dbt_meta_asset_key() -> None:
         ...
 
     # Assert that source asset keys are set properly.
-    assert set(my_dbt_assets.keys_by_input_name.values()) == {
-        AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"])
-    }
+    assert AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"]) in set(
+        my_dbt_assets.keys_by_input_name.values()
+    )
 
     # Assert that models asset keys are set properly.
     assert {
@@ -561,3 +576,79 @@ def test_dbt_with_downstream_asset():
     assert len(downstream_of_dbt.input_names) == 2
     assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
     assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing
+
+
+def test_dbt_with_python_interleaving() -> None:
+    @dbt_assets(manifest=test_python_interleaving_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    assert set(my_dbt_assets.keys_by_input_name.values()) == {
+        AssetKey(["dagster", "python_augmented_customers"]),
+        # these inputs are necessary for copies of this asset to properly reflect the dependencies
+        # of this asset when it is automatically subset
+        AssetKey("raw_customers"),
+        AssetKey("raw_orders"),
+        AssetKey("raw_payments"),
+        AssetKey("stg_orders"),
+        AssetKey("stg_payments"),
+    }
+
+    @asset(key_prefix="dagster", deps=["raw_customers"])
+    def python_augmented_customers():
+        ...
+
+    defs = Definitions(
+        assets=[my_dbt_assets, python_augmented_customers],
+        resources={
+            "dbt": DbtCliResource(
+                project_dir=test_python_interleaving_manifest_path.parent.absolute().as_posix()
+            )
+        },
+    )
+    global_job = defs.get_implicit_global_asset_job_def()
+    # my_dbt_assets gets split up
+    assert global_job.dependencies == {
+        # no dependencies for the first invocation of my_dbt_assets
+        NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
+        # the python augmented customers asset depends on the second invocation of my_dbt_assets
+        NodeInvocation(name="dagster__python_augmented_customers"): {
+            "raw_customers": DependencyDefinition(node="my_dbt_assets_2", output="raw_customers")
+        },
+        # the second invocation of my_dbt_assets depends on the first, and the python step
+        NodeInvocation(name="my_dbt_assets"): {
+            "__subset_input__stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_orders"
+            ),
+            "__subset_input__stg_payments": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_payments"
+            ),
+            "dagster_python_augmented_customers": DependencyDefinition(
+                node="dagster__python_augmented_customers", output="result"
+            ),
+        },
+    }
+    # two distinct node definitions, but 3 nodes overall
+    assert len(global_job.all_node_defs) == 2
+    assert len(global_job.nodes) == 3
+
+    result = global_job.execute_in_process()
+    assert result.success
+
+    # now make sure that if you just select these two, we still get a valid dependency graph (where)
+    # customers executes after its parent "stg_orders", even though the python step is not selected
+    subset_job = global_job.get_subset(
+        asset_selection={AssetKey("stg_orders"), AssetKey("customers")}
+    )
+    assert subset_job.dependencies == {
+        # no dependencies for the first invocation of my_dbt_assets
+        NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
+        # the second invocation of my_dbt_assets depends on the first
+        NodeInvocation(name="my_dbt_assets"): {
+            "__subset_input__stg_orders": DependencyDefinition(
+                node="my_dbt_assets_2", output="stg_orders"
+            )
+        },
+    }
+    result = subset_job.execute_in_process()
+    assert result.success

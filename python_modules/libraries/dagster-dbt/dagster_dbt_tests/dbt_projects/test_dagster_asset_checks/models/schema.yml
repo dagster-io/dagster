@@ -3,6 +3,8 @@ version: 2
 models:
   - name: customers
     description: This table has basic information about a customer, as well as some derived facts based on a customer's orders
+    config:
+      tags: "customer_info"
 
     columns:
       - name: customer_id
@@ -10,6 +12,7 @@ models:
         tests:
           - unique:
               severity: "warn"
+              tags: ["data_quality"]
           - not_null:
               severity: "error"
 
@@ -56,7 +59,8 @@ models:
         description: '{{ doc("orders_status") }}'
         tests:
           - accepted_values:
-              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+              values:
+                ["placed", "shipped", "completed", "return_pending", "returned"]
 
       - name: amount
         description: Total amount (AUD) of the order

@@ -24,7 +24,7 @@ import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AllIndividualEventsLink} from './AllIndividualEventsLink';
+import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
@@ -223,8 +223,6 @@ export const AssetPartitionDetail = ({
         )
       : [];
 
-  const prior = latest ? all.slice(all.indexOf(latest)) : all;
-
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
@@ -310,11 +308,6 @@ export const AssetPartitionDetail = ({
                 <Icon name="observation" />
               )}
               <Timestamp timestamp={{ms: Number(latest.timestamp)}} />
-              {prior.length > 0 && (
-                <AllIndividualEventsLink hasPartitions hasLineage={hasLineage} events={all}>
-                  {`(${prior.length - 1} prior ${prior.length - 1 === 1 ? 'event' : 'events'})`}
-                </AllIndividualEventsLink>
-              )}
             </Box>
           </Box>
         )}
@@ -352,6 +345,16 @@ export const AssetPartitionDetail = ({
           ) : (
             'None'
           )}
+        </Box>
+        <Box style={{textAlign: 'right'}}>
+          <AllIndividualEventsButton
+            hasPartitions
+            hasLineage={hasLineage}
+            events={all}
+            disabled={all.length === 0}
+          >
+            {`View all historical events (${all.length})`}
+          </AllIndividualEventsButton>
         </Box>
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>

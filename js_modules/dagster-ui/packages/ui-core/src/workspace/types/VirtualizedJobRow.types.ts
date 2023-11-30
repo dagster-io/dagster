@@ -15,6 +15,7 @@ export type SingleJobQuery = {
         id: string;
         name: string;
         isJob: boolean;
+        isAssetJob: boolean;
         description: string | null;
         runs: Array<{
           __typename: 'Run';

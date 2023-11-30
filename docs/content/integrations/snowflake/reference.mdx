@@ -121,7 +121,7 @@ In order to store static partitioned assets in Snowflake, you must specify `part
 ```python file=/integrations/snowflake/static_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
 
 
 @asset(
@@ -130,7 +130,7 @@ from dagster import StaticPartitionsDefinition, asset
     ),
     metadata={"partition_expr": "SPECIES"},
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
@@ -178,14 +178,14 @@ Like static partitioned assets, you can specify `partition_expr` metadata on the
 ```python file=/integrations/snowflake/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
     metadata={"partition_expr": "TO_TIMESTAMP(TIME::INT)"},
 )
-def iris_data_per_day(context) -> pd.DataFrame:
+def iris_data_per_day(context: AssetExecutionContext) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
 
     # get_iris_data_for_date fetches all of the iris data for a given date,
@@ -230,9 +230,11 @@ The Snowflake I/O manager can also store data partitioned on multiple dimensions
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
-    StaticPartitionDefinition,
+    StaticPartitionsDefinition,
     asset,
 )
 
@@ -241,7 +243,7 @@ from dagster import (
     partitions_def=MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionDefinition(
+            "species": StaticPartitionsDefinition(
                 ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
             ),
         }
@@ -250,8 +252,8 @@ from dagster import (
         "partition_expr": {"date": "TO_TIMESTAMP(TIME::INT)", "species": "SPECIES"}
     },
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
-    partition = partition = context.partition_key.keys_by_dimension
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]
 
@@ -288,17 +290,33 @@ SELECT *
 
 You may want to have different assets stored in different Snowflake schemas. The Snowflake I/O manager allows you to specify the schema in several ways.
 
-If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, like we did in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+You can specify the default schema where data will be stored as configuration to the I/O manager, like we did in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-If you want to store assets in different schemas, you can specify the schema as part of the the asset's asset key:
+If you want to store assets in different schemas, you can specify the schema as metadata:
 
-```python file=/integrations/snowflake/schema.py startafter=start_asset_key endbefore=end_asset_key
-import pandas as pd
+```python file=/integrations/snowflake/schema.py startafter=start_metadata endbefore=end_metadata dedent=4
+daffodil_dataset = SourceAsset(
+    key=["daffodil_dataset"], metadata={"schema": "daffodil"}
+)
 
-from dagster import SourceAsset, asset
+@asset(metadata={"schema": "iris"})
+def iris_dataset() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+```
 
+You can also specify the schema as part of the asset's asset key:
+
+```python file=/integrations/snowflake/schema.py startafter=start_asset_key endbefore=end_asset_key dedent=4
 daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
-
 
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
@@ -317,11 +335,20 @@ def iris_dataset() -> pd.DataFrame:
 In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
 
 <Note>
-  The two options for specifying schema are mutually exclusive. If you provide{" "}
-  <code>schema</code> configuration to the I/O manager, you cannot also provide
-  it via the asset key and vice versa. If no <code>schema</code> is provided,
-  either from configuration or asset keys, the default schema{" "}
-  <code>PUBLIC</code> will be used.
+  The schema is determined in this order:
+  <ol>
+    <li>If the schema is set via metadata, that schema will be used</li>
+    <li>
+      Otherwise, the schema set as configuration on the I/O manager will be used
+    </li>
+    <li>
+      Otherwise, if there is a <code>key_prefix</code>, that schema will be used
+    </li>
+    <li>
+      If none of the above are provided, the default schema will be{" "}
+      <code>PUBLIC</code>
+    </li>
+  </ol>
 </Note>
 
 ---
@@ -448,13 +475,13 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, EnvVar, asset
+from dagster import AssetExecutionContext, Definitions, EnvVar, asset
 
 SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_dataset(context) -> DataFrame:
+def iris_dataset(context: AssetExecutionContext) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(

@@ -7,6 +7,7 @@ from dagster import (
     AssetSelection,
     define_asset_job,
     Definitions,
+    OpExecutionContext,
 )
 from mock import MagicMock
 
@@ -22,7 +23,7 @@ from dagster_slack import SlackResource
 
 
 @op
-def fetch_files_from_slack(context, slack: SlackResource) -> pd.DataFrame:
+def fetch_files_from_slack(slack: SlackResource) -> pd.DataFrame:
     files = slack.get_client().files_list(channel="#random")
     return pd.DataFrame(
         [
