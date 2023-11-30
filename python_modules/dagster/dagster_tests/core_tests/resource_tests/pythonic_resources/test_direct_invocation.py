@@ -1,11 +1,12 @@
 import asyncio
-import warnings
 
 import pytest
 from dagster import (
     AssetExecutionContext,
     ConfigurableResource,
     OpExecutionContext,
+    Out,
+    Output,
     asset,
     op,
 )
@@ -474,9 +475,11 @@ def test_async_assets_with_shared_context():
             async_asset_two(ctx),
         )
 
-    result = asyncio.run(main())
-    assert result[0] == "one"
-    assert result[1] == "two"
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"This context is currently being used to execute .* The context cannot be used to execute another op until .* has finished executing",
+    ):
+        asyncio.run(main())
 
 
 def test_direct_invocation_resource_context_manager():
@@ -498,36 +501,73 @@ def test_direct_invocation_resource_context_manager():
         my_asset(ctx)
 
 
-def test_bound_state():
+def test_context_bound_state_non_generator():
     @asset
     def my_asset(context):
         assert context._bound_properties is not None  # noqa: SLF001
 
     ctx = build_op_context()
     assert ctx._bound_properties is None  # noqa: SLF001
+    assert ctx._invocation_properties is None  # noqa: SLF001
 
     my_asset(ctx)
-    assert ctx._bound_properties is not None  # noqa: SLF001
-
-    # ctx.unbind()
-    # assert ctx._bound_properties is None
-    my_asset(ctx)
-    assert ctx._bound_properties is not None  # noqa: SLF001
+    assert ctx._bound_properties is None  # noqa: SLF001
+    assert ctx._invocation_properties is not None  # noqa: SLF001
 
 
-def test_bound_state_warning():
-    warnings.resetwarnings()
-    warnings.filterwarnings("error")
-
-    @asset
-    def my_asset(context):
+def test_context_bound_state_generator():
+    @op(out={"first": Out(), "second": Out()})
+    def generator(context):
         assert context._bound_properties is not None  # noqa: SLF001
+        yield Output("one", output_name="first")
+        yield Output("two", output_name="second")
 
     ctx = build_op_context()
+
+    result = list(generator(ctx))
+    assert result[0].value == "one"
+    assert result[1].value == "two"
+
     assert ctx._bound_properties is None  # noqa: SLF001
+    assert ctx._invocation_properties is not None  # noqa: SLF001
 
-    my_asset(ctx)
-    assert ctx._bound_properties is not None  # noqa: SLF001
 
-    with pytest.raises(UserWarning, match="This context was already used to execute my_asset"):
-        my_asset(ctx)
+def test_context_bound_state_async():
+    @asset
+    async def async_asset(context):
+        assert context._bound_properties is not None  # noqa: SLF001
+        assert context.asset_key.to_user_string() == "async_asset"
+        await asyncio.sleep(0.01)
+        return "one"
+
+    ctx = build_asset_context()
+
+    result = asyncio.run(async_asset(ctx))
+    assert result == "one"
+
+    assert ctx._bound_properties is None  # noqa: SLF001
+    assert ctx._invocation_properties is not None  # noqa: SLF001
+
+
+def test_context_bound_state_async_generator():
+    @op(out={"first": Out(), "second": Out()})
+    async def async_generator(context):
+        assert context._bound_properties is not None  # noqa: SLF001
+        yield Output("one", output_name="first")
+        await asyncio.sleep(0.01)
+        yield Output("two", output_name="second")
+
+    ctx = build_op_context()
+
+    async def get_results():
+        res = []
+        async for output in async_generator(ctx):
+            res.append(output)
+        return res
+
+    result = asyncio.run(get_results())
+    assert result[0].value == "one"
+    assert result[1].value == "two"
+
+    assert ctx._bound_properties is None  # noqa: SLF001
+    assert ctx._invocation_properties is not None  # noqa: SLF001

@@ -1,4 +1,3 @@
-import warnings
 from contextlib import ExitStack
 from typing import (
     AbstractSet,
@@ -103,6 +102,11 @@ class InvocationProperties(
         ],
     )
 ):
+    """Maintains information about the invocation that is updated during execution time. This information
+    needs to be available to the user once invocation is complete, so that they can assert on events and
+    outputs. It needs to be cleared before the context is used for another invocation.
+    """
+
     def __new__(cls):
         return super(InvocationProperties, cls).__new__(
             cls, user_events=[], seen_outputs={}, output_metadata={}
@@ -197,17 +201,20 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
         if self._bound_properties is not None:
-            # if self._completed:
-            warnings.warn(
-                f"This context was already used to execute {self.alias}. The information about"
-                f" {self.alias} will be cleared, including user events and output metadata."
-                " If you would like to keep this information, you can create a new context"
-                " using build_op_context() to invoke other ops. You can also manually clear the"
-                f" information about {self.alias} using the unbind() method."
+            # warnings.warn(
+            #     f"This context was already used to execute {self.alias}. The information about"
+            #     f" {self.alias} will be cleared, including user events and output metadata."
+            #     " If you would like to keep this information, you can create a new context"
+            #     " using build_op_context() to invoke other ops. You can also manually clear the"
+            #     f" information about {self.alias} using the unbind() method."
+            # )
+            # self.unbind()
+            raise DagsterInvalidInvocationError(
+                f"This context is currently being used to execute {self.alias}. The context cannot be used to execute another op until {self.alias} has finished executing."
             )
-            self.unbind()
-            # else:
-            #     raise DagsterInvalidInvocationError(f"This context is currently being used to execute {self.alias}. The context cannot be used to execute another op until {self.alias} has finished executing.")
+
+        # reset invocation_properties
+        self._invocation_properties = InvocationProperties()
 
         # update the bound context with properties relevant to the execution of the op
 
@@ -277,12 +284,10 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
             op_config=op_config,
         )
 
-        self._invocation_properties = InvocationProperties()
         return self
 
     def unbind(self):
         self._bound_properties = None
-        self._invocation_properties = None
 
     @property
     def op_config(self) -> Any:

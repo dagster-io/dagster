@@ -418,6 +418,7 @@ def _type_check_output_wrapper(
                             f"Invocation of {op_def.node_type_str} '{context.alias}' did not"
                             f" return an output for non-optional output '{output_def.name}'"
                         )
+            context.unbind()
 
         return to_gen(result)
 
@@ -452,6 +453,7 @@ def _type_check_output_wrapper(
                             f'Invocation of {op_def.node_type_str} "{context.alias}" did not'
                             f' return an output for non-optional output "{output_def.name}"'
                         )
+            context.unbind()
 
         return type_check_gen(result)
 
@@ -472,6 +474,7 @@ def _type_check_function_output(
             # ensure result objects are contextually valid
             _output_name_for_result_obj(event, context)
 
+    context.unbind()
     return result
 
 
