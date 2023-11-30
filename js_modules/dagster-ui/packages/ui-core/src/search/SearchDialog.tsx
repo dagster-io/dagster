@@ -11,8 +11,8 @@ import {
   colorBackgroundDefault,
   colorKeylineDefault,
   CoreColors,
+  colorDialogBackground,
 } from '@dagster-io/ui-components';
-import {colorDialogBackground} from '@dagster-io/ui-components/src/theme/color';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
