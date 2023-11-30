@@ -9,9 +9,9 @@ import {
   colorBackgroundDefault,
   colorBackgroundLight,
   colorTextBlue,
+  colorTextDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
-import {CoreColors} from '@dagster-io/ui-components/src/palettes/Colors';
 
 import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
 
@@ -268,11 +268,11 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 
 const TextColorForStates = {
   [IStepState.RUNNING]: colorTextBlue(),
-  [IStepState.RETRY_REQUESTED]: CoreColors.White,
-  [IStepState.SUCCEEDED]: CoreColors.White,
-  [IStepState.FAILED]: CoreColors.White,
-  [IStepState.SKIPPED]: CoreColors.White,
-  [IStepState.UNKNOWN]: CoreColors.White,
+  [IStepState.RETRY_REQUESTED]: colorTextDefault(),
+  [IStepState.SUCCEEDED]: colorTextDefault(),
+  [IStepState.FAILED]: colorTextDefault(),
+  [IStepState.SKIPPED]: colorTextDefault(),
+  [IStepState.UNKNOWN]: colorTextDefault(),
 };
 
 const BackgroundColorForStates = {
