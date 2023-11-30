@@ -9,6 +9,8 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
 )
@@ -19,7 +21,12 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
-from .asset_automation_condition_cursor import AssetAutomationConditionCursor
+from .asset_automation_condition_cursor import (
+    AssetAutomationConditionCursor,
+    AssetAutomationConditionCursorValue,
+    GenericConditionCursorValue,
+)
+from .asset_automation_evaluator import AutomationCondition
 from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
 from .partition import PartitionsDefinition, PartitionsSubset
@@ -70,6 +77,11 @@ class AssetDaemonCursor(NamedTuple):
     def was_previously_handled(self, asset_key: AssetKey) -> bool:
         return asset_key in self.handled_root_asset_keys
 
+    def condition_cursor_for_condition(self, condition: AutomationCondition, cursor_value: AssetAutomationConditionCursorValue) -> AssetAutomationConditionCursor:
+        children = {child: self.condition_cursor_for_condition(child, cursor_value) for child in condition.children}
+        return AssetAutomationConditionCursor(
+            children=children, cursor_value=cursor_value
+        )
     def asset_cursor_for_key(
         self, asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
     ) -> AssetDaemonAssetCursor:
@@ -80,12 +92,21 @@ class AssetDaemonCursor(NamedTuple):
             handled_subset = AssetSubset(asset_key=asset_key, value=True)
         else:
             handled_subset = AssetSubset.empty(asset_key, partitions_def)
+
+        amp = AutoMaterializePolicy(rules={AutoMaterializeRule.skip_on_parent_missing()})
+        amp2 = amp.to_auto_materialize_policy_evaluator()
+
+        generic_cursor_value = GenericConditionCursorValue(
+            max_storage_id=self.latest_storage_id,
+            previous_evaluation_timestamp=self.latest_evaluation_timestamp,
+            subset=handled_subset,
+        )
+
+
         return AssetDaemonAssetCursor(
             asset_key=asset_key,
-            latest_storage_id=self.latest_storage_id,
-            latest_evaluation_timestamp=self.latest_evaluation_timestamp,
             latest_evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
-            materialized_requested_or_discarded_subset=handled_subset,
+            condition_cursor=
         )
 
     def with_updates(

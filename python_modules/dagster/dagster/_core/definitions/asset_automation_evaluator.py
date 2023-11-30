@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional, Sequence, Tuple
 
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
@@ -26,18 +26,6 @@ class AssetAutomationConditionSnapshot(ABC):
     ...
 
 
-class AssetAutomationConditionCursor:
-    ...
-
-
-class AssetAutomationConditionLeafCursor(AssetAutomationConditionCursor):
-    ...
-
-
-class AssetAutomationConditionEvaluation(NamedTuple):
-    result: AssetAutomationConditionResult
-
-
 class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
@@ -45,7 +33,7 @@ class ConditionEvaluation(NamedTuple):
     true_subset: AssetSubset
     results: RuleEvaluationResults = []
     children: Sequence["ConditionEvaluation"] = []
-    condition_cursor: Optional[ConditionCursor] = None
+    condition_cursor: Optional[AssetAutomationConditionCursor] = None
 
     @property
     def all_results(
@@ -100,6 +88,10 @@ class ConditionEvaluation(NamedTuple):
 
 
 class AutomationCondition(ABC):
+    @abstractproperty
+    def children(self) -> Sequence["AutomationCondition"]:
+        ...
+
     @abstractmethod
     def evaluate(self, context: RuleEvaluationContext) -> ConditionEvaluation:
         ...
