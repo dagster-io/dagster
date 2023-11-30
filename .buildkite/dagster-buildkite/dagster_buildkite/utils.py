@@ -213,6 +213,16 @@ def skip_if_no_yaml_changes():
     return "No yaml changes"
 
 
+def skip_if_no_non_docs_markdown_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+        return None
+
+    return "No markdown changes outside of docs"
+
+
 @functools.lru_cache(maxsize=None)
 def has_helm_changes():
     return any(Path("helm") in path.parents for path in ChangedFiles.all)
