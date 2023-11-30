@@ -4,7 +4,6 @@ from dagster_embedded_elt.sling.resources import (
     SlingMode,
     SlingResource,
     SlingSourceConnection,
-    SlingStream,
     SlingTargetConnection,
 )
 

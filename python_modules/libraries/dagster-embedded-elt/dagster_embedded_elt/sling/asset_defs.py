@@ -122,11 +122,9 @@ def build_assets_from_sling_streams(
     Args:
         source (SlingConnectionResource): The source SlingConnectionResource to use.
         target (SlingConnectionResource): The target SlingConnectionResource to use.
-        stream (str): The source stream to sync from. This can be a table, a query, or a path.
+        streams (str): The streams to sync from and any configurations specific to the stream. This can be a table, a query, or a path. See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/replication
         target_object (str, optional): The target object to sync to. This can be a table, or a path. Defaults to the template of "{{target_schema}}.{{stream_schema}}_{{stream_table}}". See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/replication
         mode (SlingMode, optional): The sync mode to use when syncing. Defaults to `full-refresh`.
-        primary_key (Optional[Union[str, List[str]]], optional): The optional primary key to use when syncing.
-        update_key (Optional[str], optional): The optional update key to use when syncing.
         source_options (Optional[Dict[str, Any]], optional): Any optional Sling source options to use when syncing.
         target_options (Optional[Dict[str, Any]], optional): Any optional target options to use when syncing.
 
@@ -162,9 +160,6 @@ def build_assets_from_sling_streams(
                     primary_key="id"
             )
     """
-    if primary_key is not None and not isinstance(primary_key, list):
-        primary_key = [primary_key]
-
     sling_replicator = SlingStreamReplicator(
         source_connection=source,
         target_connection=target,

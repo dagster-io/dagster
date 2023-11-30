@@ -3,7 +3,7 @@ import json
 import re
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, NamedTuple, Optional, Union
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
 from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
 from dagster._annotations import experimental
@@ -24,16 +24,6 @@ class SlingMode(str, Enum):
     TRUNCATE = "truncate"
     FULL_REFRESH = "full-refresh"
     SNAPSHOT = "snapshot"
-
-
-class SlingStream(NamedTuple):
-    stream_name: str
-    object: Optional[str] = None
-    mode: Optional[SlingMode] = None
-    primary_key: Optional[Union[str, List[str]]] = None
-    update_key: Optional[str] = None
-    sql: Optional[str] = None
-    disabled: Optional[bool] = False
 
 
 class SlingSourceConnection(PermissiveConfig):
@@ -193,49 +183,7 @@ class SlingResource(ConfigurableResource, _SlingSyncBase):
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
-        """Runs a Sling sync from the given source table to the given destination table. Generates output lines from the Sling CLI.
-        """
-        if self.source_connection.type == "file" and not source_stream.startswith("file://"):
-            source_stream = "file://" + source_stream
-
-        if self.target_connection.type == "file" and not target_object.startswith("file://"):
-            target_object = "file://" + target_object
-
-        sling_source = self.source_connection.dict()
-        sling_target = self.target_connection.dict()
-
-        if self.source_connection.connection_string:
-            sling_source["url"] = self.source_connection.connection_string
-        if self.target_connection.connection_string:
-            sling_target["url"] = self.target_connection.connection_string
-        with environ(
-            {
-                "SLING_SOURCE": json.dumps(sling_source),
-                "SLING_TARGET": json.dumps(sling_target),
-            }
-        ):
-            config = {
-                "mode": mode,
-                "source": {
-                    "conn": "SLING_SOURCE",
-                    "stream": source_stream,
-                    "primary_key": primary_key,
-                    "update_key": update_key,
-                    "options": source_options,
-                },
-                "target": {
-                    "conn": "SLING_TARGET",
-                    "object": target_object,
-                    "options": target_options,
-                },
-            }
-            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
-            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
-
-            sling_cli = Sling(**config)
-            logger.info("Starting Sling sync with mode: %s", mode)
-            cmd = sling_cli._prep_cmd()  # noqa: SLF001
-
+        """Runs a Sling sync from the given source table to the given destination table. Generates output lines from the Sling CLI."""
         yield from self._sync(
             source_stream=source_stream,
             target_object=target_object,
@@ -396,7 +344,9 @@ class SlingStreamReplicator(_SlingSyncBase):
                     if v is not None and v is not False and k != "stream_name"
                 }
 
-                if filtered_config.get("primary_key"):
+                if filtered_config.get("primary_key") and isinstance(
+                    filtered_config.get("primary_key"), list
+                ):
                     filtered_config["primary_key"] = [filtered_config["primary_key"]]
 
                 stream_config[stream["stream_name"]] = filtered_config if filtered_config else None
