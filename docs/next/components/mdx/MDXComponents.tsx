@@ -60,6 +60,10 @@ const useHash = (): string => {
   return hash;
 };
 
+//////////////////////
+//    PYOBJECT      //
+//////////////////////
+
 const PyObject: React.FunctionComponent<{
   module: string;
   object: string;
@@ -118,6 +122,10 @@ const PyObject: React.FunctionComponent<{
   );
 };
 
+//////////////////////
+//       CHECK      //
+//////////////////////
+
 const Check = () => {
   return (
     <svg
@@ -135,6 +143,10 @@ const Check = () => {
   );
 };
 
+//////////////////////
+//       CROSS      //
+//////////////////////
+
 const Cross = () => {
   return (
     <svg
@@ -151,6 +163,10 @@ const Cross = () => {
     </svg>
   );
 };
+
+//////////////////////
+//    LINKGRID      //
+//////////////////////
 
 const LinkGrid = ({children}) => {
   return (
@@ -187,6 +203,10 @@ const getColorForString = (s: string) => {
   return colors[Math.abs(hashCode(s)) % colors.length];
 };
 
+//////////////////////
+//       BADGE      //
+//////////////////////
+
 const Badge = ({text}) => {
   const colors = getColorForString(text);
   return (
@@ -197,6 +217,10 @@ const Badge = ({text}) => {
     </span>
   );
 };
+
+//////////////////////
+//  LINK GRID ITEM  //
+//////////////////////
 
 const LinkGridItem = ({title, href, children, tags = []}) => {
   return (
@@ -250,6 +274,10 @@ const ADMONITION_STYLES = {
   },
 };
 
+//////////////////////
+//    CALLOUTS      //
+//////////////////////
+
 const Admonition = ({style, children}) => {
   const {colors, icon} = ADMONITION_STYLES[style];
   return (
@@ -282,6 +310,11 @@ const Warning = ({children}) => {
   return <Admonition style="warning">{children}</Admonition>;
 };
 
+
+//////////////////////
+//  CODE REF LINK   //
+//////////////////////
+
 const CodeReferenceLink = ({filePath, isInline, children}) => {
   const url = `https://github.com/dagster-io/dagster/tree/${LATEST_VERSION}/${filePath}`;
 
@@ -302,6 +335,10 @@ const CodeReferenceLink = ({filePath, isInline, children}) => {
     );
   }
 };
+
+//////////////////////
+//    REF TABLE     //
+//////////////////////
 
 const ReferenceTable = ({children}) => {
   return (
@@ -348,6 +385,10 @@ const InstanceDiagramBox = ({href = '#', className = '', children}) => {
   );
 };
 
+//////////////////////
+//       TODO       //
+//////////////////////
+
 const TODO = () => {
   return (
     <div className="h-48 w-full bg-red-100 flex justify-center items-center rounded-lg">
@@ -355,6 +396,10 @@ const TODO = () => {
     </div>
   );
 };
+
+////////////////////////
+// IMAGE PLACEHOLDER  //
+////////////////////////
 
 const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
   return (
@@ -364,6 +409,10 @@ const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
   );
 };
 
+////////////////////////
+// EXPERIMENTAL BADGE //
+////////////////////////
+
 const Experimental = () => {
   return (
     <div className="experimental-tag">
@@ -372,6 +421,10 @@ const Experimental = () => {
   );
 };
 
+////////////////////////
+//  DEPRECATED BADGE  //
+////////////////////////
+
 const Deprecated = () => {
   return (
     <div className="deprecated-tag">
@@ -379,6 +432,10 @@ const Deprecated = () => {
     </div>
   );
 };
+
+//////////////////////
+//  LEGACY BADGE    //
+//////////////////////
 
 const Legacy = () => {
   return (
@@ -404,6 +461,10 @@ const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) =>
     </pre>
   );
 };
+
+//////////////////////
+//    CODE BLOCKS   //
+//////////////////////
 
 interface CodeProps extends React.HTMLProps<HTMLElement> {
   dagimage?: string;
@@ -496,6 +557,10 @@ const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
   );
 };
 
+//////////////////////
+//  ARTICLE LISTS   //
+//////////////////////
+
 const ArticleList = ({children}) => {
   return (
     <div className="category-container">
@@ -532,6 +597,10 @@ const ArticleListItem = ({title, href}) => {
     </li>
   );
 };
+
+//////////////////////
+//  EXAMPLE BOXES   //
+//////////////////////
 
 const ExampleItemSmall = ({title, tags = []}) => {
   return (
@@ -573,6 +642,10 @@ const ExampleItem = ({title, hrefDoc = null, hrefCode, children, tags = []}) => 
     </div>
   );
 };
+
+//////////////////////
+//       TABS       //
+//////////////////////
 
 interface TabItem {
   name: string;
@@ -679,6 +752,10 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
   );
 };
 
+//////////////////////
+//      IMAGES      //
+//////////////////////
+
 const Image = ({children, ...props}) => {
   /* Only version images when all conditions meet:
    * - use <Image> component in mdx
@@ -701,6 +778,10 @@ const Image = ({children, ...props}) => {
     </Zoom>
   );
 };
+
+//////////////////////
+//     BUTTONS      //
+//////////////////////
 
 const Button = ({
   children,
