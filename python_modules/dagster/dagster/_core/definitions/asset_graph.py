@@ -19,7 +19,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import toposort
 
 import dagster._check as check
@@ -118,14 +117,14 @@ class AssetGraph:
     def source_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._source_asset_keys
 
-    @property
+    @functools.cached_property
     def root_asset_keys(self) -> AbstractSet[AssetKey]:
         """Non-source asset keys that have no non-source parents."""
         from .asset_selection import AssetSelection
 
         return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
 
-    @property
+    @functools.cached_property
     def root_materializable_or_observable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Materializable or observable source asset keys that have no parents which are
         materializable or observable.
@@ -364,6 +363,7 @@ class AssetGraph:
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
         child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
             parent_partitions_def.empty_subset().with_partition_keys([parent_partition_key]),
+            parent_partitions_def,
             downstream_partitions_def=child_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
@@ -437,7 +437,7 @@ class AssetGraph:
         """
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
-        child_partitions_def = self.get_partitions_def(child_asset_key)
+        child_partitions_def = cast(PartitionsDefinition, self.get_partitions_def(child_asset_key))
         parent_partitions_def = self.get_partitions_def(parent_asset_key)
 
         if parent_partitions_def is None:
@@ -449,12 +449,11 @@ class AssetGraph:
 
         return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
             (
-                cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
-                    [partition_key]
-                )
+                child_partitions_def.subset_with_partition_keys([partition_key])
                 if partition_key
                 else None
             ),
+            downstream_partitions_def=child_partitions_def,
             upstream_partitions_def=parent_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
@@ -574,12 +573,12 @@ class AssetGraph:
 
         queued_subsets_by_asset_key: Dict[AssetKey, Optional[PartitionsSubset]] = {
             initial_asset_key: (
-                initial_subset.get_partitions_subset(initial_asset_key)
+                initial_subset.get_partitions_subset(initial_asset_key, self)
                 if self.get_partitions_def(initial_asset_key)
                 else None
             ),
         }
-        result = AssetGraphSubset(self)
+        result = AssetGraphSubset()
 
         while len(queue) > 0:
             asset_key = queue.popleft()
@@ -587,7 +586,6 @@ class AssetGraph:
 
             if condition_fn(asset_key, partitions_subset):
                 result |= AssetGraphSubset(
-                    self,
                     non_partitioned_asset_keys={asset_key} if partitions_subset is None else set(),
                     partitions_subsets_by_asset_key=(
                         {asset_key: partitions_subset} if partitions_subset is not None else {}
@@ -611,6 +609,7 @@ class AssetGraph:
                             child_partitions_subset = (
                                 partition_mapping.get_downstream_partitions_for_partitions(
                                     partitions_subset,
+                                    check.not_none(self.get_partitions_def(asset_key)),
                                     downstream_partitions_def=child_partitions_def,
                                     dynamic_partitions_store=dynamic_partitions_store,
                                     current_time=current_time,
@@ -754,7 +753,7 @@ class InternalAssetGraph(AssetGraph):
 
 def sort_key_for_asset_partition(
     asset_graph: AssetGraph, asset_partition: AssetKeyPartitionKey
-) -> int:
+) -> float:
     """Returns an integer sort key such that asset partitions are sorted in the order in which they
     should be materialized. For assets without a time window partition dimension, this is always 0.
     Assets with a time window partition dimension will be sorted from newest to oldest, unless they
@@ -767,9 +766,8 @@ def sort_key_for_asset_partition(
 
     # A sort key such that time window partitions are sorted from oldest to newest
     time_partition_key = get_time_partition_key(partitions_def, asset_partition.partition_key)
-    partition_timestamp = pendulum.instance(
-        datetime.strptime(time_partition_key, time_partitions_def.fmt),
-        tz=time_partitions_def.timezone,
+    partition_timestamp = time_partitions_def.start_time_for_partition_key(
+        time_partition_key
     ).timestamp()
 
     if asset_graph.has_self_dependency(asset_partition.asset_key):

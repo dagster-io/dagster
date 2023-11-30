@@ -1,6 +1,8 @@
 import datetime
 import logging  # noqa: F401; used by mock in string form
+import random
 import re
+import string
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -2120,120 +2122,6 @@ class TestEventLogStorage:
                     assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
                     assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
 
-    def test_get_materialization_count_by_partition(self, storage, instance):
-        a = AssetKey("no_materializations_asset")
-        b = AssetKey("no_partitions_asset")
-        c = AssetKey("two_partitions_asset")
-        d = AssetKey("one_partition_asset")
-
-        @op
-        def materialize():
-            yield AssetMaterialization(b)
-            yield AssetMaterialization(c, partition="a")
-            yield AssetObservation(a, partition="a")
-            yield Output(None)
-
-        @op
-        def materialize_two():
-            yield AssetMaterialization(d, partition="x")
-            yield AssetMaterialization(c, partition="a")
-            yield AssetMaterialization(c, partition="b")
-            yield Output(None)
-
-        def _fetch_counts(storage, after_cursor=None):
-            return storage.get_materialization_count_by_partition([c, d], after_cursor=after_cursor)
-
-        with instance_for_test() as created_instance:
-            if not storage.has_instance:
-                storage.register_instance(created_instance)
-
-            run_id_1 = make_new_run_id()
-            run_id_2 = make_new_run_id()
-            run_id_3 = make_new_run_id()
-
-            with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
-                events_one, _ = _synthesize_events(
-                    lambda: materialize(), instance=created_instance, run_id=run_id_1
-                )
-                for event in events_one:
-                    storage.store_event(event)
-
-                cursor_run1 = storage.get_event_records(
-                    EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION),
-                    limit=1,
-                    ascending=False,
-                )[0].storage_id
-
-                materialization_count_by_key = storage.get_materialization_count_by_partition(
-                    [a, b, c]
-                )
-
-                assert materialization_count_by_key.get(a) == {}
-                assert materialization_count_by_key.get(b) == {}
-                assert materialization_count_by_key.get(c)["a"] == 1
-                assert len(materialization_count_by_key.get(c)) == 1
-
-                events_two, _ = _synthesize_events(
-                    lambda: materialize_two(),
-                    instance=created_instance,
-                    run_id=run_id_2,
-                )
-                for event in events_two:
-                    storage.store_event(event)
-
-                materialization_count_by_key = storage.get_materialization_count_by_partition(
-                    [a, b, c]
-                )
-                assert materialization_count_by_key.get(c)["a"] == 2
-                assert materialization_count_by_key.get(c)["b"] == 1
-
-                # after_cursor
-                materialization_count_by_key_after_run1 = (
-                    storage.get_materialization_count_by_partition(
-                        [a, b, c], after_cursor=cursor_run1
-                    )
-                )
-                assert materialization_count_by_key_after_run1.get(a) == {}
-                assert materialization_count_by_key_after_run1.get(b) == {}
-                assert materialization_count_by_key_after_run1.get(c)["a"] == 1
-                assert materialization_count_by_key_after_run1.get(c)["b"] == 1
-                assert len(materialization_count_by_key_after_run1.get(c)) == 2
-
-                materialization_count_by_key_after_everything = (
-                    storage.get_materialization_count_by_partition(
-                        [a, b, c], after_cursor=9999999999
-                    )
-                )
-                assert materialization_count_by_key_after_everything.get(a) == {}
-                assert materialization_count_by_key_after_everything.get(b) == {}
-                assert materialization_count_by_key_after_everything.get(c) == {}
-
-                # wipe asset, make sure we respect that
-                if self.can_wipe():
-                    storage.wipe_asset(c)
-                    materialization_count_by_partition = _fetch_counts(storage)
-                    assert materialization_count_by_partition.get(c) == {}
-
-                    # rematerialize wiped asset
-                    events, _ = _synthesize_events(
-                        lambda: materialize_two(),
-                        instance=created_instance,
-                        run_id=run_id_3,
-                    )
-                    for event in events:
-                        storage.store_event(event)
-
-                    materialization_count_by_partition = _fetch_counts(storage)
-                    assert materialization_count_by_partition.get(c)["a"] == 1
-                    assert materialization_count_by_partition.get(d)["x"] == 2
-
-                    # make sure adding an after_cursor doesn't mess with the wiped events
-                    assert (
-                        _fetch_counts(storage, after_cursor=cursor_run1)
-                        == materialization_count_by_partition
-                    )
-                    assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
-
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
         b = AssetKey(["b"])
@@ -3686,25 +3574,11 @@ class TestEventLogStorage:
                 for event in events_one:
                     storage.store_event(event)
 
-            materialization_counts = created_instance.get_materialization_count_by_partition([key])
-            assert (
-                materialization_counts[key][
-                    MultiPartitionKey({"country": "US", "date": "2022-10-13"})
-                ]
-                == 2
-            )
-            assert (
-                materialization_counts[key][
-                    MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"})
-                ]
-                == 1
-            )
-            assert (
-                materialization_counts[key][
-                    MultiPartitionKey({"country": "Canada", "date": "2022-10-13"})
-                ]
-                == 1
-            )
+            assert created_instance.get_materialized_partitions(key) == {
+                MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"}),
+                MultiPartitionKey({"country": "Canada", "date": "2022-10-13"}),
+            }
 
     def test_store_and_wipe_cached_status(self, storage, instance):
         asset_key = AssetKey("yay")
@@ -4000,6 +3874,12 @@ class TestEventLogStorage:
         foo_info = storage.get_concurrency_info("foo")
         assert foo_info.active_slot_count == 1
         assert foo_info.active_run_ids == {run_id}
+        assert len(foo_info.claimed_slots) == 1
+        assert foo_info.claimed_slots[0].step_key == "a"
+        assert len(foo_info.pending_steps) == 5
+        assigned_steps = [step for step in foo_info.pending_steps if step.assigned_timestamp]
+        assert len(assigned_steps) == 1
+        assert assigned_steps[0].step_key == "a"
 
         # a is assigned, has the active slot, the rest are not assigned
         assert storage.check_concurrency_claim("foo", run_id, "a").assigned_timestamp is not None
@@ -4353,3 +4233,26 @@ class TestEventLogStorage:
         mats = storage.get_latest_materialization_events([key])
         assert mats
         assert mats[key].asset_materialization.metadata["was"].value == "here"
+
+    def test_large_asset_metadata(self, storage, test_run_id):
+        key = AssetKey("test_asset")
+
+        large_metadata = {
+            f"key_{i}": "".join(random.choices(string.ascii_uppercase, k=1000)) for i in range(300)
+        }
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name=RUNLESS_JOB_NAME,
+                    event_specific_data=StepMaterializationData(
+                        materialization=AssetMaterialization(asset_key=key, metadata=large_metadata)
+                    ),
+                ),
+            )
+        )

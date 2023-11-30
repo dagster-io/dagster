@@ -198,6 +198,28 @@ class ActiveExecution:
             ),
         )
 
+    def _should_skip_step(self, step_key: str, successful_or_skipped_steps: Set[str]) -> bool:
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            missing_source_handles = []
+
+            for source_handle in step_input.get_step_output_handle_dependencies():
+                if (
+                    source_handle.step_key in successful_or_skipped_steps
+                    and source_handle not in self._step_outputs
+                ):
+                    missing_source_handles.append(source_handle)
+
+            if missing_source_handles:
+                if len(missing_source_handles) == len(
+                    step_input.get_step_output_handle_dependencies()
+                ):
+                    self._skipped_deps[step_key] = [
+                        f"{h.step_key}.{h.output_name}" for h in missing_source_handles
+                    ]
+                    return True
+        return False
+
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
@@ -208,6 +230,7 @@ class ActiveExecution:
 
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
+        resolved_steps = self._success | self._skipped | self._failed | self._abandoned
 
         if self._new_dynamic_mappings:
             new_step_deps = self._plan.resolve(self._completed_dynamic_outputs)
@@ -216,39 +239,12 @@ class ActiveExecution:
 
             self._new_dynamic_mappings = False
 
-        for step_key, requirements in self._pending.items():
-            # If any upstream deps failed - this is not executable
-            if requirements.intersection(failed_or_abandoned_steps):
-                new_steps_to_abandon.append(step_key)
-
-            # If all the upstream steps of a step are complete or skipped
-            elif requirements.issubset(successful_or_skipped_steps):
-                step = self.get_step_by_key(step_key)
-
-                # The base case is downstream step won't skip
-                should_skip = False
-
-                # If there is at least one of the step's inputs, none of whose upstream steps has
-                # yielded an output, we should skip that step.
-                for step_input in step.step_inputs:
-                    missing_source_handles = [
-                        source_handle
-                        for source_handle in step_input.get_step_output_handle_dependencies()
-                        if source_handle.step_key in requirements
-                        and source_handle not in self._step_outputs
-                    ]
-                    if missing_source_handles:
-                        if len(missing_source_handles) == len(
-                            step_input.get_step_output_handle_dependencies()
-                        ):
-                            should_skip = True
-                            self._skipped_deps[step_key] = [
-                                f"{h.step_key}.{h.output_name}" for h in missing_source_handles
-                            ]
-                            break
-
-                if should_skip:
+        for step_key, depends_on_steps in self._pending.items():
+            if depends_on_steps.issubset(resolved_steps):
+                if self._should_skip_step(step_key, successful_or_skipped_steps):
                     new_steps_to_skip.append(step_key)
+                elif depends_on_steps.intersection(failed_or_abandoned_steps):
+                    new_steps_to_abandon.append(step_key)
                 else:
                     new_steps_to_execute.append(step_key)
 

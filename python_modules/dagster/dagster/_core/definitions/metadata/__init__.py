@@ -443,6 +443,41 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
+    def job(
+        job_name: str,
+        location_name: str,
+        *,
+        repository_name: Optional[str] = None,
+    ) -> "DagsterJobMetadataValue":
+        """Static constructor for a metadata value referencing a Dagster job, by name.
+
+        For example:
+
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset"
+                    metadata={
+                        "Producing job": MetadataValue.job('my_other_job'),
+                    },
+                )
+
+        Args:
+            job_name (str): The name of the job.
+            location_name (Optional[str]): The code location name for the job.
+            repository_name (Optional[str]): The repository name of the job, if different from the
+                default.
+        """
+        return DagsterJobMetadataValue(
+            job_name=check.str_param(job_name, "job_name"),
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.opt_str_param(repository_name, "repository_name"),
+        )
+
+    @public
+    @staticmethod
     @experimental
     def table(
         records: Sequence[TableRecord], schema: Optional[TableSchema] = None
@@ -800,6 +835,46 @@ class DagsterRunMetadataValue(
     def value(self) -> str:
         """str: The wrapped run id."""
         return self.run_id
+
+
+@whitelist_for_serdes
+class DagsterJobMetadataValue(
+    NamedTuple(
+        "_DagsterJobMetadataValue",
+        [
+            ("job_name", PublicAttr[str]),
+            ("location_name", PublicAttr[str]),
+            ("repository_name", PublicAttr[Optional[str]]),
+        ],
+    ),
+    MetadataValue["DagsterJobMetadataValue"],
+):
+    """Representation of a dagster run.
+
+    Args:
+        job_name (str): The job's name
+        location_name (str): The job's code location name
+        repository_name (Optional[str]): The job's repository name. If not provided, the job is
+            assumed to be in the same repository as this object.
+    """
+
+    def __new__(
+        cls,
+        job_name: str,
+        location_name: str,
+        repository_name: Optional[str] = None,
+    ):
+        return super(DagsterJobMetadataValue, cls).__new__(
+            cls,
+            check.str_param(job_name, "job_name"),
+            check.str_param(location_name, "location_name"),
+            check.opt_str_param(repository_name, "repository_name"),
+        )
+
+    @public
+    @property
+    def value(self) -> Self:
+        return self
 
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")

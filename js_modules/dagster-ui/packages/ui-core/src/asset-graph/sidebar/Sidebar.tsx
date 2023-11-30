@@ -10,7 +10,7 @@ import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
-import {Node} from './Node';
+import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
@@ -33,6 +33,8 @@ export const AssetGraphExplorerSidebar = React.memo(
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     allAssetKeys: AssetKey[];
+    expandedGroups: string[];
+    setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
   }) => {
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -184,7 +186,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const rowVirtualizer = useVirtualizer({
       count: renderedNodes.length,
       getScrollElement: () => containerRef.current,
-      estimateSize: () => 28,
+      estimateSize: () => 32,
       overscan: 10,
     });
 
@@ -293,6 +295,8 @@ export const AssetGraphExplorerSidebar = React.memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [viewType, renderedNodes, selectedNode],
     );
+    const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
+    indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 
     React.useLayoutEffect(() => {
       if (indexOfLastSelectedNode !== -1) {
@@ -306,6 +310,12 @@ export const AssetGraphExplorerSidebar = React.memo(
       // if we toggle a node above the selected node
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedNode, rootNodes, rowVirtualizer]);
+
+    React.useLayoutEffect(() => {
+      // Fix a weird issue where the sidebar doesn't measure the full height.
+      const id = setInterval(rowVirtualizer.measure, 1000);
+      return () => clearInterval(id);
+    }, [rowVirtualizer.measure]);
 
     return (
       <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
@@ -347,7 +357,36 @@ export const AssetGraphExplorerSidebar = React.memo(
           />
         </Box>
         <div>
-          <Container ref={containerRef}>
+          <Container
+            ref={containerRef}
+            onKeyDown={(e) => {
+              let nextIndex = 0;
+              if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+                nextIndex = indexOfLastSelectedNodeRef.current + (e.code === 'ArrowDown' ? 1 : -1);
+                indexOfLastSelectedNodeRef.current = nextIndex;
+                e.preventDefault();
+                const nextNode =
+                  renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
+                setSelectedNode(nextNode);
+                selectNode(e, nextNode.id);
+              } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                const open = e.code === 'ArrowRight';
+                setOpenNodes((nodes) => {
+                  const node = renderedNodes[indexOfLastSelectedNode];
+                  if (!node) {
+                    return nodes;
+                  }
+                  const openNodes = new Set(nodes);
+                  if (open) {
+                    openNodes.add(nodePathKey(node));
+                  } else {
+                    openNodes.delete(nodePathKey(node));
+                  }
+                  return openNodes;
+                });
+              }
+            }}
+          >
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start, measureElement}) => {
                 const node = renderedNodes[index]!;
@@ -363,7 +402,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                     ref={measureElement}
                   >
                     {row ? (
-                      <Node
+                      <AssetSidebarNode
                         viewType={viewType}
                         isOpen={openNodes.has(nodePathKey(node))}
                         graphData={graphData}

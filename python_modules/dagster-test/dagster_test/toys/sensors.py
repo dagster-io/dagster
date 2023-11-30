@@ -140,11 +140,12 @@ def get_toys_sensors():
 
     @sensor(job=simple_config_job)
     def math_sensor(context):
-        context.update_cursor(str(int(context.cursor) + 1))
+        cursor = context.cursor if context.cursor else 0
+        context.update_cursor(str(int(cursor) + 1))
         for i in range(3):
             yield RunRequest(
                 run_key=str(i),
-                run_config={"ops": {"the_op": {"config": {"foo": "bar"}}}},
+                run_config={"ops": {"requires_config": {"config": {"num": 0}}}},
                 tags={"fee": "fifofum"},
             )
 

@@ -14,6 +14,7 @@ export type GetEvaluationsQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
+        currentAutoMaterializeEvaluationId: number | null;
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           rules: Array<{
@@ -29,7 +30,6 @@ export type GetEvaluationsQuery = {
     | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
     | {
         __typename: 'AutoMaterializeAssetEvaluationRecords';
-        currentEvaluationId: number | null;
         records: Array<{
           __typename: 'AutoMaterializeAssetEvaluationRecord';
           id: string;

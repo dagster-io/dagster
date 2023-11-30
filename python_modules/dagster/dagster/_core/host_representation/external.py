@@ -117,10 +117,12 @@ class ExternalRepository:
         self._asset_jobs: Dict[str, List[ExternalAssetNode]] = {}
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
-                if job_name not in self._asset_jobs:
-                    self._asset_jobs[job_name] = [asset_node]
-                else:
-                    self._asset_jobs[job_name].append(asset_node)
+                self._asset_jobs.setdefault(job_name, []).append(asset_node)
+
+        self._asset_check_jobs: Dict[str, List[ExternalAssetCheck]] = {}
+        for asset_check in external_repository_data.external_asset_checks or []:
+            for job_name in asset_check.job_names:
+                self._asset_check_jobs.setdefault(job_name, []).append(asset_check)
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
@@ -282,8 +284,13 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
-    def get_external_asset_checks(self) -> Sequence[ExternalAssetCheck]:
-        return self.external_repository_data.external_asset_checks or []
+    def get_external_asset_checks(
+        self, job_name: Optional[str] = None
+    ) -> Sequence[ExternalAssetCheck]:
+        if job_name:
+            return self._asset_check_jobs.get(job_name, [])
+        else:
+            return self.external_repository_data.external_asset_checks or []
 
     def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata

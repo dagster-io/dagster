@@ -45,7 +45,11 @@ class LateBoundTypesForResourceTypeChecking:
 
     @staticmethod
     def get_partial_resource_type(base: Type) -> Type:
-        return LateBoundTypesForResourceTypeChecking._PartialResource[base]
+        # LateBoundTypesForResourceTypeChecking._PartialResource[base] would be the more
+        # correct thing to return, but to enable that deeper pydantic integration
+        # needs to be done on the PartialResource class
+        # https://github.com/dagster-io/dagster/issues/18017
+        return LateBoundTypesForResourceTypeChecking._PartialResource
 
     @staticmethod
     def set_actual_types_for_type_checking(

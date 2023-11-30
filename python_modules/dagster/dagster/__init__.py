@@ -130,6 +130,7 @@ from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
 )
 from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
     AutoMaterializeRule as AutoMaterializeRule,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
@@ -243,6 +244,7 @@ from dagster._core.definitions.materialize import (
 from dagster._core.definitions.metadata import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
+    DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,

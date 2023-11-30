@@ -62,6 +62,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
 )
 from dagster._core.test_utils import instance_for_test
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -289,7 +290,12 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
             else:
                 assert False
 
-            backfill_data = AssetBackfillData.empty(target_subset, scenario.evaluation_time)
+            backfill_data = AssetBackfillData.empty(
+                target_subset,
+                scenario.evaluation_time,
+                asset_graph,
+                dynamic_partitions_store=instance,
+            )
 
             if failures == "no_failures":
                 fail_asset_partitions: Set[AssetKeyPartitionKey] = set()
@@ -422,7 +428,12 @@ def make_backfill_data(
     else:
         assert False
 
-    return AssetBackfillData.empty(target_subset, current_time or pendulum.now("UTC"))
+    return AssetBackfillData.empty(
+        target_subset,
+        current_time or pendulum.now("UTC"),
+        asset_graph,
+        dynamic_partitions_store=instance,
+    )
 
 
 def make_random_subset(
@@ -851,7 +862,7 @@ def test_asset_backfill_status_counts():
         ],
     )
 
-    counts = completed_backfill_data.get_backfill_status_per_asset_key()
+    counts = completed_backfill_data.get_backfill_status_per_asset_key(asset_graph)
 
     assert counts[0].asset_key == unpartitioned_upstream_of_partitioned.key
     assert counts[0].backfill_status == AssetBackfillStatus.MATERIALIZED
@@ -904,7 +915,7 @@ def test_asset_backfill_status_counts_with_reexecution():
         "fake_id", backfill_data, asset_graph, instance, assets_by_repo_name
     )
 
-    counts = backfill_data.get_backfill_status_per_asset_key()
+    counts = backfill_data.get_backfill_status_per_asset_key(asset_graph)
     assert counts[0].asset_key == upstream_fail.key
     assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 0
     assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 1
@@ -920,7 +931,7 @@ def test_asset_backfill_status_counts_with_reexecution():
     backfill_data = _single_backfill_iteration(
         "fake_id", backfill_data, asset_graph, instance, assets_by_repo_name
     )
-    counts = backfill_data.get_backfill_status_per_asset_key()
+    counts = backfill_data.get_backfill_status_per_asset_key(asset_graph)
     assert counts[0].asset_key == upstream_fail.key
     assert counts[0].partitions_counts_by_status[AssetBackfillStatus.MATERIALIZED] == 1
     assert counts[0].partitions_counts_by_status[AssetBackfillStatus.FAILED] == 0
@@ -960,9 +971,14 @@ def test_asset_backfill_selects_only_existent_partitions():
 
     target_subset = backfill_data.target_subset
     assert target_subset.get_partitions_subset(
-        upstream_hourly_partitioned_asset.key
+        upstream_hourly_partitioned_asset.key, asset_graph
     ).get_partition_keys() == ["2023-01-09-00:00"]
-    assert len(target_subset.get_partitions_subset(downstream_daily_partitioned_asset.key)) == 0
+    assert (
+        len(
+            target_subset.get_partitions_subset(downstream_daily_partitioned_asset.key, asset_graph)
+        )
+        == 0
+    )
 
 
 def test_asset_backfill_throw_error_on_invalid_upstreams():
@@ -1061,13 +1077,13 @@ def test_asset_backfill_cancellation():
     assert canceling_backfill_data.have_all_requested_runs_finished() is True
     assert (
         canceling_backfill_data.materialized_subset.get_partitions_subset(
-            upstream_hourly_partitioned_asset.key
+            upstream_hourly_partitioned_asset.key, asset_graph
         ).get_partition_keys()
         == targeted_partitions
     )
     assert (
         canceling_backfill_data.materialized_subset.get_partitions_subset(
-            downstream_daily_partitioned_asset.key
+            downstream_daily_partitioned_asset.key, asset_graph
         ).get_partition_keys()
         == []
     )
@@ -1389,10 +1405,47 @@ def test_asset_backfill_unpartitioned_downstream_of_partitioned():
     )
 
     assert asset_backfill_data.target_subset.partitions_subsets_by_asset_key == {
-        foo.key: foo_partitions_def.empty_subset().with_partition_key_range(partition_key_range),
+        foo.key: foo_partitions_def.empty_subset().with_partition_key_range(
+            foo_partitions_def, partition_key_range
+        ),
         foo_child.key: foo_partitions_def.empty_subset().with_partition_key_range(
-            partition_key_range
+            foo_partitions_def, partition_key_range
         ),
     }
 
     run_backfill_to_completion(asset_graph, assets_by_repo_name, asset_backfill_data, [], instance)
+
+
+def test_asset_backfill_serialization_deserialization():
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    )
+    def upstream():
+        pass
+
+    @asset
+    def middle():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    )
+    def downstream(upstream):
+        pass
+
+    assets_by_repo_name = {"repo": [upstream, downstream, middle]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["2023-01-01", "2023-01-02", "2023-01-05"],
+        asset_selection=[upstream.key, middle.key, downstream.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 1, 9, 0, 0, 0),
+    )
+
+    assert (
+        deserialize_value(serialize_value(asset_backfill_data), AssetBackfillData)
+        == asset_backfill_data
+    )

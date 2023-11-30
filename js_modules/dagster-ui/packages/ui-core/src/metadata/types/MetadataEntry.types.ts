@@ -31,6 +31,15 @@ export type MetadataEntryFragment_IntMetadataEntry_ = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_JobMetadataEntry_ = {
+  __typename: 'JobMetadataEntry';
+  jobName: string;
+  repositoryName: string | null;
+  locationName: string;
+  label: string;
+  description: string | null;
+};
+
 export type MetadataEntryFragment_JsonMetadataEntry_ = {
   __typename: 'JsonMetadataEntry';
   jsonString: string;
@@ -147,6 +156,7 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_BoolMetadataEntry_
   | MetadataEntryFragment_FloatMetadataEntry_
   | MetadataEntryFragment_IntMetadataEntry_
+  | MetadataEntryFragment_JobMetadataEntry_
   | MetadataEntryFragment_JsonMetadataEntry_
   | MetadataEntryFragment_MarkdownMetadataEntry_
   | MetadataEntryFragment_NotebookMetadataEntry_

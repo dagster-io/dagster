@@ -514,9 +514,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             # This is not ideal, as the triggered run for the dbt Cloud job will still have both
             # `--select` options when displayed in the UI, but parsing the command line argument
             # to remove the initial select using argparse.
-            if len(context.selected_output_names) != len(
-                assets_definition_cacheable_data.keys_by_output_name or {}
-            ):
+            if context.is_subset:
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
                     for output_name in context.selected_output_names
@@ -586,7 +584,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 @experimental_param(param="partitions_def")
 @experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
-    dbt_cloud: ResourceDefinition,
+    dbt_cloud: Union[DbtCloudClientResource, ResourceDefinition],
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     node_info_to_group_fn: Callable[

@@ -7,7 +7,8 @@ sources:
       - name: raw_customers
         meta:
           dagster:
-            asset_key: ['customized', 'source', 'jaffle_shop', 'main', 'raw_customers']
+            asset_key:
+              ["customized", "source", "jaffle_shop", "main", "raw_customers"]
       - name: raw_events
 
 models:
@@ -67,7 +68,8 @@ models:
         description: '{{ doc("orders_status") }}'
         tests:
           - accepted_values:
-              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+              values:
+                ["placed", "shipped", "completed", "return_pending", "returned"]
 
       - name: amount
         description: Total amount (AUD) of the order

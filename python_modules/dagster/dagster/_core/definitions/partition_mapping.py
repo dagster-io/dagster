@@ -1,6 +1,6 @@
 import collections.abc
 import itertools
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import datetime
 from typing import (
@@ -62,6 +62,7 @@ class PartitionMapping(ABC):
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -81,6 +82,7 @@ class PartitionMapping(ABC):
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -97,6 +99,11 @@ class PartitionMapping(ABC):
         when downstream_partitions_subset contains 2023-05-01 and 2023-06-01.
         """
 
+    @abstractproperty
+    def description(self) -> str:
+        """A human-readable description of the partition mapping, displayed in the Dagster UI."""
+        raise NotImplementedError()
+
 
 @whitelist_for_serdes
 class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
@@ -107,6 +114,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -134,6 +142,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -155,6 +164,13 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
             list(downstream_partition_keys & upstream_partition_keys)
         )
 
+    @property
+    def description(self) -> str:
+        return (
+            "Assumes upstream and downstream assets share the same partitions definition. "
+            "Maps each partition in the downstream asset to the same partition in the upstream asset."
+        )
+
 
 @whitelist_for_serdes
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
@@ -167,6 +183,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -179,11 +196,16 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
         raise NotImplementedError()
+
+    @property
+    def description(self) -> str:
+        return "Each downstream partition depends on all partitions of the upstream asset."
 
 
 @whitelist_for_serdes
@@ -197,6 +219,7 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -214,11 +237,12 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        last_upstream_partition = upstream_partitions_subset.partitions_def.get_last_partition_key(
+        last_upstream_partition = upstream_partitions_def.get_last_partition_key(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
         if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
@@ -227,6 +251,10 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
             )
         else:
             return downstream_partitions_def.empty_subset()
+
+    @property
+    def description(self) -> str:
+        return "Each downstream partition depends on the last partition of the upstream asset."
 
 
 @whitelist_for_serdes
@@ -259,6 +287,7 @@ class SpecificPartitionsPartitionMapping(
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -270,6 +299,7 @@ class SpecificPartitionsPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -281,6 +311,10 @@ class SpecificPartitionsPartitionMapping(
                 dynamic_partitions_store=dynamic_partitions_store
             )
         return downstream_partitions_def.empty_subset()
+
+    @property
+    def description(self) -> str:
+        return f"Each downstream partition depends on the following upstream partitions: {self.partition_keys}"
 
 
 class DimensionDependency(NamedTuple):
@@ -325,9 +359,8 @@ class BaseMultiPartitionMapping(ABC):
         a_partition_keys_by_dimension = defaultdict(set)
         if isinstance(a_partitions_def, MultiPartitionsDefinition):
             for partition_key in a_partitions_subset.get_partition_keys():
-                for dimension_name, key in cast(
-                    MultiPartitionKey, partition_key
-                ).keys_by_dimension.items():
+                key = a_partitions_def.get_partition_key_from_str(partition_key)
+                for dimension_name, key in key.keys_by_dimension.items():
                     a_partition_keys_by_dimension[dimension_name].add(key)
         else:
             for partition_key in a_partitions_subset.get_partition_keys():
@@ -383,6 +416,7 @@ class BaseMultiPartitionMapping(ABC):
                                 a_dimension_partitions_def.empty_subset().with_partition_keys(
                                     [key]
                                 ),
+                                a_dimension_partitions_def,
                                 b_dimension_partitions_def,
                                 current_time=current_time,
                                 dynamic_partitions_store=dynamic_partitions_store,
@@ -421,6 +455,7 @@ class BaseMultiPartitionMapping(ABC):
                                 a_dimension_partitions_def.empty_subset().with_partition_keys(
                                     [key]
                                 ),
+                                a_dimension_partitions_def,
                                 b_dimension_partitions_def,
                                 current_time=current_time,
                                 dynamic_partitions_store=dynamic_partitions_store,
@@ -447,7 +482,9 @@ class BaseMultiPartitionMapping(ABC):
                     [
                         dep_b_keys_by_a_dim_and_key[dim_name][
                             (
-                                cast(MultiPartitionKey, key).keys_by_dimension[dim_name]
+                                cast(MultiPartitionsDefinition, a_partitions_def)
+                                .get_partition_key_from_str(key)
+                                .keys_by_dimension[dim_name]
                                 if dim_name
                                 else key
                             )
@@ -487,6 +524,7 @@ class BaseMultiPartitionMapping(ABC):
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -495,7 +533,7 @@ class BaseMultiPartitionMapping(ABC):
             check.failed("downstream asset is not partitioned")
 
         result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
+            check.not_none(downstream_partitions_def),
             downstream_partitions_subset,
             cast(MultiPartitionsDefinition, upstream_partitions_def),
             a_upstream_of_b=False,
@@ -511,6 +549,7 @@ class BaseMultiPartitionMapping(ABC):
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -519,7 +558,7 @@ class BaseMultiPartitionMapping(ABC):
             check.failed("upstream asset is not partitioned")
 
         result = self._get_dependency_partitions_subset(
-            cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
+            upstream_partitions_def,
             upstream_partitions_subset,
             cast(MultiPartitionsDefinition, downstream_partitions_def),
             a_upstream_of_b=True,
@@ -562,6 +601,14 @@ class MultiToSingleDimensionPartitionMapping(
             partition_dimension_name=check.opt_str_param(
                 partition_dimension_name, "partition_dimension_name"
             ),
+        )
+
+    @property
+    def description(self) -> str:
+        return (
+            "Assumes that the single-dimension partitions definition is a dimension of the "
+            "multi-partitions definition. For a single-dimension partition key X, any "
+            "multi-partition key with X in the matching dimension is a dependency."
         )
 
     def get_dimension_dependencies(
@@ -713,6 +760,18 @@ class MultiPartitionMapping(
             ),
         )
 
+    @property
+    def description(self) -> str:
+        return "\n ".join(
+            [
+                (
+                    f"Upstream dimension '{upstream_dim}' mapped to downstream dimension "
+                    f"'{downstream_mapping.dimension_name}' using {type(downstream_mapping.partition_mapping).__name__}."
+                )
+                for upstream_dim, downstream_mapping in self.downstream_mappings_by_upstream_dimension.items()
+            ]
+        )
+
     def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
@@ -855,6 +914,7 @@ class StaticPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -870,6 +930,7 @@ class StaticPartitionMapping(
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -885,6 +946,13 @@ class StaticPartitionMapping(
             upstream_keys.update(self._inverse_mapping[key])
 
         return UpstreamPartitionsResult(upstream_subset.with_partition_keys(upstream_keys), [])
+
+    @property
+    def description(self) -> str:
+        return (
+            f"Maps upstream partitions to their downstream dependencies according to the "
+            f"following mapping: \n{self.downstream_partition_keys_by_upstream_partition_key}"
+        )
 
 
 class InferSingleToMultiDimensionDepsResult(

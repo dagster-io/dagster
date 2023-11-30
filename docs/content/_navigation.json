@@ -357,7 +357,59 @@
           },
           {
             "title": "Guides",
-            "path": "/deployment/guides"
+            "path": "/deployment/guides",
+            "children": [
+              {
+                "title": "Running Dagster locally",
+                "path": "/guides/running-dagster-locally"
+              },
+              {
+                "title": "Running Dagster as a service",
+                "path": "/deployment/guides/service"
+              },
+              {
+                "title": "Deploying with Helm",
+                "path": "/deployment/guides/kubernetes",
+                "children": [
+                  {
+                    "title": "Helm",
+                    "path": "/deployment/guides/kubernetes/deploying-with-helm"
+                  },
+                  {
+                    "title": "Celery + Helm",
+                    "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
+                  },
+                  {
+                    "title": "Customzing deployments",
+                    "path": "/deployment/guides/kubernetes/customizing-your-deployment"
+                  },
+                  {
+                    "title": "Migrating instances while upgrading",
+                    "path": "/deployment/guides/kubernetes/how-to-migrate-your-instance"
+                  }
+                ]
+              },
+              {
+                "title": "Deploying to Docker",
+                "path": "/deployment/guides/docker"
+              },
+              {
+                "title": "Deploying to Amazon Web Services",
+                "path": "/deployment/guides/aws"
+              },
+              {
+                "title": "Deploying to Google Cloud Platform",
+                "path": "/deployment/guides/gcp"
+              },
+              {
+                "title": "Executing Dagster with Celery",
+                "path": "/deployment/guides/celery"
+              },
+              {
+                "title": "Executing Dagster with Dask",
+                "path": "/deployment/guides/dask"
+              }
+            ]
           }
         ]
       },
@@ -489,11 +541,15 @@
                 "title": "SSO and provisioning",
                 "children": [
                   {
-                    "title": "Azure Active Directory",
+                    "title": "SCIM provisioning",
+                    "path": "/dagster-cloud/account/authentication/utilizing-scim-provisioning"
+                  },
+                  {
+                    "title": "SSO for Azure Active Directory",
                     "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
                   },
                   {
-                    "title": "Google Workspace",
+                    "title": "SSO for Google Workspace",
                     "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
                   },
                   {
@@ -510,11 +566,11 @@
                     ]
                   },
                   {
-                    "title": "OneLogin",
+                    "title": "SSO for OneLogin",
                     "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
                   },
                   {
-                    "title": "PingOne",
+                    "title": "SSO for PingOne",
                     "path": "/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
                   }
                 ]
@@ -588,6 +644,10 @@
                 "title": "Integrating external metrics",
                 "path": "/dagster-cloud/insights/integrating-external-metrics",
                 "children": [
+                  {
+                    "title": "Direct Snowflake queries",
+                    "path": "/dagster-cloud/insights/integrating-snowflake"
+                  },
                   {
                     "title": "Snowflake + dbt",
                     "path": "/dagster-cloud/insights/integrating-snowflake-and-dbt"
@@ -690,6 +750,20 @@
         "path": "/integrations/dbt-cloud"
       },
       {
+        "title": "Delta Lake",
+        "path": "/integrations/deltalake",
+        "children": [
+          {
+            "title": "Delta Lake + Dagster tutorial",
+            "path": "/integrations/deltalake/using-deltalake-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/deltalake/reference"
+          }
+        ]
+      },
+      {
         "title": "DuckDB",
         "path": "/integrations/duckdb",
         "children": [
@@ -746,6 +820,10 @@
       {
         "title": "Pandas",
         "path": "/integrations/pandas"
+      },
+      {
+        "title": "Pandera",
+        "path": "/integrations/pandera"
       },
       {
         "title": "PySpark",
@@ -879,7 +957,10 @@
           {
             "title": "Dagster Pipes + Databricks",
             "path": "/guides/dagster-pipes/databricks"
-
+          },
+          {
+            "title": "Dagster Pipes + Kubernetes",
+            "path": "/guides/dagster-pipes/kubernetes"
           },
           {
             "title": "Details and customization",
@@ -949,10 +1030,6 @@
           {
             "title": "Experimental features",
             "children": [
-              {
-                "title": "Using custom run coordinators",
-                "path": "/guides/dagster/run-attribution"
-              },
               {
                 "title": "Airbyte ingestion as code",
                 "path": "/guides/dagster/airbyte-ingestion-as-code"
@@ -1127,6 +1204,10 @@
           {
             "title": "dbt (dagster-dbt)",
             "path": "/_apidocs/libraries/dagster-dbt"
+          },
+          {
+            "title": "Delta Lake (dagster-deltalake)",
+            "path": "/_apidocs/libraries/dagster-deltalake"
           },
           {
             "title": "Docker (dagster-docker)",

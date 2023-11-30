@@ -1,8 +1,8 @@
 from dagster import AssetKey, AutoMaterializePolicy, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
-    AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,

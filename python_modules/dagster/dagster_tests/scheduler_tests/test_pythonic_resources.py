@@ -6,6 +6,7 @@ import pendulum
 import pytest
 from dagster import (
     DagsterInstance,
+    IAttachDifferentObjectToOpContext,
     ScheduleEvaluationContext,
     job,
     op,
@@ -47,6 +48,13 @@ class MyResource(ConfigurableResource):
     a_str: str
 
 
+class MyResourceAttachDifferentObject(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    a_str: str
+
+    def get_object_to_set_on_execution_context(self) -> str:
+        return self.a_str
+
+
 @schedule(job_name="the_job", cron_schedule="* * * * *", required_resource_keys={"my_resource"})
 def schedule_from_context(context: ScheduleEvaluationContext):
     return RunRequest(context.resources.my_resource.a_str, run_config={}, tags={})
@@ -64,6 +72,15 @@ def schedule_from_weird_name(
     assert not_called_context.resources.my_resource.a_str == my_resource.a_str
 
     return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
+@schedule(job_name="the_job", cron_schedule="* * * * *")
+def schedule_with_resource_from_context(
+    context: ScheduleEvaluationContext, my_resource_attach: MyResourceAttachDifferentObject
+):
+    assert context.resources.my_resource_attach == my_resource_attach.a_str
+
+    return RunRequest(my_resource_attach.a_str, run_config={}, tags={})
 
 
 @resource
@@ -91,10 +108,12 @@ the_repo = Definitions(
         schedule_from_context,
         schedule_from_arg,
         schedule_from_weird_name,
+        schedule_with_resource_from_context,
         schedule_resource_deps,
     ],
     resources={
         "my_resource": MyResource(a_str="foo"),
+        "my_resource_attach": MyResourceAttachDifferentObject(a_str="foo"),
         "the_inner": the_inner,
         "the_outer": the_outer,
     },
@@ -147,6 +166,7 @@ def loadable_target_origin() -> LoadableTargetOrigin:
         "schedule_from_context",
         "schedule_from_arg",
         "schedule_from_weird_name",
+        "schedule_with_resource_from_context",
         "schedule_resource_deps",
     ],
 )

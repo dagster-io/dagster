@@ -13,6 +13,7 @@ from dagster import (
     IOManager,
     Out,
     Output,
+    RetryPolicy,
     SourceAsset,
     define_asset_job,
     graph,
@@ -209,7 +210,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             (
                 DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
-                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but"
+                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\] and check keys \[\], but"
                 r" attempted to "
                 r"select only \[AssetKey\(\['a'\]\)\]",
             ),
@@ -816,3 +817,25 @@ def test_job_partitions_def_unpartitioned_assets():
     @repository
     def my_repo():
         return [my_asset, my_job]
+
+
+def test_op_retry_policy():
+    ops_retry_policy = RetryPolicy(max_retries=2)
+    tries = {"a": 0, "b": 0}
+
+    @asset
+    def a():
+        tries["a"] += 1
+        raise Exception()
+
+    @asset(retry_policy=RetryPolicy(max_retries=3))
+    def b():
+        tries["b"] += 1
+        raise Exception()
+
+    job1 = define_asset_job("job", op_retry_policy=ops_retry_policy)
+    assert job1.op_retry_policy == ops_retry_policy
+    job1_resolved = job1.resolve(asset_graph=AssetGraph.from_assets([a, b]))
+    job1_resolved.execute_in_process(raise_on_error=False)
+
+    assert tries == {"a": 3, "b": 4}

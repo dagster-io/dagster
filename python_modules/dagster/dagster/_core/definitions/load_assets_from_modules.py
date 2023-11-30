@@ -360,7 +360,7 @@ def prefix_assets(
     source_assets: Sequence[SourceAsset],
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
 ) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
-    """Given a list of assets, prefix the input and output asset keys with key_prefix.
+    """Given a list of assets, prefix the input and output asset keys and check specs with key_prefix.
     The prefix is not added to source assets.
 
     Input asset keys that reference other assets within assets_defs are "brought along" -
@@ -417,11 +417,21 @@ def prefix_assets(
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
                     [*source_key_prefix, *dep_asset_key.path]
                 )
+        check_specs_by_output_name = {
+            output_name: check_spec.with_asset_key_prefix(key_prefix)
+            for output_name, check_spec in assets_def.check_specs_by_output_name.items()
+        }
+
+        selected_asset_check_keys = {
+            key.with_asset_key_prefix(key_prefix) for key in assets_def.check_keys
+        }
 
         result_assets.append(
             assets_def.with_attributes(
                 output_asset_key_replacements=output_asset_key_replacements,
                 input_asset_key_replacements=input_asset_key_replacements,
+                check_specs_by_output_name=check_specs_by_output_name,
+                selected_asset_check_keys=selected_asset_check_keys,
             )
         )
 

@@ -13,7 +13,6 @@ from dagster import (
     MaterializeResult,
     StaticPartitionsDefinition,
     asset,
-    build_op_context,
     instance_for_test,
     materialize,
     multi_asset,
@@ -497,7 +496,7 @@ def test_materialize_result_with_partitions_direct_invocation():
     def partitioned_asset(context: AssetExecutionContext) -> MaterializeResult:
         return MaterializeResult(metadata={"key": context.partition_key})
 
-    context = build_op_context(partition_key="red")
+    context = build_asset_context(partition_key="red")
 
     res = partitioned_asset(context)
     assert res.metadata["key"] == "red"

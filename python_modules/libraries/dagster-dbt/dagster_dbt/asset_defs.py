@@ -323,7 +323,7 @@ def _get_dbt_op(
         out=outs,
         required_resource_keys={dbt_resource_key},
     )
-    def _dbt_op(context, config: DbtOpConfig):
+    def _dbt_op(context: OpExecutionContext, config: DbtOpConfig):
         dbt_resource: Union[DbtCliResource, DbtCliClient] = getattr(
             context.resources, dbt_resource_key
         )
@@ -336,7 +336,7 @@ def _get_dbt_op(
 
         kwargs: Dict[str, Any] = {}
         # in the case that we're running everything, opt for the cleaner selection string
-        if len(context.selected_output_names) == len(outs):
+        if not context.is_subset:
             kwargs["select"] = select
             kwargs["exclude"] = exclude
         else:

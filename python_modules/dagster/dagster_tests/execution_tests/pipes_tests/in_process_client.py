@@ -123,7 +123,7 @@ class _InProcessPipesClient(PipesClient):
             ) as session:
                 fn(pipes_context)
 
-        return PipesClientCompletedInvocation(list(session.get_results()))
+        return PipesClientCompletedInvocation(session)
 
 
 InProcessPipesClient = ResourceParam[_InProcessPipesClient]

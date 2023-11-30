@@ -55,6 +55,8 @@ def protoc(generated_dir: str):
             generated_dir,
             "--grpc_python_out",
             generated_dir,
+            "--mypy_out",
+            generated_dir,
             PROTOS_PATH,
         ]
     )
@@ -100,11 +102,7 @@ def protoc(generated_dir: str):
     # ruff may not be available in a test environment.
     if "ruff" in installed_pkgs:
         subprocess.check_output(
-            [
-                "ruff" "format" "--line-length",
-                "100",
-                generated_dir,
-            ]
+            f"ruff format --line-length 100 {os.path.join(generated_dir, '*')}", shell=True
         )
 
 

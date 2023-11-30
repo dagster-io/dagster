@@ -100,3 +100,53 @@ def unloadable_location_fixture(instance_module_scoped) -> Iterator[WorkspacePro
         workspace_load_target=invalid_workspace_load_target(), instance=instance_module_scoped
     ) as workspace_context:
         yield workspace_context
+
+
+def partitions_def_changes_workspace_1_load_target(attribute=None):
+    return InProcessTestWorkspaceLoadTarget(
+        InProcessCodeLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.daemon_tests.test_locations.partitions_defs_changes_locations.location_1",
+                working_directory=os.getcwd(),
+                attribute=attribute,
+            ),
+            location_name="partitions_def_changes_1",
+        )
+    )
+
+
+@pytest.fixture(name="partitions_defs_changes_location_1_workspace_context", scope="module")
+def partitions_defs_changes_location_1_fixture(
+    instance_module_scoped
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=partitions_def_changes_workspace_1_load_target(),
+        instance=instance_module_scoped,
+    ) as workspace_context:
+        yield workspace_context
+
+
+def partitions_def_changes_workspace_2_load_target(attribute=None):
+    return InProcessTestWorkspaceLoadTarget(
+        InProcessCodeLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.daemon_tests.test_locations.partitions_defs_changes_locations.location_2",
+                working_directory=os.getcwd(),
+                attribute=attribute,
+            ),
+            location_name="partitions_def_changes_1",
+        )
+    )
+
+
+@pytest.fixture(name="partitions_defs_changes_location_2_workspace_context", scope="module")
+def partitions_defs_changes_location_2_fixture(
+    instance_module_scoped
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=partitions_def_changes_workspace_2_load_target(),
+        instance=instance_module_scoped,
+    ) as workspace_context:
+        yield workspace_context

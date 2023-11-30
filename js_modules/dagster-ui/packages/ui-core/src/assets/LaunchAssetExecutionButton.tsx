@@ -22,6 +22,7 @@ import {
   sortAssetKeys,
   tokenForAssetKey,
 } from '../asset-graph/Utils';
+import {PipelineSelector} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
@@ -42,6 +43,8 @@ import {
   LaunchAssetCheckUpstreamQuery,
   LaunchAssetCheckUpstreamQueryVariables,
   LaunchAssetExecutionAssetNodeFragment,
+  LaunchAssetLoaderJobQuery,
+  LaunchAssetLoaderJobQueryVariables,
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
   LaunchAssetLoaderResourceQuery,
@@ -160,6 +163,7 @@ export const LaunchAssetExecutionButton = ({
   preferredJobName,
   additionalDropdownOptions,
   intent = 'primary',
+  showChangedAndMissingOption,
 }: {
   scope: AssetsInScope;
   intent?: 'primary' | 'none';
@@ -169,6 +173,7 @@ export const LaunchAssetExecutionButton = ({
     icon?: JSX.Element;
     onClick: () => void;
   }[];
+  showChangedAndMissingOption?: boolean;
 }) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
@@ -251,7 +256,7 @@ export const LaunchAssetExecutionButton = ({
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
-              {inScope.length && 'all' in scope ? (
+              {showChangedAndMissingOption && 'all' in scope ? (
                 <MenuItem
                   text="Materialize changed and missing"
                   icon="changes_present"
@@ -299,8 +304,24 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
+  const onLoad = async (
+    assetKeysOrJob: AssetKey[] | PipelineSelector,
+  ): Promise<LaunchAssetLoaderQuery | LaunchAssetLoaderJobQuery> => {
+    const result =
+      assetKeysOrJob instanceof Array
+        ? await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
+            query: LAUNCH_ASSET_LOADER_QUERY,
+            variables: {assetKeys: assetKeysOrJob.map(asAssetKeyInput)},
+          })
+        : await client.query<LaunchAssetLoaderJobQuery, LaunchAssetLoaderJobQueryVariables>({
+            query: LAUNCH_ASSET_LOADER_JOB_QUERY,
+            variables: {job: assetKeysOrJob},
+          });
+    return result.data;
+  };
+
   const onClick = async (
-    assetKeys: AssetKey[],
+    assetKeysOrJob: AssetKey[] | PipelineSelector,
     e: React.MouseEvent<any>,
     _forceLaunchpad = false,
   ) => {
@@ -309,18 +330,15 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
     setState({type: 'loading'});
 
-    const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
-      query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: assetKeys.map(asAssetKeyInput)},
-    });
+    const data = await onLoad(assetKeysOrJob);
 
-    if (result.data.assetNodeDefinitionCollisions.length) {
-      showCustomAlert(buildAssetCollisionsAlert(result.data));
+    if ('assetNodeDefinitionCollisions' in data && data.assetNodeDefinitionCollisions.length) {
+      showCustomAlert(buildAssetCollisionsAlert(data));
       setState({type: 'none'});
       return;
     }
 
-    const assets = result.data.assetNodes;
+    const assets = data.assetNodes;
     const forceLaunchpad = e.shiftKey || _forceLaunchpad;
 
     const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
@@ -390,15 +408,8 @@ export const useMaterializationAction = (preferredJobName?: string) => {
           open={true}
           setOpen={() => setState({type: 'none'})}
           refetch={async () => {
-            const result = await client.query<
-              LaunchAssetLoaderQuery,
-              LaunchAssetLoaderQueryVariables
-            >({
-              query: LAUNCH_ASSET_LOADER_QUERY,
-              variables: {assetKeys: state.assets.map(asAssetKeyInput)},
-            });
-            const assets = result.data.assetNodes;
-            const next = await stateForLaunchingAssets(client, assets, false, preferredJobName);
+            const {assetNodes} = await onLoad(state.assets.map(asAssetKeyInput));
+            const next = await stateForLaunchingAssets(client, assetNodes, false, preferredJobName);
             if (next.type === 'error') {
               showCustomAlert({
                 title: 'Unable to Materialize',
@@ -526,7 +537,9 @@ async function stateForLaunchingAssets(
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
         assetChecksAvailable: assets.flatMap((a) =>
           a.assetChecksOrError.__typename === 'AssetChecks'
-            ? a.assetChecksOrError.checks.map((check) => ({...check, assetKey: a.assetKey}))
+            ? a.assetChecksOrError.checks
+                .filter((check) => check.jobNames.includes(jobName))
+                .map((check) => ({...check, assetKey: a.assetKey}))
             : [],
         ),
         includeSeparatelyExecutableChecks: true,
@@ -645,7 +658,7 @@ export function executionParamsForAssetJob(
       repositoryName: repoAddress.name,
       pipelineName: jobName,
       assetSelection: assets.map(asAssetKeyInput),
-      assetCheckSelection: getAssetCheckHandleInputs(assets),
+      assetCheckSelection: getAssetCheckHandleInputs(assets, jobName),
     },
   };
 }
@@ -720,6 +733,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
         checks {
           name
           canExecuteIndividually
+          jobNames
         }
       }
     }
@@ -765,7 +779,16 @@ export const LAUNCH_ASSET_LOADER_QUERY = gql`
       }
     }
   }
+  ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
+`;
 
+export const LAUNCH_ASSET_LOADER_JOB_QUERY = gql`
+  query LaunchAssetLoaderJobQuery($job: PipelineSelector!) {
+    assetNodes(pipeline: $job) {
+      id
+      ...LaunchAssetExecutionAssetNodeFragment
+    }
+  }
   ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
 `;
 

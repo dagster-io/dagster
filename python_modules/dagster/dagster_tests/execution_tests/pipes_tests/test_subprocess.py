@@ -7,8 +7,8 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Iterator
 
-import boto3
 import pytest
+from dagster import op
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
@@ -16,6 +16,7 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import (
@@ -48,8 +49,7 @@ from dagster._core.pipes.utils import (
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils.env import environ
-from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
-from moto.server import ThreadedMotoServer
+from dagster_pipes import DagsterPipesError
 
 _PYTHON_EXECUTABLE = shutil.which("python")
 
@@ -64,47 +64,16 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
         yield file.name
 
 
-_S3_TEST_BUCKET = "ext-testing"
-_S3_SERVER_PORT = 5193
-_S3_SERVER_URL = f"http://localhost:{_S3_SERVER_PORT}"
-
-
 @pytest.fixture
 def external_script() -> Iterator[str]:
     # This is called in an external process and so cannot access outer scope
     def script_fn():
-        import os
-        import time
-
         from dagster_pipes import (
-            PipesS3ContextLoader,
-            PipesS3MessageWriter,
             open_dagster_pipes,
         )
 
-        context_injector_spec = os.getenv("CONTEXT_INJECTOR_SPEC")
-        message_reader_spec = os.getenv("MESSAGE_READER_SPEC")
-
-        context_loader = None
-        message_writer = None
-        if context_injector_spec == "user/s3" or message_reader_spec == "user/s3":
-            import boto3
-
-            client = boto3.client(
-                "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
-            )
-            if context_injector_spec == "user/s3":
-                context_loader = PipesS3ContextLoader(client=client)
-            if message_reader_spec == "user/s3":
-                message_writer = PipesS3MessageWriter(client, interval=0.001)
-
-        with open_dagster_pipes(
-            context_loader=context_loader, message_writer=message_writer
-        ) as context:
+        with open_dagster_pipes() as context:
             context.log.info("hello world")
-            time.sleep(
-                0.1
-            )  # sleep to make sure that we encompass multiple intervals for blob store IO
             context.report_asset_materialization(
                 metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
                 data_version="alpha",
@@ -123,32 +92,19 @@ def external_script() -> Iterator[str]:
         yield script_path
 
 
-@pytest.fixture
-def s3_client() -> Iterator[boto3.client]:
-    # We need to use the moto server for cross-process communication
-    server = ThreadedMotoServer(port=5193)  # on localhost:5000 by default
-    server.start()
-    client = boto3.client("s3", region_name="us-east-1", endpoint_url=_S3_SERVER_URL)
-    client.create_bucket(Bucket=_S3_TEST_BUCKET)
-    yield client
-    server.stop()
-
-
 @pytest.mark.parametrize(
     ("context_injector_spec", "message_reader_spec"),
     [
         ("default", "default"),
         ("default", "user/file"),
-        ("default", "user/s3"),
         ("user/file", "default"),
         ("user/file", "user/file"),
         ("user/env", "default"),
         ("user/env", "user/file"),
-        ("user/s3", "default"),
     ],
 )
 def test_pipes_subprocess(
-    capsys, tmpdir, external_script, s3_client, context_injector_spec, message_reader_spec
+    capsys, tmpdir, external_script, context_injector_spec, message_reader_spec
 ):
     if context_injector_spec == "default":
         context_injector = None
@@ -156,8 +112,6 @@ def test_pipes_subprocess(
         context_injector = PipesTempFileContextInjector()
     elif context_injector_spec == "user/env":
         context_injector = PipesEnvContextInjector()
-    elif context_injector_spec == "user/s3":
-        context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
     else:
         assert False, "Unreachable"
 
@@ -165,10 +119,7 @@ def test_pipes_subprocess(
         message_reader = None
     elif message_reader_spec == "user/file":
         message_reader = PipesTempFileMessageReader()
-    elif message_reader_spec == "user/s3":
-        message_reader = PipesS3MessageReader(
-            bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001
-        )
+
     else:
         assert False, "Unreachable"
 
@@ -608,3 +559,68 @@ def test_pipes_exception():
         assert len(pipes_msgs) == 2
         assert "successfully opened" in pipes_msgs[0]
         assert "external process pipes closed with exception" in pipes_msgs[1]
+
+
+def test_run_in_op():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as pipes:
+            pipes.log.info("hello there")
+
+    @op
+    def just_run(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            pipes_client.run(command=cmd, context=context)
+
+    @job
+    def sample_job():
+        just_run()
+
+    result = sample_job.execute_in_process(
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
+    assert result.success
+
+
+def test_pipes_expected_materialization():
+    def script_fn():
+        ...
+
+    @asset
+    def missing_mat_result(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            return pipes_client.run(
+                command=cmd,
+                context=context,
+            ).get_materialize_result(implicit_materialization=False)
+
+    with pytest.raises(
+        DagsterPipesError,
+        match="No materialization results received from external process",
+    ):
+        materialize(
+            [missing_mat_result],
+            resources={"pipes_client": PipesSubprocessClient()},
+        )
+
+    @asset
+    def missing_results(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            return pipes_client.run(
+                command=cmd,
+                context=context,
+            ).get_results(implicit_materializations=False)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        # less then ideal error message
+        match=r"op 'missing_results' did not yield or return expected outputs {'result'}",
+    ):
+        materialize(
+            [missing_results],
+            resources={"pipes_client": PipesSubprocessClient()},
+        )

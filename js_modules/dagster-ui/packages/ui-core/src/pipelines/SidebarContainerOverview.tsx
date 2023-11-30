@@ -77,7 +77,7 @@ export const SidebarContainerOverview = ({
             <MetadataTable
               rows={container.metadataEntries.map((entry) => ({
                 key: entry.label,
-                value: <MetadataEntry entry={entry} />,
+                value: <MetadataEntry entry={entry} repoLocation={repoAddress?.location} />,
               }))}
             />
           </Box>

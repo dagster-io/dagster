@@ -329,27 +329,26 @@ class ScheduleEvaluationContext:
 
     @property
     def log(self) -> logging.Logger:
-        if self._logger:
-            return self._logger
-
-        if not self._instance_ref:
-            self._logger = self._exit_stack.enter_context(
-                InstigationLogger(
-                    self._log_key,
-                    repository_name=self._repository_name,
-                    name=self._schedule_name,
+        if self._logger is None:
+            if not self._instance_ref:
+                self._logger = self._exit_stack.enter_context(
+                    InstigationLogger(
+                        self._log_key,
+                        repository_name=self._repository_name,
+                        name=self._schedule_name,
+                    )
                 )
-            )
+            else:
+                self._logger = self._exit_stack.enter_context(
+                    InstigationLogger(
+                        self._log_key,
+                        self.instance,
+                        repository_name=self._repository_name,
+                        name=self._schedule_name,
+                    )
+                )
 
-        self._logger = self._exit_stack.enter_context(
-            InstigationLogger(
-                self._log_key,
-                self.instance,
-                repository_name=self._repository_name,
-                name=self._schedule_name,
-            )
-        )
-        return cast(InstigationLogger, self._logger)
+        return self._logger
 
     def has_captured_logs(self):
         return self._logger and self._logger.has_captured_logs()
@@ -464,7 +463,7 @@ def validate_and_get_schedule_resource_dict(
                 f"Resource with key '{k}' required by schedule '{schedule_name}' was not provided."
             )
 
-    return {k: getattr(resources, k) for k in required_resource_keys}
+    return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
 @deprecated_param(

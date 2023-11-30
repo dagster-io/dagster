@@ -77,9 +77,11 @@ from dagster._utils import (
     utc_datetime_from_timestamp,
 )
 from dagster._utils.concurrency import (
+    ClaimedSlotInfo,
     ConcurrencyClaimStatus,
     ConcurrencyKeyInfo,
     ConcurrencySlotStatus,
+    PendingStepInfo,
 )
 
 from ..dagster_run import DagsterRunStatsSnapshot
@@ -1793,54 +1795,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return set([cast(str, row[0]) for row in results])
 
-    def get_materialization_count_by_partition(
-        self,
-        asset_keys: Sequence[AssetKey],
-        after_cursor: Optional[int] = None,
-        before_cursor: Optional[int] = None,
-    ) -> Mapping[AssetKey, Mapping[str, int]]:
-        check.sequence_param(asset_keys, "asset_keys", AssetKey)
-
-        query = (
-            db_select(
-                [
-                    SqlEventLogStorageTable.c.asset_key,
-                    SqlEventLogStorageTable.c.partition,
-                    db.func.count(SqlEventLogStorageTable.c.id),
-                ]
-            )
-            .where(
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [asset_key.to_string() for asset_key in asset_keys]
-                    ),
-                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
-                    SqlEventLogStorageTable.c.dagster_event_type
-                    == DagsterEventType.ASSET_MATERIALIZATION.value,
-                )
-            )
-            .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
-        )
-
-        assets_details = self._get_assets_details(asset_keys)
-        query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
-
-        if after_cursor:
-            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
-
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
-
-        materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
-            asset_key: {} for asset_key in asset_keys
-        }
-        for row in results:
-            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
-            if asset_key:
-                materialization_count_by_partition[asset_key][cast(str, row[1])] = cast(int, row[2])
-
-        return materialization_count_by_partition
-
     def _latest_event_ids_by_partition_subquery(
         self,
         asset_key: AssetKey,
@@ -2522,59 +2476,49 @@ class SqlEventLogStorage(EventLogStorage):
                 db_select(
                     [
                         ConcurrencySlotsTable.c.run_id,
+                        ConcurrencySlotsTable.c.step_key,
                         ConcurrencySlotsTable.c.deleted,
-                        db.func.count().label("count"),
                     ]
                 )
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
-                .group_by(ConcurrencySlotsTable.c.run_id, ConcurrencySlotsTable.c.deleted)
             )
             slot_rows = db_fetch_mappings(conn, slot_query)
             pending_query = (
                 db_select(
                     [
                         PendingStepsTable.c.run_id,
-                        db_case(
-                            [(PendingStepsTable.c.assigned_timestamp.is_(None), False)],
-                            else_=True,
-                        ).label("is_assigned"),
-                        db.func.count().label("count"),
+                        PendingStepsTable.c.step_key,
+                        PendingStepsTable.c.assigned_timestamp,
+                        PendingStepsTable.c.create_timestamp,
+                        PendingStepsTable.c.priority,
                     ]
                 )
                 .select_from(PendingStepsTable)
                 .where(PendingStepsTable.c.concurrency_key == concurrency_key)
-                .group_by(PendingStepsTable.c.run_id, "is_assigned")
             )
             pending_rows = db_fetch_mappings(conn, pending_query)
 
             return ConcurrencyKeyInfo(
                 concurrency_key=concurrency_key,
-                slot_count=sum(
-                    [
-                        cast(int, slot_row["count"])
-                        for slot_row in slot_rows
-                        if not slot_row["deleted"]
-                    ]
-                ),
-                active_slot_count=sum(
-                    [cast(int, slot_row["count"]) for slot_row in slot_rows if slot_row["run_id"]]
-                ),
-                active_run_ids={
-                    cast(str, slot_row["run_id"]) for slot_row in slot_rows if slot_row["run_id"]
-                },
-                pending_step_count=sum(
-                    [cast(int, row["count"]) for row in pending_rows if not row["is_assigned"]]
-                ),
-                pending_run_ids={
-                    cast(str, row["run_id"]) for row in pending_rows if not row["is_assigned"]
-                },
-                assigned_step_count=sum(
-                    [cast(int, row["count"]) for row in pending_rows if row["is_assigned"]]
-                ),
-                assigned_run_ids={
-                    cast(str, row["run_id"]) for row in pending_rows if row["is_assigned"]
-                },
+                slot_count=len([slot_row for slot_row in slot_rows if not slot_row["deleted"]]),
+                claimed_slots=[
+                    ClaimedSlotInfo(slot_row["run_id"], slot_row["step_key"])
+                    for slot_row in slot_rows
+                    if slot_row["run_id"]
+                ],
+                pending_steps=[
+                    PendingStepInfo(
+                        run_id=row["run_id"],
+                        step_key=row["step_key"],
+                        enqueued_timestamp=utc_datetime_from_naive(row["create_timestamp"]),
+                        assigned_timestamp=utc_datetime_from_naive(row["assigned_timestamp"])
+                        if row["assigned_timestamp"]
+                        else None,
+                        priority=row["priority"],
+                    )
+                    for row in pending_rows
+                ],
             )
 
     def get_concurrency_run_ids(self) -> Set[str]:

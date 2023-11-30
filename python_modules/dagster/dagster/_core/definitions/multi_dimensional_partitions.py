@@ -4,7 +4,6 @@ from datetime import datetime
 from functools import lru_cache, reduce
 from typing import (
     Dict,
-    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -216,7 +215,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
-        return MultiPartitionsSubset
+        return DefaultPartitionsSubset
 
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
@@ -507,33 +506,6 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             for dim in self.partitions_defs
         ]
         return reduce(lambda x, y: x * y, dimension_counts, 1)
-
-
-class MultiPartitionsSubset(DefaultPartitionsSubset):
-    def __init__(
-        self,
-        partitions_def: MultiPartitionsDefinition,
-        subset: Optional[Set[str]] = None,
-    ):
-        check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
-        subset = (
-            set(
-                [
-                    partitions_def.get_partition_key_from_str(key)
-                    for key in subset
-                    if MULTIPARTITION_KEY_DELIMITER in key
-                ]
-            )
-            if subset
-            else set()
-        )
-        super(MultiPartitionsSubset, self).__init__(partitions_def, subset)
-
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "MultiPartitionsSubset":
-        return MultiPartitionsSubset(
-            cast(MultiPartitionsDefinition, self._partitions_def),
-            self._subset | set(partition_keys),
-        )
 
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:

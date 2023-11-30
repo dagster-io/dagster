@@ -5,6 +5,7 @@ from typing import Sequence
 
 import pytest
 from dagster import (
+    AssetCheckSpec,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
@@ -85,10 +86,16 @@ def test_with_replaced_asset_keys():
 @pytest.mark.parametrize(
     "subset,expected_keys,expected_inputs,expected_outputs",
     [
-        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", "a,b,c", 3, 3),
+        # there are 5 inputs here, because in addition to in1, in2, and in3, "artificial" inputs are
+        # needed for both a and b, as c depends on both and could be executed in a separate step
+        # depending on how it is subset. in these cases, the step that contains c will need to
+        # have inputs for a and b to connect to.
+        ("foo,bar,baz,in1,in2,in3,a,b,c,foo2,bar2,baz2", "a,b,c", 5, 3),
         ("foo,bar,baz", None, 0, 0),
-        ("in1,a,b,c", "a,b,c", 3, 3),
-        ("foo,in1,a,b,c,bar", "a,b,c", 3, 3),
+        # see above
+        ("in1,a,b,c", "a,b,c", 5, 3),
+        # see above
+        ("foo,in1,a,b,c,bar", "a,b,c", 5, 3),
         ("foo,in1,in2,in3,a,bar", "a", 2, 1),
         ("foo,in1,in2,a,b,bar", "a,b", 2, 2),
         ("in1,in2,in3,b", "b", 0, 1),
@@ -867,6 +874,22 @@ def test_group_name_requirements():
             return 3
 
 
+def test_from_graph_w_check_specs():
+    @op
+    def my_op():
+        pass
+
+    @graph(out={"my_out": GraphOut()})
+    def my_graph():
+        return my_op()
+
+    my_asset = AssetsDefinition.from_graph(
+        my_graph, check_specs=[AssetCheckSpec("check1", asset="my_out")]
+    )
+
+    assert list(my_asset.check_specs) == [AssetCheckSpec("check1", asset=AssetKey(["my_out"]))]
+
+
 def test_from_graph_w_key_prefix():
     @op
     def foo():
@@ -1202,6 +1225,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"out_1": Out(is_required=False), "out_2": Out(is_required=False)})
     def op_1(context):
         assert context.selected_output_names == selected_output_names_op_1
+        assert (num_materializations != 3) == context.is_subset
         if "out_1" in context.selected_output_names:
             yield Output(1, output_name="out_1")
         if "out_2" in context.selected_output_names:
@@ -1210,6 +1234,7 @@ def test_graph_backed_asset_subset_context(
     @op(out={"add_one_1": Out(is_required=False), "add_one_2": Out(is_required=False)})
     def add_one(context, x):
         assert context.selected_output_names == selected_output_names_op_2
+        assert (num_materializations != 3) == context.is_subset
         if "add_one_1" in context.selected_output_names:
             yield Output(x, output_name="add_one_1")
         if "add_one_2" in context.selected_output_names:

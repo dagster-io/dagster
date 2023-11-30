@@ -1082,3 +1082,26 @@ def test_telemetry_dagster_resource():
             return True
 
     assert MyResource(my_value="foo")._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_partial_resource_checks() -> None:
+    class IntResource(ConfigurableResource):
+        my_int: int
+
+    class StrResource(ConfigurableResource):
+        my_str: str
+
+    class MergeResource(ConfigurableResource):
+        str_res: StrResource
+        int_res: IntResource
+
+    MergeResource(
+        str_res=StrResource.configure_at_launch(),
+        int_res=IntResource.configure_at_launch(),
+    )
+
+    # this should fail but does not https://github.com/dagster-io/dagster/issues/18017
+    MergeResource(
+        int_res=StrResource.configure_at_launch(),  # type: ignore # type checker catches it though
+        str_res=IntResource.configure_at_launch(),  # type: ignore
+    )

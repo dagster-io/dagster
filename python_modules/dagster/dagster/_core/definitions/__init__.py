@@ -50,6 +50,7 @@ from .logger_definition import (
 from .metadata import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
+    DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,

@@ -31,7 +31,7 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   const history = useHistory();
 
   const [filters, setFilters] = useQueryPersistedState<{groups: AssetGroupSelector[]}>({
-    encode: ({groups}) => ({groups: JSON.stringify(groups)}),
+    encode: ({groups}) => ({groups: groups.length ? JSON.stringify(groups) : undefined}),
     decode: (qs) => ({groups: qs.groups ? JSON.parse(qs.groups) : []}),
   });
 
