@@ -93,7 +93,7 @@ export const DarkPalette = {
   [ColorName.LineageNodeBorder]: CoreColors.Gray700,
   [ColorName.LineageNodeBorderHover]: CoreColors.Gray400,
   [ColorName.LineageNodeBorderSelected]: CoreColors.Blue300,
-      
+
   // Dataviz
   [ColorName.DataVizBlue]: DataVizColors.Blue200,
   [ColorName.DataVizBlueAlt]: DataVizColors.Blue100,

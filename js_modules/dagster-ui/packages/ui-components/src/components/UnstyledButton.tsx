@@ -33,8 +33,10 @@ export const UnstyledButton = styled.button<Props>`
   :active {
     outline: none;
     ${({$showFocusOutline}) =>
-      $showFocusOutline ? `box-shadow: ${colorBorderFocused()} 0 0 0 2px;
-      ` : null}
+      $showFocusOutline
+        ? `box-shadow: ${colorBorderFocused()} 0 0 0 2px;
+      `
+        : null}
   }
 
   &:disabled {

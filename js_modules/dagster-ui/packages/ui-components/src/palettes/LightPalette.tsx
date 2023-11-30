@@ -1,5 +1,4 @@
 import {ColorName} from './ColorName';
-
 import {CoreColors, DataVizColors, TranslucentColors} from './Colors';
 
 export const LightPalette = {
@@ -80,7 +79,7 @@ export const LightPalette = {
   [ColorName.NavTextSelected]: CoreColors.White,
   [ColorName.NavButton]: CoreColors.Gray900,
   [ColorName.NavButtonHover]: CoreColors.Gray850,
-        
+
   // Lineage Graph
   [ColorName.LineageDots]: TranslucentColors.Gray20,
   [ColorName.LineageEdge]: CoreColors.Gray100,

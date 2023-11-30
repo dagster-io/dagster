@@ -75,7 +75,7 @@ export enum ColorName {
   NavTextSelected = 'NavTextSelected',
   NavButton = 'NavButton',
   NavButtonHover = 'NavButtonHover',
-        
+
   // Lineage Graph
   LineageDots = 'LineageDots',
   LineageEdge = 'LineageEdge',

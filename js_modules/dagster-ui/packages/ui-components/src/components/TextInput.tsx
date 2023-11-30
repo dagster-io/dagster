@@ -16,7 +16,6 @@ import {
   colorTextLight,
   colorTextLighter,
   colorBackgroundDefaultHover,
-  colorAccentLavender,
 } from '../theme/color';
 
 import {IconName, Icon, IconWrapper} from './Icon';
@@ -136,7 +135,7 @@ export const TextInputStyles = css`
       ${colorBorderDefault()} inset 0px 0px 0px 1px,
       ${colorKeylineDefault()} inset 2px 2px 1.5px,
       ${colorBorderFocused()} 0 0 0 2px;
-      outline: none;
+    outline: none;
   }
 `;
 
@@ -166,10 +165,9 @@ const StyledInput = styled.input<StyledInputProps>`
   }
 
   :focus {
-    box-shadow:
-      ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px;
-      ${colorBorderFocused()} 0 0 0 2px;
-      background-color: ${colorBackgroundDefaultHover()};
+    box-shadow: ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px;
+    ${colorBorderFocused()} 0 0 0 2px;
+    background-color: ${colorBackgroundDefaultHover()};
   }
 `;
 

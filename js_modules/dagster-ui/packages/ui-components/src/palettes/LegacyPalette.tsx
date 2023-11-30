@@ -80,7 +80,7 @@ export const LegacyPalette = {
   [ColorName.NavTextSelected]: LegacyColors.Gray100,
   [ColorName.NavButton]: LegacyColors.Gray900,
   [ColorName.NavButtonHover]: LegacyColors.Gray800,
-        
+
   // Lineage Graph
   [ColorName.LineageDots]: LegacyColors.Gray100,
   [ColorName.LineageEdge]: LegacyColors.Gray200,
