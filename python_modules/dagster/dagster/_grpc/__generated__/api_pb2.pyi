@@ -775,6 +775,46 @@ class ExternalJobReply(google.protobuf.message.Message):
 global___ExternalJobReply = ExternalJobReply
 
 @typing_extensions.final
+class ExternalScheduleExecutionReply(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SERIALIZED_SCHEDULE_RESULT_FIELD_NUMBER: builtins.int
+    serialized_schedule_result: builtins.str
+    def __init__(
+        self,
+        *,
+        serialized_schedule_result: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "serialized_schedule_result", b"serialized_schedule_result"
+        ],
+    ) -> None: ...
+
+global___ExternalScheduleExecutionReply = ExternalScheduleExecutionReply
+
+@typing_extensions.final
+class ExternalSensorExecutionReply(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SERIALIZED_SENSOR_RESULT_FIELD_NUMBER: builtins.int
+    serialized_sensor_result: builtins.str
+    def __init__(
+        self,
+        *,
+        serialized_sensor_result: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "serialized_sensor_result", b"serialized_sensor_result"
+        ],
+    ) -> None: ...
+
+global___ExternalSensorExecutionReply = ExternalSensorExecutionReply
+
+@typing_extensions.final
 class ReloadCodeRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 

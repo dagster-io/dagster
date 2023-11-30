@@ -688,12 +688,22 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
     def ExternalScheduleExecution(self, request, _context):
+        yield from self._split_serialized_data_into_chunk_events(
+            self._external_schedule_execution(request)
+        )
+
+    def SyncExternalScheduleExecution(self, request, _context):
+        return api_pb2.ExternalScheduleExecutionReply(
+            serialized_schedule_result=self._external_schedule_execution(request)
+        )
+
+    def _external_schedule_execution(self, request):
         try:
             args = deserialize_value(
                 request.serialized_external_schedule_execution_args,
                 ExternalScheduleExecutionArgs,
             )
-            serialized_schedule_data = serialize_value(
+            return serialize_value(
                 get_external_schedule_execution(
                     self._get_repo_for_origin(args.repository_origin),
                     args.instance_ref,
@@ -703,22 +713,20 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except Exception:
-            serialized_schedule_data = serialize_value(
+            return serialize_value(
                 ExternalScheduleExecutionErrorData(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
-        yield from self._split_serialized_data_into_chunk_events(serialized_schedule_data)
-
-    def ExternalSensorExecution(self, request, _context):
+    def _external_sensor_execution(self, request):
         try:
             args = deserialize_value(
                 request.serialized_external_sensor_execution_args,
                 SensorExecutionArgs,
             )
 
-            serialized_sensor_data = serialize_value(
+            return serialize_value(
                 get_external_sensor_execution(
                     self._get_repo_for_origin(args.repository_origin),
                     args.instance_ref,
@@ -729,13 +737,21 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except Exception:
-            serialized_sensor_data = serialize_value(
+            return serialize_value(
                 ExternalSensorExecutionErrorData(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
-        yield from self._split_serialized_data_into_chunk_events(serialized_sensor_data)
+    def SyncExternalSensorExecution(self, request, _context):
+        return api_pb2.ExternalSensorExecutionReply(
+            serialized_sensor_result=self._external_sensor_execution(request)
+        )
+
+    def ExternalSensorExecution(self, request, _context):
+        yield from self._split_serialized_data_into_chunk_events(
+            self._external_sensor_execution(request)
+        )
 
     def ShutdownServer(self, request, _context) -> api_pb2.ShutdownServerReply:
         try:
