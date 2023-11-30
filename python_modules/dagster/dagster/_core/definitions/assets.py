@@ -45,6 +45,7 @@ from dagster._core.errors import (
 )
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
+from dagster._utils.security import non_secure_md5
 from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
@@ -1312,12 +1313,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @property
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
-        try:
-            return hashlib.md5((json.dumps(sorted(self.keys))).encode("utf-8")).hexdigest()
-        except ValueError:  # `usedforsecurity` implemented only for python>=3.9
-            return hashlib.md5(
-                (json.dumps(sorted(self.keys))).encode("utf-8"), usedforsecurity=False
-            ).hexdigest()
+        return non_secure_md5((json.dumps(sorted(self.keys))).encode("utf-8")).hexdigest()
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()

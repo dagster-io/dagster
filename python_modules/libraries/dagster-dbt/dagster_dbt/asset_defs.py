@@ -44,6 +44,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.security import non_secure_md5
 from dagster._utils.warnings import (
     deprecation_warning,
     normalize_renamed_param,
@@ -430,15 +431,7 @@ def _dbt_nodes_to_assets(
     if not op_name:
         op_name = f"run_dbt_{project_id}"
         if select != "fqn:*" or exclude:
-            try:
-                op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
-            except ValueError:  # `usedforsecurity` implemented only for python>=3.9
-                op_name += (
-                    "_"
-                    + hashlib.md5(
-                        select.encode() + exclude.encode(), usedforsecurity=False
-                    ).hexdigest()[-5:]
-                )
+            op_name += "_" + non_secure_md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
     check_outs_by_output_name: Mapping[str, Out] = {}
     if check_specs_by_output_name:
