@@ -239,7 +239,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
 @click.argument("sensor_name", nargs=-1)
 @click.option(
     "--since",
-    help="Set the last_completion_time value as a timestamp float for the sensor context",
+    help="Set the last_tick_completion_time value as a timestamp float for the sensor context",
     default=None,
 )
 @click.option(

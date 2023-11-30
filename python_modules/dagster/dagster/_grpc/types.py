@@ -582,11 +582,13 @@ class SensorExecutionArgs(
             ("repository_origin", ExternalRepositoryOrigin),
             ("instance_ref", Optional[InstanceRef]),
             ("sensor_name", str),
-            ("last_completion_time", Optional[float]),
+            ("last_tick_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
             ("cursor", Optional[str]),
             ("timeout", Optional[int]),
             ("last_sensor_start_time", Optional[float]),
+            # deprecated
+            ("last_completion_time", Optional[float]),
         ],
     )
 ):
@@ -595,12 +597,21 @@ class SensorExecutionArgs(
         repository_origin: ExternalRepositoryOrigin,
         instance_ref: Optional[InstanceRef],
         sensor_name: str,
-        last_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
+        last_tick_completion_time: Optional[float] = None,
+        last_run_key: Optional[str] = None,
+        cursor: Optional[str] = None,
         timeout: Optional[int] = None,
         last_sensor_start_time: Optional[float] = None,
+        # deprecated param
+        last_completion_time: Optional[float] = None,
     ):
+        # populate both last_tick_completion_time and last_completion_time for backcompat, so that
+        # older versions can still construct the correct context object.  We manually create the
+        # normalized value here instead of using normalize_renamed_param so that we can avoid the
+        # check.invariant that would be triggered by setting both values.
+        normalized_last_tick_completion_time = (
+            last_tick_completion_time if last_tick_completion_time else last_completion_time
+        )
         return super(SensorExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -608,15 +619,14 @@ class SensorExecutionArgs(
             ),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             sensor_name=check.str_param(sensor_name, "sensor_name"),
-            last_completion_time=check.opt_float_param(
-                last_completion_time, "last_completion_time"
-            ),
+            last_tick_completion_time=normalized_last_tick_completion_time,
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
             cursor=check.opt_str_param(cursor, "cursor"),
             timeout=timeout,
             last_sensor_start_time=check.opt_float_param(
                 last_sensor_start_time, "last_sensor_start_time"
             ),
+            last_completion_time=normalized_last_tick_completion_time,
         )
 
 

@@ -169,7 +169,7 @@ def failure_job_2():
 
 @sensor(job_name="the_job")
 def simple_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -757,7 +757,7 @@ def the_other_repo():
 
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.RUNNING)
 def always_running_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -765,7 +765,7 @@ def always_running_sensor(context):
 
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.STOPPED)
 def never_running_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})

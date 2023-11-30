@@ -370,7 +370,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
                     cursor=self._cursor,
-                    last_completion_time=None,
+                    last_tick_completion_time=None,
                     last_run_key=None,
                     last_sensor_start_time=None,
                 )
