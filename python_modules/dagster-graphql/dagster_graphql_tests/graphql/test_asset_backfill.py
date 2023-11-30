@@ -762,6 +762,49 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
             assert targeted_ranges[0]["end"] == "2020-01-03-00:00"
 
 
+def test_asset_backfill_status_only_unpartitioned_assets():
+    repo = get_daily_hourly_non_partitioned_repo()
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_daily_hourly_non_partitioned_repo", instance
+        ) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "allPartitions": True,
+                        "assetSelection": [AssetKey("non_partitioned").to_graphql_input()],
+                    }
+                },
+            )
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            target_subset = asset_backfill_data.target_subset
+
+            assert target_subset == AssetGraphSubset(
+                non_partitioned_asset_keys={AssetKey("non_partitioned")},
+            )
+
+            asset_backfill_data_result = execute_dagster_graphql(
+                context, ASSET_BACKFILL_DATA_QUERY, variables={"backfillId": backfill_id}
+            )
+            assert asset_backfill_data_result.data
+            assert (
+                asset_backfill_data_result.data["partitionBackfillOrError"]["isAssetBackfill"]
+                is True
+            )
+            assert (
+                asset_backfill_data_result.data["partitionBackfillOrError"]["assetBackfillData"][
+                    "rootTargetedPartitions"
+                ]
+                is None
+            )
+
+
 def test_asset_backfill_preview_time_partitioned():
     repo = get_daily_hourly_non_partitioned_repo()
     all_asset_keys = repo.asset_graph.materializable_asset_keys

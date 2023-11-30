@@ -286,7 +286,6 @@ def test_multiple_streams(
     assert sqlite_connection.execute("SELECT count(1) FROM main.tbl").fetchone()[0] == 3
     assert sqlite_connection.execute("SELECT count(1) FROM main.staging_tbl").fetchone()[0] == 4
 
-
 def test_reuse_sling_connection_resource(
     test_csv: str,
     test_staging_csv: str,

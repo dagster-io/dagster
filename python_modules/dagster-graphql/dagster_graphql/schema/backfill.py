@@ -171,7 +171,7 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
     assetBackfillStatuses = non_null_list(
         "dagster_graphql.schema.partition_sets.GrapheneAssetBackfillStatus"
     )
-    rootTargetedPartitions = graphene.NonNull(
+    rootTargetedPartitions = graphene.Field(
         "dagster_graphql.schema.backfill.GrapheneAssetBackfillTargetPartitions",
     )
 

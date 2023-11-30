@@ -38,7 +38,7 @@ export type BackfillStatusesByAssetQuery = {
             __typename: 'AssetBackfillTargetPartitions';
             partitionKeys: Array<string> | null;
             ranges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
-          };
+          } | null;
           assetBackfillStatuses: Array<
             | {
                 __typename: 'AssetPartitionsStatusCounts';
@@ -108,7 +108,7 @@ export type PartitionBackfillFragment = {
       __typename: 'AssetBackfillTargetPartitions';
       partitionKeys: Array<string> | null;
       ranges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
-    };
+    } | null;
     assetBackfillStatuses: Array<
       | {
           __typename: 'AssetPartitionsStatusCounts';

@@ -136,6 +136,7 @@ export const AssetNodeLineageGraph = ({
                       <AssetNodeMinimal
                         definition={graphNode.definition}
                         selected={graphNode.id === assetGraphId}
+                        height={bounds.height}
                       />
                     </AssetNodeContextMenuWrapper>
                   ) : (

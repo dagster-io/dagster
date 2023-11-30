@@ -312,9 +312,11 @@ const AssetNodeChecksRow = ({
 export const AssetNodeMinimal = ({
   selected,
   definition,
+  height,
 }: {
   selected: boolean;
   definition: AssetNodeFragment;
+  height: number;
 }) => {
   const {isSource, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
@@ -323,7 +325,7 @@ export const AssetNodeMinimal = ({
 
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: (height - 64) / 2}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -460,8 +462,6 @@ const AssetNodeSpinnerContainer = styled.div`
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  padding-top: 30px;
-  padding-bottom: 42px;
   height: 100%;
 `;
 

@@ -105,7 +105,9 @@ class SlingTargetConnection(PermissiveConfig):
     )
 
 
-class SlingSyncBase:
+class _SlingSyncBase:
+    """Base class for Sling syncs. Handles the execution of the Sling CLI and processing of the output. Classes that inherit from this class must implement how to sync themselves ,but can use the `_exec_sling_cmd` and `process_stdout` methods to handle the execution and processing of the output."""
+
     def process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
         """Process stdout from the Sling CLI."""
         ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
@@ -137,7 +139,7 @@ class SlingSyncBase:
 
 
 @experimental
-class SlingResource(ConfigurableResource, SlingSyncBase):
+class SlingResource(ConfigurableResource, _SlingSyncBase):
     """Resource for interacting with the Sling package.
 
     Examples:
@@ -185,71 +187,55 @@ class SlingResource(ConfigurableResource, SlingSyncBase):
         self,
         source_stream: str,
         target_object: str,
-        mode: SlingMode,
+        mode: SlingMode = SlingMode.FULL_REFRESH,
         primary_key: Optional[List[str]] = None,
         update_key: Optional[str] = None,
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
-        """Initiate a Sling Sync between a source stream and a target object.
-
-        Args:
-            source_stream (str):  The source stream to read from. For database sources, the source stream can be either
-                a table name, a SQL statement or a path to a SQL file e.g. `TABLE1` or `SCHEMA1.TABLE2` or
-                `SELECT * FROM TABLE`. For file sources, the source stream is a path or an url to a file.
-                For file targets, the target object is a path or a url to a file, e.g. file:///tmp/file.csv or
-                s3://my_bucket/my_folder/file.csv
-            target_object (str): The target object to write into. For database targets, the target object is a table
-                name, e.g. TABLE1, SCHEMA1.TABLE2. For file targets, the target object is a path or an url to a file.
-            mode (SlingMode): The Sling mode to use when syncing, i.e. incremental, full-refresh
-                See the Sling docs for more information: https://docs.slingdata.io/sling-cli/running-tasks#modes.
-            primary_key (List[str]): For incremental syncs, a primary key is used during merge statements to update
-                existing rows.
-            update_key (str): For incremental syncs, an update key is used to stream records after max(update_key)
-            source_options (Dict[str, Any]): Other source options to pass to Sling,
-                see https://docs.slingdata.io/sling-cli/running-tasks#source-options-src-options-flag-source.options-key
-                for details
-            target_options (Dict[str, Any[): Other target options to pass to Sling,
-                see https://docs.slingdata.io/sling-cli/running-tasks#target-options-tgt-options-flag-target.options-key
-                for details
-
-        Examples:
-            Sync from a source file to a sqlite database:
-
-            .. code-block:: python
-
-                sqllite_path = "/path/to/sqlite.db"
-                csv_path = "/path/to/file.csv"
-
-                @asset
-                def run_sync(context, sling: SlingResource):
-                    res = sling.sync(
-                        source_stream=csv_path,
-                        target_object="events",
-                        mode=SlingMode.FULL_REFRESH,
-                    )
-                    for stdout in res:
-                        context.log.debug(stdout)
-                    counts = sqlite3.connect(sqllitepath).execute("SELECT count(1) FROM events").fetchone()
-                    assert counts[0] == 3
-
-                source = SlingSourceConnection(
-                    type="file",
-                )
-                target = SlingTargetConnection(type="sqlite", instance=sqllitepath)
-
-                materialize(
-                    [run_sync],
-                    resources={
-                        "sling": SlingResource(
-                            source_connection=source,
-                            target_connection=target,
-                            mode=SlingMode.TRUNCATE,
-                        )
-                    },
-                )
-
+        """Runs a Sling sync from the given source table to the given destination table. Generates output lines from the Sling CLI.
         """
+        if self.source_connection.type == "file" and not source_stream.startswith("file://"):
+            source_stream = "file://" + source_stream
+
+        if self.target_connection.type == "file" and not target_object.startswith("file://"):
+            target_object = "file://" + target_object
+
+        sling_source = self.source_connection.dict()
+        sling_target = self.target_connection.dict()
+
+        if self.source_connection.connection_string:
+            sling_source["url"] = self.source_connection.connection_string
+        if self.target_connection.connection_string:
+            sling_target["url"] = self.target_connection.connection_string
+        with environ(
+            {
+                "SLING_SOURCE": json.dumps(sling_source),
+                "SLING_TARGET": json.dumps(sling_target),
+            }
+        ):
+            config = {
+                "mode": mode,
+                "source": {
+                    "conn": "SLING_SOURCE",
+                    "stream": source_stream,
+                    "primary_key": primary_key,
+                    "update_key": update_key,
+                    "options": source_options,
+                },
+                "target": {
+                    "conn": "SLING_TARGET",
+                    "object": target_object,
+                    "options": target_options,
+                },
+            }
+            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
+            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
+
+            sling_cli = Sling(**config)
+            logger.info("Starting Sling sync with mode: %s", mode)
+            cmd = sling_cli._prep_cmd()  # noqa: SLF001
+
         yield from self._sync(
             source_stream=source_stream,
             target_object=target_object,
@@ -343,7 +329,7 @@ class SlingConnectionResource(ConfigurableResource):
     )
 
 
-class SlingStreamReplicator(SlingSyncBase):
+class SlingStreamReplicator(_SlingSyncBase):
     """A utility class for running a Sling sync from outside of a Dagster resource to enable parity between the SlingResource and SlingStreamSync.
 
     Inherits from :py:class:`~dagster_elt.sling.SlingSyncBase` and implements `_sync` to run a sync using 2 SlingConnectionResources and no SlingResource.

@@ -20,6 +20,7 @@ You can follow the [Set up data and connections](#set-up-data-and-connections) s
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
 In this example, we ingest data from Airbyte by reading info from an [Airbyte connection](https://airbytehq.github.io/understanding-airbyte/connections/) where it syncs data from Postgres to Postgres. So, in order to kick off runs successfully, you'll need the following environment variables to configure the connection:
+
 - Airbyte
   - `AIRBYTE_CONNECTION_ID`
   - `AIRBYTE_HOST`
@@ -35,6 +36,7 @@ In this example, we ingest data from Airbyte by reading info from an [Airbyte co
 You can find all the configurations in [`assets_modern_data_stack/utils/constants.py`](./assets_modern_data_stack/utils/constants.py).
 
 You can declare environment variables in various ways:
+
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)
 - **Dagster Cloud**: [Using the Dagster Cloud UI](https://docs.dagster.io/master/dagster-cloud/developing-testing/environment-variables-and-secrets#using-the-dagster-cloud-ui) to manage environment variables
 - **Dagster Open Source**: How environment variables are set for Dagster projects deployed on your infrastructure depends on where Dagster is deployed. Read about how to declare environment variables [here](https://docs.dagster.io/master/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables).
@@ -112,7 +114,6 @@ Created Airbyte Connection: c90cb8a5-c516-4c1a-b243-33dfe2cfb9e8
 This connection id is specific to your local setup, so you'll need to update `constants.py` with this
 value. Once you've update your `constants.py` file, you're good to go!
 
-
 ## Learning more
 
 ### Changing the code locally
@@ -120,6 +121,7 @@ value. Once you've update your `constants.py` file, you're good to go!
 When developing pipelines locally, be sure to click the **Reload definition** button in the Dagster UI after you change the code. This ensures that Dagster picks up the latest changes you made.
 
 You can reload the code using the **Deployment** page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
@@ -129,6 +131,7 @@ You can reload the code using the **Deployment** page:
 </details>
 
 Or from the left nav or on each job page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">

@@ -217,7 +217,7 @@ def test_pyspark_databricks(
                             config,
                             {
                                 "databricks_host": "https://",
-                                "databricks_token": "",
+                                "databricks_token": "abc123",
                                 "poll_interval_sec": 0.1,
                                 "local_dagster_job_package_path": os.path.abspath(
                                     os.path.dirname(__file__)
@@ -255,7 +255,7 @@ def test_pyspark_databricks(
                                 config,
                                 {
                                     "databricks_host": "https://",
-                                    "databricks_token": "",
+                                    "databricks_token": "abc123",
                                     "poll_interval_sec": 0.1,
                                     "local_dagster_job_package_path": os.path.abspath(
                                         os.path.dirname(__file__)

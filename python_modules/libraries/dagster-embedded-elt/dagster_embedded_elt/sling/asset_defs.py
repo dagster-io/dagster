@@ -117,6 +117,54 @@ def build_assets_from_sling_streams(
     source_options: Optional[Dict[str, Any]] = None,
     target_options: Optional[Dict[str, Any]] = None,
 ) -> AssetsDefinition:
+    """Asset Factory for using Sling to sync data from a source stream to a target object.
+
+    Args:
+        source (SlingConnectionResource): The source SlingConnectionResource to use.
+        target (SlingConnectionResource): The target SlingConnectionResource to use.
+        stream (str): The source stream to sync from. This can be a table, a query, or a path.
+        target_object (str, optional): The target object to sync to. This can be a table, or a path. Defaults to the template of "{{target_schema}}.{{stream_schema}}_{{stream_table}}". See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/replication
+        mode (SlingMode, optional): The sync mode to use when syncing. Defaults to `full-refresh`.
+        primary_key (Optional[Union[str, List[str]]], optional): The optional primary key to use when syncing.
+        update_key (Optional[str], optional): The optional update key to use when syncing.
+        source_options (Optional[Dict[str, Any]], optional): Any optional Sling source options to use when syncing.
+        target_options (Optional[Dict[str, Any]], optional): Any optional target options to use when syncing.
+
+    Examples:
+        Creating a Sling asset that syncs from a database to a data warehouse:
+
+        .. code-block:: python
+
+            source = SlingConnectionResource(
+                type="postgres",
+                host=EnvVar("POSTGRES_HOST"),
+                port=EnvVar("POSTGRES_PORT"),
+                user=EnvVar("POSTGRES_USER"),
+                password=EnvVar("POSTGRES_PASSWORD"),
+                database=EnvVar("POSTGRES_DATABASE"),
+            )
+
+            target = SlingConnectionResource(
+                type="snowflake",
+                account=EnvVar("SNOWFLAKE_ACCOUNT"),
+                user=EnvVar("SNOWFLAKE_USER"),
+                password=EnvVar("SNOWFLAKE_PASSWORD"),
+                database=EnvVar("SNOWFLAKE_DATABASE"),
+                warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
+            )
+
+            asset_def = build_assets_from_sling_stream(
+                    source=source,
+                    target=target,
+                    stream="main.orders",
+                    target_object="main.orders",
+                    mode=SlingMode.INCREMENTAL,
+                    primary_key="id"
+            )
+    """
+    if primary_key is not None and not isinstance(primary_key, list):
+        primary_key = [primary_key]
+
     sling_replicator = SlingStreamReplicator(
         source_connection=source,
         target_connection=target,

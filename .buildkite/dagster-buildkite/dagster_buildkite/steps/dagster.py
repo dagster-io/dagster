@@ -13,6 +13,7 @@ from ..utils import (
     is_feature_branch,
     is_release_branch,
     safe_getenv,
+    skip_if_no_non_docs_markdown_changes,
     skip_if_no_python_changes,
     skip_if_no_yaml_changes,
 )
@@ -82,7 +83,7 @@ def build_repo_wide_prettier_steps() -> List[CommandStep]:
             "make check_prettier",
         )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_yaml_changes())
+        .with_skip(skip_if_no_yaml_changes() and skip_if_no_non_docs_markdown_changes())
         .build(),
     ]
 

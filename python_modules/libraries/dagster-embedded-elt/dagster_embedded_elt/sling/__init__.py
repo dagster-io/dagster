@@ -15,6 +15,5 @@ __all__ = [
     "build_assets_from_sling_streams",
     "SlingSourceConnection",
     "SlingTargetConnection",
-    "SlingStream",
     "SlingConnectionResource",
 ]
