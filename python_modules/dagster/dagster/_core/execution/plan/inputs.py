@@ -822,7 +822,7 @@ def _load_input_with_input_manager(
 
     if (
         context.upstream_output
-        and context.upstream_output.dagster_type
+        and context.upstream_output.has_dagster_type
         and context.upstream_output.dagster_type.is_nothing
     ):
         yield None
