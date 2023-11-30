@@ -1269,9 +1269,7 @@ class AllPartitionsSubset(
         )
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        return other.empty_subset(other.partitions_def).with_partition_keys(
-            set(self.get_partition_keys()) & set(other.get_partition_keys())
-        )
+        return other.empty_subset().with_partition_keys(other.get_partition_keys())
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self == other:
