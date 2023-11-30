@@ -477,7 +477,8 @@ def test_async_assets_with_shared_context():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match=r"This context is currently being used to execute .* The context cannot be used to execute another op until .* has finished executing",
+        match=r"This context is currently being used to execute .* The context"
+        r" cannot be used to execute another op until .* has finished executing",
     ):
         asyncio.run(main())
 
@@ -508,7 +509,6 @@ def test_context_bound_state_non_generator():
 
     ctx = build_op_context()
     assert ctx._bound_properties is None  # noqa: SLF001
-    assert ctx._invocation_properties is None  # noqa: SLF001
 
     my_asset(ctx)
     assert ctx._bound_properties is None  # noqa: SLF001
