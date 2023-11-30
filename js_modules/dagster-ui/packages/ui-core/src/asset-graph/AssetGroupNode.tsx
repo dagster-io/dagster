@@ -1,4 +1,12 @@
-import {Box, FontFamily, Icon, Mono, colorAccentBlue, colorLineageGroupNodeBorder, colorTextLight} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  Mono,
+  colorAccentBlue,
+  colorLineageGroupNodeBorder,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -67,7 +75,9 @@ export const AssetGroupNode = ({group, scale}: Props) => {
           top: 75,
           position: 'absolute',
           background:
-            scale < GROUPS_ONLY_SCALE ? colorLineageGroupNodeBorder() : colorLineageGroupNodeBorder(),
+            scale < GROUPS_ONLY_SCALE
+              ? colorLineageGroupNodeBorder()
+              : colorLineageGroupNodeBorder(),
         }}
       />
 
