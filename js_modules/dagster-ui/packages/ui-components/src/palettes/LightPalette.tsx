@@ -78,7 +78,7 @@ export const LightPalette = {
   [ColorName.NavTextSelected]: CoreColors.White,
   [ColorName.NavButton]: CoreColors.Gray900,
   [ColorName.NavButtonHover]: CoreColors.Gray850,
-        
+
   // Lineage Graph
   [ColorName.LineageDots]: TranslucentColors.Gray20,
   [ColorName.LineageEdge]: CoreColors.Gray100,
