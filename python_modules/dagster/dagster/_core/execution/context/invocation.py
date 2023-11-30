@@ -82,12 +82,12 @@ class BoundProperties:
         and type_event_stream_error_message should be mutable.
         """
         self.op_def = check.inst_param(op_def, "op_def", OpDefinition)
-        self.tags = check.dict_param(tags, "tags", Any, Any)
+        self.tags = check.dict_param(tags, "tags")
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
         self.alias = check.str_param(alias, "alias")
         self.assets_def = check.opt_inst_param(assets_def, "assets_def", AssetsDefinition)
         self.resources = check.inst_param(resources, "resources", Resources)
-        self.op_config = check.opt_dict_param(op_config, "op_config", str, Any)
+        self.op_config = check.opt_dict_param(op_config, "op_config")
         self.requires_typed_event_stream = False
         self.typed_event_stream_error_message = None
 
