@@ -825,8 +825,8 @@ def test_sensor_timeout(entrypoint):
                         last_completion_time=None,
                         last_run_key=None,
                         cursor=None,
+                        timeout=2,
                     ),
-                    timeout=2,
                 )
 
             assert "Deadline Exceeded" in str(exc_info.getrepr())
