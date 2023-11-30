@@ -1,4 +1,4 @@
-import {Box, Icon, IconWrapper, Tooltip, CoreColors} from '@dagster-io/ui-components';
+import {Box, Icon, IconWrapper, Tooltip, CoreColors, colorNavBackground, colorNavText, colorNavTextSelected, colorNavTextHover, colorBackgroundDefaultHover, colorBackgroundLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
@@ -187,7 +187,7 @@ export const AppTopNavLogo = () => {
           shortcutFilter={(e) => e.key === '.'}
         >
           <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-            <Icon name="menu" color={CoreColors.White} size={24} />
+            <Icon name="menu" color={colorNavTextSelected()} size={24} />
           </NavButton>
         </ShortcutHandler>
       ) : null}
@@ -265,31 +265,31 @@ const DaggyTooltip = styled(Tooltip)`
 `;
 
 export const TopNavLink = styled(NavLink)`
-  color: ${CoreColors.Gray400};
+  color: ${colorNavText()};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
   text-decoration: none;
 
   :hover {
-    color: ${CoreColors.Gray300};
+    color: ${colorNavTextHover()};
     text-decoration: none;
   }
 
   :active,
   &.active {
-    color: ${CoreColors.White};
+    color: ${colorNavTextSelected()};
     text-decoration: none;
   }
 
   :focus {
     outline: none !important;
-    color: ${CoreColors.White};
+    color: ${colorNavTextSelected()};
   }
 `;
 
 export const AppTopNavContainer = styled.div`
-  background: ${CoreColors.Gray990};
+  background: ${colorNavBackground()};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -329,14 +329,14 @@ const NavButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    background: ${CoreColors.Gray500};
+    background: ${colorNavText()};
   }
 
   :active ${IconWrapper} {
-    background: ${CoreColors.Blue200};
+    background: ${colorNavText()};
   }
 
   :focus {
-    background: ${CoreColors.Gray700};
+    background: ${colorBackgroundLight()};
   }
 `;

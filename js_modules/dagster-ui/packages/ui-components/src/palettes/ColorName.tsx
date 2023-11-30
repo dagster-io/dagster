@@ -67,7 +67,13 @@ export enum ColorName {
   TooltipText = 'TooltipText',
   PopoverBackground = 'PopoverBackground',
   PopoverBackgroundHover = 'PopoverBackgroundHover',
-
+  // Header
+  NavBackground = 'NavBackground',
+  NavText = 'NavText',
+  NavTextHover = 'NavTextHover',
+  NavTextSelected = 'NavTextSelected',
+  NavButton = 'NavButton',
+  NavButtonHover = 'NavButtonHover',
   // Lineage Graph
   LineageDots = 'LineageDots',
   LineageEdge = 'LineageEdge',

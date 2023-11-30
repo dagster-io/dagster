@@ -12,7 +12,7 @@ import {
   colorKeylineDefault,
   CoreColors,
 } from '@dagster-io/ui-components';
-import {colorDialogBackground} from '@dagster-io/ui-components/src/theme/color';
+import {colorDialogBackground, colorNavBackground, colorNavButton, colorNavButtonHover, colorNavText} from '@dagster-io/ui-components/src/theme/color';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -252,7 +252,7 @@ export const SearchDialog = ({searchPlaceholder}: {searchPlaceholder: string}) =
 };
 
 const SearchTrigger = styled.button`
-  background-color: ${CoreColors.Gray900};
+  background-color: ${colorNavButton()};
   border-radius: 24px;
   border: none;
   color: ${CoreColors.Gray50};
@@ -266,11 +266,11 @@ const SearchTrigger = styled.button`
   transition: background-color 100ms linear;
 
   :hover {
-    background-color: ${CoreColors.Gray850};
+    background-color: ${colorNavButtonHover()};
   }
 
   :focus {
-    border-color: ${CoreColors.Gray100};
+    border-color: ${colorNavText()};
   }
 `;
 

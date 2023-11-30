@@ -77,6 +77,13 @@ export const colorTooltipBackground = () => color(ColorName.TooltipBackground);
 export const colorTooltipText = () => color(ColorName.TooltipText);
 export const colorPopoverBackground = () => color(ColorName.PopoverBackground);
 export const colorPopoverBackgroundHover = () => color(ColorName.PopoverBackgroundHover);
+// NAV COLORS
+export const colorNavBackground = () => color(ColorName.NavBackground);
+export const colorNavText = () => color(ColorName.NavText);
+export const colorNavTextHover = () => color(ColorName.NavTextHover);
+export const colorNavTextSelected = () => color(ColorName.NavTextSelected);
+export const colorNavButton = () => color(ColorName.NavButton);
+export const colorNavButtonHover = () => color(ColorName.NavButtonHover);
 
 // LINEAGE GRAPH COLORS
 export const colorLineageDots = () => color(ColorName.LineageDots);
