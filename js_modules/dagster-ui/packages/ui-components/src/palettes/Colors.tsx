@@ -201,3 +201,4 @@ export const DataVizColors = {
   Yellow100: 'rgba(255, 242, 176, 1)',
   Yellow200: 'rgba(253, 224, 71, 1)',
   Yellow300: 'rgba(180, 83, 9, 1)',
+}
