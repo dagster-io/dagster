@@ -215,9 +215,17 @@ def test_build_assets_from_sling_streams(
     expected: int,
     sqlite_connection: sqlite3.Connection,
 ):
+    asset_specs = [
+        AssetSpec(
+            key=["main", "tbl7"],
+            group_name="etl",
+            description="ETL Test",
+        )
+    ]
     asset_def = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
+        asset_specs,
         streams=[
             {
                 "stream_name": f"file://{test_csv}",
@@ -255,9 +263,22 @@ def test_multiple_streams(
     sqlite_connection: sqlite3.Connection,
 ):
     """Create two assets that target the same SlingConnectionResource."""
+    asset_specs = [
+        AssetSpec(
+            key=["main", "tbl"],
+            group_name="etl",
+            description="ETL Test",
+        ),
+        AssetSpec(
+            key=["main", "staging_tbl"],
+            group_name="etl",
+            description="ETL Test",
+        ),
+    ]
     asset_def = build_assets_from_sling_streams(
         sling_staging_file_connection,
         sling_sqlite_connection,
+        asset_specs,
         streams=[
             {
                 "stream_name": f"file://{test_csv}",
@@ -299,6 +320,13 @@ def test_reuse_sling_connection_resource(
     asset_def = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
+        asset_specs = [
+            AssetSpec(
+                key=["main", "tbl"],
+                group_name="etl",
+                description="ETL Test",
+            )
+        ],
         streams=[{"stream_name": f"file://{test_csv}", "primary_key": "SPECIES_CODE"}],
         target_object="main.tbl",
         mode=SlingMode.FULL_REFRESH,
@@ -307,6 +335,13 @@ def test_reuse_sling_connection_resource(
     asset_def_two = build_assets_from_sling_streams(
         sling_staging_file_connection,
         sling_sqlite_connection,
+        asset_specs = [
+            AssetSpec(
+                key=["main", "staging_tbl"],
+                group_name="etl",
+                description="ETL Test",
+            )
+        ],
         streams=[{"stream_name": f"file://{test_staging_csv}", "primary_key": "SPECIES_CODE"}],
         target_object="main.staging_tbl",
         mode=SlingMode.FULL_REFRESH,
@@ -337,9 +372,17 @@ def test_update_mode_from_stream(
     """Creates a Sling sync using Full Refresh, manually increments the UPDATE KEY to be a higher value,
     which should cause the next run not to append new rows.
     """
+    asset_specs = [
+        AssetSpec(
+            key=["main", "tbl"],
+            group_name="etl",
+            description="ETL Test",
+        )
+    ]
     asset_def_base = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
+        asset_specs,
         streams=[{"stream_name": f"file://{test_csv}"}],
         target_object="main.tbl",
         mode=SlingMode.FULL_REFRESH,
@@ -348,6 +391,7 @@ def test_update_mode_from_stream(
     asset_def_update = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
+        asset_specs,
         streams=[
             {
                 "stream_name": f"file://{test_csv}",

@@ -111,6 +111,7 @@ def build_sling_asset(
 def build_assets_from_sling_streams(
     source: SlingConnectionResource,
     target: SlingConnectionResource,
+    asset_specs: List[AssetSpec],
     streams: List[Dict[str, Any]],
     mode: SlingMode = SlingMode.FULL_REFRESH,
     target_object: str = "{target_schema}.{stream_schema}_{stream_table}",
@@ -165,20 +166,10 @@ def build_assets_from_sling_streams(
         target_connection=target,
     )
 
-    asset_names = []
-    specs = []
-    for stream in streams:
-        asset_name = stream["stream_name"].replace(".", "_")
-        if stream["stream_name"].startswith("file://"):
-            asset_name = asset_name.split("/")[-1]
-        asset_names.append(asset_name)
-
-    specs = [AssetSpec(asset_name) for asset_name in asset_names]
-
     @multi_asset(
         name=f"sling_sync__{str(uuid.uuid4())[:8]}",
         compute_kind="sling",
-        specs=specs,
+        specs=asset_specs,
     )
     def _sling_assets(context: AssetExecutionContext) -> Generator[MaterializeResult, None, None]:
         last_row_count_observed = None
@@ -195,7 +186,7 @@ def build_assets_from_sling_streams(
                 last_row_count_observed = int(match.group(1))
             context.log.info(stdout_line)
 
-        for spec in specs:
+        for spec in asset_specs:
             yield MaterializeResult(
                 asset_key=spec.key,
                 metadata=(
