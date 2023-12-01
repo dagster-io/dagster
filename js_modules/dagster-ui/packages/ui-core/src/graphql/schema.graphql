@@ -3317,6 +3317,7 @@ type CapturedLogsMetadata {
 
 type TestFields {
   alwaysException: String
+  asyncString: String
 }
 
 union AutoMaterializeAssetEvaluationRecordsOrError =
