@@ -120,19 +120,12 @@ class AssetDaemonContext:
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
 
-        # fetch some data in advance to batch some queries
-        self.instance_queryer.prefetch_asset_records(
-            [
-                key
-                for key in self.target_asset_keys_and_parents
-                if not self.asset_graph.is_source(key)
-            ]
-        )
-
         self._verbose_log_fn = (
             self._logger.info if os.getenv("ASSET_DAEMON_VERBOSE_LOGS") else self._logger.debug
         )
-        self.prefetch_updated_parents()
+
+        # cache data before the tick starts
+        self.prefetch()
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -167,24 +160,55 @@ class AssetDaemonContext:
         } | self.target_asset_keys
 
     @property
+    def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
+        return [
+            key for key in self.target_asset_keys_and_parents if not self.asset_graph.is_source(key)
+        ]
+
+    @property
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
 
-    def prefetch_updated_parents(self) -> None:
+    def prefetch(self) -> None:
         """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
         value is calculated a long time after we calculate the set of updated parents for a given
         asset, as this can cause us to miss materializations.
         """
-        self.get_latest_storage_id()
+        self._verbose_log_fn(
+            f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
+        )
+        self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
+        self._verbose_log_fn("Done prefetching asset records.")
+        self._verbose_log_fn(
+            f"Calculated a new latest_storage_id value of {self.get_new_latest_storage_id()}."
+        )
+        self._verbose_log_fn(
+            f"Precalculating updated parents for {len(self.target_asset_keys)} assets using previous "
+            "latest_storage_id of {self.latest_storage_id}."
+        )
         for asset_key in self.target_asset_keys:
             self.instance_queryer.asset_partitions_with_newly_updated_parents(
                 latest_storage_id=self.latest_storage_id, child_asset_key=asset_key
             )
+        self._verbose_log_fn("Done precalculating updated parents.")
 
     @cached_method
-    def get_latest_storage_id(self) -> Optional[int]:
-        """Get the latest storage id across all records."""
-        return self.instance_queryer.instance.event_log_storage.get_maximum_record_id()
+    def get_new_latest_storage_id(self) -> Optional[int]:
+        """Get the latest storage id across all cached asset records. We use the storage ids found
+        on asset records here as these values are prefetched in a single transaction at the start
+        of the tick.
+        """
+        new_latest_storage_id = self.latest_storage_id
+        # all of these asset records should have been prefetched at this point
+        for asset_key in self.asset_records_to_prefetch:
+            record = self.instance_queryer.get_asset_record(asset_key)
+            if record:
+                record_latest_storage_id = record.asset_entry.last_materialization_storage_id
+                new_latest_storage_id = max(
+                    filter(None, [new_latest_storage_id, record_latest_storage_id]), default=None
+                )
+
+        return new_latest_storage_id
 
     def evaluate_asset(
         self,
@@ -467,7 +491,7 @@ class AssetDaemonContext:
         return (
             run_requests,
             self.cursor.with_updates(
-                latest_storage_id=self.get_latest_storage_id(),
+                latest_storage_id=self.get_new_latest_storage_id(),
                 evaluation_id=self._evaluation_id,
                 newly_observe_requested_asset_keys=[
                     asset_key
