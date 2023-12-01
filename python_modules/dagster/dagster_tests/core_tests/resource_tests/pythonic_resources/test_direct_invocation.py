@@ -10,6 +10,7 @@ from dagster import (
     asset,
     op,
 )
+from dagster._core.definitions.events import Failure
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.invocation import build_asset_context, build_op_context
 
@@ -571,3 +572,25 @@ def test_context_bound_state_async_generator():
 
     assert ctx._bound_properties is None  # noqa: SLF001
     assert ctx._invocation_properties is not None  # noqa: SLF001
+
+
+def test_bound_state_with_error():
+    @asset
+    def throws_error(context):
+        assert context.alias == "throws_error"
+        raise Failure("something bad happened!")
+
+    ctx = build_asset_context()
+
+    with pytest.raises(Failure):
+        throws_error(ctx)
+
+    # invocation pathway was interrupted, ctx is still in bound state
+    assert ctx._bound_properties is not None  # noqa: SLF001
+
+    @asset
+    def no_error(context):
+        assert context.alias == "no_error"
+
+    with pytest.raises(DagsterInvalidInvocationError):
+        no_error(ctx)
