@@ -1560,6 +1560,7 @@ export type InstigationStateRunsArgs = {
 };
 
 export type InstigationStateTickArgs = {
+  tickId?: InputMaybe<Scalars['Int']>;
   timestamp?: InputMaybe<Scalars['Float']>;
 };
 
