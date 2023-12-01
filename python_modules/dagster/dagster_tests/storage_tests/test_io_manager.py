@@ -1011,7 +1011,9 @@ def test_nothing_output_something_input():
     job1.execute_in_process()
 
     assert my_io_manager.handle_output_calls == 1  # Nothing return type for op1 skips I/O manager
-    assert my_io_manager.handle_input_calls == 1
+    assert (
+        my_io_manager.handle_input_calls == 0
+    )  # Nothing return type for op1 means we skip I/O manager and directly provide a None
 
 
 def test_instance_set_on_input_context():
