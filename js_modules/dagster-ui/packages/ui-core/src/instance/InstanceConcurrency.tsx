@@ -30,6 +30,7 @@ import {Link} from 'react-router-dom';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -70,42 +71,32 @@ const InstanceConcurrencyPage = React.memo(() => {
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
 
-  const opConcurrencyContent = data ? (
-    <ConcurrencyLimits
-      instanceConfig={data.instance.info}
-      limits={data.instance.concurrencyLimits}
-      hasSupport={data.instance.supportsConcurrencyLimits}
-      refetch={queryResult.refetch}
-    />
-  ) : (
-    <Box padding={{vertical: 64}}>
-      <Spinner purpose="section" />
-    </Box>
-  );
-
   return (
     <Page>
       <PageHeader
         title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="concurrency" refreshState={refreshState} />}
       />
-      <Box margin={{bottom: 64}}>
-        <RunConcurrencyContent
-          hasRunQueue={!!data?.instance.runQueuingSupported}
-          runQueueConfig={data?.instance.runQueueConfig}
-        />
-      </Box>
-      <Box>
-        <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-          <Subheading>
-            <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
-              <span>Global op/asset concurrency</span>
-              <Tag>Experimental</Tag>
-            </Box>
-          </Subheading>
+      {data ? (
+        <>
+          <Box margin={{bottom: 64}}>
+            <RunConcurrencyContent
+              hasRunQueue={!!data?.instance.runQueuingSupported}
+              runQueueConfig={data?.instance.runQueueConfig}
+            />
+          </Box>
+          <ConcurrencyLimits
+            instanceConfig={data.instance.info}
+            limits={data.instance.concurrencyLimits}
+            hasSupport={data.instance.supportsConcurrencyLimits}
+            refetch={queryResult.refetch}
+          />
+        </>
+      ) : (
+        <Box padding={{vertical: 64}}>
+          <Spinner purpose="section" />
         </Box>
-        {opConcurrencyContent}
-      </Box>
+      )}
     </Page>
   );
 });
@@ -132,9 +123,11 @@ type DialogAction =
 export const RunConcurrencyContent = ({
   hasRunQueue,
   runQueueConfig,
+  onEdit,
 }: {
   hasRunQueue: boolean;
   runQueueConfig: RunQueueConfigFragment | null | undefined;
+  onEdit?: () => void;
 }) => {
   if (!hasRunQueue) {
     return (
@@ -201,14 +194,29 @@ export const RunConcurrencyContent = ({
 
   return (
     <>
-      <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
-        <Subheading>Run concurrency</Subheading>
-      </Box>
+      <RunConcurrencyLimitHeader onEdit={onEdit} />
       {info_content}
       {settings_content}
     </>
   );
 };
+
+const RunConcurrencyLimitHeader = ({onEdit}: {onEdit?: () => void}) => (
+  <Box
+    flex={{justifyContent: 'space-between', alignItems: 'center'}}
+    padding={{vertical: 16, horizontal: 24}}
+    border="bottom"
+  >
+    <Subheading>Run concurrency</Subheading>
+    {onEdit ? (
+      <Button icon={<Icon name="edit" />} onClick={() => onEdit()}>
+        Edit configuration
+      </Button>
+    ) : (
+      <span />
+    )}
+  </Box>
+);
 
 export const ConcurrencyLimits = ({
   instanceConfig,
@@ -232,7 +240,7 @@ export const ConcurrencyLimits = ({
   );
 
   const sortedLimits = React.useMemo(() => {
-    return [...limits].sort((a, b) => a.concurrencyKey.localeCompare(b.concurrencyKey));
+    return [...limits].sort((a, b) => COMMON_COLLATOR.compare(a.concurrencyKey, b.concurrencyKey));
   }, [limits]);
 
   const onAdd = () => {
@@ -247,43 +255,45 @@ export const ConcurrencyLimits = ({
 
   if (!hasSupport && instanceConfig && instanceConfig.includes('SqliteEventLogStorage')) {
     return (
-      <Box margin={24}>
-        <NonIdealState
-          icon="error"
-          title="No concurrency support"
-          description={
-            'This instance does not support global concurrency limits. You will need to ' +
-            'configure a different storage implementation (e.g. Postgres/MySQL) to use this ' +
-            'feature.'
-          }
-        />
-      </Box>
+      <>
+        <ConcurrencyLimitHeader />
+        <Box margin={24}>
+          <NonIdealState
+            icon="error"
+            title="No concurrency support"
+            description={
+              'This instance does not support global concurrency limits. You will need to ' +
+              'configure a different storage implementation (e.g. Postgres/MySQL) to use this ' +
+              'feature.'
+            }
+          />
+        </Box>
+      </>
     );
   } else if (hasSupport === false) {
     return (
-      <Box margin={24}>
-        <NonIdealState
-          icon="error"
-          title="No concurrency support"
-          description={
-            'This instance does not currently support global concurrency limits. You may need to ' +
-            'run `dagster instance migrate` to add the necessary tables to your dagster storage ' +
-            'to support this feature.'
-          }
-        />
-      </Box>
+      <>
+        <ConcurrencyLimitHeader />
+        <Box margin={24}>
+          <NonIdealState
+            icon="error"
+            title="No concurrency support"
+            description={
+              'This instance does not currently support global concurrency limits. You may need to ' +
+              'run `dagster instance migrate` to add the necessary tables to your dagster storage ' +
+              'to support this feature.'
+            }
+          />
+        </Box>
+      </>
     );
   }
 
   return (
     <>
-      <Box>
-        <Box flex={{justifyContent: 'flex-end'}} padding={16}>
-          <Button intent="primary" icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
-            Add concurrency limit
-          </Button>
-        </Box>
-        {limits.length === 0 ? (
+      <ConcurrencyLimitHeader onAdd={onAdd} />
+      {limits.length === 0 ? (
+        <Box margin={24}>
           <NonIdealState
             icon="error"
             title="No concurrency limits"
@@ -294,50 +304,50 @@ export const ConcurrencyLimits = ({
               </>
             }
           />
-        ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th style={{width: '260px'}}>Concurrency key</th>
-                <th style={{width: '20%'}}>Total slots</th>
-                <th style={{width: '20%'}}>Assigned steps</th>
-                <th style={{width: '20%'}}>Pending steps</th>
-                <th style={{width: '20%'}}>All steps</th>
-                <th></th>
+        </Box>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <th style={{width: '260px'}}>Concurrency key</th>
+              <th style={{width: '20%'}}>Total slots</th>
+              <th style={{width: '20%'}}>Assigned steps</th>
+              <th style={{width: '20%'}}>Pending steps</th>
+              <th style={{width: '20%'}}>All steps</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedLimits.map((limit) => (
+              <tr key={limit.concurrencyKey}>
+                <td>{limit.concurrencyKey}</td>
+                <td>{limit.slotCount}</td>
+                <td>{limit.pendingSteps.filter((x) => !!x.assignedTimestamp).length}</td>
+                <td>{limit.pendingSteps.filter((x) => !x.assignedTimestamp).length}</td>
+                <td>
+                  <span style={{marginRight: 16}}>{limit.pendingSteps.length}</span>
+                  <Tag intent="primary" interactive>
+                    <ButtonLink
+                      onClick={() => {
+                        setSelectedKey(limit.concurrencyKey);
+                      }}
+                    >
+                      View all
+                    </ButtonLink>
+                  </Tag>
+                </td>
+                <td>
+                  <ConcurrencyLimitActionMenu
+                    concurrencyKey={limit.concurrencyKey}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {sortedLimits.map((limit) => (
-                <tr key={limit.concurrencyKey}>
-                  <td>{limit.concurrencyKey}</td>
-                  <td>{limit.slotCount}</td>
-                  <td>{limit.pendingSteps.filter((x) => !!x.assignedTimestamp).length}</td>
-                  <td>{limit.pendingSteps.filter((x) => !x.assignedTimestamp).length}</td>
-                  <td>
-                    <span style={{marginRight: 16}}>{limit.pendingSteps.length}</span>
-                    <Tag intent="primary" interactive>
-                      <ButtonLink
-                        onClick={() => {
-                          setSelectedKey(limit.concurrencyKey);
-                        }}
-                      >
-                        View all
-                      </ButtonLink>
-                    </Tag>
-                  </td>
-                  <td>
-                    <ConcurrencyLimitActionMenu
-                      concurrencyKey={limit.concurrencyKey}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
-      </Box>
+            ))}
+          </tbody>
+        </Table>
+      )}
       <AddConcurrencyLimitDialog
         open={action?.actionType === 'add'}
         onClose={() => setAction(undefined)}
@@ -368,6 +378,26 @@ export const ConcurrencyLimits = ({
     </>
   );
 };
+
+const ConcurrencyLimitHeader = ({onAdd}: {onAdd?: () => void}) => (
+  <Box
+    flex={{justifyContent: 'space-between', alignItems: 'center'}}
+    padding={{vertical: 16, horizontal: 24}}
+    border="top-and-bottom"
+  >
+    <Subheading>
+      <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+        <span>Global op/asset concurrency</span>
+        <Tag>Experimental</Tag>
+      </Box>
+    </Subheading>
+    {onAdd ? (
+      <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
+        Add concurrency limit
+      </Button>
+    ) : null}
+  </Box>
+);
 
 const ConcurrencyLimitActionMenu = ({
   concurrencyKey,
