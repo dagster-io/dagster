@@ -1,7 +1,6 @@
 import {Button, Colors, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
-import styled from 'styled-components';
 
 import {AssetKey} from '../../assets/types';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
