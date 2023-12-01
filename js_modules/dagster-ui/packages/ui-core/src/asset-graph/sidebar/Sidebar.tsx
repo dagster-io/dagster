@@ -338,7 +338,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                         fullAssetGraphData={fullAssetGraphData}
                         node={row}
                         level={node.level}
-                        isLastSelected={lastSelectedNode.id === node.id}
+                        isLastSelected={lastSelectedNode?.id === node.id}
                         isSelected={
                           selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
                         }
