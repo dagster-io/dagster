@@ -872,6 +872,7 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
+  jobNames: [String!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
 }
@@ -2414,7 +2415,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
-  tick(timestamp: Float): InstigationTick
+  tick(timestamp: Float, tickId: Int): InstigationTick
   ticks(
     dayRange: Int
     dayOffset: Int
@@ -2456,6 +2457,7 @@ union InstigationStatesOrError = InstigationStates | PythonError
 
 type InstigationTick {
   id: ID!
+  tickId: ID!
   status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
@@ -3315,6 +3317,7 @@ type CapturedLogsMetadata {
 
 type TestFields {
   alwaysException: String
+  asyncString: String
 }
 
 union AutoMaterializeAssetEvaluationRecordsOrError =

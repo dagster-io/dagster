@@ -543,6 +543,7 @@ class ExternalScheduleExecutionArgs(
             ("schedule_name", str),
             ("scheduled_execution_timestamp", Optional[float]),
             ("scheduled_execution_timezone", Optional[str]),
+            ("timeout", Optional[int]),
         ],
     )
 ):
@@ -553,6 +554,7 @@ class ExternalScheduleExecutionArgs(
         schedule_name: str,
         scheduled_execution_timestamp: Optional[float] = None,
         scheduled_execution_timezone: Optional[str] = None,
+        timeout: Optional[int] = None,
     ):
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
@@ -568,6 +570,7 @@ class ExternalScheduleExecutionArgs(
                 scheduled_execution_timezone,
                 "scheduled_execution_timezone",
             ),
+            timeout=check.opt_int_param(timeout, "timeout"),
         )
 
 
@@ -582,6 +585,7 @@ class SensorExecutionArgs(
             ("last_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
             ("cursor", Optional[str]),
+            ("timeout", Optional[int]),
         ],
     )
 ):
@@ -593,6 +597,7 @@ class SensorExecutionArgs(
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        timeout: Optional[int] = None,
     ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
@@ -606,6 +611,7 @@ class SensorExecutionArgs(
             ),
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
             cursor=check.opt_str_param(cursor, "cursor"),
+            timeout=timeout,
         )
 
 

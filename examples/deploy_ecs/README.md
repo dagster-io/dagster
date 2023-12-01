@@ -9,21 +9,26 @@ This directory contains annotated files for deploying Dagster with an EcsRunLaun
 3. [Install the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 4. [Configure IAM permissions](https://docs.docker.com/cloud/ecs-integration/#requirements)
 5. [Create a Docker ECS context](https://docs.docker.com/cloud/ecs-integration/#create-aws-context):
-  ```sh
-  docker context create ecs dagster-ecs
-  ```
+
+```sh
+docker context create ecs dagster-ecs
+```
+
 6. [Create ECR Repositories](https://docs.aws.amazon.com/cli/latest/reference/ecr/create-repository.html) for our images:
-  ```sh
-  aws ecr create-repository --repository-name deploy_ecs/webserver
-  aws ecr create-repository --repository-name deploy_ecs/daemon
-  aws ecr create-repository --repository-name deploy_ecs/user_code
-  ```
+
+```sh
+aws ecr create-repository --repository-name deploy_ecs/webserver
+aws ecr create-repository --repository-name deploy_ecs/daemon
+aws ecr create-repository --repository-name deploy_ecs/user_code
+```
+
 7. [Log in to your ECR Registry](https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html) (ensure that the $AWS_REGION environment variable is set to your registry's AWS region):
-  ```sh
-  export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text | cut -f1)
-  export REGISTRY_URL=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-  aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY_URL
-  ```
+
+```sh
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text | cut -f1)
+export REGISTRY_URL=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY_URL
+```
 
 ## Build and Push Images
 

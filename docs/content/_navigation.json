@@ -10,7 +10,7 @@
         "path": "/getting-started/overview"
       },
       {
-        "title": "Hello Dagster",
+        "title": "Hello, Dagster!",
         "path": "/getting-started/hello-dagster"
       },
       {
@@ -18,20 +18,12 @@
         "path": "/getting-started/install"
       },
       {
-        "title": "Create a new project",
+        "title": "Creating a new project",
         "path": "/getting-started/create-new-project"
-      },
-      {
-        "title": "Project files",
-        "path": "/getting-started/project-file-reference"
       },
       {
         "title": "Getting help",
         "path": "/getting-started/getting-help"
-      },
-      {
-        "title": "Telemetry",
-        "path": "/getting-started/telemetry"
       }
     ]
   },
@@ -545,11 +537,15 @@
                 "title": "SSO and provisioning",
                 "children": [
                   {
-                    "title": "Azure Active Directory",
+                    "title": "SCIM provisioning",
+                    "path": "/dagster-cloud/account/authentication/utilizing-scim-provisioning"
+                  },
+                  {
+                    "title": "SSO for Azure Active Directory",
                     "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
                   },
                   {
-                    "title": "Google Workspace",
+                    "title": "SSO for Google Workspace",
                     "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
                   },
                   {
@@ -566,11 +562,11 @@
                     ]
                   },
                   {
-                    "title": "OneLogin",
+                    "title": "SSO for OneLogin",
                     "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
                   },
                   {
-                    "title": "PingOne",
+                    "title": "SSO for PingOne",
                     "path": "/dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
                   }
                 ]
@@ -822,6 +818,10 @@
         "path": "/integrations/pandas"
       },
       {
+        "title": "Pandera",
+        "path": "/integrations/pandera"
+      },
+      {
         "title": "PySpark",
         "path": "/integrations/spark"
       },
@@ -851,8 +851,12 @@
     "path": "/guides",
     "children": [
       {
-        "title": "Development environment",
+        "title": "Development",
         "children": [
+          {
+            "title": "Understanding Dagster project files",
+            "path": "/guides/understanding-dagster-project-files"
+          },
           {
             "title": "Running Dagster locally",
             "path": "/guides/running-dagster-locally"
@@ -1372,12 +1376,16 @@
       },
       {
         "title": "Releases",
-        "path": "/getting-started/releases"
+        "path": "/about/releases"
       },
       {
         "title": "Changelog",
         "path": "/changelog",
         "isNotDynamic": true
+      },
+      {
+        "title": "Telemetry",
+        "path": "/about/telemetry"
       }
     ]
   }
