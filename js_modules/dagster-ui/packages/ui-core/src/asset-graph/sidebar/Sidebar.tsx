@@ -165,7 +165,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const rowVirtualizer = useVirtualizer({
       count: renderedNodes.length,
       getScrollElement: () => containerRef.current,
-      estimateSize: () => 29,
+      estimateSize: () => 32,
       overscan: 10,
     });
 
@@ -263,7 +263,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     }, [rowVirtualizer.measure]);
 
     return (
-      <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
+      <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
         <div
           style={{
             display: 'grid',
@@ -338,6 +338,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                         fullAssetGraphData={fullAssetGraphData}
                         node={row}
                         level={node.level}
+                        isLastSelected={lastSelectedNode.id === node.id}
                         isSelected={
                           selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
                         }
