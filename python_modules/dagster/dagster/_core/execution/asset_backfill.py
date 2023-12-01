@@ -878,6 +878,8 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
+    logger.info(f"Evaluating asset backfill {backfill.backfill_id}")
+
     workspace_context = workspace_process_context.create_request_context()
 
     asset_graph = ExternalAssetGraph.from_workspace(workspace_context)
@@ -895,6 +897,10 @@ def execute_asset_backfill_iteration(
     )
     if previous_asset_backfill_data is None:
         return
+
+    logger.info(
+        f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}"
+    )
 
     if backfill.status == BulkActionStatus.REQUESTED:
         result = None
@@ -950,6 +956,10 @@ def execute_asset_backfill_iteration(
             updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
         instance.update_backfill(updated_backfill)
+        logger.info(
+            f"Asset backfill {backfill.backfill_id} completed iteration with status {updated_backfill.status}."
+        )
+        logger.debug(f"Updated asset backfill data after execution: {updated_asset_backfill_data}")
 
     elif backfill.status == BulkActionStatus.CANCELING:
         if not instance.run_coordinator:
@@ -1003,6 +1013,12 @@ def execute_asset_backfill_iteration(
             updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
 
         instance.update_backfill(updated_backfill)
+        logger.info(
+            f"Asset backfill {backfill.backfill_id} completed cancellation iteration with status {updated_backfill.status}."
+        )
+        logger.debug(
+            f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
+        )
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
 
