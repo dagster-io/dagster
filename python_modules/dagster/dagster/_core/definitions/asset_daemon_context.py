@@ -171,8 +171,9 @@ class AssetDaemonContext:
 
     def prefetch(self) -> None:
         """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
-        value is calculated a long time after we calculate the set of updated parents for a given
-        asset, as this can cause us to miss materializations.
+        value is calculated using information that comes in after the set of asset partitions with
+        new parent materializations is calculated, as this can result in materializations being
+        ignored if they happen between the two calculations.
         """
         self._verbose_log_fn(
             f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
@@ -184,7 +185,7 @@ class AssetDaemonContext:
         )
         self._verbose_log_fn(
             f"Precalculating updated parents for {len(self.target_asset_keys)} assets using previous "
-            "latest_storage_id of {self.latest_storage_id}."
+            f"latest_storage_id of {self.latest_storage_id}."
         )
         for asset_key in self.target_asset_keys:
             self.instance_queryer.asset_partitions_with_newly_updated_parents(
