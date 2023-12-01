@@ -1,11 +1,11 @@
 ---
-title: "Overview | Dagster Docs"
-description: ""
+title: "The what and why of Dagster | Dagster Docs"
+description: "Welcome to Dagster! Learn a bit about Dagster and why it stands out in data orchestration."
 ---
 
-# Welcome to Dagster!
+# The what and why of Dagster
 
-If you’re here, you probably have questions about data, orchestration, Dagster, and how everything fits together.
+**Welcome to Dagster!** If you’re here, you probably have questions about data, orchestration, Dagster, and how everything fits together.
 
 Let’s start with the basics: **What’s an orchestrator?**
 
@@ -25,7 +25,7 @@ That being said, you might be asking yourself...
 
 ## Why Dagster?
 
-Dagster models pipelines in terms of the data assets they produce and consume, which, by default, brings order and observability to your data platform.
+Dagster models pipelines in terms of the data assets they produce and consume, which, by default, brings order and observability to your data platform. Assets in Dagster can model data produced by any system, such as dbt models, Snowflake tables, or even CSV files.
 
 With Dagster, you declare functions in Python that you want to run and the data assets that those functions produce or update. For example, the following image is an example of a graph with several assets:
 
@@ -40,7 +40,6 @@ height={1220}
 
 Dagster’s asset-centric approach to building data pipelines makes it easy to:
 
-- **Model real-world, complex data platforms**. Assets in Dagster can model data produced by any system, such as dbt models, Snowflake tables, or even CSV files.
 - **Understand how an asset - like a database table or report - is produced.** Everyone in your organization can understand the data lineage and how data assets relate to each other, even if they didn’t build the pipeline themselves.
 - **Determine if an asset is up to date.** It’s easy to tell exactly why assets are out-of-date, whether it might be late upstream data or errors in code.
 - **Standardize best practices.** [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets), the Dagster concept that produces data assets, are a unifying abstraction across all data teams. SDAs enable easier collaboration and rapid adoption of best practices such as domain-specific languages, continuous integration, local development, and testing.
