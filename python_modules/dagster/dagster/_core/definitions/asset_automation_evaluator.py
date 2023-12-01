@@ -4,8 +4,10 @@ from typing import List, NamedTuple, Optional, Sequence
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
 from dagster._core.definitions.events import AssetKey
 
-from .asset_automation_condition import AssetAutomationConditionEvaluationContext
-from .asset_automation_condition_cursor import AssetAutomationConditionCursor
+from .asset_automation_condition_context import AssetAutomationConditionEvaluationContext
+from .asset_automation_condition_cursor import (
+    AssetAutomationConditionCursor,
+)
 from .asset_subset import AssetSubset
 
 
@@ -184,4 +186,73 @@ class NorAutomationCondition(
 # NOT BOOLEAN STUFF
 ############
 
-...
+
+class IsMissingCondition(AutomationCondition, NamedTuple("_IsMissingCondition", [])):
+    @property
+    def description(self) -> str:
+        return "materialization is missing"
+
+    def evaluate_for_asset(
+        self, context: AssetAutomationConditionEvaluationContext
+    ) -> ConditionEvaluationResult:
+        previous_handled_subset = (
+            context.get_cursor_extra("previous_handled_subset", astype=AssetSubset)
+            or context.empty_subset()
+        )
+
+        current_handled_subset = (
+            previous_handled_subset
+            | context.materialized_since_previous_tick_subset
+            | context.asset_context.previous_tick_requested_subset
+        )
+        current_unhandled_subset = context.candidates_subset - current_handled_subset
+        return ConditionEvaluationResult.create(
+            context,
+            true_subset=current_unhandled_subset,
+            cursor=AssetAutomationConditionCursor(
+                condition_snapshot=self.to_snapshot(),
+                child_cursors=[],
+                max_storage_id=None,  # TODO
+                extras={
+                    "previous_handled_subset": current_handled_subset,
+                },
+            ),
+        )
+
+
+class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCondition", [])):
+    @property
+    def description(self) -> str:
+        return "waiting on upstream data to be up to date"
+
+    def evaluate_for_asset(
+        self, context: AssetAutomationConditionEvaluationContext
+    ) -> ConditionEvaluationResult:
+        # only need to evaluate net-new candidates and candidates whose parents have changed
+        subset_to_evaluate = (
+            context.candidates_not_evaluated_on_previous_tick_subset
+            | context.candidate_parent_has_or_will_update_subset
+        )
+        for candidate in subset_to_evaluate.asset_partitions:
+            outdated_ancestors = set()
+            # find the root cause of why this asset partition's parents are outdated (if any)
+            for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
+                asset_partition=candidate
+            ):
+                if context.instance_queryer.have_ignorable_partition_mapping_for_outdated(
+                    candidate.asset_key, parent.asset_key
+                ):
+                    continue
+                outdated_ancestors.update(
+                    context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
+                )
+            if outdated_ancestors:
+                asset_partitions_by_evaluation_data[
+                    WaitingOnAssetsRuleEvaluationData(frozenset(outdated_ancestors))
+                ].add(candidate)
+
+        return self.add_evaluation_data_from_previous_tick(
+            context,
+            asset_partitions_by_evaluation_data,
+            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
+        )
