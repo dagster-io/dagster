@@ -320,7 +320,7 @@ def test_reuse_sling_connection_resource(
     asset_def = build_assets_from_sling_streams(
         sling_file_connection,
         sling_sqlite_connection,
-        asset_specs = [
+        asset_specs=[
             AssetSpec(
                 key=["main", "tbl"],
                 group_name="etl",
@@ -335,7 +335,7 @@ def test_reuse_sling_connection_resource(
     asset_def_two = build_assets_from_sling_streams(
         sling_staging_file_connection,
         sling_sqlite_connection,
-        asset_specs = [
+        asset_specs=[
             AssetSpec(
                 key=["main", "staging_tbl"],
                 group_name="etl",
