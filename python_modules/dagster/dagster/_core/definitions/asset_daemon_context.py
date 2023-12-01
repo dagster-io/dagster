@@ -169,6 +169,10 @@ class AssetDaemonContext:
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
 
+    @property
+    def auto_materialize_run_tags(self) -> Mapping[str, str]:
+        return self._materialize_run_tags or {}
+
     def prefetch(self) -> None:
         """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
         value is calculated using information that comes in after the set of asset partitions with
@@ -494,7 +498,7 @@ class AssetDaemonContext:
             *build_run_requests(
                 asset_partitions=to_materialize,
                 asset_graph=self.asset_graph,
-                run_tags=self._materialize_run_tags,
+                run_tags=self.auto_materialize_run_tags,
             ),
             *auto_observe_run_requests,
         ]
