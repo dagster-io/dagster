@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, List, Mapping, NamedTuple, Optional, Sequence
+from typing import List, Mapping, NamedTuple, Optional, Sequence, Set
 
 from dagster import MetadataValue
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
@@ -236,9 +236,7 @@ class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCo
             | context.candidate_parent_has_or_will_update_subset
         )
 
-        asset_partitions_by_metadata: Mapping[
-            MetadataMapping, AbstractSet[AssetKeyPartitionKey]
-        ] = {}
+        asset_partitions_by_metadata: Mapping[MetadataMapping, Set[AssetKeyPartitionKey]] = {}
         for candidate in subset_to_evaluate.asset_partitions:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
@@ -256,11 +254,22 @@ class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCo
                 )
             if outdated_ancestors:
                 metadata = {
-                    "outdated_ancestors": [MetadataValue.asset(ak) for ak in outdated_ancestors]
+                    f"outdated_ancestor_{i}": MetadataValue.asset(ak)
+                    for i, ak in enumerate(sorted(outdated_ancestors))
                 }
-                asset_partitions_by_evaluation_data[
-                    WaitingOnAssetsRuleEvaluationData(frozenset(outdated_ancestors))
-                ].add(candidate)
+                asset_partitions_by_metadata[metadata].add(candidate)
+
+        new_metadata_by_subset = {
+            AssetSubset.from_asset_partitions_set(
+                context.asset_key, context.partitions_def, asset_partitions
+            ): metadata
+            for metadata, asset_partitions in asset_partitions_by_metadata.items()
+        }
+        previous_metadata_by_subset = (
+            context.previous_condition_evaluation.metadata_by_subset
+            if context.previous_condition_evaluation
+            else {}
+        )
 
         true_subset = (context.previous_tick_true_subset - subset_to_evaluate) | ...
         evaluation = ConditionEvaluation(
