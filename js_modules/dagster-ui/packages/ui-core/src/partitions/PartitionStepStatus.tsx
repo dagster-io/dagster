@@ -11,6 +11,7 @@ import {
   useViewport,
   colorKeylineDefault,
   colorBackgroundDefault,
+  colorBackgroundDefaultHover,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -395,7 +396,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   cursor: pointer;
   display: flex;
   &:hover {
-    background: #ececec;
+    background: ${colorBackgroundDefaultHover()};
   }
 `;
 

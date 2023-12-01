@@ -13,6 +13,7 @@ import {
   colorTextDefault,
   colorTextDisabled,
   colorTextLighter,
+  colorFocusRing,
 } from '../theme/color';
 
 type Format = 'check' | 'star' | 'switch';
@@ -280,7 +281,7 @@ export const Checkbox = styled(Base)`
 
   input:focus + svg {
     .interaction-focus-outline {
-      stroke: rgba(58, 151, 212, 0.6);
+      stroke: ${colorFocusRing()};
       stroke-width: 6px;
       paint-order: stroke fill;
     }

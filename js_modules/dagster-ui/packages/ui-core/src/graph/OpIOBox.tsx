@@ -2,6 +2,7 @@ import {
   FontFamily,
   colorAccentBlue,
   colorAccentGray,
+  colorBackgroundBlue,
   colorBackgroundDefault,
   colorTextBlue,
   colorTextLight,
@@ -121,7 +122,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   }
   .type {
     padding: 1px 6px;
-    background: #e7e6f0;
+    background: ${colorBackgroundBlue()};
     margin-right: 4px;
     color: ${colorTextBlue()};
     font-family: ${FontFamily.monospace};

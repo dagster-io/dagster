@@ -1,5 +1,9 @@
 import {gql} from '@apollo/client';
-import {NonIdealState, colorKeylineDefault} from '@dagster-io/ui-components';
+import {
+  NonIdealState,
+  colorBackgroundDefault,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {
@@ -410,7 +414,7 @@ class AutoSizer extends React.Component<{
 }
 
 const ListEmptyState = styled.div`
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: ${colorBackgroundDefault()};
   z-index: 100;
   position: absolute;
   width: 100%;

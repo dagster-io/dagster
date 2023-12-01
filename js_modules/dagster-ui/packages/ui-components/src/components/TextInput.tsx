@@ -134,7 +134,7 @@ export const TextInputStyles = css`
     box-shadow:
       ${colorBorderDefault()} inset 0px 0px 0px 1px,
       ${colorKeylineDefault()} inset 2px 2px 1.5px,
-      ${colorFocusRing()} 0 0 0 2px;
+      ${colorFocusRing()} 0 0 0 3px;
     outline: none;
   }
 `;
@@ -167,7 +167,7 @@ const StyledInput = styled.input<StyledInputProps>`
   :focus {
     box-shadow:
       ${({$strokeColor}) => $strokeColor || colorBorderDefault()} 0px 0px 0px 1px,
-      ${colorFocusRing()} 0 0 0 2px;
+      ${colorFocusRing()} 0 0 0 3px;
     background-color: ${colorBackgroundDefaultHover()};
   }
 `;

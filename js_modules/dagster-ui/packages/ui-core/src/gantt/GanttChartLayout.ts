@@ -4,12 +4,12 @@ import {
   colorAccentGreen,
   colorAccentRed,
   colorAccentReversed,
+  colorAccentWhite,
   colorAccentYellow,
   colorBackgroundBlue,
   colorBackgroundDefault,
   colorBackgroundLight,
   colorTextBlue,
-  colorTextDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
 
@@ -268,11 +268,11 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 
 const TextColorForStates = {
   [IStepState.RUNNING]: colorTextBlue(),
-  [IStepState.RETRY_REQUESTED]: colorTextDefault(),
-  [IStepState.SUCCEEDED]: colorTextDefault(),
-  [IStepState.FAILED]: colorTextDefault(),
-  [IStepState.SKIPPED]: colorTextDefault(),
-  [IStepState.UNKNOWN]: colorTextDefault(),
+  [IStepState.RETRY_REQUESTED]: colorAccentWhite(),
+  [IStepState.SUCCEEDED]: colorAccentWhite(),
+  [IStepState.FAILED]: colorAccentWhite(),
+  [IStepState.SKIPPED]: colorAccentWhite(),
+  [IStepState.UNKNOWN]: colorAccentWhite(),
 };
 
 const BackgroundColorForStates = {

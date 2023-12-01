@@ -11,6 +11,7 @@ import {
   colorTextLight,
   colorAccentGray,
   colorAccentGrayHover,
+  colorTextLighter,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -122,7 +123,7 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
     background: none;
     font-size: 20px;
     font-weight: bold;
-    color: #5c7080;
+    color: ${colorTextLighter()};
     content: '/';
     width: 8px;
     line-height: 16px;

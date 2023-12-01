@@ -5,6 +5,22 @@ import {
   FontFamily,
   colorAccentYellow,
   CoreColors,
+  colorBackgroundLight,
+  colorBackgroundLighter,
+  colorKeylineDefault,
+  colorBackgroundLightHover,
+  colorTextDefault,
+  colorTextLight,
+  colorBorderDefault,
+  colorBackgroundYellow,
+  colorTextLighter,
+  colorAccentBlue,
+  colorTextBlue,
+  colorAccentGreen,
+  colorAccentRed,
+  colorAccentCyan,
+  colorAccentGray,
+  colorAccentOlive,
 } from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
@@ -72,7 +88,6 @@ export const RawLogContent = React.memo((props: Props) => {
               Download the full log file
             </a>
           ) : null}
-          .
         </div>
       </Group>
     </FileWarning>
@@ -254,71 +269,73 @@ const LineNumbers = (props: IScrollContainerProps) => {
 
 const Content = styled.div`
   padding: 10px;
-  background-color: ${CoreColors.Gray900};
+  background-color: ${colorBackgroundLight()};
 `;
+
 const LineNumberContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  border-right: 1px solid #5c7080;
+  border-right: 1px solid ${colorKeylineDefault()};
   padding: 10px 10px 10px 20px;
   margin-right: 5px;
-  background-color: ${CoreColors.Gray900};
+  background-color: ${colorBackgroundLightHover()};
   opacity: 0.8;
-  color: #858585;
+  color: ${colorTextLighter()};
   min-height: 100%;
 `;
+
 const SolarizedColors = createGlobalStyle`
   .ansi-black {
-    color: #586e75;
+    color: ${colorAccentOlive()};
   }
   .ansi-red {
-    color: #dc322f;
+    color: ${colorAccentRed()};
   }
   .ansi-green {
-    color: #859900;
+    color: ${colorAccentGreen()};
   }
   .ansi-yellow {
-    color: #b58900;
+    color: ${colorAccentYellow()};
   }
   .ansi-blue {
-    color: #268bd2;
+    color: ${colorAccentBlue()};
   }
   .ansi-magenta {
-    color: #d33682;
+    color: ${colorTextBlue()};
   }
   .ansi-cyan {
-    color: #2aa198;
+    color: ${colorAccentCyan()};
   }
   .ansi-white {
-    color: #eee8d5;
+    color: ${colorAccentGray()};
   }
 `;
+
 const ContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   min-height: 100%;
-  background-color: ${CoreColors.Gray900};
+  background-color: ${colorBackgroundLight()};
 `;
+
 const FileContainer = styled.div`
   flex: 1;
   height: 100%;
   position: relative;
-  &:first-child {
-    border-right: 0.5px solid #5c7080;
-  }
   display: flex;
   flex-direction: column;
   ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
 `;
+
 const FileFooter = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
   height: 30px;
-  background-color: ${CoreColors.Gray900};
-  border-top: 0.5px solid #5c7080;
-  color: #aaaaaa;
+  background-color: ${colorBackgroundLight()};
+  border-top: 0.5px solid ${colorKeylineDefault()};
+  color: ${colorTextLight()};
   padding: 2px 5px;
   font-size: 0.85em;
   ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
@@ -329,12 +346,14 @@ const FileContent = styled.div`
   display: flex;
   flex-direction: column;
 `;
+
 const RelativeContainer = styled.div`
   flex: 1;
   position: relative;
 `;
+
 const LogContent = styled(ScrollContainer)`
-  color: #eeeeee;
+  color: ${colorTextDefault()};
   font-family: ${FontFamily.monospace};
   font-size: 16px;
   white-space: pre;
@@ -371,19 +390,19 @@ const ScrollToast = styled.div`
   z-index: 1;
 `;
 const ScrollToTop = styled.div`
-  background-color: ${CoreColors.Gray950};
+  background-color: ${colorBackgroundLighter()};
   padding: 10px 20px;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
-  color: ${CoreColors.White};
-  border-bottom: 0.5px solid #5c7080;
-  border-left: 0.5px solid #5c7080;
-  border-right: 0.5px solid #5c7080;
+  color: ${colorTextDefault()};
+  border-bottom: 1px solid ${colorBorderDefault()};
+  border-left: 1px solid ${colorBorderDefault()};
+  border-right: 1px solid ${colorBorderDefault()};
   cursor: pointer;
 `;
 
 const FileWarning = styled.div`
-  background-color: #fffae3;
+  background-color: ${colorBackgroundYellow()};
   padding: 10px 20px;
   margin: 20px 70px;
   border-radius: 5px;

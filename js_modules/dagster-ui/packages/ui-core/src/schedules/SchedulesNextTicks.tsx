@@ -19,6 +19,7 @@ import {
   StyledRawCodeMirror,
   colorTextLight,
   colorAccentYellow,
+  colorBackgroundYellow,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -579,7 +580,7 @@ const RunRequestBody = styled.div`
 `;
 
 const SkipWrapper = styled.div`
-  background-color: #fdfcf2;
+  background-color: ${colorBackgroundYellow()};
   border: 1px solid ${colorAccentYellow()};
   border-radius: 3px;
 `;

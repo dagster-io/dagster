@@ -1,6 +1,7 @@
 import {
   colorAccentBlue,
   colorAccentBlueHover,
+  colorAccentGray,
   colorAccentGreen,
   colorAccentGreenHover,
   colorAccentPrimary,
@@ -8,7 +9,12 @@ import {
   colorAccentRedHover,
   colorAccentReversed,
   colorAccentYellow,
+  colorBackgroundDefault,
+  colorBackgroundDefaultHover,
+  colorBackgroundGray,
+  colorBackgroundGrayHover,
   colorBackgroundLight,
+  colorBackgroundLighter,
   colorBorderDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
@@ -48,10 +54,10 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-      background: ${colorBackgroundLight()};
+      background: ${colorBackgroundDefaultHover()};
       cursor: default;
       ${TopLabelTiltedInner} {
-        background: ${colorAccentPrimary()};
+        background: ${colorBackgroundDefaultHover()};
         .tilted {
           background: ${colorBackgroundLight()};
         }
@@ -122,7 +128,7 @@ export const GridColumn = styled.div<{
     }
     &:before {
       content: ' ';
-      background: rgba(248, 247, 245, 1);
+      background: ${colorAccentGray()};
       border-radius: 10px;
       display: inline-block;
       width: 20px;
@@ -130,7 +136,11 @@ export const GridColumn = styled.div<{
     }
     &.loading {
       &:before {
-        background: radial-gradient(white 0%, white 45%, rgba(248, 247, 245, 1) 60%);
+        background: radial-gradient(
+          ${colorBackgroundGray()} 0%,
+          ${colorBackgroundGray()} 45%,
+          ${colorBackgroundGrayHover()} 60%
+        );
       }
     }
     &.success {

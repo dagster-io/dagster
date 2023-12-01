@@ -1,5 +1,7 @@
 import styled from 'styled-components';
 
+import {colorFocusRing} from '../theme/color';
+
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 import {FontFamily} from './styles';
@@ -48,7 +50,7 @@ export const StyledButton = styled.button<StyledButtonProps>`
   }
 
   :focus {
-    box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    box-shadow: ${colorFocusRing()} 0 0 0 2px;
     outline: none;
   }
 

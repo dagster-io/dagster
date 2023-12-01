@@ -1,7 +1,7 @@
 import {LegacyColors} from '../components/LegacyColors';
 
 import {ColorName} from './ColorName';
-import {DataVizColors} from './Colors';
+import {CoreColors, DataVizColors} from './Colors';
 
 export const LegacyPalette = {
   [ColorName.KeylineDefault]: LegacyColors.KeylineGray,
@@ -45,7 +45,7 @@ export const LegacyPalette = {
   [ColorName.BorderDefault]: LegacyColors.Gray300,
   [ColorName.BorderHover]: LegacyColors.Gray200,
   [ColorName.BorderDisabled]: LegacyColors.Gray100,
-  [ColorName.FocusRing]: LegacyColors.Blue200,
+  [ColorName.FocusRing]: CoreColors.Cyan400,
   [ColorName.AccentPrimary]: LegacyColors.Gray900,
   [ColorName.AccentPrimaryHover]: LegacyColors.Gray800,
   [ColorName.AccentReversed]: LegacyColors.White,
@@ -66,6 +66,8 @@ export const LegacyPalette = {
   [ColorName.AccentGrayHover]: LegacyColors.Gray400,
   [ColorName.AccentLavender]: LegacyColors.Blue200,
   [ColorName.AccentLavenderHover]: LegacyColors.Blue100,
+  [ColorName.AccentOlive]: LegacyColors.Olive500,
+  [ColorName.AccentOliveHover]: LegacyColors.Olive500,
   [ColorName.AccentWhite]: LegacyColors.White,
   [ColorName.DialogBackground]: LegacyColors.WashGray,
   [ColorName.TooltipBackground]: LegacyColors.Dark,
@@ -92,8 +94,8 @@ export const LegacyPalette = {
   [ColorName.LineageGroupBackground]: LegacyColors.Gray10,
   [ColorName.LineageNodeBackground]: LegacyColors.Blue50,
   [ColorName.LineageNodeBackgroundHover]: LegacyColors.Blue50,
-  [ColorName.LineageNodeBorder]: LegacyColors.Blue200,
-  [ColorName.LineageNodeBorderHover]: LegacyColors.Blue200,
+  [ColorName.LineageNodeBorder]: LegacyColors.Olive500,
+  [ColorName.LineageNodeBorderHover]: LegacyColors.Olive500,
   [ColorName.LineageNodeBorderSelected]: LegacyColors.Blue500,
 
   // Dataviz
