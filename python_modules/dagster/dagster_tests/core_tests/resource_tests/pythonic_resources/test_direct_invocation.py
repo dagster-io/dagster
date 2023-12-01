@@ -1,16 +1,11 @@
-import asyncio
-
 import pytest
 from dagster import (
     AssetExecutionContext,
     ConfigurableResource,
     OpExecutionContext,
-    Out,
-    Output,
     asset,
     op,
 )
-from dagster._core.definitions.events import Failure
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.context.invocation import build_asset_context, build_op_context
 
@@ -434,56 +429,6 @@ def test_direct_asset_invocation_many_resource_args_context() -> None:
     executed.clear()
 
 
-def test_direct_invocation_output_metadata():
-    @asset
-    def my_asset(context):
-        context.add_output_metadata({"foo": "bar"})
-
-    @asset
-    def my_other_asset(context):
-        context.add_output_metadata({"baz": "qux"})
-
-    ctx = build_asset_context()
-
-    my_asset(ctx)
-    assert ctx.get_output_metadata("result") == {"foo": "bar"}
-
-    # context in unbound when used in another invocation. This allows the metadata to be
-    # added in my_other_asset
-    my_other_asset(ctx)
-
-
-def test_async_assets_with_shared_context():
-    @asset
-    async def async_asset_one(context):
-        assert context.asset_key.to_user_string() == "async_asset_one"
-        await asyncio.sleep(0.01)
-        return "one"
-
-    @asset
-    async def async_asset_two(context):
-        assert context.asset_key.to_user_string() == "async_asset_two"
-        await asyncio.sleep(0.01)
-        return "two"
-
-    # test that we can run two ops/assets with the same context at the same time without
-    # overriding op/asset specific attributes
-    ctx = build_asset_context()
-
-    async def main():
-        return await asyncio.gather(
-            async_asset_one(ctx),
-            async_asset_two(ctx),
-        )
-
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=r"This context is currently being used to execute .* The context"
-        r" cannot be used to execute another op until .* has finished executing",
-    ):
-        asyncio.run(main())
-
-
 def test_direct_invocation_resource_context_manager():
     from dagster import resource
 
@@ -501,96 +446,3 @@ def test_direct_invocation_resource_context_manager():
 
     with build_op_context(resources={"yielded_resource": yielding_resource}) as ctx:
         my_asset(ctx)
-
-
-def test_context_bound_state_non_generator():
-    @asset
-    def my_asset(context):
-        assert context._bound_properties is not None  # noqa: SLF001
-
-    ctx = build_op_context()
-    assert ctx._bound_properties is None  # noqa: SLF001
-
-    my_asset(ctx)
-    assert ctx._bound_properties is None  # noqa: SLF001
-    assert ctx._invocation_properties is not None  # noqa: SLF001
-
-
-def test_context_bound_state_generator():
-    @op(out={"first": Out(), "second": Out()})
-    def generator(context):
-        assert context._bound_properties is not None  # noqa: SLF001
-        yield Output("one", output_name="first")
-        yield Output("two", output_name="second")
-
-    ctx = build_op_context()
-
-    result = list(generator(ctx))
-    assert result[0].value == "one"
-    assert result[1].value == "two"
-
-    assert ctx._bound_properties is None  # noqa: SLF001
-    assert ctx._invocation_properties is not None  # noqa: SLF001
-
-
-def test_context_bound_state_async():
-    @asset
-    async def async_asset(context):
-        assert context._bound_properties is not None  # noqa: SLF001
-        assert context.asset_key.to_user_string() == "async_asset"
-        await asyncio.sleep(0.01)
-        return "one"
-
-    ctx = build_asset_context()
-
-    result = asyncio.run(async_asset(ctx))
-    assert result == "one"
-
-    assert ctx._bound_properties is None  # noqa: SLF001
-    assert ctx._invocation_properties is not None  # noqa: SLF001
-
-
-def test_context_bound_state_async_generator():
-    @op(out={"first": Out(), "second": Out()})
-    async def async_generator(context):
-        assert context._bound_properties is not None  # noqa: SLF001
-        yield Output("one", output_name="first")
-        await asyncio.sleep(0.01)
-        yield Output("two", output_name="second")
-
-    ctx = build_op_context()
-
-    async def get_results():
-        res = []
-        async for output in async_generator(ctx):
-            res.append(output)
-        return res
-
-    result = asyncio.run(get_results())
-    assert result[0].value == "one"
-    assert result[1].value == "two"
-
-    assert ctx._bound_properties is None  # noqa: SLF001
-    assert ctx._invocation_properties is not None  # noqa: SLF001
-
-
-def test_bound_state_with_error():
-    @asset
-    def throws_error(context):
-        assert context.alias == "throws_error"
-        raise Failure("something bad happened!")
-
-    ctx = build_asset_context()
-
-    with pytest.raises(Failure):
-        throws_error(ctx)
-
-    # invocation pathway was interrupted, ctx is still in bound state
-    assert ctx._bound_properties is not None  # noqa: SLF001
-
-    @asset
-    def no_error(context):
-        assert context.alias == "no_error"
-
-    with pytest.raises(DagsterInvalidInvocationError):
-        no_error(ctx)
