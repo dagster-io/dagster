@@ -198,7 +198,7 @@ Let's unpack the above code. Our factory function is `pandera_schema_to_dagster_
 
 Inside `type_check_fn`, we let `pandera` do the heavy lifting. After confirming `value` is in fact a `DataFrame`, we call `schema.validate` and tack the message of any resulting `SchemaErrors` instance onto our returned `TypeCheck` instance. `TypeCheck` is an optional rich return type for Dagster type check functions (it is also possible to return a boolean indicating a simple pass/fail). A `TypeCheck` is appropriate here because we want to capture specific information about any validation failures.
 
-Notice also that we provide a `metadata` dictionary to the `TypeCheck` constructor when validation fails. This can hold arbitrary information that is visible in [the Dagster UI](/concepts/webserver/ui) and can be useful in debugging. Here we've only provided a count `num_violations` of the schema violations (`SchemaErrors.failure_cases` is a dataframe tabulating each violation), but we could easily include richer information to annotate more complex validations.
+Notice also that we provide a `metadata` dictionary to the `TypeCheck` constructor when validation fails. This can hold arbitrary information that is visible in [the Dagster UI](/concepts/dagster-ui) and can be useful in debugging. Here we've only provided a count `num_violations` of the schema violations (`SchemaErrors.failure_cases` is a dataframe tabulating each violation), but we could easily include richer information to annotate more complex validations.
 
 ## Annotate our job with Dagster types
 

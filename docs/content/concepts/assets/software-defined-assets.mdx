@@ -29,7 +29,7 @@ A software-defined asset includes the following:
 
   **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between Software-defined Assets and ops is that Software-defined Assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
-**Materializing** an asset is the act of running its function and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/webserver/ui) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its function and saving the results to persistent storage. You can initiate materializations from [the Dagster UI](/concepts/dagster-ui) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
 ---
 

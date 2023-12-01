@@ -33,7 +33,7 @@ Ops support a variety of useful features for data orchestration, such as:
 
 - **Event streams**: Ops emit a stream of [events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default - such as indicating the start of an op's execution - but op authors are additionally given access to an event API.
 
-  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized in [the Dagster UI](/concepts/webserver/ui). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
+  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized in [the Dagster UI](/concepts/dagster-ui). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
 
 - **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
 
