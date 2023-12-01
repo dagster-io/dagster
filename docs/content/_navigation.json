@@ -185,7 +185,7 @@
       },
       {
         "title": "Dagster UI",
-        "path": "/concepts/webserver/ui"
+        "path": "/concepts/dagster-ui"
       },
       {
         "title": "Logging",
