@@ -75,7 +75,7 @@ class PipesClientCompletedInvocation:
 
         Returns: Sequence[PipesExecutionResult]
         """
-        return self._session.get_results(implicit_materializations=implicit_materializations)
+        return tuple(self._session.get_results(implicit_materializations=implicit_materializations))
 
     def get_materialize_result(
         self,

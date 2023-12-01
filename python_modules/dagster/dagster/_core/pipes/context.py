@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Union, cast
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
@@ -81,8 +81,13 @@ class PipesMessageHandler:
         with self._message_reader.read_messages(self) as params:
             yield params
 
-    def get_reported_results(self) -> Sequence[PipesExecutionResult]:
-        return tuple(self._result_queue.queue)
+    def clear_result_queue(self) -> Iterator[PipesExecutionResult]:
+        while not self._result_queue.empty():
+            yield self._result_queue.get()
+
+    def __del__(self):
+        if not self._result_queue.empty():
+            self._context.log.warn("[pipes] some reported results were not processed.")
 
     @property
     def received_opened_message(self) -> bool:
@@ -303,8 +308,10 @@ class PipesSession:
         self,
         *,
         implicit_materializations: bool = True,
-    ) -> Sequence[PipesExecutionResult]:
+    ) -> Iterator[PipesExecutionResult]:
         """:py:class:`PipesExecutionResult` objects reported from the external process.
+
+        When this is called it clears the results buffer.
 
         Args:
             implicit_materializations (bool): Create MaterializeResults for expected assets
@@ -313,32 +320,22 @@ class PipesSession:
         Returns:
             Sequence[PipesExecutionResult]: Result reported by external process.
         """
-        reported = self.message_handler.get_reported_results()
+        reported = self.message_handler.clear_result_queue()
         if not implicit_materializations:
-            return reported
+            yield from reported
+            return
 
-        reported_keys = set(
-            result.asset_key for result in reported if isinstance(result, MaterializeResult)
-        )
-        implicit = (
+        reported_keys = set()
+        for result in reported:
+            if isinstance(result, MaterializeResult):
+                reported_keys.add(result.asset_key)
+            yield result
+
+        yield from (
             MaterializeResult(asset_key=key)
             for key in self.context.selected_asset_keys
             if key not in reported_keys
         )
-
-        return (
-            *reported,
-            *implicit,
-        )
-
-    @public
-    def get_reported_results(self) -> Sequence[PipesExecutionResult]:
-        """:py:class:`PipesExecutionResult` objects only explicitly received from the external process.
-
-        Yields:
-            PipesExecutionResult: Result reported by external process.
-        """
-        return self.message_handler.get_reported_results()
 
 
 def build_external_execution_context_data(
