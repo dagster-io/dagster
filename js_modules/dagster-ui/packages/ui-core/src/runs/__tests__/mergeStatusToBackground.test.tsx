@@ -1,8 +1,8 @@
 import {
   colorAccentBlue,
-  colorAccentBlueHover,
   colorAccentGreen,
   colorAccentRed,
+  colorBackgroundDisabled,
 } from '@dagster-io/ui-components';
 
 import {RunStatus} from '../../graphql/types';
@@ -35,8 +35,8 @@ describe('mergeStatusToBackground', () => {
     expect(mergeStatusToBackground([failedA, failedB])).toBe(colorAccentRed());
     expect(mergeStatusToBackground([succeededA, succeededB])).toBe(colorAccentGreen());
     expect(mergeStatusToBackground([inProgressA, inProgressB])).toBe(colorAccentBlue());
-    expect(mergeStatusToBackground([queuedA, queuedB])).toBe(colorAccentBlueHover());
-    expect(mergeStatusToBackground([scheduledA, scheduledB])).toBe(colorAccentBlueHover());
+    expect(mergeStatusToBackground([queuedA, queuedB])).toBe(colorBackgroundDisabled());
+    expect(mergeStatusToBackground([scheduledA, scheduledB])).toBe(colorBackgroundDisabled());
   });
 
   it('splits the background if there are two statuses, in order', () => {
@@ -84,7 +84,7 @@ describe('mergeStatusToBackground', () => {
       scheduledA,
     ]);
     expect(allOfTheAbove).toBe(
-      `linear-gradient(to right, ${colorAccentRed()} 20.0%, ${colorAccentGreen()} 20.0% 40.0%, ${colorAccentBlue()} 40.0% 60.0%, ${colorAccentBlueHover()} 60.0% 80.0%, ${colorAccentBlueHover()} 80.0%)`,
+      `linear-gradient(to right, ${colorAccentRed()} 20.0%, ${colorAccentGreen()} 20.0% 40.0%, ${colorAccentBlue()} 40.0% 60.0%, ${colorBackgroundDisabled()} 60.0% 80.0%, ${colorBackgroundDisabled()} 80.0%)`,
     );
   });
 });

@@ -1,4 +1,4 @@
-import {Button, colorBackgroundLight} from '@dagster-io/ui-components';
+import {Button} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

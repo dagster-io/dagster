@@ -9,12 +9,10 @@ import {
   colorAccentRedHover,
   colorAccentReversed,
   colorAccentYellow,
-  colorBackgroundDefault,
   colorBackgroundDefaultHover,
   colorBackgroundGray,
   colorBackgroundGrayHover,
   colorBackgroundLight,
-  colorBackgroundLighter,
   colorBorderDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';

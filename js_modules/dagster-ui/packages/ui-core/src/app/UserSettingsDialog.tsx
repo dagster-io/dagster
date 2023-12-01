@@ -132,7 +132,20 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
                 ),
               },
               {
-                key: 'Theme (experimental)',
+                key: 'Theme',
+                label: (
+                  <div>
+                    Theme (
+                    <a
+                      href="https://github.com/dagster-io/dagster/discussions/18439"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Learn more
+                    </a>
+                    )
+                  </div>
+                ),
                 value: (
                   <Box margin={{bottom: 4}}>
                     <ThemeSelect theme={theme} onChange={setTheme} />

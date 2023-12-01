@@ -11,15 +11,15 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
   const items = [
     {
       key: DagsterTheme.Legacy,
-      label: 'Legacy (default)',
+      label: 'Legacy',
     },
     {
       key: DagsterTheme.Light,
-      label: 'Light',
+      label: 'Light (experimental)',
     },
     {
       key: DagsterTheme.Dark,
-      label: 'Dark',
+      label: 'Dark (experimental)',
     },
   ];
 
