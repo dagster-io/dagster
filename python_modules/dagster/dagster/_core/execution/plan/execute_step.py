@@ -715,11 +715,9 @@ def _store_output(
     # don't store asset check outputs, asset observation outputs, or Nothing type outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
     if (
-        step_output.properties.asset_check_key  # don't store asset checks
-        or (
-            step_context.output_observes_source_asset(step_output_handle.output_name)
-        )  # don't store source asset observations
-        or output_context.dagster_type.is_nothing  # don't store Nothing outputs # TODO - maybe need to scope this to just assets
+        step_output.properties.asset_check_key
+        or (step_context.output_observes_source_asset(step_output_handle.output_name))
+        or output_context.dagster_type.is_nothing  # TODO - maybe need to scope this to just assets
     ):
         yield from _log_asset_materialization_events_for_asset(
             step_context=step_context,
