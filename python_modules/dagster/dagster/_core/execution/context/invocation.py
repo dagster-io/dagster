@@ -170,10 +170,18 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         #     ...
         # ctx = build_op_context() # ctx._bound_properties is None
         # my_op(ctx)
-        # ctx._bound_properties.alias is "my_op", must call ctx.unbind() to unbind
+        # ctx._bound_properties is None # ctx is unbound at the end of invocation
         self._bound_properties = None
 
         # Maintains the properties on the context that are modified during invocation
+        # @op
+        # def my_op(context):
+        #     # context._invocation_properties can be modified with output metadata etc.
+        #     ...
+        # ctx = build_op_context() # ctx._invocation_properties is empty
+        # my_op(ctx)
+        # ctx._invocation_properties.output_metadata # information is retained after invocation
+        # my_op(ctx) # ctx._invocation_properties is cleared at the beginning of the next invocation
         self._invocation_properties = InvocationProperties()
 
     def __enter__(self):
