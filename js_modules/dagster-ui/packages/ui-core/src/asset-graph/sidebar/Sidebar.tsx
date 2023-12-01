@@ -18,7 +18,7 @@ export const AssetGraphExplorerSidebar = React.memo(
   ({
     assetGraphData,
     fullAssetGraphData,
-    lastSelectedNode,
+    selectedNodes,
     selectNode: _selectNode,
     explorerPath,
     onChangeExplorerPath,
@@ -27,7 +27,7 @@ export const AssetGraphExplorerSidebar = React.memo(
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
-    lastSelectedNode: GraphNode;
+    selectedNodes: GraphNode[];
     selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -36,6 +36,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
   }) => {
+    const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
     const graphData = Object.keys(assetGraphData.nodes).length
       ? assetGraphData
@@ -164,7 +165,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const rowVirtualizer = useVirtualizer({
       count: renderedNodes.length,
       getScrollElement: () => containerRef.current,
-      estimateSize: () => 32,
+      estimateSize: () => 29,
       overscan: 10,
     });
 
@@ -338,9 +339,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                         node={row}
                         level={node.level}
                         isSelected={
-                          selectedNode && 'path' in node && 'path' in selectedNode
-                            ? selectedNode.path === node.path
-                            : selectedNode?.id === node.id
+                          selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
                         }
                         toggleOpen={() => {
                           setOpenNodes((nodes) => {
