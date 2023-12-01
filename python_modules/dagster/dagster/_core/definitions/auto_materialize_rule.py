@@ -580,7 +580,8 @@ class MaterializeOnCronRule(
             return {
                 AssetKeyPartitionKey(context.asset_key, partition_key)
                 for partition_key in partitions_def.get_partition_keys(
-                    current_time=context.evaluation_time
+                    current_time=context.evaluation_time,
+                    dynamic_partitions_store=context.instance_queryer,
                 )
             }
 
@@ -589,13 +590,20 @@ class MaterializeOnCronRule(
         time_partitions_def = get_time_partitions_def(partitions_def)
         if time_partitions_def is None:
             return {
-                AssetKeyPartitionKey(context.asset_key, partitions_def.get_last_partition_key())
+                AssetKeyPartitionKey(
+                    context.asset_key,
+                    partitions_def.get_last_partition_key(
+                        dynamic_partitions_store=context.instance_queryer
+                    ),
+                )
             }
 
         missed_time_partition_keys = filter(
             None,
             [
-                time_partitions_def.get_last_partition_key(current_time=missed_tick)
+                time_partitions_def.get_last_partition_key(
+                    current_time=missed_tick, dynamic_partitions_store=context.instance_queryer
+                )
                 for missed_tick in missed_ticks
             ],
         )
