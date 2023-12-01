@@ -2457,6 +2457,7 @@ union InstigationStatesOrError = InstigationStates | PythonError
 
 type InstigationTick {
   id: ID!
+  tickId: ID!
   status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
