@@ -271,7 +271,7 @@
   },
   {
     "source": "/overview/graphql-api",
-    "destination": "/concepts/dagit/graphql",
+    "destination": "/concepts/graphql",
     "statusCode": 302
   },
   {

@@ -288,11 +288,11 @@
             "children": [
               {
                 "title": "GraphQL API",
-                "path": "/concepts/webserver/graphql"
+                "path": "/concepts/graphql"
               },
               {
                 "title": "GraphQL Python client",
-                "path": "/concepts/webserver/graphql-client"
+                "path": "/concepts/graphql/graphql-client"
               }
             ]
           }
