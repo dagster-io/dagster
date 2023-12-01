@@ -20,7 +20,6 @@ import {StatusDot} from './StatusDot';
 import {FolderNodeNonAssetType, getDisplayName} from './util';
 
 export const AssetSidebarNode = ({
-  graphData,
   node,
   level,
   toggleOpen,
@@ -30,10 +29,8 @@ export const AssetSidebarNode = ({
   selectThisNode,
   explorerPath,
   onChangeExplorerPath,
-  viewType,
   fullAssetGraphData,
 }: {
-  graphData: GraphData;
   fullAssetGraphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
@@ -44,7 +41,6 @@ export const AssetSidebarNode = ({
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  viewType: 'tree' | 'group';
 }) => {
   const isGroupNode = 'groupName' in node;
   const isLocationNode = 'locationName' in node;
@@ -60,11 +56,9 @@ export const AssetSidebarNode = ({
     }
   }, [isAssetNode, isGroupNode, node]);
 
-  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const showArrow =
-    !isAssetNode || (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
+  const showArrow = !isAssetNode;
 
   const ref = React.useRef<HTMLButtonElement | null>(null);
   React.useLayoutEffect(() => {

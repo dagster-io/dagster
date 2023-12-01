@@ -1,14 +1,6 @@
-import {
-  Box,
-  Button,
-  Icon,
-  ButtonGroup,
-  Tooltip,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Button, Icon, Tooltip, colorKeylineDefault} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
-import styled from 'styled-components';
 
 import {AssetKey} from '../../assets/types';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
@@ -18,7 +10,7 @@ import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
-import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
+import {FolderNodeType, getDisplayName, nodePathKey} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
@@ -89,8 +81,6 @@ export const AssetGraphExplorerSidebar = React.memo(
       null | {id: string; path: string} | {id: string}
     >(null);
 
-    const [viewType, setViewType] = React.useState<'tree' | 'group'>('group');
-
     const rootNodes = React.useMemo(
       () =>
         Object.keys(graphData.nodes)
@@ -109,25 +99,6 @@ export const AssetGraphExplorerSidebar = React.memo(
           ),
       [graphData],
     );
-
-    const treeNodes = React.useMemo(() => {
-      const queue = rootNodes.map((id) => ({level: 1, id, path: id}));
-
-      const treeNodes: TreeNodeType[] = [];
-      while (queue.length) {
-        const node = queue.shift()!;
-        treeNodes.push(node);
-        if (openNodes.has(node.path)) {
-          const downstream = Object.keys(graphData.downstream[node.id] || {}).filter(
-            (id) => graphData.nodes[id],
-          );
-          queue.unshift(
-            ...downstream.map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
-          );
-        }
-      }
-      return treeNodes;
-    }, [graphData.downstream, graphData.nodes, openNodes, rootNodes]);
 
     const {folderNodes, codeLocationNodes} = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
@@ -186,7 +157,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       return {folderNodes, codeLocationNodes};
     }, [graphData.nodes, openNodes]);
 
-    const renderedNodes = viewType === 'tree' ? treeNodes : folderNodes;
+    const renderedNodes = folderNodes;
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -201,7 +172,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     React.useLayoutEffect(() => {
-      if (renderedNodes.length === 1 && viewType === 'group') {
+      if (renderedNodes.length === 1) {
         // If there's a single code location and a single group in it then just open them
         setOpenNodes((prevOpenNodes) => {
           const nextOpenNodes = new Set(prevOpenNodes);
@@ -221,46 +192,19 @@ export const AssetGraphExplorerSidebar = React.memo(
       }
       if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
-          if (viewType === 'group') {
-            const nextOpenNodes = new Set(prevOpenNodes);
-            const assetNode = graphData.nodes[lastSelectedNode.id];
-            if (assetNode) {
-              const locationName = buildRepoPathForHuman(
-                assetNode.definition.repository.name,
-                assetNode.definition.repository.location.name,
-              );
-              const groupName = assetNode.definition.groupName || 'default';
-              nextOpenNodes.add(locationName);
-              nextOpenNodes.add(locationName + ':' + groupName);
-            }
-            if (selectedNode?.id !== lastSelectedNode.id) {
-              setSelectedNode({id: lastSelectedNode.id});
-            }
-            return nextOpenNodes;
-          }
-          let path = lastSelectedNode.id;
-          let currentId = lastSelectedNode.id;
-          let next: string | undefined;
-          while ((next = Object.keys(graphData.upstream[currentId] ?? {})[0])) {
-            if (!graphData.nodes[next]) {
-              break;
-            }
-            path = `${next}:${path}`;
-            currentId = next;
-          }
-
           const nextOpenNodes = new Set(prevOpenNodes);
-
-          const nodesInPath = path.split(':');
-          let currentPath = nodesInPath[0]!;
-
-          nextOpenNodes.add(currentPath);
-          for (let i = 1; i < nodesInPath.length; i++) {
-            currentPath = `${currentPath}:${nodesInPath[i]}`;
-            nextOpenNodes.add(currentPath);
+          const assetNode = graphData.nodes[lastSelectedNode.id];
+          if (assetNode) {
+            const locationName = buildRepoPathForHuman(
+              assetNode.definition.repository.name,
+              assetNode.definition.repository.location.name,
+            );
+            const groupName = assetNode.definition.groupName || 'default';
+            nextOpenNodes.add(locationName);
+            nextOpenNodes.add(locationName + ':' + groupName);
           }
           if (selectedNode?.id !== lastSelectedNode.id) {
-            setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+            setSelectedNode({id: lastSelectedNode.id});
           }
           return nextOpenNodes;
         });
@@ -271,7 +215,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     }, [
       lastSelectedNode,
       graphData,
-      viewType,
       // eslint-disable-next-line react-hooks/exhaustive-deps
       lastSelectedNode &&
         renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
@@ -282,25 +225,19 @@ export const AssetGraphExplorerSidebar = React.memo(
         if (!selectedNode) {
           return -1;
         }
-        if (viewType === 'tree') {
-          return 'path' in selectedNode
-            ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
-            : -1;
-        } else {
-          return renderedNodes.findIndex((node) => {
-            // If you select a node via the search dropdown or from the graph directly then
-            // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
-            // will always have a path so we need to explicitly check if the id's match
-            if (!('path' in selectedNode)) {
-              return node.id === selectedNode.id;
-            } else {
-              return nodePathKey(node) === nodePathKey(selectedNode);
-            }
-          });
-        }
+        return renderedNodes.findIndex((node) => {
+          // If you select a node via the search dropdown or from the graph directly then
+          // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+          // will always have a path so we need to explicitly check if the id's match
+          if (!('path' in selectedNode)) {
+            return node.id === selectedNode.id;
+          } else {
+            return nodePathKey(node) === nodePathKey(selectedNode);
+          }
+        });
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [viewType, renderedNodes, selectedNode],
+      [renderedNodes, selectedNode],
     );
     const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
     indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
@@ -336,23 +273,6 @@ export const AssetGraphExplorerSidebar = React.memo(
             borderBottom: `1px solid ${colorKeylineDefault()}`,
           }}
         >
-          <ButtonGroupWrapper>
-            <ButtonGroup
-              activeItems={new Set([viewType])}
-              buttons={[
-                {id: 'group', label: 'Group view', icon: 'asset_group'},
-                {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
-              ]}
-              onClick={(id: 'tree' | 'group') => {
-                setViewType(id);
-              }}
-            />
-          </ButtonGroupWrapper>
-          <Tooltip content="Hide sidebar">
-            <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
-          </Tooltip>
-        </div>
-        <Box padding={{vertical: 8, left: 24, right: 12}}>
           <SearchFilter
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
@@ -362,7 +282,10 @@ export const AssetGraphExplorerSidebar = React.memo(
             }, [allAssetKeys])}
             onSelectValue={selectNode}
           />
-        </Box>
+          <Tooltip content="Hide sidebar">
+            <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
+          </Tooltip>
+        </div>
         <div>
           <Container
             ref={containerRef}
@@ -410,9 +333,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   >
                     {row ? (
                       <AssetSidebarNode
-                        viewType={viewType}
                         isOpen={openNodes.has(nodePathKey(node))}
-                        graphData={graphData}
                         fullAssetGraphData={fullAssetGraphData}
                         node={row}
                         level={node.level}
@@ -454,13 +375,3 @@ export const AssetGraphExplorerSidebar = React.memo(
     );
   },
 );
-
-const ButtonGroupWrapper = styled.div`
-  > * {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    > * {
-      place-content: center;
-    }
-  }
-`;
