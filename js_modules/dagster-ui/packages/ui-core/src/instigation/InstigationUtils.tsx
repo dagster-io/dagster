@@ -110,6 +110,7 @@ export const DYNAMIC_PARTITIONS_REQUEST_RESULT_FRAGMENT = gql`
 export const HISTORY_TICK_FRAGMENT = gql`
   fragment HistoryTick on InstigationTick {
     id
+    tickId
     status
     timestamp
     endTimestamp
