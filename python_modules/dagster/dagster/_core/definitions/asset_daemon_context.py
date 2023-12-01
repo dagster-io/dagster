@@ -195,19 +195,26 @@ class AssetDaemonContext:
 
     @cached_method
     def get_new_latest_storage_id(self) -> Optional[int]:
-        """Get the latest storage id across all cached asset records. We use the storage ids found
-        on asset records here as these values are prefetched in a single transaction at the start
-        of the tick.
+        """Get the latest storage id across all cached asset records. We use this method as it uses
+        identical data to what is used to calculate assets with updated parents, and therefore
+        avoids certain classes of race conditions.
         """
         new_latest_storage_id = self.latest_storage_id
-        # all of these asset records should have been prefetched at this point
-        for asset_key in self.asset_records_to_prefetch:
-            record = self.instance_queryer.get_asset_record(asset_key)
-            if record:
-                record_latest_storage_id = record.asset_entry.last_materialization_storage_id
-                new_latest_storage_id = max(
-                    filter(None, [new_latest_storage_id, record_latest_storage_id]), default=None
+        for asset_key in self.target_asset_keys_and_parents:
+            # ignore non-observable sources
+            if self.asset_graph.is_source(asset_key) and not self.asset_graph.is_observable(
+                asset_key
+            ):
+                continue
+            # get the latest overall storage id for this asset key
+            asset_latest_storage_id = (
+                self.instance_queryer.get_latest_materialization_or_observation_storage_id(
+                    AssetKeyPartitionKey(asset_key)
                 )
+            )
+            new_latest_storage_id = max(
+                filter(None, [new_latest_storage_id, asset_latest_storage_id]), default=None
+            )
 
         return new_latest_storage_id
 
