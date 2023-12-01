@@ -63,6 +63,9 @@ class TestScheduleStorage:
     def can_store_auto_materialize_asset_evaluations(self):
         return True
 
+    def can_get_single_tick(self):
+        return True
+
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
@@ -546,7 +549,8 @@ class TestScheduleStorage:
         )
         assert len(ticks) == 1
 
-        assert storage.get_tick(five_days_ago_tick.tick_id)
+        if self.can_get_single_tick():
+            assert storage.get_tick(five_days_ago_tick.tick_id)
 
     def test_update_sensor_tick_to_success(self, storage):
         assert storage
