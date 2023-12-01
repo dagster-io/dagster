@@ -340,6 +340,24 @@ class SqlScheduleStorage(ScheduleStorage):
             results[selector_id].append(InstigatorTick(tick_id, tick_data))
         return results
 
+    def get_tick(self, tick_id: int) -> InstigatorTick:
+        check.int_param(tick_id, "tick_id")
+
+        query = (
+            db_select([JobTickTable.c.id, JobTickTable.c.tick_body])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.id == tick_id)
+        )
+
+        rows = self.execute(query)
+        if not rows:
+            raise DagsterInvariantViolationError(
+                f"InstigatorTick {tick_id} is not present in storage"
+            )
+
+        tick_id, tick_data = rows[0]
+        return InstigatorTick(tick_id, deserialize_value(tick_data, TickData))
+
     def get_ticks(
         self,
         origin_id: str,

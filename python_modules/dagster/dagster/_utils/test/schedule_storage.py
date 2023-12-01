@@ -63,6 +63,9 @@ class TestScheduleStorage:
     def can_store_auto_materialize_asset_evaluations(self):
         return True
 
+    def can_get_single_tick(self):
+        return True
+
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
@@ -529,7 +532,9 @@ class TestScheduleStorage:
         four_days_ago = now.subtract(days=4).timestamp()
         one_day_ago = now.subtract(days=1).timestamp()
 
-        storage.create_tick(self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED))
+        five_days_ago_tick = storage.create_tick(
+            self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED)
+        )
         storage.create_tick(self.build_sensor_tick(four_days_ago, TickStatus.SKIPPED))
         storage.create_tick(self.build_sensor_tick(one_day_ago, TickStatus.SKIPPED))
         ticks = storage.get_ticks("my_sensor", "my_sensor")
@@ -543,6 +548,9 @@ class TestScheduleStorage:
             "my_sensor", "my_sensor", after=five_days_ago + 1, before=one_day_ago - 1
         )
         assert len(ticks) == 1
+
+        if self.can_get_single_tick():
+            assert storage.get_tick(five_days_ago_tick.tick_id)
 
     def test_update_sensor_tick_to_success(self, storage):
         assert storage

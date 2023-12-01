@@ -6,7 +6,7 @@
     "isDefaultOpen": true,
     "children": [
       {
-        "title": "Hello Dagster",
+        "title": "Hello, Dagster!",
         "path": "/getting-started/hello-dagster"
       },
       {
@@ -14,20 +14,12 @@
         "path": "/getting-started/install"
       },
       {
-        "title": "Create a new project",
+        "title": "Creating a new project",
         "path": "/getting-started/create-new-project"
-      },
-      {
-        "title": "Project files",
-        "path": "/getting-started/project-file-reference"
       },
       {
         "title": "Getting help",
         "path": "/getting-started/getting-help"
-      },
-      {
-        "title": "Telemetry",
-        "path": "/getting-started/telemetry"
       }
     ]
   },
@@ -855,8 +847,12 @@
     "path": "/guides",
     "children": [
       {
-        "title": "Development environment",
+        "title": "Development",
         "children": [
+          {
+            "title": "Understanding Dagster project files",
+            "path": "/guides/understanding-dagster-project-files"
+          },
           {
             "title": "Running Dagster locally",
             "path": "/guides/running-dagster-locally"
@@ -1376,12 +1372,16 @@
       },
       {
         "title": "Releases",
-        "path": "/getting-started/releases"
+        "path": "/about/releases"
       },
       {
         "title": "Changelog",
         "path": "/changelog",
         "isNotDynamic": true
+      },
+      {
+        "title": "Telemetry",
+        "path": "/about/telemetry"
       }
     ]
   }

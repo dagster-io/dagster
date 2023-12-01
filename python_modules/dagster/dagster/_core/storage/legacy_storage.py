@@ -743,6 +743,9 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     ) -> Mapping[str, Iterable["InstigatorTick"]]:
         return self._storage.schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
 
+    def get_tick(self, tick_id: int) -> "InstigatorTick":
+        return self._storage.schedule_storage.get_tick(tick_id)
+
     def get_ticks(
         self,
         origin_id: str,

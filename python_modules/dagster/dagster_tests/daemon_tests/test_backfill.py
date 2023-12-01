@@ -1451,3 +1451,44 @@ def test_partitions_def_changed_backfill_retry_envvar_set(
         assert ("partitions definition has changed") in error_msg or (
             "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
         ) in error_msg
+
+
+def test_asset_backfill_logging(caplog, instance, workspace_context):
+    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+
+    partition_keys = partitions_a.get_partition_keys()
+    backfill_id = "backfill_with_multiple_assets_selected"
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
+    logs = caplog.text
+    assert "Evaluating asset backfill backfill_with_multiple_assets_selected" in logs
+    assert "DefaultPartitionsSubset(subset={'foo_b'})" in logs
+    assert "latest_storage_id=None" in logs
+    assert "AssetBackfillData" in logs

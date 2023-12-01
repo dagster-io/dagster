@@ -77,6 +77,10 @@ class _ScheduleLaunchContext:
     def failure_count(self) -> int:
         return self._tick.tick_data.failure_count
 
+    @property
+    def tick_id(self) -> str:
+        return str(self._tick.tick_id)
+
     def update_state(self, status, error=None, **kwargs):
         skip_reason = kwargs.get("skip_reason")
         if "skip_reason" in kwargs:
@@ -733,21 +737,26 @@ def _schedule_runs_at_time(
     run_requests = []
 
     for raw_run_request in schedule_execution_data.run_requests:
-        if raw_run_request.stale_assets_only:
+        run_request = raw_run_request.with_replaced_attrs(
+            tags=merge_dicts(
+                raw_run_request.tags,
+                DagsterRun.tags_for_tick_id(tick_context.tick_id),
+            )
+        )
+
+        if run_request.stale_assets_only:
             stale_assets = resolve_stale_or_missing_assets(
                 workspace_process_context,  # type: ignore
-                raw_run_request,
+                run_request,
                 external_schedule,
             )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
             else:
-                run_request = raw_run_request.with_replaced_attrs(
+                run_request = run_request.with_replaced_attrs(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
-        else:
-            run_request = raw_run_request
 
         run_requests.append(run_request)
 
