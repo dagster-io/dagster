@@ -4,7 +4,7 @@ import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetGraphExplorerFilters} from '../asset-graph/AssetGraphExplorerFilters';
+import {useAssetGraphExplorerFilters} from '../asset-graph/AssetGraphExplorerFilters';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
@@ -90,6 +90,15 @@ export const AssetsGroupsGlobalGraphRoot = () => {
     );
   }, [visibleRepos]);
 
+  const {button, filterBar} = useAssetGraphExplorerFilters({
+    assetGroups,
+    visibleAssetGroups: React.useMemo(() => filters.groups || [], [filters.groups]),
+    setGroupFilters: React.useCallback(
+      (groups: AssetGroupSelector[]) => setFilters({...filters, groups}),
+      [filters, setFilters],
+    ),
+  });
+
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
@@ -98,16 +107,8 @@ export const AssetsGroupsGlobalGraphRoot = () => {
       />
       <AssetGraphExplorer
         fetchOptions={fetchOptions}
-        fetchOptionFilters={
-          <AssetGraphExplorerFilters
-            assetGroups={assetGroups}
-            visibleAssetGroups={React.useMemo(() => filters.groups || [], [filters.groups])}
-            setGroupFilters={React.useCallback(
-              (groups) => setFilters({...filters, groups}),
-              [filters, setFilters],
-            )}
-          />
-        }
+        fetchOptionFilters={button}
+        filterBar={filterBar}
         options={{preferAssetRendering: true, explodeComposites: true}}
         explorerPath={globalAssetGraphPathFromString(path)}
         onChangeExplorerPath={onChangeExplorerPath}

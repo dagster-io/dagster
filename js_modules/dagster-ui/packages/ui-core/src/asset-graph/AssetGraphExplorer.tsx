@@ -71,6 +71,7 @@ interface Props {
 
   fetchOptions: AssetGraphFetchScope;
   fetchOptionFilters?: React.ReactNode;
+  filterBar?: React.ReactNode;
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -136,6 +137,7 @@ const AssetGraphExplorerWithData = ({
   fetchOptions,
   fetchOptionFilters,
   allAssetKeys,
+  filterBar,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const {flagDAGSidebar} = useFeatureFlags();
@@ -548,55 +550,64 @@ const AssetGraphExplorerWithData = ({
             </OptionsOverlay>
           )}
 
-          <TopbarWrapper style={{paddingLeft: showSidebar || !flagDAGSidebar ? 12 : 24}}>
-            {showSidebar || !flagDAGSidebar ? undefined : (
-              <Tooltip content="Show sidebar">
+          <TopbarWrapper>
+            <Box flex={{direction: 'column'}} style={{width: '100%'}}>
+              <Box
+                border={filterBar ? 'bottom' : undefined}
+                flex={{gap: 12, alignItems: 'center'}}
+                padding={{left: showSidebar || !flagDAGSidebar ? 12 : 24, vertical: 12, right: 12}}
+              >
+                {showSidebar || !flagDAGSidebar ? undefined : (
+                  <Tooltip content="Show sidebar">
+                    <Button
+                      icon={<Icon name="panel_show_left" />}
+                      onClick={() => {
+                        setShowSidebar(true);
+                      }}
+                    />
+                  </Tooltip>
+                )}
+                <div>{fetchOptionFilters}</div>
+                <GraphQueryInputFlexWrap>
+                  <GraphQueryInput
+                    type="asset_graph"
+                    items={graphQueryItems}
+                    value={explorerPath.opsQuery}
+                    placeholder="Type an asset subset…"
+                    onChange={(opsQuery) =>
+                      onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
+                    }
+                    popoverPosition="bottom-left"
+                  />
+                </GraphQueryInputFlexWrap>
                 <Button
-                  icon={<Icon name="panel_show_left" />}
                   onClick={() => {
-                    setShowSidebar(true);
+                    onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
                   }}
+                >
+                  Clear query
+                </Button>
+                <AssetLiveDataRefresh />
+                <LaunchAssetObservationButton
+                  preferredJobName={explorerPath.pipelineName}
+                  scope={
+                    selectedDefinitions.length
+                      ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
+                      : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
+                  }
                 />
-              </Tooltip>
-            )}
-            <div>{fetchOptionFilters}</div>
-            <GraphQueryInputFlexWrap>
-              <GraphQueryInput
-                type="asset_graph"
-                items={graphQueryItems}
-                value={explorerPath.opsQuery}
-                placeholder="Type an asset subset…"
-                onChange={(opsQuery) =>
-                  onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
-                }
-                popoverPosition="bottom-left"
-              />
-            </GraphQueryInputFlexWrap>
-            <Button
-              onClick={() => {
-                onChangeExplorerPath({...explorerPath, opsQuery: ''}, 'push');
-              }}
-            >
-              Clear query
-            </Button>
-            <AssetLiveDataRefresh />
-            <LaunchAssetObservationButton
-              preferredJobName={explorerPath.pipelineName}
-              scope={
-                selectedDefinitions.length
-                  ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
-                  : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
-              }
-            />
-            <LaunchAssetExecutionButton
-              preferredJobName={explorerPath.pipelineName}
-              scope={
-                selectedDefinitions.length
-                  ? {selected: selectedDefinitions}
-                  : {all: allDefinitionsForMaterialize}
-              }
-              showChangedAndMissingOption
-            />
+                <LaunchAssetExecutionButton
+                  preferredJobName={explorerPath.pipelineName}
+                  scope={
+                    selectedDefinitions.length
+                      ? {selected: selectedDefinitions}
+                      : {all: allDefinitionsForMaterialize}
+                  }
+                  showChangedAndMissingOption
+                />
+              </Box>
+              {filterBar}
+            </Box>
           </TopbarWrapper>
         </ErrorBoundary>
       }
