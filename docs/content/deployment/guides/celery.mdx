@@ -27,7 +27,7 @@ To complete the steps in this guide, you'll need to:
   pip install dagster dagster-celery
   ```
 
-- **A running broker like [RabbitMQ](https://www.rabbitmq.com/).** This is required to run the Celery executor.
+- **A running broker,** which is required to run the Celery executor. Refer to the [Celery documentation](https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#choosing-a-broker) for more info about choosing a broker.
 
 ---
 
@@ -54,7 +54,7 @@ def parallel_job():
         not_much.alias("not_much_" + str(i))()
 ```
 
-To run the Celery executor, you'll need a running broker like [RabbitMQ](https://www.rabbitmq.com/). With Docker, this is something like the following:
+Now, run the Celery executor. In our case, we're running RabbitMQ as our broker. With Docker, this is something like the following:
 
 ```shell
 docker run -p 5672:5672 rabbitmq:3.8.2
@@ -87,22 +87,9 @@ In production, more configuration is required.
 
 ### Step 1: Configure persistent run and event log storage
 
-First, you'll ensure that appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage`, are configured on your [Dagster instance](/deployment/dagster-instance) (via `dagster.yaml`). This allows the webserver and workers to communicate information about the run and events with each other.
+First, configure appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage` on your [Dagster instance](/deployment/dagster-instance) (via `dagster.yaml`). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/deployment/dagster-instance#dagster-storage) for information on how to do this.
 
-Add a block like the following to your project's `dagster.yaml`:
-
-```python file=/deploying/dagster-pg.yaml
-storage:
-  postgres:
-    postgres_db:
-      username: my_username
-      password: my_password
-      hostname: my_hostname
-      db_name: my_database
-      port: 5432
-```
-
-**The same instance config must be present in the webserver's environment and in the workers' environments.** Refer to the [Dagster instance](/deployment/dagster-instance) documentation for more information.
+**Note**: The same instance config must be present in the webserver's environment and in the workers' environments. Refer to the [Dagster instance](/deployment/dagster-instance#default-local-behavior) documentation for more information.
 
 ### Step 2: Configure a persistent I/O manager
 
@@ -180,5 +167,3 @@ To monitor celery workers and queues, you can use Celery's [Flower](https://flow
 ### Broker and backend
 
 `dagster-celery` has been tested using the RabbitMQ broker and default RPC backend.
-
-<!-- At least one team is running dagster-celery using SQS as the broker, and we intend to expand the scope of broker/backend matrix testing, probably starting with the Postgres backend. -->
