@@ -6,8 +6,8 @@
     "isDefaultOpen": true,
     "children": [
       {
-        "title": "Overview",
-        "path": "/getting-started/overview"
+        "title": "What's Dagster?",
+        "path": "/getting-started/what-why-dagster"
       },
       {
         "title": "Hello, Dagster!",
