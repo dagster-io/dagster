@@ -899,7 +899,7 @@ def execute_asset_backfill_iteration(
         return
 
     logger.info(
-        f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}"
+        f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
     )
 
     if backfill.status == BulkActionStatus.REQUESTED:
