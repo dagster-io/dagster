@@ -868,18 +868,32 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(workspace_context))
         assert self.get_run_ids(instance.run_launcher.queue()) == ["run-1"]
 
-    def test_key_limit_with_priority(self, workspace_context, daemon, job_handle, instance):
-        self.create_queued_run(
-            instance,
-            job_handle,
-            run_id="high-priority",
-            tags={"test": "value", PRIORITY_TAG: "100"},
-        )
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=2,
+                tag_concurrency_limits=[
+                    {"key": "test", "limit": 1},
+                ],
+                dequeue_use_threads=True,
+            ),
+        ],
+    )
+    def test_key_limit_with_priority(
+        self, workspace_context, daemon, job_handle, instance, run_coordinator_config
+    ):
         self.create_queued_run(
             instance,
             job_handle,
             run_id="low-priority",
             tags={"test": "value", PRIORITY_TAG: "-100"},
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id="high-priority",
+            tags={"test": "value", PRIORITY_TAG: "100"},
         )
 
         list(daemon.run_iteration(workspace_context))
