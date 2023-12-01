@@ -181,9 +181,7 @@ class AssetDaemonContext:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self._verbose_log_fn("Done prefetching asset records.")
         self._verbose_log_fn(
-            f"Calculated a new latest_storage_id value of {self.get_new_latest_storage_id()}."
-        )
-        self._verbose_log_fn(
+            f"Calculated a new latest_storage_id value of {self.get_new_latest_storage_id()}.\n"
             f"Precalculating updated parents for {len(self.target_asset_keys)} assets using previous "
             f"latest_storage_id of {self.latest_storage_id}."
         )
@@ -204,6 +202,11 @@ class AssetDaemonContext:
             # ignore non-observable sources
             if self.asset_graph.is_source(asset_key) and not self.asset_graph.is_observable(
                 asset_key
+            ):
+                continue
+            # ignore cases where we know for sure there's no new event
+            if not self.instance_queryer.asset_partition_has_materialization_or_observation(
+                AssetKeyPartitionKey(asset_key), after_cursor=self.latest_storage_id
             ):
                 continue
             # get the latest overall storage id for this asset key
