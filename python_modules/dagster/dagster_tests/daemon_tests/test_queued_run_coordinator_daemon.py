@@ -30,9 +30,13 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def instance(self, run_coordinator_config):
         raise NotImplementedError
 
+    @pytest.fixture(params=[1, 25])
+    def page_size(self, request):
+        yield request.param
+
     @abstractmethod
     @pytest.fixture()
-    def daemon(self):
+    def daemon(self, page_size):
         raise NotImplementedError
 
     @pytest.fixture()
@@ -923,5 +927,5 @@ class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
             yield instance
 
     @pytest.fixture()
-    def daemon(self):
-        return QueuedRunCoordinatorDaemon(interval_seconds=1)
+    def daemon(self, page_size):
+        return QueuedRunCoordinatorDaemon(interval_seconds=1, page_size=page_size)

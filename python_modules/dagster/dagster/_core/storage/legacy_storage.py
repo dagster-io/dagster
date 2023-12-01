@@ -206,8 +206,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+        ascending: bool = False,
     ) -> Iterable["DagsterRun"]:
-        return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by)
+        return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
 
     def get_run_ids(
         self,

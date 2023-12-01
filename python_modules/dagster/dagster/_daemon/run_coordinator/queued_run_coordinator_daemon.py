@@ -41,11 +41,12 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     store and launches them.
     """
 
-    def __init__(self, interval_seconds) -> None:
+    def __init__(self, interval_seconds, page_size=25) -> None:
         self._exit_stack = ExitStack()
         self._executor: Optional[ThreadPoolExecutor] = None
         self._location_timeouts_lock = threading.Lock()
         self._location_timeouts: Dict[str, float] = {}
+        self._page_size = page_size
         super().__init__(interval_seconds)
 
     def _get_executor(self, max_workers) -> ThreadPoolExecutor:
@@ -207,11 +208,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 )
                 return []
 
-        # Reverse to maintain FIFO ordering
-        queued_run_ids = instance.get_run_ids(RunsFilter(statuses=[DagsterRunStatus.QUEUED]))[::-1]
-        if not queued_run_ids:
-            self._logger.debug("Poll returned no queued runs.")
-            return []
+        cursor = None
+        has_more = True
+        batch: List[DagsterRun] = []
 
         now = fixed_iteration_time or time.time()
 
@@ -229,45 +228,54 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 + ",".join(list(paused_location_names))
             )
 
-        self._logger.info(
-            f"Retrieved %d queued runs, checking limits.{locations_clause}",
-            len(queued_run_ids),
-        )
-
-        tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
-            tag_concurrency_limits, in_progress_runs
-        )
-
-        batch: List[DagsterRun] = []
-        # Paginate through our run ids list so we don't need to hold every run
+        # Paginate through our runs list so we don't need to hold every run
         # in memory at once. The maximum number of runs we'll hold in memory is
         # max_runs_to_launch + page_size.
-        page_size = 25
-        for page in range(0, len(queued_run_ids), page_size):
-            run_ids = queued_run_ids[page : page + page_size]
-            # Create a dict of runs keyed by id so we can maintain FIFO ordering
-            runs_by_id = dict(
-                [(run.run_id, run) for run in instance.get_runs(RunsFilter(run_ids=run_ids))]
+        while has_more:
+            queued_runs = instance.get_runs(
+                RunsFilter(statuses=[DagsterRunStatus.QUEUED]),
+                cursor=cursor,
+                limit=self._page_size,
+                ascending=True,
+            )
+            has_more = len(queued_runs) >= self._page_size
+
+            if not queued_runs:
+                self._logger.debug("Poll returned no queued runs.")
+                has_more = False
+                return batch
+
+            cursor = queued_runs[-1].run_id
+
+            self._logger.info(
+                f"Retrieved %d queued runs, checking limits.{locations_clause}",
+                len(queued_runs),
             )
 
-            for run_id in run_ids:
-                run = runs_by_id.pop(run_id)
+            tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
+                tag_concurrency_limits, in_progress_runs
+            )
 
+            batch += queued_runs
+            batch = self._priority_sort(batch)
+
+            to_remove = []
+            for run in batch:
                 if tag_concurrency_limits_counter.is_blocked(run):
-                    continue
+                    to_remove.append(run)
+                else:
+                    tag_concurrency_limits_counter.update_counters_with_launched_item(run)
 
                 location_name = (
                     run.external_job_origin.location_name if run.external_job_origin else None
                 )
                 if location_name and location_name in paused_location_names:
-                    continue
+                    to_remove.append(run)
 
-                tag_concurrency_limits_counter.update_counters_with_launched_item(run)
-                batch.append(run)
+            for run in to_remove:
+                batch.remove(run)
 
-            # After each page, re-sort our batch and trim it to our max_runs_to_launch
-            batch = self._priority_sort(batch)
-            if max_concurrent_runs_enabled:
+            if max_runs_to_launch >= 1:
                 batch = batch[:max_runs_to_launch]
 
         return batch
