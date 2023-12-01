@@ -22,7 +22,6 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
 
   const {healthTitle} = React.useContext(InstancePageContext);
   const canSeeConfig = useCanSeeConfig();
-  const {flagInstanceConcurrencyLimits} = useFeatureFlags();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -34,7 +33,7 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
           icon={<WorkspaceStatus placeholder={false} />}
         />
         <TabLink id="health" title={healthTitle} to="/health" icon={<InstanceWarningIcon />} />
-        {canSeeConfig && flagInstanceConcurrencyLimits ? (
+        {canSeeConfig ? (
           <TabLink id="concurrency" title="Concurrency limits" to="/concurrency" />
         ) : null}
         {canSeeConfig ? <TabLink id="config" title="Configuration" to="/config" /> : null}

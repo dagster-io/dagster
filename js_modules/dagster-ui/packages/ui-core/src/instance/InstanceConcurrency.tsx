@@ -26,10 +26,9 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link, Redirect} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
 import {showSharedToaster} from '../app/DomUtils';
-import {useFeatureFlags} from '../app/Flags';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
@@ -60,8 +59,6 @@ import {
 const InstanceConcurrencyPage = React.memo(() => {
   useTrackPageView();
   useDocumentTitle('Concurrency');
-  const {flagInstanceConcurrencyLimits} = useFeatureFlags();
-
   const {pageTitle} = React.useContext(InstancePageContext);
   const queryResult = useQuery<
     InstanceConcurrencyLimitsQuery,
@@ -74,16 +71,12 @@ const InstanceConcurrencyPage = React.memo(() => {
   const {data} = queryResult;
 
   const opConcurrencyContent = data ? (
-    flagInstanceConcurrencyLimits ? (
-      <ConcurrencyLimits
-        instanceConfig={data.instance.info}
-        limits={data.instance.concurrencyLimits}
-        hasSupport={data.instance.supportsConcurrencyLimits}
-        refetch={queryResult.refetch}
-      />
-    ) : (
-      <Redirect to="/config" />
-    )
+    <ConcurrencyLimits
+      instanceConfig={data.instance.info}
+      limits={data.instance.concurrencyLimits}
+      hasSupport={data.instance.supportsConcurrencyLimits}
+      refetch={queryResult.refetch}
+    />
   ) : (
     <Box padding={{vertical: 64}}>
       <Spinner purpose="section" />
@@ -136,7 +129,7 @@ type DialogAction =
     }
   | undefined;
 
-const RunConcurrencyContent = ({
+export const RunConcurrencyContent = ({
   hasRunQueue,
   runQueueConfig,
 }: {
@@ -238,6 +231,10 @@ export const ConcurrencyLimits = ({
     limits.map(({concurrencyKey, slotCount}) => [concurrencyKey, slotCount]),
   );
 
+  const sortedLimits = React.useMemo(() => {
+    return [...limits].sort((a, b) => a.concurrencyKey.localeCompare(b.concurrencyKey));
+  }, [limits]);
+
   const onAdd = () => {
     setAction({actionType: 'add'});
   };
@@ -310,7 +307,7 @@ export const ConcurrencyLimits = ({
               </tr>
             </thead>
             <tbody>
-              {limits.map((limit) => (
+              {sortedLimits.map((limit) => (
                 <tr key={limit.concurrencyKey}>
                   <td>{limit.concurrencyKey}</td>
                   <td>{limit.slotCount}</td>

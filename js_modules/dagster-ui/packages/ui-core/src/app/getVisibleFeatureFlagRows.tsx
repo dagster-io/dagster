@@ -30,10 +30,6 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagSensorScheduleLogging,
   },
   {
-    key: 'Experimental instance-level concurrency limits',
-    flagType: FeatureFlag.flagInstanceConcurrencyLimits,
-  },
-  {
     key: 'Display resources in navigation sidebar',
     flagType: FeatureFlag.flagSidebarResources,
   },
