@@ -31,7 +31,7 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_automation_condition import AssetAutomationEvaluationContext
+from .asset_automation_condition_context import AssetAutomationEvaluationContext
 from .asset_daemon_cursor import AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .backfill_policy import BackfillPolicy, BackfillPolicyType

@@ -8,9 +8,9 @@ if TYPE_CHECKING:
 
 class AssetAutomationConditionCursor(NamedTuple):
     condition_snapshot: "AssetAutomationConditionSnapshot"
-    max_storage_id: Optional[int]
-    extras: Mapping[str, PackableValue]
     child_cursors: Sequence["AssetAutomationConditionCursor"]
+    max_storage_id: Optional[int]
+    extras: Mapping[str, PackableValue] = {}
 
     def for_child(self, child: "AutomationCondition") -> Optional["AssetAutomationConditionCursor"]:
         for child_cursor in self.child_cursors:

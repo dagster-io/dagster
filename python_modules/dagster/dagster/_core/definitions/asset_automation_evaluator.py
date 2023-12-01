@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import List, NamedTuple, Optional, Sequence
+from typing import AbstractSet, List, Mapping, NamedTuple, Optional, Sequence
 
+from dagster import MetadataValue
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.metadata import MetadataMapping
 
 from .asset_automation_condition_context import AssetAutomationConditionEvaluationContext
 from .asset_automation_condition_cursor import (
@@ -24,6 +26,7 @@ class ConditionEvaluation(NamedTuple):
     condition_snapshot: "AssetAutomationConditionSnapshot"
     true_subset: AssetSubset
     candidate_subset: AssetSubset
+    metadata_by_subset: Mapping[AssetSubset, Mapping[str, MetadataValue]] = {}
     child_evaluations: Sequence["ConditionEvaluation"] = []
 
     def for_child(self, child_condition: "AutomationCondition") -> Optional["ConditionEvaluation"]:
@@ -75,7 +78,6 @@ class ConditionEvaluationResult(NamedTuple):
             or AssetAutomationConditionCursor(
                 condition_snapshot=condition_snapshot,
                 child_cursors=[result.cursor for result in child_results or []],
-                cursor_value=None,
             ),
         )
 
@@ -233,10 +235,16 @@ class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCo
             context.candidates_not_evaluated_on_previous_tick_subset
             | context.candidate_parent_has_or_will_update_subset
         )
+
+        asset_partitions_by_metadata: Mapping[
+            MetadataMapping, AbstractSet[AssetKeyPartitionKey]
+        ] = {}
         for candidate in subset_to_evaluate.asset_partitions:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
-            for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
+            for (
+                parent
+            ) in context.asset_context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
             ):
                 if context.instance_queryer.have_ignorable_partition_mapping_for_outdated(
@@ -247,9 +255,20 @@ class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCo
                     context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
                 )
             if outdated_ancestors:
+                metadata = {
+                    "outdated_ancestors": [MetadataValue.asset(ak) for ak in outdated_ancestors]
+                }
                 asset_partitions_by_evaluation_data[
                     WaitingOnAssetsRuleEvaluationData(frozenset(outdated_ancestors))
                 ].add(candidate)
+
+        true_subset = (context.previous_tick_true_subset - subset_to_evaluate) | ...
+        evaluation = ConditionEvaluation(
+            condition_snapshot=self.to_snapshot(),
+            true_subset=AssetSubset.empty(context.asset_key, context.partitions_def),
+            candidate_subset=subset_to_evaluate,
+            child_evaluations=[],
+        )
 
         return self.add_evaluation_data_from_previous_tick(
             context,
