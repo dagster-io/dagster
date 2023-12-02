@@ -30,7 +30,7 @@ export const TickLogDialog = ({
   onClose: () => void;
 }) => {
   const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
-    variables: {instigationSelector, timestamp: tick.timestamp},
+    variables: {instigationSelector, tickId: Number(tick.tickId)},
     notifyOnNetworkStatusChange: true,
   });
 
@@ -118,11 +118,11 @@ const TickLogRow = ({event}: {event: TickLogEventFragment}) => {
 };
 
 const TICK_LOG_EVENTS_QUERY = gql`
-  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
+  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: Int!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id
-        tick(timestamp: $timestamp) {
+        tick(tickId: $tickId) {
           id
           status
           timestamp
