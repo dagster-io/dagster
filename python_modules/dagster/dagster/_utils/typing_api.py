@@ -8,12 +8,29 @@ from typing_extensions import get_args, get_origin
 
 import dagster._check as check
 
+try:
+    from types import UnionType
+except ImportError:
+    UnionType = typing.Union
+
+
+def is_closed_python_union_type(ttype):
+    # There are two types of unions:
+    # - older type hint union typing.Union[T0, ..., Tn]
+    # - the new union expression T0 | ... | Tn introduced in python 3.10.
+    # The first one has origin typing.Union, while the latter has origin types.UnionType
+    origin = get_origin(ttype)
+    return origin is typing.Union or isinstance(ttype, UnionType)
+
 
 def is_closed_python_optional_type(ttype):
     # Optional[X] is Union[X, NoneType] which is what we match against here
-    origin = get_origin(ttype)
     args = get_args(ttype)
-    return origin is typing.Union and len(args) == 2 and args[1] is type(None)
+    if len(args) != 2:
+        return False
+    if args[-1] is not type(None):
+        return False
+    return is_closed_python_union_type(ttype)
 
 
 def is_python_dict_type(ttype):
