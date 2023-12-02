@@ -557,47 +557,6 @@ class SkipOnRequiredButNonexistentParentsRule(
 
 
 @whitelist_for_serdes
-class SkipOnBackfillInProgressRule(
-    AutoMaterializeRule,
-    NamedTuple("_SkipOnBackfillInProgressRule", [("all_partitions", bool)]),
-):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.SKIP
-
-    @property
-    def description(self) -> str:
-        if self.all_partitions:
-            return "part of an asset targeted by an in-progress backfill"
-        else:
-            return "targeted by an in-progress backfill"
-
-    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        backfill_in_progress_candidates: AbstractSet[AssetKeyPartitionKey] = set()
-        backfilling_subset = (
-            context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-        )
-
-        if self.all_partitions:
-            backfill_in_progress_candidates = {
-                candidate
-                for candidate in context.candidate_subset.asset_partitions
-                if candidate.asset_key in backfilling_subset.asset_keys
-            }
-        else:
-            backfill_in_progress_candidates = {
-                candidate
-                for candidate in context.candidate_subset.asset_partitions
-                if candidate in backfilling_subset
-            }
-
-        if backfill_in_progress_candidates:
-            return [(None, backfill_in_progress_candidates)]
-
-        return []
-
-
-@whitelist_for_serdes
 class DiscardOnMaxMaterializationsExceededRule(
     AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
 ):

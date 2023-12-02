@@ -20,14 +20,19 @@ class AssetAutomationConditionSnapshot(NamedTuple):
     description: Optional[str]
 
 
+class AssetSubsetWithMetadata(NamedTuple):
+    asset_subset: AssetSubset
+    metadata: Mapping[str, MetadataValue]
+
+
 class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: "AssetAutomationConditionSnapshot"
     true_subset: AssetSubset
     candidate_subset: AssetSubset
-    metadata_by_subset: Mapping[AssetSubset, Mapping[str, MetadataValue]] = {}
-    child_evaluations: Sequence["ConditionEvaluation"] = []
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
+    child_evaluations: Sequence["ConditionEvaluation"]
 
     def for_child(self, child_condition: "AutomationCondition") -> Optional["ConditionEvaluation"]:
         for child_evaluation in self.child_evaluations:
@@ -62,6 +67,7 @@ class ConditionEvaluationResult(NamedTuple):
     def create(
         context: AssetAutomationConditionEvaluationContext,
         true_subset: AssetSubset,
+        asset_subsets_with_metadata: Optional[Sequence[AssetSubsetWithMetadata]] = None,
         cursor: Optional[AssetAutomationConditionCursor] = None,
         child_results: Optional[Sequence["ConditionEvaluationResult"]] = None,
     ) -> "ConditionEvaluationResult":
@@ -71,6 +77,7 @@ class ConditionEvaluationResult(NamedTuple):
             evaluation=ConditionEvaluation(
                 condition_snapshot=condition_snapshot,
                 true_subset=true_subset,
+                subsets_with_metadata=asset_subsets_with_metadata or [],
                 candidate_subset=context.candidates_subset,
                 child_evaluations=[result.evaluation for result in child_results or []],
             ),
@@ -78,6 +85,7 @@ class ConditionEvaluationResult(NamedTuple):
             or AssetAutomationConditionCursor(
                 condition_snapshot=condition_snapshot,
                 child_cursors=[result.cursor for result in child_results or []],
+                max_storage_id=None,  # TODO
             ),
         )
 
@@ -259,28 +267,58 @@ class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCo
                 }
                 asset_partitions_by_metadata[metadata].add(candidate)
 
-        new_metadata_by_subset = {
-            AssetSubset.from_asset_partitions_set(
-                context.asset_key, context.partitions_def, asset_partitions
-            ): metadata
+        new_subsets_with_metadata = [
+            AssetSubsetWithMetadata(
+                asset_subset=AssetSubset.from_asset_partitions_set(
+                    context.asset_key, context.partitions_def, asset_partitions
+                ),
+                metadata=metadata,
+            )
             for metadata, asset_partitions in asset_partitions_by_metadata.items()
-        }
-        previous_metadata_by_subset = (
-            context.previous_condition_evaluation.metadata_by_subset
-            if context.previous_condition_evaluation
-            else {}
-        )
+        ]
+        true_subset = context.previous_tick_true_subset - subset_to_evaluate
+        for subset_with_metadata in new_subsets_with_metadata:
+            true_subset |= subset_with_metadata.asset_subset
 
-        true_subset = (context.previous_tick_true_subset - subset_to_evaluate) | ...
-        evaluation = ConditionEvaluation(
-            condition_snapshot=self.to_snapshot(),
-            true_subset=AssetSubset.empty(context.asset_key, context.partitions_def),
-            candidate_subset=subset_to_evaluate,
-            child_evaluations=[],
-        )
-
-        return self.add_evaluation_data_from_previous_tick(
+        return ConditionEvaluationResult.create(
             context,
-            asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
+            true_subset,
+            context.combine_previous_data(new_subsets_with_metadata, subset_to_evaluate),
         )
+
+
+class BackfillInProgressCondition(
+    AutomationCondition,
+    NamedTuple("_BackfillInProgressCondition", [("all_partitions", bool)]),
+):
+    @property
+    def description(self) -> str:
+        if self.all_partitions:
+            return "part of an asset targeted by an in-progress backfill"
+        else:
+            return "targeted by an in-progress backfill"
+
+    def evaluate_for_asset(
+        self, context: AssetAutomationConditionEvaluationContext
+    ) -> ConditionEvaluationResult:
+        backfilling_subset = (
+            context.instance_queryer.get_active_backfill_target_asset_graph_subset()
+        )
+
+        if self.all_partitions:
+            backfill_in_progress_candidates = {
+                candidate
+                for candidate in context.candidate_subset.asset_partitions
+                if candidate.asset_key in backfilling_subset.asset_keys
+            }
+        else:
+            backfill_in_progress_candidates = {
+                candidate
+                for candidate in context.candidate_subset.asset_partitions
+                if candidate in backfilling_subset
+            }
+
+        if backfill_in_progress_candidates:
+            return [(None, backfill_in_progress_candidates)]
+
+        return []

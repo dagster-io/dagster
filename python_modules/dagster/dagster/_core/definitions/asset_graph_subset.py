@@ -16,6 +16,7 @@ from typing import (
 )
 
 from dagster import _check as check
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
@@ -77,6 +78,20 @@ class AssetGraphSubset(NamedTuple):
         return len(self.non_partitioned_asset_keys) + sum(
             len(subset) for subset in self.partitions_subsets_by_asset_key.values()
         )
+
+    def get_asset_subset(self, asset_key: AssetKey, asset_graph: AssetGraph) -> AssetSubset:
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if partitions_def is None:
+            return AssetSubset(
+                asset_key=asset_key, value=asset_key in self.non_partitioned_asset_keys
+            )
+        else:
+            return AssetSubset(
+                asset_key=asset_key,
+                value=self.partitions_subsets_by_asset_key.get(
+                    asset_key, partitions_def.empty_subset()
+                ),
+            )
 
     def get_partitions_subset(
         self, asset_key: AssetKey, asset_graph: Optional[AssetGraph] = None

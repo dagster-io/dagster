@@ -1,10 +1,12 @@
 import datetime
 import functools
+import operator
 from dataclasses import dataclass
 from typing import (
     AbstractSet,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
 )
@@ -20,6 +22,7 @@ from dagster._core.definitions.time_window_partition_mapping import TimeWindowPa
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_automation_evaluator import (
+    AssetSubsetWithMetadata,
     AutomationCondition,
     ConditionEvaluation,
     ConditionEvaluationResult,
@@ -245,6 +248,34 @@ class AssetAutomationConditionEvaluationContext:
 
     def empty_subset(self) -> AssetSubset:
         return self.asset_context.empty_subset()
+
+    def combine_previous_data(
+        self,
+        new_subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
+        previous_subset_to_ignore: AssetSubset,
+    ) -> Sequence[AssetSubsetWithMetadata]:
+        # this is the subset of the asset for which we have new metadata
+        subset_with_new_metadata: AssetSubset = functools.reduce(
+            operator.or_,
+            [s.asset_subset for s in new_subsets_with_metadata],
+            initial=self.empty_subset(),
+        )
+
+        # remove subsets that are now covered by new metadata
+        subset_to_ignore = previous_subset_to_ignore | subset_with_new_metadata
+        filtered_previous_subsets = []
+        previous_subsets = (
+            self.previous_condition_evaluation.subsets_with_metadata
+            if self.previous_condition_evaluation
+            else []
+        )
+        for subset in previous_subsets:
+            filtered_previous_subsets.append(
+                subset._replace(asset_subset=subset.asset_subset - subset_to_ignore)
+            )
+
+        # TODO: compact subsets with matching metadata
+        return [*filtered_previous_subsets, *new_subsets_with_metadata]
 
     def for_child(
         self, condition: AutomationCondition, candidates_subset: AssetSubset
