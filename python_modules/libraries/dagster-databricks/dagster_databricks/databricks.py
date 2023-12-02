@@ -7,6 +7,8 @@ from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster
 import dagster._check as check
+from importlib_metadata import version, PackageNotFoundError
+
 import dagster_pyspark
 import databricks_api
 import databricks_cli.sdk
@@ -608,6 +610,9 @@ class DatabricksJobRunner:
                     libraries.append(
                         {"pypi": {"package": f"{library_name}=={library.__version__}"}}
                     )
+
+            if "databricks-sdk" not in python_libraries:
+                libraries.append({"pypi": {"package": f"databricks-sdk=={version('databricks-sdk')}"}})
 
         # Only one task should be able to be chosen really; make sure of that here.
         check.invariant(
