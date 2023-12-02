@@ -2,6 +2,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     DagsterEventType,
+    DagsterInstance,
     EventRecordsFilter,
     Output,
     asset,
@@ -11,6 +12,10 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
 
@@ -165,4 +170,64 @@ def test_asset_partition_materialization_planned_events():
                 AssetKey("my_other_asset"),
             )
         )
+        assert record.event_log_entry.dagster_event.event_specific_data.partition is None
+
+
+def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_allowed():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        return 0
+
+    with instance_for_test() as instance:
+
+        class FakeCloudInstance(DagsterInstance):
+            @property
+            def is_cloud_instance(self) -> bool:
+                return True
+
+        instance.__class__ = FakeCloudInstance
+
+        materialize_to_memory(
+            [my_asset],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+        )
+
+        [record] = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset"),
+            )
+        )
+        assert (
+            record.event_log_entry.dagster_event.event_specific_data.partitions_subset
+            == partitions_def.subset_with_partition_keys(["a", "b"])
+        )
+
+
+def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_not_allowed():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        return 0
+
+    with instance_for_test() as instance:
+        materialize_to_memory(
+            [my_asset],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+        )
+
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset"),
+            )
+        )
+        assert len(records) == 1
+        record = records[0]
+        assert record.event_log_entry.dagster_event.event_specific_data.partitions_subset is None
         assert record.event_log_entry.dagster_event.event_specific_data.partition is None
