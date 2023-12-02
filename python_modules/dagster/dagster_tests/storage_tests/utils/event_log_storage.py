@@ -50,7 +50,7 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.partition import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.event_api import EventLogCursor, EventRecordsResult
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
@@ -2583,9 +2583,28 @@ class TestEventLogStorage:
             .to_serializable_subset()
         )
 
-        # TODO make this test only run for cloud storage
-        # TODO add test that asserts exception is raised when partition key and subset provided
         with create_and_delete_test_runs(instance, [run_id_1]):
+            with pytest.raises(
+                DagsterInvariantViolationError,
+                match="Cannot provide both partition and partitions_subset",
+            ):
+                storage.store_event(
+                    EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id_1,
+                        timestamp=time.time(),
+                        dagster_event=DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            "nonce",
+                            event_specific_data=AssetMaterializationPlannedData(
+                                a, partitions_subset=partitions_subset, partition="foo"
+                            ),
+                        ),
+                    )
+                )
+
             storage.store_event(
                 EventLogEntry(
                     error_info=None,
