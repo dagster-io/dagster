@@ -7,8 +7,6 @@ from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster
 import dagster._check as check
-from importlib_metadata import version, PackageNotFoundError
-
 import dagster_pyspark
 import databricks_api
 import databricks_cli.sdk
@@ -23,6 +21,7 @@ from databricks.sdk.core import (
     pat_auth,
 )
 from databricks.sdk.service import compute, jobs
+from importlib_metadata import version
 from typing_extensions import Final
 
 import dagster_databricks
@@ -612,7 +611,9 @@ class DatabricksJobRunner:
                     )
 
             if "databricks-sdk" not in python_libraries:
-                libraries.append({"pypi": {"package": f"databricks-sdk=={version('databricks-sdk')}"}})
+                libraries.append(
+                    {"pypi": {"package": f"databricks-sdk=={version('databricks-sdk')}"}}
+                )
 
         # Only one task should be able to be chosen really; make sure of that here.
         check.invariant(
@@ -639,7 +640,6 @@ class DatabricksJobRunner:
                     {
                         "new_cluster": new_cluster,
                         "existing_cluster_id": existing_cluster_id,
-                        # "libraries": [compute.Library.from_dict(lib) for lib in libraries],
                         "libraries": libraries,
                         **task,
                         "task_key": "dagster-task",

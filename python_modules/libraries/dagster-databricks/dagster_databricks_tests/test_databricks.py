@@ -1,8 +1,6 @@
 from unittest import mock
 
 import dagster
-from importlib_metadata import version
-
 import dagster_databricks
 import dagster_pyspark
 import pytest
@@ -17,6 +15,7 @@ from dagster_databricks.databricks import (
 )
 from dagster_databricks.resources import AzureServicePrincipalCredentials, OauthCredentials
 from databricks.sdk.service import compute, jobs
+from importlib_metadata import version
 from pytest_mock import MockerFixture
 
 HOST = "https://uksouth.azuredatabricks.net"
@@ -47,9 +46,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
             )
         ),
         compute.Library(
-            pypi=compute.PythonPyPiLibrary(
-                package=f"databricks-sdk=={version('databricks-sdk')}"
-            )
+            pypi=compute.PythonPyPiLibrary(package=f"databricks-sdk=={version('databricks-sdk')}")
         ),
     ]
     expected_health = [
@@ -146,9 +143,7 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
             )
         ),
         compute.Library(
-            pypi=compute.PythonPyPiLibrary(
-                package=f"databricks-sdk=={version('databricks-sdk')}"
-            )
+            pypi=compute.PythonPyPiLibrary(package=f"databricks-sdk=={version('databricks-sdk')}")
         ),
     ]
 
