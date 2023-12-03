@@ -289,3 +289,13 @@ def test_async(test_client: TestClient):
     result = response.json()
     assert result["data"]["test"]["one"] == "slept", result
     assert result["data"]["test"]["two"] == "slept concurrently", result
+
+
+def test_download_captured_logs_not_found(test_client: TestClient):
+    response = test_client.get("/logs/does-not-exist/stdout")
+    assert response.status_code == 404
+
+
+def test_download_captured_logs_forbidden(test_client: TestClient):
+    response = test_client.get("/logs/%2e%2e/secret/txt")
+    assert response.status_code == 403
