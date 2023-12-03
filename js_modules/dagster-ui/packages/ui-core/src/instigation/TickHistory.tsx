@@ -4,7 +4,6 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Checkbox,
-  Colors,
   CursorHistoryControls,
   NonIdealState,
   Spinner,
@@ -16,6 +15,9 @@ import {
   ButtonLink,
   ifPlural,
   Caption,
+  colorLinkDefault,
+  colorAccentGray,
+  colorAccentGrayHover,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -557,16 +559,16 @@ const CopyButton = styled.button`
   outline: none;
 
   ${IconWrapper} {
-    background-color: ${Colors.Gray600};
+    background-color: ${colorAccentGray()};
     transition: background-color 100ms;
   }
 
   :hover ${IconWrapper} {
-    background-color: ${Colors.Gray800};
+    background-color: ${colorAccentGrayHover()};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${Colors.Link};
+    background-color: ${colorLinkDefault()};
   }
 `;
 

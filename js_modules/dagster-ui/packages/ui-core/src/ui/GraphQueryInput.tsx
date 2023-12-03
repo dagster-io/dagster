@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Colors,
   Icon,
   MenuItem,
   Menu,
@@ -16,6 +15,15 @@ import {
   DialogBody,
   Table,
   Tag,
+  colorKeylineDefault,
+  colorLinkDefault,
+  colorAccentGreen,
+  colorAccentRed,
+  colorAccentYellow,
+  colorBackgroundDefault,
+  colorTextLight,
+  colorBorderDefault,
+  colorAccentGray,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -107,15 +115,15 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
 const intentToStrokeColor = (intent: Intent | undefined) => {
   switch (intent) {
     case 'danger':
-      return Colors.Red500;
+      return colorAccentRed();
     case 'success':
-      return Colors.Green500;
+      return colorAccentGreen();
     case 'warning':
-      return Colors.Yellow500;
+      return colorAccentYellow();
     case 'none':
     case 'primary':
     default:
-      return Colors.Gray300;
+      return colorBorderDefault();
   }
 };
 
@@ -288,7 +296,7 @@ export const GraphQueryInput = React.memo(
             pipelineName: `${props.linkToPreview.pipelineName}~${flattenGraphsFlag}${pendingValue}`,
           })}
         >
-          Graph Preview <Icon color={Colors.Link} name="open_in_new" />
+          Graph Preview <Icon color={colorLinkDefault()} name="open_in_new" />
         </Link>
       </OpCountWrap>
     );
@@ -375,7 +383,7 @@ export const GraphQueryInput = React.memo(
                       content="Flatten subgraphs to select ops within nested graphs"
                       placement="right"
                     >
-                      <Icon name="info" color={Colors.Gray500} />
+                      <Icon name="info" color={colorAccentGray()} />
                     </Tooltip>
                   </Box>
                   {opCountInfo}
@@ -544,10 +552,10 @@ const CustomTable = styled(Table)`
     td:first-child,
     th:first-child {
       vertical-align: middle;
-      box-shadow: inset 0 1px 0 ${Colors.KeylineGray} !important;
+      box-shadow: inset 0 1px 0 ${colorKeylineDefault()} !important;
     }
   }
-  border: 1px solid ${Colors.KeylineGray};
+  border: 1px solid ${colorKeylineDefault()};
   border-top: none;
   margin-bottom: 12px;
 `;
@@ -562,8 +570,8 @@ const OpInfoWrap = styled.div`
   top: 100%;
   margin-top: 2px;
   font-size: 0.85rem;
-  background: ${Colors.White};
-  color: ${Colors.Gray600};
+  background: ${colorBackgroundDefault()};
+  color: ${colorTextLight()};
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
   z-index: 2;
   left: 0;
@@ -578,10 +586,10 @@ const EnterHint = styled.div`
   right: 6px;
   top: 5px;
   border-radius: 5px;
-  border: 1px solid ${Colors.Gray500};
-  background: ${Colors.White};
+  border: 1px solid ${colorBorderDefault()};
+  background: ${colorBackgroundDefault()};
   font-weight: 500;
   font-size: 12px;
-  color: ${Colors.Gray500};
+  color: ${colorTextLight()};
   padding: 2px 6px;
 `;

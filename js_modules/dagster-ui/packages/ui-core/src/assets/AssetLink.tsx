@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Icon, MiddleTruncate, colorAccentGray} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -25,7 +25,7 @@ export const AssetLink = (props: {
     >
       {icon ? (
         <Box margin={{right: 8, top: 2}}>
-          <Icon name={icon} color={Colors.Gray400} />
+          <Icon name={icon} color={colorAccentGray()} />
         </Box>
       ) : null}
       <Link to={linkUrl} style={{overflow: 'hidden'}}>

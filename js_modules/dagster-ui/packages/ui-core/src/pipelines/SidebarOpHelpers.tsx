@@ -1,6 +1,18 @@
 // eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
-import {Colors, Group, Icon, IconWrapper, Code, FontFamily} from '@dagster-io/ui-components';
+import {
+  Group,
+  Icon,
+  IconWrapper,
+  Code,
+  FontFamily,
+  colorKeylineDefault,
+  colorAccentBlue,
+  colorTextBlue,
+  colorTextLight,
+  colorBackgroundLight,
+  colorAccentGray,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -27,7 +39,7 @@ export type OpMappingTable = {
 export const ShowAllButton = styled.button`
   background: transparent;
   border: none;
-  color: ${Colors.Blue500};
+  color: ${colorAccentBlue()};
   text-decoration: underline;
   padding-top: 10px;
   font-size: 0.9rem;
@@ -58,7 +70,7 @@ export const Invocation = (props: {invocation: SidebarOpInvocationInfo; onClick:
   const handlePath = handleID.split('.');
   return (
     <InvocationContainer onClick={props.onClick}>
-      {pipelineName && <div style={{color: Colors.Blue700}}>{pipelineName}</div>}
+      {pipelineName && <div style={{color: colorTextBlue()}}>{pipelineName}</div>}
       <OpColumn stepKey={handlePath.join('.')} />
     </InvocationContainer>
   );
@@ -78,8 +90,8 @@ export const DependencyRow = ({
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <OpLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
         <Group direction="row" spacing={2} alignItems="center">
-          {isDynamic && <Icon name="op_dynamic" color={Colors.Gray700} />}
-          <Icon name="arrow_forward" color={Colors.Gray700} />
+          {isDynamic && <Icon name="op_dynamic" color={colorAccentGray()} />}
+          <Icon name="arrow_forward" color={colorAccentGray()} />
         </Group>
       </td>
       <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <OpLink {...to} />}</Cell>
@@ -127,21 +139,21 @@ export const DependencyTable = styled.table`
 
 const DependencyHeaderCell = styled.td`
   font-size: 0.7rem;
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
 `;
 
 const InvocationContainer = styled.div`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background: ${Colors.Gray50};
+    background: ${colorBackgroundLight()};
   }
 
   font-family: ${FontFamily.monospace};

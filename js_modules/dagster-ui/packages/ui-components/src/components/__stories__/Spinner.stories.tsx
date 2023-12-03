@@ -1,8 +1,8 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
+import {colorAccentBlue} from '../../theme/color';
 import {Box} from '../Box';
-import {Colors} from '../Colors';
 import {Group} from '../Group';
 import {Spinner} from '../Spinner';
 import {Caption, Code} from '../Text';
@@ -39,7 +39,7 @@ export const Sizes = () => {
           <Code>purpose=&quot;section&quot;</Code>
           <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={24}>
             <Spinner purpose="section" />
-            <Spinner purpose="section" fillColor={Colors.Blue500} />
+            <Spinner purpose="section" fillColor={colorAccentBlue()} />
           </Box>
         </Group>
       </Box>
@@ -48,7 +48,7 @@ export const Sizes = () => {
           <Code>purpose=&quot;page&quot;</Code>
           <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={48}>
             <Spinner purpose="page" />
-            <Spinner purpose="page" fillColor={Colors.Blue500} />
+            <Spinner purpose="page" fillColor={colorAccentBlue()} />
           </Box>
         </Group>
       </Box>

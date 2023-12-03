@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Group, Mono} from '@dagster-io/ui-components';
+import {Group, Mono, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -19,7 +19,7 @@ export const InstigatedRunStatus = ({
 }) => {
   const [instigationRun] = instigationState.runs;
   if (!instigationRun) {
-    return <span style={{color: Colors.Gray300}}>None</span>;
+    return <span style={{color: colorTextLight()}}>None</span>;
   }
   return <LastRunSummary run={instigationRun} name={instigationState.name} />;
 };
@@ -94,7 +94,7 @@ export const StatusTable = styled.table`
   }
 
   &&&&& tbody > tr > td:first-child {
-    color: ${Colors.Gray500};
+    color: ${colorTextLight()};
   }
 `;
 

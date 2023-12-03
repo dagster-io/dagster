@@ -3,8 +3,10 @@ import {IToasterProps, ToasterInstance, ToastProps} from '@blueprintjs/core';
 import React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import {Colors} from './Colors';
-import {IconName, Icon} from './Icon';
+import {CoreColors} from '../palettes/Colors';
+import {colorAccentBlue, colorAccentGray, colorAccentPrimary, colorAccentRed} from '../theme/color';
+
+import {IconName, Icon, IconWrapper} from './Icon';
 import {createToaster} from './createToaster';
 
 export const GlobalToasterStyle = createGlobalStyle`
@@ -14,8 +16,8 @@ export const GlobalToasterStyle = createGlobalStyle`
       border-radius: 8px;
       font-size: 14px;
       line-height: 22px;
-      color: ${Colors.White};
-      background-color: ${Colors.Gray700};
+      color: ${CoreColors.White};
+      background-color: ${colorAccentGray()};
     }
 
     .bp4-button-group {
@@ -29,28 +31,32 @@ export const GlobalToasterStyle = createGlobalStyle`
       gap: 8px;
     }
 
+    .bp4-icon-cross {
+      color: ${CoreColors.White} !important;
+    }
+
+    ${IconWrapper} {
+      background-color: ${CoreColors.White} !important;
+    }
+
     .bp4-toast.bp4-intent-primary,
     .bp4-toast.bp4-intent-primary .bp4-button {
-      background-color: ${Colors.Gray700} !important;
+      background-color: ${colorAccentGray()} !important;
     }
 
     .bp4-toast.bp4-intent-success,
     .bp4-toast.bp4-intent-success .bp4-button {
-      background-color: ${Colors.Blue500} !important;
+      background-color: ${colorAccentBlue()} !important;
     }
 
     .bp4-toast.bp4-intent-warning,
     .bp4-toast.bp4-intent-warning .bp4-button {
-      background-color: ${Colors.Gray700} !important;
-
-      .bp4-icon-cross {
-        color: ${Colors.Gray300} !important;
-      }
+      background-color: ${colorAccentGray()} !important;
     }
 
     .bp4-toast.bp4-intent-danger,
     .bp4-toast.bp4-intent-danger .bp4-button {
-      background-color: ${Colors.Red500} !important;
+      background-color: ${colorAccentRed()} !important;
     }
   }
 `;
@@ -66,7 +72,7 @@ const setup = (instance: ToasterInstance): DToaster => {
     if (icon && typeof icon === 'string') {
       rest.message = (
         <>
-          <Icon name={icon} color={Colors.White} />
+          <Icon name={icon} color={colorAccentPrimary()} />
           {rest.message}
         </>
       );

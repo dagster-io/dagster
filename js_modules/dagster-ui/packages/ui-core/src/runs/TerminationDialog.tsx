@@ -5,13 +5,14 @@ import {
   Box,
   Button,
   Checkbox,
-  Colors,
   DialogBody,
   DialogFooter,
   Dialog,
   Group,
   Icon,
   Mono,
+  colorAccentYellow,
+  colorAccentGreen,
 } from '@dagster-io/ui-components';
 import chunk from 'lodash/chunk';
 import * as React from 'react';
@@ -220,7 +221,7 @@ export const TerminationDialog = (props: Props) => {
                 />
                 {force ? (
                   <Box flex={{display: 'flex', direction: 'row', gap: 8}} margin={{top: 8}}>
-                    <Icon name="warning" color={Colors.Yellow500} />
+                    <Icon name="warning" color={colorAccentYellow()} />
                     <div>
                       <strong>Warning:</strong> computational resources created by runs may not be
                       cleaned up.
@@ -230,7 +231,7 @@ export const TerminationDialog = (props: Props) => {
               </div>
             ) : !props.selectedRunsAllQueued ? (
               <Group direction="row" spacing={8}>
-                <Icon name="warning" color={Colors.Yellow500} />
+                <Icon name="warning" color={colorAccentYellow()} />
                 <div>
                   <strong>Warning:</strong> computational resources created by runs may not be
                   cleaned up.
@@ -313,7 +314,7 @@ export const TerminationDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon name="check_circle" color={Colors.Green500} />
+            <Icon name="check_circle" color={colorAccentGreen()} />
             <div>
               {force
                 ? `Successfully forced termination for ${successCount} ${
@@ -328,7 +329,7 @@ export const TerminationDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon name="warning" color={Colors.Yellow500} />
+              <Icon name="warning" color={colorAccentYellow()} />
               <div>
                 {force
                   ? `Could not force termination for ${errorCount} ${

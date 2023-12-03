@@ -1,4 +1,13 @@
-import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
+import {
+  Box,
+  Group,
+  Icon,
+  Mono,
+  NonIdealState,
+  Table,
+  colorAccentGray,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -94,7 +103,7 @@ export const LatestMaterializationMetadata = ({
                             spacing={8}
                             alignItems="center"
                           >
-                            <Icon name="linear_scale" color={Colors.Gray400} />
+                            <Icon name="linear_scale" color={colorAccentGray()} />
                             <Link to={linkToRunEvent(latestRun, latestEvent)}>
                               {latestEvent.stepKey}
                             </Link>
@@ -128,7 +137,7 @@ export const LatestMaterializationMetadata = ({
             {isRunlessEvent(latestEvent) ? (
               <tr>
                 <td>Description</td>
-                <td style={{color: Colors.Gray800}}>
+                <td style={{color: colorTextLight()}}>
                   <Description
                     description={latestEvent.description}
                     fontSize={14}

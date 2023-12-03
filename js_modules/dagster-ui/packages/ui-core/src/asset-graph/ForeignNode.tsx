@@ -1,4 +1,4 @@
-import {Colors, Icon, FontFamily} from '@dagster-io/ui-components';
+import {Icon, FontFamily, colorLinkDefault} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -10,7 +10,7 @@ export const AssetNodeLink = React.memo(({assetKey}: {assetKey: {path: string[]}
   const label = assetKey.path[assetKey.path.length - 1]!;
   return (
     <AssetNodeLinkContainer>
-      <Icon name="open_in_new" color={Colors.Link} />
+      <Icon name="open_in_new" color={colorLinkDefault()} />
       <span className="label" title={label}>
         {withMiddleTruncation(label, {
           maxLength: ASSET_LINK_NAME_MAX_LENGTH,
@@ -26,12 +26,12 @@ const AssetNodeLinkContainer = styled.div`
   margin-top: 26px;
   line-height: 30px;
   font-family: ${FontFamily.monospace};
-  color: ${Colors.Link};
+  color: ${colorLinkDefault()};
   align-items: center;
   font-weight: 600;
   gap: 4px;
   &:hover .label {
-    color: ${Colors.Link};
+    color: ${colorLinkDefault()};
     text-decoration: underline;
   }
 `;

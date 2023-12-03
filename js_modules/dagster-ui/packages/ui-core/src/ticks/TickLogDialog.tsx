@@ -1,5 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  DialogFooter,
+  Dialog,
+  DialogBody,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {InstigationSelector} from '../graphql/types';
@@ -53,7 +60,7 @@ export const TickLogDialog = ({
         ) : (
           <Box
             flex={{justifyContent: 'center', alignItems: 'center'}}
-            style={{flex: 1, color: Colors.Gray600}}
+            style={{flex: 1, color: colorTextLight()}}
           >
             No logs available
           </Box>
