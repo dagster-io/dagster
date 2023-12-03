@@ -4,7 +4,6 @@ import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
   Box,
   Button,
-  Colors,
   Icon,
   IconWrapper,
   MenuDivider,
@@ -13,6 +12,10 @@ import {
   Select,
   Spinner,
   Suggest,
+  colorAccentGray,
+  colorBackgroundLighter,
+  colorBackgroundLighterHover,
+  colorBackgroundLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -206,7 +209,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
 
   const rightElement = partitions.length ? (
     <SortButton onMouseDown={onClickSort}>
-      <Icon name="sort_by_alpha" color={Colors.Gray400} />
+      <Icon name="sort_by_alpha" color={colorAccentGray()} />
     </SortButton>
   ) : undefined;
 
@@ -420,17 +423,17 @@ export const SortButton = styled.button`
   cursor: pointer;
   padding: 4px;
   margin: 3px 3px 0 0;
-  background-color: ${Colors.White};
+  background-color: ${colorBackgroundLighter()};
   border-radius: 4px;
   transition: background-color 100ms;
 
   :focus {
-    background-color: ${Colors.Gray100};
+    background-color: ${colorBackgroundLighterHover()};
     outline: none;
   }
   :hover {
     ${IconWrapper} {
-      background-color: ${Colors.Gray700};
+      background-color: ${colorBackgroundLight()};
     }
   }
 `;

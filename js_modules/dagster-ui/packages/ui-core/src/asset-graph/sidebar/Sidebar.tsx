@@ -1,4 +1,11 @@
-import {Box, Button, Colors, Icon, ButtonGroup, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Icon,
+  ButtonGroup,
+  Tooltip,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
@@ -326,7 +333,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             gap: '6px',
             padding: '12px 24px',
             paddingRight: 12,
-            borderBottom: `1px solid ${Colors.KeylineGray}`,
+            borderBottom: `1px solid ${colorKeylineDefault()}`,
           }}
         >
           <ButtonGroupWrapper>

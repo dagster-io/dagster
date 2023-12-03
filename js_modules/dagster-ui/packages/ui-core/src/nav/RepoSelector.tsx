@@ -1,13 +1,18 @@
 import {
   Box,
   Checkbox,
-  Colors,
   Icon,
   IconWrapper,
   Spinner,
   Table,
   Caption,
   Tooltip,
+  colorLinkDefault,
+  colorTextLight,
+  colorTextLighter,
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorTextDisabled,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -94,7 +99,7 @@ export const RepoSelector = (props: Props) => {
                       <Box flex={{direction: 'column', gap: 2}}>
                         {option.repository.displayMetadata.map(({key, value}) => (
                           <Caption
-                            style={{color: Colors.Gray400}}
+                            style={{color: colorTextLighter()}}
                             key={key}
                           >{`${key}: ${value}`}</Caption>
                         ))}
@@ -141,7 +146,7 @@ const RepoLabel = styled.label`
 `;
 
 const RepoLocation = styled.div`
-  color: ${Colors.Gray700};
+  color: ${colorTextLight()};
 `;
 
 const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
@@ -170,7 +175,7 @@ const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
               ) : (
                 <Icon
                   name="refresh"
-                  color={hasReloadPermission ? Colors.Gray200 : Colors.Gray100}
+                  color={hasReloadPermission ? colorAccentGray() : colorAccentGrayHover()}
                 />
               )}
             </ReloadButtonInner>
@@ -194,20 +199,20 @@ const ReloadButtonInner = styled.button`
   }
 
   :disabled ${IconWrapper} {
-    background-color: ${Colors.Gray300};
+    background-color: ${colorTextDisabled};
     transition: background-color 100ms;
   }
 
   ${IconWrapper} {
-    background-color: ${Colors.Gray600};
+    background-color: ${colorTextLight()};
     transition: background-color 100ms;
   }
 
   :hover:not(:disabled) ${IconWrapper} {
-    background-color: ${Colors.Gray800};
+    background-color: ${colorTextLighter()};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${Colors.Link};
+    background-color: ${colorLinkDefault()};
   }
 `;

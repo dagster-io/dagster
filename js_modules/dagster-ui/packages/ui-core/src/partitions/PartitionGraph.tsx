@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorAccentPrimary, colorBorderDefault, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
@@ -143,15 +143,15 @@ export const PartitionGraph = ({
             {
               label: allLabel,
               data: jobData,
-              borderColor: Colors.Gray500,
-              backgroundColor: 'rgba(0,0,0,0)',
+              borderColor: colorBorderDefault(),
+              backgroundColor: colorAccentPrimary(),
             },
           ]),
       ...Object.keys(stepData).map((stepKey) => ({
         label: stepKey,
         data: stepData[stepKey as keyof typeof stepData],
         borderColor: colorHash(stepKey),
-        backgroundColor: 'rgba(0,0,0,0)',
+        backgroundColor: colorAccentPrimary(),
       })),
     ],
   };
@@ -180,7 +180,7 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
 
 const PartitionGraphContainer = styled.div`
   display: flex;
-  color: ${Colors.Gray700};
+  color: ${colorTextLight()};
   padding: 24px 12px;
   text-decoration: none;
 `;

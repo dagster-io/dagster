@@ -1,6 +1,5 @@
 import {
   Checkbox,
-  Colors,
   NonIdealState,
   SplitPanelContainer,
   ErrorBoundary,
@@ -9,6 +8,8 @@ import {
   Tooltip,
   TextInputContainer,
   Box,
+  colorKeylineDefault,
+  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import pickBy from 'lodash/pickBy';
@@ -432,11 +433,6 @@ const AssetGraphExplorerWithData = ({
                         : filterEdges(layout.edges, allowGroupsOnlyZoomLevel, scale, assetGraphData)
                     }
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-                    baseColor={
-                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
-                        ? Colors.Gray400
-                        : Colors.KeylineGray
-                    }
                   />
 
                   {Object.values(layout.groups)
@@ -673,11 +669,11 @@ const TopbarWrapper = styled.div`
   left: 0;
   right: 0;
   display: flex;
-  background: white;
+  background: ${colorBackgroundDefault()};
   gap: 12px;
   align-items: center;
   padding: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
 `;
 
 const GraphQueryInputFlexWrap = styled.div`

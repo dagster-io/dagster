@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Icon, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Tooltip, colorAccentGray} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
@@ -48,7 +48,7 @@ export const AssetDataRefreshButton = ({
       }
     >
       <Button
-        icon={<Icon name="refresh" color={Colors.Gray400} />}
+        icon={<Icon name="refresh" color={colorAccentGray()} />}
         onClick={() => {
           if (!isRefreshing) {
             onRefresh();

@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   DialogFooter,
   DialogHeader,
   Dialog,
@@ -10,6 +9,12 @@ import {
   IconWrapper,
   Spinner,
   Tooltip,
+  colorTextLighter,
+  colorBackgroundLighter,
+  colorTextDisabled,
+  colorTextLight,
+  colorTextDefault,
+  colorAccentBlue,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -39,7 +44,7 @@ export const RepoNavItem = (props: Props) => {
 
   const summary = () => {
     if (allRepos.length === 0) {
-      return <span style={{color: Colors.Gray700}}>No definitions</span>;
+      return <span style={{color: colorTextLighter()}}>No definitions</span>;
     }
     if (allRepos.length === 1) {
       return <SingleRepoSummary repo={allRepos[0]!} onlyRepo />;
@@ -52,7 +57,11 @@ export const RepoNavItem = (props: Props) => {
   };
 
   return (
-    <Box background={Colors.Gray50} padding={{vertical: 12, left: 24, right: 20}} border="top">
+    <Box
+      background={colorBackgroundLighter()}
+      padding={{vertical: 12, left: 24, right: 20}}
+      border="top"
+    >
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
           <Icon name="folder" />
@@ -141,7 +150,7 @@ const SingleRepoSummary = ({repo, onlyRepo}: {repo: RepoSelectorOption; onlyRepo
                   <ReloadButton disabled={!hasReloadPermission} onClick={tryReload}>
                     <Icon
                       name="refresh"
-                      color={hasReloadPermission ? Colors.Gray900 : Colors.Gray400}
+                      color={hasReloadPermission ? colorTextLight() : colorTextDisabled()}
                     />
                   </ReloadButton>
                 )}
@@ -162,20 +171,20 @@ const SummaryText = styled.div`
 `;
 
 const SingleRepoNameLink = styled(Link)<{$onlyRepo: boolean}>`
-  color: ${Colors.Gray900};
+  color: ${colorTextLight()};
   display: block;
   max-width: ${({$onlyRepo}) => ($onlyRepo ? '248px' : '192px')};
   overflow-x: hidden;
   text-overflow: ellipsis;
   transition: color 100ms linear;
 
-  && {
-    color: ${Colors.Gray900};
+  &&:hover {
+    color: ${colorTextDefault()};
   }
 
   &&:hover,
   &&:active {
-    color: ${Colors.Gray800};
+    color: ${colorTextDefault()};
     text-decoration: none;
   }
 `;
@@ -204,7 +213,7 @@ const ReloadButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${Colors.Blue200};
+    color: ${colorAccentBlue()};
   }
 `;
 

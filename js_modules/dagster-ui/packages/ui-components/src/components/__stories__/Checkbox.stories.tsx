@@ -2,8 +2,13 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import {useState} from 'react';
 
+import {
+  colorAccentBlue,
+  colorAccentCyan,
+  colorAccentGray,
+  colorAccentGreen,
+} from '../../theme/color';
 import {Checkbox} from '../Checkbox';
-import {Colors} from '../Colors';
 import {Group} from '../Group';
 
 // eslint-disable-next-line import/no-default-export
@@ -19,7 +24,7 @@ export const Default = () => {
 
   return (
     <Group spacing={8} direction="column">
-      {[Colors.Blue500, Colors.Olive500, Colors.Gray800].map((fillColor) => (
+      {[colorAccentBlue(), colorAccentCyan(), colorAccentGray()].map((fillColor) => (
         <Group spacing={24} direction="row" key={fillColor}>
           <Checkbox
             label="Hello world"
@@ -110,7 +115,7 @@ export const Small = () => {
 
   return (
     <Group spacing={8} direction="column">
-      {[Colors.Blue500, Colors.ForestGreen, Colors.Gray800].map((fillColor) => (
+      {[colorAccentBlue(), colorAccentGreen(), colorAccentGray()].map((fillColor) => (
         <Group spacing={24} direction="row" key={fillColor}>
           <Checkbox
             size="small"
