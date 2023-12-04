@@ -176,7 +176,7 @@ export function SetFilterActiveState({
   icon: IconName;
   state: Set<any>;
   getStringValue: (value: any) => string;
-  getTooltipText: (value: any) => string | undefined;
+  getTooltipText: ((value: any) => string) | undefined;
   onRemove: () => void;
   renderLabel: (value: any) => JSX.Element;
   matchType: 'any-of' | 'all-of';
