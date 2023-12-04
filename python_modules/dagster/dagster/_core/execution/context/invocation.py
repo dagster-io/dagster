@@ -194,9 +194,12 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
     def __del__(self):
         self._exit_stack.close()
 
-    def _check_bound(self, fn_name: str, fn_type: str):
+    def _check_bound(self, fn_name: str, fn_type: str) -> BoundProperties:
         if self._bound_properties is None:
             raise DagsterInvalidPropertyError(_property_msg(fn_name, fn_type))
+        # return self._bound_properties so that the calling function can access properties
+        # of self._bound_properties without causing pyright errors
+        return self._bound_properties
 
     def bind(
         self,
@@ -209,14 +212,6 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
         if self._bound_properties is not None:
-            # warnings.warn(
-            #     f"This context was already used to execute {self.alias}. The information about"
-            #     f" {self.alias} will be cleared, including user events and output metadata."
-            #     " If you would like to keep this information, you can create a new context"
-            #     " using build_op_context() to invoke other ops. You can also manually clear the"
-            #     f" information about {self.alias} using the unbind() method."
-            # )
-            # self.unbind()
             raise DagsterInvalidInvocationError(
                 f"This context is currently being used to execute {self.alias}. The context cannot be used to execute another op until {self.alias} has finished executing."
             )
@@ -355,12 +350,12 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
     @property
     def run_config(self) -> dict:
-        self._check_bound(fn_name="run_config", fn_type="property")
+        bound_properties = self._check_bound(fn_name="run_config", fn_type="property")
 
         run_config: Dict[str, object] = {}
-        if self._op_config and self._bound_properties.op_def:
+        if self._op_config and bound_properties.op_def:
             run_config["ops"] = {
-                self._bound_properties.op_def.name: {"config": self._bound_properties.op_config}
+                bound_properties.op_def.name: {"config": bound_properties.op_config}
             }
         run_config["resources"] = self._resources_config
         return run_config
@@ -392,23 +387,23 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
     @property
     def op_def(self) -> OpDefinition:
-        self._check_bound(fn_name="op_def", fn_type="property")
-        return cast(OpDefinition, self._bound_properties.op_def)
+        bound_properties = self._check_bound(fn_name="op_def", fn_type="property")
+        return cast(OpDefinition, bound_properties.op_def)
 
     @property
     def has_assets_def(self) -> bool:
-        self._check_bound(fn_name="has_assets_def", fn_type="property")
-        return self._bound_properties.assets_def is not None
+        bound_properties = self._check_bound(fn_name="has_assets_def", fn_type="property")
+        return bound_properties.assets_def is not None
 
     @property
     def assets_def(self) -> AssetsDefinition:
-        self._check_bound(fn_name="assets_def", fn_type="property")
+        bound_properties = self._check_bound(fn_name="assets_def", fn_type="property")
 
-        if self._bound_properties.assets_def is None:
+        if bound_properties.assets_def is None:
             raise DagsterInvalidPropertyError(
                 f"Op {self.op_def.name} does not have an assets definition."
             )
-        return self._bound_properties.assets_def
+        return bound_properties.assets_def
 
     @property
     def has_partition_key(self) -> bool:
@@ -438,17 +433,17 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         return self.partition_key
 
     def has_tag(self, key: str) -> bool:
-        self._check_bound(fn_name="has_tag", fn_type="method")
-        return key in self._bound_properties.tags
+        bound_properties = self._check_bound(fn_name="has_tag", fn_type="method")
+        return key in bound_properties.tags
 
     def get_tag(self, key: str) -> Optional[str]:
-        self._check_bound(fn_name="get_tag", fn_type="method")
-        return self._bound_properties.tags.get(key)
+        bound_properties = self._check_bound(fn_name="get_tag", fn_type="method")
+        return bound_properties.tags.get(key)
 
     @property
     def alias(self) -> str:
-        self._check_bound(fn_name="alias", fn_type="property")
-        return cast(str, self._bound_properties.alias)
+        bound_properties = self._check_bound(fn_name="alias", fn_type="property")
+        return cast(str, bound_properties.alias)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "method"))
@@ -648,18 +643,22 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
     # allowed.
     @property
     def requires_typed_event_stream(self) -> bool:
-        self._check_bound(fn_name="requires_typed_event_stream", fn_type="property")
-        return self._bound_properties.requires_typed_event_stream
+        bound_properties = self._check_bound(
+            fn_name="requires_typed_event_stream", fn_type="property"
+        )
+        return bound_properties.requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
-        self._check_bound(fn_name="typed_event_stream_error_message", fn_type="property")
-        return self._bound_properties.typed_event_stream_error_message
+        bound_properties = self._check_bound(
+            fn_name="typed_event_stream_error_message", fn_type="property"
+        )
+        return bound_properties.typed_event_stream_error_message
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
         self._check_bound(fn_name="set_requires_typed_event_stream", fn_type="method")
-        self._bound_properties.requires_typed_event_stream = True
-        self._bound_properties.typed_event_stream_error_message = error_message
+        self._bound_properties.requires_typed_event_stream = True  # type: ignore
+        self._bound_properties.typed_event_stream_error_message = error_message  # type: ignore
 
 
 def _validate_resource_requirements(
