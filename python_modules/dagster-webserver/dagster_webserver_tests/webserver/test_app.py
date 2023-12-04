@@ -296,6 +296,6 @@ def test_download_captured_logs_not_found(test_client: TestClient):
     assert response.status_code == 404
 
 
-def test_download_captured_logs_forbidden(test_client: TestClient):
-    response = test_client.get("/logs/%2e%2e/secret/txt")
-    assert response.status_code == 403
+def test_download_captured_logs_invalid_path(test_client: TestClient):
+    with pytest.raises(ValueError, match="Invalid path"):
+        test_client.get("/logs/%2e%2e/secret/txt")

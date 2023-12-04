@@ -198,12 +198,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         else:
             location = compute_log_manager.get_captured_local_path(log_key, file_extension)
 
-        if location:
-            location = path.abspath(location)
-
-            if not location.startswith(compute_log_manager._base_dir):
-                raise HTTPException(403, detail="Invalid path")
-
         if not location or not path.exists(location):
             raise HTTPException(404, detail="No log files available for download")
 
