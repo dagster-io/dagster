@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  Icon,
-  ButtonGroup,
-  Tooltip,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Button, Icon, Tooltip, colorKeylineDefault} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
