@@ -20,7 +20,7 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
-from dagster._utils.security import non_secure_md5
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import get_common_labels, sanitize_k8s_label
@@ -892,6 +892,6 @@ def get_k8s_job_name(input_1, input_2=None):
         input_2 = "".join(random.choice(letters) for i in range(20))
 
     # Creates 32-bit signed int, so could be negative
-    name_hash = non_secure_md5((input_1 + input_2).encode("utf-8"))
+    name_hash = non_secure_md5_hash_str((input_1 + input_2).encode("utf-8"))
 
-    return name_hash.hexdigest()
+    return name_hash
