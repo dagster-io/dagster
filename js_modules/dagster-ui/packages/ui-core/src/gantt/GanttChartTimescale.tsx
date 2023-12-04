@@ -11,7 +11,7 @@ import {
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {formatElapsedTime} from '../app/Util';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
@@ -21,11 +21,11 @@ const ONE_HOUR = 60 * 60 * 1000;
 // If we're zoomed in to second or minute resolution but showing large values,
 // switch to the "1:00:05" format used elsewhere in the Dagster UI.
 const subsecondResolutionLabel = (ms: number) =>
-  ms > 5 * ONE_MIN ? formatElapsedTime(ms) : `${(ms / 1000).toFixed(1)}s`;
+  ms > 5 * ONE_MIN ? formatElapsedTimeWithoutMsec(ms) : `${(ms / 1000).toFixed(1)}s`;
 const secondResolutionLabel = (ms: number) =>
-  ms > 5 * ONE_MIN ? formatElapsedTime(ms) : `${(ms / 1000).toFixed(0)}s`;
+  ms > 5 * ONE_MIN ? formatElapsedTimeWithoutMsec(ms) : `${(ms / 1000).toFixed(0)}s`;
 const minuteResolutionLabel = (ms: number) =>
-  ms > 59 * ONE_MIN ? formatElapsedTime(ms) : `${Math.round(ms / ONE_MIN)}m`;
+  ms > 59 * ONE_MIN ? formatElapsedTimeWithoutMsec(ms) : `${Math.round(ms / ONE_MIN)}m`;
 const hourResolutionLabel = (ms: number) => `${Math.round(ms / ONE_HOUR)}h`;
 
 // We want to gracefully transition the tick marks shown as you zoom, but it's
@@ -160,7 +160,7 @@ export const GanttChartTimescale = ({
               transform,
             }}
           >
-            {formatElapsedTime(highlightedMs[1]! - highlightedMs[0]!)}
+            {formatElapsedTimeWithoutMsec(highlightedMs[1]! - highlightedMs[0]!)}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {

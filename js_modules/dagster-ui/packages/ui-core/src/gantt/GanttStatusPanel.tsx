@@ -10,7 +10,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {formatElapsedTime} from '../app/Util';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
@@ -197,7 +197,7 @@ const StepItem = ({
         />
       )}
       <StepLabel>{name}</StepLabel>
-      {step?.start && <Elapsed>{formatElapsedTime(end - step.start)}</Elapsed>}
+      {step?.start && <Elapsed>{formatElapsedTimeWithoutMsec(end - step.start)}</Elapsed>}
     </StepItemContainer>
   );
 };

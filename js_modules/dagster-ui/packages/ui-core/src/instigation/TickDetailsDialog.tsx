@@ -18,7 +18,7 @@ import * as React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {formatElapsedTime} from '../app/Util';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {
@@ -194,7 +194,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
           <Subtitle2>Duration</Subtitle2>
           <div>
             {tick?.endTimestamp
-              ? formatElapsedTime(tick.endTimestamp * 1000 - tick.timestamp * 1000)
+              ? formatElapsedTimeWithoutMsec(tick.endTimestamp * 1000 - tick.timestamp * 1000)
               : '\u2013'}
           </div>
         </Box>
