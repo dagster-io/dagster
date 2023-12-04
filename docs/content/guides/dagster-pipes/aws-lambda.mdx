@@ -122,6 +122,9 @@ def lambda_handler(event, _context):
     with open_dagster_pipes(
         params_loader=PipesMappingParamsLoader(event),
     ) as pipes:
+        # Get some_parameter_value from the event payload
+        some_parameter_value = event['some_parameter_value']
+
         # Stream log message back to Dagster
         pipes.log.info(f"Using some_parameter value: {some_parameter_value}")
 
