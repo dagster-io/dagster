@@ -38,7 +38,7 @@ class PickledObjectS3IOManager(UPathIOManager):
 
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         try:
-            s3_obj = self.s3.get_object(Bucket=self.bucket, Key=str(path))["Body"].read()
+            s3_obj = self.s3.get_object(Bucket=self.bucket, Key=path.as_posix())["Body"].read()
             return pickle.loads(s3_obj)
         except self.s3.exceptions.NoSuchKey:
             raise FileNotFoundError(f"Could not find file {path} in S3 bucket {self.bucket}")
@@ -50,11 +50,11 @@ class PickledObjectS3IOManager(UPathIOManager):
 
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         pickled_obj_bytes = io.BytesIO(pickled_obj)
-        self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, str(path))
+        self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, path.as_posix())
 
     def path_exists(self, path: UPath) -> bool:
         try:
-            self.s3.get_object(Bucket=self.bucket, Key=str(path))
+            self.s3.get_object(Bucket=self.bucket, Key=path.as_posix())
         except self.s3.exceptions.NoSuchKey:
             return False
         return True
@@ -66,7 +66,7 @@ class PickledObjectS3IOManager(UPathIOManager):
         return f"Writing S3 object at: {self._uri_for_path(path)}"
 
     def unlink(self, path: UPath) -> None:
-        self.s3.delete_object(Bucket=self.bucket, Key=str(path))
+        self.s3.delete_object(Bucket=self.bucket, Key=path.as_posix())
 
     def make_directory(self, path: UPath) -> None:
         # It is not necessary to create directories in S3
@@ -80,7 +80,7 @@ class PickledObjectS3IOManager(UPathIOManager):
         return UPath("storage", super().get_op_output_relative_path(context))
 
     def _uri_for_path(self, path: UPath) -> str:
-        return f"s3://{self.bucket}/{path}"
+        return f"s3://{self.bucket}/{path.as_posix()}"
 
 
 class S3PickleIOManager(ConfigurableIOManager):
