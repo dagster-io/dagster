@@ -224,9 +224,9 @@ def direct_invocation_result(
             resource_args=resource_arg_mapping,
         )
         return _type_check_output_wrapper(op_def, result, bound_context)
-    except Exception as e:
+    except Exception:
         bound_context.unbind()
-        raise e
+        raise
 
 
 def _resolve_inputs(
@@ -413,9 +413,9 @@ def _type_check_output_wrapper(
                 # async generators, the errors will only be surfaced here
                 async for event in async_gen:
                     yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
-            except Exception as e:
+            except Exception:
                 context.unbind()
-                raise e
+                raise
 
             for output_def in op_def.output_defs:
                 if (
@@ -443,9 +443,9 @@ def _type_check_output_wrapper(
                 # if the compute function fails, we want to ensure we unbind the context. For
                 # async, the errors will only be surfaced here
                 out = await coro
-            except Exception as e:
+            except Exception:
                 context.unbind()
-                raise e
+                raise
             return _type_check_function_output(op_def, out, context)
 
         return type_check_coroutine(result)
@@ -460,9 +460,9 @@ def _type_check_output_wrapper(
                 # generators, the errors will only be surfaced here
                 for event in gen:
                     yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
-            except Exception as e:
+            except Exception:
                 context.unbind()
-                raise e
+                raise
 
             for output_def in op_def.output_defs:
                 if (
