@@ -1456,7 +1456,7 @@ def test_context_bound_state_async_generator():
     assert ctx._invocation_properties is not None  # noqa: SLF001
 
 
-def test_bound_state_with_error():
+def test_bound_state_with_error_assets():
     @asset
     def throws_error(context):
         assert context.alias == "throws_error"
@@ -1464,17 +1464,81 @@ def test_bound_state_with_error():
 
     ctx = build_asset_context()
 
-    throws_error(ctx)
-
     with pytest.raises(Failure):
         throws_error(ctx)
 
-    # invocation pathway was interrupted, ctx is still in bound state
-    assert ctx._bound_properties is not None  # noqa: SLF001
+    assert ctx._bound_properties is None  # noqa: SLF001
 
     @asset
     def no_error(context):
         assert context.alias == "no_error"
 
-    with pytest.raises(DagsterInvalidInvocationError):
-        no_error(ctx)
+    no_error(ctx)
+
+
+def test_context_bound_state_with_error_ops():
+    @op(out={"first": Out(), "second": Out()})
+    def throws_error(context):
+        assert context._bound_properties is not None  # noqa: SLF001
+        raise Failure("something bad happened!")
+
+    ctx = build_op_context()
+
+    with pytest.raises(Failure):
+        throws_error(ctx)
+
+    assert ctx._bound_properties is None  # noqa: SLF001
+
+
+def test_context_bound_state_with_error_generator():
+    @op(out={"first": Out(), "second": Out()})
+    def generator(context):
+        assert context._bound_properties is not None  # noqa: SLF001
+        yield Output("one", output_name="first")
+        raise Failure("something bad happened!")
+
+    ctx = build_op_context()
+
+    with pytest.raises(Failure):
+        list(generator(ctx))
+
+    assert ctx._bound_properties is None  # noqa: SLF001
+    assert ctx._invocation_properties is not None  # noqa: SLF001
+
+
+def test_context_bound_state_with_error_async():
+    @asset
+    async def async_asset(context):
+        assert context._bound_properties is not None  # noqa: SLF001
+        await asyncio.sleep(0.01)
+        raise Failure("something bad happened!")
+
+    ctx = build_asset_context()
+
+    with pytest.raises(Failure):
+        asyncio.run(async_asset(ctx))
+
+    assert ctx._bound_properties is None  # noqa: SLF001
+    assert ctx._invocation_properties is not None  # noqa: SLF001
+
+
+def test_context_bound_state_with_error_async_generator():
+    @op(out={"first": Out(), "second": Out()})
+    async def async_generator(context):
+        assert context._bound_properties is not None  # noqa: SLF001
+        yield Output("one", output_name="first")
+        await asyncio.sleep(0.01)
+        raise Failure("something bad happened!")
+
+    ctx = build_op_context()
+
+    async def get_results():
+        res = []
+        async for output in async_generator(ctx):
+            res.append(output)
+        return res
+
+    with pytest.raises(Failure):
+        asyncio.run(get_results())
+
+    assert ctx._bound_properties is None  # noqa: SLF001

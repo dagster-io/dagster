@@ -206,20 +206,27 @@ def direct_invocation_result(
         ),
     )
 
-    input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
+    try:
+        # if the compute function fails, we want to ensure we unbind the context. This
+        # try-except handles "vanilla" asset and op invocation (generators and async handled in
+        # _type_check_output_wrapper)
 
-    result = invoke_compute_fn(
-        fn=compute_fn.decorated_fn,
-        context=bound_context,
-        kwargs=input_dict,
-        context_arg_provided=compute_fn.has_context_arg(),
-        config_arg_cls=(
-            compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
-        ),
-        resource_args=resource_arg_mapping,
-    )
+        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
 
-    return _type_check_output_wrapper(op_def, result, bound_context)
+        result = invoke_compute_fn(
+            fn=compute_fn.decorated_fn,
+            context=bound_context,
+            kwargs=input_dict,
+            context_arg_provided=compute_fn.has_context_arg(),
+            config_arg_cls=(
+                compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
+            ),
+            resource_args=resource_arg_mapping,
+        )
+        return _type_check_output_wrapper(op_def, result, bound_context)
+    except Exception as e:
+        bound_context.unbind()
+        raise e
 
 
 def _resolve_inputs(
@@ -401,8 +408,14 @@ def _type_check_output_wrapper(
         async def to_gen(async_gen):
             outputs_seen = set()
 
-            async for event in async_gen:
-                yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            try:
+                # if the compute function fails, we want to ensure we unbind the context. For
+                # async generators, the errors will only be surfaced here
+                async for event in async_gen:
+                    yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            except Exception as e:
+                context.unbind()
+                raise e
 
             for output_def in op_def.output_defs:
                 if (
@@ -426,7 +439,13 @@ def _type_check_output_wrapper(
     elif inspect.iscoroutine(result):
 
         async def type_check_coroutine(coro):
-            out = await coro
+            try:
+                # if the compute function fails, we want to ensure we unbind the context. For
+                # async, the errors will only be surfaced here
+                out = await coro
+            except Exception as e:
+                context.unbind()
+                raise e
             return _type_check_function_output(op_def, out, context)
 
         return type_check_coroutine(result)
@@ -436,8 +455,14 @@ def _type_check_output_wrapper(
 
         def type_check_gen(gen):
             outputs_seen = set()
-            for event in gen:
-                yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            try:
+                # if the compute function fails, we want to ensure we unbind the context. For
+                # generators, the errors will only be surfaced here
+                for event in gen:
+                    yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            except Exception as e:
+                context.unbind()
+                raise e
 
             for output_def in op_def.output_defs:
                 if (
