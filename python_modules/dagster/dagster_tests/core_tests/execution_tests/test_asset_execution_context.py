@@ -1,4 +1,3 @@
-import inspect
 import warnings
 
 import pytest
@@ -35,6 +34,7 @@ def test_deprecation_warnings():
     # If the method should not be deprecated for AssetExecutionContext, please still add the same method
     # to AssetExecutionContext and add the method name to asset_context_not_deprecated
 
+    # This list maintains all methods on OpExecutionContext that are not deprecated on AssetExecutionContext
     asset_context_not_deprecated = [
         "add_output_metadata",
         "asset_check_spec",
@@ -112,77 +112,30 @@ def test_deprecation_warnings():
         assert received_info.additional_warn_text == expected_info["additional_warn_text"]
         assert received_info.subject == expected_info["subject"]
 
-    @asset
-    def test_context(context: AssetExecutionContext):
-        asset_context = context
-        op_context = context.op_execution_context
+    for attr in dir(OpExecutionContext):
+        if attr[:2] == "__" or attr in other_ignores:
+            continue
+        if not hasattr(AssetExecutionContext, attr):
+            raise Exception(
+                f"Property {attr} on OpExecutionContext does not have an implementation on"
+                " AssetExecutionContext. All properties on OpExecutionContext must be"
+                " re-implemented on AssetExecutionContext with appropriate deprecation"
+                " warnings. See the class implementation of AssetExecutionContext for more details."
+            )
 
-        op_context_properties = []
+        asset_context_attr = getattr(AssetExecutionContext, attr)
 
-        for attr in dir(OpExecutionContext):
-            if isinstance(getattr(OpExecutionContext, attr), property):
-                op_context_properties.append(attr)
-                if attr in asset_context_not_deprecated:
-                    try:
-                        getattr(AssetExecutionContext, attr)
-                    except Exception:
-                        raise Exception(
-                            f"Property {attr} on OpExecutionContext does not have an implementation on"
-                            " AssetExecutionContext. All methods on OpExecutionContext must be"
-                            " re-implemented on AssetExecutionContext See the class implementation of"
-                            " AssetExecutionContext for more details."
-                        )
-                else:
-                    try:
-                        deprecation_info = getattr(  # noqa: SLF001
-                            AssetExecutionContext, attr
-                        ).fget._deprecated
-
-                    except Exception:
-                        raise Exception(
-                            f"Property {attr} on OpExecutionContext does not have an implementation on"
-                            " AssetExecutionContext. All methods on OpExecutionContext must be"
-                            " re-implemented on AssetExecutionContext with appropriate deprecation"
-                            " warnings. See the class implementation of AssetExecutionContext for more"
-                            " details."
-                        )
-
-                    expected_deprecation_args = _get_deprecation_kwargs(attr)
-                    assert_deprecation_messages_as_expected(
-                        deprecation_info, expected_deprecation_args
-                    )
-
-        for attr in dir(op_context):
-            if (
-                attr in asset_context_not_deprecated
-                or attr[:2] == "__"
-                or attr in op_context_properties
-                or attr in other_ignores
-            ):
-                continue
-            if inspect.ismethod(getattr(op_context, attr)):
-                assert attr in dir(asset_context)
-                try:
-                    deprecation_info = getattr(asset_context, attr)._deprecated  # noqa: SLF001
-                except Exception:
-                    raise Exception(
-                        f"Method {attr} on OpExecutionContext does not have an implementation on"
-                        " AssetExecutionContext. All methods on OpExecutionContext must be"
-                        " re-implemented on AssetExecutionContext with appropriate deprecation"
-                        " warnings. See the class implementation of AssetExecutionContext for more"
-                        " details."
-                    )
-
-                expected_deprecation_args = _get_deprecation_kwargs(attr)
-                assert_deprecation_messages_as_expected(deprecation_info, expected_deprecation_args)
-            else:
+        if attr not in asset_context_not_deprecated:
+            if not hasattr(asset_context_attr.fget, "_deprecated"):
                 raise Exception(
-                    f"Method {attr} on OpExecutionContext not accounted for in AssetExecutionContext deprecation"
-                    f" test. Ensure that the method {attr} exists on AssetExecutionContext, or is explicitly ignored in"
-                    " the test."
+                    f"Property {attr} on OpExecutionContext is implemented but not deprecated on"
+                    " AssetExecutionContext. If this in intended, update asset_context_not_deprecated."
+                    f" Otherwise, add a deprecation warning to {attr}."
                 )
 
-    materialize([test_context])
+            deprecation_info = asset_context_attr.fget._deprecated  # noqa: SLF001
+            expected_deprecation_args = _get_deprecation_kwargs(attr)
+            assert_deprecation_messages_as_expected(deprecation_info, expected_deprecation_args)
 
 
 def test_instance_check():
