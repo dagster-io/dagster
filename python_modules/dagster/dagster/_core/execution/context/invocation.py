@@ -3,7 +3,6 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -66,9 +65,22 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class BoundProperties:
-    def __init__(
-        self,
+class BoundProperties(
+    NamedTuple(
+        "_BoundProperties",
+        [
+            ("op_def", OpDefinition),
+            ("tags", Mapping[Any, Any]),
+            ("hook_defs", Optional[AbstractSet[HookDefinition]]),
+            ("alias", str),
+            ("assets_def", Optional[AssetsDefinition]),
+            ("resources", Resources),
+            ("op_config", Any),
+        ],
+    )
+):
+    def __new__(
+        cls,
         op_def: OpDefinition,
         tags: Mapping[Any, Any],
         hook_defs: Optional[AbstractSet[HookDefinition]],
@@ -77,40 +89,116 @@ class BoundProperties:
         resources: Resources,
         op_config: Any,
     ):
-        """Maintains the properties of the context that are provided at bind time.
-        This class is not implemented as a NamedTuple because requires_typed_event_stream
-        and type_event_stream_error_message should be mutable.
-        """
-        self.op_def = check.inst_param(op_def, "op_def", OpDefinition)
-        self.tags = check.dict_param(tags, "tags")
-        self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
-        self.alias = check.str_param(alias, "alias")
-        self.assets_def = check.opt_inst_param(assets_def, "assets_def", AssetsDefinition)
-        self.resources = check.inst_param(resources, "resources", Resources)
-        self.op_config = op_config
-        self.requires_typed_event_stream = False
-        self.typed_event_stream_error_message = None
+        """Maintains the properties of the context that are provided at bind time."""
+
+        def __new__(cls):
+            return super(BoundProperties, cls).__new__(
+                cls,
+                op_def=check.inst_param(op_def, "op_def", OpDefinition),
+                tags=check.dict_param(tags, "tags"),
+                hook_defs=check.opt_set_param(hook_defs, "hook_defs", HookDefinition),
+                alias=check.str_param(alias, "alias"),
+                assets_def=check.opt_inst_param(assets_def, "assets_def", AssetsDefinition),
+                resources=check.inst_param(resources, "resources", Resources),
+                op_config=op_config,
+            )
 
 
-class InvocationProperties(
-    NamedTuple(
-        "_InvocationProperties",
-        [
-            ("user_events", List[UserEvent]),
-            ("seen_outputs", Dict[str, Union[Set[str], str]]),
-            ("output_metadata", Dict[str, Any]),
-        ],
-    )
-):
+class InvocationProperties:
     """Maintains information about the invocation that is updated during execution time. This information
     needs to be available to the user once invocation is complete, so that they can assert on events and
     outputs. It needs to be cleared before the context is used for another invocation.
     """
 
-    def __new__(cls):
-        return super(InvocationProperties, cls).__new__(
-            cls, user_events=[], seen_outputs={}, output_metadata={}
+    def __init__(self):
+        self.user_events = []
+        self.seen_outputs = {}
+        self.output_metadata = {}
+        self.requires_typed_event_stream = False
+        self.typed_event_stream_error_message: Optional[str] = None
+
+    def log_event(self, event: UserEvent) -> None:
+        check.inst_param(
+            event,
+            "event",
+            (AssetMaterialization, AssetObservation, ExpectationResult),
         )
+        self.user_events.append(event)
+
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        if mapping_key:
+            if output_name not in self.seen_outputs:
+                self.seen_outputs[output_name] = set()
+            cast(Set[str], self.seen_outputs[output_name]).add(mapping_key)
+        else:
+            self.seen_outputs[output_name] = "seen"
+
+    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+        if mapping_key:
+            return (
+                output_name in self.seen_outputs and mapping_key in self.seen_outputs[output_name]
+            )
+        return output_name in self.seen_outputs
+
+    def add_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        op_def: OpDefinition,
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+        metadata = check.mapping_param(metadata, "metadata", key_type=str)
+        output_name = check.opt_str_param(output_name, "output_name")
+        mapping_key = check.opt_str_param(mapping_key, "mapping_key")
+
+        if output_name is None and len(op_def.output_defs) == 1:
+            output_def = op_def.output_defs[0]
+            output_name = output_def.name
+        elif output_name is None:
+            raise DagsterInvariantViolationError(
+                "Attempted to log metadata without providing output_name, but multiple outputs"
+                " exist. Please provide an output_name to the invocation of"
+                " `context.add_output_metadata`."
+            )
+        else:
+            output_def = op_def.output_def_named(output_name)
+
+        if self.has_seen_output(output_name, mapping_key):
+            output_desc = (
+                f"output '{output_def.name}'"
+                if not mapping_key
+                else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
+            )
+            raise DagsterInvariantViolationError(
+                f"In {op_def.node_type_str} '{op_def.name}', attempted to log output"
+                f" metadata for {output_desc} which has already been yielded. Metadata must be"
+                " logged before the output is yielded."
+            )
+        if output_def.is_dynamic and not mapping_key:
+            raise DagsterInvariantViolationError(
+                f"In {op_def.node_type_str} '{op_def.name}', attempted to log metadata"
+                f" for dynamic output '{output_def.name}' without providing a mapping key. When"
+                " logging metadata for a dynamic output, it is necessary to provide a mapping key."
+            )
+
+        output_name = output_def.name
+        if output_name in self.output_metadata:
+            if not mapping_key or mapping_key in self.output_metadata[output_name]:
+                raise DagsterInvariantViolationError(
+                    f"In {op_def.node_type_str} '{op_def.name}', attempted to log"
+                    f" metadata for output '{output_name}' more than once."
+                )
+        if mapping_key:
+            if output_name not in self.output_metadata:
+                self.output_metadata[output_name] = {}
+            self.output_metadata[output_name][mapping_key] = metadata
+
+        else:
+            self.output_metadata[output_name] = metadata
+
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
+        self.requires_typed_event_stream = True
+        self.typed_event_stream_error_message = error_message
 
 
 class DirectInvocationOpExecutionContext(OpExecutionContext):
@@ -512,29 +600,16 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
     def log_event(self, event: UserEvent) -> None:
         self._check_bound(fn_name="log_event", fn_type="method")
-        check.inst_param(
-            event,
-            "event",
-            (AssetMaterialization, AssetObservation, ExpectationResult),
-        )
-        self._invocation_properties.user_events.append(event)
+        self._invocation_properties.log_event(event)
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         self._check_bound(fn_name="observe_output", fn_type="method")
-        if mapping_key:
-            if output_name not in self._invocation_properties.seen_outputs:
-                self._invocation_properties.seen_outputs[output_name] = set()
-            cast(Set[str], self._invocation_properties.seen_outputs[output_name]).add(mapping_key)
-        else:
-            self._invocation_properties.seen_outputs[output_name] = "seen"
+        self._invocation_properties.observe_output(output_name=output_name, mapping_key=mapping_key)
 
     def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
-        if mapping_key:
-            return (
-                output_name in self._invocation_properties.seen_outputs
-                and mapping_key in self._invocation_properties.seen_outputs[output_name]
-            )
-        return output_name in self._invocation_properties.seen_outputs
+        return self._invocation_properties.has_seen_output(
+            output_name=output_name, mapping_key=mapping_key
+        )
 
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         self._check_bound(fn_name="asset_partitions_time_window_for_output", fn_type="method")
@@ -587,78 +662,25 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
 
         """
         self._check_bound(fn_name="add_output_metadata", fn_type="method")
-        metadata = check.mapping_param(metadata, "metadata", key_type=str)
-        output_name = check.opt_str_param(output_name, "output_name")
-        mapping_key = check.opt_str_param(mapping_key, "mapping_key")
-
-        if output_name is None and len(self.op_def.output_defs) == 1:
-            output_def = self.op_def.output_defs[0]
-            output_name = output_def.name
-        elif output_name is None:
-            raise DagsterInvariantViolationError(
-                "Attempted to log metadata without providing output_name, but multiple outputs"
-                " exist. Please provide an output_name to the invocation of"
-                " `context.add_output_metadata`."
-            )
-        else:
-            output_def = self.op_def.output_def_named(output_name)
-
-        if self.has_seen_output(output_name, mapping_key):
-            output_desc = (
-                f"output '{output_def.name}'"
-                if not mapping_key
-                else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
-            )
-            raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log output"
-                f" metadata for {output_desc} which has already been yielded. Metadata must be"
-                " logged before the output is yielded."
-            )
-        if output_def.is_dynamic and not mapping_key:
-            raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log metadata"
-                f" for dynamic output '{output_def.name}' without providing a mapping key. When"
-                " logging metadata for a dynamic output, it is necessary to provide a mapping key."
-            )
-
-        output_name = output_def.name
-        if output_name in self._invocation_properties.output_metadata:
-            if (
-                not mapping_key
-                or mapping_key in self._invocation_properties.output_metadata[output_name]
-            ):
-                raise DagsterInvariantViolationError(
-                    f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log"
-                    f" metadata for output '{output_name}' more than once."
-                )
-        if mapping_key:
-            if output_name not in self._invocation_properties.output_metadata:
-                self._invocation_properties.output_metadata[output_name] = {}
-            self._invocation_properties.output_metadata[output_name][mapping_key] = metadata
-
-        else:
-            self._invocation_properties.output_metadata[output_name] = metadata
+        self._invocation_properties.add_output_metadata(
+            metadata=metadata, op_def=self.op_def, output_name=output_name, mapping_key=mapping_key
+        )
 
     # In bound mode no conversion is done on returned values and missing but expected outputs are not
     # allowed.
     @property
     def requires_typed_event_stream(self) -> bool:
-        bound_properties = self._check_bound(
-            fn_name="requires_typed_event_stream", fn_type="property"
-        )
-        return bound_properties.requires_typed_event_stream
+        self._check_bound(fn_name="requires_typed_event_stream", fn_type="property")
+        return self._invocation_properties.requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
-        bound_properties = self._check_bound(
-            fn_name="typed_event_stream_error_message", fn_type="property"
-        )
-        return bound_properties.typed_event_stream_error_message
+        self._check_bound(fn_name="typed_event_stream_error_message", fn_type="property")
+        return self._invocation_properties.typed_event_stream_error_message
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
         self._check_bound(fn_name="set_requires_typed_event_stream", fn_type="method")
-        self._bound_properties.requires_typed_event_stream = True  # type: ignore
-        self._bound_properties.typed_event_stream_error_message = error_message  # type: ignore
+        self._invocation_properties.set_requires_typed_event_stream(error_message=error_message)
 
 
 def _validate_resource_requirements(
