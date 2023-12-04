@@ -20,6 +20,7 @@ import {
   colorLineageNodeBorderSelected,
   colorLineageNodeBorderHover,
   colorLineageNodeBackground,
+  colorPopoverBackground,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
@@ -260,8 +261,7 @@ export const AssetNodeContextMenuWrapper = React.memo(
                   position: 'absolute',
                   top: menuPosition.top,
                   left: menuPosition.left,
-                  backgroundColor: '#fff',
-                  border: '1px solid #ccc',
+                  backgroundColor: colorPopoverBackground(),
                   boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                   zIndex: 10,
                 }}
