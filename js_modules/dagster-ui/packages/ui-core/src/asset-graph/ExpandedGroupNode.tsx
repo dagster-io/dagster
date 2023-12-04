@@ -10,35 +10,49 @@ import {
 import React from 'react';
 import styled from 'styled-components';
 
-import {GroupNodeNameAndRepo} from './CollapsedGroupNode';
+import {GroupNodeNameAndRepo, useGroupNodeContextMenu} from './CollapsedGroupNode';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
 
 export const ExpandedGroupNode = ({
   group,
   minimal,
   onCollapse,
+  preferredJobName,
+  onFilterToGroup,
 }: {
-  group: GroupLayout;
+  group: GroupLayout & {assets: GraphNode[]};
   minimal: boolean;
   onCollapse?: () => void;
+  preferredJobName: string;
+  onFilterToGroup: () => void;
 }) => {
+  const {menu, dialog} = useGroupNodeContextMenu({
+    onFilterToGroup,
+    assets: group.assets,
+    preferredJobName,
+  });
   return (
     <div style={{position: 'relative', width: '100%', height: '100%'}}>
-      <GroupNodeHeaderBox
-        $minimal={minimal}
-        onClick={(e) => {
-          onCollapse?.();
-          e.stopPropagation();
-        }}
-      >
-        <GroupNodeNameAndRepo group={group} minimal={minimal} />
-        {onCollapse && (
-          <Box padding={{vertical: 4}}>
-            <Icon name="unfold_less" />
-          </Box>
-        )}
-      </GroupNodeHeaderBox>
+      <ContextMenuWrapper menu={menu}>
+        <GroupNodeHeaderBox
+          $minimal={minimal}
+          onClick={(e) => {
+            onCollapse?.();
+            e.stopPropagation();
+          }}
+        >
+          <GroupNodeNameAndRepo group={group} minimal={minimal} />
+          {onCollapse && (
+            <Box padding={{vertical: 4}}>
+              <Icon name="unfold_less" />
+            </Box>
+          )}
+        </GroupNodeHeaderBox>
+      </ContextMenuWrapper>
       <GroupOutline $minimal={minimal} />
+      {dialog}
     </div>
   );
 };
