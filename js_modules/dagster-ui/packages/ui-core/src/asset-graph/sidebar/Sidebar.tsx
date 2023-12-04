@@ -245,7 +245,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (indexOfLastSelectedNode !== -1) {
         rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
           align: 'center',
-          smoothScroll: true,
+          behavior: 'auto',
         });
       }
       // Only scroll if the rootNodes changes or the selected node changes
@@ -317,7 +317,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             }}
           >
             <Inner $totalHeight={totalHeight}>
-              {items.map(({index, key, size, start, measureElement}) => {
+              {items.map(({index, key, size, start}) => {
                 const node = renderedNodes[index]!;
                 const isCodelocationNode = 'locationName' in node;
                 const isGroupNode = 'groupName' in node;
@@ -327,8 +327,9 @@ export const AssetGraphExplorerSidebar = React.memo(
                     $height={size}
                     $start={start}
                     key={key}
+                    data-key={key}
                     style={{overflow: 'visible'}}
-                    ref={measureElement}
+                    ref={rowVirtualizer.measureElement}
                   >
                     {row ? (
                       <AssetSidebarNode

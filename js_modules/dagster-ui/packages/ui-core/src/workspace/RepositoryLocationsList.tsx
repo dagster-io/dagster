@@ -18,28 +18,28 @@ interface Props {
 }
 
 export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = React.useRef<HTMLDivElement>(null);
 
-  const rowVirtualizer = useVirtualizer({
+  const virtualizer = useVirtualizer({
     count: codeLocations.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 64,
     overscan: 10,
   });
 
-  const totalHeight = rowVirtualizer.getTotalSize();
-  const items = rowVirtualizer.getVirtualItems();
+  const totalHeight = virtualizer.getTotalSize();
+  const items = virtualizer.getVirtualItems();
 
-  if (loading && !items.length) {
+  if (loading && !codeLocations.length) {
     return (
       <Box flex={{gap: 8, alignItems: 'center'}} padding={{horizontal: 24}}>
         <Spinner purpose="body-text" />
-        <div>Loading...</div>
+        <div>Loading…</div>
       </Box>
     );
   }
 
-  if (!items.length) {
+  if (!codeLocations.length) {
     if (searchValue) {
       return (
         <Box padding={{vertical: 32}}>
@@ -70,35 +70,35 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
   return (
     <>
       <VirtualizedCodeLocationHeader />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            <DynamicRowContainer $start={items[0]?.start ?? 0}>
-              {items.map(({index, key, measureElement}) => {
-                const row: CodeLocationRowType = codeLocations[index]!;
-                if (row.type === 'error') {
-                  return (
-                    <VirtualizedCodeLocationErrorRow
-                      key={key}
-                      locationNode={row.node}
-                      measure={measureElement}
-                    />
-                  );
-                }
-
+      <Container ref={parentRef}>
+        <Inner $totalHeight={totalHeight}>
+          <DynamicRowContainer $start={items[0]?.start ?? 0}>
+            {items.map(({index, key}) => {
+              const row: CodeLocationRowType = codeLocations[index]!;
+              if (row.type === 'error') {
                 return (
-                  <VirtualizedCodeLocationRow
+                  <VirtualizedCodeLocationErrorRow
                     key={key}
-                    codeLocation={row.codeLocation}
-                    repository={row.repository}
-                    measure={measureElement}
+                    index={index}
+                    locationNode={row.node}
+                    ref={virtualizer.measureElement}
                   />
                 );
-              })}
-            </DynamicRowContainer>
-          </Inner>
-        </Container>
-      </div>
+              }
+
+              return (
+                <VirtualizedCodeLocationRow
+                  key={key}
+                  index={index}
+                  codeLocation={row.codeLocation}
+                  repository={row.repository}
+                  ref={virtualizer.measureElement}
+                />
+              );
+            })}
+          </DynamicRowContainer>
+        </Inner>
+      </Container>
     </>
   );
 };
