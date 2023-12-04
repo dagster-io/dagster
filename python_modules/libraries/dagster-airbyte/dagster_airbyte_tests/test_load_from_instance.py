@@ -50,7 +50,10 @@ def airbyte_instance_fixture(request):
 
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
-@pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
+@pytest.mark.parametrize(
+    "connection_to_group_fn, connection_meta_to_group_fn",
+    [(None, lambda meta: f"{meta.name[0]}_group"), (None, None), (lambda x: f"{x[0]}_group", None)],
+)
 @pytest.mark.parametrize("filter_connection", [True, False])
 @pytest.mark.parametrize(
     "connection_to_asset_key_fn", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
@@ -67,6 +70,7 @@ def airbyte_instance_fixture(request):
 def test_load_from_instance(
     use_normalization_tables,
     connection_to_group_fn,
+    connection_meta_to_group_fn,
     filter_connection,
     connection_to_asset_key_fn,
     connection_to_freshness_policy_fn,
@@ -113,6 +117,7 @@ def test_load_from_instance(
             airbyte_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection else None,
             connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             connection_to_asset_key_fn=connection_to_asset_key_fn,
@@ -126,6 +131,7 @@ def test_load_from_instance(
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_filter=(lambda _: False) if filter_connection else None,
             io_manager_key="test_io_manager",
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
             connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
@@ -219,9 +225,15 @@ def test_load_from_instance(
         [
             ab_assets[0].group_names_by_key.get(AssetKey(t))
             == (
-                connection_to_group_fn("GitHub <> snowflake-ben")
-                if connection_to_group_fn
-                else "github_snowflake_ben"
+                connection_meta_to_group_fn(
+                    AirbyteConnectionMetadata("GitHub <> snowflake-ben", "", False, [])
+                )
+                if connection_meta_to_group_fn
+                else (
+                    connection_to_group_fn("GitHub <> snowflake-ben")
+                    if connection_to_group_fn
+                    else "github_snowflake_ben"
+                )
             )
             for t in tables
         ]

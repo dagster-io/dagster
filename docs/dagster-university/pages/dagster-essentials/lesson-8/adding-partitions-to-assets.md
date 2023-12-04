@@ -78,7 +78,7 @@ To add the partition to the asset:
 After following the steps above, the `taxi_trips_file` asset should look similar to the code snippet below:
 
 ```python
-from .partitions import monthly_partition
+from ..partitions import monthly_partition
 
 @asset(
   partitions_def=monthly_partition

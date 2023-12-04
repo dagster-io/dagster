@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  Colors,
   Group,
   Heading,
   Icon,
@@ -11,6 +10,11 @@ import {
   Spinner,
   Subheading,
   Tag,
+  colorAccentGray,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -24,7 +28,7 @@ import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AllIndividualEventsLink} from './AllIndividualEventsLink';
+import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
@@ -223,8 +227,6 @@ export const AssetPartitionDetail = ({
         )
       : [];
 
-  const prior = latest ? all.slice(all.indexOf(latest)) : all;
-
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
@@ -258,7 +260,7 @@ export const AssetPartitionDetail = ({
             ) : undefined}
           </div>
         ) : (
-          <Heading color={Colors.Gray400}>No partition selected</Heading>
+          <Heading color={colorTextLight()}>No partition selected</Heading>
         )}
         <div style={{flex: 1}} />
       </Box>
@@ -310,11 +312,6 @@ export const AssetPartitionDetail = ({
                 <Icon name="observation" />
               )}
               <Timestamp timestamp={{ms: Number(latest.timestamp)}} />
-              {prior.length > 0 && (
-                <AllIndividualEventsLink hasPartitions hasLineage={hasLineage} events={all}>
-                  {`(${prior.length - 1} prior ${prior.length - 1 === 1 ? 'event' : 'events'})`}
-                </AllIndividualEventsLink>
-              )}
             </Box>
           </Box>
         )}
@@ -345,13 +342,23 @@ export const AssetPartitionDetail = ({
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={Colors.Gray400} />
+                <Icon name="linear_scale" color={colorAccentGray()} />
                 <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
               </Group>
             </Box>
           ) : (
             'None'
           )}
+        </Box>
+        <Box style={{textAlign: 'right'}}>
+          <AllIndividualEventsButton
+            hasPartitions
+            hasLineage={hasLineage}
+            events={all}
+            disabled={all.length === 0}
+          >
+            {`View all historical events (${all.length})`}
+          </AllIndividualEventsButton>
         </Box>
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
@@ -381,9 +388,9 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
 );
 
 const PartitionHeadingTooltipStyle = JSON.stringify({
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
+  background: colorBackgroundLight(),
+  border: `1px solid ${colorBorderDefault()}`,
   fontSize: '18px',
   fontWeight: '600',
-  color: Colors.Dark,
+  color: colorTextDefault(),
 });

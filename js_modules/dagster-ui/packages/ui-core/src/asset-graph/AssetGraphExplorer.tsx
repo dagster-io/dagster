@@ -1,6 +1,5 @@
 import {
   Checkbox,
-  Colors,
   NonIdealState,
   SplitPanelContainer,
   ErrorBoundary,
@@ -9,6 +8,8 @@ import {
   Tooltip,
   TextInputContainer,
   Box,
+  colorKeylineDefault,
+  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import pickBy from 'lodash/pickBy';
@@ -41,7 +42,7 @@ import {Loading} from '../ui/Loading';
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
-import {AssetNode, AssetNodeMinimal} from './AssetNode';
+import {AssetNode, AssetNodeMinimal, AssetNodeContextMenuWrapper} from './AssetNode';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ExpandedGroupNode} from './ExpandedGroupNode';
 import {AssetNodeLink} from './ForeignNode';
@@ -432,11 +433,6 @@ const AssetGraphExplorerWithData = ({
                         : filterEdges(layout.edges, allowGroupsOnlyZoomLevel, scale, assetGraphData)
                     }
                     strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-                    baseColor={
-                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
-                        ? Colors.Gray400
-                        : Colors.KeylineGray
-                    }
                   />
 
                   {Object.values(layout.groups)
@@ -487,6 +483,13 @@ const AssetGraphExplorerWithData = ({
                         return;
                       }
 
+                      const contextMenuProps = {
+                        graphData: fullAssetGraphData,
+                        node: graphNode,
+                        explorerPath,
+                        onChangeExplorerPath,
+                        selectNode: selectNodeById,
+                      };
                       return (
                         <foreignObject
                           {...bounds}
@@ -503,15 +506,20 @@ const AssetGraphExplorerWithData = ({
                           {!graphNode ? (
                             <AssetNodeLink assetKey={{path}} />
                           ) : scale < MINIMAL_SCALE ? (
-                            <AssetNodeMinimal
-                              definition={graphNode.definition}
-                              selected={selectedGraphNodes.includes(graphNode)}
-                            />
+                            <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                              <AssetNodeMinimal
+                                definition={graphNode.definition}
+                                selected={selectedGraphNodes.includes(graphNode)}
+                                height={bounds.height}
+                              />
+                            </AssetNodeContextMenuWrapper>
                           ) : (
-                            <AssetNode
-                              definition={graphNode.definition}
-                              selected={selectedGraphNodes.includes(graphNode)}
-                            />
+                            <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                              <AssetNode
+                                definition={graphNode.definition}
+                                selected={selectedGraphNodes.includes(graphNode)}
+                              />
+                            </AssetNodeContextMenuWrapper>
                           )}
                         </foreignObject>
                       );
@@ -587,6 +595,7 @@ const AssetGraphExplorerWithData = ({
                   ? {selected: selectedDefinitions}
                   : {all: allDefinitionsForMaterialize}
               }
+              showChangedAndMissingOption
             />
           </TopbarWrapper>
         </ErrorBoundary>
@@ -660,11 +669,11 @@ const TopbarWrapper = styled.div`
   left: 0;
   right: 0;
   display: flex;
-  background: white;
+  background: ${colorBackgroundDefault()};
   gap: 12px;
   align-items: center;
   padding: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
 `;
 
 const GraphQueryInputFlexWrap = styled.div`

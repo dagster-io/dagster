@@ -689,7 +689,8 @@ type AssetNode {
   type: DagsterType
   hasMaterializePermission: Boolean!
   hasAssetChecks: Boolean!
-  assetChecksOrError(limit: Int): AssetChecksOrError!
+  assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
+  currentAutoMaterializeEvaluationId: Int
 }
 
 type MaterializationUpstreamDataVersion {
@@ -712,6 +713,12 @@ enum BackfillPolicyType {
 type AssetDependency {
   asset: AssetNode!
   inputName: String!
+  partitionMapping: PartitionMapping
+}
+
+type PartitionMapping {
+  className: String!
+  description: String!
 }
 
 type AssetFreshnessInfo {
@@ -865,6 +872,7 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
+  jobNames: [String!]!
   executionForLatestMaterialization: AssetCheckExecution
   canExecuteIndividually: AssetCheckCanExecuteIndividually!
 }
@@ -2310,6 +2318,7 @@ type Instance {
   info: String
   runLauncher: RunLauncher
   runQueuingSupported: Boolean!
+  runQueueConfig: RunQueueConfig
   executablePath: String!
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
@@ -2317,6 +2326,12 @@ type Instance {
   autoMaterializePaused: Boolean!
   supportsConcurrencyLimits: Boolean!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
+  concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
+}
+
+type RunQueueConfig {
+  maxConcurrentRuns: Int!
+  tagConcurrencyLimitsYaml: String
 }
 
 type ConcurrencyKeyInfo {
@@ -2378,6 +2393,7 @@ type RunRequest {
   tags: [PipelineTag!]!
   runConfigYaml: String!
   assetSelection: [AssetKey!]
+  jobName: String
 }
 
 type DryRunInstigationTicks {
@@ -2399,7 +2415,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
-  tick(timestamp: Float): InstigationTick
+  tick(timestamp: Float, tickId: Int): InstigationTick
   ticks(
     dayRange: Int
     dayOffset: Int
@@ -2441,6 +2457,7 @@ union InstigationStatesOrError = InstigationStates | PythonError
 
 type InstigationTick {
   id: ID!
+  tickId: ID!
   status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
@@ -2592,6 +2609,14 @@ type AssetMetadataEntry implements MetadataEntry {
   assetKey: AssetKey!
 }
 
+type JobMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  jobName: String!
+  repositoryName: String
+  locationName: String!
+}
+
 type NullMetadataEntry implements MetadataEntry {
   label: String!
   description: String
@@ -2688,7 +2713,7 @@ type PartitionKeyRange {
 
 type AssetBackfillData {
   assetBackfillStatuses: [AssetBackfillStatus!]!
-  rootTargetedPartitions: AssetBackfillTargetPartitions!
+  rootTargetedPartitions: AssetBackfillTargetPartitions
 }
 
 union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
@@ -3292,6 +3317,7 @@ type CapturedLogsMetadata {
 
 type TestFields {
   alwaysException: String
+  asyncString: String
 }
 
 union AutoMaterializeAssetEvaluationRecordsOrError =
@@ -3300,7 +3326,6 @@ union AutoMaterializeAssetEvaluationRecordsOrError =
 
 type AutoMaterializeAssetEvaluationRecords {
   records: [AutoMaterializeAssetEvaluationRecord!]!
-  currentEvaluationId: Int
 }
 
 type AutoMaterializeAssetEvaluationRecord {
@@ -3417,6 +3442,7 @@ type Mutation {
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   freeConcurrencySlotsForRun(runId: String!): Boolean!
+  freeConcurrencySlots(runId: String!, stepKey: String): Boolean!
 }
 
 input ReexecutionParams {

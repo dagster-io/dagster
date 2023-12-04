@@ -521,7 +521,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         self,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
@@ -535,7 +535,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
     ):
         self._key_prefix = key_prefix
         self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
-        self._connection_to_group_fn = connection_to_group_fn
+        self._connection_meta_to_group_fn = connection_meta_to_group_fn
         self._connection_to_io_manager_key_fn = connection_to_io_manager_key_fn
         self._connection_filter = connection_filter
         self._connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] = (
@@ -585,8 +585,8 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 },
                 asset_key_prefix=self._key_prefix,
                 group_name=(
-                    self._connection_to_group_fn(connection.name)
-                    if self._connection_to_group_fn
+                    self._connection_meta_to_group_fn(connection)
+                    if self._connection_meta_to_group_fn
                     else None
                 ),
                 io_manager_key=(
@@ -624,7 +624,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         workspace_id: Optional[str],
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
@@ -639,7 +639,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         super().__init__(
             key_prefix=key_prefix,
             create_assets_for_normalization_tables=create_assets_for_normalization_tables,
-            connection_to_group_fn=connection_to_group_fn,
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=connection_filter,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
@@ -725,7 +725,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         workspace_id: Optional[str],
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_directories: Optional[Sequence[str]],
@@ -740,7 +740,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         super().__init__(
             key_prefix=key_prefix,
             create_assets_for_normalization_tables=create_assets_for_normalization_tables,
-            connection_to_group_fn=connection_to_group_fn,
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=connection_filter,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
@@ -803,6 +803,9 @@ def load_assets_from_airbyte_instance(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_meta_to_group_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[str]]
+    ] = None,
     io_manager_key: Optional[str] = None,
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
@@ -833,6 +836,9 @@ def load_assets_from_airbyte_instance(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+        connection_meta_to_group_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]]): Function which
+            returns an asset group name for a given Airbyte connection metadata. If None and connection_to_group_fn
+            is None, no groups will be created
         io_manager_key (Optional[str]): The I/O manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
@@ -901,12 +907,22 @@ def load_assets_from_airbyte_instance(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
+    check.invariant(
+        not connection_meta_to_group_fn
+        or not connection_to_group_fn
+        or connection_to_group_fn == _clean_name,
+        "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
+    )
+
+    if not connection_meta_to_group_fn and connection_to_group_fn:
+        connection_meta_to_group_fn = lambda meta: connection_to_group_fn(meta.name)
+
     return AirbyteInstanceCacheableAssetsDefinition(
         airbyte_resource_def=airbyte,
         workspace_id=workspace_id,
         key_prefix=key_prefix,
         create_assets_for_normalization_tables=create_assets_for_normalization_tables,
-        connection_to_group_fn=connection_to_group_fn,
+        connection_meta_to_group_fn=connection_meta_to_group_fn,
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connection_filter=connection_filter,
         connection_to_asset_key_fn=connection_to_asset_key_fn,
@@ -922,6 +938,9 @@ def load_assets_from_airbyte_project(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_meta_to_group_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[str]]
+    ] = None,
     io_manager_key: Optional[str] = None,
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
@@ -953,6 +972,9 @@ def load_assets_from_airbyte_project(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+        connection_meta_to_group_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]]): Function
+            which returns an asset group name for a given Airbyte connection metadata. If None and connection_to_group_fn
+            is None, no groups will be created. Defaults to None.
         io_manager_key (Optional[str]): The I/O manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
@@ -1007,12 +1029,22 @@ def load_assets_from_airbyte_project(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
+    check.invariant(
+        not connection_meta_to_group_fn
+        or not connection_to_group_fn
+        or connection_to_group_fn == _clean_name,
+        "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
+    )
+
+    if not connection_meta_to_group_fn and connection_to_group_fn:
+        connection_meta_to_group_fn = lambda meta: connection_to_group_fn(meta.name)
+
     return AirbyteYAMLCacheableAssetsDefinition(
         project_dir=project_dir,
         workspace_id=workspace_id,
         key_prefix=key_prefix,
         create_assets_for_normalization_tables=create_assets_for_normalization_tables,
-        connection_to_group_fn=connection_to_group_fn,
+        connection_meta_to_group_fn=connection_meta_to_group_fn,
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connection_filter=connection_filter,
         connection_directories=connection_directories,

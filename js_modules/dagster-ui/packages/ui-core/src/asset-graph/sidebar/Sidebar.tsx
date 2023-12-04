@@ -1,4 +1,11 @@
-import {Box, Button, Colors, Icon, ButtonGroup, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Icon,
+  ButtonGroup,
+  Tooltip,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
@@ -10,7 +17,7 @@ import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
-import {Node} from './Node';
+import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
@@ -186,7 +193,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const rowVirtualizer = useVirtualizer({
       count: renderedNodes.length,
       getScrollElement: () => containerRef.current,
-      estimateSize: () => 28,
+      estimateSize: () => 32,
       overscan: 10,
     });
 
@@ -311,6 +318,12 @@ export const AssetGraphExplorerSidebar = React.memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedNode, rootNodes, rowVirtualizer]);
 
+    React.useLayoutEffect(() => {
+      // Fix a weird issue where the sidebar doesn't measure the full height.
+      const id = setInterval(rowVirtualizer.measure, 1000);
+      return () => clearInterval(id);
+    }, [rowVirtualizer.measure]);
+
     return (
       <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
         <div
@@ -320,7 +333,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             gap: '6px',
             padding: '12px 24px',
             paddingRight: 12,
-            borderBottom: `1px solid ${Colors.KeylineGray}`,
+            borderBottom: `1px solid ${colorKeylineDefault()}`,
           }}
         >
           <ButtonGroupWrapper>
@@ -359,7 +372,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                 nextIndex = indexOfLastSelectedNodeRef.current + (e.code === 'ArrowDown' ? 1 : -1);
                 indexOfLastSelectedNodeRef.current = nextIndex;
                 e.preventDefault();
-                const nextNode = renderedNodes[nextIndex % renderedNodes.length]!;
+                const nextNode =
+                  renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
                 setSelectedNode(nextNode);
                 selectNode(e, nextNode.id);
               } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
@@ -395,7 +409,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                     ref={measureElement}
                   >
                     {row ? (
-                      <Node
+                      <AssetSidebarNode
                         viewType={viewType}
                         isOpen={openNodes.has(nodePathKey(node))}
                         graphData={graphData}

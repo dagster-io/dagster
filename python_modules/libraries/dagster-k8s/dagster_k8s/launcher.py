@@ -362,16 +362,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
         namespace = container_context.namespace
-        user_defined_k8s_config = container_context.run_k8s_config
-        container_name = user_defined_k8s_config.container_config.get("name", "dagster")
         pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
         full_msg = ""
         try:
             pod_debug_info = [
-                self._api_client.get_pod_debug_info(
-                    pod_name, namespace, container_name=container_name
-                )
-                for pod_name in pod_names
+                self._api_client.get_pod_debug_info(pod_name, namespace) for pod_name in pod_names
             ]
             full_msg = "\n".join(pod_debug_info)
         except Exception:

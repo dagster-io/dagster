@@ -244,6 +244,7 @@ from dagster._core.definitions.materialize import (
 from dagster._core.definitions.metadata import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
+    DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,

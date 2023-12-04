@@ -21,10 +21,10 @@ import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
-import {FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION} from '../instance/InstanceConcurrency';
+import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
 import {
-  FreeConcurrencySlotsForRunMutation,
-  FreeConcurrencySlotsForRunMutationVariables,
+  FreeConcurrencySlotsMutation,
+  FreeConcurrencySlotsMutationVariables,
 } from '../instance/types/InstanceConcurrency.types';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -51,9 +51,9 @@ export const RunConfigDialog = ({run, isJob}: {run: RunFragment; isJob: boolean}
   const history = useHistory();
 
   const [freeSlots] = useMutation<
-    FreeConcurrencySlotsForRunMutation,
-    FreeConcurrencySlotsForRunMutationVariables
-  >(FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION);
+    FreeConcurrencySlotsMutation,
+    FreeConcurrencySlotsMutationVariables
+  >(FREE_CONCURRENCY_SLOTS_MUTATION);
 
   const copyConfig = async () => {
     copy(runConfigYaml);
@@ -66,7 +66,7 @@ export const RunConfigDialog = ({run, isJob}: {run: RunFragment; isJob: boolean}
 
   const freeConcurrencySlots = async () => {
     const resp = await freeSlots({variables: {runId: run.id}});
-    if (resp.data?.freeConcurrencySlotsForRun) {
+    if (resp.data?.freeConcurrencySlots) {
       await showSharedToaster({
         intent: 'success',
         icon: 'check_circle',

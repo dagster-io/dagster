@@ -34,24 +34,6 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagInstanceConcurrencyLimits,
   },
   {
-    key: 'Experimental longest path DAG algorithm (faster)',
-    flagType: FeatureFlag.flagLongestPathDag,
-    label: (
-      <Box flex={{direction: 'column'}}>
-        Experimental longest path asset graph algorithm (faster)
-        <div>
-          <a
-            href="https://github.com/dagster-io/dagster/discussions/17240"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Learn more
-          </a>
-        </div>
-      </Box>
-    ),
-  },
-  {
     key: 'Display resources in navigation sidebar',
     flagType: FeatureFlag.flagSidebarResources,
   },

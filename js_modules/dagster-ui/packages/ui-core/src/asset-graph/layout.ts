@@ -35,7 +35,6 @@ const MARGIN = 100;
 
 export type LayoutAssetGraphOptions = {
   horizontalDAGs: boolean;
-  longestPath: boolean;
 };
 
 export const layoutAssetGraph = (
@@ -44,7 +43,7 @@ export const layoutAssetGraph = (
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
-  const ranker = opts.longestPath ? 'longest-path' : 'tight-tree';
+  const ranker = 'tight-tree';
 
   g.setGraph(
     opts.horizontalDAGs
@@ -286,22 +285,20 @@ export const getAssetNodeDimensions = (def: {
 }) => {
   const width = 265;
 
-  if (def.isSource && !def.isObservable) {
-    return {width, height: 102};
+  let height = 100; // top tags area + name + description
+
+  if (def.isSource && def.isObservable) {
+    height += 30; // status row
+  } else if (def.isSource) {
+    height += 0; // no status row
   } else {
-    let height = 100; // top tags area + name + description
-
-    if (def.isSource) {
-      height += 30; // last observed
-    } else {
-      height += 26; // status row
-      if (def.isPartitioned) {
-        height += 40;
-      }
+    height += 26; // status row
+    if (def.isPartitioned) {
+      height += 40;
     }
-
-    height += 30; // tags beneath
-
-    return {width, height};
   }
+
+  height += 30; // tags beneath
+
+  return {width, height};
 };

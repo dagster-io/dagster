@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Sequence, Union, cast
 
 import dagster._check as check
 import graphene
@@ -132,6 +132,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
+    jobNames = non_null_list(graphene.String)
     executionForLatestMaterialization = graphene.Field(GrapheneAssetCheckExecution)
     canExecuteIndividually = graphene.NonNull(GrapheneAssetCheckCanExecuteIndividually)
 
@@ -156,6 +157,9 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     def resolve_description(self, _) -> Optional[str]:
         return self._asset_check.description
+
+    def resolve_jobNames(self, _) -> Sequence[str]:
+        return self._asset_check.job_names
 
     def resolve_executionForLatestMaterialization(
         self, _graphene_info: ResolveInfo

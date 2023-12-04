@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Popover} from '@dagster-io/ui-components';
+import {Box, Caption, Popover, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -16,7 +16,7 @@ export type TagAction =
     };
 
 export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]}) => (
-  <ActionContainer background={Colors.Gray900} flex={{direction: 'row'}}>
+  <ActionContainer background={CoreColors.Gray900} flex={{direction: 'row'}}>
     {actions.map((action, ii) =>
       'to' in action ? (
         <Link to={action.to} key={ii}>
@@ -62,14 +62,14 @@ const ActionContainer = styled(Box)`
 
 const TagButton = styled.button`
   border: none;
-  background: ${Colors.Dark};
-  color: ${Colors.Gray100};
+  background: ${CoreColors.Gray900};
+  color: ${CoreColors.Gray100};
   cursor: pointer;
   padding: 8px 12px;
   text-align: left;
 
   :not(:last-child) {
-    box-shadow: -1px 0 0 inset ${Colors.Gray600};
+    box-shadow: -1px 0 0 inset ${CoreColors.Gray600};
   }
 
   :focus {
@@ -77,7 +77,7 @@ const TagButton = styled.button`
   }
 
   :hover {
-    background-color: ${Colors.Gray800};
-    color: ${Colors.White};
+    background-color: ${CoreColors.Gray800};
+    color: ${CoreColors.White};
   }
 `;

@@ -1,12 +1,22 @@
-import {Box, Caption, Colors, CursorPaginationControls} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  CursorPaginationControls,
+  colorBackgroundBlue,
+  colorBackgroundBlueHover,
+  colorBackgroundDefault,
+  colorBackgroundDefaultHover,
+  colorBackgroundLight,
+  colorKeylineDefault,
+  colorTextBlue,
+  colorTextDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {compactNumber} from '../../ui/formatters';
 
 import {EvaluationCounts} from './EvaluationCounts';
-import {EvaluationOrEmpty} from './types';
 import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 
@@ -18,7 +28,6 @@ interface Props extends ListProps {
 export const AutomaterializeLeftPanel = ({
   assetHasDefinedPartitions,
   evaluations,
-  evaluationsIncludingEmpty,
   paginationProps,
   onSelectEvaluation,
   selectedEvaluation,
@@ -27,7 +36,7 @@ export const AutomaterializeLeftPanel = ({
     <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
       <AutomaterializeLeftList
         assetHasDefinedPartitions={assetHasDefinedPartitions}
-        evaluationsIncludingEmpty={evaluationsIncludingEmpty}
+        evaluations={evaluations}
         onSelectEvaluation={onSelectEvaluation}
         selectedEvaluation={selectedEvaluation}
       />
@@ -42,18 +51,13 @@ export const AutomaterializeLeftPanel = ({
 
 interface ListProps {
   assetHasDefinedPartitions: boolean;
-  evaluationsIncludingEmpty: EvaluationOrEmpty[];
-  onSelectEvaluation: (evaluation: EvaluationOrEmpty) => void;
-  selectedEvaluation?: EvaluationOrEmpty;
+  evaluations: AutoMaterializeEvaluationRecordItemFragment[];
+  onSelectEvaluation: (evaluation: AutoMaterializeEvaluationRecordItemFragment) => void;
+  selectedEvaluation?: AutoMaterializeEvaluationRecordItemFragment;
 }
 
 export const AutomaterializeLeftList = (props: ListProps) => {
-  const {
-    assetHasDefinedPartitions,
-    evaluationsIncludingEmpty,
-    onSelectEvaluation,
-    selectedEvaluation,
-  } = props;
+  const {assetHasDefinedPartitions, evaluations, onSelectEvaluation, selectedEvaluation} = props;
 
   return (
     <Box
@@ -61,45 +65,8 @@ export const AutomaterializeLeftList = (props: ListProps) => {
       style={{flex: 1, minHeight: 0, overflowY: 'auto'}}
       flex={{grow: 1, direction: 'column'}}
     >
-      {evaluationsIncludingEmpty.map((evaluation) => {
+      {evaluations.map((evaluation) => {
         const isSelected = selectedEvaluation?.evaluationId === evaluation.evaluationId;
-        if (evaluation.__typename === 'no_conditions_met') {
-          return (
-            <EvaluationListItem
-              key={`skip-${evaluation.evaluationId}`}
-              onClick={() => {
-                onSelectEvaluation(evaluation);
-              }}
-              $selected={isSelected}
-            >
-              <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
-                <div>
-                  {evaluation.startTimestamp ? (
-                    evaluation.amount === 1 ? (
-                      '1 evaluation'
-                    ) : (
-                      `${compactNumber(evaluation.amount)} evaluations`
-                    )
-                  ) : (
-                    <>
-                      {evaluation.endTimestamp === 'now' ? (
-                        'Before now'
-                      ) : (
-                        <>
-                          Before <TimestampDisplay timestamp={evaluation.endTimestamp} />
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-                <Caption color={isSelected ? Colors.Blue700 : Colors.Gray700}>
-                  No conditions met
-                </Caption>
-              </Box>
-            </EvaluationListItem>
-          );
-        }
-
         const {numRequested, numSkipped, numDiscarded} = evaluation;
 
         return (
@@ -133,9 +100,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
 const PaginationWrapper = styled.div`
   position: sticky;
   bottom: 0;
-  background: ${Colors.White};
-  border-right: 1px solid ${Colors.KeylineGray};
-  box-shadow: inset 0 1px ${Colors.KeylineGray};
+  background: ${colorBackgroundLight()};
+  border-right: 1px solid ${colorKeylineDefault()};
+  box-shadow: inset 0 1px ${colorKeylineDefault()};
   margin-top: -1px;
   padding-bottom: 16px;
   padding-top: 16px;
@@ -149,10 +116,11 @@ interface EvaluationListItemProps {
 }
 
 const EvaluationListItem = styled.button<EvaluationListItemProps>`
-  background-color: ${({$selected}) => ($selected ? Colors.Blue50 : Colors.White)};
+  background-color: ${({$selected}) =>
+    $selected ? colorBackgroundBlue() : colorBackgroundDefault()};
   border: none;
   border-radius: 8px;
-  color: ${({$selected}) => ($selected ? Colors.Blue700 : Colors.Dark)};
+  color: ${({$selected}) => ($selected ? colorTextBlue() : colorTextDefault())};
   cursor: pointer;
   margin: 2px 0;
   text-align: left;
@@ -162,7 +130,8 @@ const EvaluationListItem = styled.button<EvaluationListItemProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${({$selected}) => ($selected ? Colors.Blue50 : Colors.Gray10)};
+    background-color: ${({$selected}) =>
+      $selected ? colorBackgroundBlueHover() : colorBackgroundDefaultHover()};
   }
 
   &:focus,

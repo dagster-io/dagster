@@ -13,6 +13,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -38,6 +39,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset_observations,
 )
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.inputs import GraphenePipelineSelector
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
@@ -78,6 +80,7 @@ from .dagster_types import (
 from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
+from .partition_mappings import GraphenePartitionMapping
 from .pipelines.pipeline import (
     GrapheneAssetPartitionStatuses,
     GrapheneDefaultPartitionStatuses,
@@ -116,6 +119,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
 
     asset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
     inputName = graphene.NonNull(graphene.String)
+    partitionMapping = graphene.Field(GraphenePartitionMapping)
 
     def __init__(
         self,
@@ -126,6 +130,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         asset_checks_loader: AssetChecksLoader,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
+        partition_mapping: Optional[PartitionMapping] = None,
     ):
         self._repository_location = check.inst_param(
             repository_location, "repository_location", CodeLocation
@@ -143,6 +148,9 @@ class GrapheneAssetDependency(graphene.ObjectType):
         self._depended_by_loader = check.opt_inst_param(
             depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
         )
+        self._partition_mapping = check.opt_inst_param(
+            partition_mapping, "partition_mapping", PartitionMapping
+        )
         super().__init__(inputName=input_name)
 
     def resolve_asset(self, _graphene_info: ResolveInfo):
@@ -158,6 +166,13 @@ class GrapheneAssetDependency(graphene.ObjectType):
             asset_checks_loader=self._asset_checks_loader,
             materialization_loader=self._latest_materialization_loader,
         )
+
+    def resolve_partitionMapping(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GraphenePartitionMapping]:
+        if self._partition_mapping:
+            return GraphenePartitionMapping(self._partition_mapping)
+        return None
 
 
 class GrapheneAssetLatestInfo(graphene.ObjectType):
@@ -283,7 +298,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     assetChecksOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetChecksOrError),
         limit=graphene.Argument(graphene.Int),
+        pipeline=graphene.Argument(GraphenePipelineSelector),
     )
+    currentAutoMaterializeEvaluationId = graphene.Int()
 
     class Meta:
         name = "AssetNode"
@@ -796,6 +813,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 asset_key=dep.upstream_asset_key,
                 materialization_loader=materialization_loader,
                 asset_checks_loader=asset_checks_loader,
+                partition_mapping=dep.partition_mapping,
             )
             for dep in self._external_asset_node.dependencies
         ]
@@ -831,6 +849,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         if self._external_asset_node.auto_materialize_policy:
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
         return None
+
+    def resolve_currentAutoMaterializeEvaluationId(self, graphene_info):
+        from dagster._daemon.asset_daemon import get_current_evaluation_id
+
+        return get_current_evaluation_id(graphene_info.context.instance)
 
     def resolve_backfillPolicy(
         self, _graphene_info: ResolveInfo
@@ -930,6 +953,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not self._dynamic_partitions_loader:
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
+        partitions_def = (
+            self._external_asset_node.partitions_def_data.get_partitions_definition()
+            if self._external_asset_node.partitions_def_data
+            else None
+        )
+
         (
             materialized_partition_subset,
             failed_partition_subset,
@@ -938,11 +967,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
-            (
-                self._external_asset_node.partitions_def_data.get_partitions_definition()
-                if self._external_asset_node.partitions_def_data
-                else None
-            ),
+            partitions_def,
         )
 
         return build_partition_statuses(
@@ -950,6 +975,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             materialized_partition_subset,
             failed_partition_subset,
             in_progress_subset,
+            partitions_def,
         )
 
     def resolve_partitionStats(
@@ -1133,10 +1159,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
 
     def resolve_assetChecksOrError(
-        self, graphene_info: ResolveInfo, limit=None
+        self,
+        graphene_info: ResolveInfo,
+        limit=None,
+        pipeline: Optional[GraphenePipelineSelector] = None,
     ) -> AssetChecksOrErrorUnion:
         return self._asset_checks_loader.get_checks_for_asset(
-            self._external_asset_node.asset_key, limit
+            self._external_asset_node.asset_key, limit, pipeline
         )
 
 

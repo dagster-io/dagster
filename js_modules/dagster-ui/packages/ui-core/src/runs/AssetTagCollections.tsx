@@ -2,12 +2,12 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   Dialog,
   DialogFooter,
   Icon,
   MiddleTruncate,
   Tag,
+  colorAccentGray,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -110,7 +110,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
           ) : (
             <Link to={assetDetailsPathForKey(assetKey)}>
               <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <Icon color={Colors.Gray400} name="asset" size={16} />
+                <Icon color={colorAccentGray()} name="asset" size={16} />
                 {displayNameForAssetKey(assetKey)}
               </Box>
             </Link>
@@ -140,12 +140,10 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
             {assetKeys.length} assets
           </Tag>
         ) : (
-          <ButtonLink onClick={() => setShowMore(true)}>
+          <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
-              <Icon color={Colors.Gray400} name="asset" size={16} />
-              <Box style={{flex: 1}} flex={{wrap: 'wrap', display: 'inline-flex'}}>
-                {`${assetKeys.length} assets`}
-              </Box>
+              <Icon color={colorAccentGray()} name="asset" size={16} />
+              {`${assetKeys.length} assets`}
             </Box>
           </ButtonLink>
         )}
@@ -188,7 +186,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
           ) : (
             <Link to={assetDetailsPathForAssetCheck(check)}>
               <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <Icon color={Colors.Gray400} name="asset_check" size={16} />
+                <Icon color={colorAccentGray()} name="asset_check" size={16} />
                 {labelForAssetCheck(check)}
               </Box>
             </Link>
@@ -214,12 +212,10 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
             {assetChecks.length} asset checks
           </Tag>
         ) : (
-          <ButtonLink onClick={() => setShowMore(true)}>
+          <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
-              <Icon color={Colors.Gray400} name="asset_check" size={16} />
-              <Box style={{flex: 1}} flex={{wrap: 'wrap', display: 'inline-flex'}}>
-                {`${assetChecks.length} asset checks`}
-              </Box>
+              <Icon color={colorAccentGray()} name="asset_check" size={16} />
+              {`${assetChecks.length} asset checks`}
             </Box>
           </ButtonLink>
         )}

@@ -1,3 +1,4 @@
+import {Button} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -84,10 +85,11 @@ export class Description extends React.Component<IDescriptionProps, IDescription
           fontSize: this.props.fontSize || '0.8rem',
         }}
       >
-        {!expanded && hasMore && <Mask />}
         {hasMore && (
-          <ShowMoreHandle onClick={() => this.setState({expanded: !expanded})}>
-            {expanded ? 'Show Less' : 'Show More'}
+          <ShowMoreHandle>
+            <Button intent="primary" onClick={() => this.setState({expanded: !expanded})}>
+              {expanded ? 'Show less' : 'Show more'}
+            </Button>
           </ShowMoreHandle>
         )}
 
@@ -107,29 +109,10 @@ const Container = styled.div`
   }
 `;
 
-const Mask = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0) 70%,
-    rgba(255, 255, 255, 1)
-  );
-  pointer-events: none;
-  border-bottom: 1px solid #eee;
-`;
-
-const ShowMoreHandle = styled.a`
-  line-height: 20px;
+const ShowMoreHandle = styled.div`
   position: absolute;
   padding: 0 14px;
   bottom: 0;
   left: 50%;
-  height: 20px;
   transform: translate(-50%);
-  background: #eee;
 `;

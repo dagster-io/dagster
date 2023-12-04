@@ -49,14 +49,6 @@ def build_helm_steps() -> List[BuildkiteStep]:
 
 def _build_lint_steps(package_spec) -> List[CommandStep]:
     return [
-        CommandStepBuilder(":yaml: :lint-roller:")
-        .run(
-            "pip install yamllint",
-            "make yamllint",
-        )
-        .with_skip(skip_if_no_helm_changes() and package_spec.skip_reason)
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
         CommandStepBuilder("dagster-json-schema")
         .run(
             "pip install -e helm/dagster/schema",

@@ -2,9 +2,10 @@
 
 This example builds a daily ETL pipeline that materializes tables in Snowflake. At a high level, this project shows how to ingest data from external sources to Snowflake, explore and transform the data, and materialize outputs that help visualize the data.
 
-*New to Dagster? Learn what Dagster is [in Concepts](https://docs.dagster.io/concepts) or [in the hands-on Tutorials](https://docs.dagster.io/tutorial).*
+_New to Dagster? Learn what Dagster is [in Concepts](https://docs.dagster.io/concepts) or [in the hands-on Tutorials](https://docs.dagster.io/tutorial)._
 
 This guide covers:
+
 - [Dagster + Snowflake starter kit](#dagster--snowflake-starter-kit)
   - [Introduction](#introduction)
   - [Prerequisites](#prerequisites)
@@ -20,16 +21,15 @@ This guide covers:
     - [Adding new Python dependencies](#adding-new-python-dependencies)
     - [Testing](#testing)
 
-
 ## Introduction
 
 This starter kit includes:
+
 - Basics of creating, connecting, and testing [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) in Dagster.
 - Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata), etc.
 - [Snowflake I/O manager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake) to load the datasets in Snowflake and read from it, which [uses environment variables](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) to handle credentials.
 - A [schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) defined to run a job that generates assets daily.
 - [Scaffolded project layout](https://docs.dagster.io/getting-started/create-new-project) that helps you to quickly get started with everything set up.
-
 
 In this project, we're building an analytical pipeline that explores popular topics on HackerNews.
 
@@ -57,6 +57,7 @@ To connect to Snowflake, you'll need to set up your credentials in Dagster.
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
 In this example, we use [SnowflakePandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake-pandas#dagster_snowflake_pandas.SnowflakePandasIOManager) to write outputs to Snowflake and read inputs from it. The configurations of the Snowflake connection are defined [in `quickstart_snowflake/__init__.py`](./quickstart_snowflake/__init__.py), which requires the following environment variables:
+
 - `SNOWFLAKE_ACCOUNT`
 - `SNOWFLAKE_USER`
 - `SNOWFLAKE_PASSWORD`
@@ -65,6 +66,7 @@ In this example, we use [SnowflakePandasIOManager](https://docs.dagster.io/_apid
 - `SNOWFLAKE_SCHEMA`
 
 You can declare environment variables in various ways:
+
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)
 - **Dagster Cloud**: [Using the Dagster Cloud UI](https://docs.dagster.io/master/dagster-cloud/developing-testing/environment-variables-and-secrets#using-the-dagster-cloud-ui) to manage environment variables
 - **Dagster Open Source**: How environment variables are set for Dagster projects deployed on your infrastructure depends on where Dagster is deployed. Read about how to declare environment variables [here](https://docs.dagster.io/master/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables).
@@ -121,7 +123,6 @@ This project also comes with ways to better organize the assets:
 - **Grouping assets**. We've also assigned all three assets to the group `hackernews`, which is accomplished by providing the `group_name` argument to the `@asset` decorator. Grouping assets can help keep assets organized as your project grows. Learn about asset grouping [here](https://docs.dagster.io/concepts/assets/software-defined-assets#assigning-assets-to-groups).
 - **Adding descriptions.** In the asset graph, the UI also shows the description of each asset. You can specify the description of an asset in the `description` argument to `@asset`. When the argument is not provided and the decorated function has a docstring, Dagster will use the docstring as the description. In this example, the UI is using the docstrings as the descriptions.
 
-
 Now that we've got a basic understanding of Dagster assets, let's materialize them.
 
 <p align="center">
@@ -142,11 +143,11 @@ You'll see an indicator pop up with the launched run ID. Click **View** to monit
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-1-4-compute-logs.png" />
 </p>
 
-The process will run for a bit. While it's running, you should see the real-time compute logs printed in the UI. *(It may take 1-2 minutes to fetch all top 500 stories from HackerNews in the `hackernews_topstories` step).*
+The process will run for a bit. While it's running, you should see the real-time compute logs printed in the UI. _(It may take 1-2 minutes to fetch all top 500 stories from HackerNews in the `hackernews_topstories` step)._
 
 ## Step 2: Viewing and monitoring assets
 
-When you materialize an asset, the object returned by your asset function is saved. Dagster makes it easy to save these results to disk, to blob storage, to a database, or to any other system. In this example the assets are saved to the file system. In addition to the asset materialization,  your asset functions can also generate metadata that is directly visible in Dagster. To view the materialization details and metadata, click on the "ASSET_MATERIALIZATION" event. In this example, the `hackernews_stories_word_cloud` asset materializes a plot that is saved to disk, but we also add the plot as metadata to make it visible in Dagster.
+When you materialize an asset, the object returned by your asset function is saved. Dagster makes it easy to save these results to disk, to blob storage, to a database, or to any other system. In this example the assets are saved to the file system. In addition to the asset materialization, your asset functions can also generate metadata that is directly visible in Dagster. To view the materialization details and metadata, click on the "ASSET_MATERIALIZATION" event. In this example, the `hackernews_stories_word_cloud` asset materializes a plot that is saved to disk, but we also add the plot as metadata to make it visible in Dagster.
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-2-5-asset-in-logs.png" />
@@ -158,7 +159,7 @@ Click **Show Markdown**. You'll see a word cloud of the top 500 HackerNews story
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-2-6-hackernews_word_cloud.png" />
 </p>
 
-The metadata is recorded in the `hackernews_topstories_word_cloud` asset [in `quickstart_snowflake/assets/hackernews.py`](./quickstart_snowflake/assets/hackernews.py). Dagster supports attaching arbitrary [metadata](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) to asset materializations.  This metadata is also be displayed on the **Activity** tab of the **Asset Details** page in the UI or in the **Asset Lineage** view after selecting an asset. From the compute logs of a run, you can click the **View Asset** to go to the **Asset Details** page.
+The metadata is recorded in the `hackernews_topstories_word_cloud` asset [in `quickstart_snowflake/assets/hackernews.py`](./quickstart_snowflake/assets/hackernews.py). Dagster supports attaching arbitrary [metadata](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata is also be displayed on the **Activity** tab of the **Asset Details** page in the UI or in the **Asset Lineage** view after selecting an asset. From the compute logs of a run, you can click the **View Asset** to go to the **Asset Details** page.
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-2-7-view-assets.png" />
@@ -205,6 +206,7 @@ You can now turn on the schedule switch to set up the daily job we defined in [q
 Congratulations 🎉 You now have a daily job running in production!
 
 ---
+
 ## Learning more
 
 ### Changing the code locally
@@ -212,6 +214,7 @@ Congratulations 🎉 You now have a daily job running in production!
 When developing pipelines locally, be sure to click the **Reload definition** button in the Dagster UI after you change the code. This ensures that Dagster picks up the latest changes you made.
 
 You can reload the code using the **Deployment** page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
@@ -221,6 +224,7 @@ You can reload the code using the **Deployment** page:
 </details>
 
 Or from the left nav or on each job page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">

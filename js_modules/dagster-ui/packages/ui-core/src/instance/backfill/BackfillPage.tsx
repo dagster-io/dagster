@@ -2,7 +2,6 @@ import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
   Box,
   ButtonLink,
-  Colors,
   Heading,
   NonIdealState,
   Page,
@@ -10,6 +9,11 @@ import {
   Spinner,
   Table,
   Tag,
+  colorAccentBlue,
+  colorAccentGreen,
+  colorAccentRed,
+  colorBackgroundLight,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -305,7 +309,7 @@ export const BackfillPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to="/overview/backfills" style={{color: Colors.Gray700}}>
+            <Link to="/overview/backfills" style={{color: colorTextLight()}}>
               Backfills
             </Link>
             {' / '}
@@ -352,7 +356,7 @@ function StatusBar({
     <div
       style={{
         borderRadius: '8px',
-        backgroundColor: Colors.Gray100,
+        backgroundColor: colorBackgroundLight(),
         display: 'grid',
         gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
           (100 * inProgress) / targeted
@@ -363,15 +367,15 @@ function StatusBar({
         overflow: 'hidden',
       }}
     >
-      <div style={{background: Colors.Green500}} />
-      <div style={{background: Colors.Red500}} />
-      <div style={{background: Colors.Blue200}} />
+      <div style={{background: colorAccentGreen()}} />
+      <div style={{background: colorAccentRed()}} />
+      <div style={{background: colorAccentBlue()}} />
     </div>
   );
 }
 
 const Label = styled.div`
-  color: ${Colors.Gray700};
+  color: ${colorTextLight()};
   font-size: 12px;
   line-height: 16px;
 `;

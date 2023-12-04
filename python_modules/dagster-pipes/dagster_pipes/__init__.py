@@ -54,8 +54,10 @@ PipesParams = Mapping[str, Any]
 
 # ##### MESSAGE
 
+Method = Literal["opened", "closed", "log", "report_asset_materialization", "report_asset_check"]
 
-def _make_message(method: str, params: Optional[Mapping[str, Any]]) -> "PipesMessage":
+
+def _make_message(method: Method, params: Optional[Mapping[str, Any]]) -> "PipesMessage":
     return {
         PIPES_PROTOCOL_VERSION_FIELD: PIPES_PROTOCOL_VERSION,
         "method": method,
@@ -1022,7 +1024,7 @@ class PipesContext:
         """bool: Whether the context has been closed."""
         return self._closed
 
-    def _write_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
+    def _write_message(self, method: Method, params: Optional[Mapping[str, Any]] = None) -> None:
         if self._closed:
             raise DagsterPipesError("Cannot send message after pipes context is closed.")
         message = _make_message(method, params)

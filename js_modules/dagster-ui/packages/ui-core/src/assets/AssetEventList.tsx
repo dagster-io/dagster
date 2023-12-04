@@ -1,4 +1,14 @@
-import {Box, Caption, Colors, Icon, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Icon,
+  Tag,
+  colorAccentBlue,
+  colorBackgroundBlue,
+  colorBackgroundLight,
+  colorTextBlue,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -95,7 +105,7 @@ export const AssetEventList = ({
 export const AssetListContainer = styled(Container)`
   outline: none;
   &:focus {
-    box-shadow: 0 -1px ${Colors.Blue500};
+    box-shadow: 0 -1px ${colorAccentBlue()};
   }
 `;
 
@@ -107,14 +117,14 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
   :active,
   :hover {
     outline: none;
-    background: ${Colors.Gray100};
+    background: ${colorBackgroundLight()};
   }
   ${(p) =>
     p.$focused &&
-    `background: ${Colors.Blue50};
-     color: ${Colors.Blue700};
+    `background: ${colorBackgroundBlue()};
+     color: ${colorTextBlue()};
      :hover {
-       background: ${Colors.Blue50};
+       background: ${colorBackgroundBlue()};
      }
     `}
 `;
@@ -130,7 +140,7 @@ const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
         {!latest ? <Tag intent="none">Missing</Tag> : <Tag intent="success">Materialized</Tag>}
       </Box>
 
-      <Caption color={Colors.Gray600} style={{userSelect: 'none'}}>
+      <Caption color={colorTextLight()} style={{userSelect: 'none'}}>
         {timestamp ? (
           <span>
             Materialized <Timestamp timestamp={{ms: Number(timestamp)}} />

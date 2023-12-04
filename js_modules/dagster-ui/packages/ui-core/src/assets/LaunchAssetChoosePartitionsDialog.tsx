@@ -7,7 +7,6 @@ import {
   Button,
   ButtonLink,
   Checkbox,
-  Colors,
   Dialog,
   DialogFooter,
   DialogHeader,
@@ -15,6 +14,9 @@ import {
   RadioContainer,
   Subheading,
   Tooltip,
+  colorAccentGray,
+  colorBackgroundYellow,
+  colorTextYellow,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -82,11 +84,7 @@ import {
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {
-  PartitionDimensionSelection,
-  keyCountInSelections,
-  usePartitionHealthData,
-} from './usePartitionHealthData';
+import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
@@ -425,6 +423,32 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     );
   };
 
+  const previewNotice = (() => {
+    const notices: string[] = [];
+    if (target.type === 'pureWithAnchorAsset') {
+      notices.push(
+        `Dagster will materialize all partitions downstream of the ` +
+          `selected partitions for the selected assets, using separate runs 
+                ${backfillPolicyVaries ? `and obeying backfill policies.` : `as needed.`}`,
+      );
+    } else if (backfillPolicyVaries) {
+      notices.push(
+        `Dagster will materialize the selected partitions for the ` +
+          `selected assets using varying backfill policies.`,
+      );
+    } else if (assets[0]?.backfillPolicy) {
+      notices.push(`${assets[0].backfillPolicy.description}.`);
+    }
+    if (missingFailedOnly) {
+      notices.push(
+        `Only ${partitionCountString(
+          keysFiltered.length,
+        )} failed and missing partitions will be materialized.`,
+      );
+    }
+    return notices.join(' ');
+  })();
+
   return (
     <>
       <div data-testid={testId('choose-partitions-dialog')}>
@@ -465,7 +489,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 {target.type === 'pureWithAnchorAsset' ? (
                   <span /> // we won't know until runtime
                 ) : (
-                  <span>{partitionCountString(keyCountInSelections(selections))}</span>
+                  <span>{partitionCountString(keysFiltered.length)}</span>
                 )}
               </Box>
             }
@@ -524,34 +548,6 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 />
               </Box>
             ))}
-
-            <BackfillPreviewModal
-              assets={assets}
-              keysFiltered={keysFiltered}
-              isOpen={previewOpen}
-              setOpen={setPreviewOpen}
-            />
-
-            {target.type === 'pureWithAnchorAsset' ? (
-              <PartitionSelectionNotice
-                onShowPreview={() => setPreviewOpen(true)}
-                text={
-                  `Dagster will materialize all partitions downstream of the ` +
-                  `selected partitions for the selected assets, using separate runs 
-                  ${backfillPolicyVaries ? `and obeying backfill policies.` : `as needed.`}`
-                }
-              />
-            ) : backfillPolicyVaries ? (
-              <PartitionSelectionNotice
-                onShowPreview={() => setPreviewOpen(true)}
-                text={
-                  `Dagster will materialize the selected partitions for the ` +
-                  `selected assets using varying backfill policies.`
-                }
-              />
-            ) : assets[0]?.backfillPolicy ? (
-              <PartitionSelectionNotice text={assets[0].backfillPolicy.description} />
-            ) : undefined}
           </ToggleableSection>
         )}
         <ToggleableSection
@@ -627,7 +623,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                           </div>
                         }
                       >
-                        <Icon name="info" color={Colors.Gray500} />
+                        <Icon name="info" color={colorAccentGray()} />
                       </Tooltip>
                     </Box>
                   </Radio>
@@ -646,8 +642,19 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         )}
       </div>
 
+      <BackfillPreviewModal
+        assets={assets}
+        keysFiltered={keysFiltered}
+        isOpen={previewOpen}
+        setOpen={setPreviewOpen}
+      />
+
+      {previewNotice && (
+        <PartitionSelectionNotice onShowPreview={() => setPreviewOpen(true)} text={previewNotice} />
+      )}
+
       <DialogFooter
-        topBorder
+        topBorder={!previewNotice}
         left={
           'partitionSetName' in target && (
             <RunningBackfillsNotice partitionSetName={target.partitionSetName} />
@@ -814,15 +821,15 @@ const Warnings = ({
 
   return (
     <ToggleableSection
-      background={Colors.Yellow50}
+      background={colorBackgroundYellow()}
       isInitiallyOpen={false}
       title={
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          style={{color: Colors.Yellow700}}
+          style={{color: colorTextYellow()}}
         >
           <Box flex={{alignItems: 'center', gap: 12}}>
-            <Icon name="warning" color={Colors.Yellow700} />
+            <Icon name="warning" color={colorTextYellow()} />
             <Subheading>Warnings</Subheading>
           </Box>
           <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>
@@ -844,20 +851,17 @@ const PartitionSelectionNotice = ({
   onShowPreview?: () => void;
 }) => {
   return (
-    <Box padding={{horizontal: 16, bottom: 16}} border="bottom">
-      <Alert
-        intent="info"
-        title={
-          <Box flex={{gap: 12, alignItems: 'flex-start'}}>
-            <span>{text}</span>
-            {onShowPreview && (
-              <Button data-testid={testId('backfill-preview-button')} onClick={onShowPreview}>
-                Preview
-              </Button>
-            )}
-          </Box>
-        }
-      />
+    <Box padding={{horizontal: 16, top: 16, bottom: 8}} style={{position: 'relative'}} border="top">
+      <Alert intent="info" title={<Box style={{marginRight: 100, minHeight: 24}}>{text}</Box>} />
+      <div style={{position: 'absolute', top: 24, right: 24, zIndex: 4}}>
+        <Button
+          data-testid={testId('backfill-preview-button')}
+          intent="none"
+          onClick={onShowPreview}
+        >
+          Preview
+        </Button>
+      </div>
     </Box>
   );
 };

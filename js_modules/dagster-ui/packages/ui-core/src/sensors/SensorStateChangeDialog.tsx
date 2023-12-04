@@ -3,12 +3,13 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
-  Colors,
   DialogBody,
   DialogFooter,
   Dialog,
   Group,
   Icon,
+  colorAccentGreen,
+  colorAccentYellow,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -230,7 +231,7 @@ export const SensorStateChangeDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon name="check_circle" color={Colors.Green500} />
+            <Icon name="check_circle" color={colorAccentGreen()} />
             <div>
               {openWithIntent === 'start'
                 ? `Successfully started ${
@@ -245,7 +246,7 @@ export const SensorStateChangeDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon name="warning" color={Colors.Yellow500} />
+              <Icon name="warning" color={colorAccentYellow()} />
               <div>
                 {openWithIntent === 'start'
                   ? `Could not start ${errorCount === 1 ? '1 sensor' : `${errorCount} sensors`}:`

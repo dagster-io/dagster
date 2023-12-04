@@ -1,4 +1,4 @@
-import {Box, Colors, Subheading} from '@dagster-io/ui-components';
+import {Box, Subheading, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -10,7 +10,6 @@ import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBa
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
 import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';
 import {AutomaterializeRightPanel} from './AutomaterializeRightPanel';
-import {getEvaluationsWithEmptyAdded} from './getEvaluationsWithEmptyAdded';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 
 export const AssetAutomaterializePolicyPage = ({
@@ -24,34 +23,25 @@ export const AssetAutomaterializePolicyPage = ({
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const {evaluations, currentEvaluationId} = React.useMemo(() => {
+  const {evaluations} = React.useMemo(() => {
     if (
       queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
-      'AutoMaterializeAssetEvaluationRecords'
+        'AutoMaterializeAssetEvaluationRecords' &&
+      queryResult.data?.assetNodeOrError?.__typename === 'AssetNode'
     ) {
       return {
         evaluations: queryResult.data?.autoMaterializeAssetEvaluationsOrError.records,
-        currentEvaluationId:
-          queryResult.data.autoMaterializeAssetEvaluationsOrError.currentEvaluationId,
+        currentAutoMaterializeEvaluationId:
+          queryResult.data.assetNodeOrError.currentAutoMaterializeEvaluationId,
       };
     }
-    return {evaluations: [], currentEvaluationId: null};
-  }, [queryResult.data?.autoMaterializeAssetEvaluationsOrError]);
+    return {evaluations: [], currentAutoMaterializeEvaluationId: null};
+  }, [
+    queryResult.data?.autoMaterializeAssetEvaluationsOrError,
+    queryResult.data?.assetNodeOrError,
+  ]);
 
   const isFirstPage = !paginationProps.hasPrevCursor;
-  const isLastPage = !paginationProps.hasNextCursor;
-  const isLoading = queryResult.loading && !queryResult.data;
-  const evaluationsIncludingEmpty = React.useMemo(
-    () =>
-      getEvaluationsWithEmptyAdded({
-        currentEvaluationId,
-        evaluations,
-        isFirstPage,
-        isLastPage,
-        isLoading,
-      }),
-    [currentEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
-  );
 
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
     number | undefined
@@ -69,16 +59,14 @@ export const AssetAutomaterializePolicyPage = ({
     // automatically select the first item -- an evaluation on another page might be our
     // active evaluation ID.
     if (selectedEvaluationId === undefined && isFirstPage) {
-      return evaluationsIncludingEmpty[0];
+      return evaluations[0];
     }
-    return evaluationsIncludingEmpty.find(
-      (evaluation) => evaluation.evaluationId === selectedEvaluationId,
-    );
-  }, [selectedEvaluationId, isFirstPage, evaluationsIncludingEmpty]);
+    return evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
+  }, [selectedEvaluationId, isFirstPage, evaluations]);
 
   return (
     <AutomaterializePage
-      style={{flex: 1, minHeight: 0, color: Colors.Gray700, overflow: 'hidden'}}
+      style={{flex: 1, minHeight: 0, color: colorTextLight(), overflow: 'hidden'}}
       flex={{direction: 'column'}}
     >
       <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
@@ -98,7 +86,6 @@ export const AssetAutomaterializePolicyPage = ({
               <AutomaterializeLeftPanel
                 assetHasDefinedPartitions={assetHasDefinedPartitions}
                 evaluations={evaluations}
-                evaluationsIncludingEmpty={evaluationsIncludingEmpty}
                 paginationProps={paginationProps}
                 onSelectEvaluation={(evaluation) => {
                   setSelectedEvaluationId(evaluation.evaluationId);

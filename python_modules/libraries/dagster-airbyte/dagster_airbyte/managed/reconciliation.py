@@ -14,7 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -39,6 +39,7 @@ from dagster_airbyte.asset_defs import (
     _clean_name,
 )
 from dagster_airbyte.managed.types import (
+    MANAGED_ELEMENTS_DEPRECATION_MSG,
     AirbyteConnection,
     AirbyteDestination,
     AirbyteDestinationNamespace,
@@ -636,6 +637,7 @@ def reconcile_connections_post(
 
 
 @experimental
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
     """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
@@ -703,7 +705,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         airbyte_resource_def: AirbyteResource,
         key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
-        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connection_meta_to_group_fn: Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]],
         connections: Iterable[AirbyteConnection],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
@@ -717,7 +719,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             workspace_id=None,
             key_prefix=key_prefix,
             create_assets_for_normalization_tables=create_assets_for_normalization_tables,
-            connection_to_group_fn=connection_to_group_fn,
+            connection_meta_to_group_fn=connection_meta_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=lambda conn: conn.name in defined_conn_names,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
@@ -740,12 +742,16 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
 
 
 @experimental
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     connections: Iterable[AirbyteConnection],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_meta_to_group_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[str]]
+    ] = None,
     io_manager_key: Optional[str] = None,
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connection_to_asset_key_fn: Optional[
@@ -769,6 +775,9 @@ def load_assets_from_connections(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+        connection_meta_to_group_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[str]]]): Function which
+            returns an asset group name for a given Airbyte connection metadata. If None and connection_to_group_fn
+            is None, no groups will be created. Defaults to None.
         io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
@@ -811,6 +820,16 @@ def load_assets_from_connections(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
+    check.invariant(
+        not connection_meta_to_group_fn
+        or not connection_to_group_fn
+        or connection_to_group_fn == _clean_name,
+        "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
+    )
+
+    if not connection_meta_to_group_fn and connection_to_group_fn:
+        connection_meta_to_group_fn = lambda meta: connection_to_group_fn(meta.name)
+
     return AirbyteManagedElementCacheableAssetsDefinition(
         airbyte_resource_def=(
             airbyte
@@ -821,8 +840,8 @@ def load_assets_from_connections(
         create_assets_for_normalization_tables=check.bool_param(
             create_assets_for_normalization_tables, "create_assets_for_normalization_tables"
         ),
-        connection_to_group_fn=check.opt_callable_param(
-            connection_to_group_fn, "connection_to_group_fn"
+        connection_meta_to_group_fn=check.opt_callable_param(
+            connection_meta_to_group_fn, "connection_meta_to_group_fn"
         ),
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),

@@ -1067,3 +1067,19 @@ def execution_run_config() -> None:
         ),
     )
     assert result.success
+
+
+def test_run_config_equality() -> None:
+    config_dict = {
+        "ops": {
+            "foo_op": {
+                "config": {"foo": "bar"},
+            },
+        },
+        "execution": {
+            "multiprocess": {
+                "config": {"max_concurrent": 0},
+            },
+        },
+    }
+    assert RunConfig(config_dict) == RunConfig(config_dict)

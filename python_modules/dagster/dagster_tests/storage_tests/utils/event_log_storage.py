@@ -1,6 +1,8 @@
 import datetime
 import logging  # noqa: F401; used by mock in string form
+import random
 import re
+import string
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -4231,3 +4233,26 @@ class TestEventLogStorage:
         mats = storage.get_latest_materialization_events([key])
         assert mats
         assert mats[key].asset_materialization.metadata["was"].value == "here"
+
+    def test_large_asset_metadata(self, storage, test_run_id):
+        key = AssetKey("test_asset")
+
+        large_metadata = {
+            f"key_{i}": "".join(random.choices(string.ascii_uppercase, k=1000)) for i in range(300)
+        }
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name=RUNLESS_JOB_NAME,
+                    event_specific_data=StepMaterializationData(
+                        materialization=AssetMaterialization(asset_key=key, metadata=large_metadata)
+                    ),
+                ),
+            )
+        )

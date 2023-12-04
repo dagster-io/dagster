@@ -105,9 +105,24 @@ class TimeWindowPartitionMapping(
             ),
         )
 
+    @property
+    def description(self) -> str:
+        description_str = (
+            "Maps a downstream partition to any upstream partition with an overlapping time window."
+        )
+
+        if self.start_offset != 0 or self.end_offset != 0:
+            description_str += (
+                f" The start and end of the upstream time window is offsetted by "
+                f"{self.start_offset} and {self.end_offset} partitions respectively."
+            )
+
+        return description_str
+
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -127,6 +142,7 @@ class TimeWindowPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: Optional[PartitionsDefinition],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -137,7 +153,7 @@ class TimeWindowPartitionMapping(
         if not provided.
         """
         return self._map_partitions(
-            upstream_partitions_subset.partitions_def,
+            upstream_partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
             end_offset=-self.start_offset,
@@ -214,16 +230,24 @@ class TimeWindowPartitionMapping(
             # PartitionsDefinition
             if first_window is not None and last_window is not None:
                 if start_offset < 0:
-                    offsetted_start_dt = max(first_window.start, offsetted_start_dt)
+                    offsetted_start_dt = max(
+                        first_window.start, offsetted_start_dt, key=lambda d: d.timestamp()
+                    )
 
                 if end_offset < 0:
-                    offsetted_end_dt = max(first_window.start, offsetted_end_dt)
+                    offsetted_end_dt = max(
+                        first_window.start, offsetted_end_dt, key=lambda d: d.timestamp()
+                    )
 
                 if start_offset > 0:
-                    offsetted_start_dt = min(last_window.end, offsetted_start_dt)
+                    offsetted_start_dt = min(
+                        last_window.end, offsetted_start_dt, key=lambda d: d.timestamp()
+                    )
 
                 if end_offset > 0:
-                    offsetted_end_dt = min(last_window.end, offsetted_end_dt)
+                    offsetted_end_dt = min(
+                        last_window.end, offsetted_end_dt, key=lambda d: d.timestamp()
+                    )
 
             # Align the windows to partition boundaries in the target PartitionsDefinition
             if (from_partitions_def.cron_schedule == to_partitions_def.cron_schedule) or (
@@ -250,7 +274,7 @@ class TimeWindowPartitionMapping(
                 )
                 window_end = to_partitions_def.end_time_for_partition_key(to_end_partition_key)
 
-            if window_start < window_end:
+            if window_start.timestamp() < window_end.timestamp():
                 time_windows.append(TimeWindow(window_start, window_end))
 
         filtered_time_windows = []
@@ -260,11 +284,13 @@ class TimeWindowPartitionMapping(
             if (
                 first_window
                 and last_window
-                and time_window.start <= last_window.start
-                and time_window.end >= first_window.end
+                and time_window.start.timestamp() <= last_window.start.timestamp()
+                and time_window.end.timestamp() >= first_window.end.timestamp()
             ):
-                window_start = max(time_window.start, first_window.start)
-                window_end = min(time_window.end, last_window.end)
+                window_start = max(
+                    time_window.start, first_window.start, key=lambda d: d.timestamp()
+                )
+                window_end = min(time_window.end, last_window.end, key=lambda d: d.timestamp())
                 filtered_time_windows.append(TimeWindow(window_start, window_end))
 
             if self.allow_nonexistent_upstream_partitions:
@@ -274,16 +300,19 @@ class TimeWindowPartitionMapping(
             else:
                 invalid_time_window = None
                 if not (first_window and last_window) or (
-                    time_window.start < first_window.start and time_window.end > last_window.end
+                    time_window.start.timestamp() < first_window.start.timestamp()
+                    and time_window.end.timestamp() > last_window.end.timestamp()
                 ):
                     invalid_time_window = time_window
-                elif time_window.start < first_window.start:
+                elif time_window.start.timestamp() < first_window.start.timestamp():
                     invalid_time_window = TimeWindow(
-                        time_window.start, min(time_window.end, first_window.start)
+                        time_window.start,
+                        min(time_window.end, first_window.start, key=lambda d: d.timestamp()),
                     )
-                elif time_window.end > last_window.end:
+                elif time_window.end.timestamp() > last_window.end.timestamp():
                     invalid_time_window = TimeWindow(
-                        max(time_window.start, last_window.end), time_window.end
+                        max(time_window.start, last_window.end, key=lambda d: d.timestamp()),
+                        time_window.end,
                     )
 
                 if invalid_time_window:
@@ -330,14 +359,15 @@ class TimeWindowPartitionMapping(
         if (
             from_partitions_def.equal_except_for_start_or_end(to_partitions_def)
             and (
-                from_partitions_def.start >= to_partitions_def.start
-                or from_partitions_subset.first_start >= to_partitions_def.start
+                from_partitions_def.start.timestamp() >= to_partitions_def.start.timestamp()
+                or from_partitions_subset.first_start.timestamp()
+                >= to_partitions_def.start.timestamp()
             )
             and (
                 to_partitions_def.end is None
                 or (
                     from_partitions_def.end is not None
-                    and to_partitions_def.end >= from_partitions_def.end
+                    and to_partitions_def.end.timestamp() >= from_partitions_def.end.timestamp()
                 )
             )
         ):
@@ -352,13 +382,15 @@ class TimeWindowPartitionMapping(
             from_partitions_def.is_basic_daily
             and to_partitions_def.is_basic_hourly
             and (
-                from_partitions_def.start >= to_partitions_def.start
-                or from_partitions_subset.first_start >= to_partitions_def.start
+                from_partitions_def.start.timestamp() >= to_partitions_def.start.timestamp()
+                or from_partitions_subset.first_start.timestamp()
+                >= to_partitions_def.start.timestamp()
             )
             and (
                 from_last_partition_window is not None
                 and to_last_partition_window is not None
-                and from_last_partition_window.end <= to_last_partition_window.end
+                and from_last_partition_window.end.timestamp()
+                <= to_last_partition_window.end.timestamp()
             )
         ):
             return UpstreamPartitionsResult(
@@ -397,22 +429,28 @@ def _offsetted_datetime(
 ) -> datetime:
     if partitions_def.is_basic_daily and offset != 0:
         result = dt + timedelta(days=offset)
+
+        if result.hour == dt.hour:
+            # Can't short-circuit in cases where a DST transition moved us
+            # to a different hour, fall back to slow logic
+            return result
+
     elif partitions_def.is_basic_hourly and offset != 0:
-        result = dt + timedelta(hours=offset)
-    else:
-        result = dt
-        for _ in range(abs(offset)):
-            if offset < 0:
-                prev_window = cast(
-                    TimeWindow,
-                    partitions_def.get_prev_partition_window(result, respect_bounds=False),
-                )
-                result = prev_window.start
-            else:
-                next_window = cast(
-                    TimeWindow,
-                    partitions_def.get_next_partition_window(result, respect_bounds=False),
-                )
-                result = next_window.end
+        return dt + timedelta(hours=offset)
+
+    result = dt
+    for _ in range(abs(offset)):
+        if offset < 0:
+            prev_window = cast(
+                TimeWindow,
+                partitions_def.get_prev_partition_window(result, respect_bounds=False),
+            )
+            result = prev_window.start
+        else:
+            next_window = cast(
+                TimeWindow,
+                partitions_def.get_next_partition_window(result, respect_bounds=False),
+            )
+            result = next_window.end
 
     return result

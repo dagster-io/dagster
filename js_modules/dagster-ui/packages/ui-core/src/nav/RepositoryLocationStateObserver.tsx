@@ -1,5 +1,14 @@
 import {gql, useApolloClient, useSubscription} from '@apollo/client';
-import {ButtonLink, Colors, Group, Icon, Caption} from '@dagster-io/ui-components';
+import {
+  ButtonLink,
+  Group,
+  Icon,
+  Caption,
+  colorBackgroundLight,
+  colorAccentGray,
+  colorTextLight,
+  colorTextLighter,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {LocationStateChangeEventType} from '../graphql/types';
@@ -66,20 +75,20 @@ export const RepositoryLocationStateObserver = () => {
   }
 
   return (
-    <Group background={Colors.Gray200} direction="column" spacing={0}>
+    <Group background={colorBackgroundLight()} direction="column" spacing={0}>
       {updatedLocations.length > 0 ? (
         <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
-          <Icon name="warning" color={Colors.Gray700} />
-          <Caption color={Colors.Gray800}>
+          <Icon name="warning" color={colorAccentGray()} />
+          <Caption color={colorTextLight()}>
             {updatedLocations.length === 1
               ? `Code location ${updatedLocations[0]} has been updated,` // Be specific when there's only one code location updated
               : 'One or more code locations have been updated,'}
             {' and new data is available. '}
             <ButtonLink
               color={{
-                link: Colors.Gray800,
-                hover: Colors.Gray900,
-                active: Colors.Gray900,
+                link: colorTextLight(),
+                hover: colorTextLighter(),
+                active: colorTextLighter(),
               }}
               underline="always"
               onClick={() => {

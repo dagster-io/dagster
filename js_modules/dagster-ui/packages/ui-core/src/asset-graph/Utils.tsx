@@ -1,4 +1,5 @@
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
+import memoize from 'lodash/memoize';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
@@ -37,6 +38,10 @@ export function isHiddenAssetGroupJob(jobName: string) {
 //
 export type GraphId = string;
 export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
+export const fromGraphID = (graphId: GraphId): AssetNodeKeyFragment => ({
+  path: JSON.parse(graphId),
+  __typename: 'AssetKey',
+});
 
 export interface GraphNode {
   id: GraphId;
@@ -262,3 +267,21 @@ export const groupIdForNode = (node: GraphNode) =>
     ':',
     node.definition.groupName,
   ].join('');
+
+// Inclusive
+export const getUpstreamNodes = memoize(
+  (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
+    const upstream = Object.keys(graphData.upstream[toGraphId(assetKey)] || {});
+    const currentUpstream = upstream.map((graphId) => fromGraphID(graphId));
+    return [
+      assetKey,
+      ...currentUpstream,
+      ...currentUpstream.map((graphId) => getUpstreamNodes(graphId, graphData)).flat(),
+    ].filter(
+      (key, index, arr) =>
+        // Filter out non uniques
+        arr.findIndex((key2) => JSON.stringify(key2) === JSON.stringify(key)) === index,
+    );
+  },
+  (key, data) => JSON.stringify({key, data}),
+);

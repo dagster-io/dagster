@@ -246,8 +246,14 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def ExternalScheduleExecution(self, request, context):
         return self._streaming_query("ExternalScheduleExecution", request, context)
 
+    def SyncExternalScheduleExecution(self, request, context):
+        return self._query("SyncExternalScheduleExecution", request, context)
+
     def ExternalSensorExecution(self, request, context):
         return self._streaming_query("ExternalSensorExecution", request, context)
+
+    def SyncExternalSensorExecution(self, request, context):
+        return self._query("SyncExternalSensorExecution", request, context)
 
     def ShutdownServer(self, request, context):
         try:

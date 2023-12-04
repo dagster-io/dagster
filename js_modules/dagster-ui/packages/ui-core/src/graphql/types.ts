@@ -108,7 +108,7 @@ export type AssetAssetObservationsArgs = {
 export type AssetBackfillData = {
   __typename: 'AssetBackfillData';
   assetBackfillStatuses: Array<AssetBackfillStatus>;
-  rootTargetedPartitions: AssetBackfillTargetPartitions;
+  rootTargetedPartitions: Maybe<AssetBackfillTargetPartitions>;
 };
 
 export type AssetBackfillPreviewParams = {
@@ -130,6 +130,7 @@ export type AssetCheck = {
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
+  jobNames: Array<Scalars['String']>;
   name: Scalars['String'];
 };
 
@@ -253,6 +254,7 @@ export type AssetDependency = {
   __typename: 'AssetDependency';
   asset: AssetNode;
   inputName: Scalars['String'];
+  partitionMapping: Maybe<PartitionMapping>;
 };
 
 export enum AssetEventType {
@@ -339,6 +341,7 @@ export type AssetNode = {
   backfillPolicy: Maybe<BackfillPolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
+  currentAutoMaterializeEvaluationId: Maybe<Scalars['Int']>;
   dataVersion: Maybe<Scalars['String']>;
   dataVersionByPartition: Array<Maybe<Scalars['String']>>;
   dependedBy: Array<AssetDependency>;
@@ -381,6 +384,7 @@ export type AssetNode = {
 
 export type AssetNodeAssetChecksOrErrorArgs = {
   limit?: InputMaybe<Scalars['Int']>;
+  pipeline?: InputMaybe<PipelineSelector>;
 };
 
 export type AssetNodeAssetMaterializationUsedDataArgs = {
@@ -505,7 +509,6 @@ export type AutoMaterializeAssetEvaluationRecord = {
 
 export type AutoMaterializeAssetEvaluationRecords = {
   __typename: 'AutoMaterializeAssetEvaluationRecords';
-  currentEvaluationId: Maybe<Scalars['Int']>;
   records: Array<AutoMaterializeAssetEvaluationRecord>;
 };
 
@@ -1493,6 +1496,7 @@ export type InputTag = {
 export type Instance = {
   __typename: 'Instance';
   autoMaterializePaused: Scalars['Boolean'];
+  concurrencyLimit: ConcurrencyKeyInfo;
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String'];
@@ -1501,8 +1505,13 @@ export type Instance = {
   id: Scalars['String'];
   info: Maybe<Scalars['String']>;
   runLauncher: Maybe<RunLauncher>;
+  runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
   supportsConcurrencyLimits: Scalars['Boolean'];
+};
+
+export type InstanceConcurrencyLimitArgs = {
+  concurrencyKey?: InputMaybe<Scalars['String']>;
 };
 
 export type InstigationEvent = {
@@ -1551,6 +1560,7 @@ export type InstigationStateRunsArgs = {
 };
 
 export type InstigationStateTickArgs = {
+  tickId?: InputMaybe<Scalars['Int']>;
   timestamp?: InputMaybe<Scalars['Float']>;
 };
 
@@ -1607,6 +1617,7 @@ export type InstigationTick = {
   runs: Array<Run>;
   skipReason: Maybe<Scalars['String']>;
   status: InstigationTickStatus;
+  tickId: Scalars['ID'];
   timestamp: Scalars['Float'];
 };
 
@@ -1696,6 +1707,15 @@ export type JobSolidHandleArgs = {
 
 export type JobSolidHandlesArgs = {
   parentHandleID?: InputMaybe<Scalars['String']>;
+};
+
+export type JobMetadataEntry = MetadataEntry & {
+  __typename: 'JobMetadataEntry';
+  description: Maybe<Scalars['String']>;
+  jobName: Scalars['String'];
+  label: Scalars['String'];
+  locationName: Scalars['String'];
+  repositoryName: Maybe<Scalars['String']>;
 };
 
 export type JobOrPipelineSelector = {
@@ -2058,6 +2078,7 @@ export type Mutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
+  freeConcurrencySlots: Scalars['Boolean'];
   freeConcurrencySlotsForRun: Scalars['Boolean'];
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
@@ -2102,6 +2123,11 @@ export type MutationDeletePipelineRunArgs = {
 
 export type MutationDeleteRunArgs = {
   runId: Scalars['String'];
+};
+
+export type MutationFreeConcurrencySlotsArgs = {
+  runId: Scalars['String'];
+  stepKey?: InputMaybe<Scalars['String']>;
 };
 
 export type MutationFreeConcurrencySlotsForRunArgs = {
@@ -2452,6 +2478,12 @@ export type PartitionKeys = {
 };
 
 export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
+
+export type PartitionMapping = {
+  __typename: 'PartitionMapping';
+  className: Scalars['String'];
+  description: Scalars['String'];
+};
 
 export type PartitionRangeSelector = {
   end: Scalars['String'];
@@ -3645,9 +3677,16 @@ export type RunNotFoundError = Error &
 
 export type RunOrError = PythonError | Run | RunNotFoundError;
 
+export type RunQueueConfig = {
+  __typename: 'RunQueueConfig';
+  maxConcurrentRuns: Scalars['Int'];
+  tagConcurrencyLimitsYaml: Maybe<Scalars['String']>;
+};
+
 export type RunRequest = {
   __typename: 'RunRequest';
   assetSelection: Maybe<Array<AssetKey>>;
+  jobName: Maybe<Scalars['String']>;
   runConfigYaml: Scalars['String'];
   runKey: Maybe<Scalars['String']>;
   tags: Array<PipelineTag>;
@@ -4298,6 +4337,7 @@ export type TerminateRunsResultOrError = PythonError | TerminateRunsResult;
 export type TestFields = {
   __typename: 'TestFields';
   alwaysException: Maybe<Scalars['String']>;
+  asyncString: Maybe<Scalars['String']>;
 };
 
 export type TextMetadataEntry = MetadataEntry & {
@@ -4648,6 +4688,7 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetCheckExecution')
         ? ({} as AssetCheckExecution)
         : buildAssetCheckExecution({}, relationshipsToOmit),
+    jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
   };
 };
@@ -4894,6 +4935,12 @@ export const buildAssetDependency = (
         : buildAssetNode({}, relationshipsToOmit),
     inputName:
       overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'aspernatur',
+    partitionMapping:
+      overrides && overrides.hasOwnProperty('partitionMapping')
+        ? overrides.partitionMapping!
+        : relationshipsToOmit.has('PartitionMapping')
+        ? ({} as PartitionMapping)
+        : buildPartitionMapping({}, relationshipsToOmit),
   };
 };
 
@@ -5144,6 +5191,10 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('ConfigTypeField')
         ? ({} as ConfigTypeField)
         : buildConfigTypeField({}, relationshipsToOmit),
+    currentAutoMaterializeEvaluationId:
+      overrides && overrides.hasOwnProperty('currentAutoMaterializeEvaluationId')
+        ? overrides.currentAutoMaterializeEvaluationId!
+        : 6693,
     dataVersion:
       overrides && overrides.hasOwnProperty('dataVersion') ? overrides.dataVersion! : 'a',
     dataVersionByPartition:
@@ -5423,10 +5474,6 @@ export const buildAutoMaterializeAssetEvaluationRecords = (
   relationshipsToOmit.add('AutoMaterializeAssetEvaluationRecords');
   return {
     __typename: 'AutoMaterializeAssetEvaluationRecords',
-    currentEvaluationId:
-      overrides && overrides.hasOwnProperty('currentEvaluationId')
-        ? overrides.currentEvaluationId!
-        : 9797,
     records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
   };
 };
@@ -7263,6 +7310,12 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('autoMaterializePaused')
         ? overrides.autoMaterializePaused!
         : true,
+    concurrencyLimit:
+      overrides && overrides.hasOwnProperty('concurrencyLimit')
+        ? overrides.concurrencyLimit!
+        : relationshipsToOmit.has('ConcurrencyKeyInfo')
+        ? ({} as ConcurrencyKeyInfo)
+        : buildConcurrencyKeyInfo({}, relationshipsToOmit),
     concurrencyLimits:
       overrides && overrides.hasOwnProperty('concurrencyLimits')
         ? overrides.concurrencyLimits!
@@ -7288,6 +7341,12 @@ export const buildInstance = (
         : relationshipsToOmit.has('RunLauncher')
         ? ({} as RunLauncher)
         : buildRunLauncher({}, relationshipsToOmit),
+    runQueueConfig:
+      overrides && overrides.hasOwnProperty('runQueueConfig')
+        ? overrides.runQueueConfig!
+        : relationshipsToOmit.has('RunQueueConfig')
+        ? ({} as RunQueueConfig)
+        : buildRunQueueConfig({}, relationshipsToOmit),
     runQueuingSupported:
       overrides && overrides.hasOwnProperty('runQueuingSupported')
         ? overrides.runQueuingSupported!
@@ -7503,6 +7562,10 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : InstigationTickStatus.FAILURE,
+    tickId:
+      overrides && overrides.hasOwnProperty('tickId')
+        ? overrides.tickId!
+        : '664bf548-9cd0-4a28-8f90-61c0e5d4d811',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.06,
   };
 };
@@ -7642,6 +7705,25 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('solidHandles') ? overrides.solidHandles! : [],
     solids: overrides && overrides.hasOwnProperty('solids') ? overrides.solids! : [],
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+  };
+};
+
+export const buildJobMetadataEntry = (
+  overrides?: Partial<JobMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'JobMetadataEntry'} & JobMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('JobMetadataEntry');
+  return {
+    __typename: 'JobMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'id',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'eum',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'illo',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'quidem',
+    repositoryName:
+      overrides && overrides.hasOwnProperty('repositoryName') ? overrides.repositoryName! : 'eos',
   };
 };
 
@@ -8443,6 +8525,10 @@ export const buildMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
         ? ({} as DeletePipelineRunSuccess)
         : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    freeConcurrencySlots:
+      overrides && overrides.hasOwnProperty('freeConcurrencySlots')
+        ? overrides.freeConcurrencySlots!
+        : false,
     freeConcurrencySlotsForRun:
       overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
         ? overrides.freeConcurrencySlotsForRun!
@@ -9113,6 +9199,22 @@ export const buildPartitionKeys = (
     __typename: 'PartitionKeys',
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
+export const buildPartitionMapping = (
+  overrides?: Partial<PartitionMapping>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionMapping'} & PartitionMapping => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionMapping');
+  return {
+    __typename: 'PartitionMapping',
+    className: overrides && overrides.hasOwnProperty('className') ? overrides.className! : 'quos',
+    description:
+      overrides && overrides.hasOwnProperty('description')
+        ? overrides.description!
+        : 'voluptatibus',
   };
 };
 
@@ -11301,6 +11403,25 @@ export const buildRunNotFoundError = (
   };
 };
 
+export const buildRunQueueConfig = (
+  overrides?: Partial<RunQueueConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunQueueConfig'} & RunQueueConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunQueueConfig');
+  return {
+    __typename: 'RunQueueConfig',
+    maxConcurrentRuns:
+      overrides && overrides.hasOwnProperty('maxConcurrentRuns')
+        ? overrides.maxConcurrentRuns!
+        : 9835,
+    tagConcurrencyLimitsYaml:
+      overrides && overrides.hasOwnProperty('tagConcurrencyLimitsYaml')
+        ? overrides.tagConcurrencyLimitsYaml!
+        : 'reprehenderit',
+  };
+};
+
 export const buildRunRequest = (
   overrides?: Partial<RunRequest>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11311,6 +11432,7 @@ export const buildRunRequest = (
     __typename: 'RunRequest',
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'saepe',
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'ut',
     runKey: overrides && overrides.hasOwnProperty('runKey') ? overrides.runKey! : 'eius',
@@ -12648,6 +12770,8 @@ export const buildTestFields = (
       overrides && overrides.hasOwnProperty('alwaysException')
         ? overrides.alwaysException!
         : 'quibusdam',
+    asyncString:
+      overrides && overrides.hasOwnProperty('asyncString') ? overrides.asyncString! : 'non',
   };
 };
 

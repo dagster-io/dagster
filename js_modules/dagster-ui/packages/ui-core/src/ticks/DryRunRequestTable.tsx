@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
+import {Box, Icon, Table, Tag, colorKeylineDefault} from '@dagster-io/ui-components';
 import qs from 'qs';
 import React from 'react';
 
@@ -31,7 +31,7 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
             <td>
               <Box flex={{alignItems: 'center', gap: 8}}>
                 <PipelineReference
-                  pipelineName={jobName}
+                  pipelineName={request.jobName ?? jobName}
                   pipelineHrefContext={repoAddress}
                   isJob={!!repo && isJob}
                   showIcon
@@ -52,7 +52,7 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
                 target="_blank"
                 to={workspacePathFromAddress(
                   repoAddress,
-                  `/pipeline_or_job/${jobName}/playground/setup?${qs.stringify({
+                  `/pipeline_or_job/${request.jobName ?? jobName}/playground/setup?${qs.stringify({
                     mode,
                     config: request.runConfigYaml,
                     tags: request.tags,
@@ -72,7 +72,7 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
   );
   return (
     <div>
-      <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`, tableLayout: 'fixed'}}>
+      <Table style={{borderRight: `1px solid ${colorKeylineDefault()}`, tableLayout: 'fixed'}}>
         <thead>
           <tr>
             <th>{isJob ? 'Job' : 'Pipeline'} name</th>

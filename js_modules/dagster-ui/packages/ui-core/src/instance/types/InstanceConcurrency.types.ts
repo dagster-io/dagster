@@ -2,12 +2,34 @@
 
 import * as Types from '../../graphql/types';
 
+export type ConcurrencyStepFragment = {
+  __typename: 'PendingConcurrencyStep';
+  runId: string;
+  stepKey: string;
+  enqueuedTimestamp: number;
+  assignedTimestamp: number | null;
+  priority: number | null;
+};
+
 export type ConcurrencyLimitFragment = {
   __typename: 'ConcurrencyKeyInfo';
   concurrencyKey: string;
   slotCount: number;
-  activeRunIds: Array<string>;
-  activeSlotCount: number;
+  claimedSlots: Array<{__typename: 'ClaimedConcurrencySlot'; runId: string; stepKey: string}>;
+  pendingSteps: Array<{
+    __typename: 'PendingConcurrencyStep';
+    runId: string;
+    stepKey: string;
+    enqueuedTimestamp: number;
+    assignedTimestamp: number | null;
+    priority: number | null;
+  }>;
+};
+
+export type RunQueueConfigFragment = {
+  __typename: 'RunQueueConfig';
+  maxConcurrentRuns: number;
+  tagConcurrencyLimitsYaml: string | null;
 };
 
 export type InstanceConcurrencyLimitsQueryVariables = Types.Exact<{[key: string]: never}>;
@@ -19,12 +41,25 @@ export type InstanceConcurrencyLimitsQuery = {
     id: string;
     info: string | null;
     supportsConcurrencyLimits: boolean;
+    runQueuingSupported: boolean;
+    runQueueConfig: {
+      __typename: 'RunQueueConfig';
+      maxConcurrentRuns: number;
+      tagConcurrencyLimitsYaml: string | null;
+    } | null;
     concurrencyLimits: Array<{
       __typename: 'ConcurrencyKeyInfo';
       concurrencyKey: string;
       slotCount: number;
-      activeRunIds: Array<string>;
-      activeSlotCount: number;
+      claimedSlots: Array<{__typename: 'ClaimedConcurrencySlot'; runId: string; stepKey: string}>;
+      pendingSteps: Array<{
+        __typename: 'PendingConcurrencyStep';
+        runId: string;
+        stepKey: string;
+        enqueuedTimestamp: number;
+        assignedTimestamp: number | null;
+        priority: number | null;
+      }>;
     }>;
   };
 };
@@ -36,13 +71,37 @@ export type SetConcurrencyLimitMutationVariables = Types.Exact<{
 
 export type SetConcurrencyLimitMutation = {__typename: 'Mutation'; setConcurrencyLimit: boolean};
 
-export type FreeConcurrencySlotsForRunMutationVariables = Types.Exact<{
+export type FreeConcurrencySlotsMutationVariables = Types.Exact<{
   runId: Types.Scalars['String'];
+  stepKey?: Types.InputMaybe<Types.Scalars['String']>;
 }>;
 
-export type FreeConcurrencySlotsForRunMutation = {
-  __typename: 'Mutation';
-  freeConcurrencySlotsForRun: boolean;
+export type FreeConcurrencySlotsMutation = {__typename: 'Mutation'; freeConcurrencySlots: boolean};
+
+export type ConcurrencyKeyDetailsQueryVariables = Types.Exact<{
+  concurrencyKey: Types.Scalars['String'];
+}>;
+
+export type ConcurrencyKeyDetailsQuery = {
+  __typename: 'Query';
+  instance: {
+    __typename: 'Instance';
+    id: string;
+    concurrencyLimit: {
+      __typename: 'ConcurrencyKeyInfo';
+      concurrencyKey: string;
+      slotCount: number;
+      claimedSlots: Array<{__typename: 'ClaimedConcurrencySlot'; runId: string; stepKey: string}>;
+      pendingSteps: Array<{
+        __typename: 'PendingConcurrencyStep';
+        runId: string;
+        stepKey: string;
+        enqueuedTimestamp: number;
+        assignedTimestamp: number | null;
+        priority: number | null;
+      }>;
+    };
+  };
 };
 
 export type RunsForConcurrencyKeyQueryVariables = Types.Exact<{
@@ -54,49 +113,9 @@ export type RunsForConcurrencyKeyQuery = {
   __typename: 'Query';
   pipelineRunsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {
-        __typename: 'PythonError';
-        message: string;
-        stack: Array<string>;
-        errorChain: Array<{
-          __typename: 'ErrorChainLink';
-          isExplicitLink: boolean;
-          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-        }>;
-      }
+    | {__typename: 'PythonError'}
     | {
         __typename: 'Runs';
-        results: Array<{
-          __typename: 'Run';
-          id: string;
-          status: Types.RunStatus;
-          stepKeysToExecute: Array<string> | null;
-          canTerminate: boolean;
-          hasReExecutePermission: boolean;
-          hasTerminatePermission: boolean;
-          hasDeletePermission: boolean;
-          mode: string;
-          rootRunId: string | null;
-          parentRunId: string | null;
-          pipelineSnapshotId: string | null;
-          pipelineName: string;
-          solidSelection: Array<string> | null;
-          startTime: number | null;
-          endTime: number | null;
-          updateTime: number | null;
-          repositoryOrigin: {
-            __typename: 'RepositoryOrigin';
-            id: string;
-            repositoryName: string;
-            repositoryLocationName: string;
-          } | null;
-          assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-          assetCheckSelection: Array<{
-            __typename: 'AssetCheckhandle';
-            name: string;
-            assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          }> | null;
-          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-        }>;
+        results: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
       };
 };

@@ -24,6 +24,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generic,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -89,6 +90,31 @@ UnpackedValue: TypeAlias = Union[
     Enum,
     "UnknownSerdesValue",
 ]
+
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+class SerializableNonScalarKeyMapping(Mapping[_K, _V]):
+    """Wrapper class for non-scalar key mappings, used to performantly type check when serializing
+    without impacting the performance of serializing the more common scalar key dicts.
+    May be replaceable with a different clever scheme.
+    """
+
+    def __init__(self, mapping: Mapping[_K, _V] = {}) -> None:
+        self.mapping: Mapping[_K, _V] = mapping
+
+    def __setitem__(self, key: _K, item: _V):
+        raise NotImplementedError("SerializableNonScalarKeyMapping is immutable")
+
+    def __getitem__(self, item: _K) -> _V:
+        return self.mapping[item]
+
+    def __len__(self) -> int:
+        return len(self.mapping)
+
+    def __iter__(self) -> Iterator[_K]:
+        return iter(self.mapping)
 
 
 ###################################################################################################
@@ -516,7 +542,7 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
     ) -> Dict[str, JsonSerializableValue]:
         packed: Dict[str, JsonSerializableValue] = {}
         packed["__class__"] = self.get_storage_name()
-        for key, inner_value in value._asdict().items():
+        for key, inner_value in self.before_pack(value)._asdict().items():
             if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
             storage_key = self.storage_field_names.get(key, key)
@@ -537,6 +563,10 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
             packed[key] = default
         packed = self.after_pack(**packed)
         return packed
+
+    # Hook: Modify the contents of the named tuple before packing
+    def before_pack(self, value: T_NamedTuple) -> T_NamedTuple:
+        return value
 
     # Hook: Modify the contents of the packed, json-serializable dict before it is converted to a
     # string.
@@ -681,6 +711,16 @@ def _pack_value(
         return {
             key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in cast(dict, val).items()
+        }
+    if tval is SerializableNonScalarKeyMapping:
+        return {
+            "__mapping_items__": [
+                [
+                    _pack_value(k, whitelist_map, f"{descent_path}.{k}"),
+                    _pack_value(v, whitelist_map, f"{descent_path}.{k}"),
+                ]
+                for k, v in cast(dict, val).items()
+            ]
         }
 
     # inlined is_named_tuple_instance
@@ -851,6 +891,12 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
     if "__frozenset__" in val:
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
+
+    if "__mapping_items__" in val:
+        return {
+            _unpack_value(k, whitelist_map, context): _unpack_value(v, whitelist_map, context)
+            for k, v in val["__mapping_items__"]
+        }
 
     return val
 

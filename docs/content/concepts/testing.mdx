@@ -333,7 +333,7 @@ def test_asset_with_inputs():
 If your asset has a config schema, you can pass a config value to the invocation. The following asset relies on attached config:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_config_asset endbefore=end_test_config_asset
-from dagster import asset, Config, build_op_context
+from dagster import asset, Config
 
 
 class MyAssetConfig(Config):
@@ -357,7 +357,7 @@ If your asset requires resources, you can specify them as arguments when invokin
 Consider the following asset, which requires a resource `bar`.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
-from dagster import asset, ConfigurableResource, build_op_context, with_resources
+from dagster import asset, ConfigurableResource
 
 
 class BarResource(ConfigurableResource):

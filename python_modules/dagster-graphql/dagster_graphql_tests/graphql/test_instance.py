@@ -49,6 +49,12 @@ mutation FreeConcurrencySlotsForRun($runId: String!) {
 }
 """
 
+FREE_CONCURRENCY_SLOTS_MUTATION = """
+mutation FreeConcurrencySlots($runId: String!, $stepKey: String) {
+    freeConcurrencySlots(runId: $runId, stepKey: $stepKey)
+}
+"""
+
 BaseTestSuite: Any = make_graphql_context_test_suite(
     context_variants=[
         GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
@@ -143,6 +149,58 @@ class TestInstanceSettings(BaseTestSuite):
         assert foo["pendingSteps"] == []
 
     def test_concurrency_free(self, graphql_context):
+        storage = graphql_context.instance.event_log_storage
+
+        # set a limit
+        storage.set_concurrency_slots("foo", 1)
+
+        # claim the slot
+        run_id = "fake_run_id"
+        run_id_2 = "fake_run_id_2"
+        storage.claim_concurrency_slot("foo", run_id, "fake_step_key")
+        # add pending steps
+        storage.claim_concurrency_slot("foo", run_id, "fake_step_key_2")
+        storage.claim_concurrency_slot("foo", run_id_2, "fake_step_key_3")
+
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 1
+        assert foo_info.active_run_ids == {run_id}
+        assert foo_info.pending_step_count == 2
+        assert foo_info.pending_run_ids == {run_id, run_id_2}
+        assert foo_info.assigned_step_count == 1
+        assert foo_info.assigned_run_ids == {run_id}
+
+        execute_dagster_graphql(
+            graphql_context,
+            FREE_CONCURRENCY_SLOTS_MUTATION,
+            variables={"runId": run_id_2, "stepKey": "fake_step_key_3"},
+        )
+
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 1
+        assert foo_info.active_run_ids == {run_id}
+        assert foo_info.pending_step_count == 1
+        assert foo_info.pending_run_ids == {run_id}
+        assert foo_info.assigned_step_count == 1
+        assert foo_info.assigned_run_ids == {run_id}
+
+        execute_dagster_graphql(
+            graphql_context,
+            FREE_CONCURRENCY_SLOTS_MUTATION,
+            variables={"runId": run_id},
+        )
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 0
+        assert foo_info.active_run_ids == set()
+        assert foo_info.pending_step_count == 0
+        assert foo_info.pending_run_ids == set()
+        assert foo_info.assigned_step_count == 0
+        assert foo_info.assigned_run_ids == set()
+
+    def test_concurrency_free_run(self, graphql_context):
         storage = graphql_context.instance.event_log_storage
 
         # set a limit

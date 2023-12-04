@@ -3,13 +3,13 @@ import {ProgressBar as BlueprintProgressBar, ProgressBarProps} from '@blueprintj
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {colorAccentGray} from '../theme/color';
 
 interface Props extends ProgressBarProps {
   fillColor?: string;
 }
 
-export const ProgressBar = ({fillColor = Colors.Gray600, ...rest}: Props) => {
+export const ProgressBar = ({fillColor = colorAccentGray(), ...rest}: Props) => {
   return (
     <StyledProgressBar
       {...rest}

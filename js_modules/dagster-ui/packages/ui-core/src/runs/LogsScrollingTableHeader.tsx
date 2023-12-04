@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorAccentGray, colorKeylineDefault, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -144,10 +144,10 @@ export const Headers = () => {
 
 export const HeadersContainer = styled.div`
   display: flex;
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
   text-transform: uppercase;
   font-size: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
   z-index: 2;
 `;
 
@@ -176,7 +176,7 @@ const HeaderDragHandle = styled.div<{
   & > div {
     width: 1px;
     height: 100%;
-    background: ${({isDragging}) => (isDragging ? Colors.Gray400 : Colors.KeylineGray)};
+    background: ${({isDragging}) => (isDragging ? colorAccentGray() : colorKeylineDefault())};
   }
 `;
 

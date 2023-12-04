@@ -4,13 +4,15 @@ import {
   Box,
   Button,
   Checkbox,
-  Colors,
   Dialog,
   ExternalAnchorButton,
   Heading,
   Icon,
   Spinner,
   TextInput,
+  colorAccentRed,
+  colorTextLight,
+  colorTextRed,
 } from '@dagster-io/ui-components';
 import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
 import React from 'react';
@@ -101,7 +103,7 @@ const Form = ({dismiss, submit}: FormProps) => {
       >
         <Box flex={{direction: 'column', gap: 8, alignItems: 'start', justifyContent: 'start'}}>
           <Heading>Join the Dagster community</Heading>
-          <Body style={{color: Colors.Gray700, marginBottom: '4px'}}>
+          <Body style={{color: colorTextLight(), marginBottom: '4px'}}>
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
           </Body>
@@ -126,11 +128,11 @@ const Form = ({dismiss, submit}: FormProps) => {
           }}
           onBlur={() => setBlurred(true)}
           placeholder="hello@dagster.io"
-          strokeColor={!emailChanged || validEmail ? undefined : Colors.Red500}
+          strokeColor={!emailChanged || validEmail ? undefined : colorAccentRed()}
           style={{width: '100%'}}
         />
         {emailChanged && blurred && !validEmail ? (
-          <div style={{paddingBottom: '12px', color: Colors.Red500, fontSize: '12px'}}>
+          <div style={{paddingBottom: '12px', color: colorTextRed(), fontSize: '12px'}}>
             Add your email to get updates from Dagster.
           </div>
         ) : null}

@@ -1,12 +1,13 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PIPES_METADATA_TYPE_INFER,
+    Method,
     PipesContextData,
     PipesDataProvenance,
     PipesException,
@@ -71,7 +72,6 @@ class PipesMessageHandler:
         # Queue is thread-safe
         self._result_queue: Queue[PipesExecutionResult] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
-        self._unmaterialized_assets: Set[AssetKey] = set(context.selected_asset_keys)
         self._received_opened_msg = False
         self._received_closed_msg = False
         self._opened_payload: Optional[PipesOpenedData] = None
@@ -80,12 +80,9 @@ class PipesMessageHandler:
     def handle_messages(self) -> Iterator[PipesParams]:
         with self._message_reader.read_messages(self) as params:
             yield params
-        for key in self._unmaterialized_assets:
-            self._result_queue.put(MaterializeResult(asset_key=key))
 
-    def clear_result_queue(self) -> Iterator[PipesExecutionResult]:
-        while not self._result_queue.empty():
-            yield self._result_queue.get()
+    def get_reported_results(self) -> Sequence[PipesExecutionResult]:
+        return tuple(self._result_queue.queue)
 
     @property
     def received_opened_message(self) -> bool:
@@ -141,15 +138,16 @@ class PipesMessageHandler:
         if self._received_closed_msg:
             self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
 
-        if message["method"] == "opened":
+        method = cast(Method, message["method"])
+        if method == "opened":
             self._handle_opened(message["params"])  # type: ignore
-        elif message["method"] == "closed":
+        elif method == "closed":
             self._handle_closed(message["params"])
-        elif message["method"] == "report_asset_materialization":
+        elif method == "report_asset_materialization":
             self._handle_report_asset_materialization(**message["params"])  # type: ignore
-        elif message["method"] == "report_asset_check":
+        elif method == "report_asset_check":
             self._handle_report_asset_check(**message["params"])  # type: ignore
-        elif message["method"] == "log":
+        elif method == "log":
             self._handle_log(**message["params"])  # type: ignore
         else:
             raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
@@ -188,7 +186,6 @@ class PipesMessageHandler:
             data_version=resolved_data_version,
         )
         self._result_queue.put(result)
-        self._unmaterialized_assets.remove(resolved_asset_key)
 
     def _handle_report_asset_check(
         self,
@@ -268,6 +265,7 @@ class PipesSession:
     message_handler: PipesMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
+    context: OpExecutionContext
 
     @public
     def get_bootstrap_env_vars(self) -> Dict[str, str]:
@@ -301,16 +299,46 @@ class PipesSession:
         }
 
     @public
-    def get_results(self) -> Iterator[PipesExecutionResult]:
-        """Iterator over buffered :py:class:`PipesExecutionResult` objects received from the
-        external process.
+    def get_results(
+        self,
+        *,
+        implicit_materializations: bool = True,
+    ) -> Sequence[PipesExecutionResult]:
+        """:py:class:`PipesExecutionResult` objects reported from the external process.
 
-        When this is called it clears the results buffer.
+        Args:
+            implicit_materializations (bool): Create MaterializeResults for expected assets
+                even was nothing is reported from the external process.
+
+        Returns:
+            Sequence[PipesExecutionResult]: Result reported by external process.
+        """
+        reported = self.message_handler.get_reported_results()
+        if not implicit_materializations:
+            return reported
+
+        reported_keys = set(
+            result.asset_key for result in reported if isinstance(result, MaterializeResult)
+        )
+        implicit = (
+            MaterializeResult(asset_key=key)
+            for key in self.context.selected_asset_keys
+            if key not in reported_keys
+        )
+
+        return (
+            *reported,
+            *implicit,
+        )
+
+    @public
+    def get_reported_results(self) -> Sequence[PipesExecutionResult]:
+        """:py:class:`PipesExecutionResult` objects only explicitly received from the external process.
 
         Yields:
-            ExtResult: Result reported by external process.
+            PipesExecutionResult: Result reported by external process.
         """
-        yield from self.message_handler.clear_result_queue()
+        return self.message_handler.get_reported_results()
 
 
 def build_external_execution_context_data(

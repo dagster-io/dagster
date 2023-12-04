@@ -4,7 +4,6 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Checkbox,
-  Colors,
   CursorHistoryControls,
   NonIdealState,
   Spinner,
@@ -16,6 +15,9 @@ import {
   ButtonLink,
   ifPlural,
   Caption,
+  colorLinkDefault,
+  colorAccentGray,
+  colorAccentGrayHover,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -26,7 +28,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {
   DynamicPartitionsRequestType,
@@ -141,6 +143,8 @@ export const TicksTable = ({
     query: JOB_TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
+
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const state = queryResult?.data?.instigationStateOrError;
   const ticks = React.useMemo(
@@ -291,9 +295,9 @@ export const TickHistoryTimeline = ({
   afterTimestamp?: number;
   statuses?: InstigationTickStatus[];
 }) => {
-  const [selectedTime, setSelectedTime] = useQueryPersistedState<number | undefined>({
-    encode: (timestamp) => ({time: timestamp}),
-    decode: (qs) => (qs['time'] ? Number(qs['time']) : undefined),
+  const [selectedTickId, setSelectedTickId] = useQueryPersistedState<number | undefined>({
+    encode: (tickId) => ({tickId}),
+    decode: (qs) => (qs['tickId'] ? Number(qs['tickId']) : undefined),
   });
 
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
@@ -345,8 +349,9 @@ export const TickHistoryTimeline = ({
   const {ticks = []} = data.instigationStateOrError;
 
   const onTickClick = (tick?: InstigationTick) => {
-    setSelectedTime(tick ? tick.timestamp : undefined);
+    setSelectedTickId(tick ? Number(tick.id) : undefined);
   };
+
   const onTickHover = (tick?: InstigationTick) => {
     if (!tick) {
       pausePolling(false);
@@ -359,8 +364,8 @@ export const TickHistoryTimeline = ({
   return (
     <>
       <TickDetailsDialog
-        isOpen={!!selectedTime}
-        timestamp={selectedTime}
+        isOpen={!!selectedTickId}
+        tickId={selectedTickId}
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
       />
@@ -491,7 +496,7 @@ function TickRow({
             ) : null}
             <TickDetailsDialog
               isOpen={showResults}
-              timestamp={tick.timestamp}
+              tickId={Number(tick.tickId)}
               instigationSelector={instigationSelector}
               onClose={() => {
                 setShowResults(false);
@@ -554,16 +559,16 @@ const CopyButton = styled.button`
   outline: none;
 
   ${IconWrapper} {
-    background-color: ${Colors.Gray600};
+    background-color: ${colorAccentGray()};
     transition: background-color 100ms;
   }
 
   :hover ${IconWrapper} {
-    background-color: ${Colors.Gray800};
+    background-color: ${colorAccentGrayHover()};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${Colors.Link};
+    background-color: ${colorLinkDefault()};
   }
 `;
 

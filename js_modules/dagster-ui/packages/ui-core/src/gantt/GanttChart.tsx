@@ -1,7 +1,17 @@
 import {
   Box,
   Checkbox,
-  Colors,
+  colorAccentCyan,
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentReversed,
+  colorAccentYellow,
+  colorBackgroundCyan,
+  colorBackgroundDefault,
+  colorBackgroundGray,
+  colorBackgroundYellow,
+  colorFocusRing,
+  colorTextYellow,
   FontFamily,
   Group,
   Icon,
@@ -376,11 +386,11 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               <Group
                 direction="row"
                 spacing={8}
-                background={`${Colors.Yellow500}26`}
+                background={colorBackgroundYellow()}
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
-                <Icon name="warning" color={Colors.Yellow700} />
+                <Icon name="warning" color={colorAccentYellow()} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagster webserver.</strong>
                   <span>
@@ -630,7 +640,7 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? Colors.Gray700 : Colors.Gray300
+      darkened ? colorAccentGray() : colorAccentGrayHover()
     }`;
 
     const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
@@ -689,7 +699,7 @@ const GanttChartContainer = styled.div`
   flex-direction: column;
   z-index: 2;
   user-select: none;
-  background: ${Colors.White};
+  background: ${colorBackgroundDefault()};
 
   .line {
     position: absolute;
@@ -709,7 +719,7 @@ const GanttChartContainer = styled.div`
       left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
-    color: white;
+    color: ${colorAccentReversed()};
     overflow: hidden;
     user-select: text;
     z-index: 2;
@@ -733,7 +743,6 @@ const GanttChartContainer = styled.div`
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
     padding: 3px;
     padding-right: 1px;
-    border: 1px solid transparent;
     border-radius: 2px;
     white-space: nowrap;
     font-family: ${FontFamily.monospace};
@@ -745,14 +754,14 @@ const GanttChartContainer = styled.div`
       top ${CSS_DURATION}ms linear,
       left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear,
-      height ${CSS_DURATION}ms linear;
+      height ${CSS_DURATION}ms linear,
+      box-shadow ${CSS_DURATION}ms linear;
 
     &.focused {
-      border: 1px solid ${Colors.Gray900};
-      box-shadow: 0 0 0 2px ${Colors.Yellow500};
+      box-shadow: 0 0 0 2px ${colorFocusRing()};
     }
     &.hovered {
-      border: 1px solid ${Colors.Gray800};
+      box-shadow: 0 0 0 2px ${colorFocusRing()};
     }
     &.dynamic {
       filter: brightness(115%);
@@ -768,23 +777,24 @@ const GanttChartContainer = styled.div`
   .marker-dot {
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
-    border: 1px solid rgb(27, 164, 206);
+    border: 1px solid ${colorAccentCyan()};
     border-radius: ${BOX_DOT_SIZE / 2}px;
   }
+
   .marker-whiskers {
     display: inline-block;
     position: absolute;
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    background: rgba(27, 164, 206, 0.09);
-    border-left: 1px solid rgba(27, 164, 206, 0.6);
-    border-right: 1px solid rgba(27, 164, 206, 0.6);
+    background-color: ${colorBackgroundCyan()};
+    border-left: 1px solid ${colorAccentCyan()};
+    border-right: 1px solid ${colorAccentCyan()};
     transition:
       top ${CSS_DURATION}ms linear,
       left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear;
 
     & > div {
-      border-bottom: 1px dashed rgba(27, 164, 206, 0.6);
+      border-bottom: 1px dashed ${colorAccentCyan()};
       height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
@@ -793,7 +803,7 @@ const GanttChartContainer = styled.div`
 const WebsocketWarning = styled.div`
   position: absolute;
   bottom: 100%;
-  color: ${Colors.Yellow700};
+  color: ${colorTextYellow()};
   width: 100%;
 `;
 
@@ -807,8 +817,9 @@ const GraphQueryInputContainer = styled.div`
 `;
 
 const FilterInputsBackgroundBox = styled(Box)`
-  background: radial-gradient(${Colors.Gray50} 0%, rgba(255, 255, 255, 0) 100%);
-  padding: 15px 15px 0px 15px;
+  background-color: ${colorBackgroundGray()};
+  border-radius: 4px;
+  padding: 8px 12px 8px 8px;
 `;
 
 export const GanttChartLoadingState = ({runId}: {runId: string}) => (

@@ -50,6 +50,14 @@ export type DagsterTypeFragment_ListDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -1279,6 +1287,14 @@ export type DagsterTypeFragment_ListDagsterType_ = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -2516,6 +2532,14 @@ export type DagsterTypeFragment_ListDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -3736,6 +3760,14 @@ export type DagsterTypeFragment_ListDagsterType_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -4962,6 +4994,14 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -6191,6 +6231,14 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -7428,6 +7476,14 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -8648,6 +8704,14 @@ export type DagsterTypeFragment_NullableDagsterType_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -9874,6 +9938,14 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -11103,6 +11175,14 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -12340,6 +12420,14 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
               description: string | null;
             }
           | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'JsonMetadataEntry';
               jsonString: string;
               label: string;
@@ -13564,6 +13652,14 @@ export type DagsterTypeFragment_RegularDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -14780,6 +14876,14 @@ export type InnerDagsterTypeFragment_ListDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -15991,6 +16095,14 @@ export type InnerDagsterTypeFragment_NullableDagsterType_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -17198,6 +17310,14 @@ export type InnerDagsterTypeFragment_RegularDagsterType_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }

@@ -1,4 +1,22 @@
-import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
+import {
+  Caption,
+  Tooltip,
+  colorAccentCyan,
+  colorAccentCyanHover,
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentGreen,
+  colorAccentGreenHover,
+  colorAccentPrimary,
+  colorAccentRed,
+  colorAccentRedHover,
+  colorAccentReversed,
+  colorBackgroundDefault,
+  colorKeylineDefault,
+  colorTextLight,
+  ifPlural,
+  useViewport,
+} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import memoize from 'lodash/memoize';
@@ -16,17 +34,17 @@ import {isOldTickWithoutEndtimestamp} from './util';
 dayjs.extend(relativeTime);
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: Colors.Green500,
-  [InstigationTickStatus.FAILURE]: Colors.Red500,
-  [InstigationTickStatus.STARTED]: Colors.LightPurple,
-  [InstigationTickStatus.SKIPPED]: Colors.Olive200,
+  [InstigationTickStatus.SUCCESS]: colorAccentGreen(),
+  [InstigationTickStatus.FAILURE]: colorAccentRed(),
+  [InstigationTickStatus.STARTED]: colorAccentCyan(),
+  [InstigationTickStatus.SKIPPED]: colorAccentGray(),
 };
 
 const HoverColorMap = {
-  [InstigationTickStatus.SUCCESS]: Colors.Green700,
-  [InstigationTickStatus.FAILURE]: Colors.Red700,
-  [InstigationTickStatus.STARTED]: Colors.Blue500,
-  [InstigationTickStatus.SKIPPED]: Colors.Olive500,
+  [InstigationTickStatus.SUCCESS]: colorAccentGreenHover(),
+  [InstigationTickStatus.FAILURE]: colorAccentRedHover(),
+  [InstigationTickStatus.STARTED]: colorAccentCyanHover(),
+  [InstigationTickStatus.SKIPPED]: colorAccentGrayHover(),
 };
 
 const REFRESH_INTERVAL = 100;
@@ -105,7 +123,8 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minX, now, ticksReversed, fullRange, viewport.width]);
 
-  const tickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
+  const timeTickGridDelta = Math.max((maxX - minX) / 25, tickGrid);
+  const tickGridDelta = timeTickGridDelta / 5;
   const startTickGridX = Math.ceil(minX / tickGridDelta) * tickGridDelta;
   const gridTicks = React.useMemo(() => {
     const ticks = [];
@@ -113,11 +132,11 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
       ticks.push({
         time: i,
         x: getX(i, viewport.width, minX, fullRange),
-        showLabel: i % tickGridDelta === 0,
+        showLabel: i % timeTickGridDelta === 0,
       });
     }
     return ticks;
-  }, [startTickGridX, maxX, tickGridDelta, viewport.width, minX, fullRange]);
+  }, [maxX, startTickGridX, tickGridDelta, viewport.width, minX, fullRange, timeTickGridDelta]);
 
   const {
     timezone: [timezone],
@@ -215,7 +234,7 @@ const TickTooltip = React.memo(({tick}: {tick: HistoryTickFragment | AssetDaemon
         {status} ({elapsedTime})
       </Caption>
       {tick.status === InstigationTickStatus.STARTED ? null : (
-        <Caption color={Colors.Gray300}>Click for details</Caption>
+        <Caption color={colorTextLight()}>Click for details</Caption>
       )}
     </div>
   );
@@ -225,7 +244,7 @@ const TicksWrapper = styled.div`
   position: relative;
   height: 100px;
   padding: 10px 2px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
 `;
 
 const TimeAxisWrapper = styled.div`
@@ -243,7 +262,7 @@ const Tick = styled.div<{status: InstigationTickStatus}>`
     place-content: center;
     display: grid;
   }
-  color: ${Colors.White};
+  color: ${colorBackgroundDefault()};
   ${({status}) => `
     background: ${COLOR_MAP[status]};
     &:hover {
@@ -263,7 +282,7 @@ const GridTickLine = styled.div`
   top: 0;
   height: 108px;
   width: 1px;
-  background: ${Colors.KeylineGray};
+  background: ${colorKeylineDefault()};
 `;
 const GridTickTime = styled.div`
   height: 16px;
@@ -278,13 +297,13 @@ const NowIndicator = styled.div`
   top: 0;
   height: 126px;
   width: 2px;
-  background: ${Colors.Dark};
+  background: ${colorAccentPrimary()};
   &:after {
     content: 'Now';
     position: absolute;
     left: 0;
-    background: ${Colors.Dark};
-    color: white;
+    background: ${colorAccentPrimary()};
+    color: ${colorAccentReversed()};
     bottom: 0;
     font-size: 12px;
     padding: 3px 4px;

@@ -6,7 +6,7 @@ export * from './components/Button';
 export * from './components/ButtonGroup';
 export * from './components/ButtonLink';
 export * from './components/Checkbox';
-export * from './components/Colors';
+export * from './components/LegacyColors';
 export * from './components/ConfigEditorDialog';
 export * from './components/ConfigEditorWithSchema';
 export * from './components/ConfigTypeSchema';
@@ -54,6 +54,10 @@ export * from './components/UnstyledButton';
 export * from './components/StyledRawCodeMirror';
 export * from './components/useDelayedState';
 export * from './components/ifPlural';
+export * from './theme/color';
+
+// todo dish: Delete this
+export * from './palettes/Colors';
 
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />
