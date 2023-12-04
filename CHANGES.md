@@ -1,5 +1,67 @@
 # Changelog
 
+# 1.5.10 / 0.21.10 (libraries)
+
+### New
+
+- Added a new `MetadataValue.job` metadata type, which can be used to link to a Dagster job from other objects in the UI.
+- [asset backfills] Previously, when partitions definitions were changed after backfill launch, the asset backfill page would be blank. Now, when partitions definitions are changed, the backfill page will display statuses by asset.
+- [dagster-bigquery, dagster-duckdb, dagster-snowflake]. The BigQuery, DuckDB, and Snowflake I/O Managers will now determine the schema (dataset for BigQuery) in the following order of precedence: `schema` metadata set on the `asset` or `op`, I/O manager `schema`/ `dataset` configuration, `key_prefix` set on the `asset`. Previously, all methods for setting the schema/dataset were mutually exclusive, and setting more than one would raise an exception.
+- [dagster-shell] Added option to exclude the shell command from logs.
+- [dagster-dbt] When running `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev` in a new scaffolded project from `dagster-dbt project scaffold`, dbt artifacts for loading the project are now created in a static `target/` directory.
+
+### Bugfixes
+
+- Problematic inheritance that was causing pydantic warnings to be emitted has been corrected.
+- It's now possible to use the logger of `ScheduleEvaluationContext` when testing via `build_schedule_context`.
+- The `metadata` from a `Failure` exception is now hoisted up to the failure that culminates when retry limits are exceeded.
+- Fixed bug in which the second instance of an hour partition at a DST boundary would never be shown as “materialized” in certain UI views.
+- Fixed an issue where backfilling an hourly partition that occurred during a fall Daylight Savings Time transition sometimes raised an error.
+- [auto-materialize] Fix issue where assets which were skipped because required parent partitions did not exist would not be materialized once those partitions came into existence.
+- [dagster ecs] The exit code of failed containers is now included in the failure message.
+- [dagster pipes] The `PipesK8sClient` now correctly raises on failed containers.
+- [dagster pipes] Using pipes within ops instead of assets no longer enforces problematic constraints.
+- [helm] Added `maxCatchupRuns` and `maxTickRetries` configuration options for the scheduler in the Helm chart.
+- [embedded-elt] Fixed crashes for non-unicode logs.
+- [UI] Fixed an issue where the test sensor dialog for a sensor that targeted multiple jobs would claim that all of the runs were targeting the same job.
+- [UI] Asset keys, job names, and other strings in Dagster UI no longer truncate unnecessarily in Firefox in some scenarios
+- [UI] A larger “View prior events” button on the Asset > Partitions page makes it easier to see the historical materializations of a specific partition of an asset.
+- [asset-checks, dbt] Fixed a bug that that caused asset checks to not execute when a run was not a subset. As part of the fix, the default dbt selection selection string will not be used for dbt runs, even when not in a subset. Instead we pass the explicit set of models and tests to execute, with `DBT_INDIRECT_SELECTION=empty`.
+- [asset-checks] Fixed a bug that caused asset checks defined with `@asset(check_specs=...` to not cooperate with the `key_prefix` argument of the `load_assets_from_modules` method and it’s compatriots.
+- [asset-checks] Fixed a bug that caused errors when launching a job from the UI that excluded asset checks.
+- [asset-checks] Fixed a bug that caused UI errors when a check run was deleted.
+
+### Deprecations
+
+- Marked the experimental Airbyte ingestion-as-code feature as deprecated, to be removed in a future release. We suggest users interested in managing their Airbyte connections in code use the [Airbyte terraform provider](https://reference.airbyte.com/reference/using-the-terraform-provider).
+
+### Community Contributions
+
+- `define_asset_job` now accepts an `op_retry_policy` argument, which specifies a default retry policies for all of the ops in the job. (thanks Eugenio Contreras!)
+- Fix IOManager not being able to load assets with MultiPartitionsDefinition - thanks [@cyberosa](https://github.com/cyberosa)!
+- [dagster-essentials] Three typo fixes in Lesson 8 - thanks Colton [@cmpadden](https://github.com/cmpadden)!
+
+### Experimental
+
+- The `observable_source_asset` decorator now accepts a `key` argument.
+- [dagster pipes] an `implicit_materializations` argument has been added to `get_results` and `get_materialize_result` to control whether an implicit materialization event is created or not.
+- [embedded-elt] Added a new builder and `SlingConnectionResource` to allow reusing sources and targets interoperably.
+- [UI] Updated the experimental concurrency limits configuration page to show per-op runtime info and control.
+- [UI] The Auto-materialize history tab for each asset now only includes rows for evaluations where the result of evaluating the policy has changed. Previously, it would also show a row in the table representing periods of time where nothing changed.
+- [asset-checks, dbt] `build_dbt_asset_selection` now also selects asset checks based on their underlying dbt tests. E.g. `build_dbt_asset_selection([my_dbt_assets], dbt_select="tag:data_quality")` will select the assets and checks for any models and tests tagged with ‘data_quality’.
+
+### Documentation
+
+- Added information about `EnvVar` vs. `os.getenv` to the [Environment variables documentation](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets).
+- Updates to the [Asset selection syntax reference](https://docs.dagster.io/concepts/assets/asset-selection-syntax), including expanded examples for Python, the CLI, and the Dagster UI.
+- Added Experimental tags to all Dagster Cloud Insights docs.
+- Updated the [Helm - Migrating a Dagster instance while upgrading guide](https://docs.dagster.io/deployment/guides/kubernetes/how-to-migrate-your-instance) to include a prerequisites section.
+
+### Dagster Cloud
+
+- Branch deployments now use the same timeouts for starting and canceling runs that are set for their parent full deployment, instead of a fixed value of 10 minutes.
+- [k8s agent] Setting labels on a code location will now apply those labels to the kubernetes deployment and service for that code location, rather than just applying them to the pod for that code location.
+
 # 1.5.9 / 0.21.9 (libraries)
 
 ### New

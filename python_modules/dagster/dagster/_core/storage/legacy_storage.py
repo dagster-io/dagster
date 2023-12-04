@@ -206,8 +206,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+        ascending: bool = False,
     ) -> Iterable["DagsterRun"]:
-        return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by)
+        return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
 
     def get_run_ids(
         self,
@@ -742,6 +743,9 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         statuses: Optional[Sequence["TickStatus"]] = None,
     ) -> Mapping[str, Iterable["InstigatorTick"]]:
         return self._storage.schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
+
+    def get_tick(self, tick_id: int) -> "InstigatorTick":
+        return self._storage.schedule_storage.get_tick(tick_id)
 
     def get_ticks(
         self,

@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorLineageEdgeHighlighted, colorLineageEdge} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {buildSVGPath} from './Utils';
@@ -9,7 +9,6 @@ interface AssetEdgesProps {
   selected: string[] | null;
   highlighted: string | null;
   strokeWidth?: number;
-  baseColor?: string;
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
@@ -18,7 +17,6 @@ export const AssetEdges = ({
   selected,
   highlighted,
   strokeWidth = 4,
-  baseColor = Colors.KeylineGray,
   viewportRect,
 }: AssetEdgesProps) => {
   // Note: we render the highlighted edges twice, but it's so that the first item with
@@ -33,13 +31,13 @@ export const AssetEdges = ({
   return (
     <React.Fragment>
       <AssetEdgeSet
-        color={baseColor}
+        color={colorLineageEdge()}
         edges={intersectedEdges.length > 50 ? visibleToFromEdges : intersectedEdges}
         strokeWidth={strokeWidth}
         viewportRect={viewportRect}
       />
       <AssetEdgeSet
-        color={Colors.Blue500}
+        color={colorLineageEdgeHighlighted()}
         edges={edges.filter(
           ({fromId, toId}) =>
             selected?.includes(fromId) ||

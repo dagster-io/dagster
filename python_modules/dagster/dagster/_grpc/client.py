@@ -2,7 +2,7 @@ import os
 import sys
 from contextlib import contextmanager
 from threading import Event
-from typing import Any, Iterator, Optional, Sequence, Tuple
+from typing import Any, Iterator, Optional, Sequence, Tuple, cast
 
 import grpc
 from grpc_health.v1 import health_pb2
@@ -367,33 +367,77 @@ class DagsterGrpcClient:
                 "serialized_external_repository_chunk": res.serialized_external_repository_chunk,
             }
 
-    def external_schedule_execution(
-        self, external_schedule_execution_args, timeout=DEFAULT_SCHEDULE_GRPC_TIMEOUT
-    ):
+    def _is_unimplemented_error(self, e: Exception):
+        return (
+            isinstance(e.__cause__, grpc.RpcError)
+            and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+        )
+
+    def external_schedule_execution(self, external_schedule_execution_args):
         check.inst_param(
             external_schedule_execution_args,
             "external_schedule_execution_args",
             ExternalScheduleExecutionArgs,
         )
 
-        chunks = list(
-            self._streaming_query(
-                "ExternalScheduleExecution",
+        # The timeout for the schedule can be defined in one of three ways.
+        #   1. By the default grpc timeout
+        #   2. By the DEFAULT_SCHEDULE_GRPC_TIMEOUT environment variable
+        #   3. By the client.
+        # The DEFAULT_SCHEDULE_GRPC_TIMEOUT constant takes the maximum of (1) and
+        # (2), while
+        # the client may pass a timeout argument via the
+        # `sensor_execution_args` object. If the timeout is passed from the client, we use that value irrespective of what the other timeout values may be set to.
+        timeout = (
+            external_schedule_execution_args.timeout
+            if external_schedule_execution_args.timeout is not None
+            else DEFAULT_SCHEDULE_GRPC_TIMEOUT
+        )
+
+        try:
+            return self._query(
+                "SyncExternalScheduleExecution",
                 api_pb2.ExternalScheduleExecutionRequest,
                 serialized_external_schedule_execution_args=serialize_value(
                     external_schedule_execution_args
                 ),
                 timeout=timeout,
-            )
-        )
+            ).serialized_schedule_result
+        except Exception as e:
+            # On older servers that only have the streaming API call implemented, fall back to that API
+            if self._is_unimplemented_error(e):
+                chunks = list(
+                    self._streaming_query(
+                        "ExternalScheduleExecution",
+                        api_pb2.ExternalScheduleExecutionRequest,
+                        serialized_external_schedule_execution_args=serialize_value(
+                            external_schedule_execution_args
+                        ),
+                        timeout=timeout,
+                    )
+                )
+                return "".join([chunk.serialized_chunk for chunk in chunks])
+            else:
+                raise
 
-        return "".join([chunk.serialized_chunk for chunk in chunks])
-
-    def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_SENSOR_GRPC_TIMEOUT):
+    def external_sensor_execution(self, sensor_execution_args):
         check.inst_param(
             sensor_execution_args,
             "sensor_execution_args",
             SensorExecutionArgs,
+        )
+        # The timeout for the sensor can be defined in one of three ways.
+        #   1. By the default grpc timeout
+        #   2. By the DEFAULT_SENSOR_GRPC_TIMEOUT environment variable
+        #   3. By the client.
+        # The DEFAULT_SENSOR_GRPC_TIMEOUT constant takes the maximum of (1) and
+        # (2), while
+        # the client may pass a timeout argument via the
+        # `sensor_execution_args` object. If the timeout is passed from the client, we use that value irrespective of what the other timeout values may be set to.
+        timeout = (
+            sensor_execution_args.timeout
+            if sensor_execution_args.timeout is not None
+            else DEFAULT_SENSOR_GRPC_TIMEOUT
         )
 
         custom_timeout_message = (
@@ -403,17 +447,32 @@ class DagsterGrpcClient:
             " left off."
         )
 
-        chunks = list(
-            self._streaming_query(
-                "ExternalSensorExecution",
+        try:
+            return self._query(
+                "SyncExternalSensorExecution",
                 api_pb2.ExternalSensorExecutionRequest,
                 timeout=timeout,
                 serialized_external_sensor_execution_args=serialize_value(sensor_execution_args),
                 custom_timeout_message=custom_timeout_message,
-            )
-        )
+            ).serialized_sensor_result
+        except Exception as e:
+            # On older servers that only have the streaming API call implemented, fall back to that API
+            if self._is_unimplemented_error(e):
+                chunks = list(
+                    self._streaming_query(
+                        "ExternalSensorExecution",
+                        api_pb2.ExternalSensorExecutionRequest,
+                        timeout=timeout,
+                        serialized_external_sensor_execution_args=serialize_value(
+                            sensor_execution_args
+                        ),
+                        custom_timeout_message=custom_timeout_message,
+                    )
+                )
 
-        return "".join([chunk.serialized_chunk for chunk in chunks])
+                return "".join([chunk.serialized_chunk for chunk in chunks])
+            else:
+                raise
 
     def external_notebook_data(self, notebook_path: str):
         check.str_param(notebook_path, "notebook_path")

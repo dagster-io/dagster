@@ -2,9 +2,15 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
+import {
+  colorBackgroundDefault,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextDisabled,
+} from '../theme/color';
+
 import {Box} from './Box';
 import {Checkbox} from './Checkbox';
-import {Colors} from './Colors';
 import {Icon} from './Icon';
 import {MenuItem, Menu} from './Menu';
 import {MiddleTruncate} from './MiddleTruncate';
@@ -228,7 +234,7 @@ const Container = styled.div`
 `;
 
 const Placeholder = styled.div`
-  color: ${Colors.Gray400};
+  color: ${colorTextDisabled()};
 `;
 
 const TagsContainer = styled(Box)`
@@ -298,7 +304,7 @@ export const TagSelectorWithSearch = (
 };
 
 const DefaultTagTooltipStyle = JSON.stringify({
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
-  color: Colors.Dark,
+  background: colorBackgroundDefault(),
+  border: `1px solid ${colorBorderDefault()}`,
+  color: colorTextDefault(),
 });

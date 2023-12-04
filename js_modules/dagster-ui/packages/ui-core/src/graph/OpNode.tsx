@@ -1,5 +1,15 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily} from '@dagster-io/ui-components';
+import {
+  Icon,
+  FontFamily,
+  colorAccentBlue,
+  colorBackgroundBlue,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorAccentYellow,
+  colorBackgroundLighter,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -319,8 +329,8 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
 `;
 
 const NodeHighlightColors = {
-  Border: Colors.Blue500,
-  Background: Colors.Blue50,
+  Border: colorAccentBlue(),
+  Background: colorBackgroundBlue(),
 };
 
 const NodeContainer = styled.div<{
@@ -343,22 +353,22 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${Colors.Blue500}55`
-        : '2px solid #dcd5ca'};
+        ? `2px solid ${colorAccentBlue()}55`
+        : `2px solid ${colorKeylineDefault()}`};
 
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 8px;
-    background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};
+    background: ${(p) => (p.$minified ? colorBackgroundLight() : colorBackgroundDefault())};
   }
   .composite-marker {
     outline: ${(p) => (p.$minified ? '3px' : '2px')} solid
-      ${(p) => (p.$selected ? 'transparent' : Colors.Yellow200)};
+      ${(p) => (p.$selected ? 'transparent' : colorAccentYellow())};
     outline-offset: ${(p) => (p.$minified ? '5px' : '3px')};
     border-radius: 3px;
   }
   .dynamic-marker {
     transform: translate(-5px, -5px);
-    border: ${(p) => (p.$minified ? '3px' : '2px')} solid #dcd5ca;
+    border: ${(p) => (p.$minified ? '3px' : '2px')} solid ${colorKeylineDefault()};
     border-radius: 3px;
   }
   .config-marker {
@@ -392,7 +402,7 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
+    background: ${colorBackgroundLighter()};
     font-size: 12px;
     display: flex;
     gap: 4px;
@@ -405,8 +415,8 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
-    border-top: 1px solid #e6e1d8;
+    background: ${colorBackgroundLighter()};
+    border-top: ${colorKeylineDefault()} 1px solid;
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
     font-size: 12px;

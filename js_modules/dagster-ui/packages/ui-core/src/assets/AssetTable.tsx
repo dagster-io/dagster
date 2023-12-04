@@ -2,7 +2,6 @@ import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
-  Colors,
   Icon,
   MenuItem,
   Menu,
@@ -10,6 +9,9 @@ import {
   Tooltip,
   Checkbox,
   NonIdealState,
+  colorBackgroundDefault,
+  colorTextDisabled,
+  colorAccentRed,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
@@ -149,7 +151,7 @@ export const AssetTable = ({
     <>
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <Box
-          background={Colors.White}
+          background={colorBackgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
           padding={{vertical: 8, left: 24, right: 12}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
@@ -223,7 +225,9 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
             <MenuItem
               text="Wipe materializations"
               onClick={() => setShowBulkWipeDialog(true)}
-              icon={<Icon name="delete" color={disabled ? Colors.Gray600 : Colors.Red500} />}
+              icon={
+                <Icon name="delete" color={disabled ? colorTextDisabled() : colorAccentRed()} />
+              }
               disabled={disabled}
               intent="danger"
             />

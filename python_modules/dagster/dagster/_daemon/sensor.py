@@ -110,6 +110,10 @@ class SensorLaunchContext:
     def run_count(self) -> int:
         return len(self._tick.run_ids)
 
+    @property
+    def tick_id(self) -> str:
+        return str(self._tick.tick_id)
+
     def update_state(self, status: TickStatus, **kwargs: object):
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
         cursor = cast(Optional[str], kwargs.get("cursor"))
@@ -796,21 +800,26 @@ def _evaluate_sensor(
     run_requests = []
 
     for raw_run_request in sensor_runtime_data.run_requests:
-        if raw_run_request.stale_assets_only:
+        run_request = raw_run_request.with_replaced_attrs(
+            tags=merge_dicts(
+                raw_run_request.tags,
+                DagsterRun.tags_for_tick_id(context.tick_id),
+            )
+        )
+
+        if run_request.stale_assets_only:
             stale_assets = resolve_stale_or_missing_assets(
                 workspace_process_context,  # type: ignore
-                raw_run_request,
+                run_request,
                 external_sensor,
             )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
             else:
-                run_request = raw_run_request.with_replaced_attrs(
+                run_request = run_request.with_replaced_attrs(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
-        else:
-            run_request = raw_run_request
 
         run_requests.append(run_request)
 

@@ -7,7 +7,6 @@ import {
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
-  Colors,
 } from '../src';
 
 import {MemoryRouter} from 'react-router-dom';
@@ -16,6 +15,12 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import './blueprint.css';
+import {
+  colorBackgroundDefault,
+  colorLinkDefault,
+  colorTextDefault,
+  colorTextLight,
+} from '../src/theme/color';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -23,7 +28,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body {
-    color: ${Colors.Gray800};
+    background-color: ${colorBackgroundDefault()};
+    color: ${colorTextDefault()};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -31,7 +37,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${Colors.Link};
+    color: ${colorLinkDefault()};
   }
 
   body {
@@ -40,6 +46,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body, input, select, textarea {
+    background-color: ${colorBackgroundDefault()};
+    color: ${colorTextDefault()};
     font-family: ${FontFamily.default};
   }
 
@@ -50,6 +58,10 @@ const GlobalStyle = createGlobalStyle`
   code, pre {
     font-family: ${FontFamily.monospace};
     font-size: 16px;
+  }
+
+  input::placeholder {
+    color: ${colorTextLight()};
   }
 `;
 

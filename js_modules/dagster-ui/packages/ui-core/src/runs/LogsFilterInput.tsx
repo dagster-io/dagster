@@ -1,10 +1,13 @@
 import {
-  Colors,
   Popover,
   TextInput,
   SuggestionProvider,
   useSuggestionsForString,
   Icon,
+  colorBackgroundDefault,
+  colorAccentPrimary,
+  colorBackgroundBlue,
+  colorBackgroundGray,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -245,8 +248,9 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.White)};
-  color: ${({isHighlight}) => (isHighlight ? Colors.White : 'default')};
+  background-color: ${({isHighlight}) =>
+    isHighlight ? colorBackgroundBlue() : colorBackgroundDefault()};
+  color: ${({isHighlight}) => (isHighlight ? colorAccentPrimary() : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -258,6 +262,7 @@ const Item = styled.li<HighlightableTextProps>`
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.Gray100)};
+    background-color: ${({isHighlight}) =>
+      isHighlight ? colorBackgroundBlue() : colorBackgroundGray()};
   }
 `;

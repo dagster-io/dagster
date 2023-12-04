@@ -1,4 +1,14 @@
-import {Box, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  colorBackgroundLight,
+  colorBackgroundLightHover,
+  colorBackgroundLighter,
+  colorLineageGroupNodeBorder,
+  colorTextLight,
+  colorTextLighter,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -25,7 +35,6 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
         >
           {withMiddleTruncation(name, {maxLength: 14})}
         </div>
-        <div style={{fontSize: 20}}>{withMiddleTruncation(location, {maxLength: 21})}</div>
       </Box>
     );
   }
@@ -40,7 +49,9 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           {withMiddleTruncation(name, {maxLength: 22})}
         </div>
       </Box>
-      <Box style={{lineHeight: '1em'}}>{withMiddleTruncation(location, {maxLength: 31})}</Box>
+      <Box style={{lineHeight: '1em', color: colorTextLight()}}>
+        {withMiddleTruncation(location, {maxLength: 31})}
+      </Box>
     </Box>
   );
 };
@@ -70,7 +81,7 @@ export const CollapsedGroupNode = ({
         </Box>
         {!minimal && (
           <Box padding={{horizontal: 12, bottom: 4}}>
-            <AssetDescription $color={Colors.Gray400}>
+            <AssetDescription $color={colorTextLighter()}>
               {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'}
             </AssetDescription>
           </Box>
@@ -84,36 +95,42 @@ export const CollapsedGroupNode = ({
 
 export const GroupNameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
+  background: colorBackgroundLighter(),
+  border: `none`,
+  borderRadius: '4px',
 });
 
 const GroupStackLine = styled.div`
-  background: ${Colors.Gray200};
-  border-top: 2px solid ${Colors.White};
+  background: transparent;
+  border-top: 2px solid ${colorLineageGroupNodeBorder()};
   border-radius: 2px;
-  height: 4px;
 `;
 
 const CollapsedGroupNodeBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.Gray200};
-  background: ${Colors.Gray50};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorLineageGroupNodeBorder()};
+  background: ${colorBackgroundLight()};
   border-radius: 8px;
   position: relative;
-  outline-bottom: 3px solid gray;
   margin-top: 8px;
 `;
 
 const CollapsedGroupNodeContainer = styled.div`
   user-select: none;
   padding: 4px;
-  transition: transform linear 120ms;
+  transition:
+    transform linear 200ms,
+    gap linear 200ms;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 
   &:hover {
     transform: scale(1.03);
+    gap: 3px;
     ${CollapsedGroupNodeBox} {
-      background: ${Colors.Gray100};
+      transition: background linear 200ms;
+      background: ${colorBackgroundLightHover()};
     }
   }
 `;

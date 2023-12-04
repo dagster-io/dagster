@@ -9,7 +9,6 @@ import {
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {
-  Colors,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -19,6 +18,9 @@ import {
   CustomTooltipProvider,
   GlobalInter,
   GlobalInconsolata,
+  colorLinkDefault,
+  colorBackgroundDefault,
+  colorTextDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -57,7 +59,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${Colors.Gray800};
+    background-color: ${colorBackgroundDefault()};
+    color: ${colorTextDefault()};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -70,7 +73,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${Colors.Link};
+    color: ${colorLinkDefault()};
   }
 
   #root {
@@ -89,6 +92,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   button {
+    color: ${colorTextDefault()};
     font-family: inherit;
   }
 

@@ -1,4 +1,4 @@
-import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
+import {Icon, Tooltip, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -48,7 +48,7 @@ export const TimestampDisplay = (props: Props) => {
             </TabularNums>
           }
         >
-          <Icon name="schedule" color={Colors.Gray400} size={12} />
+          <Icon name="schedule" color={colorTextLight()} size={12} />
         </TimestampTooltip>
       ) : null}
     </span>

@@ -234,6 +234,7 @@ class GrapheneRequestedMaterializationsForAsset(graphene.ObjectType):
 
 class GrapheneInstigationTick(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
+    tickId = graphene.NonNull(graphene.ID)
     status = graphene.NonNull(GrapheneInstigationTickStatus)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
@@ -256,7 +257,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     class Meta:
         name = "InstigationTick"
 
-    def __init__(self, _, tick):
+    def __init__(self, tick: InstigatorTick):
         self._tick = check.inst_param(tick, "tick", InstigatorTick)
 
         super().__init__(
@@ -276,6 +277,9 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
     def resolve_id(self, _):
         return "%s:%s" % (self._tick.instigator_origin_id, self._tick.timestamp)
+
+    def resolve_tickId(self, _: ResolveInfo) -> str:
+        return str(self._tick.tick_id)
 
     def resolve_runs(self, graphene_info: ResolveInfo):
         from .pipelines.pipeline import GrapheneRun
@@ -531,7 +535,11 @@ class GrapheneInstigationState(graphene.ObjectType):
         limit=graphene.Int(),
     )
     runsCount = graphene.NonNull(graphene.Int)
-    tick = graphene.Field(GrapheneInstigationTick, timestamp=graphene.Float())
+    tick = graphene.Field(
+        GrapheneInstigationTick,
+        timestamp=graphene.Float(),
+        tickId=graphene.Int(),
+    )
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
         dayRange=graphene.Int(),
@@ -655,7 +663,20 @@ class GrapheneInstigationState(graphene.ObjectType):
             filters = RunsFilter.for_schedule(self._instigator_state)
         return graphene_info.context.instance.get_runs_count(filters=filters)
 
-    def resolve_tick(self, graphene_info: ResolveInfo, timestamp):
+    def resolve_tick(
+        self,
+        graphene_info: ResolveInfo,
+        timestamp: Optional[float] = None,
+        tickId: Optional[int] = None,
+    ):
+        if tickId:
+            schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
+            tick = schedule_storage.get_tick(tickId)
+
+            return GrapheneInstigationTick(tick)
+
+        timestamp = check.float_param(timestamp, "timestamp")
+
         matches = graphene_info.context.instance.get_ticks(
             self._instigator_state.instigator_origin_id,
             self._instigator_state.selector_id,
@@ -663,7 +684,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             after=timestamp - 1,
             limit=1,
         )
-        return GrapheneInstigationTick(graphene_info, matches[0]) if matches else None
+        return GrapheneInstigationTick(matches[0]) if matches else None
 
     def resolve_ticks(
         self,

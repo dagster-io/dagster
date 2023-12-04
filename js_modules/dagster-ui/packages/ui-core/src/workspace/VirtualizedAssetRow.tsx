@@ -1,5 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Checkbox,
+  Icon,
+  colorAccentGray,
+  colorBackgroundDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -111,7 +119,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               textOverflow: 'ellipsis',
             }}
           >
-            <Caption style={{color: Colors.Gray500, whiteSpace: 'nowrap'}}>
+            <Caption style={{color: colorTextLight(), whiteSpace: 'nowrap'}}>
               {definition?.description}
             </Caption>
           </div>
@@ -132,7 +140,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                     )}
                   >
                     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                      <Icon color={Colors.Gray400} name="asset_group" />
+                      <Icon color={colorAccentGray()} name="asset_group" />
                       {definition.groupName}
                     </Box>
                   </Link>
@@ -180,7 +188,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                   />
                 </AssetRunLink>
               ) : (
-                <div style={{color: Colors.Gray500}}>
+                <div style={{color: colorTextLight()}}>
                   {!liveData && type !== 'folder' ? 'Loading' : '\u2013'}
                 </div>
               )}
@@ -214,14 +222,14 @@ export const VirtualizedAssetCatalogHeader = ({
 }) => {
   return (
     <Box
-      background={Colors.White}
+      background={colorBackgroundDefault()}
       border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS_FOR_CATALOG,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
         position: 'sticky',
         top: 0,
         zIndex: 1,
@@ -245,7 +253,7 @@ export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
       }}
     >
       <HeaderCell>{nameLabel}</HeaderCell>

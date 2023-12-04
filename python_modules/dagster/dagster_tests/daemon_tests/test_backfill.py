@@ -1410,3 +1410,85 @@ def test_raise_error_on_target_static_partition_removed(
     ]
     assert len(errors) == 1
     assert ("The following partitions were removed: {'c'}.") in errors[0].message
+
+
+def test_partitions_def_changed_backfill_retry_envvar_set(
+    caplog,
+    instance,
+    partitions_defs_changes_location_1_workspace_context,
+    partitions_defs_changes_location_2_workspace_context,
+):
+    asset_selection = [AssetKey("time_partitions_def_changes")]
+    partition_keys = ["2023-01-01"]
+    backfill_id = "dummy_backfill"
+    asset_graph = ExternalAssetGraph.from_workspace(
+        partitions_defs_changes_location_1_workspace_context.create_request_context()
+    )
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=partition_keys,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+
+    instance.add_backfill(backfill)
+
+    with environ({"DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR": "1"}):
+        errors = list(
+            execute_backfill_iteration(
+                partitions_defs_changes_location_2_workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+            )
+        )
+
+        assert len(errors) == 1
+        error_msg = check.not_none(errors[0]).message
+        assert ("partitions definition has changed") in error_msg or (
+            "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
+        ) in error_msg
+
+
+def test_asset_backfill_logging(caplog, instance, workspace_context):
+    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+
+    partition_keys = partitions_a.get_partition_keys()
+    backfill_id = "backfill_with_multiple_assets_selected"
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
+    logs = caplog.text
+    assert "Evaluating asset backfill backfill_with_multiple_assets_selected" in logs
+    assert "DefaultPartitionsSubset(subset={'foo_b'})" in logs
+    assert "latest_storage_id=None" in logs
+    assert "AssetBackfillData" in logs

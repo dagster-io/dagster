@@ -1560,6 +1560,7 @@ export type InstigationStateRunsArgs = {
 };
 
 export type InstigationStateTickArgs = {
+  tickId?: InputMaybe<Scalars['Int']>;
   timestamp?: InputMaybe<Scalars['Float']>;
 };
 
@@ -1616,6 +1617,7 @@ export type InstigationTick = {
   runs: Array<Run>;
   skipReason: Maybe<Scalars['String']>;
   status: InstigationTickStatus;
+  tickId: Scalars['ID'];
   timestamp: Scalars['Float'];
 };
 
@@ -4335,6 +4337,7 @@ export type TerminateRunsResultOrError = PythonError | TerminateRunsResult;
 export type TestFields = {
   __typename: 'TestFields';
   alwaysException: Maybe<Scalars['String']>;
+  asyncString: Maybe<Scalars['String']>;
 };
 
 export type TextMetadataEntry = MetadataEntry & {
@@ -7559,6 +7562,10 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : InstigationTickStatus.FAILURE,
+    tickId:
+      overrides && overrides.hasOwnProperty('tickId')
+        ? overrides.tickId!
+        : '664bf548-9cd0-4a28-8f90-61c0e5d4d811',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.06,
   };
 };
@@ -12763,6 +12770,8 @@ export const buildTestFields = (
       overrides && overrides.hasOwnProperty('alwaysException')
         ? overrides.alwaysException!
         : 'quibusdam',
+    asyncString:
+      overrides && overrides.hasOwnProperty('asyncString') ? overrides.asyncString! : 'non',
   };
 };
 

@@ -90,6 +90,17 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def get_tick(self, tick_id: int) -> InstigatorTick:
+        """Get the tick for a given evaluation tick id.
+
+        Args:
+            tick_id (str): The id of the tick to query.
+
+        Returns:
+            InstigatorTick: The tick for the given id.
+        """
+
+    @abc.abstractmethod
     def get_ticks(
         self,
         origin_id: str,

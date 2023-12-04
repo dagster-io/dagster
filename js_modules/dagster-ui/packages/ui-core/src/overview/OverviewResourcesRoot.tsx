@@ -1,12 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   Heading,
   NonIdealState,
   PageHeader,
   Spinner,
   TextInput,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -83,7 +83,7 @@ export const OverviewResourcesRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading resources…</div>
+            <div style={{color: colorTextLight()}}>Loading resources…</div>
           </Box>
         </Box>
       );
