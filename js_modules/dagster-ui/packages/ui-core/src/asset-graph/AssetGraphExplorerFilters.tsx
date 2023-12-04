@@ -126,7 +126,10 @@ export function useAssetGraphExplorerFilters({
   });
 
   const allKindTags = React.useMemo(
-    () => nodes.map((node) => node.definition.computeKind).filter((v) => v) as string[],
+    () =>
+      Array.from(
+        new Set(nodes.map((node) => node.definition.computeKind).filter((v) => v) as string[]),
+      ),
     [nodes],
   );
 
