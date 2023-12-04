@@ -17,6 +17,7 @@ type Args<TValue> = {
   renderActiveStateLabel?: (props: {value: TValue; isActive: boolean}) => JSX.Element;
   getKey?: (value: TValue) => string;
   getStringValue: (value: TValue) => string;
+  getTooltipText?: (value: TValue) => string;
   allValues: SetFilterValue<TValue>[];
   initialState?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
@@ -40,6 +41,7 @@ export function useStaticSetFilter<TValue>({
   renderActiveStateLabel,
   initialState,
   getStringValue,
+  getTooltipText,
   onStateChanged,
   menuWidth,
   allowMultipleSelections = true,
@@ -128,6 +130,7 @@ export function useStaticSetFilter<TValue>({
           name={name}
           state={state}
           getStringValue={getStringValue}
+          getTooltipText={getTooltipText}
           renderLabel={renderActiveStateLabel || renderLabel}
           onRemove={() => {
             setState(new Set());
@@ -167,11 +170,13 @@ export function SetFilterActiveState({
   onRemove,
   renderLabel,
   matchType,
+  getTooltipText,
 }: {
   name: string;
   icon: IconName;
   state: Set<any>;
   getStringValue: (value: any) => string;
+  getTooltipText: (value: any) => string | undefined;
   onRemove: () => void;
   renderLabel: (value: any) => JSX.Element;
   matchType: 'any-of' | 'all-of';
@@ -185,12 +190,17 @@ export function SetFilterActiveState({
       return (
         <>
           is&nbsp;{arr.length === 1 ? '' : <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>}
-          {arr.map((value, index) => (
-            <React.Fragment key={index}>
-              <FilterTagHighlightedText>{getStringValue(value)}</FilterTagHighlightedText>
-              {index < arr.length - 1 ? <>,&nbsp;</> : ''}
-            </React.Fragment>
-          ))}
+          {arr.map((value, index) => {
+            console.log({value}, getTooltipText?.(value), getTooltipText);
+            return (
+              <React.Fragment key={index}>
+                <FilterTagHighlightedText tooltipText={getTooltipText?.(value)}>
+                  {getStringValue(value)}
+                </FilterTagHighlightedText>
+                {index < arr.length - 1 ? <>,&nbsp;</> : ''}
+              </React.Fragment>
+            );
+          })}
         </>
       );
     } else {
@@ -202,9 +212,9 @@ export function SetFilterActiveState({
             position="bottom"
             content={
               <Box padding={{vertical: 8, horizontal: 12}} flex={{direction: 'column', gap: 4}}>
-                {arr.map((value) => (
+                {arr.map((value, index) => (
                   <div
-                    key={getStringValue(value)}
+                    key={index}
                     style={{
                       maxWidth: '500px',
                       overflow: 'hidden',
@@ -223,7 +233,7 @@ export function SetFilterActiveState({
         </Box>
       );
     }
-  }, [arr, getStringValue, isAnyOf, renderLabel]);
+  }, [arr, getStringValue, getTooltipText, isAnyOf, renderLabel]);
 
   if (arr.length === 0) {
     return null;

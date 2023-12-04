@@ -72,9 +72,15 @@ export const FilterTagHighlightedText = React.forwardRef(
   ) => {
     return (
       <FilterTagHighlightedTextSpan
-        text={children}
+        text={
+          <>
+            {children}
+            <div style={{display: 'none'}}>…</div>
+          </>
+        }
         tooltipStyle={LabelTooltipStyles}
         {...rest}
+        tooltipText={rest.tooltipText || children}
         ref={ref}
       />
     );
