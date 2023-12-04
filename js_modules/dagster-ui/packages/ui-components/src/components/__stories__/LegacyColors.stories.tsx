@@ -6,7 +6,7 @@ import * as React from 'react';
 import rgbHex from 'rgb-hex';
 
 import {Box} from '../Box';
-import {Colors} from '../Colors';
+import {LegacyColors} from '../LegacyColors';
 
 const ColorExample = ({color, name}: {name: string; color: string}) => (
   <Box background={color} padding={12} style={{width: 120}}>
@@ -20,8 +20,11 @@ export default {
   component: ColorExample,
 } as Meta;
 
-const ColorsToHex = Object.keys(Colors).reduce(
-  (accum, key) => ({...accum, [key]: `#${rgbHex(Colors[key as keyof typeof Colors]).slice(0, 6)}`}),
+const ColorsToHex = Object.keys(LegacyColors).reduce(
+  (accum, key) => ({
+    ...accum,
+    [key]: `#${rgbHex(LegacyColors[key as keyof typeof LegacyColors]).slice(0, 6)}`,
+  }),
   {},
 );
 

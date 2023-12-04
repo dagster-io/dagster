@@ -3,13 +3,14 @@ import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
-  Colors,
   DialogBody,
   DialogFooter,
   Dialog,
   Group,
   Icon,
   Mono,
+  colorAccentGreen,
+  colorAccentYellow,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -293,7 +294,7 @@ export const ReexecutionDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon name="check_circle" color={Colors.Green500} />
+            <Icon name="check_circle" color={colorAccentGreen()} />
             <div>
               {`Successfully requested re-execution for ${successCount} ${
                 successCount === 1 ? 'run' : `runs`
@@ -304,7 +305,7 @@ export const ReexecutionDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon name="warning" color={Colors.Yellow500} />
+              <Icon name="warning" color={colorAccentYellow()} />
               <div>
                 {`Could not request re-execution for ${errorCount} ${
                   errorCount === 1 ? 'run' : 'runs'

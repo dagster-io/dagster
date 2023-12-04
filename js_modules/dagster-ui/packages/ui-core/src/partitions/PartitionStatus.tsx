@@ -1,4 +1,16 @@
-import {Box, Tooltip, Colors, useViewport} from '@dagster-io/ui-components';
+import {
+  Box,
+  Tooltip,
+  useViewport,
+  colorKeylineDefault,
+  colorTextLight,
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentBlue,
+  colorBackgroundLighter,
+  colorBackgroundDefault,
+  colorBorderDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -303,7 +315,7 @@ export const PartitionStatus = ({
         <Box
           flex={{justifyContent: 'space-between'}}
           margin={{top: 4}}
-          style={{fontSize: '0.8rem', color: Colors.Gray500, minHeight: 17}}
+          style={{fontSize: '0.8rem', color: colorTextLight(), minHeight: 17}}
         >
           <span>{partitionNames[0]}</span>
           <span>{partitionNames[partitionNames.length - 1]}</span>
@@ -370,9 +382,9 @@ function assetHealthToColorSegments(ranges: Range[]) {
 
 const statusToBackgroundColor = (status: RunStatus | undefined) => {
   if (status === undefined) {
-    return Colors.Gray600;
+    return colorAccentGray();
   }
-  return status === RunStatus.NOT_STARTED ? Colors.Gray200 : RUN_STATUS_COLORS[status];
+  return status === RunStatus.NOT_STARTED ? colorAccentGrayHover() : RUN_STATUS_COLORS[status];
 };
 
 function opRunStatusToColorRanges(
@@ -411,7 +423,7 @@ const SelectionSpansContainer = styled.div`
     position: absolute;
     top: 0;
     height: 8px;
-    border: 2px solid ${Colors.Blue500};
+    border: 2px solid ${colorAccentBlue()};
     border-bottom: 0;
   }
 `;
@@ -422,7 +434,7 @@ const PartitionSpansContainer = styled.div`
   border-radius: 4px;
   overflow: hidden;
   cursor: col-resize;
-  background: ${Colors.Gray200};
+  background: ${colorBackgroundLighter()};
 
   .color-span {
     width: 100%;
@@ -434,7 +446,7 @@ const PartitionSpansContainer = styled.div`
     width: 1px;
     position: absolute;
     z-index: 4;
-    background: ${Colors.KeylineGray};
+    background: ${colorKeylineDefault()};
     top: 0;
   }
 `;
@@ -442,7 +454,7 @@ const PartitionSpansContainer = styled.div`
 const SelectionFade = styled.div`
   position: absolute;
   z-index: 5;
-  background: ${Colors.White};
+  background: ${colorBackgroundDefault()};
   opacity: 0.5;
   top: 0;
 `;
@@ -451,7 +463,7 @@ const SelectionHoverHighlight = styled.div`
   min-width: 2px;
   position: absolute;
   z-index: 4;
-  background: ${Colors.White};
+  background: ${colorBackgroundDefault()};
   opacity: 0.7;
   top: 0;
 `;
@@ -460,7 +472,7 @@ const SelectionBorder = styled.div`
   min-width: 2px;
   position: absolute;
   z-index: 5;
-  border: 3px solid ${Colors.Dark};
+  border: 3px solid ${colorBorderDefault()};
   border-radius: 4px;
   top: 0;
 `;

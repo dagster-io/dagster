@@ -7,6 +7,7 @@ from ..asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 from ..base_scenario import run_request
 from .asset_daemon_scenario_states import (
     daily_partitions_def,
+    dynamic_partitions_def,
     hourly_partitions_def,
     one_asset,
     one_asset_depends_on_two,
@@ -361,6 +362,63 @@ cron_scenarios = [
         .evaluate_tick()
         .assert_requested_runs(
             *[run_request(["A"], hour_partition_key(state.current_time, delta=i)) for i in range(5)]
+        ),
+    ),
+    AssetDaemonScenario(
+        id="dynamic_cron_all_partitions",
+        initial_state=one_asset.with_asset_properties(
+            partitions_def=dynamic_partitions_def,
+            auto_materialize_policy=get_cron_policy(
+                basic_hourly_cron_rule._replace(all_partitions=True),
+                max_materializations_per_minute=100,
+            ),
+        ),
+        execution_fn=lambda state: state.with_dynamic_partitions("dynamic", ["2", "3", "4"])
+        .with_current_time("2020-01-01T00:05")
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("A", partition_key="2"),
+            run_request("A", partition_key="3"),
+            run_request("A", partition_key="4"),
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_dynamic_partitions("dynamic", ["5"])
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(hours=1)
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("A", partition_key="2"),
+            run_request("A", partition_key="3"),
+            run_request("A", partition_key="4"),
+            run_request("A", partition_key="5"),
+        ),
+    ),
+    AssetDaemonScenario(
+        id="dynamic_cron_last_partition",
+        initial_state=one_asset.with_asset_properties(
+            partitions_def=dynamic_partitions_def,
+            auto_materialize_policy=get_cron_policy(
+                basic_hourly_cron_rule._replace(all_partitions=False),
+                max_materializations_per_minute=100,
+            ),
+        ),
+        execution_fn=lambda state: state.with_dynamic_partitions("dynamic", ["2", "3", "4"])
+        .with_current_time("2020-01-01T00:05")
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("A", partition_key="4"),
+        )
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_dynamic_partitions("dynamic", ["5"])
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(hours=1)
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request("A", partition_key="5"),
         ),
     ),
 ]

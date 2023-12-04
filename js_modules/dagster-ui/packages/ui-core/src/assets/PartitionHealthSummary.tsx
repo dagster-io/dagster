@@ -1,4 +1,4 @@
-import {Spinner, Box, Colors, Caption} from '@dagster-io/ui-components';
+import {Spinner, Box, Caption} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -45,7 +45,7 @@ export const PartitionHealthSummary = React.memo((props: Props) => {
     .filter((dkeys) => assetData.stateForKey(dkeys) === AssetPartitionStatus.MATERIALIZED).length;
 
   return (
-    <Box color={Colors.Gray500}>
+    <div>
       <Box flex={{justifyContent: 'space-between'}} style={{fontWeight: 600}} margin={{bottom: 4}}>
         <Caption>{showAssetKey ? displayNameForAssetKey(assetKey) : 'Materialized'}</Caption>
         <Caption>{`${success.toLocaleString()}/${total.toLocaleString()}`}</Caption>
@@ -67,6 +67,6 @@ export const PartitionHealthSummary = React.memo((props: Props) => {
           />
         </Box>
       ))}
-    </Box>
+    </div>
   );
 });

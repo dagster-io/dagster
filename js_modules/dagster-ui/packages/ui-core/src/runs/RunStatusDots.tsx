@@ -53,7 +53,7 @@ const pulseAnimation = keyframes`
   }
 
   50% {
-    filter: brightness(0.7);
+    filter: brightness(0.6);
   }
 
   100% {
@@ -80,6 +80,6 @@ export const RunStatusDot = styled.div<{
   background: ${({status}) => RUN_STATUS_COLORS[status]};
   &:hover {
     animation: none;
-    filter: brightness(0.7);
+    filter: brightness(0.6);
   }
 `;

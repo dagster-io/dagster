@@ -1,4 +1,11 @@
-import {Button, Colors, Icon, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Icon,
+  ButtonGroup,
+  Tooltip,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
@@ -271,7 +278,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             gap: '6px',
             padding: '12px 24px',
             paddingRight: 12,
-            borderBottom: `1px solid ${Colors.KeylineGray}`,
+            borderBottom: `1px solid ${colorKeylineDefault()}`,
           }}
         >
           <SearchFilter

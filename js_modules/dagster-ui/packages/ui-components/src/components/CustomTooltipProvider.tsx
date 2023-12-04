@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import {colorTooltipBackground, colorTooltipText} from '../theme/color';
+
 export const CustomTooltipProvider = () => {
   const [state, setState] = React.useState<null | {
     title: string;
@@ -69,13 +71,12 @@ const TooltipContainer = styled.div`
   position: absolute;
   top: 0;
   left: 0;
-  font-size: 11px;
-  padding: 3px;
-  color: #a88860;
-  background: #fffaf5;
-  border: 1px solid #dbc5ad;
+  font-size: 12px;
+  padding: 4px 6px;
+  color: ${colorTooltipText()};
+  background: ${colorTooltipBackground()};
   transform: translate(5px, 5px);
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 1px 3px ${colorTooltipBackground()};
   z-index: 100;
   pointer-events: none;
   user-select: none;

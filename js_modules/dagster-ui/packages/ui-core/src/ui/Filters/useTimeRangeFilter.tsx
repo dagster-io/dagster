@@ -1,4 +1,16 @@
-import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter} from '@dagster-io/ui-components';
+import {
+  IconName,
+  Box,
+  Icon,
+  Dialog,
+  Button,
+  DialogFooter,
+  colorAccentPrimary,
+  colorBackgroundBlue,
+  colorTextBlue,
+  colorBackgroundBlueHover,
+  colorBorderDefault,
+} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -172,7 +184,7 @@ export function useTimeRangeFilter({
 function TimeRangeResult({range}: {range: string}) {
   return (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-      <Icon name="date" color={Colors.Dark} />
+      <Icon name="date" color={colorAccentPrimary()} />
       {range}
     </Box>
   );
@@ -356,17 +368,17 @@ const Container = styled.div`
   .CalendarDay__hovered_span:hover,
   .CalendarDay__selected_span,
   .CalendarDay__selected_span:hover {
-    background: ${Colors.Blue50};
-    color: ${Colors.Blue700};
+    background: ${colorBackgroundBlue()};
+    color: ${colorTextBlue()};
     border: 1px solid #e4e7e7;
   }
   .CalendarDay__selected,
   .CalendarDay__selected:active,
   .CalendarDay__selected:hover {
-    background: ${Colors.Blue200};
+    background: ${colorBackgroundBlueHover()};
     border: 1px solid #e4e7e7;
   }
   .DateInput_input__focused {
-    border-color: ${Colors.Blue500};
+    border-color: ${colorBorderDefault()};
   }
 `;

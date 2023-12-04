@@ -69,6 +69,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        ascending: bool = False,
     ) -> Sequence[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
 
@@ -78,6 +79,8 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
+            ascending (bool): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
 
         Returns:
             List[PipelineRun]

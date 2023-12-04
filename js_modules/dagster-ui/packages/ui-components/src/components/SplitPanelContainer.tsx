@@ -1,8 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorAccentGray, colorKeylineDefault} from '../theme/color';
+
 import {Button} from './Button';
-import {Colors} from './Colors';
 import {Icon} from './Icon';
 
 const DIVIDER_THICKNESS = 2;
@@ -194,7 +195,7 @@ const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
+    background: ${(p) => (p.resizing ? colorAccentGray() : colorKeylineDefault())};
     margin-left: -1px;
     overflow: visible;
     position: relative;
@@ -202,7 +203,7 @@ const DividerWrapper = {
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
+    background: ${(p) => (p.resizing ? colorAccentGray() : colorKeylineDefault())};
     margin-top: -1px;
     overflow: visible;
     position: relative;

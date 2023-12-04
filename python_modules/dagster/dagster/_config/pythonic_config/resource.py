@@ -43,6 +43,7 @@ from .attach_other_object_to_context import (
 from .pydantic_compat_layer import (
     model_fields,
 )
+from .type_check_utils import is_optional
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -895,6 +896,13 @@ def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> boo
 
     if metadata and metadata[0] == "resource_dependency":
         return True
+
+    if is_optional(annotation):
+        args = get_args(annotation)
+        annotation_inner = next((arg for arg in args if arg is not None), None)
+        if not annotation_inner:
+            return False
+        return _is_annotated_as_resource_type(annotation_inner, [])
 
     is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
         annotation, "__metadata__", None

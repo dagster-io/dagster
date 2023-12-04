@@ -5,7 +5,6 @@ import {
   Button,
   ButtonLink,
   Checkbox,
-  Colors,
   ConfigEditorHandle,
   ConfigEditorHelp,
   ConfigEditorHelpContext,
@@ -17,6 +16,9 @@ import {
   SecondPanelToggle,
   SplitPanelContainer,
   TextInput,
+  colorAccentYellow,
+  colorBorderDefault,
+  colorTextDefault,
   isHelpContextEqual,
 } from '@dagster-io/ui-components';
 import merge from 'deepmerge';
@@ -683,7 +685,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                     }
                   />
                   {includedChecks.length > 0 ? (
-                    <Body color={Colors.Dark}>
+                    <Body color={colorTextDefault()}>
                       {`Including `}
                       <ButtonLink onClick={() => setShowChecks(includedChecks)}>
                         {`${includedChecks.length.toLocaleString()} ${
@@ -767,7 +769,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
                 padding={{vertical: 8, left: 12, right: 0}}
-                border={{side: 'bottom', color: Colors.Gray200}}
+                border={{side: 'bottom', color: colorBorderDefault()}}
               >
                 <TagContainer
                   tagsFromDefinition={pipeline.tags}
@@ -779,10 +781,10 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', color: Colors.Gray200}}
+                border={{side: 'bottom', color: colorBorderDefault()}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
-                  <Icon name="warning" color={Colors.Yellow500} />
+                  <Icon name="warning" color={colorAccentYellow()} />
                   <div>
                     {repoAddressAsHumanString(repoAddress)} has been manually refreshed, and this
                     configuration may now be out of date.

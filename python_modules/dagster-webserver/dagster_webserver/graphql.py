@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from asyncio import Task, get_event_loop
+from asyncio import Task, get_event_loop, run
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -236,15 +236,23 @@ class GraphQLServer(ABC):
         variables: Optional[Dict[str, Any]],
         operation_name: Optional[str],
     ) -> ExecutionResult:
-        # use run_in_threadpool since underlying schema is sync
-        return await run_in_threadpool(
-            self._graphql_schema.execute,
-            query,
-            variables=variables,
-            operation_name=operation_name,
-            context=self.make_request_context(request),
-            middleware=self._graphql_middleware,
-        )
+        # run each query in a separate thread, as much of the schema is sync/blocking
+        # use execute_async to allow async resolvers to facilitate dataloader pattern
+
+        request_context = self.make_request_context(request)
+
+        def _graphql_request():
+            return run(
+                self._graphql_schema.execute_async(
+                    query,
+                    variables=variables,
+                    operation_name=operation_name,
+                    context=request_context,
+                    middleware=self._graphql_middleware,
+                )
+            )
+
+        return await run_in_threadpool(_graphql_request)
 
     async def execute_graphql_subscription(
         self,

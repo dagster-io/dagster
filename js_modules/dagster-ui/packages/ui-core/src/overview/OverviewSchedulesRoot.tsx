@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   Heading,
@@ -12,6 +11,7 @@ import {
   Spinner,
   TextInput,
   Tooltip,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -180,7 +180,7 @@ export const OverviewSchedulesRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading schedules…</div>
+            <div style={{color: colorTextLight()}}>Loading schedules…</div>
           </Box>
         </Box>
       );

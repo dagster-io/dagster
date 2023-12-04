@@ -1,4 +1,11 @@
-import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
+import {
+  Icon,
+  Tooltip,
+  colorAccentBlue,
+  colorAccentGray,
+  colorAccentGreen,
+  colorTextDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -77,7 +84,7 @@ export const LeftNavItem = React.forwardRef(
         const icon = (
           <Icon
             name={whichIcon}
-            color={status() === InstigationStatus.RUNNING ? Colors.Green500 : Colors.Gray600}
+            color={status() === InstigationStatus.RUNNING ? colorAccentGreen() : colorAccentGray()}
           />
         );
 
@@ -118,7 +125,7 @@ export const LeftNavItem = React.forwardRef(
     return (
       <ItemContainer ref={ref}>
         <Item $active={active} to={path}>
-          <Icon name={leftIcon} color={active ? Colors.Blue700 : Colors.Dark} />
+          <Icon name={leftIcon} color={active ? colorAccentBlue() : colorTextDefault()} />
           {label}
         </Item>
         {rightIcon()}

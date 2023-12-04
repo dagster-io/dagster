@@ -61,6 +61,7 @@ export type DynamicPartitionsRequestResultFragment = {
 export type HistoryTickFragment = {
   __typename: 'InstigationTick';
   id: string;
+  tickId: string;
   status: Types.InstigationTickStatus;
   timestamp: number;
   endTimestamp: number | null;

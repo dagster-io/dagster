@@ -4,12 +4,12 @@ import {
   ButtonLink,
   Caption,
   Checkbox,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
   Mono,
   Tag,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -178,7 +178,7 @@ export const RunRow = ({
                   onClick={() => {
                     setShowRunTags(true);
                   }}
-                  color={Colors.Gray700}
+                  color={colorTextLight()}
                   style={{margin: '-4px', padding: '4px'}}
                 >
                   View all tags ({allTagsWithPinned.length})

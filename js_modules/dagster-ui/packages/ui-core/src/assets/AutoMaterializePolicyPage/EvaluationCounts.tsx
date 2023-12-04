@@ -1,4 +1,13 @@
-import {Box, Caption, Colors} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  colorTextBlue,
+  colorTextGreen,
+  colorTextLight,
+  colorTextLighter,
+  colorTextRed,
+  colorTextYellow,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {compactNumber} from '../../ui/formatters';
@@ -18,7 +27,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numRequested || isPartitionedAsset ? (
       <Caption
         key="requested"
-        color={selected ? Colors.Blue700 : numRequested ? Colors.Green700 : Colors.Gray700}
+        color={selected ? colorTextBlue() : numRequested ? colorTextGreen() : colorTextLight()}
       >
         {isPartitionedAsset ? `${compactNumber(numRequested)} launched` : 'Launched'}
       </Caption>
@@ -28,7 +37,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numSkipped || isPartitionedAsset ? (
       <Caption
         key="skipped"
-        color={selected ? Colors.Blue700 : numSkipped ? Colors.Yellow700 : Colors.Gray700}
+        color={selected ? colorTextBlue() : numSkipped ? colorTextYellow() : colorTextLight()}
       >
         {isPartitionedAsset ? `${compactNumber(numSkipped)} skipped` : 'Skipped'}
       </Caption>
@@ -38,7 +47,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numDiscarded || isPartitionedAsset ? (
       <Caption
         key="discarded"
-        color={selected ? Colors.Blue700 : numDiscarded ? Colors.Red700 : Colors.Gray700}
+        color={selected ? colorTextBlue() : numDiscarded ? colorTextRed() : colorTextLight()}
       >
         {isPartitionedAsset ? `${compactNumber(numDiscarded)} discarded` : 'Discarded'}
       </Caption>
@@ -53,7 +62,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
       {filtered
         .map((element, ii) => [
           element,
-          <Caption key={`spacer-${ii}`} color={selected ? Colors.Blue200 : Colors.Gray200}>
+          <Caption key={`spacer-${ii}`} color={selected ? colorTextBlue() : colorTextLighter()}>
             /
           </Caption>,
         ])

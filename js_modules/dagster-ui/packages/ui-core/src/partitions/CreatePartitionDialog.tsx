@@ -2,7 +2,6 @@ import {gql, useMutation} from '@apollo/client';
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -11,6 +10,7 @@ import {
   Spinner,
   TextInput,
   Tooltip,
+  colorAccentRed,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -206,7 +206,7 @@ export const CreatePartitionDialog = ({
                   handleSave();
                 }
               }}
-              strokeColor={isValidPartitionName ? undefined : Colors.Red500}
+              strokeColor={isValidPartitionName ? undefined : colorAccentRed()}
               ref={React.useCallback((inputElement: HTMLInputElement) => {
                 if (inputElement) {
                   inputElement.focus();

@@ -16,6 +16,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
+from dagster._annotations import public
 from dagster._config import (
     ALL_CONFIG_BUILTINS,
     ConfigType,
@@ -639,13 +640,25 @@ class RunConfig:
         self.loggers = check.opt_dict_param(loggers, "loggers")
         self.execution = check.opt_dict_param(execution, "execution")
 
+    @public
     def to_config_dict(self):
+        """Converts the RunConfig to a dictionary representation.
+
+        Returns:
+            Dict[str, Any]: The dictionary representation of the RunConfig.
+        """
         return {
             "loggers": self.loggers,
             "resources": _convert_config_classes(self.resources),
             "ops": _convert_config_classes(self.ops),
             "execution": self.execution,
         }
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RunConfig):
+            return False
+
+        return self.to_config_dict() == other.to_config_dict()
 
 
 CoercibleToRunConfig: TypeAlias = Union[Dict[str, Any], RunConfig]

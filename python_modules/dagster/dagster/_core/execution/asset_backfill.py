@@ -36,7 +36,6 @@ from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import (
-    AllPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
 )
@@ -799,10 +798,9 @@ def _check_target_partitions_subset_is_valid(
         else:
             # Check that all target partitions still exist. If so, the backfill can continue.a
             existent_partitions_subset = (
-                AllPartitionsSubset(
-                    partitions_def,
-                    dynamic_partitions_store=instance_queryer,
+                partitions_def.subset_with_all_partitions(
                     current_time=instance_queryer.evaluation_time,
+                    dynamic_partitions_store=instance_queryer,
                 )
                 & target_partitions_subset
             )
@@ -850,7 +848,10 @@ def _check_validity_and_deserialize_asset_backfill_data(
             if unloadable_locations
             else ""
         )
-        if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
+        if (
+            os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR")
+            and unloadable_locations
+        ):
             logger.warning(
                 f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
                 " partition in the asset graph. The backfill will resume once it is available"
@@ -877,6 +878,8 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
+    logger.info(f"Evaluating asset backfill {backfill.backfill_id}")
+
     workspace_context = workspace_process_context.create_request_context()
 
     asset_graph = ExternalAssetGraph.from_workspace(workspace_context)
@@ -894,6 +897,10 @@ def execute_asset_backfill_iteration(
     )
     if previous_asset_backfill_data is None:
         return
+
+    logger.info(
+        f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
+    )
 
     if backfill.status == BulkActionStatus.REQUESTED:
         result = None
@@ -949,6 +956,10 @@ def execute_asset_backfill_iteration(
             updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
         instance.update_backfill(updated_backfill)
+        logger.info(
+            f"Asset backfill {backfill.backfill_id} completed iteration with status {updated_backfill.status}."
+        )
+        logger.debug(f"Updated asset backfill data after execution: {updated_asset_backfill_data}")
 
     elif backfill.status == BulkActionStatus.CANCELING:
         if not instance.run_coordinator:
@@ -1002,6 +1013,12 @@ def execute_asset_backfill_iteration(
             updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
 
         instance.update_backfill(updated_backfill)
+        logger.info(
+            f"Asset backfill {backfill.backfill_id} completed cancellation iteration with status {updated_backfill.status}."
+        )
+        logger.debug(
+            f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
+        )
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
 
