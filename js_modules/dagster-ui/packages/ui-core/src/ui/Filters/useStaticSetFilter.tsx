@@ -191,7 +191,6 @@ export function SetFilterActiveState({
         <>
           is&nbsp;{arr.length === 1 ? '' : <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>}
           {arr.map((value, index) => {
-            console.log({value}, getTooltipText?.(value), getTooltipText);
             return (
               <React.Fragment key={index}>
                 <FilterTagHighlightedText tooltipText={getTooltipText?.(value)}>
