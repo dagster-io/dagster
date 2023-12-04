@@ -1455,7 +1455,7 @@ class AssetExecutionContext(OpExecutionContext):
     @deprecated(**_get_deprecation_kwargs("dagster_run"))
     @property
     def dagster_run(self) -> DagsterRun:
-        """DagsterRun: The current pipeline run."""
+        """DagsterRun: The current job run."""
         return self.op_execution_context.dagster_run
 
     @deprecated(**_get_deprecation_kwargs("run_id"))

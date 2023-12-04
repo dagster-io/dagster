@@ -152,33 +152,33 @@ def test_deprecation_warnings():
                         deprecation_info, expected_deprecation_args
                     )
 
-        for method in dir(op_context):
+        for attr in dir(op_context):
             if (
-                method in asset_context_not_deprecated
-                or method[:2] == "__"
-                or method in op_context_properties
-                or method in other_ignores
+                attr in asset_context_not_deprecated
+                or attr[:2] == "__"
+                or attr in op_context_properties
+                or attr in other_ignores
             ):
                 continue
-            if inspect.ismethod(getattr(op_context, method)):
-                assert method in dir(asset_context)
+            if inspect.ismethod(getattr(op_context, attr)):
+                assert attr in dir(asset_context)
                 try:
-                    deprecation_info = getattr(asset_context, method)._deprecated  # noqa: SLF001
+                    deprecation_info = getattr(asset_context, attr)._deprecated  # noqa: SLF001
                 except Exception:
                     raise Exception(
-                        f"Method {method} on OpExecutionContext does not have an implementation on"
+                        f"Method {attr} on OpExecutionContext does not have an implementation on"
                         " AssetExecutionContext. All methods on OpExecutionContext must be"
                         " re-implemented on AssetExecutionContext with appropriate deprecation"
                         " warnings. See the class implementation of AssetExecutionContext for more"
                         " details."
                     )
 
-                expected_deprecation_args = _get_deprecation_kwargs(method)
+                expected_deprecation_args = _get_deprecation_kwargs(attr)
                 assert_deprecation_messages_as_expected(deprecation_info, expected_deprecation_args)
             else:
                 raise Exception(
-                    f"Method {method} on OpExecutionContext not accounted for in AssetExecutionContext deprecation"
-                    f" test. Ensure that the method {method} exists on AssetExecutionContext, or is explicitly ignored in"
+                    f"Method {attr} on OpExecutionContext not accounted for in AssetExecutionContext deprecation"
+                    f" test. Ensure that the method {attr} exists on AssetExecutionContext, or is explicitly ignored in"
                     " the test."
                 )
 
