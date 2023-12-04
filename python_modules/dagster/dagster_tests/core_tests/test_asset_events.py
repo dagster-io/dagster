@@ -231,3 +231,43 @@ def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_n
         record = records[0]
         assert record.event_log_entry.dagster_event.event_specific_data.partitions_subset is None
         assert record.event_log_entry.dagster_event.event_specific_data.partition is None
+
+
+def test_single_run_backfill_with_unpartitioned_and_partitioned_mix():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=partitions_def)
+    def partitioned():
+        return 0
+
+    @asset
+    def unpartitioned():
+        return 0
+
+    with instance_for_test() as instance:
+
+        class FakeCloudInstance(DagsterInstance):
+            @property
+            def is_cloud_instance(self) -> bool:
+                return True
+
+        instance.__class__ = FakeCloudInstance
+
+        materialize_to_memory(
+            [partitioned, unpartitioned],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+        )
+
+        [record] = instance.get_event_records(
+            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, partitioned.key)
+        )
+        assert (
+            record.event_log_entry.dagster_event.event_specific_data.partitions_subset
+            == partitions_def.subset_with_partition_keys(["a", "b"])
+        )
+
+        [record] = instance.get_event_records(
+            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, unpartitioned.key)
+        )
+        assert record.event_log_entry.dagster_event.event_specific_data.partitions_subset is None

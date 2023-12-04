@@ -3,6 +3,7 @@ import logging.config
 import os
 import sys
 import time
+import warnings
 import weakref
 from abc import abstractmethod
 from collections import defaultdict
@@ -1372,7 +1373,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
                             # For now, yielding materialization planned events for single run backfills
                             # is only supported on cloud
-                            if self.is_cloud_instance:
+                            if (
+                                self.is_cloud_instance
+                                and check.not_none(output.properties).is_asset_partitioned
+                            ):
                                 partitions_def = (
                                     external_partitions_def_data.get_partitions_definition()
                                 )
@@ -1989,8 +1993,10 @@ class DagsterInstance(DynamicPartitionsStore):
                 event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
                 and event_records_filter.asset_partitions
             ):
-                # TODO: Raise warning that events targeting multiple partitions will not be returned
-                pass
+                warnings.warn(
+                    "Asset materialization planned events with partitions subsets will not be "
+                    "returned when the event records filter contains the asset_partitions argument"
+                )
 
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 
