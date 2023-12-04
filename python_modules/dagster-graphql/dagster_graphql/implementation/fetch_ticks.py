@@ -63,12 +63,8 @@ def get_instigation_ticks(
             )
         else:
             raise Exception(f"Unexpected instigator type {instigator_type}")
-
-        return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
-
-    return [
-        GrapheneInstigationTick(graphene_info, tick)
-        for tick in graphene_info.context.instance.get_ticks(
+    else:
+        ticks = graphene_info.context.instance.get_ticks(
             instigator_origin_id,
             selector_id,
             before=before,
@@ -76,4 +72,5 @@ def get_instigation_ticks(
             limit=limit,
             statuses=statuses,
         )
-    ]
+
+    return [GrapheneInstigationTick(tick) for tick in ticks]

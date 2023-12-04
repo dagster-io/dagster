@@ -1,4 +1,12 @@
-import {Body, Box, Button, Colors, Subtitle1} from '@dagster-io/ui-components';
+import {
+  Body,
+  Box,
+  Button,
+  Subtitle1,
+  colorAccentBlue,
+  colorBackgroundBlue,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import uniq from 'lodash/uniq';
 import React from 'react';
 import styled from 'styled-components';
@@ -24,7 +32,7 @@ export const TryTheFeatureFlagNotice = () => {
     <Container>
       <Box flex={{direction: 'column', gap: 4}}>
         <Subtitle1>{TITLE}</Subtitle1>
-        <Body color={Colors.Gray700}>{MESSAGE}</Body>
+        <Body color={colorTextLight()}>{MESSAGE}</Body>
         <Box flex={{gap: 8}} margin={{top: 12}}>
           <Button
             intent="primary"
@@ -49,8 +57,8 @@ const Container = styled.div`
   z-index: 2;
   width: 700px;
   max-width: 50vw;
-  border: 1px solid ${Colors.Blue100};
+  border: 1px solid ${colorAccentBlue()};
   border-radius: 16px;
-  background: ${Colors.Blue50};
+  background: ${colorBackgroundBlue()};
   padding: 24px;
 `;

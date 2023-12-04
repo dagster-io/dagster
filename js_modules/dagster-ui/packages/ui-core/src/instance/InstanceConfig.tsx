@@ -3,13 +3,16 @@ import 'codemirror/addon/search/searchcursor';
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   PageHeader,
   Spinner,
   Code,
   Heading,
   StyledRawCodeMirror,
   Subheading,
+  colorKeylineDefault,
+  colorBackgroundDefault,
+  colorTextDefault,
+  colorBackgroundLime,
 } from '@dagster-io/ui-components';
 import CodeMirror from 'codemirror';
 import * as React from 'react';
@@ -25,13 +28,15 @@ import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/Instanc
 
 const InstanceConfigStyle = createGlobalStyle`
   .CodeMirror.cm-s-instance-config {
-    box-shadow: 0 1px 0 ${Colors.KeylineGray};
+    background-color: ${colorBackgroundDefault()};
+    box-shadow: 0 1px 0 ${colorKeylineDefault()};
+    color: ${colorTextDefault()};
     height: 100%;
   }
 
   .CodeMirror.cm-s-instance-config {
     .config-highlight {
-      background-color: ${Colors.Yellow200};
+      background-color: ${colorBackgroundLime()};
     }
 `;
 

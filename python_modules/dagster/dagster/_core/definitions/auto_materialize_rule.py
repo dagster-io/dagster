@@ -97,10 +97,7 @@ class RuleEvaluationContext:
 
     @property
     def auto_materialize_run_tags(self) -> Mapping[str, str]:
-        return {
-            AUTO_MATERIALIZE_TAG: "true",
-            **self.instance_queryer.instance.auto_materialize_run_tags,
-        }
+        return self.daemon_context.auto_materialize_run_tags
 
     @functools.cached_property
     def previous_tick_requested_or_discarded_subset(self) -> AssetSubset:
@@ -580,7 +577,8 @@ class MaterializeOnCronRule(
             return {
                 AssetKeyPartitionKey(context.asset_key, partition_key)
                 for partition_key in partitions_def.get_partition_keys(
-                    current_time=context.evaluation_time
+                    current_time=context.evaluation_time,
+                    dynamic_partitions_store=context.instance_queryer,
                 )
             }
 
@@ -589,13 +587,20 @@ class MaterializeOnCronRule(
         time_partitions_def = get_time_partitions_def(partitions_def)
         if time_partitions_def is None:
             return {
-                AssetKeyPartitionKey(context.asset_key, partitions_def.get_last_partition_key())
+                AssetKeyPartitionKey(
+                    context.asset_key,
+                    partitions_def.get_last_partition_key(
+                        dynamic_partitions_store=context.instance_queryer
+                    ),
+                )
             }
 
         missed_time_partition_keys = filter(
             None,
             [
-                time_partitions_def.get_last_partition_key(current_time=missed_tick)
+                time_partitions_def.get_last_partition_key(
+                    current_time=missed_tick, dynamic_partitions_store=context.instance_queryer
+                )
                 for missed_tick in missed_ticks
             ],
         )
@@ -693,7 +698,10 @@ class AutoMaterializeAssetPartitionsFilter(
             for asset_partition in run_id_asset_partitions
         }
 
-        if self.latest_run_required_tags.items() <= context.auto_materialize_run_tags.items():
+        if (
+            self.latest_run_required_tags.items()
+            <= {AUTO_MATERIALIZE_TAG: "true", **context.auto_materialize_run_tags}.items()
+        ):
             return will_update_asset_partitions | updated_partitions_with_required_tags
         else:
             return updated_partitions_with_required_tags

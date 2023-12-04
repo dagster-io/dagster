@@ -6,8 +6,15 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import searchSVG from '../icon-svgs/search.svg';
+import {
+  colorAccentGray,
+  colorBorderDefault,
+  colorKeylineDefault,
+  colorTextDefault,
+  colorTextDisabled,
+  colorPopoverBackground,
+} from '../theme/color';
 
-import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export const GlobalPopoverStyle = createGlobalStyle`
@@ -18,13 +25,19 @@ export const GlobalPopoverStyle = createGlobalStyle`
 
   .dagster-popover .bp4-popover2-content,
   .dagster-popover .bp4-popover-content {
+    background-color: ${colorPopoverBackground()};
     border-radius: 4px;
+
+    .bp4-menu {
+      background-color: ${colorPopoverBackground()};
+      color: ${colorTextDefault()};
+    }
 
     .bp4-input-group {
       .bp4-icon.bp4-icon-search {
         width: 16px;
         height: 16px;
-        background: ${Colors.Gray900};
+        background: ${colorAccentGray()};
         mask-image: url(${searchSVG.src});
         mask-size: cover;
         &::before { 
@@ -36,12 +49,14 @@ export const GlobalPopoverStyle = createGlobalStyle`
       }
         
       .bp4-input {
+        background-color: ${colorPopoverBackground()};
         border: none;
         border-radius: 8px;
-        box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
+        box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px, ${colorKeylineDefault()} inset 2px 2px 1.5px;
+        color: ${colorTextDefault()};
         font-family: ${FontFamily.default};
         ::placeholder {
-          color: ${Colors.Gray500};
+          color: ${colorTextDisabled()};
         }
       }
     }
@@ -58,11 +73,12 @@ export const GlobalPopoverStyle = createGlobalStyle`
   }
 
   .dagster-popover .bp4-popover2-arrow-fill {
-    fill: ${Colors.Gray900};
+    fill: ${colorPopoverBackground()};
   }
+
   .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
   .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
-    background-color: ${Colors.Gray900};
+    background-color: ${colorPopoverBackground()};
   }
 `;
 

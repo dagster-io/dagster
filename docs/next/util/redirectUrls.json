@@ -5,6 +5,11 @@
     "statusCode": 302
   },
   {
+    "source": "/getting-started/project-file-reference",
+    "destination": "/guides/understanding-dagster-project-files",
+    "statusCode": 302
+  },
+  {
     "source": "/install",
     "destination": "/getting-started",
     "statusCode": 302
@@ -69,7 +74,11 @@
     "destination": "/tutorial/advanced-tutorial/scheduling",
     "statusCode": 302
   },
-  {"source": "/overview", "destination": "/concepts", "statusCode": 302},
+  {
+    "source": "/overview", 
+    "destination": "/concepts", 
+    "statusCode": 302
+  },
   {
     "source": "/overview/solids-pipelines/solids",
     "destination": "/concepts/solids-pipelines/solids",
@@ -80,7 +89,6 @@
     "destination": "/concepts/solids-pipelines/solids",
     "statusCode": 302
   },
-
   {
     "source": "/overview/solids-pipelines/pipelines",
     "destination": "/concepts/solids-pipelines/pipelines",
@@ -170,13 +178,11 @@
     "destination": "/concepts/partitions-schedules-sensors/partitions",
     "statusCode": 302
   },
-
   {
     "source": "/overview/partitions-backfill/backfill",
     "destination": "/concepts/partitions-schedules-sensors/backfills",
     "statusCode": 302
   },
-
   {
     "source": "/overview/schedules-sensors/schedules",
     "destination": "/concepts/partitions-schedules-sensors/schedules",
@@ -188,7 +194,6 @@
     "destination": "/concepts/partitions-schedules-sensors/sensors",
     "statusCode": 302
   },
-
   {
     "source": "/overview/instances/dagster-instance",
     "destination": "/deployment/dagster-instance",
@@ -723,6 +728,16 @@
   {
     "source": "/concepts/assets/asset-materializations",
     "destination": "/concepts/ops-jobs-graphs/op-events#asset-materializations",
+    "statusCode": 302
+  },
+  {
+    "source": "/getting-started/releases",
+    "destination": "/about/releases",
+    "statusCode": 302
+  },
+  {
+    "source": "/getting-started/telemetry",
+    "destination": "/about/telemetry",
     "statusCode": 302
   },
   {

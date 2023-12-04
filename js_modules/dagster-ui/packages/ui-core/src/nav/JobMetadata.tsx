@@ -3,10 +3,10 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   DialogFooter,
   Dialog,
   Tag,
+  colorLinkDefault,
 } from '@dagster-io/ui-components';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -157,7 +157,7 @@ const RelatedAssetsTag = ({relatedAssets}: {relatedAssets: string[]}) => {
     <>
       <Tag icon="asset">
         <ButtonLink
-          color={Colors.Link}
+          color={colorLinkDefault()}
           onClick={() => setOpen(true)}
         >{`View ${relatedAssets.length} assets`}</ButtonLink>
       </Tag>

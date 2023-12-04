@@ -1,4 +1,17 @@
-import {Colors} from '@dagster-io/ui-components';
+import {
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentGreen,
+  colorAccentRed,
+  colorAccentReversed,
+  colorAccentWhite,
+  colorAccentYellow,
+  colorBackgroundBlue,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorTextBlue,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 
 import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
 
@@ -254,21 +267,21 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 };
 
 const TextColorForStates = {
-  [IStepState.RUNNING]: Colors.Blue700,
-  [IStepState.RETRY_REQUESTED]: Colors.White,
-  [IStepState.SUCCEEDED]: Colors.White,
-  [IStepState.FAILED]: Colors.White,
-  [IStepState.SKIPPED]: Colors.White,
-  [IStepState.UNKNOWN]: Colors.White,
+  [IStepState.RUNNING]: colorTextBlue(),
+  [IStepState.RETRY_REQUESTED]: colorAccentWhite(),
+  [IStepState.SUCCEEDED]: colorAccentWhite(),
+  [IStepState.FAILED]: colorAccentWhite(),
+  [IStepState.SKIPPED]: colorAccentWhite(),
+  [IStepState.UNKNOWN]: colorAccentWhite(),
 };
 
 const BackgroundColorForStates = {
-  [IStepState.RUNNING]: Colors.Blue100,
-  [IStepState.RETRY_REQUESTED]: Colors.Yellow500,
-  [IStepState.SUCCEEDED]: Colors.Green500,
-  [IStepState.FAILED]: Colors.Red500,
-  [IStepState.SKIPPED]: Colors.Gray500,
-  [IStepState.UNKNOWN]: Colors.Gray400,
+  [IStepState.RUNNING]: colorBackgroundBlue(),
+  [IStepState.RETRY_REQUESTED]: colorAccentYellow(),
+  [IStepState.SUCCEEDED]: colorAccentGreen(),
+  [IStepState.FAILED]: colorAccentRed(),
+  [IStepState.SKIPPED]: colorAccentGray(),
+  [IStepState.UNKNOWN]: colorAccentGrayHover(),
 };
 
 export const boxStyleFor = (
@@ -289,16 +302,16 @@ export const boxStyleFor = (
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      color: TextColorForStates[state] || Colors.White,
-      background: BackgroundColorForStates[state] || Colors.Gray400,
+      color: TextColorForStates[state] || colorAccentReversed(),
+      background: BackgroundColorForStates[state] || colorBackgroundLight(),
     };
   }
 
   // Step has not started, use "hypothetical dotted box".
   return {
-    color: Colors.Gray600,
-    background: Colors.White,
-    border: `1.5px dotted ${Colors.Gray500}`,
+    color: colorTextLight(),
+    background: colorBackgroundDefault(),
+    border: `1.5px dotted ${colorAccentGray()}`,
   };
 };
 

@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorBackgroundGray} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -53,7 +53,7 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
       <SVGLabeledParentRect
         {...bounds}
         label={op.definition.name}
-        fill={Colors.Gray50}
+        fill={colorBackgroundGray()}
         minified={minified}
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {

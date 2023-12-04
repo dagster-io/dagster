@@ -35,17 +35,20 @@ from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
+PAGE_SIZE = 100
+
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
     """Used with the QueuedRunCoordinator on the instance. This process finds queued runs from the run
     store and launches them.
     """
 
-    def __init__(self, interval_seconds) -> None:
+    def __init__(self, interval_seconds, page_size=PAGE_SIZE) -> None:
         self._exit_stack = ExitStack()
         self._executor: Optional[ThreadPoolExecutor] = None
         self._location_timeouts_lock = threading.Lock()
         self._location_timeouts: Dict[str, float] = {}
+        self._page_size = page_size
         super().__init__(interval_seconds)
 
     def _get_executor(self, max_workers) -> ThreadPoolExecutor:
@@ -207,11 +210,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 )
                 return []
 
-        queued_runs = self._get_queued_runs(instance)
-
-        if not queued_runs:
-            self._logger.debug("Poll returned no queued runs.")
-            return []
+        cursor = None
+        has_more = True
+        batch: List[DagsterRun] = []
 
         now = fixed_iteration_time or time.time()
 
@@ -228,48 +229,60 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 " Temporarily skipping runs from the following locations due to a user code error: "
                 + ",".join(list(paused_location_names))
             )
-
         self._logger.info(
-            f"Retrieved %d queued runs, checking limits.{locations_clause}",
-            len(queued_runs),
+            "Priority sorting and checking tag concurrency limits for queued runs."
+            + locations_clause
         )
-
-        # place in order
-        sorted_runs = self._priority_sort(queued_runs)
-        tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
-            tag_concurrency_limits, in_progress_runs
-        )
-
-        batch: List[DagsterRun] = []
-        for run in sorted_runs:
-            if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
-                break
-
-            if tag_concurrency_limits_counter.is_blocked(run):
-                continue
-
-            location_name = (
-                run.external_job_origin.location_name if run.external_job_origin else None
+        # Paginate through our runs list so we don't need to hold every run
+        # in memory at once. The maximum number of runs we'll hold in memory is
+        # max_runs_to_launch + page_size.
+        while has_more:
+            queued_runs = instance.get_runs(
+                RunsFilter(statuses=[DagsterRunStatus.QUEUED]),
+                cursor=cursor,
+                limit=self._page_size,
+                ascending=True,
             )
-            if location_name and location_name in paused_location_names:
-                continue
+            has_more = len(queued_runs) >= self._page_size
 
-            tag_concurrency_limits_counter.update_counters_with_launched_item(run)
-            batch.append(run)
+            if not queued_runs:
+                has_more = False
+                return batch
+
+            cursor = queued_runs[-1].run_id
+
+            tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
+                tag_concurrency_limits, in_progress_runs
+            )
+
+            batch += queued_runs
+            batch = self._priority_sort(batch)
+
+            to_remove = []
+            for run in batch:
+                if tag_concurrency_limits_counter.is_blocked(run):
+                    to_remove.append(run)
+                else:
+                    tag_concurrency_limits_counter.update_counters_with_launched_item(run)
+
+                location_name = (
+                    run.external_job_origin.location_name if run.external_job_origin else None
+                )
+                if location_name and location_name in paused_location_names:
+                    to_remove.append(run)
+
+            for run in to_remove:
+                batch.remove(run)
+
+            if max_runs_to_launch >= 1:
+                batch = batch[:max_runs_to_launch]
 
         return batch
-
-    def _get_queued_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
-        queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
-
-        # Reversed for fifo ordering
-        runs = instance.get_runs(filters=queued_runs_filter)[::-1]
-        return runs
 
     def _get_in_progress_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
-    def _priority_sort(self, runs: Iterable[DagsterRun]) -> Sequence[DagsterRun]:
+    def _priority_sort(self, runs: Iterable[DagsterRun]) -> List[DagsterRun]:
         def get_priority(run: DagsterRun) -> int:
             priority_tag_value = run.tags.get(PRIORITY_TAG, "0")
             try:

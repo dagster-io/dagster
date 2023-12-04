@@ -117,14 +117,14 @@ class AssetGraph:
     def source_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._source_asset_keys
 
-    @property
+    @functools.cached_property
     def root_asset_keys(self) -> AbstractSet[AssetKey]:
         """Non-source asset keys that have no non-source parents."""
         from .asset_selection import AssetSelection
 
         return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
 
-    @property
+    @functools.cached_property
     def root_materializable_or_observable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Materializable or observable source asset keys that have no parents which are
         materializable or observable.

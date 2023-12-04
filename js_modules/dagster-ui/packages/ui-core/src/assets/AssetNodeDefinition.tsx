@@ -3,11 +3,12 @@ import {
   Body,
   Box,
   Caption,
-  Colors,
   ConfigTypeSchema,
   Icon,
   Mono,
   Subheading,
+  colorAccentGray,
+  colorLinkDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -159,7 +160,7 @@ export const AssetNodeDefinition = ({
             <Link to="?view=lineage&lineageScope=upstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
                 View upstream graph
-                <Icon name="open_in_new" color={Colors.Link} />
+                <Icon name="open_in_new" color={colorLinkDefault()} />
               </Box>
             </Link>
           </Box>
@@ -176,7 +177,7 @@ export const AssetNodeDefinition = ({
             <Link to="?view=lineage&lineageScope=downstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
                 View downstream graph
-                <Icon name="open_in_new" color={Colors.Link} />
+                <Icon name="open_in_new" color={colorLinkDefault()} />
               </Box>
             </Link>
           </Box>
@@ -195,7 +196,7 @@ export const AssetNodeDefinition = ({
                 .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
                 .map((resource) => (
                   <ResourceContainer key={resource.resourceKey}>
-                    <Icon name="resource" color={Colors.Gray700} />
+                    <Icon name="resource" color={colorAccentGray()} />
                     {repoAddress ? (
                       <Link
                         to={workspacePathFromAddress(

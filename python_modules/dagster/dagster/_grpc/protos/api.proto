@@ -21,7 +21,9 @@ service DagsterApi {
   rpc ExternalJob (ExternalJobRequest) returns (ExternalJobReply) {}
   rpc StreamingExternalRepository (ExternalRepositoryRequest) returns (stream StreamingExternalRepositoryEvent) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (stream StreamingChunkEvent) {}
+  rpc SyncExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
   rpc ExternalSensorExecution (ExternalSensorExecutionRequest) returns (stream StreamingChunkEvent) {}
+  rpc SyncExternalSensorExecution (ExternalSensorExecutionRequest) returns (ExternalSensorExecutionReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
   rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
@@ -185,6 +187,14 @@ message ExternalJobRequest {
 message ExternalJobReply {
   string serialized_job_data = 1;
   string serialized_error = 2;
+}
+
+message ExternalScheduleExecutionReply {
+  string serialized_schedule_result = 1;
+}
+
+message ExternalSensorExecutionReply {
+  string serialized_sensor_result = 1;
 }
 
 message ReloadCodeRequest {
