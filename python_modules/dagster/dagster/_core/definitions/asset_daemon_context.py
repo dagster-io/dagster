@@ -272,7 +272,7 @@ class AssetDaemonContext:
             daemon_context=self,
         )
 
-        return auto_materialize_policy_evaluator.evaluate(context, from_legacy=True)
+        return auto_materialize_policy_evaluator.evaluate(context, report_num_skipped=True)
 
     def get_auto_materialize_asset_evaluations(
         self,
