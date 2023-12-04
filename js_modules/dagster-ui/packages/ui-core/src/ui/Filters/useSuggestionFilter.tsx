@@ -26,6 +26,7 @@ type Args<TValue> = {
   onSuggestionClicked: (value: TValue) => Promise<SuggestionFilterSuggestion<TValue>[]> | void;
 
   getStringValue: (value: TValue) => string;
+  getTooltipText?: (value: TValue) => string;
   getKey: (value: TValue) => string;
   renderLabel: ({value, isActive}: {value: TValue; isActive: boolean}) => JSX.Element;
   renderActiveStateLabel?: ({value, isActive}: {value: TValue; isActive: boolean}) => JSX.Element;
@@ -53,6 +54,7 @@ export function useSuggestionFilter<TValue>({
   renderActiveStateLabel,
   isMatch,
   matchType = 'any-of',
+  getTooltipText,
 }: Args<TValue>): SuggestionFilter<TValue> {
   const [nextSuggestionsLoading, setNextSuggestionsLoading] = React.useState(false);
   const [nextSuggestions, setNextSuggestions] = React.useState<
@@ -162,6 +164,7 @@ export function useSuggestionFilter<TValue>({
           name={name}
           state={new Set(state)}
           getStringValue={getStringValue}
+          getTooltipText={getTooltipText}
           renderLabel={renderActiveStateLabel || renderLabel}
           onRemove={() => {
             setState([]);
