@@ -42,6 +42,7 @@ CACHEABLE_PARTITION_TYPES = (
     StaticPartitionsDefinition,
     DynamicPartitionsDefinition,
 )
+RUN_FETCH_BATCH_SIZE = 100
 
 
 class AssetPartitionStatus(Enum):
@@ -349,15 +350,18 @@ def build_failed_and_in_progress_partition_subset(
 
     cursor = None
     if incomplete_materializations:
-        finished_runs = {
-            r.run_id: r.status
+        to_fetch = list(set([run_id for run_id, _event_id in incomplete_materializations.values()]))
+        finished_runs = {}
+        while to_fetch:
+            chunk = to_fetch[:RUN_FETCH_BATCH_SIZE]
+            to_fetch = to_fetch[RUN_FETCH_BATCH_SIZE:]
             for r in instance.get_runs(
                 filters=RunsFilter(
-                    run_ids=[run_id for run_id, _event_id in incomplete_materializations.values()],
+                    run_ids=chunk,
                     statuses=FINISHED_STATUSES,
                 )
-            )
-        }
+            ):
+                finished_runs[r.run_id] = r.status
         for partition, (run_id, event_id) in incomplete_materializations.items():
             if run_id in finished_runs:
                 status = finished_runs.get(run_id)
