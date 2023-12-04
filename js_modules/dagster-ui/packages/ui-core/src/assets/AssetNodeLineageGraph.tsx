@@ -35,10 +35,17 @@ export const AssetNodeLineageGraph = ({
   const {flagDAGSidebar} = useFeatureFlags();
 
   const assetGraphId = toGraphId(assetKey);
-  const allGroups = React.useMemo(
-    () => uniq(Object.values(assetGraphData.nodes).map((g) => groupIdForNode(g))),
-    [assetGraphData],
-  );
+
+  const {allGroups, groupedAssets} = React.useMemo(() => {
+    const groupedAssets: Record<string, GraphNode[]> = {};
+    Object.values(assetGraphData.nodes).forEach((node) => {
+      const groupId = groupIdForNode(node);
+      groupedAssets[groupId] = groupedAssets[groupId] || [];
+      groupedAssets[groupId]!.push(node);
+    });
+    return {allGroups: Object.keys(groupedAssets), groupedAssets};
+  }, [assetGraphData]);
+
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
   // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
@@ -91,7 +98,13 @@ export const AssetNodeLineageGraph = ({
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
                 {flagDAGSidebar ? (
-                  <ExpandedGroupNode group={group} minimal={scale < MINIMAL_SCALE} />
+                  <ExpandedGroupNode
+                    group={{
+                      ...group,
+                      assets: groupedAssets[group.id]!,
+                    }}
+                    minimal={scale < MINIMAL_SCALE}
+                  />
                 ) : (
                   <AssetGroupNode group={group} scale={scale} />
                 )}

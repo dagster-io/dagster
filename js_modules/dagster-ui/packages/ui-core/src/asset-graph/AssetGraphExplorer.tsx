@@ -208,7 +208,7 @@ const AssetGraphExplorerWithData = ({
     });
     const counts: Record<string, number> = {};
     Object.keys(groupedAssets).forEach((key) => (counts[key] = groupedAssets[key]!.length));
-    return {allGroups: Object.keys(counts), allGroupCounts: counts, groupedAssets};
+    return {allGroups: Object.keys(groupedAssets), allGroupCounts: counts, groupedAssets};
   }, [assetGraphData]);
 
   const [expandedGroups, setExpandedGroups] = useQueryPersistedState<string[]>({

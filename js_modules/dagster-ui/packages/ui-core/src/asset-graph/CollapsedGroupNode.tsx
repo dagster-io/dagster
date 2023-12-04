@@ -117,7 +117,7 @@ export const useGroupNodeContextMenu = ({
   assets,
   preferredJobName,
 }: {
-  onFilterToGroup: () => void;
+  onFilterToGroup?: () => void;
   assets: GraphNode[];
   preferredJobName?: string;
 }) => {
@@ -140,7 +140,7 @@ export const useGroupNodeContextMenu = ({
         text="Materialize changed and missing"
         onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
       />
-      <MenuItem text="Filter to this group" onClick={onFilterToGroup} />
+      {onFilterToGroup ? <MenuItem text="Filter to this group" onClick={onFilterToGroup} /> : null}
     </Menu>
   );
   const dialog = (

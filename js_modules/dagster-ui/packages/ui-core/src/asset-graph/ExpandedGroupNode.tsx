@@ -25,8 +25,8 @@ export const ExpandedGroupNode = ({
   group: GroupLayout & {assets: GraphNode[]};
   minimal: boolean;
   onCollapse?: () => void;
-  preferredJobName: string;
-  onFilterToGroup: () => void;
+  preferredJobName?: string;
+  onFilterToGroup?: () => void;
 }) => {
   const {menu, dialog} = useGroupNodeContextMenu({
     onFilterToGroup,
