@@ -76,7 +76,7 @@ type OptionalFilters =
       };
       setFilters: (updates: {groups: AssetGroupSelector[]; computeKindTags: string[]}) => void;
     }
-  | {filters: undefined; setFilters: undefined};
+  | {filters?: null; setFilters?: null};
 
 type Props = {
   options: GraphExplorerOptions;
