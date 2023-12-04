@@ -373,53 +373,6 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
 
 
 @whitelist_for_serdes
-class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMissingRule", [])):
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.SKIP
-
-    @property
-    def description(self) -> str:
-        return "waiting on upstream data to be present"
-
-    def evaluate_for_asset(
-        self,
-        context: RuleEvaluationContext,
-    ) -> RuleEvaluationResults:
-        asset_partitions_by_evaluation_data = defaultdict(set)
-
-        # only need to evaluate net-new candidates and candidates whose parents have changed
-        subset_to_evaluate = (
-            context.candidate_not_evaluated_on_previous_tick_subset
-            | context.candidate_has_parents_that_have_or_will_update_subset
-        )
-        for candidate in subset_to_evaluate.asset_partitions:
-            missing_parent_asset_keys = set()
-            for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
-                asset_partition=candidate
-            ):
-                # ignore non-observable sources, which will never have a materialization or observation
-                if context.asset_graph.is_source(
-                    parent.asset_key
-                ) and not context.asset_graph.is_observable(parent.asset_key):
-                    continue
-                if not context.instance_queryer.asset_partition_has_materialization_or_observation(
-                    parent
-                ):
-                    missing_parent_asset_keys.add(parent.asset_key)
-            if missing_parent_asset_keys:
-                asset_partitions_by_evaluation_data[
-                    WaitingOnAssetsRuleEvaluationData(frozenset(missing_parent_asset_keys))
-                ].add(candidate)
-
-        return self.add_evaluation_data_from_previous_tick(
-            context,
-            asset_partitions_by_evaluation_data,
-            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
-        )
-
-
-@whitelist_for_serdes
 class SkipOnNotAllParentsUpdatedRule(
     AutoMaterializeRule,
     NamedTuple(

@@ -235,6 +235,26 @@ class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCo
     def description(self) -> str:
         return "waiting on upstream data to be up to date"
 
+    def outdated_ancestors(
+        self,
+        context: AssetAutomationConditionEvaluationContext,
+        asset_partition: AssetKeyPartitionKey,
+    ) -> Set[AssetKey]:
+        outdated_ancestors = set()
+        for (
+            parent
+        ) in context.asset_context.get_parents_that_will_not_be_materialized_on_current_tick(
+            asset_partition=asset_partition
+        ):
+            if context.instance_queryer.have_ignorable_partition_mapping_for_outdated(
+                asset_partition.asset_key, parent.asset_key
+            ):
+                continue
+            outdated_ancestors.update(
+                context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
+            )
+        return outdated_ancestors
+
     def evaluate_for_asset(
         self, context: AssetAutomationConditionEvaluationContext
     ) -> ConditionEvaluationResult:
@@ -246,20 +266,8 @@ class ParentOutdatedCondition(AutomationCondition, NamedTuple("_ParentOutdatedCo
 
         asset_partitions_by_metadata: Mapping[MetadataMapping, Set[AssetKeyPartitionKey]] = {}
         for candidate in subset_to_evaluate.asset_partitions:
-            outdated_ancestors = set()
+            outdated_ancestors = self.outdated_ancestors(context, candidate)
             # find the root cause of why this asset partition's parents are outdated (if any)
-            for (
-                parent
-            ) in context.asset_context.get_parents_that_will_not_be_materialized_on_current_tick(
-                asset_partition=candidate
-            ):
-                if context.instance_queryer.have_ignorable_partition_mapping_for_outdated(
-                    candidate.asset_key, parent.asset_key
-                ):
-                    continue
-                outdated_ancestors.update(
-                    context.instance_queryer.get_outdated_ancestors(asset_partition=parent)
-                )
             if outdated_ancestors:
                 metadata = {
                     f"outdated_ancestor_{i}": MetadataValue.asset(ak)
@@ -303,22 +311,53 @@ class BackfillInProgressCondition(
     ) -> ConditionEvaluationResult:
         backfilling_subset = (
             context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-        )
+        ).get_asset_subset(context.asset_key, context.asset_context.asset_graph)
 
-        if self.all_partitions:
-            backfill_in_progress_candidates = {
-                candidate
-                for candidate in context.candidate_subset.asset_partitions
-                if candidate.asset_key in backfilling_subset.asset_keys
-            }
+        if backfilling_subset.size == 0:
+            true_subset = context.empty_subset()
+        elif self.all_partitions:
+            true_subset = context.candidates_subset
         else:
-            backfill_in_progress_candidates = {
-                candidate
-                for candidate in context.candidate_subset.asset_partitions
-                if candidate in backfilling_subset
-            }
+            true_subset = context.candidates_subset & backfilling_subset
 
-        if backfill_in_progress_candidates:
-            return [(None, backfill_in_progress_candidates)]
+        return ConditionEvaluationResult.create(context, true_subset=true_subset)
 
-        return []
+
+class ParentMissingCondition(AutomationCondition, NamedTuple("_ParentMissingCondition", [])):
+    @property
+    def description(self) -> str:
+        return "waiting on upstream data to be present"
+
+    def evaluate_for_asset(
+        self, context: AssetAutomationConditionEvaluationContext
+    ) -> ConditionEvaluationResult:
+        subset_to_evaluate = (
+            context.candidates_not_evaluated_on_previous_tick_subset
+            | context.candidate_parent_has_or_will_update_subset
+        )
+        for candidate in subset_to_evaluate.asset_partitions:
+            missing_parent_asset_keys = set()
+            for (
+                parent
+            ) in context.asset_context.get_parents_that_will_not_be_materialized_on_current_tick(
+                asset_partition=candidate
+            ):
+                # ignore non-observable sources, which will never have a materialization or observation
+                if context.asset_context.asset_graph.is_source(
+                    parent.asset_key
+                ) and not context.asset_context.asset_graph.is_observable(parent.asset_key):
+                    continue
+                if not context.instance_queryer.asset_partition_has_materialization_or_observation(
+                    parent
+                ):
+                    missing_parent_asset_keys.add(parent.asset_key)
+            if missing_parent_asset_keys:
+                asset_partitions_by_evaluation_data[
+                    WaitingOnAssetsRuleEvaluationData(frozenset(missing_parent_asset_keys))
+                ].add(candidate)
+
+        return self.add_evaluation_data_from_previous_tick(
+            context,
+            asset_partitions_by_evaluation_data,
+            should_use_past_data_fn=lambda ap: ap not in subset_to_evaluate,
+        )
