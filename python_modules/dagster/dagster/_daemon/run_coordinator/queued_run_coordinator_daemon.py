@@ -229,7 +229,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 " Temporarily skipping runs from the following locations due to a user code error: "
                 + ",".join(list(paused_location_names))
             )
-
+        self._logger.info(
+            "Priority sorting and checking tag concurrency limits for queued runs."
+            + locations_clause
+        )
         # Paginate through our runs list so we don't need to hold every run
         # in memory at once. The maximum number of runs we'll hold in memory is
         # max_runs_to_launch + page_size.
@@ -243,16 +246,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             has_more = len(queued_runs) >= self._page_size
 
             if not queued_runs:
-                self._logger.debug("Poll returned no queued runs.")
                 has_more = False
                 return batch
 
             cursor = queued_runs[-1].run_id
-
-            self._logger.info(
-                f"Retrieved %d queued runs, checking limits.{locations_clause}",
-                len(queued_runs),
-            )
 
             tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
                 tag_concurrency_limits, in_progress_runs
