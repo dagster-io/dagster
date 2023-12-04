@@ -35,13 +35,15 @@ from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
+PAGE_SIZE = 100
+
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
     """Used with the QueuedRunCoordinator on the instance. This process finds queued runs from the run
     store and launches them.
     """
 
-    def __init__(self, interval_seconds, page_size=25) -> None:
+    def __init__(self, interval_seconds, page_size=PAGE_SIZE) -> None:
         self._exit_stack = ExitStack()
         self._executor: Optional[ThreadPoolExecutor] = None
         self._location_timeouts_lock = threading.Lock()
