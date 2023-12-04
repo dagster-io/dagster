@@ -132,7 +132,7 @@ export function useAssetGraphExplorerFilters({
 
   const kindTagsFilter = useStaticSetFilter<string>({
     name: 'Compute kind',
-    icon: 'wysiwyg',
+    icon: 'tag',
     allValues: React.useMemo(
       () =>
         allKindTags.map((value) => ({
@@ -144,7 +144,7 @@ export function useAssetGraphExplorerFilters({
     menuWidth: '300px',
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="wysiwyg" />
+        <Icon name="tag" />
         <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
       </Box>
     ),
