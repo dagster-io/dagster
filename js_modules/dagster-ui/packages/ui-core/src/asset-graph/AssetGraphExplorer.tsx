@@ -98,7 +98,10 @@ const emptyArray: any[] = [];
 
 export const AssetGraphExplorer = (props: Props) => {
   const {fetchResult, assetGraphData, fullAssetGraphData, graphQueryItems, allAssetKeys} =
-    useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
+    useAssetGraphData(props.explorerPath.opsQuery, {
+      ...props.fetchOptions,
+      computeKinds: props.filters?.computeKindTags,
+    });
 
   const {visibleRepos} = React.useContext(WorkspaceContext);
 
