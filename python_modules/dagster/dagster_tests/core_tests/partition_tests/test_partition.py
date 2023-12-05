@@ -44,9 +44,11 @@ def test_duplicate_partition_key():
 
 def test_partitions_def_to_string():
     hourly = HourlyPartitionsDefinition(
-        start_date="Tue Jan 11 1:30PM", timezone="America/Los_Angeles", fmt="%a %b %d %I:%M%p"
+        start_date="Fri Jan 11 1:30PM 1985",
+        timezone="America/Los_Angeles",
+        fmt="%a %b %d %I:%M%p %Y",
     )
-    assert str(hourly) == "Hourly, starting Thu Jan 11 01:30PM America/Los_Angeles."
+    assert str(hourly) == "Hourly, starting Fri Jan 11 01:30PM 1985 America/Los_Angeles."
 
     daily = DailyPartitionsDefinition(start_date="2020-01-01", end_offset=1)
     assert str(daily) == "Daily, starting 2020-01-01 UTC. End offsetted by 1 partition."

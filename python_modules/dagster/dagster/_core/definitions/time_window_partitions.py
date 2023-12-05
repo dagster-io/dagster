@@ -81,13 +81,6 @@ def is_second_ambiguous_time(dt: datetime, tz: str):
     # Ensure that the datetime is in the correct timezone
     tzinfo = check.not_none(dt.tzinfo)
     if tzinfo.tzname(None) != tz:
-        print("-------------")
-        print("dt:", dt)
-        print("timestamp:", dt.timestamp())
-        print("tzinfo_name:", tzinfo.tzname(None))
-        print("tzinfo:", tzinfo)
-        print("..")
-        print("tz:", tz)
         dt = to_timezone(dt, tz)
         tzinfo = check.not_none(dt.tzinfo)
 
