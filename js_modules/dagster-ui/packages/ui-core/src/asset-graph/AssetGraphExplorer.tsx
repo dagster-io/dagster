@@ -624,8 +624,8 @@ const AssetGraphExplorerWithData = ({
             <LoadingNotice async={async} nodeType="asset" />
           ) : allGroups.length > 1 ? (
             <ContextMenuWrapper
-              wrapper1Styles={{width: '100%', height: '100%'}}
-              wrapper2Styles={{width: '100%', height: '100%'}}
+              wrapperOuterStyles={{width: '100%', height: '100%'}}
+              wrapperInnerStyles={{width: '100%', height: '100%'}}
               menu={
                 <Menu>
                   {areAllGroupsCollapsed ? null : (

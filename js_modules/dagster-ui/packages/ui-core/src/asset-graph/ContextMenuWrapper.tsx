@@ -7,14 +7,14 @@ export const ContextMenuWrapper = ({
   children,
   menu,
   stopPropagation,
-  wrapper1Styles,
-  wrapper2Styles,
+  wrapperOuterStyles,
+  wrapperInnerStyles,
 }: {
   children: React.ReactNode;
   menu: React.ReactNode;
   stopPropagation?: boolean;
-  wrapper1Styles?: React.CSSProperties;
-  wrapper2Styles?: React.CSSProperties;
+  wrapperOuterStyles?: React.CSSProperties;
+  wrapperInnerStyles?: React.CSSProperties;
 }) => {
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [menuPosition, setMenuPosition] = React.useState<{top: number; left: number}>({
@@ -68,8 +68,8 @@ export const ContextMenuWrapper = ({
   }, [menuVisible]);
 
   return (
-    <div ref={ref} style={wrapper1Styles}>
-      <div onContextMenu={showMenu} onClick={hideMenu} style={wrapper2Styles}>
+    <div ref={ref} style={wrapperOuterStyles}>
+      <div onContextMenu={showMenu} onClick={hideMenu} style={wrapperInnerStyles}>
         {children}
       </div>
       {menuVisible
