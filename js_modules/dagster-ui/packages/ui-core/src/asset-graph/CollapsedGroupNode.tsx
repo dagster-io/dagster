@@ -4,7 +4,6 @@ import {
   Icon,
   colorBackgroundLight,
   colorBackgroundLightHover,
-  colorBackgroundLighter,
   colorLineageGroupNodeBorder,
   colorTextLight,
   colorTextLighter,
@@ -95,7 +94,7 @@ export const CollapsedGroupNode = ({
 
 export const GroupNameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundLighter(),
+  background: colorBackgroundLight(),
   border: `none`,
   borderRadius: '4px',
 });

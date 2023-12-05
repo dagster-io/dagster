@@ -5,6 +5,8 @@ import {
   colorBackgroundBlue,
   colorLinkDefault,
   colorTextBlue,
+  colorTooltipBackground,
+  colorTooltipText,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -88,8 +90,8 @@ export const FilterTagHighlightedText = React.forwardRef(
 );
 
 const LabelTooltipStyles = JSON.stringify({
-  background: colorBackgroundBlue(),
-  color: colorTextBlue(),
+  background: colorTooltipBackground(),
+  color: colorTooltipText(),
   border: 'none',
   borderRadius: 7,
   overflow: 'hidden',
