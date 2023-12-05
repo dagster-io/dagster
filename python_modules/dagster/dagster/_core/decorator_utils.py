@@ -26,6 +26,7 @@ from typing_extensions import (
     get_type_hints as typing_get_type_hints,
 )
 
+import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
@@ -73,7 +74,14 @@ def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
 
 
 def get_type_hints(fn: Callable) -> Mapping[str, Any]:
-    target = fn.func if isinstance(fn, functools.partial) else fn
+    if isinstance(fn, functools.partial):
+        target = fn.func
+    elif inspect.isfunction(fn):
+        target = fn
+    elif hasattr(fn, "__call__"):
+        target = fn.__call__
+    else:
+        check.failed(f"Unhandled Callable object {fn}")
 
     try:
         return typing_get_type_hints(target, include_extras=True)

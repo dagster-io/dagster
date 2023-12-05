@@ -45,7 +45,7 @@ export type SelectedTickQuery = {
             skippedPartitionKeys: Array<string>;
             type: Types.DynamicPartitionsRequestType;
           }>;
-        } | null;
+        };
       }
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};
