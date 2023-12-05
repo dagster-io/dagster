@@ -10,6 +10,7 @@ from dagster import (
     IOManager,
     OutputContext,
 )
+from dagster._check import CheckError
 from dagster._config.pythonic_config.io_manager import ConfigurableIOManager
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.event_api import EventLogRecord, EventRecordsFilter
@@ -101,9 +102,16 @@ class AssetBasedInMemoryIOManager(IOManager):
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _key_from_context(self, context: Union[InputContext, OutputContext]):
-        return self._get_key(
-            context.asset_key, context.partition_key if context.has_partition_key else None
-        )
+        if isinstance(context, InputContext):
+            partition_key = None
+            try:
+                partition_key = context.asset_partition_key
+            except CheckError:
+                pass
+        else:
+            partition_key = context.partition_key if context.has_partition_key else None
+
+        return self._get_key(context.asset_key, partition_key)
 
     def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
         return tuple([*asset_key.path] + [partition_key] if partition_key is not None else [])
@@ -144,9 +152,15 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
         return self._values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _key_from_context(self, context: Union[InputContext, OutputContext]):
-        return self._get_key(
-            context.asset_key, context.partition_key if context.has_partition_key else None
-        )
+        if isinstance(context, InputContext):
+            partition_key = None
+            try:
+                partition_key = context.asset_partition_key
+            except CheckError:
+                pass
+        else:
+            partition_key = context.partition_key if context.has_partition_key else None
+        return self._get_key(context.asset_key, partition_key=partition_key)
 
     def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
         return tuple([*asset_key.path] + [partition_key] if partition_key is not None else [])

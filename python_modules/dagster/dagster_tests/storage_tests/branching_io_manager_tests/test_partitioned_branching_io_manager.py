@@ -1,7 +1,8 @@
 import math
 import time
+from typing import Any
 
-from dagster import DagsterInstance, Definitions, asset
+from dagster import AssetIn, DagsterInstance, Definitions, StaticPartitionMapping, asset
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
@@ -9,11 +10,22 @@ from dagster._core.storage.branching.branching_io_manager import BranchingIOMana
 from .utils import AssetBasedInMemoryIOManager, DefinitionsRunner
 
 partitioning_scheme = StaticPartitionsDefinition(["A", "B", "C"])
+secondary_partitioning_scheme = StaticPartitionsDefinition(["1", "2", "3"])
+
+partition_mapping = StaticPartitionMapping({"A": "1", "B": "2", "C": "3"})
 
 
 @asset(partitions_def=partitioning_scheme)
 def now_time():
     return int(math.floor(time.time() * 100))
+
+
+@asset(
+    partitions_def=secondary_partitioning_scheme,
+    ins={"now_time": AssetIn(key="now_time", partition_mapping=partition_mapping)},
+)
+def now_time_times_two(now_time: int) -> int:
+    return now_time * 2
 
 
 def get_now_time_plus_N(N: int) -> AssetsDefinition:
@@ -217,3 +229,58 @@ def test_basic_partitioning_workflow():
             dev_runner_t1.load_asset_value("now_time_plus_N", partition_key="B")
             == dev_now_time_B + 15
         )
+
+
+def test_partition_mapping_workflow() -> Any:
+    prod_io_manager = AssetBasedInMemoryIOManager()
+    dev_io_manager = AssetBasedInMemoryIOManager()
+
+    prod_defs = Definitions(
+        assets=[now_time, now_time_times_two],
+        resources={
+            "io_manager": prod_io_manager,
+        },
+    )
+
+    dev_defs = Definitions(
+        assets=[now_time, now_time_times_two],
+        resources={
+            "io_manager": BranchingIOManager(
+                parent_io_manager=prod_io_manager, branch_io_manager=dev_io_manager
+            )
+        },
+    )
+
+    with DagsterInstance.ephemeral() as dev_instance, DagsterInstance.ephemeral() as prod_instance:
+        # Simulate a full prod run. All partitions are full
+        prod_runner = DefinitionsRunner(prod_defs, prod_instance)
+        prod_runner.materialize_asset("now_time", partition_key="A")
+        prod_runner.materialize_asset("now_time", partition_key="B")
+        prod_runner.materialize_asset("now_time", partition_key="C")
+
+        prod_runner.materialize_asset("now_time_times_two", partition_key="1")
+        prod_runner.materialize_asset("now_time_times_two", partition_key="2")
+        prod_runner.materialize_asset("now_time_times_two", partition_key="3")
+
+        for partition_key in ["A", "B", "C"]:
+            assert prod_io_manager.has_value("now_time", partition_key)
+
+        for partition_key in ["1", "2", "3"]:
+            assert prod_io_manager.has_value("now_time_times_two", partition_key)
+
+        dev_runner = DefinitionsRunner(dev_defs, dev_instance)
+
+        dev_runner.materialize_asset("now_time_times_two", partition_key="2")
+
+        assert dev_runner.load_asset_value(
+            "now_time", partition_key="A"
+        ) == prod_runner.load_asset_value("now_time", partition_key="A")
+
+        assert not dev_io_manager.has_value("now_time", partition_key="A")
+
+        # now_time_plus_N has been remataerialized in the dev branch but still with same logic
+        assert dev_runner.load_asset_value(
+            "now_time_times_two", partition_key="2"
+        ) == prod_runner.load_asset_value("now_time_times_two", partition_key="2")
+
+        assert dev_io_manager.has_value("now_time_times_two", partition_key="2")

@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from dagster import InputContext, OutputContext
+from dagster._check import CheckError
 from dagster._config.pythonic_config import (
     ConfigurableIOManager,
     ResourceDependency,
@@ -69,10 +70,16 @@ class BranchingIOManager(ConfigurableIOManager):
             return self.branch_io_manager.load_input(context)
         else:
             # we are dealing with an asset input
+            partition_key = None
+            try:
+                partition_key = context.asset_partition_key
+            except CheckError:
+                pass
+
             event_log_entry = latest_materialization_log_entry(
                 instance=context.instance,
                 asset_key=context.asset_key,
-                partition_key=context.partition_key if context.has_partition_key else None,
+                partition_key=(partition_key),
             )
             if (
                 event_log_entry
