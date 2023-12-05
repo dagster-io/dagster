@@ -1,4 +1,5 @@
 export enum ColorName {
+  BrowserColorScheme = 'BrowserColorScheme',
   KeylineDefault = 'KeylineDefault',
   LinkDefault = 'LinkDefault',
   LinkHover = 'LinkHover',

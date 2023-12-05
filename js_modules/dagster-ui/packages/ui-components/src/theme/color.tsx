@@ -9,6 +9,7 @@ const color = memoize((semanticName: ColorName): string => {
   return palette[semanticName];
 });
 
+export const browserColorScheme = () => color(ColorName.BrowserColorScheme);
 export const colorKeylineDefault = () => color(ColorName.KeylineDefault);
 export const colorLinkDefault = () => color(ColorName.LinkDefault);
 export const colorLinkHover = () => color(ColorName.LinkHover);
