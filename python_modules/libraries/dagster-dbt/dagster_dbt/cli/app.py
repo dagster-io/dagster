@@ -139,7 +139,7 @@ def copy_scaffold(
         f'"{part}"' for part in dbt_project_dir_relative_path.parts
     ]
 
-    dbt_parse_command = ['"parse"']
+    dbt_parse_command = ['"--quiet", "parse"']
     if version.parse(dbt_version) < version.parse("1.5.0"):
         dbt_parse_command += ['"--write-manifest"']
 
