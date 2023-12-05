@@ -201,7 +201,7 @@ class InvocationProperties:
         self.typed_event_stream_error_message = error_message
 
 
-class DirectInvocationOpExecutionContext(OpExecutionContext):
+class RunlessOpExecutionContext(OpExecutionContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -296,7 +296,7 @@ class DirectInvocationOpExecutionContext(OpExecutionContext):
         assets_def: Optional[AssetsDefinition],
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
-    ) -> "DirectInvocationOpExecutionContext":
+    ) -> "RunlessOpExecutionContext":
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
         if self._bound_properties is not None:
@@ -703,7 +703,7 @@ def build_op_context(
     partition_key_range: Optional[PartitionKeyRange] = None,
     mapping_key: Optional[str] = None,
     _assets_def: Optional[AssetsDefinition] = None,
-) -> DirectInvocationOpExecutionContext:
+) -> RunlessOpExecutionContext:
     """Builds op execution context from provided parameters.
 
     ``build_op_context`` can be used as either a function or context manager. If there is a
@@ -751,7 +751,7 @@ def build_op_context(
         )
 
     op_config = op_config if op_config else config
-    return DirectInvocationOpExecutionContext(
+    return RunlessOpExecutionContext(
         resources_dict=check.opt_mapping_param(resources, "resources", key_type=str),
         resources_config=check.opt_mapping_param(
             resources_config, "resources_config", key_type=str
