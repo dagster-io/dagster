@@ -1,5 +1,5 @@
-from docs_snippets.concepts.assets.asset_retry import retried_asset
 from dagster import materialize
+from docs_snippets.concepts.assets.asset_retry import retried_asset
 
 
 def test_retry_examples():
