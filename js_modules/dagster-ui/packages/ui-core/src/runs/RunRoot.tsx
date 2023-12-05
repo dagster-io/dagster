@@ -7,7 +7,6 @@ import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useStartTrace} from '../performance';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
