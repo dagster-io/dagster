@@ -135,7 +135,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
                 key: 'Theme',
                 label: (
                   <div>
-                    Theme (
+                    Theme (Dark mode) {'\u2013 '}
                     <a
                       href="https://github.com/dagster-io/dagster/discussions/18439"
                       target="_blank"
@@ -143,7 +143,6 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
                     >
                       Learn more
                     </a>
-                    )
                   </div>
                 ),
                 value: (
