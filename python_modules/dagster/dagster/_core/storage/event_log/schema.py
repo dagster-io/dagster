@@ -81,7 +81,6 @@ AssetEventTagsTable = db.Table(
     db.Column(
         "event_id",
         db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-        db.ForeignKey("event_logs.id", ondelete="CASCADE"),
     ),
     db.Column("asset_key", db.Text, nullable=False),
     db.Column("key", db.Text, nullable=False),
