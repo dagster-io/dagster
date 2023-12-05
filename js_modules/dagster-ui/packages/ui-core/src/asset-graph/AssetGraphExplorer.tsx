@@ -94,6 +94,8 @@ type Props = {
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
 
+const emptyArray: any[] = [];
+
 export const AssetGraphExplorer = (props: Props) => {
   const {fetchResult, assetGraphData, fullAssetGraphData, graphQueryItems, allAssetKeys} =
     useAssetGraphData(props.explorerPath.opsQuery, {
@@ -124,7 +126,7 @@ export const AssetGraphExplorer = (props: Props) => {
       (groups: AssetGroupSelector[]) => props.setFilters?.({...props.filters, groups}),
       [props],
     ),
-    computeKindTags: props.filters?.computeKindTags || [],
+    computeKindTags: props.filters?.computeKindTags || emptyArray,
     setComputeKindTags: React.useCallback(
       (tags: string[]) =>
         props.setFilters?.({
