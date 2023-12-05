@@ -44,8 +44,6 @@ class PointToPointInstrumentation {
         detail: trace,
       }),
     );
-
-    console.log('completed', trace);
   }
 }
 
@@ -57,7 +55,10 @@ export function useStartTrace(name: string) {
 
   instrumentation.startTrace(traceId, name);
 
-  return {
-    endTrace: instrumentation.endTrace.bind(instrumentation, traceId),
-  };
+  return React.useMemo(
+    () => ({
+      endTrace: instrumentation.endTrace.bind(instrumentation, traceId),
+    }),
+    [traceId],
+  );
 }
