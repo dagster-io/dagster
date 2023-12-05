@@ -100,7 +100,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const {folderNodes, codeLocationNodes} = React.useMemo(() => {
+    const {folderNodes: renderedNodes, codeLocationNodes} = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -156,8 +156,6 @@ export const AssetGraphExplorerSidebar = React.memo(
 
       return {folderNodes, codeLocationNodes};
     }, [graphData.nodes, openNodes]);
-
-    const renderedNodes = folderNodes;
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 

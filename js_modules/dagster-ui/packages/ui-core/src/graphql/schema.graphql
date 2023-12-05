@@ -2415,7 +2415,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
-  tick(timestamp: Float, tickId: Int): InstigationTick
+  tick(tickId: Int!): InstigationTick!
   ticks(
     dayRange: Int
     dayOffset: Int
