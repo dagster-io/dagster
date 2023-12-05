@@ -4,6 +4,7 @@ import {ColorName} from './ColorName';
 import {CoreColors, DataVizColors} from './Colors';
 
 export const LegacyPalette = {
+  [ColorName.BrowserColorScheme]: 'light',
   [ColorName.KeylineDefault]: LegacyColors.KeylineGray,
   [ColorName.LinkDefault]: LegacyColors.Link,
   [ColorName.LinkHover]: LegacyColors.Link,
