@@ -11,7 +11,6 @@ import {
   colorKeylineDefault,
   colorBackgroundDefault,
 } from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
@@ -60,7 +59,7 @@ import {
   tokenForAssetKey,
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
-import {AssetGraphLayout, AssetLayoutEdge} from './layout';
+import {AssetGraphLayout, AssetLayoutEdge, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
@@ -191,15 +190,24 @@ const AssetGraphExplorerWithData = ({
   allAssetKeys,
   filterButton,
   filterBar,
+  filters,
+  setFilters,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const {flagDAGSidebar} = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
-  const {allGroups, allGroupCounts} = React.useMemo(() => {
-    const counts = countBy(Object.values(assetGraphData.nodes).map(groupIdForNode));
-    return {allGroups: Object.keys(counts), allGroupCounts: counts};
+  const {allGroups, allGroupCounts, groupedAssets} = React.useMemo(() => {
+    const groupedAssets: Record<string, GraphNode[]> = {};
+    Object.values(assetGraphData.nodes).forEach((node) => {
+      const groupId = groupIdForNode(node);
+      groupedAssets[groupId] = groupedAssets[groupId] || [];
+      groupedAssets[groupId]!.push(node);
+    });
+    const counts: Record<string, number> = {};
+    Object.keys(groupedAssets).forEach((key) => (counts[key] = groupedAssets[key]!.length));
+    return {allGroups: Object.keys(groupedAssets), allGroupCounts: counts, groupedAssets};
   }, [assetGraphData]);
 
   const [expandedGroups, setExpandedGroups] = useQueryPersistedState<string[]>({
@@ -416,6 +424,19 @@ const AssetGraphExplorerWithData = ({
     </ShortcutHandler>
   );
 
+  const onFilterToGroup = (group: GroupLayout) => {
+    setFilters?.({
+      ...filters,
+      groups: [
+        {
+          groupName: group.groupName,
+          repositoryName: group.repositoryName,
+          repositoryLocationName: group.repositoryLocationName,
+        },
+      ],
+    });
+  };
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -468,7 +489,12 @@ const AssetGraphExplorerWithData = ({
                           }}
                         >
                           <ExpandedGroupNode
-                            group={group}
+                            preferredJobName={explorerPath.pipelineName}
+                            onFilterToGroup={() => onFilterToGroup(group)}
+                            group={{
+                              ...group,
+                              assets: groupedAssets[group.id] || [],
+                            }}
                             minimal={scale < MINIMAL_SCALE}
                             onCollapse={() => {
                               focusGroupIdAfterLayoutRef.current = group.id;
@@ -513,8 +539,14 @@ const AssetGraphExplorerWithData = ({
                       >
                         {flagDAGSidebar ? (
                           <CollapsedGroupNode
+                            preferredJobName={explorerPath.pipelineName}
+                            onFilterToGroup={() => onFilterToGroup(group)}
                             minimal={scale < MINIMAL_SCALE}
-                            group={{...group, assetCount: allGroupCounts[group.id] || 0}}
+                            group={{
+                              ...group,
+                              assetCount: allGroupCounts[group.id] || 0,
+                              assets: groupedAssets[group.id] || [],
+                            }}
                             onExpand={() => {
                               focusGroupIdAfterLayoutRef.current = group.id;
                               setExpandedGroups([...expandedGroups, group.id]);
