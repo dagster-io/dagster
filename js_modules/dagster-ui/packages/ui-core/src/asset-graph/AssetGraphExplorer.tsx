@@ -27,6 +27,7 @@ import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
+import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {
   GraphExplorerOptions,
@@ -38,8 +39,10 @@ import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipel
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {AssetEdges} from './AssetEdges';
+import {useAssetGraphExplorerFilters} from './AssetGraphExplorerFilters';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal, AssetNodeContextMenuWrapper} from './AssetNode';
@@ -65,25 +68,70 @@ import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
-interface Props {
+type OptionalFilters =
+  | {
+      filters: {
+        groups: AssetGroupSelector[];
+        computeKindTags: string[];
+      };
+      setFilters: (updates: {groups: AssetGroupSelector[]; computeKindTags: string[]}) => void;
+    }
+  | {filters?: null; setFilters?: null};
+
+type Props = {
   options: GraphExplorerOptions;
   setOptions?: (options: GraphExplorerOptions) => void;
 
   fetchOptions: AssetGraphFetchScope;
-  fetchOptionFilters?: React.ReactNode;
-  filterBar?: React.ReactNode;
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onNavigateToSourceAssetNode: (node: AssetLocation) => void;
-}
+} & OptionalFilters;
 
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
 
 export const AssetGraphExplorer = (props: Props) => {
   const {fetchResult, assetGraphData, fullAssetGraphData, graphQueryItems, allAssetKeys} =
-    useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
+    useAssetGraphData(props.explorerPath.opsQuery, {
+      ...props.fetchOptions,
+      computeKinds: props.filters?.computeKindTags,
+    });
+
+  const {visibleRepos} = React.useContext(WorkspaceContext);
+
+  const assetGroups: AssetGroupSelector[] = React.useMemo(() => {
+    return visibleRepos.flatMap((repo) =>
+      repo.repository.assetGroups.map((g) => ({
+        groupName: g.groupName,
+        repositoryLocationName: repo.repositoryLocation.name,
+        repositoryName: repo.repository.name,
+      })),
+    );
+  }, [visibleRepos]);
+
+  const {button, filterBar} = useAssetGraphExplorerFilters({
+    nodes: React.useMemo(
+      () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
+      [fullAssetGraphData],
+    ),
+    assetGroups,
+    visibleAssetGroups: React.useMemo(() => props.filters?.groups || [], [props.filters?.groups]),
+    setGroupFilters: React.useCallback(
+      (groups: AssetGroupSelector[]) => props.setFilters?.({...props.filters, groups}),
+      [props],
+    ),
+    computeKindTags: props.filters?.computeKindTags || [],
+    setComputeKindTags: React.useCallback(
+      (tags: string[]) =>
+        props.setFilters?.({
+          ...props.filters,
+          computeKindTags: tags,
+        }),
+      [props],
+    ),
+  });
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -110,6 +158,8 @@ export const AssetGraphExplorer = (props: Props) => {
             fullAssetGraphData={fullAssetGraphData}
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
+            filterBar={filterBar}
+            filterButton={button}
             {...props}
           />
         );
@@ -118,12 +168,15 @@ export const AssetGraphExplorer = (props: Props) => {
   );
 };
 
-interface WithDataProps extends Props {
+type WithDataProps = Props & {
   allAssetKeys: AssetKey[];
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
-}
+
+  filterButton?: React.ReactNode;
+  filterBar?: React.ReactNode;
+};
 
 const AssetGraphExplorerWithData = ({
   options,
@@ -135,8 +188,8 @@ const AssetGraphExplorerWithData = ({
   fullAssetGraphData,
   graphQueryItems,
   fetchOptions,
-  fetchOptionFilters,
   allAssetKeys,
+  filterButton,
   filterBar,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
@@ -567,7 +620,7 @@ const AssetGraphExplorerWithData = ({
                     />
                   </Tooltip>
                 )}
-                <div>{fetchOptionFilters}</div>
+                <div>{filterButton}</div>
                 <GraphQueryInputFlexWrap>
                   <GraphQueryInput
                     type="asset_graph"
