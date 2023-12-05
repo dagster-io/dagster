@@ -103,7 +103,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       assetGraphData,
       graphQueryItems,
     };
-  }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
+  }, [
+    repoFilteredNodes,
+    graphQueryItems,
+    opsQuery,
+    options.computeKinds,
+    options.hideEdgesToNodesOutsideQuery,
+  ]);
 
   return {
     fetchResult,

@@ -11,7 +11,6 @@ import {
   colorKeylineDefault,
   colorBackgroundDefault,
 } from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
