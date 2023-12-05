@@ -1,4 +1,4 @@
-import {Button, Icon, Tooltip, colorKeylineDefault} from '@dagster-io/ui-components';
+import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
@@ -262,15 +262,15 @@ export const AssetGraphExplorerSidebar = React.memo(
 
     return (
       <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
-        <div
+        <Box
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr auto',
             gap: '6px',
             padding: '12px 24px',
             paddingRight: 12,
-            borderBottom: `1px solid ${colorKeylineDefault()}`,
           }}
+          border="bottom"
         >
           <SearchFilter
             values={React.useMemo(() => {
@@ -284,7 +284,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           <Tooltip content="Hide sidebar">
             <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
           </Tooltip>
-        </div>
+        </Box>
         <div>
           <Container
             ref={containerRef}
