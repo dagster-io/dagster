@@ -34,6 +34,7 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
+from dagster._utils.log import get_dagster_logger
 from dagster._utils.warnings import disable_dagster_warnings
 
 from ..context.compute import (
@@ -280,10 +281,7 @@ def validate_and_coerce_op_result_to_iterator(
     # results that will be registered in the instance, without additional fancy inference (like
     # wrapping `None` in an `Output`). We therefore skip any return-specific validation for this
     # mode and treat returned values as if they were yielded.
-    elif (
-        output_defs
-        and context.execution_properties.op_execution_context.requires_typed_event_stream
-    ):
+    elif output_defs and context.execution_properties.requires_typed_event_stream:
         # If nothing was returned, treat it as an empty tuple instead of a `(None,)`.
         # This is important for delivering the correct error message when an output is missing.
         if result is None:
@@ -298,7 +296,7 @@ def validate_and_coerce_op_result_to_iterator(
             result, context, output_defs
         ):
             annotation = _get_annotation_for_output_position(
-                position, context.execution_properties.op_execution_context.op_def, output_defs
+                position, context.execution_properties.op_def, output_defs
             )
             if output_def.is_dynamic:
                 if not isinstance(element, list):
@@ -357,7 +355,7 @@ def validate_and_coerce_op_result_to_iterator(
                         f"Received instead an object of type {type(element)}."
                     )
                 if result is None and output_def.is_required is False:
-                    context.execution_properties.op_execution_context.log.warning(
+                    get_dagster_logger().warning(
                         'Value "None" returned for non-required output '
                         f'"{output_def.name}" of {context.execution_properties.step_description}. '
                         "This value will be passed to downstream "

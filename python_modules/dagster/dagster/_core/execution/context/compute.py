@@ -66,34 +66,18 @@ from dagster._utils.warnings import (
 from .system import StepExecutionContext
 
 
-class ExecutionProperties(
-    # NamedTuple(
-    #     "_ExecutionProperties",
-    #     [
-    #         ("step_description", PublicAttr[str]),
-    #         ("node_type", PublicAttr[str]),
-    #         ("op_execution_context", PublicAttr["OpExecutionContext"]),
-    #     ],
-    # )
-):
+class ExecutionProperties:
     """Information to be used by dagster internals during execution.
     You should not need to access these attributes directly.
     """
 
-    def __init__(
-        self, step_description: str, node_type: str, op_execution_context: "OpExecutionContext"
-    ):
+    def __init__(self, step_description: str, node_type: str, op_def: "OpDefinition"):
         self._step_description = step_description
         self._node_type = node_type
-        self._op_execution_context = op_execution_context
+        self._op_def = op_def
         self._events: List[DagsterEvent] = []
-        self._requires_typed_event_stream = None
-        # return super(ExecutionProperties, cls).__new__(
-        #     cls,
-        #     step_description=step_description,
-        #     node_type=node_type,
-        #     op_execution_context=op_execution_context,
-        # )
+        self._requires_typed_event_stream = False
+        self._typed_event_stream_error_message = None
 
     @property
     def step_description(self) -> str:
@@ -104,8 +88,8 @@ class ExecutionProperties(
         return self._node_type
 
     @property
-    def op_execution_context(self) -> "OpExecutionContext":
-        return self._op_execution_context
+    def op_def(self) -> "OpDefinition":
+        return self._op_def
 
     def consume_events(self) -> Iterator[DagsterEvent]:
         events = self._events
@@ -124,6 +108,18 @@ class ExecutionProperties(
             self._events.append(DagsterEvent.step_expectation_result(step_execution_context, event))
         else:
             check.failed(f"Unexpected event {event}")
+
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._requires_typed_event_stream
+
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._typed_event_stream_error_message
+
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None):
+        self._requires_typed_event_stream = True
+        self._typed_event_stream_error_message = error_message
 
 
 # This metaclass has to exist for OpExecutionContext to have a metaclass
@@ -240,6 +236,19 @@ class OpExecutionContext(
         self._pdb: Optional[ForkedPdb] = None
         self._events: List[DagsterEvent] = []
         self._output_metadata: Dict[str, Any] = {}
+
+        self._execution_props = ExecutionProperties(  # TODO - maybe swap to this being None here and creating/caching in the property
+            step_description=self._step_execution_context.describe_op(),
+            node_type="op",
+            op_def=cast(
+                OpDefinition,
+                self._step_execution_context.job_def.get_node(self.node_handle).definition,
+            ),
+        )
+
+    @property
+    def execution_properties(self) -> ExecutionProperties:
+        return self._execution_props
 
     @public
     @property
@@ -1486,6 +1495,7 @@ class AssetExecutionContext(OpExecutionContext):
             retry_number=self._op_execution_context.retry_number,
         )
 
+        # TODO - confirm accuracy of this comment
         # start execution_props as None since enter_execution_context builds an AssetExecutionContext
         # for all steps (including ops) and ops will fail on self.assets_def call
         self._execution_props = None
@@ -1511,7 +1521,7 @@ class AssetExecutionContext(OpExecutionContext):
             self._execution_props = ExecutionProperties(
                 step_description=f"asset {self.op_execution_context.node_handle}",
                 node_type="asset",
-                op_execution_context=self._op_execution_context,
+                op_def=self.op_execution_context.op_def,
             )
         return self._execution_props
 
