@@ -211,64 +211,63 @@ export const RunsRoot = () => {
           }}
         >
           {({pipelineRunsOrError}) => {
-            function Wrapper() {
-              React.useLayoutEffect(() => {
-                if (pipelineRunsOrError.__typename === 'Runs') {
-                  trace.endTrace();
-                }
-              }, []);
-
-              if (pipelineRunsOrError.__typename !== 'Runs') {
-                return (
-                  <Box padding={{vertical: 64}}>
-                    <NonIdealState
-                      icon="error"
-                      title="Query Error"
-                      description={pipelineRunsOrError.message}
-                    />
-                  </Box>
-                );
-              }
-
+            if (pipelineRunsOrError.__typename !== 'Runs') {
               return (
-                <>
-                  <StickyTableContainer $top={0}>
-                    <RunTable
-                      runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                      onAddTag={onAddTag}
-                      filter={filter}
-                      actionBarComponents={actionBar()}
-                      belowActionBarComponents={
-                        currentTab === 'queued' || activeFiltersJsx.length ? (
-                          <>
-                            {currentTab === 'queued' && <QueuedRunsBanners />}
-                            {activeFiltersJsx.length > 0 && (
-                              <>
-                                {activeFiltersJsx}
-                                <ButtonLink onClick={() => setFilterTokensWithStatus([])}>
-                                  Clear all
-                                </ButtonLink>
-                              </>
-                            )}
-                          </>
-                        ) : null
-                      }
-                    />
-                  </StickyTableContainer>
-                  {pipelineRunsOrError.results.length > 0 ? (
-                    <div style={{marginTop: '16px'}}>
-                      <CursorHistoryControls {...paginationProps} />
-                    </div>
-                  ) : null}
-                </>
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState
+                    icon="error"
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                </Box>
               );
             }
-            return <Wrapper />;
+
+            return (
+              <>
+                <RunsRootPerformanceEmitter trace={trace} />
+                <StickyTableContainer $top={0}>
+                  <RunTable
+                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                    onAddTag={onAddTag}
+                    filter={filter}
+                    actionBarComponents={actionBar()}
+                    belowActionBarComponents={
+                      currentTab === 'queued' || activeFiltersJsx.length ? (
+                        <>
+                          {currentTab === 'queued' && <QueuedRunsBanners />}
+                          {activeFiltersJsx.length > 0 && (
+                            <>
+                              {activeFiltersJsx}
+                              <ButtonLink onClick={() => setFilterTokensWithStatus([])}>
+                                Clear all
+                              </ButtonLink>
+                            </>
+                          )}
+                        </>
+                      ) : null
+                    }
+                  />
+                </StickyTableContainer>
+                {pipelineRunsOrError.results.length > 0 ? (
+                  <div style={{marginTop: '16px'}}>
+                    <CursorHistoryControls {...paginationProps} />
+                  </div>
+                ) : null}
+              </>
+            );
           }}
         </Loading>
       </RunsQueryRefetchContext.Provider>
     </Page>
   );
+};
+
+const RunsRootPerformanceEmitter = ({trace}: {trace: ReturnType<typeof useStartTrace>}) => {
+  React.useLayoutEffect(() => {
+    trace.endTrace();
+  }, [trace]);
+  return null;
 };
 
 // Imported via React.lazy, which requires a default export.

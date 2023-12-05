@@ -44,8 +44,6 @@ class PointToPointInstrumentation {
         detail: trace,
       }),
     );
-
-    console.log('completed', trace);
   }
 }
 
