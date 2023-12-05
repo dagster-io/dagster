@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 from contextlib import ExitStack
 from typing import IO, Any, List, Mapping, Optional, Sequence
 
@@ -19,21 +20,24 @@ class DispatchingLogHandler(logging.Handler):
     """
 
     def __init__(self, downstream_loggers: List[logging.Logger]):
-        self._should_capture = True
+        self.local_thread_context = threading.local()
+        self.local_thread_context._should_capture = True
         self._downstream_loggers = [*downstream_loggers]
         super().__init__()
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return self._should_capture
+        if not hasattr(self.local_thread_context, "_should_capture"):
+            self.local_thread_context._should_capture = True
+        return self.local_thread_context._should_capture
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add metadata, and have handlers handle it."""
         try:
-            self._should_capture = False
+            self.local_thread_context._should_capture = False
             for logger in self._downstream_loggers:
                 logger.handle(record)
         finally:
-            self._should_capture = True
+            self.local_thread_context._should_capture = True
 
 
 class CapturedLogHandler(logging.Handler):
