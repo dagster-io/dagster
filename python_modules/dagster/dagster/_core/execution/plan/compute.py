@@ -188,12 +188,12 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if compute_context.execution_properties.op_execution_context.has_events():
-            yield from compute_context.execution_properties.op_execution_context.consume_events()
+        if compute_context.execution_properties.has_events():
+            yield from compute_context.execution_properties.consume_events()
         yield _validate_event(event, step_context)
 
-    if compute_context.execution_properties.op_execution_context.has_events():
-        yield from compute_context.execution_properties.op_execution_context.consume_events()
+    if compute_context.execution_properties.has_events():
+        yield from compute_context.execution_properties.consume_events()
 
 
 def execute_core_compute(

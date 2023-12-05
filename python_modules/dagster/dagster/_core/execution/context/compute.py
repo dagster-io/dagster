@@ -67,28 +67,63 @@ from .system import StepExecutionContext
 
 
 class ExecutionProperties(
-    NamedTuple(
-        "_ExecutionProperties",
-        [
-            ("step_description", PublicAttr[str]),
-            ("node_type", PublicAttr[str]),
-            ("op_execution_context", PublicAttr["OpExecutionContext"]),
-        ],
-    )
+    # NamedTuple(
+    #     "_ExecutionProperties",
+    #     [
+    #         ("step_description", PublicAttr[str]),
+    #         ("node_type", PublicAttr[str]),
+    #         ("op_execution_context", PublicAttr["OpExecutionContext"]),
+    #     ],
+    # )
 ):
     """Information to be used by dagster internals during execution.
     You should not need to access these attributes directly.
     """
 
-    def __new__(
-        cls, step_description: str, node_type: str, op_execution_context: "OpExecutionContext"
+    def __init__(
+        self, step_description: str, node_type: str, op_execution_context: "OpExecutionContext"
     ):
-        return super(ExecutionProperties, cls).__new__(
-            cls,
-            step_description=step_description,
-            node_type=node_type,
-            op_execution_context=op_execution_context,
-        )
+        self._step_description = step_description
+        self._node_type = node_type
+        self._op_execution_context = op_execution_context
+        self._events: List[DagsterEvent] = []
+        self._requires_typed_event_stream = None
+        # return super(ExecutionProperties, cls).__new__(
+        #     cls,
+        #     step_description=step_description,
+        #     node_type=node_type,
+        #     op_execution_context=op_execution_context,
+        # )
+
+    @property
+    def step_description(self) -> str:
+        return self._step_description
+
+    @property
+    def node_type(self) -> str:
+        return self._node_type
+
+    @property
+    def op_execution_context(self) -> "OpExecutionContext":
+        return self._op_execution_context
+
+    def consume_events(self) -> Iterator[DagsterEvent]:
+        events = self._events
+        self._events = []
+        yield from events
+
+    def has_events(self) -> bool:
+        return bool(self._events)
+
+    def log_event(self, event: UserEvent, step_execution_context: StepExecutionContext) -> None:
+        if isinstance(event, AssetMaterialization):
+            self._events.append(DagsterEvent.asset_materialization(step_execution_context, event))
+        elif isinstance(event, AssetObservation):
+            self._events.append(DagsterEvent.asset_observation(step_execution_context, event))
+        elif isinstance(event, ExpectationResult):
+            self._events.append(DagsterEvent.step_expectation_result(step_execution_context, event))
+        else:
+            check.failed(f"Unexpected event {event}")
 
 
 # This metaclass has to exist for OpExecutionContext to have a metaclass
@@ -151,7 +186,7 @@ class ContextHasExecutionProperties(ABC):
     @property
     @abstractmethod
     def execution_properties(self) -> ExecutionProperties:
-        """Implement this method to check if a logging tag is set."""
+        """Context classes must contain an instance of ExecutionProperties."""
 
 
 class OpExecutionContextMetaClass(AbstractComputeMetaclass):
@@ -481,16 +516,16 @@ class OpExecutionContext(
         return self._step_execution_context.run_tags
 
     def has_events(self) -> bool:
-        return bool(self._events)
+        return self.execution_properties.has_events()
 
     def consume_events(self) -> Iterator[DagsterEvent]:
         """Pops and yields all user-generated events that have been recorded from this context.
 
         If consume_events has not yet been called, this will yield all logged events since the beginning of the op's computation. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-        events = self._events
-        self._events = []
-        yield from events
+        # events = self.execution_properties.events
+        # self._events = []
+        yield from self.execution_properties.consume_events()
 
     @public
     def log_event(self, event: UserEvent) -> None:
@@ -511,18 +546,9 @@ class OpExecutionContext(
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-        if isinstance(event, AssetMaterialization):
-            self._events.append(
-                DagsterEvent.asset_materialization(self._step_execution_context, event)
-            )
-        elif isinstance(event, AssetObservation):
-            self._events.append(DagsterEvent.asset_observation(self._step_execution_context, event))
-        elif isinstance(event, ExpectationResult):
-            self._events.append(
-                DagsterEvent.step_expectation_result(self._step_execution_context, event)
-            )
-        else:
-            check.failed(f"Unexpected event {event}")
+        self.execution_properties.log_event(
+            event=event, step_execution_context=self._step_execution_context
+        )
 
     @public
     def add_output_metadata(
