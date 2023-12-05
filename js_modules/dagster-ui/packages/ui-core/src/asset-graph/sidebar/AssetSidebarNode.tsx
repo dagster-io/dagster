@@ -30,6 +30,7 @@ export const AssetSidebarNode = ({
   explorerPath,
   onChangeExplorerPath,
   fullAssetGraphData,
+  isLastSelected,
 }: {
   fullAssetGraphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
@@ -38,6 +39,7 @@ export const AssetSidebarNode = ({
   selectThisNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>) => void;
   selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
   isOpen: boolean;
+  isLastSelected: boolean;
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -66,10 +68,10 @@ export const AssetSidebarNode = ({
     // We want to check if the focus is currently in the graph and if it is lets keep it there
     // Otherwise it means the click happened in the sidebar in which case we should move focus to the element
     // in the sidebar
-    if (ref.current && isSelected && !isElementInsideSVGViewport(document.activeElement)) {
+    if (ref.current && isLastSelected && !isElementInsideSVGViewport(document.activeElement)) {
       ref.current.focus();
     }
-  }, [isSelected]);
+  }, [isLastSelected]);
 
   return (
     <>
