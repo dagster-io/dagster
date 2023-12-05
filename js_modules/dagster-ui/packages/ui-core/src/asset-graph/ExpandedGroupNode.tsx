@@ -35,7 +35,7 @@ export const ExpandedGroupNode = ({
   });
   return (
     <div style={{position: 'relative', width: '100%', height: '100%'}}>
-      <ContextMenuWrapper menu={menu}>
+      <ContextMenuWrapper menu={menu} stopPropagation>
         <GroupNodeHeaderBox
           $minimal={minimal}
           onClick={(e) => {
