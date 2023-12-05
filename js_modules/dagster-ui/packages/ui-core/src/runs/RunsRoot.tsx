@@ -21,6 +21,7 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
+import {useStartTrace} from '../performance';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
@@ -44,6 +45,7 @@ const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
   useTrackPageView();
+  const trace = useStartTrace('RunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
@@ -209,50 +211,59 @@ export const RunsRoot = () => {
           }}
         >
           {({pipelineRunsOrError}) => {
-            if (pipelineRunsOrError.__typename !== 'Runs') {
+            function Wrapper() {
+              React.useLayoutEffect(() => {
+                if (pipelineRunsOrError.__typename === 'Runs') {
+                  trace.endTrace();
+                }
+              }, []);
+
+              if (pipelineRunsOrError.__typename !== 'Runs') {
+                return (
+                  <Box padding={{vertical: 64}}>
+                    <NonIdealState
+                      icon="error"
+                      title="Query Error"
+                      description={pipelineRunsOrError.message}
+                    />
+                  </Box>
+                );
+              }
+
               return (
-                <Box padding={{vertical: 64}}>
-                  <NonIdealState
-                    icon="error"
-                    title="Query Error"
-                    description={pipelineRunsOrError.message}
-                  />
-                </Box>
+                <>
+                  <StickyTableContainer $top={0}>
+                    <RunTable
+                      runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                      onAddTag={onAddTag}
+                      filter={filter}
+                      actionBarComponents={actionBar()}
+                      belowActionBarComponents={
+                        currentTab === 'queued' || activeFiltersJsx.length ? (
+                          <>
+                            {currentTab === 'queued' && <QueuedRunsBanners />}
+                            {activeFiltersJsx.length > 0 && (
+                              <>
+                                {activeFiltersJsx}
+                                <ButtonLink onClick={() => setFilterTokensWithStatus([])}>
+                                  Clear all
+                                </ButtonLink>
+                              </>
+                            )}
+                          </>
+                        ) : null
+                      }
+                    />
+                  </StickyTableContainer>
+                  {pipelineRunsOrError.results.length > 0 ? (
+                    <div style={{marginTop: '16px'}}>
+                      <CursorHistoryControls {...paginationProps} />
+                    </div>
+                  ) : null}
+                </>
               );
             }
-
-            return (
-              <>
-                <StickyTableContainer $top={0}>
-                  <RunTable
-                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                    onAddTag={onAddTag}
-                    filter={filter}
-                    actionBarComponents={actionBar()}
-                    belowActionBarComponents={
-                      currentTab === 'queued' || activeFiltersJsx.length ? (
-                        <>
-                          {currentTab === 'queued' && <QueuedRunsBanners />}
-                          {activeFiltersJsx.length > 0 && (
-                            <>
-                              {activeFiltersJsx}
-                              <ButtonLink onClick={() => setFilterTokensWithStatus([])}>
-                                Clear all
-                              </ButtonLink>
-                            </>
-                          )}
-                        </>
-                      ) : null
-                    }
-                  />
-                </StickyTableContainer>
-                {pipelineRunsOrError.results.length > 0 ? (
-                  <div style={{marginTop: '16px'}}>
-                    <CursorHistoryControls {...paginationProps} />
-                  </div>
-                ) : null}
-              </>
-            );
+            return <Wrapper />;
           }}
         </Loading>
       </RunsQueryRefetchContext.Provider>
