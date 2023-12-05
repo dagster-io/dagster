@@ -510,7 +510,7 @@ class DbtCliResource(ConfigurableResource):
         target (Optional[str]): The target from your dbt `profiles.yml` to use for execution. See
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
-        dbt_executable (str]): The path to the dbt executable. By default, this is `dbt`.
+        dbt_executable (str): The path to the dbt executable. By default, this is `dbt`.
 
     Examples:
         Creating a dbt resource with only a reference to ``project_dir``:
