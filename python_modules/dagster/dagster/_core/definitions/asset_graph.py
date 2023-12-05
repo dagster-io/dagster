@@ -289,11 +289,21 @@ class AssetGraph:
         self, asset_key: AssetKey, include_self: bool = False
     ) -> AbstractSet[AssetKey]:
         """Returns all nth-order dependencies of an asset."""
-        ancestors = {asset_key} if include_self else set()
-        parents = self.get_parents(asset_key) - {asset_key}  # remove self-dependencies
-        return ancestors.union(
-            *[self.get_ancestors(parent, include_self=True) for parent in parents]
-        )
+        ancestors = set()
+        next_parents = self.get_parents(asset_key) - {asset_key}  # remove self-dependencies
+        while next_parents:
+            pending_next_parents = set()
+            for node_key in next_parents:
+                if node_key in ancestors:
+                    continue
+                ancestors.add(node_key)
+                pending_next_parents.update(self.get_parents(node_key))
+
+            next_parents = pending_next_parents
+
+        if include_self:
+            ancestors.add(asset_key)
+        return ancestors
 
     def get_children_partitions(
         self,

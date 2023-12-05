@@ -6,6 +6,7 @@ from unittest import mock
 from dagster import (
     AssetIn,
     AssetKey,
+    DagsterInstance,
     DailyPartitionsDefinition,
     Definitions,
     IdentityPartitionMapping,
@@ -16,6 +17,7 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import InProcessCodeLocationOrigin
@@ -394,3 +396,24 @@ def test_assets_with_backfill_policies():
     assert asset_graph.get_backfill_policy(
         AssetKey("static_partitioned_multi_run_backfill_asset")
     ) == BackfillPolicy.multi_run(5)
+
+
+@asset(deps=[SourceAsset("b")])
+def a():
+    pass
+
+
+@asset(deps=[SourceAsset("a")])
+def b():
+    pass
+
+
+cycle_defs_a = Definitions(assets=[a])
+cycle_defs_b = Definitions(assets=[b])
+
+
+def test_cycle_status():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["cycle_defs_a", "cycle_defs_b"]))
+    resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph)
+    for key in asset_graph.all_asset_keys:
+        resolver.get_status(key)
