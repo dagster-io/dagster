@@ -3,26 +3,24 @@ import React from 'react';
 import {useStartTrace} from '../performance';
 
 export const useRunRootTrace = () => {
-  const logsLoaded = React.useRef(false);
-  const runsLoaded = React.useRef(false);
-
   const trace = useStartTrace('RunRoot');
-  const onLoaded = React.useCallback(() => {
-    if (logsLoaded.current && runsLoaded.current) {
-      trace.endTrace();
+  return React.useMemo(() => {
+    let logsLoaded = false;
+    let runsLoaded = false;
+    function onLoaded() {
+      if (logsLoaded && runsLoaded) {
+        trace.endTrace();
+      }
     }
-  }, [trace]);
-  return React.useMemo(
-    () => ({
+    return {
       onLogsLoaded() {
-        logsLoaded.current = true;
+        logsLoaded = true;
         onLoaded();
       },
       onRunLoaded() {
-        runsLoaded.current = true;
+        runsLoaded = true;
         onLoaded();
       },
-    }),
-    [],
-  );
+    };
+  }, [trace]);
 };
