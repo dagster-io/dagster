@@ -9,19 +9,38 @@ import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
+import {GraphNode} from './Utils';
+
 const emptySet = new Set<any>();
 
-export function useAssetGraphExplorerFilters({
-  assetGroups,
-  visibleAssetGroups,
-  setGroupFilters,
-}:
+type OptionalFilters =
+  | {
+      assetGroups?: null;
+      setGroupFilters?: null;
+      visibleAssetGroups?: null;
+      computeKindTags?: null;
+      setComputeKindTags?: null;
+    }
   | {
       assetGroups: AssetGroupSelector[];
       visibleAssetGroups: AssetGroupSelector[];
       setGroupFilters: (groups: AssetGroupSelector[]) => void;
-    }
-  | {assetGroups?: null; setGroupFilters?: null; visibleAssetGroups?: null}) {
+      computeKindTags: string[];
+      setComputeKindTags: (s: string[]) => void;
+    };
+
+type Props = {
+  nodes: GraphNode[];
+} & OptionalFilters;
+
+export function useAssetGraphExplorerFilters({
+  nodes,
+  assetGroups,
+  visibleAssetGroups,
+  setGroupFilters,
+  computeKindTags,
+  setComputeKindTags,
+}: Props) {
   const {allRepos, visibleRepos, toggleVisible, setVisible} = React.useContext(WorkspaceContext);
 
   const visibleReposSet = React.useMemo(() => new Set(visibleRepos), [visibleRepos]);
@@ -106,6 +125,39 @@ export function useAssetGraphExplorerFilters({
     },
   });
 
+  const allKindTags = React.useMemo(
+    () =>
+      Array.from(
+        new Set(nodes.map((node) => node.definition.computeKind).filter((v) => v) as string[]),
+      ),
+    [nodes],
+  );
+
+  const kindTagsFilter = useStaticSetFilter<string>({
+    name: 'Compute kind',
+    icon: 'tag',
+    allValues: React.useMemo(
+      () =>
+        allKindTags.map((value) => ({
+          value,
+          match: [value],
+        })),
+      [allKindTags],
+    ),
+    menuWidth: '300px',
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="tag" />
+        <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
+      </Box>
+    ),
+    getStringValue: (value) => value,
+    initialState: computeKindTags ?? [],
+    onStateChanged: (values) => {
+      setComputeKindTags?.(Array.from(values));
+    },
+  });
+
   const filters: FilterObject[] = [];
   if (allRepos.length > 1) {
     filters.push(reposFilter);
@@ -113,6 +165,7 @@ export function useAssetGraphExplorerFilters({
   if (assetGroups) {
     filters.push(groupsFilter);
   }
+  filters.push(kindTagsFilter);
   const {button, activeFiltersJsx} = useFilters({filters});
   if (allRepos.length <= 1 && !assetGroups) {
     return {button: null, activeFiltersJsx: null};
@@ -120,7 +173,7 @@ export function useAssetGraphExplorerFilters({
   return {
     button,
     filterBar: activeFiltersJsx.length ? (
-      <Box padding={12} flex={{gap: 12}}>
+      <Box padding={{vertical: 8, horizontal: 12}} flex={{gap: 12}}>
         {' '}
         {activeFiltersJsx}
       </Box>
