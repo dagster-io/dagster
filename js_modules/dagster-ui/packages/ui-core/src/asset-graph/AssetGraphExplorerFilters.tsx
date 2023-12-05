@@ -117,6 +117,11 @@ export function useAssetGraphExplorerFilters({
       </Box>
     ),
     getStringValue: (group) => group.groupName,
+    getTooltipText: (group) =>
+      group.groupName +
+      ' - ' +
+      buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
+
     initialState: React.useMemo(() => new Set(visibleAssetGroups ?? []), [visibleAssetGroups]),
     onStateChanged: (values) => {
       if (setGroupFilters) {
