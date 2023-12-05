@@ -101,34 +101,35 @@ export const Run = (props: RunProps) => {
   return (
     <RunContext.Provider value={run}>
       <LogsProvider key={runId} runId={runId}>
-        {(logs) => {
-          function Wrapper() {
-            React.useLayoutEffect(() => {
-              trace.onLogsLoaded();
-            }, []);
-            return (
-              <RunMetadataProvider logs={logs}>
-                {(metadata) => (
-                  <RunWithData
-                    run={run}
-                    runId={runId}
-                    logs={logs}
-                    logsFilter={logsFilter}
-                    metadata={metadata}
-                    selectionQuery={selectionQuery}
-                    onSetLogsFilter={setLogsFilter}
-                    onSetSelectionQuery={onSetSelectionQuery}
-                    onShowStateDetails={onShowStateDetails}
-                  />
-                )}
-              </RunMetadataProvider>
-            );
-          }
-          return <Wrapper />;
-        }}
+        {(logs) => (
+          <>
+            <OnLogsLoaded />
+            <RunMetadataProvider logs={logs}>
+              {(metadata) => (
+                <RunWithData
+                  run={run}
+                  runId={runId}
+                  logs={logs}
+                  logsFilter={logsFilter}
+                  metadata={metadata}
+                  selectionQuery={selectionQuery}
+                  onSetLogsFilter={setLogsFilter}
+                  onSetSelectionQuery={onSetSelectionQuery}
+                  onShowStateDetails={onShowStateDetails}
+                />
+              )}
+            </RunMetadataProvider>
+          </>
+        )}
       </LogsProvider>
     </RunContext.Provider>
   );
+};
+
+const OnLogsLoaded = ({trace}: {trace: ReturnType<typeof useRunRootTrace>}) => {
+  React.useLayoutEffect(() => {
+    trace.onLogsLoaded();
+  }, [trace]);
 };
 
 interface RunWithDataProps {
