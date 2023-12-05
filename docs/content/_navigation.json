@@ -955,6 +955,10 @@
             ]
           },
           {
+            "title": "Dagster Pipes + AWS Lambda",
+            "path": "/guides/dagster-pipes/aws-lambda"
+          },
+          {
             "title": "Dagster Pipes + Databricks",
             "path": "/guides/dagster-pipes/databricks"
           },

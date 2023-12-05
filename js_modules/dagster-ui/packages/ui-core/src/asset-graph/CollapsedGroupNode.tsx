@@ -6,7 +6,6 @@ import {
   MenuItem,
   colorBackgroundLight,
   colorBackgroundLightHover,
-  colorBackgroundLighter,
   colorLineageGroupNodeBorder,
   colorTextLight,
   colorTextLighter,
@@ -164,7 +163,7 @@ export const useGroupNodeContextMenu = ({
 
 export const GroupNameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundLighter(),
+  background: colorBackgroundLight(),
   border: `none`,
   borderRadius: '4px',
 });

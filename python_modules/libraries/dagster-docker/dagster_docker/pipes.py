@@ -75,7 +75,7 @@ class _PipesDockerClient(PipesClient):
             the docker client.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the docker container process. Defaults to :py:class:`PipesEnvContextInjector`.
-        message_reader (Optional[PipesContextInjector]): A message reader to use to read messages
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the docker container process. Defaults to :py:class:`DockerLogsMessageReader`.
     """
 
