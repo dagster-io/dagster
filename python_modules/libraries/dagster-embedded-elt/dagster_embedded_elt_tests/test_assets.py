@@ -204,7 +204,7 @@ def test_non_unicode_stdout(text, encoding, expected, sling_sqlite_resource: Sli
 
 
 @pytest.mark.parametrize(
-    "mode,runs,expected", [(SlingMode.FULL_REFRESH, 1, 3), (SlingMode.SNAPSHOT, 2, 6)]
+    "mode,runs,expected", [(SlingMode.INCREMENTAL, 1, 3), (SlingMode.SNAPSHOT, 2, 6)]
 )
 def test_build_assets_from_sling_streams(
     test_csv: str,

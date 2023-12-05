@@ -296,12 +296,14 @@ class SlingStreamReplicator(_SlingSyncBase):
         streams: List[Dict[str, Any]],
         mode: SlingMode,
         target_object: str,
+        default_stream_config: Dict[str, Any],
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
         yield from self._sync(
             streams=streams,
             mode=mode,
+            default_stream_config=default_stream_config,
             target_object=target_object,
             source_options=source_options,
             target_options=target_options,
@@ -312,6 +314,7 @@ class SlingStreamReplicator(_SlingSyncBase):
         streams: List[Dict[str, Any]],
         mode: SlingMode,
         target_object: str,
+        default_stream_config: Dict[str, Any],
         source_options: Optional[Dict[str, Any]] = None,
         target_options: Optional[Dict[str, Any]] = None,
         encoding: str = "utf8",
@@ -359,6 +362,7 @@ class SlingStreamReplicator(_SlingSyncBase):
                     "object": target_object,
                     "source_options": source_options,
                     "target_options": target_options,
+                    **default_stream_config,
                 },
                 "streams": {
                     **stream_config,

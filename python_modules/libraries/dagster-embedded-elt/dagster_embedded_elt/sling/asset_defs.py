@@ -114,20 +114,24 @@ def build_assets_from_sling_streams(
     asset_specs: List[AssetSpec],
     streams: List[Dict[str, Any]],
     mode: SlingMode = SlingMode.FULL_REFRESH,
-    target_object: str = "{target_schema}.{stream_schema}_{stream_table}",
+    target_object: str = "{target_schema}.{stream_schema}_{stream_table}",  # Note: this is required, but could and should be passed into the stream config
+    default_stream_config: Optional[Dict[str, Any]] = {},
     source_options: Optional[Dict[str, Any]] = None,
     target_options: Optional[Dict[str, Any]] = None,
+    **kwargs,
 ) -> AssetsDefinition:
     """Asset Factory for using Sling to sync data from a source stream to a target object.
 
     Args:
         source (SlingConnectionResource): The source SlingConnectionResource to use.
         target (SlingConnectionResource): The target SlingConnectionResource to use.
-        streams (str): The streams to sync from and any configurations specific to the stream. This can be a table, a query, or a path. See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/replication
-        target_object (str, optional): The target object to sync to. This can be a table, or a path. Defaults to the template of "{{target_schema}}.{{stream_schema}}_{{stream_table}}". See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/replication
-        mode (SlingMode, optional): The sync mode to use when syncing. Defaults to `full-refresh`.
+        streams (List[Dict[str, Any]]): The streams to sync from and any configurations specific to the stream. This can be a table, a query, or a path. See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/run/configuration#replication-config
+        target_object (str, optional): The target object to sync to. This can be a table, or a path. Defaults to the template of "{{target_schema}}.{{stream_schema}}_{{stream_table}}". See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/run/configuration#replication-config
+        mode (SlingMode, optional): The sync mode to use when syncing. Defaults to SlingMode.FULL_REFRESH.
+        default_stream_config (Optional[Dict[str, Any]], optional): Any default stream configurations to use when syncing. See the Sling documentation for more information. https://docs.slingdata.io/sling-cli/run/configuration#replication-config
         source_options (Optional[Dict[str, Any]], optional): Any optional Sling source options to use when syncing.
         target_options (Optional[Dict[str, Any]], optional): Any optional target options to use when syncing.
+        **kwargs: Any additional kwargs to pass to the @multi_asset decorator.
 
     Examples:
         Creating a Sling asset that syncs from a database to a data warehouse:
@@ -170,6 +174,7 @@ def build_assets_from_sling_streams(
         name=f"sling_sync__{str(uuid.uuid4())[:8]}",
         compute_kind="sling",
         specs=asset_specs,
+        **kwargs,
     )
     def _sling_assets(context: AssetExecutionContext) -> Generator[MaterializeResult, None, None]:
         last_row_count_observed = None
@@ -178,6 +183,7 @@ def build_assets_from_sling_streams(
             streams=streams,
             mode=mode,
             target_object=target_object,
+            default_stream_config=default_stream_config,
             source_options=source_options,
             target_options=target_options,
         ):
