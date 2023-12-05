@@ -103,7 +103,7 @@ export const Run = (props: RunProps) => {
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <>
-            <OnLogsLoaded />
+            <OnLogsLoaded trace={trace} />
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
                 <RunWithData
@@ -130,6 +130,7 @@ const OnLogsLoaded = ({trace}: {trace: ReturnType<typeof useRunRootTrace>}) => {
   React.useLayoutEffect(() => {
     trace.onLogsLoaded();
   }, [trace]);
+  return null;
 };
 
 interface RunWithDataProps {
