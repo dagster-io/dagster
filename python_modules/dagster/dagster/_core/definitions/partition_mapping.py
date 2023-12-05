@@ -122,7 +122,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         if downstream_partitions_subset is None:
             check.failed("downstream asset is not partitioned")
 
-        if downstream_partitions_subset.partitions_def == upstream_partitions_def:
+        if downstream_partitions_def == upstream_partitions_def:
             return UpstreamPartitionsResult(downstream_partitions_subset, [])
 
         upstream_partition_keys = set(
@@ -150,7 +150,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         if upstream_partitions_subset is None:
             check.failed("upstream asset is not partitioned")
 
-        if upstream_partitions_subset.partitions_def == downstream_partitions_def:
+        if upstream_partitions_def == downstream_partitions_def:
             return upstream_partitions_subset
 
         upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())

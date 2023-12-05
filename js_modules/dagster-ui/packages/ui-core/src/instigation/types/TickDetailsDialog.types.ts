@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type SelectedTickQueryVariables = Types.Exact<{
   instigationSelector: Types.InstigationSelector;
-  timestamp: Types.Scalars['Float'];
+  tickId: Types.Scalars['Int'];
 }>;
 
 export type SelectedTickQuery = {
@@ -16,6 +16,7 @@ export type SelectedTickQuery = {
         tick: {
           __typename: 'InstigationTick';
           id: string;
+          tickId: string;
           status: Types.InstigationTickStatus;
           timestamp: number;
           endTimestamp: number | null;
@@ -44,7 +45,7 @@ export type SelectedTickQuery = {
             skippedPartitionKeys: Array<string>;
             type: Types.DynamicPartitionsRequestType;
           }>;
-        } | null;
+        };
       }
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};

@@ -1,7 +1,6 @@
 import {
   Box,
   ButtonLink,
-  Colors,
   Group,
   MetadataTableWIP,
   PageHeader,
@@ -11,6 +10,8 @@ import {
   Mono,
   Tooltip,
   Button,
+  colorTextLight,
+  colorTextDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -98,7 +99,10 @@ export const ScheduleDetails = (props: {
             ) : null}
             <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
               <Tooltip content={copyText}>
-                <ButtonLink color={{link: Colors.Gray400, hover: Colors.Gray600}} onClick={copyId}>
+                <ButtonLink
+                  color={{link: colorTextLight(), hover: colorTextDefault()}}
+                  onClick={copyId}
+                >
                   <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
                 </ButtonLink>
               </Tooltip>

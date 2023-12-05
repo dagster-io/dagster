@@ -1,4 +1,4 @@
-import {Box, Colors, Spinner} from '@dagster-io/ui-components';
+import {Box, Spinner, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
@@ -28,7 +28,7 @@ const FinalRedirectOrLoadingRoot = () => {
       <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
           <Spinner purpose="section" />
-          <div style={{color: Colors.Gray600}}>Loading definitions…</div>
+          <div style={{color: colorTextLight()}}>Loading definitions…</div>
         </Box>
       </Box>
     );

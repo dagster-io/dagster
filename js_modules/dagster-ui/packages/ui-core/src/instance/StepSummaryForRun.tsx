@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Caption} from '@dagster-io/ui-components';
+import {Caption, colorTextLight} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -58,13 +58,13 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <Caption color={Colors.Gray500}>
+        <Caption color={colorTextLight()}>
           Failed at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
         </Caption>
       );
     }
     return (
-      <Caption color={Colors.Gray500}>
+      <Caption color={colorTextLight()}>
         Failed at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
       </Caption>
     );
@@ -77,13 +77,13 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <Caption color={Colors.Gray500}>
+        <Caption color={colorTextLight()}>
           In progress at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
         </Caption>
       );
     }
     return (
-      <Caption color={Colors.Gray500}>
+      <Caption color={colorTextLight()}>
         In progress at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
       </Caption>
     );

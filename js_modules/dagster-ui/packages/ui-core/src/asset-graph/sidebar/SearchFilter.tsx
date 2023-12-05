@@ -1,4 +1,4 @@
-import {MenuItem, useViewport, Suggest} from '@dagster-io/ui-components';
+import {MenuItem, useViewport, Suggest, colorTextLighter} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -64,5 +64,9 @@ export const SearchFilter = <T,>({
 const SuggestWrapper = styled.div`
   .bp4-input-group.dagster-suggest-input {
     width: 100%;
+
+    ::placeholder {
+      color: ${colorTextLighter()};
+    }
   }
 `;

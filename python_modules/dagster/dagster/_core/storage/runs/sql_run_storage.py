@@ -226,7 +226,10 @@ class SqlRunStorage(RunStorage):
         """Helper function to deal with cursor/limit pagination args."""
         if cursor:
             cursor_query = db_select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
-            query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
+            if ascending:
+                query = query.where(RunsTable.c.id > db_scalar_subquery(cursor_query))
+            else:
+                query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
 
         if limit:
             query = query.limit(limit)
@@ -333,8 +336,9 @@ class SqlRunStorage(RunStorage):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        ascending: bool = False,
     ) -> Sequence[DagsterRun]:
-        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
+        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by, ascending=ascending)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 

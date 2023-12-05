@@ -1726,8 +1726,9 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        ascending: bool = False,
     ) -> Sequence[DagsterRun]:
-        return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
+        return self._run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
 
     @traced
     def get_run_ids(

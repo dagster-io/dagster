@@ -1,4 +1,4 @@
-import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {FontFamily, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
@@ -90,7 +90,7 @@ const Container = styled.div`
 
   &&& table tr th {
     box-shadow: none !important;
-    color: ${Colors.Gray400};
+    color: ${colorTextLight()};
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: normal;

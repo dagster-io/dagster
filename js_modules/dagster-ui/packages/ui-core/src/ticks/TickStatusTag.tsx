@@ -5,10 +5,10 @@ import {
   DialogFooter,
   Button,
   BaseTag,
-  Colors,
   Box,
   ButtonLink,
   Tooltip,
+  colorBackgroundLighter,
 } from '@dagster-io/ui-components';
 import React from 'react';
 
@@ -37,7 +37,7 @@ export const TickStatusTag = ({
           </Tag>
         );
       case InstigationTickStatus.SKIPPED:
-        const tag = <BaseTag fillColor={Colors.Olive50} label="0 requested" />;
+        const tag = <BaseTag fillColor={colorBackgroundLighter()} label="0 requested" />;
         if ('runKeys' in tick && tick.runKeys.length) {
           const message = `${tick.runKeys.length} runs requested, but skipped because the runs already exist for the requested keys.`;
           return (

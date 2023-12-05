@@ -1,4 +1,14 @@
-import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  IconWrapper,
+  Tooltip,
+  colorNavBackground,
+  colorNavText,
+  colorNavTextSelected,
+  colorNavTextHover,
+  colorBackgroundLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
@@ -187,7 +197,7 @@ export const AppTopNavLogo = () => {
           shortcutFilter={(e) => e.key === '.'}
         >
           <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-            <Icon name="menu" color={Colors.White} size={24} />
+            <Icon name="menu" color={colorNavTextSelected()} size={24} />
           </NavButton>
         </ShortcutHandler>
       ) : null}
@@ -265,31 +275,31 @@ const DaggyTooltip = styled(Tooltip)`
 `;
 
 export const TopNavLink = styled(NavLink)`
-  color: ${Colors.Gray400};
+  color: ${colorNavText()};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
   text-decoration: none;
 
   :hover {
-    color: ${Colors.Gray300};
+    color: ${colorNavTextHover()};
     text-decoration: none;
   }
 
   :active,
   &.active {
-    color: ${Colors.White};
+    color: ${colorNavTextSelected()};
     text-decoration: none;
   }
 
   :focus {
     outline: none !important;
-    color: ${Colors.White};
+    color: ${colorNavTextSelected()};
   }
 `;
 
 export const AppTopNavContainer = styled.div`
-  background: ${Colors.Gray900};
+  background: ${colorNavBackground()};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -329,14 +339,14 @@ const NavButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    background: ${Colors.Gray500};
+    background: ${colorNavText()};
   }
 
   :active ${IconWrapper} {
-    background: ${Colors.Blue200};
+    background: ${colorNavText()};
   }
 
   :focus {
-    background: ${Colors.Gray700};
+    background: ${colorBackgroundLight()};
   }
 `;

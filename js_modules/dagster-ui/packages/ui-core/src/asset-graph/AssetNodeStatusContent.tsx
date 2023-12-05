@@ -1,4 +1,24 @@
-import {Body, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import {
+  Body,
+  Icon,
+  Spinner,
+  colorAccentBlue,
+  colorAccentGray,
+  colorAccentGreen,
+  colorAccentRed,
+  colorAccentYellow,
+  colorBackgroundBlue,
+  colorBackgroundGreen,
+  colorBackgroundLight,
+  colorBackgroundRed,
+  colorBackgroundYellow,
+  colorBorderDefault,
+  colorKeylineDefault,
+  colorTextGreen,
+  colorTextLight,
+  colorTextRed,
+  colorTextYellow,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -39,12 +59,12 @@ export type AssetNodeStatusContent = ReturnType<typeof buildAssetNodeStatusConte
 
 const LOADING_STATUS_CONTENT = {
   case: StatusCase.LOADING as const,
-  background: Colors.Gray100,
-  border: Colors.Gray300,
+  background: colorBackgroundLight(),
+  border: colorBorderDefault(),
   content: (
     <>
       <Spinner purpose="caption-text" />
-      <span style={{flex: 1, color: Colors.Gray800}}>Loading...</span>
+      <span style={{flex: 1, color: colorTextLight()}}>Loading...</span>
     </>
   ),
 };
@@ -93,12 +113,12 @@ export function _buildSourceAssetNodeStatusContent({
   if (materializingRunId) {
     return {
       case: StatusCase.SOURCE_OBSERVING as const,
-      background: Colors.Gray100,
-      border: Colors.Gray300,
+      background: colorBackgroundLight(),
+      border: colorBorderDefault(),
       content: (
         <>
           <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
-          <span style={{flex: 1}} color={Colors.Gray800}>
+          <span style={{flex: 1}} color={colorTextLight()}>
             Observing...
           </span>
           {expanded && <SpacerDot />}
@@ -110,8 +130,8 @@ export function _buildSourceAssetNodeStatusContent({
   if (liveData?.lastObservation) {
     return {
       case: StatusCase.SOURCE_OBSERVED as const,
-      background: Colors.Gray100,
-      border: Colors.Gray300,
+      background: colorBackgroundLight(),
+      border: colorBorderDefault(),
       content: (
         <>
           {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />}
@@ -139,14 +159,14 @@ export function _buildSourceAssetNodeStatusContent({
   if (definition.isObservable) {
     return {
       case: StatusCase.SOURCE_NEVER_OBSERVED as const,
-      background: Colors.Gray100,
-      border: Colors.Gray300,
+      background: colorBackgroundLight(),
+      border: colorBorderDefault(),
       content: (
         <>
           {expanded && (
             <Icon
               name="partition_missing"
-              color={Colors.Gray300}
+              color={colorAccentGray()}
               style={{marginRight: -2}}
               size={12}
             />
@@ -160,8 +180,8 @@ export function _buildSourceAssetNodeStatusContent({
 
   return {
     case: StatusCase.SOURCE_NO_STATE as const,
-    background: Colors.Gray100,
-    border: Colors.Gray300,
+    background: colorBackgroundLight(),
+    border: colorBorderDefault(),
     content: <span>–</span>,
   };
 }
@@ -195,15 +215,15 @@ export function _buildAssetNodeStatusContent({
 
     return {
       case: StatusCase.MATERIALIZING as const,
-      background: Colors.Blue50,
-      border: Colors.Blue500,
+      background: colorBackgroundBlue(),
+      border: colorAccentBlue(),
       numMaterializing,
       content: (
         <>
           <div style={{marginLeft: -1, marginRight: -1}}>
             <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
           </div>
-          <span style={{flex: 1}} color={Colors.Gray800}>
+          <span style={{flex: 1}} color={colorTextLight()}>
             {numMaterializing === 1
               ? `Materializing 1 partition...`
               : numMaterializing
@@ -282,14 +302,14 @@ export function _buildAssetNodeStatusContent({
   if (runWhichFailedToMaterialize || overdue || checksFailed) {
     return {
       case: StatusCase.LATE_OR_FAILED as const,
-      background: Colors.Red50,
-      border: Colors.Red500,
+      background: colorBackgroundRed(),
+      border: colorAccentRed(),
       content: (
         <>
           {expanded && (
             <Icon
               name="partition_failure"
-              color={Colors.Red500}
+              color={colorAccentRed()}
               style={{marginRight: -2}}
               size={12}
             />
@@ -297,18 +317,18 @@ export function _buildAssetNodeStatusContent({
 
           {overdue && runWhichFailedToMaterialize ? (
             <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.Red700}}>Failed, Overdue</span>
+              <span style={{color: colorTextRed()}}>Failed, Overdue</span>
             </OverdueLineagePopover>
           ) : overdue ? (
             <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
-              <span style={{color: Colors.Red700}}>Overdue</span>
+              <span style={{color: colorTextRed()}}>Overdue</span>
             </OverdueLineagePopover>
           ) : runWhichFailedToMaterialize ? (
-            <span style={{color: Colors.Red700}}>Failed</span>
+            <span style={{color: colorTextRed()}}>Failed</span>
           ) : lastMaterialization ? (
-            <span style={{color: Colors.Red700}}>Materialized</span>
+            <span style={{color: colorTextRed()}}>Materialized</span>
           ) : (
-            <span style={{color: Colors.Red700}}>Never materialized</span>
+            <span style={{color: colorTextRed()}}>Never materialized</span>
           )}
 
           {expanded && <SpacerDot />}
@@ -333,19 +353,19 @@ export function _buildAssetNodeStatusContent({
   if (!lastMaterialization) {
     return {
       case: StatusCase.NEVER_MATERIALIZED as const,
-      background: Colors.Yellow50,
-      border: Colors.Yellow500,
+      background: colorBackgroundYellow(),
+      border: colorAccentYellow(),
       content: (
         <>
           {expanded && (
             <Icon
               name="partition_missing"
-              color={Colors.Yellow500}
+              color={colorAccentYellow()}
               style={{marginRight: -2}}
               size={12}
             />
           )}
-          <span style={{color: Colors.Yellow700}}>Never materialized</span>
+          <span style={{color: colorTextYellow()}}>Never materialized</span>
         </>
       ),
     };
@@ -353,12 +373,12 @@ export function _buildAssetNodeStatusContent({
 
   return {
     case: StatusCase.MATERIALIZED as const,
-    background: Colors.Green50,
-    border: Colors.Green500,
+    background: colorBackgroundGreen(),
+    border: colorAccentGreen(),
     content: (
       <>
         {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />}
-        <span style={{color: Colors.Green700}}>Materialized</span>
+        <span style={{color: colorTextGreen()}}>Materialized</span>
         {expanded && <SpacerDot />}
         {lastMaterializationLink}
       </>
@@ -367,7 +387,7 @@ export function _buildAssetNodeStatusContent({
 }
 
 const SpacerDot = () => (
-  <Body color={Colors.KeylineGray} style={{marginLeft: -3, marginRight: -3}}>
+  <Body color={colorKeylineDefault()} style={{marginLeft: -3, marginRight: -3}}>
     •
   </Body>
 );

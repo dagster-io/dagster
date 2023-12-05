@@ -226,7 +226,11 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             filename = f"{filename}.partial"
         if len(filename) > MAX_FILENAME_LENGTH:
             filename = "{}.{}".format(non_secure_md5_hash_str(filebase.encode("utf-8")), extension)
-        return os.path.join(self._base_dir, *namespace, filename)
+        location = os.path.join(self._base_dir, *namespace, filename)
+        location = os.path.abspath(location)
+        if not location.startswith(self._base_dir):
+            raise ValueError("Invalid path")
+        return location
 
     def subscribe(
         self, log_key: Sequence[str], cursor: Optional[str] = None

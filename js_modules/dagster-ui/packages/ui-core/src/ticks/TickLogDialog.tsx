@@ -1,5 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  DialogFooter,
+  Dialog,
+  DialogBody,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {InstigationSelector} from '../graphql/types';
@@ -30,7 +37,7 @@ export const TickLogDialog = ({
   onClose: () => void;
 }) => {
   const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
-    variables: {instigationSelector, timestamp: tick.timestamp},
+    variables: {instigationSelector, tickId: Number(tick.tickId)},
     notifyOnNetworkStatusChange: true,
   });
 
@@ -53,7 +60,7 @@ export const TickLogDialog = ({
         ) : (
           <Box
             flex={{justifyContent: 'center', alignItems: 'center'}}
-            style={{flex: 1, color: Colors.Gray600}}
+            style={{flex: 1, color: colorTextLight()}}
           >
             No logs available
           </Box>
@@ -118,11 +125,11 @@ const TickLogRow = ({event}: {event: TickLogEventFragment}) => {
 };
 
 const TICK_LOG_EVENTS_QUERY = gql`
-  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
+  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: Int!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id
-        tick(timestamp: $timestamp) {
+        tick(tickId: $tickId) {
           id
           status
           timestamp

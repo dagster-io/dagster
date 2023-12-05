@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Page,
-  Colors,
   Checkbox,
   Spinner,
   Subtitle2,
@@ -126,11 +125,7 @@ export const AutomaterializationRoot = () => {
   return (
     <Page>
       <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="amp" />} />
-      <Box
-        padding={{vertical: 12, horizontal: 24}}
-        flex={{direction: 'column', gap: 12}}
-        background={Colors.Gray50}
-      >
+      <Box padding={{vertical: 12, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
         <Alert
           intent="info"
           title="[Experimental] Dagster can automatically materialize assets when criteria are met."

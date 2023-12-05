@@ -1,8 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorTextDefault, colorTextLight} from '../theme/color';
+
 import {Box} from './Box';
-import {Colors} from './Colors';
 import {Table, TableProps} from './Table';
 
 export type MetadataTableRow = {key: string; label?: React.ReactNode; value: React.ReactNode};
@@ -58,7 +59,7 @@ export const StyledTable = styled.table`
 `;
 
 const MetadataKey = styled.div<{$dark: boolean}>`
-  color: ${({$dark}) => ($dark ? Colors.Gray200 : Colors.Gray600)};
+  color: ${({$dark}) => ($dark ? colorTextDefault() : colorTextLight())};
   font-weight: 400;
 `;
 

@@ -21,6 +21,7 @@ export interface AssetGraphFetchScope {
   hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
+  computeKinds?: string[];
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
@@ -84,7 +85,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const {all} = filterByQuery(graphQueryItems, opsQuery);
+    const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
+    const computeKinds = options.computeKinds;
+    const all = computeKinds?.length
+      ? allFilteredByOpQuery.filter((item) => computeKinds.includes(item.node.computeKind ?? ''))
+      : allFilteredByOpQuery;
 
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
@@ -98,7 +103,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       assetGraphData,
       graphQueryItems,
     };
-  }, [repoFilteredNodes, graphQueryItems, opsQuery, options.hideEdgesToNodesOutsideQuery]);
+  }, [
+    repoFilteredNodes,
+    graphQueryItems,
+    opsQuery,
+    options.computeKinds,
+    options.hideEdgesToNodesOutsideQuery,
+  ]);
 
   return {
     fetchResult,

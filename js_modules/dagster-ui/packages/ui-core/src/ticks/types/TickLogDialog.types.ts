@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type TickLogEventsQueryVariables = Types.Exact<{
   instigationSelector: Types.InstigationSelector;
-  timestamp: Types.Scalars['Float'];
+  tickId: Types.Scalars['Int'];
 }>;
 
 export type TickLogEventsQuery = {
@@ -27,7 +27,7 @@ export type TickLogEventsQuery = {
               level: Types.LogLevel;
             }>;
           };
-        } | null;
+        };
       }
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};

@@ -1,9 +1,9 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
+import {CoreColors} from '../../palettes/Colors';
 import {BaseButton} from '../BaseButton';
 import {Box} from '../Box';
-import {Colors} from '../Colors';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
 
@@ -32,35 +32,35 @@ export const Default = () => {
 export const Fill = () => {
   return (
     <Group direction="column" spacing={8}>
-      <BaseButton label="Button" fillColor={Colors.Dark} textColor={Colors.White} />
+      <BaseButton label="Button" fillColor={CoreColors.Gray900} textColor={CoreColors.White} />
       <BaseButton
         label="Button"
-        fillColor={Colors.Blue500}
-        textColor={Colors.White}
+        fillColor={CoreColors.Blue500}
+        textColor={CoreColors.White}
         icon={<Icon name="star" />}
       />
       <BaseButton
         label="Button"
-        fillColor={Colors.Green500}
-        textColor={Colors.White}
+        fillColor={CoreColors.Green500}
+        textColor={CoreColors.White}
         rightIcon={<Icon name="close" />}
       />
       <BaseButton
         label="Button"
-        fillColor={Colors.Red500}
-        textColor={Colors.White}
+        fillColor={CoreColors.Red500}
+        textColor={CoreColors.White}
         icon={<Icon name="source" />}
         rightIcon={<Icon name="expand_more" />}
       />
       <BaseButton
         label="Button"
-        fillColor={Colors.Olive500}
-        textColor={Colors.White}
+        fillColor={CoreColors.Olive500}
+        textColor={CoreColors.White}
         icon={<Icon name="folder_open" />}
       />
       <BaseButton
-        fillColor={Colors.Yellow500}
-        textColor={Colors.White}
+        fillColor={CoreColors.Yellow500}
+        textColor={CoreColors.White}
         icon={<Icon name="cached" />}
       />
     </Group>
@@ -69,29 +69,33 @@ export const Fill = () => {
 
 export const Transparent = () => {
   return (
-    <Box padding={12} background={Colors.Gray200}>
+    <Box padding={12} background={CoreColors.Gray200}>
       <Group direction="column" spacing={8}>
-        <BaseButton textColor={Colors.Dark} label="Button" fillColor="transparent" />
+        <BaseButton textColor={CoreColors.Gray900} label="Button" fillColor="transparent" />
         <BaseButton
-          textColor={Colors.Dark}
+          textColor={CoreColors.Gray900}
           label="Button"
           fillColor="transparent"
           icon={<Icon name="star" />}
         />
         <BaseButton
-          textColor={Colors.Dark}
+          textColor={CoreColors.Gray900}
           label="Button"
           fillColor="transparent"
           rightIcon={<Icon name="close" />}
         />
         <BaseButton
-          textColor={Colors.Dark}
+          textColor={CoreColors.Gray900}
           label="Button"
           fillColor="transparent"
           icon={<Icon name="source" />}
           rightIcon={<Icon name="expand_more" />}
         />
-        <BaseButton textColor={Colors.Dark} fillColor="transparent" icon={<Icon name="cached" />} />
+        <BaseButton
+          textColor={CoreColors.Gray900}
+          fillColor="transparent"
+          icon={<Icon name="cached" />}
+        />
       </Group>
     </Box>
   );
@@ -101,8 +105,13 @@ export const Disabled = () => {
   return (
     <Group direction="column" spacing={8}>
       <BaseButton label="Button" icon={<Icon name="star" />} disabled />
-      <BaseButton label="Button" fillColor={Colors.Dark} textColor={Colors.White} disabled />
-      <BaseButton textColor={Colors.Dark} label="Button" fillColor="transparent" disabled />
+      <BaseButton
+        label="Button"
+        fillColor={CoreColors.Gray900}
+        textColor={CoreColors.White}
+        disabled
+      />
+      <BaseButton textColor={CoreColors.Gray900} label="Button" fillColor="transparent" disabled />
     </Group>
   );
 };

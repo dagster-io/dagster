@@ -1,4 +1,4 @@
-import {Box, Colors, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Spinner, colorBackgroundDefault} from '@dagster-io/ui-components';
 import capitalize from 'lodash/capitalize';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -56,7 +56,7 @@ export const LoadingNotice = (props: {async: boolean; nodeType: 'asset' | 'op'})
 };
 
 const LoadingContainer = styled.div`
-  background-color: ${Colors.White};
+  background-color: ${colorBackgroundDefault()};
   position: absolute;
   top: 57px;
   bottom: 0;

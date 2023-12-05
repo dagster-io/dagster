@@ -1,4 +1,13 @@
-import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui-components';
+import {
+  BaseTag,
+  Icon,
+  IconName,
+  colorBackgroundBlue,
+  colorLinkDefault,
+  colorTextBlue,
+  colorTooltipBackground,
+  colorTooltipText,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -33,21 +42,21 @@ export const FilterTag = ({
 }) => (
   <div>
     <BaseTag
-      icon={<Icon name={iconName} color={Colors.Link} />}
+      icon={<Icon name={iconName} color={colorLinkDefault()} />}
       rightIcon={
         <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
-          <Icon name="close" color={Colors.Link} />
+          <Icon name="close" color={colorLinkDefault()} />
         </div>
       }
       label={label}
-      fillColor={Colors.Blue50}
-      textColor={Colors.Link}
+      fillColor={colorBackgroundBlue()}
+      textColor={colorLinkDefault()}
     />
   </div>
 );
 
 const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)`
-  color: ${Colors.Blue500};
+  color: ${colorTextBlue()};
   font-weight: 600;
   font-size: 12px;
   max-width: 100px;
@@ -65,9 +74,16 @@ export const FilterTagHighlightedText = React.forwardRef(
   ) => {
     return (
       <FilterTagHighlightedTextSpan
-        text={children}
+        text={
+          <>
+            {children}
+            {/* The following display:none div is a hack to trick CustomTooltipProvider into showing the tooltip even if the text isn't truncated */}
+            <div style={{display: 'none'}}>…</div>
+          </>
+        }
         tooltipStyle={LabelTooltipStyles}
         {...rest}
+        tooltipText={rest.tooltipText || children}
         ref={ref}
       />
     );
@@ -75,8 +91,8 @@ export const FilterTagHighlightedText = React.forwardRef(
 );
 
 const LabelTooltipStyles = JSON.stringify({
-  background: Colors.Blue50,
-  color: Colors.Blue500,
+  background: colorTooltipBackground(),
+  color: colorTooltipText(),
   border: 'none',
   borderRadius: 7,
   overflow: 'hidden',

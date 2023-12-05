@@ -3,7 +3,6 @@ import {
   Body2,
   Box,
   Button,
-  Colors,
   CursorHistoryControls,
   Dialog,
   DialogBody,
@@ -12,6 +11,7 @@ import {
   NonIdealState,
   Spinner,
   Table,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -260,7 +260,7 @@ export function MigrationRequired() {
         title="Migration required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
               A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
             </Body2>
@@ -279,7 +279,7 @@ export function AgentUpgradeRequired() {
         title="Agent upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
               Checks require Dagster Cloud Agent version 1.5 or higher. Upgrade your agent(s) to use
               checks.
             </Body2>
@@ -298,7 +298,7 @@ export function NeedsUserCodeUpgrade() {
         title="Upgrade required"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
               Checks aren&apos;t supported with dagster versions before 1.5. Upgrade the dagster
               library in this code location to use them.
             </Body2>
@@ -317,7 +317,7 @@ export function NoChecks() {
         title="No checks found for this asset"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
               Asset Checks run after a materialization and can verify a particular property of a
               data asset. Checks can help ensure that the contents of each data asset is correct.
             </Body2>
@@ -328,7 +328,7 @@ export function NoChecks() {
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
               Learn more about Asset Checks
-              <Icon name="open_in_new" color={Colors.Link} />
+              <Icon name="open_in_new" color={colorLinkDefault()} />
             </Box> */}
           </Box>
         }
@@ -345,7 +345,7 @@ function NoExecutions() {
         title="No executions found for this check"
         description={
           <Box flex={{direction: 'column'}}>
-            <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
+            <Body2 color={colorTextLight()} style={{padding: '6px 0'}}>
               No executions found. Materialize this asset and the check will run automatically.
             </Body2>
             {/* <Box
@@ -355,7 +355,7 @@ function NoExecutions() {
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
               Learn more about Asset Checks
-              <Icon name="open_in_new" color={Colors.Link} />
+              <Icon name="open_in_new" color={colorLinkDefault()} />
             </Box> */}
           </Box>
         }

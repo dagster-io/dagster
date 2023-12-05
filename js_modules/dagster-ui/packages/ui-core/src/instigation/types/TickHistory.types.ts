@@ -22,6 +22,7 @@ export type TickHistoryQuery = {
         ticks: Array<{
           __typename: 'InstigationTick';
           id: string;
+          tickId: string;
           status: Types.InstigationTickStatus;
           timestamp: number;
           endTimestamp: number | null;

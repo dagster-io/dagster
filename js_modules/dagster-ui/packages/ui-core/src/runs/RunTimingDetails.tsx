@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, MetadataTable} from '@dagster-io/ui-components';
+import {MetadataTable, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {RunStatus} from '../graphql/types';
@@ -37,7 +37,7 @@ const LoadingOrValue = ({
 }: {
   loading: boolean;
   children: () => React.ReactNode;
-}) => (loading ? <div style={{color: Colors.Gray400}}>Loading…</div> : <div>{children()}</div>);
+}) => (loading ? <div style={{color: colorTextLight()}}>Loading…</div> : <div>{children()}</div>);
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -61,7 +61,7 @@ export const RunTimingDetails = ({
                   return <TimestampDisplay timestamp={run.startTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: colorTextLight()}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -76,7 +76,7 @@ export const RunTimingDetails = ({
                   return <TimestampDisplay timestamp={run.endTime} timeFormat={TIME_FORMAT} />;
                 }
                 return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: colorTextLight()}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -91,7 +91,7 @@ export const RunTimingDetails = ({
                   return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
                 }
                 return (
-                  <div style={{color: Colors.Gray400}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: colorTextLight()}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>

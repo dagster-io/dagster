@@ -33,7 +33,7 @@ export const RepoFilterButton = () => {
       </Dialog>
 
       <Button
-        intent="none"
+        outlined
         icon={<Icon name="folder" />}
         rightIcon={<Icon name="expand_more" />}
         onClick={() => setOpen(true)}

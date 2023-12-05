@@ -2,8 +2,9 @@
 import {HTMLTable, HTMLTableProps} from '@blueprintjs/core';
 import styled from 'styled-components';
 
+import {colorKeylineDefault, colorTextDefault, colorTextLight} from '../theme/color';
+
 import {StyledTag} from './BaseTag';
-import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export interface TableProps extends HTMLTableProps {
@@ -17,12 +18,12 @@ export const Table = styled(HTMLTable)<TableProps>`
   & tr th,
   & tr td {
     box-shadow:
-      inset 0 1px 0 ${Colors.KeylineGray},
-      inset 1px 0 0 ${Colors.KeylineGray} !important;
+      inset 0 1px 0 ${colorKeylineDefault()},
+      inset 1px 0 0 ${colorKeylineDefault()} !important;
   }
 
   & tr th {
-    color: ${Colors.Gray500};
+    color: ${colorTextLight()};
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: 400;
@@ -37,7 +38,7 @@ export const Table = styled(HTMLTable)<TableProps>`
   }
 
   & tr td {
-    color: ${Colors.Gray900};
+    color: ${colorTextDefault()};
     font-family: ${FontFamily.default};
     font-size: 14px;
     line-height: 20px;
@@ -50,9 +51,9 @@ export const Table = styled(HTMLTable)<TableProps>`
 
   & tr:last-child td {
     box-shadow:
-      inset 0 1px 0 ${Colors.KeylineGray},
-      inset 1px 0 0 ${Colors.KeylineGray},
-      inset 0 -1px 0 ${Colors.KeylineGray} !important;
+      inset 0 1px 0 ${colorKeylineDefault()},
+      inset 1px 0 0 ${colorKeylineDefault()},
+      inset 0 -1px 0 ${colorKeylineDefault()} !important;
   }
 
   & tr td ${StyledTag} {
