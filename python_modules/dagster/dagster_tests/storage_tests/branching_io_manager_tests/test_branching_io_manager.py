@@ -1,8 +1,8 @@
 import math
 import time
-from typing import Optional
+from typing import Any, Optional, cast
 
-from dagster import Definitions, asset
+from dagster import Definitions, In, asset, job, op
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
@@ -245,4 +245,34 @@ def test_basic_workflow():
         # downstream gets it from staging
         assert dev_t1_runner.load_asset_value("now_time_plus_20_after_plus_N") == (
             now_time_prod_value_1 + 17 + 20
+        )
+
+
+@op
+def now_time_op() -> int:
+    return int(math.floor(time.time() * 100))
+
+
+@op(ins={"now_time": In(int)})
+def now_time_divide_by_2(now_time: int) -> int:
+    return now_time // 2
+
+
+@job
+def now_time_job():
+    now_time_divide_by_2(now_time_op())
+
+
+def test_job_op_usecase() -> Any:
+    with DefinitionsRunner.ephemeral(
+        Definitions(
+            jobs=[now_time_job],
+            resources={"io_manager": AssetBasedInMemoryIOManager()},
+        ),
+    ) as runner:
+        assert (
+            cast(DefinitionsRunner, runner)
+            .defs.get_job_def("now_time_job")
+            .execute_in_process(instance=runner.instance)
+            .success
         )

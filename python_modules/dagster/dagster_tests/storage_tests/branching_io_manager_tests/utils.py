@@ -102,8 +102,15 @@ class AssetBasedInMemoryIOManager(IOManager):
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
     def _key_from_context(self, context: Union[InputContext, OutputContext]):
+        if not context.has_asset_key:
+            return None
+
         if isinstance(context, InputContext):
-            partition_key = None
+            partition_key = (
+                context.upstream_output.partition_key
+                if context.upstream_output and context.upstream_output.has_partition_key
+                else None
+            )
             try:
                 partition_key = context.asset_partition_key
             except CheckError:
@@ -153,7 +160,11 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
 
     def _key_from_context(self, context: Union[InputContext, OutputContext]):
         if isinstance(context, InputContext):
-            partition_key = None
+            partition_key = (
+                context.upstream_output.partition_key
+                if context.upstream_output and context.upstream_output.has_partition_key
+                else None
+            )
             try:
                 partition_key = context.asset_partition_key
             except CheckError:

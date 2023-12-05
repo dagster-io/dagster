@@ -70,7 +70,11 @@ class BranchingIOManager(ConfigurableIOManager):
             return self.branch_io_manager.load_input(context)
         else:
             # we are dealing with an asset input
-            partition_key = None
+            partition_key = (
+                context.upstream_output.partition_key
+                if context.upstream_output and context.upstream_output.has_partition_key
+                else None
+            )
             try:
                 partition_key = context.asset_partition_key
             except CheckError:
