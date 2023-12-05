@@ -4,6 +4,7 @@ import {
   colorAccentGray,
   colorAccentPrimary,
   colorAccentPrimaryHover,
+  colorBackgroundDefault,
   colorBackgroundLight,
   colorBackgroundLighter,
   colorTextLight,
@@ -158,15 +159,22 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
         ))}
         <LaunchpadTab title="+ Add..." onClick={onCreate} />
         {sessionKeys.length > REMOVE_ALL_THRESHOLD ? (
-          <ButtonLink color={colorTextRed()} onClick={onRemoveAll}>
-            <Box
-              flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-              style={{whiteSpace: 'nowrap'}}
-            >
-              <Icon name="delete" color={colorTextRed()} />
-              <div>Remove all</div>
-            </Box>
-          </ButtonLink>
+          <Box
+            background={colorBackgroundDefault()}
+            padding={{top: 8, left: 8, right: 12}}
+            border="bottom"
+            style={{position: 'sticky', right: 0}}
+          >
+            <ButtonLink color={colorTextRed()} onClick={onRemoveAll}>
+              <Box
+                flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+                style={{whiteSpace: 'nowrap'}}
+              >
+                <Icon name="delete" color={colorTextRed()} />
+                <div>Remove all</div>
+              </Box>
+            </ButtonLink>
+          </Box>
         ) : null}
       </LaunchpadTabsContainer>
     </Box>
@@ -182,6 +190,10 @@ const LaunchpadTabsContainer = styled.div`
   flex-direction: row;
   padding-left: 12px;
   overflow-x: auto;
+
+  ::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
 `;
 
 const TabContainer = styled.div<{$active: boolean}>`

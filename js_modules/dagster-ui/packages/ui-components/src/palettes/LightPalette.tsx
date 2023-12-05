@@ -2,6 +2,7 @@ import {ColorName} from './ColorName';
 import {CoreColors, DataVizColors, TranslucentColors} from './Colors';
 
 export const LightPalette = {
+  [ColorName.BrowserColorScheme]: 'light',
   [ColorName.KeylineDefault]: TranslucentColors.Gray15,
   [ColorName.LinkDefault]: CoreColors.Blue700,
   [ColorName.LinkHover]: CoreColors.Blue500,

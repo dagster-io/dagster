@@ -1,5 +1,4 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import uniq from 'lodash/uniq';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
@@ -11,7 +10,7 @@ import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode, AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {GraphData, groupIdForNode, toGraphId} from '../asset-graph/Utils';
+import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
@@ -35,10 +34,17 @@ export const AssetNodeLineageGraph = ({
   const {flagDAGSidebar} = useFeatureFlags();
 
   const assetGraphId = toGraphId(assetKey);
-  const allGroups = React.useMemo(
-    () => uniq(Object.values(assetGraphData.nodes).map((g) => groupIdForNode(g))),
-    [assetGraphData],
-  );
+
+  const {allGroups, groupedAssets} = React.useMemo(() => {
+    const groupedAssets: Record<string, GraphNode[]> = {};
+    Object.values(assetGraphData.nodes).forEach((node) => {
+      const groupId = groupIdForNode(node);
+      groupedAssets[groupId] = groupedAssets[groupId] || [];
+      groupedAssets[groupId]!.push(node);
+    });
+    return {allGroups: Object.keys(groupedAssets), groupedAssets};
+  }, [assetGraphData]);
+
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
   // Use the pathname as part of the key so that different deployments don't invalidate each other's cached layout
@@ -91,7 +97,13 @@ export const AssetNodeLineageGraph = ({
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
                 {flagDAGSidebar ? (
-                  <ExpandedGroupNode group={group} minimal={scale < MINIMAL_SCALE} />
+                  <ExpandedGroupNode
+                    group={{
+                      ...group,
+                      assets: groupedAssets[group.id]!,
+                    }}
+                    minimal={scale < MINIMAL_SCALE}
+                  />
                 ) : (
                   <AssetGroupNode group={group} scale={scale} />
                 )}

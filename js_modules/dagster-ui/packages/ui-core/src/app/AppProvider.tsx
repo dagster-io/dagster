@@ -21,6 +21,7 @@ import {
   colorLinkDefault,
   colorBackgroundDefault,
   colorTextDefault,
+  browserColorScheme,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -59,6 +60,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
+    color-scheme: ${browserColorScheme()};
     background-color: ${colorBackgroundDefault()};
     color: ${colorTextDefault()};
     width: 100vw;
