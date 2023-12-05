@@ -267,7 +267,12 @@ def test_job_op_usecase() -> Any:
     with DefinitionsRunner.ephemeral(
         Definitions(
             jobs=[now_time_job],
-            resources={"io_manager": AssetBasedInMemoryIOManager()},
+            resources={
+                "io_manager": BranchingIOManager(
+                    parent_io_manager=AssetBasedInMemoryIOManager(),
+                    branch_io_manager=AssetBasedInMemoryIOManager(),
+                )
+            },
         ),
     ) as runner:
         assert (
