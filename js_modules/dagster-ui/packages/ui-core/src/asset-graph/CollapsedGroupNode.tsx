@@ -82,7 +82,7 @@ export const CollapsedGroupNode = ({
     preferredJobName,
   });
   return (
-    <ContextMenuWrapper menu={menu}>
+    <ContextMenuWrapper menu={menu} stopPropagation>
       <CollapsedGroupNodeContainer
         onClick={(e) => {
           onExpand();

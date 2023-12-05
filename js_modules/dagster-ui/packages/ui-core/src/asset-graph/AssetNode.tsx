@@ -211,7 +211,9 @@ export const AssetNodeContextMenuWrapper = React.memo(
     });
     return (
       <>
-        <ContextMenuWrapper menu={menu}>{children}</ContextMenuWrapper>
+        <ContextMenuWrapper menu={menu} stopPropagation>
+          {children}
+        </ContextMenuWrapper>
         {dialog}
       </>
     );

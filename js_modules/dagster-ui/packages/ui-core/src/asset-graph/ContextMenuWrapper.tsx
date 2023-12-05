@@ -1,12 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+const CONTEXT_MENU_EVENT = 'context-menu-event';
+
 export const ContextMenuWrapper = ({
   children,
   menu,
+  stopPropagation,
+  wrapper1Styles,
+  wrapper2Styles,
 }: {
   children: React.ReactNode;
   menu: React.ReactNode;
+  stopPropagation?: boolean;
+  wrapper1Styles?: React.CSSProperties;
+  wrapper2Styles?: React.CSSProperties;
 }) => {
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [menuPosition, setMenuPosition] = React.useState<{top: number; left: number}>({
@@ -16,8 +24,15 @@ export const ContextMenuWrapper = ({
 
   const showMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    setMenuVisible(true);
     setMenuPosition({top: e.pageY, left: e.pageX});
+
+    if (!menuVisible) {
+      setMenuVisible(true);
+      document.dispatchEvent(new CustomEvent(CONTEXT_MENU_EVENT));
+    }
+    if (stopPropagation) {
+      e.stopPropagation();
+    }
   };
 
   const hideMenu = () => {
@@ -39,18 +54,22 @@ export const ContextMenuWrapper = ({
     if (menuVisible && node) {
       document.body.addEventListener('click', listener);
       document.body.addEventListener('keydown', keydownListener);
+      document.body.addEventListener('contextmenu', listener);
+      document.addEventListener(CONTEXT_MENU_EVENT, listener as any);
     }
     return () => {
       if (node) {
         document.body.removeEventListener('click', listener);
         document.body.removeEventListener('keydown', keydownListener);
+        document.body.removeEventListener('contextmenu', listener);
+        document.removeEventListener(CONTEXT_MENU_EVENT, listener as any);
       }
     };
   }, [menuVisible]);
 
   return (
-    <div ref={ref}>
-      <div onContextMenu={showMenu} onClick={hideMenu}>
+    <div ref={ref} style={wrapper1Styles}>
+      <div onContextMenu={showMenu} onClick={hideMenu} style={wrapper2Styles}>
         {children}
       </div>
       {menuVisible

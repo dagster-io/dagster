@@ -10,8 +10,9 @@ import {
   Box,
   colorKeylineDefault,
   colorBackgroundDefault,
+  Menu,
+  MenuItem,
 } from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
@@ -47,6 +48,7 @@ import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal, AssetNodeContextMenuWrapper} from './AssetNode';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {ExpandedGroupNode} from './ExpandedGroupNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -438,6 +440,172 @@ const AssetGraphExplorerWithData = ({
     });
   };
 
+  const areAllGroupsCollapsed = expandedGroups.length === 0;
+  const areAllGroupsExpanded = expandedGroups.length === allGroups.length;
+
+  const svgViewport = layout ? (
+    <SVGViewport
+      ref={(r) => (viewportEl.current = r || undefined)}
+      defaultZoom={flagDAGSidebar ? 'zoom-to-fit-width' : 'zoom-to-fit'}
+      interactor={SVGViewport.Interactors.PanAndZoom}
+      graphWidth={layout.width}
+      graphHeight={layout.height}
+      graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel || flagDAGSidebar}
+      additionalToolbarElements={toggleGroupsButton}
+      onClick={onClickBackground}
+      onArrowKeyDown={onArrowKeyDown}
+      onDoubleClick={(e) => {
+        viewportEl.current?.autocenter(true);
+        e.stopPropagation();
+      }}
+      maxZoom={DEFAULT_MAX_ZOOM}
+      maxAutocenterZoom={1.0}
+    >
+      {({scale}, viewportRect) => (
+        <SVGContainer width={layout.width} height={layout.height}>
+          {flagDAGSidebar &&
+            Object.values(layout.groups)
+              .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+              .filter((group) => group.expanded)
+              .sort((a, b) => a.id.length - b.id.length)
+              .map((group) => (
+                <foreignObject
+                  key={group.id}
+                  {...group.bounds}
+                  className="group"
+                  onDoubleClick={(e) => {
+                    zoomToGroup(group.id);
+                    e.stopPropagation();
+                  }}
+                >
+                  <ExpandedGroupNode
+                    preferredJobName={explorerPath.pipelineName}
+                    onFilterToGroup={() => onFilterToGroup(group)}
+                    group={{
+                      ...group,
+                      assets: groupedAssets[group.id] || [],
+                    }}
+                    minimal={scale < MINIMAL_SCALE}
+                    onCollapse={() => {
+                      focusGroupIdAfterLayoutRef.current = group.id;
+                      setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
+                    }}
+                  />
+                </foreignObject>
+              ))}
+
+          <AssetEdges
+            viewportRect={viewportRect}
+            selected={selectedGraphNodes.map((n) => n.id)}
+            highlighted={highlighted}
+            edges={
+              flagDAGSidebar
+                ? layout.edges
+                : filterEdges(layout.edges, allowGroupsOnlyZoomLevel, scale, assetGraphData)
+            }
+            strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
+          />
+
+          {Object.values(layout.groups)
+            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .filter((group) => !flagDAGSidebar || !group.expanded)
+            .sort((a, b) => a.id.length - b.id.length)
+            .map((group) => (
+              <foreignObject
+                key={group.id}
+                {...group.bounds}
+                className="group"
+                onDoubleClick={(e) => {
+                  if (!viewportEl.current) {
+                    return;
+                  }
+                  const targetScale = viewportEl.current.scaleForSVGBounds(
+                    group.bounds.width,
+                    group.bounds.height,
+                  );
+                  viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
+                  e.stopPropagation();
+                }}
+              >
+                {flagDAGSidebar ? (
+                  <CollapsedGroupNode
+                    preferredJobName={explorerPath.pipelineName}
+                    onFilterToGroup={() => onFilterToGroup(group)}
+                    minimal={scale < MINIMAL_SCALE}
+                    group={{
+                      ...group,
+                      assetCount: allGroupCounts[group.id] || 0,
+                      assets: groupedAssets[group.id] || [],
+                    }}
+                    onExpand={() => {
+                      focusGroupIdAfterLayoutRef.current = group.id;
+                      setExpandedGroups([...expandedGroups, group.id]);
+                    }}
+                  />
+                ) : (
+                  <AssetGroupNode group={group} scale={scale} />
+                )}
+              </foreignObject>
+            ))}
+
+          {Object.values(layout.nodes)
+            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .map(({id, bounds}) => {
+              const graphNode = assetGraphData.nodes[id]!;
+              const path = JSON.parse(id);
+              if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
+                return;
+              }
+              if (bounds.width === 1) {
+                return;
+              }
+
+              const contextMenuProps = {
+                graphData: fullAssetGraphData,
+                node: graphNode,
+                explorerPath,
+                onChangeExplorerPath,
+                selectNode: selectNodeById,
+              };
+              return (
+                <foreignObject
+                  {...bounds}
+                  key={id}
+                  onMouseEnter={() => setHighlighted(id)}
+                  onMouseLeave={() => setHighlighted(null)}
+                  onClick={(e) => onSelectNode(e, {path}, graphNode)}
+                  onDoubleClick={(e) => {
+                    viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
+                    e.stopPropagation();
+                  }}
+                  style={{overflow: 'visible'}}
+                >
+                  {!graphNode ? (
+                    <AssetNodeLink assetKey={{path}} />
+                  ) : scale < MINIMAL_SCALE ? (
+                    <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                      <AssetNodeMinimal
+                        definition={graphNode.definition}
+                        selected={selectedGraphNodes.includes(graphNode)}
+                        height={bounds.height}
+                      />
+                    </AssetNodeContextMenuWrapper>
+                  ) : (
+                    <AssetNodeContextMenuWrapper {...contextMenuProps}>
+                      <AssetNode
+                        definition={graphNode.definition}
+                        selected={selectedGraphNodes.includes(graphNode)}
+                      />
+                    </AssetNodeContextMenuWrapper>
+                  )}
+                </foreignObject>
+              );
+            })}
+        </SVGContainer>
+      )}
+    </SVGViewport>
+  ) : null;
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -454,167 +622,35 @@ const AssetGraphExplorerWithData = ({
           ) : undefined}
           {loading || !layout ? (
             <LoadingNotice async={async} nodeType="asset" />
-          ) : (
-            <SVGViewport
-              ref={(r) => (viewportEl.current = r || undefined)}
-              defaultZoom={flagDAGSidebar ? 'zoom-to-fit-width' : 'zoom-to-fit'}
-              interactor={SVGViewport.Interactors.PanAndZoom}
-              graphWidth={layout.width}
-              graphHeight={layout.height}
-              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel || flagDAGSidebar}
-              additionalToolbarElements={toggleGroupsButton}
-              onClick={onClickBackground}
-              onArrowKeyDown={onArrowKeyDown}
-              onDoubleClick={(e) => {
-                viewportEl.current?.autocenter(true);
-                e.stopPropagation();
-              }}
-              maxZoom={DEFAULT_MAX_ZOOM}
-              maxAutocenterZoom={1.0}
+          ) : allGroups.length > 1 ? (
+            <ContextMenuWrapper
+              wrapper1Styles={{width: '100%', height: '100%'}}
+              wrapper2Styles={{width: '100%', height: '100%'}}
+              menu={
+                <Menu>
+                  {areAllGroupsCollapsed ? null : (
+                    <MenuItem
+                      text="Collapse all groups"
+                      onClick={() => {
+                        setExpandedGroups([]);
+                      }}
+                    />
+                  )}
+                  {areAllGroupsExpanded ? null : (
+                    <MenuItem
+                      text="Expand all groups"
+                      onClick={() => {
+                        setExpandedGroups(allGroups.slice());
+                      }}
+                    />
+                  )}
+                </Menu>
+              }
             >
-              {({scale}, viewportRect) => (
-                <SVGContainer width={layout.width} height={layout.height}>
-                  {flagDAGSidebar &&
-                    Object.values(layout.groups)
-                      .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-                      .filter((group) => group.expanded)
-                      .sort((a, b) => a.id.length - b.id.length)
-                      .map((group) => (
-                        <foreignObject
-                          key={group.id}
-                          {...group.bounds}
-                          className="group"
-                          onDoubleClick={(e) => {
-                            zoomToGroup(group.id);
-                            e.stopPropagation();
-                          }}
-                        >
-                          <ExpandedGroupNode
-                            preferredJobName={explorerPath.pipelineName}
-                            onFilterToGroup={() => onFilterToGroup(group)}
-                            group={{
-                              ...group,
-                              assets: groupedAssets[group.id] || [],
-                            }}
-                            minimal={scale < MINIMAL_SCALE}
-                            onCollapse={() => {
-                              focusGroupIdAfterLayoutRef.current = group.id;
-                              setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
-                            }}
-                          />
-                        </foreignObject>
-                      ))}
-
-                  <AssetEdges
-                    viewportRect={viewportRect}
-                    selected={selectedGraphNodes.map((n) => n.id)}
-                    highlighted={highlighted}
-                    edges={
-                      flagDAGSidebar
-                        ? layout.edges
-                        : filterEdges(layout.edges, allowGroupsOnlyZoomLevel, scale, assetGraphData)
-                    }
-                    strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
-                  />
-
-                  {Object.values(layout.groups)
-                    .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-                    .filter((group) => !flagDAGSidebar || !group.expanded)
-                    .sort((a, b) => a.id.length - b.id.length)
-                    .map((group) => (
-                      <foreignObject
-                        key={group.id}
-                        {...group.bounds}
-                        className="group"
-                        onDoubleClick={(e) => {
-                          if (!viewportEl.current) {
-                            return;
-                          }
-                          const targetScale = viewportEl.current.scaleForSVGBounds(
-                            group.bounds.width,
-                            group.bounds.height,
-                          );
-                          viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
-                          e.stopPropagation();
-                        }}
-                      >
-                        {flagDAGSidebar ? (
-                          <CollapsedGroupNode
-                            preferredJobName={explorerPath.pipelineName}
-                            onFilterToGroup={() => onFilterToGroup(group)}
-                            minimal={scale < MINIMAL_SCALE}
-                            group={{
-                              ...group,
-                              assetCount: allGroupCounts[group.id] || 0,
-                              assets: groupedAssets[group.id] || [],
-                            }}
-                            onExpand={() => {
-                              focusGroupIdAfterLayoutRef.current = group.id;
-                              setExpandedGroups([...expandedGroups, group.id]);
-                            }}
-                          />
-                        ) : (
-                          <AssetGroupNode group={group} scale={scale} />
-                        )}
-                      </foreignObject>
-                    ))}
-
-                  {Object.values(layout.nodes)
-                    .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
-                    .map(({id, bounds}) => {
-                      const graphNode = assetGraphData.nodes[id]!;
-                      const path = JSON.parse(id);
-                      if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
-                        return;
-                      }
-                      if (bounds.width === 1) {
-                        return;
-                      }
-
-                      const contextMenuProps = {
-                        graphData: fullAssetGraphData,
-                        node: graphNode,
-                        explorerPath,
-                        onChangeExplorerPath,
-                        selectNode: selectNodeById,
-                      };
-                      return (
-                        <foreignObject
-                          {...bounds}
-                          key={id}
-                          onMouseEnter={() => setHighlighted(id)}
-                          onMouseLeave={() => setHighlighted(null)}
-                          onClick={(e) => onSelectNode(e, {path}, graphNode)}
-                          onDoubleClick={(e) => {
-                            viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
-                            e.stopPropagation();
-                          }}
-                          style={{overflow: 'visible'}}
-                        >
-                          {!graphNode ? (
-                            <AssetNodeLink assetKey={{path}} />
-                          ) : scale < MINIMAL_SCALE ? (
-                            <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                              <AssetNodeMinimal
-                                definition={graphNode.definition}
-                                selected={selectedGraphNodes.includes(graphNode)}
-                                height={bounds.height}
-                              />
-                            </AssetNodeContextMenuWrapper>
-                          ) : (
-                            <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                              <AssetNode
-                                definition={graphNode.definition}
-                                selected={selectedGraphNodes.includes(graphNode)}
-                              />
-                            </AssetNodeContextMenuWrapper>
-                          )}
-                        </foreignObject>
-                      );
-                    })}
-                </SVGContainer>
-              )}
-            </SVGViewport>
+              {svgViewport}
+            </ContextMenuWrapper>
+          ) : (
+            svgViewport
           )}
           {setOptions && (
             <OptionsOverlay>
