@@ -6,7 +6,6 @@ import {
   MenuItem,
   colorBackgroundLight,
   colorBackgroundLightHover,
-  colorBackgroundLighter,
   colorLineageGroupNodeBorder,
   colorTextLight,
   colorTextLighter,
@@ -128,6 +127,7 @@ export const useGroupNodeContextMenu = ({
   const menu = (
     <Menu>
       <MenuItem
+        icon="materialization"
         text={`Materialize assets (${assets.length})`}
         onClick={(e) => {
           onClick(
@@ -137,10 +137,13 @@ export const useGroupNodeContextMenu = ({
         }}
       />
       <MenuItem
+        icon="changes_present"
         text="Materialize changed and missing"
         onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
       />
-      {onFilterToGroup ? <MenuItem text="Filter to this group" onClick={onFilterToGroup} /> : null}
+      {onFilterToGroup ? (
+        <MenuItem text="Filter to this group" onClick={onFilterToGroup} icon="filter_alt" />
+      ) : null}
     </Menu>
   );
   const dialog = (
@@ -164,7 +167,7 @@ export const useGroupNodeContextMenu = ({
 
 export const GroupNameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundLighter(),
+  background: colorBackgroundLight(),
   border: `none`,
   borderRadius: '4px',
 });

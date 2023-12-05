@@ -9,7 +9,6 @@ import {
   colorBackgroundGray,
   colorBackgroundLight,
   colorBackgroundLightHover,
-  colorBackgroundLighterHover,
   colorKeylineDefault,
   colorTextDefault,
   colorTextDisabled,
@@ -433,7 +432,7 @@ const ItemRow = (props: ItemRowProps) => {
 };
 
 const CodeLocationTooltipStyles = JSON.stringify({
-  background: colorBackgroundLighterHover(),
+  background: colorBackgroundLightHover(),
   filter: `brightness(97%)`,
   color: colorTextDefault(),
   fontWeight: 500,

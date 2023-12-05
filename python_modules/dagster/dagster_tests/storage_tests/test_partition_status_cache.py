@@ -23,11 +23,18 @@ from dagster._core.events import (
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.partition_status_cache import (
+    RUN_FETCH_BATCH_SIZE,
     AssetStatusCacheValue,
+    build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
 )
 from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.utils import make_new_run_id
 from dagster._utils import Counter, traced_counter
+
+from .utils.event_log_storage import (
+    create_and_delete_test_runs,
+)
 
 
 def test_get_cached_status_unpartitioned():
@@ -776,3 +783,60 @@ def test_failed_partitioned_asset_converted_to_multipartitioned():
             asset_graph.get_partitions_def(asset_key)
         )
         assert failed_subset.get_partition_keys() == set()
+
+
+def test_batch_canceled_partitions():
+    my_asset = AssetKey("my_asset")
+
+    # one more than the batch size to ensure we're hitting the pagination logic
+    PARTITION_COUNT = RUN_FETCH_BATCH_SIZE + 1
+    static_partitions_def = StaticPartitionsDefinition(
+        [f"partition_{i}" for i in range(0, PARTITION_COUNT)]
+    )
+    run_ids_by_partition = {
+        key: make_new_run_id() for key in static_partitions_def.get_partition_keys()
+    }
+
+    with instance_for_test() as instance:
+        with create_and_delete_test_runs(instance, list(run_ids_by_partition.values())):
+            for partition, run_id in run_ids_by_partition.items():
+                instance.event_log_storage.store_event(
+                    _create_test_planned_materialization_record(run_id, my_asset, partition)
+                )
+
+            failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
+                instance, my_asset, static_partitions_def, instance
+            )
+            assert failed_subset.get_partition_keys() == set()
+            assert in_progress_subset.get_partition_keys() == set(
+                static_partitions_def.get_partition_keys()
+            )
+
+            # cancel every run
+            for run_id in run_ids_by_partition.values():
+                run = instance.get_run_by_id(run_id)
+                if run:
+                    instance.report_run_canceled(run)
+
+            failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
+                instance, my_asset, static_partitions_def, instance
+            )
+            assert failed_subset.get_partition_keys() == set()
+            assert in_progress_subset.get_partition_keys() == set()
+
+
+def _create_test_planned_materialization_record(run_id: str, asset_key: AssetKey, partition: str):
+    return EventLogEntry(
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
+        dagster_event=DagsterEvent(
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+            "nonce",
+            event_specific_data=AssetMaterializationPlannedData(
+                asset_key=asset_key, partition=partition
+            ),
+        ),
+    )

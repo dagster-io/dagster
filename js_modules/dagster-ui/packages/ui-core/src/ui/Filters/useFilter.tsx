@@ -5,6 +5,8 @@ import {
   colorBackgroundBlue,
   colorLinkDefault,
   colorTextBlue,
+  colorTooltipBackground,
+  colorTooltipText,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -75,6 +77,7 @@ export const FilterTagHighlightedText = React.forwardRef(
         text={
           <>
             {children}
+            {/* The following display:none div is a hack to trick CustomTooltipProvider into showing the tooltip even if the text isn't truncated */}
             <div style={{display: 'none'}}>…</div>
           </>
         }
@@ -88,8 +91,8 @@ export const FilterTagHighlightedText = React.forwardRef(
 );
 
 const LabelTooltipStyles = JSON.stringify({
-  background: colorBackgroundBlue(),
-  color: colorTextBlue(),
+  background: colorTooltipBackground(),
+  color: colorTooltipText(),
   border: 'none',
   borderRadius: 7,
   overflow: 'hidden',

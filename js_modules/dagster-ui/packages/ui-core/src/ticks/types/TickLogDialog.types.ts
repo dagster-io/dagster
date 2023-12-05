@@ -27,7 +27,7 @@ export type TickLogEventsQuery = {
               level: Types.LogLevel;
             }>;
           };
-        } | null;
+        };
       }
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};
