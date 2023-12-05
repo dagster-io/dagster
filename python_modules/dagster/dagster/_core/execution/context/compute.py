@@ -164,6 +164,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         self._events: List[DagsterEvent] = []
         self._output_metadata: Dict[str, Any] = {}
 
+        self._requires_typed_event_stream = False
+        self._typed_event_stream_error_message = None
+
     @public
     @property
     def op_config(self) -> Any:
@@ -1342,14 +1345,16 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     # allowed.
     @property
     def requires_typed_event_stream(self) -> bool:
-        return self._step_execution_context.requires_typed_event_stream
+        return self._requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
-        return self._step_execution_context.typed_event_stream_error_message
+        return self._typed_event_stream_error_message
 
-    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
-        self._step_execution_context.set_requires_typed_event_stream(error_message=error_message)
+    # Error message will be appended to the default error message.
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None):
+        self._requires_typed_event_stream = True
+        self._typed_event_stream_error_message = error_message
 
     @staticmethod
     def get() -> "OpExecutionContext":

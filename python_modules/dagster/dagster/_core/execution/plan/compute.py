@@ -245,7 +245,7 @@ def execute_core_compute(
         output.name
         for output in step.step_outputs
         # checks are required if we're in requires_typed_event_stream mode
-        if step_context.requires_typed_event_stream or output.properties.asset_check_key
+        if compute_context.requires_typed_event_stream or output.properties.asset_check_key
     }
     omitted_outputs = expected_op_output_names.difference(emitted_result_names)
     if omitted_outputs:
@@ -254,9 +254,9 @@ def execute_core_compute(
             f"expected outputs {omitted_outputs!r}."
         )
 
-        if step_context.requires_typed_event_stream:
-            if step_context.typed_event_stream_error_message:
-                message += " " + step_context.typed_event_stream_error_message
+        if compute_context.requires_typed_event_stream:
+            if compute_context.typed_event_stream_error_message:
+                message += " " + compute_context.typed_event_stream_error_message
             raise DagsterInvariantViolationError(message)
         else:
             step_context.log.info(message)
