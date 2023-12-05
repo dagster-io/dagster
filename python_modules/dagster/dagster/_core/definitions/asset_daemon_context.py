@@ -265,17 +265,6 @@ class AssetDaemonContext:
 
         evaluation, cursor, to_discard = auto_materialize_policy_evaluator.evaluate(context, report_num_skipped=True)
 
-        if (
-            # check shape of top-level condition
-            auto_materialize_policy_evaluator.condition.is_legacy
-            # confirm shape of evaluation
-            and len(condition_evaluation.child_evaluations) == 2
-        ):
-            # the first child is the materialize condition, the second child is the skip_condition
-            materialize_condition, skip_evaluation = condition_evaluation.child_evaluations
-            skipped_subset_size = (
-                materialize_condition.true_subset.size - skip_evaluation.true_subset.size
-            )
 
 
     def get_auto_materialize_asset_evaluations(
