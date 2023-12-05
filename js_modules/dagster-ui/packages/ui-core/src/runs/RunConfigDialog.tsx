@@ -19,7 +19,6 @@ import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
 import {
@@ -41,7 +40,6 @@ type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
 
 export const RunConfigDialog = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
   const {runConfigYaml} = run;
-  const {flagInstanceConcurrencyLimits} = useFeatureFlags();
   const [visibleDialog, setVisibleDialog] = React.useState<VisibleDialog>(null);
 
   const {rootServerURI} = React.useContext(AppContext);
@@ -115,9 +113,7 @@ export const RunConfigDialog = ({run, isJob}: {run: RunFragment; isJob: boolean}
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
-              {flagInstanceConcurrencyLimits &&
-              run.hasConcurrencyKeySlots &&
-              doneStatuses.has(run.status) ? (
+              {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
                 <MenuItem
                   text="Free concurrency slots"
                   icon={<Icon name="lock" />}

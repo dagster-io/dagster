@@ -9,7 +9,6 @@ export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 export const FeatureFlag = {
   flagDebugConsoleLogging: 'flagDebugConsoleLogging' as const,
   flagDisableWebsockets: 'flagDisableWebsockets' as const,
-  flagInstanceConcurrencyLimits: 'flagInstanceConcurrencyLimits' as const,
   flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
