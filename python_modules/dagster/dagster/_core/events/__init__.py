@@ -1529,13 +1529,17 @@ class AssetMaterializationPlannedData(
                 "Cannot provide both partition and partitions_subset"
             )
 
+        if partitions_subset:
+            check.opt_inst_param(partitions_subset, "partitions_subset", PartitionsSubset)
+            check.invariant(
+                partitions_subset.is_serializable, "partitions_subset must be serializable"
+            )
+
         return super(AssetMaterializationPlannedData, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             partition=check.opt_str_param(partition, "partition"),
-            partitions_subset=check.opt_inst_param(
-                partitions_subset, "partitions_subset", PartitionsSubset
-            ),
+            partitions_subset=partitions_subset,
         )
 
 

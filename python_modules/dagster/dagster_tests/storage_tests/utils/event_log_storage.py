@@ -35,6 +35,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._check import CheckError
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.asset_check_evaluation import (
@@ -48,7 +49,10 @@ from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.partition import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
+    PartitionKeysTimeWindowPartitionsSubset,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.event_api import EventLogCursor, EventRecordsResult
@@ -2565,7 +2569,7 @@ class TestEventLogStorage:
                     {},
                 )
 
-    def test_store_asset_materialization_planned_event_with_partitions_subset(
+    def test_store_asset_materialization_planned_event_with_invalid_partitions_subset(
         self, storage, instance
     ) -> None:
         a = AssetKey(["a"])
@@ -2580,10 +2584,31 @@ class TestEventLogStorage:
                     PartitionKeyRange("2023-01-05", "2023-01-10")
                 )
             )
-            .to_serializable_subset()
         )
+        assert isinstance(partitions_subset, PartitionKeysTimeWindowPartitionsSubset)
 
         with create_and_delete_test_runs(instance, [run_id_1]):
+            with pytest.raises(
+                CheckError,
+                match="partitions_subset must be serializable",
+            ):
+                storage.store_event(
+                    EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id_1,
+                        timestamp=time.time(),
+                        dagster_event=DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            "nonce",
+                            event_specific_data=AssetMaterializationPlannedData(
+                                a, partitions_subset=partitions_subset
+                            ),
+                        ),
+                    )
+                )
+
             with pytest.raises(
                 DagsterInvariantViolationError,
                 match="Cannot provide both partition and partitions_subset",
@@ -2605,6 +2630,25 @@ class TestEventLogStorage:
                     )
                 )
 
+    def test_store_asset_materialization_planned_event_with_partitions_subset(
+        self, storage, instance
+    ) -> None:
+        a = AssetKey(["a"])
+        run_id_1 = make_new_run_id()
+
+        partitions_def = DailyPartitionsDefinition("2023-01-01")
+        partitions_subset = (
+            external_partitions_definition_from_def(partitions_def)
+            .get_partitions_definition()
+            .subset_with_partition_keys(
+                partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange("2023-01-05", "2023-01-10")
+                )
+            )
+            .to_serializable_subset()
+        )
+
+        with create_and_delete_test_runs(instance, [run_id_1]):
             storage.store_event(
                 EventLogEntry(
                     error_info=None,
