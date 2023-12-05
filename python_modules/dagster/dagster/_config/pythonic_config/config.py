@@ -161,12 +161,12 @@ def ensure_env_vars_set_post_init(set_value: T, input_value: Any) -> T:
     """
     if isinstance(set_value, dict) and isinstance(input_value, dict):
         for key, value in input_value.items():
-            if key not in set_value:
-                continue
             if isinstance(value, (EnvVar, IntEnvVar)):
                 set_value[key] = value
-            elif isinstance(value, (dict, list)):
-                set_value[key] = ensure_env_vars_set_post_init(set_value[key], value)
+            elif isinstance(value, dict):
+                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or {}, value)
+            elif isinstance(value, list):
+                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or [], value)
     if isinstance(set_value, List) and isinstance(input_value, List):
         for i in range(len(set_value)):
             value = input_value[i]
