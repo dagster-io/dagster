@@ -283,6 +283,8 @@ def build_caching_repository_data_from_list(
         for env_var in used_env_vars:
             utilized_env_vars[env_var].add(resource_key)
 
+    ensure_automation_policy_sensors_dont_overlap()
+
     return CachingRepositoryData(
         jobs=jobs,
         schedules=schedules,
