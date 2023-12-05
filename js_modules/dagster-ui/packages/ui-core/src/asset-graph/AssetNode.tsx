@@ -20,7 +20,6 @@ import {
   colorLineageNodeBorderSelected,
   colorLineageNodeBorderHover,
   colorLineageNodeBackground,
-  colorPopoverBackground,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
