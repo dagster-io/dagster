@@ -58,7 +58,6 @@ from dagster._core.host_representation import (
     ExternalExecutionPlan,
     ExternalJob,
 )
-from dagster._core.host_representation.external_data import ExternalPartitionsDefinitionData
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
@@ -695,7 +694,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
     unsubmitted_run_request_idx = 0
     pipeline_and_execution_plan_cache: Dict[
-        int, Tuple[ExternalJob, ExternalExecutionPlan, Optional[ExternalPartitionsDefinitionData]]
+        int, Tuple[ExternalJob, ExternalExecutionPlan, Optional[PartitionsDefinition]]
     ] = {}
     while unsubmitted_run_request_idx < len(run_requests):
         chunk_end_idx = min(unsubmitted_run_request_idx + RUN_CHUNK_SIZE, len(run_requests))
@@ -1076,7 +1075,7 @@ def submit_run_request(
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
     pipeline_and_execution_plan_cache: Dict[
-        int, Tuple[ExternalJob, ExternalExecutionPlan, Optional[ExternalPartitionsDefinitionData]]
+        int, Tuple[ExternalJob, ExternalExecutionPlan, Optional[PartitionsDefinition]]
     ],
 ) -> None:
     """Creates and submits a run for the given run request."""
@@ -1118,20 +1117,18 @@ def submit_run_request(
             instance=instance,
         )
 
-        external_partitions_def_data = code_location.get_external_partitions_def_data_for_job(
-            external_job
-        )
+        partitions_def = code_location.get_asset_job_partitions_def(external_job)
 
         pipeline_and_execution_plan_cache[selector_id] = (
             external_job,
             external_execution_plan,
-            external_partitions_def_data,
+            partitions_def,
         )
 
     (
         external_job,
         external_execution_plan,
-        external_partitions_def_data,
+        partitions_def,
     ) = pipeline_and_execution_plan_cache[selector_id]
 
     run = instance.create_run(
@@ -1152,7 +1149,7 @@ def submit_run_request(
         job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection),
         asset_check_selection=None,
-        external_partitions_definition_data=external_partitions_def_data,
+        asset_job_partitions_def=partitions_def,
     )
 
     instance.submit_run(run.run_id, workspace)

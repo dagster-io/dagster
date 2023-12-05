@@ -151,7 +151,7 @@ def create_run_for_test(
     asset_selection=None,
     asset_check_selection=None,
     op_selection=None,
-    external_partitions_definition_data=None,
+    asset_job_partitions_def=None,
 ):
     return instance.create_run(
         job_name=job_name,
@@ -171,7 +171,7 @@ def create_run_for_test(
         asset_selection=asset_selection,
         asset_check_selection=asset_check_selection,
         op_selection=op_selection,
-        external_partitions_definition_data=external_partitions_definition_data,
+        asset_job_partitions_def=asset_job_partitions_def,
     )
 
 

@@ -609,9 +609,7 @@ def submit_asset_run(
             job_code_origin=external_job.get_python_origin(),
             asset_selection=frozenset(asset_keys),
             asset_check_selection=None,
-            external_partitions_definition_data=code_location.get_external_partitions_def_data_for_job(
-                external_job
-            ),
+            asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
         )
 
     check_for_debug_crash(debug_crash_flags, "RUN_CREATED")

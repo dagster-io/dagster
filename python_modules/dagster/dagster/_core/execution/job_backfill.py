@@ -335,9 +335,7 @@ def create_backfill_run(
             frozenset(backfill_job.asset_selection) if backfill_job.asset_selection else None
         ),
         asset_check_selection=None,
-        external_partitions_definition_data=code_location.get_external_partitions_def_data_for_job(
-            external_pipeline
-        ),
+        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_pipeline),
     )
 
 

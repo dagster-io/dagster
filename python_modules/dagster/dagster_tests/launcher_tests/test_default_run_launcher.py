@@ -223,9 +223,7 @@ def test_successful_run_from_pending(
         asset_selection=None,
         op_selection=None,
         asset_check_selection=None,
-        external_partitions_definition_data=code_location.get_external_partitions_def_data_for_job(
-            external_job
-        ),
+        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
     )
 
     run_id = created_run.run_id

@@ -1920,24 +1920,6 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
     )
 
 
-def can_build_external_partitions_definition_from_def(partitions_def: PartitionsDefinition):
-    return (
-        isinstance(partitions_def, TimeWindowPartitionsDefinition)
-        or isinstance(partitions_def, StaticPartitionsDefinition)
-        or (
-            isinstance(partitions_def, MultiPartitionsDefinition)
-            and all(
-                can_build_external_partitions_definition_from_def(dimension.partitions_def)
-                for dimension in partitions_def.partitions_defs
-            )
-        )
-        or (
-            isinstance(partitions_def, DynamicPartitionsDefinition)
-            and partitions_def.name is not None
-        )
-    )
-
-
 def external_partitions_definition_from_def(
     partitions_def: PartitionsDefinition,
 ) -> ExternalPartitionsDefinitionData:

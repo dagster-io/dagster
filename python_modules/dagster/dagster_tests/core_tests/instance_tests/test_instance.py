@@ -33,9 +33,6 @@ from dagster._core.errors import (
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.host_representation.external_data import (
-    external_partitions_definition_from_def,
-)
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
@@ -330,10 +327,6 @@ def test_create_run_with_asset_partitions():
             execution_plan, noop_asset_job.get_job_snapshot_id()
         )
 
-        external_partitions_def_data = external_partitions_definition_from_def(
-            noop_asset_job.partitions_def
-        )
-
         with pytest.raises(
             Exception,
             match=(
@@ -347,7 +340,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
-                external_partitions_definition_data=external_partitions_def_data,
+                partitions_def=noop_asset_job.partitions_def,
             )
 
         with pytest.raises(
@@ -363,7 +356,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
-                external_partitions_definition_data=external_partitions_def_data,
+                partitions_def=noop_asset_job.partitions_def,
             )
 
         create_run_for_test(
@@ -372,7 +365,7 @@ def test_create_run_with_asset_partitions():
             execution_plan_snapshot=ep_snapshot,
             job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
-            external_partitions_definition_data=external_partitions_def_data,
+            partitions_def=noop_asset_job.partitions_def,
         )
 
 
