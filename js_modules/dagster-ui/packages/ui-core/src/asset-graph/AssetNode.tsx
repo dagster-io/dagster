@@ -24,7 +24,6 @@ import {
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
-import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
