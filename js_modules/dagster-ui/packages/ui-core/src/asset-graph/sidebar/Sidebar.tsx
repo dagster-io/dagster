@@ -18,7 +18,7 @@ export const AssetGraphExplorerSidebar = React.memo(
   ({
     assetGraphData,
     fullAssetGraphData,
-    lastSelectedNode,
+    selectedNodes,
     selectNode: _selectNode,
     explorerPath,
     onChangeExplorerPath,
@@ -27,7 +27,7 @@ export const AssetGraphExplorerSidebar = React.memo(
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
-    lastSelectedNode: GraphNode;
+    selectedNodes: GraphNode[];
     selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -36,6 +36,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
   }) => {
+    const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
     const graphData = Object.keys(assetGraphData.nodes).length
       ? assetGraphData
@@ -260,7 +261,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     }, [rowVirtualizer.measure]);
 
     return (
-      <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
+      <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
         <div
           style={{
             display: 'grid',
@@ -335,10 +336,9 @@ export const AssetGraphExplorerSidebar = React.memo(
                         fullAssetGraphData={fullAssetGraphData}
                         node={row}
                         level={node.level}
+                        isLastSelected={lastSelectedNode?.id === node.id}
                         isSelected={
-                          selectedNode && 'path' in node && 'path' in selectedNode
-                            ? selectedNode.path === node.path
-                            : selectedNode?.id === node.id
+                          selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
                         }
                         toggleOpen={() => {
                           setOpenNodes((nodes) => {
