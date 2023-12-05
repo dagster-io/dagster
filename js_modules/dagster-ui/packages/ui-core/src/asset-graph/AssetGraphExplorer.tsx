@@ -631,6 +631,7 @@ const AssetGraphExplorerWithData = ({
                   {areAllGroupsCollapsed ? null : (
                     <MenuItem
                       text="Collapse all groups"
+                      icon={<Icon name="unfold_less" />}
                       onClick={() => {
                         setExpandedGroups([]);
                       }}
@@ -639,8 +640,9 @@ const AssetGraphExplorerWithData = ({
                   {areAllGroupsExpanded ? null : (
                     <MenuItem
                       text="Expand all groups"
+                      icon={<Icon name="unfold_more" />}
                       onClick={() => {
-                        setExpandedGroups(allGroups.slice());
+                        setExpandedGroups(allGroups);
                       }}
                     />
                   )}
