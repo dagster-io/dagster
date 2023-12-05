@@ -77,6 +77,7 @@ export const FilterTagHighlightedText = React.forwardRef(
         text={
           <>
             {children}
+            {/* The following display:none div is a hack to trick CustomTooltipProvider into showing the tooltip even if the text isn't truncated */}
             <div style={{display: 'none'}}>…</div>
           </>
         }
