@@ -7,7 +7,7 @@ import {
   colorNavText,
   colorNavTextSelected,
   colorNavTextHover,
-  colorBackgroundLight,
+  colorNavButton,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
@@ -331,7 +331,7 @@ const NavButton = styled.button`
   outline: none;
   padding: 6px;
   border: none;
-  background: transparent;
+  background: ${colorNavBackground()};
   display: block;
 
   ${IconWrapper} {
@@ -347,6 +347,6 @@ const NavButton = styled.button`
   }
 
   :focus {
-    background: ${colorBackgroundLight()};
+    background: ${colorNavButton()};
   }
 `;
