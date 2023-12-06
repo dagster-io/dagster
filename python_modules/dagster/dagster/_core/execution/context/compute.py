@@ -128,10 +128,6 @@ class AbstractComputeMetaclass(ABCMeta):
 
 
 class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
-    """Base class for op context implemented by OpExecutionContext,
-    and DagstermillExecutionContext.
-    """
-
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -532,8 +528,6 @@ class OpExecutionContext(
 
         If consume_events has not yet been called, this will yield all logged events since the beginning of the op's computation. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-        # events = self.execution_properties.events
-        # self._events = []
         yield from self.execution_properties.consume_events()
 
     @public
