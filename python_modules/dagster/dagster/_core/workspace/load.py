@@ -71,7 +71,7 @@ def location_origins_from_config(
 
 
 def _location_origin_from_module_config(
-    python_module_config: Union[str, Mapping[str, str]]
+    python_module_config: Union[str, Mapping[str, str]],
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     (
         module_name,
@@ -86,7 +86,7 @@ def _location_origin_from_module_config(
 
 
 def _get_module_config_data(
-    python_module_config: Union[str, Mapping[str, str]]
+    python_module_config: Union[str, Mapping[str, str]],
 ) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (python_module_config, None, None, None, None)
@@ -132,7 +132,7 @@ def location_origin_from_module_name(
 
 
 def _location_origin_from_package_config(
-    python_package_config: Union[str, Mapping[str, str]]
+    python_package_config: Union[str, Mapping[str, str]],
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     (
         module_name,
@@ -147,7 +147,7 @@ def _location_origin_from_package_config(
 
 
 def _get_package_config_data(
-    python_package_config: Union[str, Mapping[str, str]]
+    python_package_config: Union[str, Mapping[str, str]],
 ) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     return (
         (python_package_config, None, None, None, None)

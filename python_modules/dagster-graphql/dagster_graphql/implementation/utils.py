@@ -92,7 +92,7 @@ def _noop(_) -> None:
 class ErrorCapture:
     @staticmethod
     def default_on_exception(
-        exc_info: Tuple[Type[BaseException], BaseException, TracebackType]
+        exc_info: Tuple[Type[BaseException], BaseException, TracebackType],
     ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
@@ -118,7 +118,7 @@ class ErrorCapture:
 
 
 def capture_error(
-    fn: Callable[P, T]
+    fn: Callable[P, T],
 ) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
     def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
         try:

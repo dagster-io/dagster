@@ -314,7 +314,7 @@ class AssetDaemonScenarioState(NamedTuple):
         return self
 
     def _evaluate_tick_fast(
-        self
+        self,
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
         cursor = AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph)
 

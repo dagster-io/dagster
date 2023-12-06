@@ -191,7 +191,7 @@ from dagster import (
     metadata={"partition_expr": {"date": "time", "species": "species"}},
 )
 def iris_dataset_partitioned(context) -> pd.DataFrame:
-    partition = partition = context.partition_key.keys_by_dimension
+    partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]
 

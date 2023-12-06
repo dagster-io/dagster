@@ -296,7 +296,7 @@ def build_caching_repository_data_from_list(
 
 
 def build_caching_repository_data_from_dict(
-    repository_definitions: Dict[str, Dict[str, Any]]
+    repository_definitions: Dict[str, Dict[str, Any]],
 ) -> "CachingRepositoryData":
     check.dict_param(repository_definitions, "repository_definitions", key_type=str)
     check.invariant(

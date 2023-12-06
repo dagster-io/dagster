@@ -23,7 +23,7 @@ from dagster._core.test_utils import instance_for_test
     ],
 )
 def test_dynamic_partitions_partitions(
-    partition_fn: Callable[[Optional[datetime]], Sequence[Partition]]
+    partition_fn: Callable[[Optional[datetime]], Sequence[Partition]],
 ):
     partitions = DynamicPartitionsDefinition(partition_fn)
 

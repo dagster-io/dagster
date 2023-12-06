@@ -62,7 +62,7 @@ class FreshnessPolicySensorCursor(
 
     @staticmethod
     def from_dict(
-        minutes_late_by_key: Mapping[AssetKey, Optional[float]]
+        minutes_late_by_key: Mapping[AssetKey, Optional[float]],
     ) -> "FreshnessPolicySensorCursor":
         return FreshnessPolicySensorCursor(
             minutes_late_by_key_str={k.to_user_string(): v for k, v in minutes_late_by_key.items()}
