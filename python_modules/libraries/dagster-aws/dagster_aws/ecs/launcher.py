@@ -325,7 +325,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return EcsRunLauncher(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
         tags = {

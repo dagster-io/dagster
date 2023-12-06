@@ -75,7 +75,7 @@ from .conversion_utils import (
 )
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 
-Self = TypeVar("Self", bound="ConfigurableResourceFactory")
+T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int
 
 
@@ -435,7 +435,7 @@ class ConfigurableResourceFactory(
         return self._nested_resources
 
     @classmethod
-    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
+    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
         """Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
         """
@@ -808,7 +808,7 @@ class PartialResource(
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
 

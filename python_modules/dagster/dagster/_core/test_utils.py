@@ -337,7 +337,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return ExplodingRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     def launch_run(self, context) -> NoReturn:
         raise NotImplementedError("The entire purpose of this is to throw on launch")
@@ -460,7 +460,7 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return TestSecretsLoader(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
 
 def get_crash_signals() -> Sequence[Signals]:

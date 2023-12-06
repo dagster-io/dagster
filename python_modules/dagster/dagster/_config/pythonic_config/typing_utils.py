@@ -138,7 +138,7 @@ class BaseResourceMeta(BaseConfigMeta):
         return super().__new__(cls, name, bases, namespaces, **kwargs)
 
 
-Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
+T_Self = TypeVar("T_Self", bound="TypecheckAllowPartialResourceInitParams")
 
 
 class TypecheckAllowPartialResourceInitParams:
@@ -176,12 +176,12 @@ class TypecheckAllowPartialResourceInitParams:
     def __set_name__(self, _owner, name):
         self._assigned_name = name
 
-    def __get__(self: "Self", obj: Any, __owner: Any) -> "Self":
+    def __get__(self: "T_Self", obj: Any, __owner: Any) -> "T_Self":
         # no-op implementation (only used to affect type signature)
-        return cast(Self, getattr(obj, self._assigned_name))
+        return cast(T_Self, getattr(obj, self._assigned_name))
 
     def __set__(
-        self: "Self", obj: Optional[object], value: Union["Self", "PartialResource[Self]"]
+        self: "T_Self", obj: Optional[object], value: Union["T_Self", "PartialResource[T_Self]"]
     ) -> None:
         # no-op implementation (only used to affect type signature)
         setattr(obj, self._assigned_name, value)
