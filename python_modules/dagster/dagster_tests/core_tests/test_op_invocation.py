@@ -1432,7 +1432,7 @@ def test_context_bound_state_generator():
     def generator(context):
         assert_context_bound(context)
         assert_execution_properties_cleared(context)
-        context.add_output_metadata({"foo": "bar"}, output_name="one")
+        context.add_output_metadata({"foo": "bar"}, output_name="first")
         yield Output("one", output_name="first")
         yield Output("two", output_name="second")
 
@@ -1479,7 +1479,7 @@ def test_context_bound_state_async_generator():
     async def async_generator(context):
         assert_context_bound(context)
         assert_execution_properties_cleared(context)
-        context.add_output_metadata({"foo": "bar"}, output_name="one")
+        context.add_output_metadata({"foo": "bar"}, output_name="first")
         yield Output("one", output_name="first")
         await asyncio.sleep(0.01)
         yield Output("two", output_name="second")
