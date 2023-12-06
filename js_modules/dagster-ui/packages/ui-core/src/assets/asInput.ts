@@ -6,13 +6,17 @@ import {
 
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionButton.types';
 
+// Checks that REQUIRES_MATERIALIZATION cannot be omitted and need to be executed
+// whenver the asset is executed. Checks with CAN_EXECUTE should be omitted if their
+// jobNames array does not include the requested job.
+//
 export function inMaterializeFunctionOrInJob(
   check: Pick<AssetCheck, 'jobNames' | 'canExecuteIndividually'>,
   jobName?: string,
 ) {
+  const inJob = !jobName || check.jobNames.includes(jobName);
   const inMaterialize =
     check.canExecuteIndividually === AssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION;
-  const inJob = !jobName || check.jobNames.includes(jobName);
 
   return inMaterialize || inJob;
 }

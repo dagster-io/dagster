@@ -162,7 +162,7 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     describe('assets with checks', () => {
-      it('should not include checks if the job in context is marked without_checks', async () => {
+      it('should not include CAN_EXECUTE checks that do not specify the job name (checks_excluded_job)', async () => {
         const launchMock = buildExpectedLaunchSingleRunMutation({
           mode: 'default',
           executionMetadata: {tags: []},
@@ -172,7 +172,11 @@ describe('LaunchAssetExecutionButton', () => {
             repositoryName: 'repo',
             pipelineName: 'checks_excluded_job',
             assetSelection: [{path: ['checked_asset']}],
-            assetCheckSelection: [],
+            assetCheckSelection: [
+              // This check is not executed because it's jobNames does not incldue checks_excluded_job
+              // {name: 'check_can_execute', assetKey: {path: ['checked_asset']}},
+              {name: 'check_requires_materialization', assetKey: {path: ['checked_asset']}},
+            ],
           },
         });
         renderButton({
@@ -184,7 +188,7 @@ describe('LaunchAssetExecutionButton', () => {
         await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
       });
 
-      it('should include checks if the job in context includes them', async () => {
+      it('should include checks if the job in context includes them, or they REQUIRE_MATERIALIZATION', async () => {
         const launchMock = buildExpectedLaunchSingleRunMutation({
           mode: 'default',
           executionMetadata: {tags: []},
@@ -194,7 +198,10 @@ describe('LaunchAssetExecutionButton', () => {
             repositoryName: 'repo',
             pipelineName: 'checks_included_job',
             assetSelection: [{path: ['checked_asset']}],
-            assetCheckSelection: [{name: 'CHECK_1', assetKey: {path: ['checked_asset']}}],
+            assetCheckSelection: [
+              {name: 'check_can_execute', assetKey: {path: ['checked_asset']}},
+              {name: 'check_requires_materialization', assetKey: {path: ['checked_asset']}},
+            ],
           },
         });
         renderButton({

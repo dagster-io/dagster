@@ -4,6 +4,7 @@ import without from 'lodash/without';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
 import {
+  AssetCheckCanExecuteIndividually,
   AssetKeyInput,
   LaunchBackfillParams,
   PartitionDefinitionType,
@@ -1021,9 +1022,16 @@ const CHECKED_ASSET_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
   assetChecksOrError: buildAssetChecks({
     checks: [
       buildAssetCheck({
-        name: 'CHECK_1',
+        name: 'check_can_execute',
         assetKey: CHECKED_ASSET.assetKey,
+        canExecuteIndividually: AssetCheckCanExecuteIndividually.CAN_EXECUTE,
         jobNames: ['checks_included_job', '__ASSET_JOB_0'],
+      }),
+      buildAssetCheck({
+        name: 'check_requires_materialization',
+        assetKey: CHECKED_ASSET.assetKey,
+        canExecuteIndividually: AssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION,
+        jobNames: [], // may be populated, but should not matter
       }),
     ],
   }),
