@@ -228,17 +228,19 @@ def new_resources_nesting() -> "Definitions":
         pass
 
     # start_new_resources_nesting
-    from dagster import Definitions, ConfigurableResource
+    from dagster import Definitions, ConfigurableResource, ResourceDependency
 
     class CredentialsResource(ConfigurableResource):
         username: str
         password: str
 
     class FileStoreBucket(ConfigurableResource):
-        credentials: CredentialsResource
+        credentials: ResourceDependency[CredentialsResource]
         region: str
 
         def write(self, data: str):
+            # We can access the credentials resource via `self.credentials`,
+            # which will be an initialized instance of `CredentialsResource`
             get_filestore_client(
                 username=self.credentials.username,
                 password=self.credentials.password,
@@ -302,7 +304,7 @@ class GitHubOrganization:
     def __init__(self, name: str):
         self.name = name
 
-    def repositories(self):
+    def repositories(self) -> Any:
         return ["dagster", "dagster-webserver", "dagster-graphql"]
 
 
@@ -310,7 +312,7 @@ class GitHub:
     def __init__(*args, **kwargs):
         pass
 
-    def organization(self, name: str):
+    def organization(self, name: str) -> GitHubOrganization:
         return GitHubOrganization(name)
 
 
@@ -624,7 +626,7 @@ def new_resource_testing_with_context():
 
 def with_state_example() -> None:
     # start_with_state_example
-    from dagster import ConfigurableResource, asset
+    from dagster import ConfigurableResource, InitResourceContext, asset
     import requests
 
     from pydantic import PrivateAttr
@@ -635,7 +637,7 @@ def with_state_example() -> None:
 
         _api_token: str = PrivateAttr()
 
-        def setup_for_execution(self, context) -> None:
+        def setup_for_execution(self, context: InitResourceContext) -> None:
             # Fetch and set up an API token based on the username and password
             self._api_token = requests.get(
                 "https://my-api.com/token", auth=(self.username, self.password)
@@ -657,7 +659,7 @@ def with_state_example() -> None:
 def with_complex_state_example() -> None:
     # start_with_complex_state_example
 
-    from dagster import ConfigurableResource, asset
+    from dagster import ConfigurableResource, asset, InitResourceContext
     from contextlib import contextmanager
     from pydantic import PrivateAttr
 
@@ -678,7 +680,7 @@ def with_complex_state_example() -> None:
         _db_connection: DBConnection = PrivateAttr()
 
         @contextmanager
-        def yield_for_execution(self, context):
+        def yield_for_execution(self, context: InitResourceContext):
             # keep connection open for the duration of the execution
             with get_database_connection(self.username, self.password) as conn:
                 # set up the connection attribute so it can be used in the execution
