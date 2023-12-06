@@ -93,19 +93,17 @@ class BoundProperties(
         step_description: str,
     ):
         """Maintains the properties of the context that are provided at bind time."""
-
-        def __new__(cls):
-            return super(BoundProperties, cls).__new__(
-                cls,
-                op_def=check.inst_param(op_def, "op_def", OpDefinition),
-                tags=check.dict_param(tags, "tags"),
-                hook_defs=check.opt_set_param(hook_defs, "hook_defs", HookDefinition),
-                alias=check.str_param(alias, "alias"),
-                assets_def=check.opt_inst_param(assets_def, "assets_def", AssetsDefinition),
-                resources=check.inst_param(resources, "resources", Resources),
-                op_config=op_config,
-                step_description=step_description,
-            )
+        return super(BoundProperties, cls).__new__(
+            cls,
+            op_def=check.inst_param(op_def, "op_def", OpDefinition),
+            tags=check.dict_param(tags, "tags"),
+            hook_defs=check.opt_set_param(hook_defs, "hook_defs", HookDefinition),
+            alias=check.str_param(alias, "alias"),
+            assets_def=check.opt_inst_param(assets_def, "assets_def", AssetsDefinition),
+            resources=check.inst_param(resources, "resources", Resources),
+            op_config=op_config,
+            step_description=step_description,
+        )
 
 
 class RunlessExecutionProperties:
