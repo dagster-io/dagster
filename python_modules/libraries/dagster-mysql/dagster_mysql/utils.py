@@ -172,14 +172,18 @@ def mysql_alembic_config(dunder_file: str) -> Config:
     return get_alembic_config(dunder_file, config_path="../alembic/alembic.ini")
 
 
-def mysql_isolation_level():
-    if db.__version__.startswith("2.") or db.__version__.startswith("1.4"):
-        # Starting with 1.4, the ability to emulate autocommit was deprecated, so we need to
-        # explicitly call commit on the connection for MySQL where the AUTOCOMMIT isolation
-        # level is not supported.  We should then set the isolation level to the MySQL default
-        return "REPEATABLE READ"
+def sqlalchemy_supports_autocommit():
+    return not (db.__version__.startswith("2.") or db.__version__.startswith("1.4"))
 
-    return "AUTOCOMMIT"
+
+def mysql_isolation_level():
+    if sqlalchemy_supports_autocommit():
+        return "AUTOCOMMIT"
+
+    # Starting with 1.4, the ability to emulate autocommit was deprecated, so we need to
+    # explicitly call commit on the connection for MySQL where the AUTOCOMMIT isolation
+    # level is not supported.  We should then set the isolation level to the MySQL default
+    return "REPEATABLE READ"
 
 
 @contextmanager
@@ -195,7 +199,12 @@ def create_mysql_connection(
     else:
         storage_type_desc = ""
 
-    conn_cm = retry_mysql_connection_fn(engine.connect)
-    with conn_cm as conn:
-        with conn.begin():
-            yield conn
+    conn = None
+    try:
+        conn = retry_mysql_connection_fn(engine.connect)
+        yield conn
+    finally:
+        if conn:
+            if not sqlalchemy_supports_autocommit():
+                conn.commit()  # type: ignore #
+            conn.close()
