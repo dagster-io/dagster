@@ -959,7 +959,9 @@ def execute_asset_backfill_iteration(
         logger.info(
             f"Asset backfill {backfill.backfill_id} completed iteration with status {updated_backfill.status}."
         )
-        logger.debug(f"Updated asset backfill data after execution: {updated_asset_backfill_data}")
+        logger.info(
+            f"Updated asset backfill data for {backfill.backfill_id}: {updated_asset_backfill_data}"
+        )
 
     elif backfill.status == BulkActionStatus.CANCELING:
         if not instance.run_coordinator:
