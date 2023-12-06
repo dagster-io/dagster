@@ -9,6 +9,7 @@ import {Box} from './Box';
 import {Button} from './Button';
 import {Popover} from './Popover';
 import {Subheading} from './Text';
+import { colorShadowDefault } from '../theme/color';
 
 export enum ProductTourPosition {
   TOP_LEFT = 'top-start',
@@ -101,7 +102,7 @@ const ProductTourContainer = styled(Box)`
   background: ${CoreColors.Gray900};
   border-radius: 4px;
   padding: 16px;
-  box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0px 2px 12px ${colorShadowDefault()};
 
   &,
   button {

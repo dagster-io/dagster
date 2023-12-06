@@ -15,6 +15,7 @@ import {
   colorNavButton,
   colorNavButtonHover,
   colorNavText,
+  colorShadowDefault,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
@@ -279,7 +280,7 @@ const SearchTrigger = styled.button`
 const Container = styled.div`
   background-color: ${colorBackgroundDefault()};
   border-radius: 4px;
-  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 2px 8px ${colorShadowDefault()};
   max-height: 60vh;
   left: calc(50% - 300px);
   overflow: hidden;

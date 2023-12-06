@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import {Group} from '../Group';
 import {Menu, MenuItem, MenuDivider} from '../Menu';
+import { colorShadowDefault } from '../../theme/color';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -52,5 +53,5 @@ export const Default = () => {
 };
 
 const Container = styled.div`
-  box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
+  box-shadow: ${colorShadowDefault()} 0px 2px 12px;
 `;

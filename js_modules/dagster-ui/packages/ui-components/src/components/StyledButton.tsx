@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import {colorFocusRing} from '../theme/color';
+import {colorFocusRing, colorShadowDefault} from '../theme/color';
 
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
@@ -44,7 +44,7 @@ export const StyledButton = styled.button<StyledButtonProps>`
     box-shadow: ${({$strokeColor, $strokeColorHover}) =>
       `${
         $strokeColorHover || $strokeColor
-      } inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
+      } inset 0px 0px 0px 1px, ${colorShadowDefault()} 0px 2px 12px 0px;`};
     color: ${({$textColor}) => $textColor};
     text-decoration: none;
   }
@@ -56,7 +56,7 @@ export const StyledButton = styled.button<StyledButtonProps>`
 
   :focus:not(:focus-visible) {
     box-shadow: ${({$strokeColor}) =>
-      `${$strokeColor} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
+      `${$strokeColor} inset 0px 0px 0px 1px, ${colorShadowDefault()} 0px 2px 12px 0px;`};
   }
 
   :active:not(:disabled) {
