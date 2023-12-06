@@ -52,7 +52,7 @@ height={917}
 
 ### Attaching Metadata to an AssetObservation
 
-There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the [Asset Details](/concepts/webserver/ui#asset-details) page. Check our API docs for <PyObject object="MetadataValue" /> for more details on the types of event metadata available.
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the [Asset Details](/concepts/dagster-ui#asset-details) page. Check our API docs for <PyObject object="MetadataValue" /> for more details on the types of event metadata available.
 
 ```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
 from dagster import AssetMaterialization, AssetObservation, MetadataValue, op
@@ -79,7 +79,7 @@ def observes_dataset_op(context: OpExecutionContext):
     return remote_storage_path
 ```
 
-In the [Asset Details](/concepts/webserver/ui#asset-details) page, we can see observations in the Asset Activity table.
+In the [Asset Details](/concepts/dagster-ui#asset-details) page, we can see observations in the Asset Activity table.
 
 <Image
 alt="asset-activity-observation"

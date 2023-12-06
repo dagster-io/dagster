@@ -33,6 +33,6 @@ Partitions are supported for both Software-defined Assets and ops, but how each 
 
 With partitions, you can:
 
-- View runs by partition in the [Dagster UI](/concepts/webserver/ui)
+- View runs by partition in the [Dagster UI](/concepts/dagster-ui)
 - Define a [schedule](/concepts/partitions-schedules-sensors/schedules) that fills in a partition each time it runs. For example, a job might run each day and process the data that arrived during the previous day.
 - Launch [backfills](/concepts/partitions-schedules-sensors/backfills), which are sets of runs that each process a different partition. For example, after making a code change, you might want to run your job on all partitions instead of just one of them.

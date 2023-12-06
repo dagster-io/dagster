@@ -256,7 +256,12 @@
   },
   {
     "source": "/overview/dagit",
-    "destination": "/concepts/dagit/dagit",
+    "destination": "/concepts/dagster-ui",
+    "statusCode": 302
+  },
+  {
+    "source": "/concepts/webserver/ui",
+    "destination": "/concepts/dagster-ui",
     "statusCode": 302
   },
   {
@@ -266,7 +271,7 @@
   },
   {
     "source": "/overview/graphql-api",
-    "destination": "/concepts/dagit/graphql",
+    "destination": "/concepts/graphql",
     "statusCode": 302
   },
   {
