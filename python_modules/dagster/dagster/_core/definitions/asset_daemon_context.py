@@ -242,7 +242,6 @@ class AssetDaemonContext:
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         ).to_auto_materialize_policy_evaluator()
 
-        partitions_def = self.asset_graph.get_partitions_def(asset_key)
         context = AssetAutomationEvaluationContext(
             asset_key=asset_key,
             asset_cursor=self.cursor.asset_cursor_for_key(asset_key, self.asset_graph),
