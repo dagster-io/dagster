@@ -3,6 +3,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -114,11 +115,31 @@ class RunlessExecutionProperties:
     """
 
     def __init__(self):
-        self.user_events = []
-        self.seen_outputs = {}
-        self.output_metadata = {}
-        self.requires_typed_event_stream = False
-        self.typed_event_stream_error_message: Optional[str] = None
+        self._events: List[UserEvent] = []
+        self._seen_outputs = {}
+        self._output_metadata = {}
+        self._requires_typed_event_stream = False
+        self._typed_event_stream_error_message = None
+
+    @property
+    def user_events(self):
+        return self._events
+
+    @property
+    def seen_outputs(self):
+        return self._seen_outputs
+
+    @property
+    def output_metadata(self):
+        return self._output_metadata
+
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._requires_typed_event_stream
+
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._typed_event_stream_error_message
 
     def log_event(self, event: UserEvent) -> None:
         check.inst_param(
@@ -126,15 +147,15 @@ class RunlessExecutionProperties:
             "event",
             (AssetMaterialization, AssetObservation, ExpectationResult),
         )
-        self.user_events.append(event)
+        self._events.append(event)
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         if mapping_key:
             if output_name not in self.seen_outputs:
-                self.seen_outputs[output_name] = set()
-            cast(Set[str], self.seen_outputs[output_name]).add(mapping_key)
+                self._seen_outputs[output_name] = set()
+            cast(Set[str], self._seen_outputs[output_name]).add(mapping_key)
         else:
-            self.seen_outputs[output_name] = "seen"
+            self._seen_outputs[output_name] = "seen"
 
     def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
         if mapping_key:
@@ -193,15 +214,15 @@ class RunlessExecutionProperties:
                 )
         if mapping_key:
             if output_name not in self.output_metadata:
-                self.output_metadata[output_name] = {}
-            self.output_metadata[output_name][mapping_key] = metadata
+                self._output_metadata[output_name] = {}
+            self._output_metadata[output_name][mapping_key] = metadata
 
         else:
-            self.output_metadata[output_name] = metadata
+            self._output_metadata[output_name] = metadata
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
-        self.requires_typed_event_stream = True
-        self.typed_event_stream_error_message = error_message
+        self._requires_typed_event_stream = True
+        self._typed_event_stream_error_message = error_message
 
 
 class RunlessOpExecutionContext(OpExecutionContext):
