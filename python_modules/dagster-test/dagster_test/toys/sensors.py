@@ -10,8 +10,6 @@ from dagster import (
     run_failure_sensor,
     sensor,
 )
-from dagster_slack import make_slack_on_run_failure_sensor
-from slack_sdk.web.client import WebClient
 
 from dagster_test.toys.error_monster import error_monster_failing_job
 from dagster_test.toys.log_asset import log_asset_job
@@ -96,34 +94,42 @@ def get_toys_sensors():
                 },
             )
 
-    @run_failure_sensor(monitored_jobs=[error_monster_failing_job])
-    def custom_slack_on_job_failure(context: RunFailureSensorContext):
-        base_url = "http://localhost:3000"
+    has_dagster_slack = importlib.util.find_spec("dagster_slack") is not None
+    if has_dagster_slack:
+        from dagster_slack import make_slack_on_run_failure_sensor
+        from slack_sdk.web.client import WebClient
 
-        slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
+        @run_failure_sensor(monitored_jobs=[error_monster_failing_job])
+        def custom_slack_on_job_failure(context: RunFailureSensorContext):
+            base_url = "http://localhost:3000"
 
-        run_page_url = f"{base_url}/runs/{context.dagster_run.run_id}"
-        channel = "#toy-test"
-        message = "\n".join(
-            [
-                f'Pipeline "{context.dagster_run.job_name}" failed.',
-                f"error: {context.failure_event.message}",
-                f"run_page_url: {run_page_url}",
-            ]
+            slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
+
+            run_page_url = f"{base_url}/runs/{context.dagster_run.run_id}"
+            channel = "#toy-test"
+            message = "\n".join(
+                [
+                    f'Pipeline "{context.dagster_run.job_name}" failed.',
+                    f"error: {context.failure_event.message}",
+                    f"run_page_url: {run_page_url}",
+                ]
+            )
+
+            slack_client.chat_postMessage(
+                channel=channel,
+                blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
+            )
+
+        built_in_slack_on_run_failure_sensor = make_slack_on_run_failure_sensor(
+            name="built_in_slack_on_run_failure_sensor",
+            channel="#toy-test",
+            slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
+            monitored_jobs=[error_monster_failing_job],
+            webserver_base_url="http://localhost:3000",
         )
-
-        slack_client.chat_postMessage(
-            channel=channel,
-            blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
-        )
-
-    built_in_slack_on_run_failure_sensor = make_slack_on_run_failure_sensor(
-        name="built_in_slack_on_run_failure_sensor",
-        channel="#toy-test",
-        slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
-        monitored_jobs=[error_monster_failing_job],
-        webserver_base_url="http://localhost:3000",
-    )
+    else:
+        custom_slack_on_job_failure = None
+        built_in_slack_on_run_failure_sensor = None
 
     @asset_sensor(asset_key=AssetKey("model"), job=log_asset_job)
     def toy_asset_sensor(context, asset_event):
@@ -149,11 +155,16 @@ def get_toys_sensors():
                 tags={"fee": "fifofum"},
             )
 
-    return [
-        toy_file_sensor,
-        toy_asset_sensor,
-        toy_s3_sensor,
-        custom_slack_on_job_failure,
-        built_in_slack_on_run_failure_sensor,
-        math_sensor,
-    ]
+    return list(
+        filter(
+            lambda sensor: sensor is not None,
+            [
+                toy_file_sensor,
+                toy_asset_sensor,
+                toy_s3_sensor,
+                custom_slack_on_job_failure,
+                built_in_slack_on_run_failure_sensor,
+                math_sensor,
+            ],
+        )
+    )

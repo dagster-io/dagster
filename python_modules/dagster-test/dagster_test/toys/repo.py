@@ -5,6 +5,8 @@ from dagster import ExperimentalWarning
 # squelch experimental warnings since we often include experimental things in toys for development
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
+import importlib
+
 import pendulum
 from dagster import (
     AssetMaterialization,
@@ -40,7 +42,6 @@ from dagster_test.toys.longitudinal import longitudinal_job
 from dagster_test.toys.many_events import many_events, many_events_subset_job
 from dagster_test.toys.metadata import with_metadata
 from dagster_test.toys.multi_inputs_outputs import multi_inputs_outputs_job
-from dagster_test.toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.toys.nothing_input import nothing_job
 from dagster_test.toys.partition_config import job_with_partition_config
 from dagster_test.toys.retries import retry_job
@@ -75,7 +76,20 @@ from .auto_materializing.repo_2 import (
     auto_materialize_repo_2 as auto_materialize_repo_2,
 )
 from .schedules import get_toys_schedules
-from .sensors import get_toys_sensors
+
+has_dagstermill = importlib.util.find_spec("dagstermill") is not None
+if has_dagstermill:
+    from dagster_test.toys.notebooks import hello_world_notebook_pipeline
+else:
+    hello_world_notebook_pipeline = None
+
+has_dagster_slack = importlib.util.find_spec("dagster_slack") is not None
+if has_dagster_slack:
+    from .sensors import get_toys_sensors
+else:
+
+    def get_toys_sensors():
+        return []
 
 
 @op
@@ -96,46 +110,50 @@ model_job = model.to_job()
 @repository
 def toys_repository():
     return (
-        [
-            composition_job,
-            error_monster_failing_job,
-            error_monster_passing_job,
-            hammer_default_executor_job,
-            log_asset_job,
-            log_file_job,
-            log_s3_job,
-            log_spew,
-            longitudinal_job,
-            many_events,
-            many_events_subset_job,
-            nothing_job,
-            sleepy_job,
-            retry_job,
-            branch_job,
-            branch_failed_job,
-            unreliable_job,
-            dynamic_job,
-            model_job,
-            job_with_partition_config,
-            multi_inputs_outputs_job,
-            hello_world_notebook_pipeline,
-            *software_defined_assets,
-            with_metadata,
-            succeeds_job,
-            return_run_request_succeeds_sensor,
-            yield_run_request_succeeds_sensor,
-            fails_job,
-            fails_sensor,
-            cross_repo_sensor,
-            cross_repo_job_sensor,
-            cross_repo_success_job_sensor,
-            status_job,
-            df_stats_job,
-            yield_multi_run_request_success_sensor,
-            return_multi_run_request_success_sensor,
-            success_sensor_with_pipeline_run_reaction,
-            instance_success_sensor,
-        ]
+        list(
+            filter(
+                lambda toy: toy is not None,
+                [
+                    composition_job,
+                    error_monster_failing_job,
+                    error_monster_passing_job,
+                    hammer_default_executor_job,
+                    log_asset_job,
+                    log_file_job,
+                    log_s3_job,
+                    log_spew,
+                    longitudinal_job,
+                    many_events,
+                    many_events_subset_job,
+                    nothing_job,
+                    sleepy_job,
+                    retry_job,
+                    branch_job,
+                    branch_failed_job,
+                    unreliable_job,
+                    dynamic_job,
+                    model_job,
+                    job_with_partition_config,
+                    multi_inputs_outputs_job,
+                    *software_defined_assets,
+                    with_metadata,
+                    succeeds_job,
+                    return_run_request_succeeds_sensor,
+                    yield_run_request_succeeds_sensor,
+                    fails_job,
+                    fails_sensor,
+                    cross_repo_sensor,
+                    cross_repo_job_sensor,
+                    cross_repo_success_job_sensor,
+                    status_job,
+                    df_stats_job,
+                    yield_multi_run_request_success_sensor,
+                    return_multi_run_request_success_sensor,
+                    success_sensor_with_pipeline_run_reaction,
+                    instance_success_sensor,
+                ],
+            )
+        )
         + get_toys_schedules()
         + get_toys_sensors()
         + get_checks_and_assets()
