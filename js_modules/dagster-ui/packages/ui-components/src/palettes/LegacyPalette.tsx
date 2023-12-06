@@ -95,8 +95,8 @@ export const LegacyPalette = {
   [ColorName.LineageGroupBackground]: LegacyColors.Gray10,
   [ColorName.LineageNodeBackground]: LegacyColors.Blue50,
   [ColorName.LineageNodeBackgroundHover]: LegacyColors.Blue50,
-  [ColorName.LineageNodeBorder]: LegacyColors.Olive500,
-  [ColorName.LineageNodeBorderHover]: LegacyColors.Olive500,
+  [ColorName.LineageNodeBorder]: LegacyColors.Blue200,
+  [ColorName.LineageNodeBorderHover]: LegacyColors.Blue500,
   [ColorName.LineageNodeBorderSelected]: LegacyColors.Blue500,
 
   // Dataviz
