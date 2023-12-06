@@ -1,10 +1,9 @@
 import dataclasses
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional, Sequence, Tuple
 
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
 from .asset_automation_condition_context import (
@@ -12,7 +11,6 @@ from .asset_automation_condition_context import (
     AssetAutomationEvaluationContext,
 )
 from .asset_subset import AssetSubset
-from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule, RuleEvaluationResults
 from .auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
     AutoMaterializeDecisionType,
@@ -22,6 +20,8 @@ from .auto_materialize_rule_evaluation import (
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+    from .auto_materialize_rule import AutoMaterializeRule, RuleEvaluationResults
+
 
 class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
@@ -30,12 +30,14 @@ class ConditionEvaluation(NamedTuple):
     true_subset: AssetSubset
     candidate_subset: AssetSubset
 
+    results: "RuleEvaluationResults" = []
+    child_evaluations: Sequence["ConditionEvaluation"] = []
+
     # backcompat until we remove the discard concept
     discard_subset: Optional[AssetSubset] = None
-    discard_results: RuleEvaluationResults = []
-
-    results: RuleEvaluationResults = []
-    child_evaluations: Sequence["ConditionEvaluation"] = []
+    discard_results: Sequence[
+        Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
+    ] = []
 
     @property
     def all_results(
@@ -73,31 +75,31 @@ class ConditionEvaluation(NamedTuple):
         asset_key: AssetKey,
         asset_graph: AssetGraph,
         instance_queryer: "CachingInstanceQueryer",
-        to_discard: AssetSubset,
-        discard_results: Sequence[
-            Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
-        ],
     ) -> AutoMaterializeAssetEvaluation:
         """This method is a placeholder to allow us to convert this into a shape that other parts
         of the system understand.
         """
         # backcompat way to calculate the set of skipped partitions for legacy policies
         if self.condition.is_legacy and len(self.child_evaluations) == 2:
-            # the first child is the materialize condition, the second child is the skip_condition
-            materialize_condition, skip_evaluation = self.child_evaluations
-            skipped_subset_size = (
-                materialize_condition.true_subset.size - skip_evaluation.true_subset.size
-            )
+            # the first child is the materialize condition, the second child is the negation of
+            # the skip condition
+            _, nor_skip_evaluation = self.child_evaluations
+            skip_evaluation = nor_skip_evaluation.child_evaluations[0]
+            skipped_subset_size = skip_evaluation.true_subset.size
         else:
             skipped_subset_size = 0
+
+        discard_subset = self.discard_subset or AssetSubset.empty(
+            asset_key, asset_graph.get_partitions_def(asset_key)
+        )
 
         return AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
             asset_key=asset_key,
             asset_graph=asset_graph,
-            asset_partitions_by_rule_evaluation=[*self.all_results, *discard_results],
-            num_requested=(self.true_subset - to_discard).size,
+            asset_partitions_by_rule_evaluation=[*self.all_results, *self.discard_results],
+            num_requested=(self.true_subset - discard_subset).size,
             num_skipped=skipped_subset_size,
-            num_discarded=to_discard.size,
+            num_discarded=discard_subset.size,
             dynamic_partitions_store=instance_queryer,
         )
 
@@ -105,7 +107,7 @@ class ConditionEvaluation(NamedTuple):
     def from_evaluation_and_rule(
         evaluation: AutoMaterializeAssetEvaluation,
         asset_graph: AssetGraph,
-        rule: AutoMaterializeRule,
+        rule: "AutoMaterializeRule",
     ) -> "ConditionEvaluation":
         asset_key = evaluation.asset_key
         partitions_def = asset_graph.get_partitions_def(asset_key)
@@ -123,13 +125,13 @@ class ConditionEvaluation(NamedTuple):
     @staticmethod
     def from_evaluation(
         condition: "AutomationCondition",
-        evaluation: AutoMaterializeAssetEvaluation,
+        evaluation: Optional[AutoMaterializeAssetEvaluation],
         asset_graph: AssetGraph,
     ) -> Optional["ConditionEvaluation"]:
         """This method is a placeholder to allow us to convert the serialized objects the system
         uses into a more-convenient internal representation.
         """
-        if not condition.is_legacy:
+        if not condition.is_legacy or not evaluation:
             return None
 
         asset_key = evaluation.asset_key
@@ -171,7 +173,8 @@ class ConditionEvaluation(NamedTuple):
         ]
         return ConditionEvaluation(
             condition=condition,
-            true_subset=evaluation.get_evaluated_subset(asset_graph),
+            true_subset=evaluation.get_requested_subset(asset_graph),
+            discard_subset=evaluation.get_discarded_subset(asset_graph),
             candidate_subset=empty_subset,
             child_evaluations=children,
         )
@@ -183,9 +186,9 @@ class AutomationCondition(ABC):
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
     """
 
-    @abstractproperty
+    @property
     def children(self) -> Sequence["AutomationCondition"]:
-        raise NotImplementedError()
+        return []
 
     @abstractmethod
     def evaluate(self, context: AssetAutomationConditionEvaluationContext) -> ConditionEvaluation:
@@ -226,7 +229,8 @@ class AutomationCondition(ABC):
 
 
 class RuleCondition(
-    AutomationCondition, NamedTuple("_RuleCondition", [("rule", AutoMaterializeRule)])
+    NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
+    AutomationCondition,
 ):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 
@@ -252,8 +256,8 @@ class RuleCondition(
 
 
 class AndAutomationCondition(
-    AutomationCondition,
     NamedTuple("_AndAutomationCondition", [("children", Sequence[AutomationCondition])]),
+    AutomationCondition,
 ):
     """This class represents the condition that all of its children evaluate to true."""
 
@@ -261,8 +265,8 @@ class AndAutomationCondition(
         child_evaluations: List[ConditionEvaluation] = []
         true_subset = context.candidate_subset
         for child in self.children:
-            context = context.for_child(condition=child, candidate_subset=true_subset)
-            result = child.evaluate(context)
+            child_context = context.for_child(condition=child, candidate_subset=true_subset)
+            result = child.evaluate(child_context)
             child_evaluations.append(result)
             true_subset &= result.true_subset
         return ConditionEvaluation(
@@ -274,8 +278,8 @@ class AndAutomationCondition(
 
 
 class OrAutomationCondition(
-    AutomationCondition,
     NamedTuple("_OrAutomationCondition", [("children", Sequence[AutomationCondition])]),
+    AutomationCondition,
 ):
     """This class represents the condition that any of its children evaluate to true."""
 
@@ -283,7 +287,10 @@ class OrAutomationCondition(
         child_evaluations: List[ConditionEvaluation] = []
         true_subset = context.empty_subset()
         for child in self.children:
-            result = child.evaluate(context)
+            child_context = context.for_child(
+                condition=child, candidate_subset=context.candidate_subset
+            )
+            result = child.evaluate(child_context)
             child_evaluations.append(result)
             true_subset |= result.true_subset
         return ConditionEvaluation(
@@ -295,8 +302,8 @@ class OrAutomationCondition(
 
 
 class NorAutomationCondition(
-    AutomationCondition,
     NamedTuple("_NorAutomationCondition", [("children", Sequence[AutomationCondition])]),
+    AutomationCondition,
 ):
     """This class represents the condition that none of its children evaluate to true."""
 
@@ -304,8 +311,8 @@ class NorAutomationCondition(
         child_evaluations: List[ConditionEvaluation] = []
         true_subset = context.candidate_subset
         for child in self.children:
-            context = context.with_candidate_subset(true_subset)
-            result = child.evaluate(context)
+            child_context = context.for_child(condition=child, candidate_subset=true_subset)
+            result = child.evaluate(child_context)
             child_evaluations.append(result)
             true_subset -= result.true_subset
         return ConditionEvaluation(
@@ -326,7 +333,7 @@ class AssetAutomationEvaluator(NamedTuple):
 
     def evaluate(
         self, context: AssetAutomationEvaluationContext
-    ) -> Tuple[ConditionEvaluation, AssetDaemonAssetCursor, AssetSubset]:
+    ) -> Tuple[ConditionEvaluation, AssetDaemonAssetCursor]:
         """Evaluates the auto materialize policy of a given asset.
 
         Returns:
@@ -335,27 +342,35 @@ class AssetAutomationEvaluator(NamedTuple):
         skipped partitions in a backwards-compatible way. This can only be done for policies that
         are in the format `(a | b | ...) & ~(c | d | ...).
         - A new AssetDaemonAssetCursor that represents the state of the world after this evaluation.
-        - The AssetSubset that should be discarded.
         """
+        from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
+
         condition_context = context.get_root_condition_context()
         condition_evaluation = self.condition.evaluate(condition_context)
 
         # this is treated separately from other rules, for now
-        to_discard = context.empty_subset()
+        discard_subset = context.empty_subset()
+        discard_results = []
         if self.max_materializations_per_minute is not None:
             discard_context = dataclasses.replace(
                 condition_context, candidate_subset=condition_evaluation.true_subset
             )
-            condition = RuleCondition(
-                DiscardOnMaxMaterializationsExceededRule(limit=self.max_materializations_per_minute)
+            discard_rule = DiscardOnMaxMaterializationsExceededRule(
+                limit=self.max_materializations_per_minute
             )
+            condition = RuleCondition(discard_rule)
             discard_condition_evaluation = condition.evaluate(discard_context)
-            to_discard = discard_condition_evaluation.true_subset
+            discard_subset = discard_condition_evaluation.true_subset
+            discard_results = [
+                (AutoMaterializeRuleEvaluation(discard_rule.to_snapshot(), evaluation_data), aps)
+                for evaluation_data, aps in discard_condition_evaluation.results
+            ]
 
         return (
-            condition_evaluation._replace(discard_subset=to_discard),
-            context.get_new_asset_cursor(
-                to_materialize=condition_evaluation.true_subset, to_discard=to_discard
+            condition_evaluation._replace(
+                true_subset=condition_evaluation.true_subset - discard_subset,
+                discard_subset=discard_subset,
+                discard_results=discard_results,
             ),
-            to_discard,
+            context.get_new_asset_cursor(evaluation=condition_evaluation),
         )

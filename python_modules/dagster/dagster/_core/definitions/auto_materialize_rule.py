@@ -99,7 +99,6 @@ class AutoMaterializeRule(ABC):
                     continue
                 elif should_use_past_data_fn(ap):
                     asset_partitions_by_evaluation_data[evaluation_data].add(ap)
-
         return list(asset_partitions_by_evaluation_data.items())
 
     @abstractmethod
@@ -380,6 +379,7 @@ class MaterializeOnCronRule(
         asset_partitions_by_evaluation_data = defaultdict(set)
         if asset_partitions_to_request:
             asset_partitions_by_evaluation_data[None].update(asset_partitions_to_request)
+
         return self.add_evaluation_data_from_previous_tick(
             context,
             asset_partitions_by_evaluation_data,
@@ -421,7 +421,7 @@ class AutoMaterializeAssetPartitionsFilter(
 
         asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for asset_partition in asset_partitions:
-            if asset_partition in context.candidate_parent_has_or_will_update_subset:
+            if context.asset_context.will_udpate_asset_partition(asset_partition):
                 will_update_asset_partitions.add(asset_partition)
             else:
                 record = context.instance_queryer.get_latest_materialization_or_observation_record(
@@ -873,16 +873,14 @@ class SkipOnBackfillInProgressRule(
         ).get_asset_subset(context.asset_key, context.asset_context.asset_graph)
 
         if backfilling_subset.size == 0:
-            true_subset = context.empty_subset()
-        elif self.all_partitions:
+            return []
+
+        if self.all_partitions:
             true_subset = context.candidate_subset
         else:
             true_subset = context.candidate_subset & backfilling_subset
 
-        if true_subset:
-            return [(None, true_subset.asset_partitions)]
-
-        return []
+        return [(None, true_subset.asset_partitions)]
 
 
 @whitelist_for_serdes
