@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from contextlib import ExitStack
 from typing import (
     AbstractSet,
@@ -66,6 +67,36 @@ def _property_msg(prop_name: str, method_name: str) -> str:
         f"The {prop_name} {method_name} is not set on the context when an op is directly invoked."
     )
 
+class BaseRunlessContext:
+    @abstractmethod
+    def bind(
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ):
+        """Instances of BsaeRunlessContest must implement bind."""
+
+    @abstractmethod
+    def unbind(self):
+        """Instances of BsaeRunlessContest must implement unbind."""
+
+    @property
+    @abstractmethod
+    def bound_properties(self) -> "BoundProperties":
+        """Instances of BaseRunlessContext must contain a BoundProperties object."""
+
+    @property
+    @abstractmethod
+    def execution_properties(self) -> "RunlessExecutionProperties":
+        """Instances of BaseRunlessContext must contain a RunlessExecutionProperties object."""
+
+    @abstractmethod
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        pass
+
 
 class PerInvocationProperties(
     NamedTuple(
@@ -128,7 +159,7 @@ class DirectExecutionProperties:
         self.typed_event_stream_error_message: Optional[str] = None
 
 
-class DirectOpExecutionContext(OpExecutionContext):
+class DirectOpExecutionContext(OpExecutionContext, BaseRunlessContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -707,7 +738,7 @@ class DirectOpExecutionContext(OpExecutionContext):
         self._execution_properties.typed_event_stream_error_message = error_message
 
 
-class RunlessAssetExecutionContext(AssetExecutionContext):
+class RunlessAssetExecutionContext(AssetExecutionContext, BaseRunlessContext):
     """The ``context`` object available as the first argument to an asset's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -716,6 +747,16 @@ class RunlessAssetExecutionContext(AssetExecutionContext):
         self._op_execution_context = op_execution_context
 
         self._run_props = None
+
+    def __enter__(self):
+        self.op_execution_context._cm_scope_entered = True  # noqa: SLF001
+        return self
+
+    def __exit__(self, *exc):
+        self.op_execution_context._exit_stack.close()  # noqa: SLF001
+
+    def __del__(self):
+        self.op_execution_context._exit_stack.close()  # noqa: SLF001
 
     def _check_bound(self, fn_name: str, fn_type: str):
         if not self._op_execution_context._bound_properties:  # noqa: SLF001
@@ -752,6 +793,14 @@ class RunlessAssetExecutionContext(AssetExecutionContext):
 
     def unbind(self):
         self._op_execution_context = self._op_execution_context.unbind()
+
+    @property
+    def bound_properties(self) -> BoundProperties:
+        return self.op_execution_context.bound_properties
+
+    @property
+    def execution_properties(self) -> RunlessExecutionProperties:
+        return self.op_execution_context.execution_properties
 
     @property
     def op_execution_context(self) -> RunlessOpExecutionContext:
