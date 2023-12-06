@@ -31,6 +31,7 @@ class GCSComputeLogManager(BaseModel):
     prefix: Optional[StringSource]
     jsonCredentialsEnvvar: Optional[StringSource]
     uploadInterval: Optional[int]
+    showUrlOnly: Optional[bool]
 
 
 class S3ComputeLogManager(BaseModel):
