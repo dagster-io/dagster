@@ -3,7 +3,6 @@ import {WebTracerProvider} from '@opentelemetry/web';
 import React from 'react';
 
 import {usePageContext} from './app/analytics';
-
 // Initialize OpenTelemetry
 const tracerProvider = new WebTracerProvider();
 trace.setGlobalTracerProvider(tracerProvider);
@@ -17,6 +16,22 @@ export function init() {
   pageloadSpan = tracer.startSpan('page-load', {
     startTime: performance.timeOrigin,
   });
+}
+
+/**
+ * This function is used by cypress to hook into the provider and add a span processor:
+ *
+ * // Configure Collector exporter to send traces to your Starlette backend
+ * const collectorExporter = new CollectorTraceExporter({
+ *   serviceName: 'web-performance',
+ *   url: 'http://dagster.cloud/web-performance-trace',
+ * });
+ *
+ * // Register exporter
+ * __getProvider().addSpanProcessor(new BatchSpanProcessor(collectorExporter));
+ */
+export function __getProvider() {
+  return tracerProvider;
 }
 
 let didPageload = false;
