@@ -324,6 +324,28 @@ def multi_asset_with_versions():
 
 Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI.
 
+### Retrying failed assets
+
+If an exception occurs during asset execution, you can use a <PyObject module="dagster" object="RetryPolicy"  /> to automatically retry the asset within the same run.
+
+In the following example, we've specified the number of times to retry and how long to wait between retries:
+
+```python file=/concepts/assets/asset_retry.py
+from dagster import Backoff, Jitter, RetryPolicy, RetryRequested, asset
+
+
+@asset(
+    retry_policy=RetryPolicy(
+        max_retries=3,
+        delay=0.2,  # 200ms
+        backoff=Backoff.EXPONENTIAL,
+        jitter=Jitter.PLUS_MINUS,
+    )
+)
+def retried_asset():
+    return "Retry me!"
+```
+
 ---
 
 ## Viewing and materializing assets in the UI
