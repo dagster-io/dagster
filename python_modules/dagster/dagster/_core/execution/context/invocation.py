@@ -56,7 +56,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .compute import OpExecutionContext
+from .compute import ExecutionProperties, OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -106,18 +106,26 @@ class BoundProperties(
         )
 
 
-class RunlessExecutionProperties:
-    """Maintains information about the invocation that is updated during execution time. This information
-    needs to be available to the user once invocation is complete, so that they can assert on events and
-    outputs. It needs to be cleared before the context is used for another invocation.
+class RunlessExecutionProperties(ExecutionProperties):
+    """Maintains properties that need to be available to the execution code. To support runless execution
+    (direct invocation) this class also maintains information about the invocation that is updated
+    during execution time. This information needs to be available to the user once invocation is
+    complete, so that they can assert on events and outputs. It needs to be cleared before the
+    context is used for another invocation.
     """
 
-    def __init__(self):
+    def __init__(
+        self, step_description: str, node_type: str, op_def: "OpDefinition", op_config: Any
+    ):
+        self._step_description = step_description
+        self._node_type = node_type
+        self._op_def = op_def
         self._events: List[UserEvent] = []
         self._seen_outputs = {}
         self._output_metadata = {}
         self._requires_typed_event_stream = False
         self._typed_event_stream_error_message = None
+        self._op_config = op_config
 
     @property
     def user_events(self):
@@ -130,14 +138,6 @@ class RunlessExecutionProperties:
     @property
     def output_metadata(self):
         return self._output_metadata
-
-    @property
-    def requires_typed_event_stream(self) -> bool:
-        return self._requires_typed_event_stream
-
-    @property
-    def typed_event_stream_error_message(self) -> Optional[str]:
-        return self._typed_event_stream_error_message
 
     def log_event(self, event: UserEvent) -> None:
         check.inst_param(
@@ -292,7 +292,7 @@ class RunlessOpExecutionContext(OpExecutionContext):
         # my_op(ctx)
         # ctx._execution_properties.output_metadata # information is retained after invocation
         # my_op(ctx) # ctx._execution_properties is cleared at the beginning of the next invocation
-        self._execution_properties = RunlessExecutionProperties()
+        self._execution_properties = None
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -325,9 +325,6 @@ class RunlessOpExecutionContext(OpExecutionContext):
             raise DagsterInvalidInvocationError(
                 f"This context is currently being used to execute {self.alias}. The context cannot be used to execute another op until {self.alias} has finished executing."
             )
-
-        # reset execution_properties
-        self._execution_properties = RunlessExecutionProperties()
 
         # update the bound context with properties relevant to the execution of the op
 
@@ -403,6 +400,11 @@ class RunlessOpExecutionContext(OpExecutionContext):
             step_description=step_description,
         )
 
+        # reset execution_properties
+        self._execution_properties = RunlessExecutionProperties(
+            step_description=step_description, node_type="op", op_def=op_def, op_config=op_config
+        )
+
         return self
 
     def unbind(self):
@@ -414,6 +416,11 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
     @property
     def execution_properties(self) -> RunlessExecutionProperties:
+        if self._execution_properties is None:
+            raise DagsterInvalidPropertyError(
+                "Cannot access execution_properties until after the context has been used to"
+                " invoke an op"
+            )
         return self._execution_properties
 
     @property

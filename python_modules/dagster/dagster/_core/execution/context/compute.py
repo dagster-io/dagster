@@ -71,13 +71,16 @@ class ExecutionProperties:
     You should not need to access these attributes directly.
     """
 
-    def __init__(self, step_description: str, node_type: str, op_def: "OpDefinition"):
+    def __init__(
+        self, step_description: str, node_type: str, op_def: "OpDefinition", op_config: Any
+    ):
         self._step_description = step_description
         self._node_type = node_type
         self._op_def = op_def
         self._events: List[DagsterEvent] = []
         self._requires_typed_event_stream = False
         self._typed_event_stream_error_message = None
+        self._op_config = op_config
 
     @property
     def step_description(self) -> str:
@@ -90,6 +93,10 @@ class ExecutionProperties:
     @property
     def op_def(self) -> "OpDefinition":
         return self._op_def
+
+    @property
+    def op_config(self) -> Any:
+        return self._op_config
 
     def consume_events(self) -> Iterator[DagsterEvent]:
         events = self._events
@@ -168,10 +175,19 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
 
 
 class ContextHasExecutionProperties(ABC):
+    """Base class that any context that can be used for execution or invocation of an op or asset
+    must implement.
+    """
+
     @property
     @abstractmethod
     def execution_properties(self) -> ExecutionProperties:
         """Context classes must contain an instance of ExecutionProperties."""
+
+    @property
+    @abstractmethod
+    def resources(self) -> Any:
+        """Context classes must be able to provide currently available resources."""
 
 
 class OpExecutionContextMetaClass(AbstractComputeMetaclass):
@@ -233,6 +249,7 @@ class OpExecutionContext(
                 OpDefinition,
                 self._step_execution_context.job_def.get_node(self.node_handle).definition,
             ),
+            op_config=self._step_execution_context.op_config,
         )
 
     @property
@@ -243,7 +260,7 @@ class OpExecutionContext(
     @property
     def op_config(self) -> Any:
         """Any: The parsed config specific to this op."""
-        return self._step_execution_context.op_config
+        return self.execution_properties.op_config
 
     @property
     def dagster_run(self) -> DagsterRun:
@@ -1517,6 +1534,7 @@ class AssetExecutionContext(OpExecutionContext):
                 step_description=f"asset {self.op_execution_context.node_handle}",
                 node_type="asset",
                 op_def=self.op_execution_context.op_def,
+                op_config=self.op_execution_context.op_config,
             )
         return self._execution_props
 

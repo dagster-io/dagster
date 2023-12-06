@@ -120,10 +120,12 @@ def invoke_compute_fn(
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
         if issubclass(config_arg_cls, Config):
-            to_pass = config_arg_cls._get_non_default_public_field_values_cls(context.op_config)  # noqa: SLF001
+            to_pass = config_arg_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
+                context.execution_properties.op_config
+            )
             args_to_pass["config"] = config_arg_cls(**to_pass)
         else:
-            args_to_pass["config"] = context.op_config
+            args_to_pass["config"] = context.execution_properties.op_config
     if resource_args:
         for resource_name, arg_name in resource_args.items():
             args_to_pass[arg_name] = context.resources.original_resource_dict[resource_name]
