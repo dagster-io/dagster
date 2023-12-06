@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorBackgroundGray} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -24,7 +24,7 @@ interface ParentOpNodeProps {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
+export const ParentOpNode = (props: ParentOpNodeProps) => {
   const {layout, op, minified} = props;
 
   const def = props.op.definition;
@@ -53,14 +53,32 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
       <SVGLabeledParentRect
         {...bounds}
         label={op.definition.name}
-        fill={Colors.Gray50}
+        fill={colorBackgroundGray()}
         minified={minified}
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {
-        const destination = layout.nodes[mappedInput.solid.name];
-        const sourcePort = parentLayout.inputs[definition.name]?.port;
-        const trgtPort = destination?.inputs[mappedInput.definition.name]?.port;
-        if (!destination || !sourcePort || !trgtPort) {
+        // The mappings link the IOs of the parent graph op to the
+        // input / outputs of ops within the subgraph.
+
+        const parentIO = parentLayout.inputs[definition.name];
+        const destinationNode = layout.nodes[mappedInput.solid.name];
+        if (!destinationNode || !parentIO) {
+          console.warn(
+            `Assertion failure - Unable to find ${mappedInput.solid.name} in the layout ` +
+              `or ${definition.name} in the parent layout`,
+          );
+          return <g key={mappedInput.solid.name} />;
+        }
+
+        const destinationIOFull = destinationNode.inputs[mappedInput.definition.name];
+        const destinationIOCollapsed = Object.values(destinationNode.inputs).find((o) =>
+          o.collapsed.includes(mappedInput.definition.name),
+        );
+        const destinationIO = destinationIOFull || destinationIOCollapsed;
+        if (!destinationIO) {
+          console.warn(
+            `Assertion failure - Unable to find port for ${mappedInput.definition.name}`,
+          );
           return <g key={mappedInput.solid.name} />;
         }
 
@@ -68,8 +86,8 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
           <MappingLine
             {...highlightingProps}
             key={`in-${idx}`}
-            target={trgtPort}
-            source={sourcePort}
+            target={destinationIO.port}
+            source={parentIO.port}
             minified={minified}
             leftEdgeX={mappingLeftEdge - idx * mappingLeftSpacing}
             edge={{a: titleOfIO(mappedInput), b: PARENT_IN}}
@@ -77,19 +95,32 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
         );
       })}
       {def.outputMappings.map(({definition, mappedOutput}, idx) => {
+        const parentIO = parentLayout.outputs[definition.name];
         const destination = layout.nodes[mappedOutput.solid.name];
-        if (!destination) {
+        if (!destination || !parentIO) {
+          console.warn(
+            `Unable to find ${mappedOutput.solid.name} in the layout ` +
+              `or ${definition.name} in the parent layout`,
+          );
           return <g key={mappedOutput.solid.name} />;
         }
-        const sourcePort = parentLayout.outputs[definition.name]!.port;
-        const trgtPort = destination.outputs[mappedOutput.definition.name]!.port;
+
+        const destinationIOFull = destination.outputs[mappedOutput.definition.name];
+        const destinationIOCollapsed = Object.values(destination.outputs).find((o) =>
+          o.collapsed.includes(mappedOutput.definition.name),
+        );
+        const destinationIO = destinationIOFull || destinationIOCollapsed;
+        if (!destinationIO) {
+          console.warn(`Unable to find port for ${mappedOutput.definition.name}`);
+          return <g key={mappedOutput.solid.name} />;
+        }
 
         return (
           <MappingLine
             {...highlightingProps}
             key={`out-${idx}`}
-            target={trgtPort}
-            source={sourcePort}
+            target={destinationIO.port}
+            source={parentIO.port}
             minified={minified}
             leftEdgeX={mappingLeftEdge - idx * mappingLeftSpacing}
             edge={{a: titleOfIO(mappedOutput), b: PARENT_OUT}}
@@ -163,5 +194,9 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
 };
 
 export const SVGLabeledParentRect = styled(SVGLabeledRect)`
-  transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out, height 250ms ease-out;
+  transition:
+    x 250ms ease-out,
+    y 250ms ease-out,
+    width 250ms ease-out,
+    height 250ms ease-out;
 `;

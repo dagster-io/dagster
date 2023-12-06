@@ -12,9 +12,11 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    cast,
 )
 
 from dagster import (
+    AssetCheckSpec,
     AssetKey,
     AssetsDefinition,
     AssetSelection,
@@ -32,13 +34,20 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
+from dagster._core.definitions.decorators.asset_decorator import (
+    _validate_and_assign_output_names_to_check_specs,
+)
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
 from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
-    from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
+    from .dagster_dbt_translator import (
+        DagsterDbtTranslator,
+        DagsterDbtTranslatorSettings,
+        DbtManifestWrapper,
+    )
 
 MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
@@ -178,7 +187,7 @@ def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name
             " source."
         )
 
-    return list(asset_keys_by_output_name.values())[0]
+    return next(iter(asset_keys_by_output_name.values()))
 
 
 def build_dbt_asset_selection(
@@ -294,7 +303,7 @@ def get_manifest_and_translator_from_dbt_assets(
     check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
     dbt_assets_def = dbt_assets[0]
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
-    first_asset_key = next(iter(dbt_assets_def.keys))
+    first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
     manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(MANIFEST_METADATA_KEY)
     if manifest_wrapper is None:
@@ -509,6 +518,40 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
     return "\n\n".join(filter(None, description_sections))
 
 
+def is_generic_test_on_attached_node_from_dbt_resource_props(
+    unique_id: str, dbt_resource_props: Mapping[str, Any]
+) -> bool:
+    attached_node_unique_id = dbt_resource_props.get("attached_node")
+    is_generic_test = bool(attached_node_unique_id)
+
+    return is_generic_test and attached_node_unique_id == unique_id
+
+
+def default_asset_check_fn(
+    asset_key: AssetKey,
+    unique_id: str,
+    dagster_dbt_translator_settings: "DagsterDbtTranslatorSettings",
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[AssetCheckSpec]:
+    is_generic_test_on_attached_node = is_generic_test_on_attached_node_from_dbt_resource_props(
+        unique_id, dbt_resource_props
+    )
+
+    if not all(
+        [
+            dagster_dbt_translator_settings.enable_asset_checks,
+            is_generic_test_on_attached_node,
+        ]
+    ):
+        return None
+
+    return AssetCheckSpec(
+        name=dbt_resource_props["name"],
+        asset=asset_key,
+        description=dbt_resource_props["description"],
+    )
+
+
 def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
     return hashlib.sha1(
         (dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", "")).encode(
@@ -589,8 +632,6 @@ def get_deps(
 def get_asset_deps(
     dbt_nodes,
     deps,
-    node_info_to_freshness_policy_fn,
-    node_info_to_auto_materialize_policy_fn,
     io_manager_key,
     manifest: Optional[Mapping[str, Any]],
     dagster_dbt_translator: "DagsterDbtTranslator",
@@ -601,10 +642,13 @@ def get_asset_deps(
     Dict[AssetKey, str],
     Dict[AssetKey, FreshnessPolicy],
     Dict[AssetKey, AutoMaterializePolicy],
+    Dict[str, AssetCheckSpec],
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
-    from .dagster_dbt_translator import DbtManifestWrapper
+    from .dagster_dbt_translator import DbtManifestWrapper, validate_translator
+
+    dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
@@ -615,6 +659,7 @@ def get_asset_deps(
     group_names_by_key: Dict[AssetKey, str] = {}
     freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
     auto_materialize_policies_by_key: Dict[AssetKey, AutoMaterializePolicy] = {}
+    check_specs: List[AssetCheckSpec] = []
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
@@ -655,13 +700,32 @@ def get_asset_deps(
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
 
-        freshness_policy = node_info_to_freshness_policy_fn(dbt_resource_props)
+        freshness_policy = dagster_dbt_translator.get_freshness_policy(dbt_resource_props)
         if freshness_policy is not None:
             freshness_policies_by_key[asset_key] = freshness_policy
 
-        auto_materialize_policy = node_info_to_auto_materialize_policy_fn(dbt_resource_props)
+        auto_materialize_policy = dagster_dbt_translator.get_auto_materialize_policy(
+            dbt_resource_props
+        )
         if auto_materialize_policy is not None:
             auto_materialize_policies_by_key[asset_key] = auto_materialize_policy
+
+        test_unique_ids = []
+        if manifest:
+            test_unique_ids = [
+                child_unique_id
+                for child_unique_id in manifest["child_map"][unique_id]
+                if child_unique_id.startswith("test")
+            ]
+
+            for test_unique_id in test_unique_ids:
+                test_resource_props = manifest["nodes"][test_unique_id]
+                check_spec = default_asset_check_fn(
+                    asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+                )
+
+                if check_spec:
+                    check_specs.append(check_spec)
 
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
@@ -674,6 +738,11 @@ def get_asset_deps(
                 input_name = input_name_fn(parent_node_info)
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
+    check_specs_by_output_name = cast(
+        Dict[str, AssetCheckSpec],
+        _validate_and_assign_output_names_to_check_specs(check_specs, list(asset_outs.keys())),
+    )
+
     return (
         asset_deps,
         asset_ins,
@@ -681,6 +750,14 @@ def get_asset_deps(
         group_names_by_key,
         freshness_policies_by_key,
         auto_materialize_policies_by_key,
+        check_specs_by_output_name,
         fqns_by_output_name,
         metadata_by_output_name,
     )
+
+
+def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
+    has_self_dependency = dagster_metadata.get("has_self_dependency", False)
+
+    return has_self_dependency

@@ -100,7 +100,7 @@ In order to store static partitioned assets in BigQuery, you must specify `parti
 ```python file=/integrations/bigquery/reference/static_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
 
 
 @asset(
@@ -109,7 +109,7 @@ from dagster import StaticPartitionsDefinition, asset
     ),
     metadata={"partition_expr": "SPECIES"},
 )
-def iris_data_partitioned(context) -> pd.DataFrame:
+def iris_data_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
@@ -140,7 +140,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -157,14 +157,14 @@ Like static partitioned assets, you can specify `partition_expr` metadata on the
 ```python file=/integrations/bigquery/reference/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
     metadata={"partition_expr": "TIMESTAMP_SECONDS(TIME)"},
 )
-def iris_data_per_day(context) -> pd.DataFrame:
+def iris_data_per_day(context: AssetExecutionContext) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
 
     # get_iris_data_for_date fetches all of the iris data for a given date,
@@ -188,7 +188,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -209,6 +209,7 @@ The BigQuery I/O manager can also store data partitioned on multiple dimensions.
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -229,8 +230,8 @@ from dagster import (
         "partition_expr": {"date": "TIMESTAMP_SECONDS(TIME)", "species": "SPECIES"}
     },
 )
-def iris_data_partitioned(context) -> pd.DataFrame:
-    partition = partition = context.partition_key.keys_by_dimension
+def iris_data_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]
 
@@ -249,7 +250,7 @@ def iris_cleaned(iris_data_partitioned: pd.DataFrame):
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the static partition and time-window partition sections to craft the correct `SELECT` statement.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
 SELECT *
@@ -267,17 +268,31 @@ SELECT *
 
 You may want to have different assets stored in different BigQuery datasets. The BigQuery I/O manager allows you to specify the dataset in several ways.
 
-If you want all of your assets to be stored in the same dataset, you can specify the dataset as configuration to the I/O manager, like we did in [Step 1: Configure the BigQuery I/O manager](/integrations/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
+You can specify the default dataset where data will be stored as configuration to the I/O manager, like we did in [Step 1: Configure the BigQuery I/O manager](/integrations/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
 
-If you want to store assets in different datasets, you can specify the dataset as part of the the asset's asset key:
+If you want to store assets in different datasets, you can specify the dataset as metadata:
 
-```python file=/integrations/bigquery/reference/dataset.py startafter=start_asset_key endbefore=end_asset_key
-import pandas as pd
+```python file=/integrations/bigquery/reference/dataset.py startafter=start_metadata endbefore=end_metadata dedent=4
+daffodil_data = SourceAsset(key=["daffodil_data"], metadata={"schema": "daffodil"})
 
-from dagster import SourceAsset, asset
+@asset(metadata={"schema": "iris"})
+def iris_data() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+```
 
+You can also specify the dataset as part of the asset's asset key:
+
+```python file=/integrations/bigquery/reference/dataset.py startafter=start_asset_key endbefore=end_asset_key dedent=4
 daffodil_data = SourceAsset(key=["gcp", "bigquery", "daffodil", "daffodil_data"])
-
 
 @asset(key_prefix=["gcp", "bigquery", "iris"])
 def iris_data() -> pd.DataFrame:
@@ -296,11 +311,22 @@ def iris_data() -> pd.DataFrame:
 The dataset will be the last prefix before the asset's name. In this example, the `iris_data` asset will be stored in the `IRIS` dataset, and the `daffodil_data` asset will be found in the `DAFFODIL` dataset.
 
 <Note>
-  The two options for specifying the dataset are mutually exclusive. If you
-  provide <code>dataset</code> configuration to the I/O manager, you cannot also
-  provide it via the asset key and vice versa. If no <code>dataset</code> is
-  provided, either from configuration or asset keys, the default dataset{" "}
-  <code>PUBLIC</code> will be used.
+  The dataset is determined in this order:
+  <ol>
+    <li>If the dataset is set via metadata, that dataset will be used</li>
+    <li>
+      Otherwise, the dataset set as configuration on the I/O manager will be
+      used
+    </li>
+    <li>
+      Otherwise, if there is a <code>key_prefix</code>, that dataset will be
+      used
+    </li>
+    <li>
+      If none of the above are provided, the default dataset will be{" "}
+      <code>PUBLIC</code>
+    </li>
+  </ol>
 </Note>
 
 ---
@@ -415,13 +441,13 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import AssetExecutionContext, Definitions, asset
 
 BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_data(context) -> DataFrame:
+def iris_data(context: AssetExecutionContext) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(

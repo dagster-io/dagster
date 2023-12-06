@@ -481,7 +481,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
         context = self.get_resource_context()
         default_flags = {
             k: v
-            for k, v in self._get_non_none_public_field_values().items()
+            for k, v in self._get_non_default_public_field_values().items()
             if k not in COMMON_OPTION_KEYS
         }
 
@@ -502,7 +502,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
         return self.get_dbt_client()
 
 
-@deprecated(breaking_version="0.21", additional_warn_text="Use DbtCli instead.")
+@deprecated(breaking_version="0.21", additional_warn_text="Use DbtCliResource instead.")
 @dagster_maintained_resource
 @resource(config_schema=DbtCliClientResource.to_config_schema())
 def dbt_cli_resource(context) -> DbtCliClient:

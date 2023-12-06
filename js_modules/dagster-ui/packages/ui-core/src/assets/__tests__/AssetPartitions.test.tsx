@@ -35,10 +35,13 @@ jest.mock('../AssetPartitionList', () => ({
   ),
 }));
 
-const SingleDimensionAssetPartitions: React.FC<{
+const SingleDimensionAssetPartitions = ({
+  assetKey,
+  mocks,
+}: {
   assetKey: AssetKeyInput;
   mocks?: MockedResponse[];
-}> = ({assetKey, mocks}) => {
+}) => {
   const [params, setParams] = React.useState<AssetViewParams>({});
   return (
     <MemoryRouter>

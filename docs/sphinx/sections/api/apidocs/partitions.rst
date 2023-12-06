@@ -25,6 +25,8 @@ Partitions Definitions
 
 .. autoclass:: DynamicPartitionsDefinition
 
+.. autoclass:: PartitionKeyRange
+
 Partitioned Schedules
 =====================
 

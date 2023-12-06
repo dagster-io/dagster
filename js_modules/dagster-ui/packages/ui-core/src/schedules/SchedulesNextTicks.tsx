@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   DialogBody,
   DialogFooter,
   Dialog,
@@ -16,8 +15,11 @@ import {
   Spinner,
   Table,
   Subheading,
-  StyledReadOnlyCodeMirror,
   ExternalAnchorButton,
+  StyledRawCodeMirror,
+  colorTextLight,
+  colorAccentYellow,
+  colorBackgroundYellow,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -58,9 +60,11 @@ interface ScheduleTick {
   repoAddress: RepoAddress;
 }
 
-export const SchedulesNextTicks: React.FC<{
+interface Props {
   repos: RepositoryForNextTicksFragment[];
-}> = React.memo(({repos}) => {
+}
+
+export const SchedulesNextTicks = React.memo(({repos}: Props) => {
   const nextTicks: ScheduleTick[] = [];
   let anyPipelines = false;
   let anySchedules = false;
@@ -187,11 +191,13 @@ export const SchedulesNextTicks: React.FC<{
   );
 });
 
-const NextTickMenu: React.FC<{
+interface NextTickMenuProps {
   repoAddress: RepoAddress;
   schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
-}> = React.memo(({repoAddress, schedule, tickTimestamp}) => {
+}
+
+const NextTickMenu = React.memo(({repoAddress, schedule, tickTimestamp}: NextTickMenuProps) => {
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
     scheduleName: schedule.name,
@@ -249,13 +255,19 @@ const NextTickMenu: React.FC<{
   );
 });
 
-const NextTickMenuItems: React.FC<{
+const NextTickMenuItems = ({
+  repoAddress,
+  schedule,
+  evaluationResult,
+  loading,
+  onItemOpen,
+}: {
   repoAddress: RepoAddress;
   evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
   schedule: ScheduleNextFiveTicksFragment;
   loading: boolean;
   onItemOpen: (value: boolean) => void;
-}> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
+}) => {
   if (!evaluationResult) {
     return <MenuItem text="Could not preview tick for this schedule" />;
   }
@@ -309,22 +321,27 @@ const NextTickMenuItems: React.FC<{
   );
 };
 
-const NextTickDialog: React.FC<{
+const NextTickDialog = ({
+  repoAddress,
+  evaluationResult,
+  schedule,
+  tickTimestamp,
+  setOpen,
+  isOpen,
+}: {
   repoAddress: RepoAddress;
   isOpen: boolean;
   setOpen: (value: boolean) => void;
   evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
   schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
-}> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
-  const [
-    selectedRunRequest,
-    setSelectedRunRequest,
-  ] = React.useState<ScheduleFutureTickRunRequestFragment | null>(
-    evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
-      ? evaluationResult.runRequests[0]!
-      : null,
-  );
+}) => {
+  const [selectedRunRequest, setSelectedRunRequest] =
+    React.useState<ScheduleFutureTickRunRequestFragment | null>(
+      evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
+        ? evaluationResult.runRequests[0]!
+        : null,
+    );
 
   const copy = useCopyToClipboard();
 
@@ -359,15 +376,12 @@ const NextTickDialog: React.FC<{
           ) : null}
         </Box>
         <div>
-          <Box
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            padding={{left: 24, bottom: 16}}
-          >
+          <Box border="bottom" padding={{left: 24, bottom: 16}}>
             <Subheading>Config</Subheading>
           </Box>
-          <StyledReadOnlyCodeMirror
+          <StyledRawCodeMirror
             value={selectedRunRequest.runConfigYaml}
-            options={{lineNumbers: true, mode: 'yaml'}}
+            options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
           />
         </div>
       </Box>
@@ -410,7 +424,7 @@ const NextTickDialog: React.FC<{
                         underline={false}
                       >
                         <Group direction="row" spacing={8} alignItems="center">
-                          <Icon name="open_in_new" color={Colors.Gray400} />
+                          <Icon name="open_in_new" color={colorTextLight()} />
                           <span>View config</span>
                         </Group>
                       </ButtonLink>
@@ -566,7 +580,7 @@ const RunRequestBody = styled.div`
 `;
 
 const SkipWrapper = styled.div`
-  background-color: #fdfcf2;
-  border: 1px solid ${Colors.Yellow500};
+  background-color: ${colorBackgroundYellow()};
+  border: 1px solid ${colorAccentYellow()};
   border-radius: 3px;
 `;

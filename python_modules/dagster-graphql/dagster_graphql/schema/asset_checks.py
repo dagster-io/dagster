@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import TYPE_CHECKING, Optional, Sequence, Union, cast
 
 import dagster._check as check
 import graphene
@@ -7,7 +7,8 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
+from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -21,6 +22,11 @@ from dagster_graphql.schema.util import non_null_list
 
 from .asset_key import GrapheneAssetKey
 from .util import ResolveInfo
+
+if TYPE_CHECKING:
+    from ..implementation.asset_checks_loader import (
+        AssetChecksExecutionForLatestMaterializationLoader,
+    )
 
 GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
     AssetCheckExecutionResolvedStatus
@@ -53,6 +59,8 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
     targetMaterialization = graphene.Field(GrapheneAssetCheckEvaluationTargetMaterializationData)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
     severity = graphene.NonNull(GrapheneAssetCheckSeverity)
+
+    # NOTE: this should be renamed passed
     success = graphene.NonNull(graphene.Boolean)
 
     class Meta:
@@ -74,7 +82,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 
         self.metadataEntries = list(iterate_metadata_entries(evaluation_data.metadata))
         self.severity = evaluation_data.severity
-        self.success = evaluation_data.success
+        self.success = evaluation_data.passed
         self.checkName = evaluation_data.check_name
         self.assetKey = evaluation_data.asset_key
 
@@ -87,6 +95,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     timestamp = graphene.Field(
         graphene.NonNull(graphene.Float), description="When the check run started"
     )
+    stepKey = graphene.Field(graphene.String)
 
     class Meta:
         name = "AssetCheckExecution"
@@ -101,29 +110,44 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self.runId = execution.run_id
         self.status = status
         self.evaluation = (
-            GrapheneAssetCheckEvaluation(execution.evaluation_event)
-            if execution.evaluation_event
+            GrapheneAssetCheckEvaluation(execution.event)
+            if execution.event
+            and execution.event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION
             else None
         )
         self.timestamp = execution.create_timestamp
+        self.stepKey = execution.event.step_key if execution.event else None
+
+
+class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
+    class Meta:
+        name = "AssetCheckCanExecuteIndividually"
+
+    CAN_EXECUTE = "CAN_EXECUTE"
+    REQUIRES_MATERIALIZATION = "REQUIRES_MATERIALIZATION"
+    NEEDS_USER_CODE_UPGRADE = "NEEDS_USER_CODE_UPGRADE"
 
 
 class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
-    executions = graphene.Field(
-        non_null_list(GrapheneAssetCheckExecution),
-        limit=graphene.NonNull(graphene.Int),
-        cursor=graphene.String(),
-    )
+    jobNames = non_null_list(graphene.String)
     executionForLatestMaterialization = graphene.Field(GrapheneAssetCheckExecution)
+    canExecuteIndividually = graphene.NonNull(GrapheneAssetCheckCanExecuteIndividually)
 
     class Meta:
         name = "AssetCheck"
 
-    def __init__(self, asset_check: ExternalAssetCheck):
+    def __init__(
+        self,
+        asset_check: ExternalAssetCheck,
+        can_execute_individually,
+        execution_loader: "AssetChecksExecutionForLatestMaterializationLoader",
+    ):
         self._asset_check = asset_check
+        self._can_execute_individually = can_execute_individually
+        self._execution_loader = execution_loader
 
     def resolve_assetKey(self, _):
         return self._asset_check.asset_key
@@ -134,27 +158,18 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_description(self, _) -> Optional[str]:
         return self._asset_check.description
 
-    def resolve_executions(
-        self, graphene_info: ResolveInfo, **kwargs
-    ) -> List[GrapheneAssetCheckExecution]:
-        from dagster_graphql.implementation.fetch_asset_checks import (
-            fetch_executions,
-        )
-
-        return fetch_executions(
-            graphene_info.context.instance, self._asset_check, kwargs["limit"], kwargs.get("cursor")
-        )
+    def resolve_jobNames(self, _) -> Sequence[str]:
+        return self._asset_check.job_names
 
     def resolve_executionForLatestMaterialization(
-        self, graphene_info: ResolveInfo
+        self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetCheckExecution]:
-        from dagster_graphql.implementation.fetch_asset_checks import (
-            fetch_execution_for_latest_materialization,
+        return self._execution_loader.get_execution_for_latest_materialization(
+            self._asset_check.key
         )
 
-        return fetch_execution_for_latest_materialization(
-            graphene_info.context.instance, self._asset_check
-        )
+    def resolve_canExecuteIndividually(self, _) -> GrapheneAssetCheckCanExecuteIndividually:
+        return self._can_execute_individually
 
 
 class GrapheneAssetChecks(graphene.ObjectType):
@@ -172,10 +187,47 @@ class GrapheneAssetCheckNeedsMigrationError(graphene.ObjectType):
         name = "AssetCheckNeedsMigrationError"
 
 
+class GrapheneAssetCheckNeedsAgentUpgradeError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AssetCheckNeedsAgentUpgradeError"
+
+
+class GrapheneAssetCheckNeedsUserCodeUpgrade(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AssetCheckNeedsUserCodeUpgrade"
+
+
+AssetChecksOrErrorUnion = Union[
+    GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
+    GrapheneAssetChecks,
+]
+
+
 class GrapheneAssetChecksOrError(graphene.Union):
     class Meta:
         types = (
             GrapheneAssetChecks,
             GrapheneAssetCheckNeedsMigrationError,
+            GrapheneAssetCheckNeedsUserCodeUpgrade,
+            GrapheneAssetCheckNeedsAgentUpgradeError,
         )
         name = "AssetChecksOrError"
+
+
+class GrapheneAssetCheckHandle(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetCheckhandle"
+
+    def __init__(self, handle: AssetCheckKey):
+        super().__init__(name=handle.name, assetKey=GrapheneAssetKey(path=handle.asset_key.path))

@@ -1,4 +1,12 @@
-import {Colors, IconName, Icon} from '@dagster-io/ui-components';
+import {
+  IconName,
+  Icon,
+  colorTextLight,
+  colorTextDefault,
+  colorBackgroundLight,
+  colorAccentLime,
+  colorTextLighter,
+} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -38,7 +46,7 @@ interface ItemProps {
   result: Fuse.FuseResult<SearchResult>;
 }
 
-const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickResult, result}) => {
+const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
 
@@ -61,7 +69,10 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickR
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <Icon name={iconForType(item.type)} color={isHighlight ? Colors.Gray800 : Colors.Gray500} />
+        <Icon
+          name={iconForType(item.type)}
+          color={isHighlight ? colorTextDefault() : colorTextLight()}
+        />
         <div style={{marginLeft: '12px'}}>
           <Label isHighlight={isHighlight}>{item.label}</Label>
           <Description isHighlight={isHighlight}>{item.description}</Description>
@@ -100,7 +111,7 @@ export const SearchResults = (props: Props) => {
 };
 
 const NoResults = styled.div`
-  color: ${Colors.Gray500};
+  color: ${colorTextLighter()};
   font-size: 16px;
   padding: 16px;
 `;
@@ -123,10 +134,9 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.Gray100 : 'transparent')};
-  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.HighlightGreen : 'transparent')} 4px 0 0
-    inset;
-  color: ${Colors.Gray700};
+  background-color: ${({isHighlight}) => (isHighlight ? colorBackgroundLight() : 'transparent')};
+  box-shadow: ${({isHighlight}) => (isHighlight ? colorAccentLime() : 'transparent')} 4px 0 0 inset;
+  color: ${colorTextLight()};
   display: flex;
   flex-direction: row;
   list-style: none;
@@ -134,7 +144,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${Colors.Gray100};
+    background-color: ${colorBackgroundLight()};
   }
 `;
 
@@ -153,12 +163,12 @@ const ResultLink = styled(Link)`
 `;
 
 const Label = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? Colors.Gray900 : Colors.Gray700)};
+  color: ${({isHighlight}) => (isHighlight ? colorTextDefault() : colorTextLight())};
   font-weight: 500;
 `;
 
 const Description = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? Colors.Gray900 : Colors.Gray700)};
+  color: ${({isHighlight}) => (isHighlight ? colorTextDefault() : colorTextLight())};
   font-size: 12px;
   max-width: 530px;
   overflow-x: hidden;

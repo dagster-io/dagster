@@ -6,7 +6,7 @@ def test_default(ecs, instance, launch_run):
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     container_definitions = task_definition["taskDefinition"]["containerDefinitions"]
 
@@ -23,7 +23,7 @@ def test_include_sidecars_with_depends_on(ecs, instance_cm, launch_run, task_def
         # A new task definition is created
         task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
         assert len(task_definitions) == len(initial_task_definitions) + 1
-        task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+        task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
         container_definitions = task_definition["taskDefinition"]["containerDefinitions"]
 

@@ -3,13 +3,13 @@ import {
   Button,
   ButtonLink,
   Checkbox,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
   MetadataTable,
   Subheading,
 } from '@dagster-io/ui-components';
+import {DAGSTER_THEME_KEY, DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
 import * as React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -17,11 +17,12 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {HourCycleSelect} from './time/HourCycleSelect';
+import {ThemeSelect} from './time/ThemeSelect';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
-type VisibleFlag = {key: string; flagType: FeatureFlagType};
+type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlagType};
 
 interface DialogProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ interface DialogProps {
   visibleFlags: VisibleFlag[];
 }
 
-export const UserSettingsDialog: React.FC<DialogProps> = ({isOpen, onClose, visibleFlags}) => {
+export const UserSettingsDialog = ({isOpen, onClose, visibleFlags}: DialogProps) => {
   return (
     <Dialog
       title="User settings"
@@ -44,14 +45,14 @@ export const UserSettingsDialog: React.FC<DialogProps> = ({isOpen, onClose, visi
 
 interface DialogContentProps {
   onClose: OnCloseFn;
-  visibleFlags: {key: string; flagType: FeatureFlagType}[];
+  visibleFlags: {key: string; label?: React.ReactNode; flagType: FeatureFlagType}[];
 }
 
 /**
  * Separate the content from the `Dialog` so that we don't prepare its state before
  * we want to render it.
  */
-const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visibleFlags}) => {
+const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
   const [flags, setFlags] = React.useState<FeatureFlagType[]>(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 
@@ -60,8 +61,16 @@ const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visib
     (value: any) => (typeof value === 'boolean' ? value : true),
   );
 
+  const [theme, setTheme] = useStateWithStorage(DAGSTER_THEME_KEY, (value: any) => {
+    if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
+      return value;
+    }
+    return DagsterTheme.Legacy;
+  });
+
   const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
+  const initialTheme = React.useRef(theme);
 
   React.useEffect(() => {
     setFeatureFlags(flags);
@@ -85,7 +94,8 @@ const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visib
 
   const anyChange =
     initialFlagState.current !== JSON.stringify([...flags.sort()]) ||
-    initialShortcutsEnabled.current !== shortcutsEnabled;
+    initialShortcutsEnabled.current !== shortcutsEnabled ||
+    initialTheme.current !== theme;
 
   const handleClose = (event: React.SyntheticEvent<HTMLElement>) => {
     if (anyChange) {
@@ -122,6 +132,27 @@ const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visib
                 ),
               },
               {
+                key: 'Theme',
+                label: (
+                  <div>
+                    Theme (
+                    <a
+                      href="https://github.com/dagster-io/dagster/discussions/18439"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Learn more
+                    </a>
+                    )
+                  </div>
+                ),
+                value: (
+                  <Box margin={{bottom: 4}}>
+                    <ThemeSelect theme={theme} onChange={setTheme} />
+                  </Box>
+                ),
+              },
+              {
                 key: 'Enable keyboard shortcuts',
                 value: (
                   <Checkbox
@@ -134,13 +165,14 @@ const UserSettingsDialogContent: React.FC<DialogContentProps> = ({onClose, visib
             ]}
           />
         </Box>
-        <Box padding={{top: 16}} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+        <Box padding={{top: 16}} border="top">
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
           <MetadataTable
-            rows={visibleFlags.map(({key, flagType}) => ({
+            rows={visibleFlags.map(({key, label, flagType}) => ({
               key,
+              label,
               value: (
                 <Checkbox
                   format="switch"

@@ -76,7 +76,7 @@ class AssetValueLoader:
         python_type: Optional[Type[object]] = None,
         partition_key: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        resource_config: Optional[Any] = None,
+        resource_config: Optional[Mapping[str, Any]] = None,
     ) -> object:
         """Loads the contents of an asset as a Python object.
 

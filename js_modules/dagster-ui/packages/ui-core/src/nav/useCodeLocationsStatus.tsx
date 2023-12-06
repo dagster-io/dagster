@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
+import {Box, ButtonLink, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
@@ -264,9 +264,9 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
 
 const alreadyViewingCodeLocations = () => document.location.pathname.endsWith('/locations');
 
-const ViewCodeLocationsButton: React.FC<{onClick: () => void}> = ({onClick}) => {
+const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
   return (
-    <ViewButton onClick={onClick} color={Colors.White}>
+    <ViewButton onClick={onClick} color={CoreColors.White}>
       View
     </ViewButton>
   );

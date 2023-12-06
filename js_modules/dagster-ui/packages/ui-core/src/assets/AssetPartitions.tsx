@@ -1,6 +1,5 @@
 import {
   Box,
-  Colors,
   Icon,
   Menu,
   MenuItem,
@@ -8,6 +7,9 @@ import {
   Spinner,
   Subheading,
   Tooltip,
+  colorAccentGray,
+  colorBackgroundDefault,
+  colorBackgroundLight,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -66,13 +68,13 @@ enum SortType {
   REVERSE_ALPHABETICAL,
 }
 
-export const AssetPartitions: React.FC<Props> = ({
+export const AssetPartitions = ({
   assetKey,
   assetPartitionDimensions,
   params,
   setParams,
   dataRefreshHint,
-}) => {
+}: Props) => {
   const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
@@ -189,10 +191,7 @@ export const AssetPartitions: React.FC<Props> = ({
   return (
     <>
       {timeDimensionIdx !== -1 && (
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
+        <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
             partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
             health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
@@ -210,7 +209,7 @@ export const AssetPartitions: React.FC<Props> = ({
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
       >
         <div data-testid={testId('partitions-selected')}>
           {countsFiltered.toLocaleString()} Partitions Selected
@@ -230,14 +229,14 @@ export const AssetPartitions: React.FC<Props> = ({
               key={selection.dimension.name}
               style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
               flex={{direction: 'column'}}
-              border={{side: 'right', color: Colors.KeylineGray, width: 1}}
-              background={Colors.Gray50}
+              border="right"
+              background={colorBackgroundLight()}
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
                 flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-                background={Colors.White}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                background={colorBackgroundDefault()}
+                border="bottom"
                 padding={{horizontal: 24, vertical: 8}}
               >
                 <div>
@@ -318,7 +317,7 @@ export const AssetPartitions: React.FC<Props> = ({
                   position="bottom-left"
                 >
                   <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
-                    <Icon name="sort_by_alpha" color={Colors.Gray400} />
+                    <Icon name="sort_by_alpha" color={colorAccentGray()} />
                   </SortButton>
                 </Popover>
               </Box>

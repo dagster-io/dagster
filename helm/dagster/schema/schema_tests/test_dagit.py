@@ -547,7 +547,7 @@ def test_env_configmap(configmap_template):
         )
     )
     [cm] = configmap_template.render(helm_values)
-    assert len(cm.data) == 7
+    assert len(cm.data) == 5
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert "TEST_ENV" not in cm.data
 
@@ -558,6 +558,6 @@ def test_env_configmap(configmap_template):
         )
     )
     [cm] = configmap_template.render(helm_values)
-    assert len(cm.data) == 8
+    assert len(cm.data) == 6
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert cm.data["TEST_ENV"] == "test_value"

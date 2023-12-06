@@ -1,5 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  NonIdealState,
+  Spinner,
+  TextInput,
+  Tooltip,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -89,9 +96,8 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     return permissionedSchedules.map(({name}) => makeScheduleKey(repoAddress, name));
   }, [permissionedSchedules, repoAddress]);
 
-  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    permissionedKeys,
-  );
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(permissionedKeys);
 
   const checkedSchedules = React.useMemo(() => {
     return permissionedSchedules
@@ -112,7 +118,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading schedules…</div>
+            <div style={{color: colorTextLight()}}>Loading schedules…</div>
           </Box>
         </Box>
       );
@@ -202,7 +208,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       {activeFiltersJsx.length ? (
         <Box
           padding={{vertical: 8, horizontal: 24}}
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          border="top-and-bottom"
           flex={{direction: 'row', gap: 8}}
         >
           {activeFiltersJsx}

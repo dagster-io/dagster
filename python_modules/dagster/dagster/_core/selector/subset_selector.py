@@ -23,6 +23,7 @@ from typing import (
 
 from typing_extensions import Literal, TypeAlias
 
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -84,6 +85,7 @@ class AssetSelectionData(
         "_AssetSelectionData",
         [
             ("asset_selection", AbstractSet[AssetKey]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -96,12 +98,20 @@ class AssetSelectionData(
             pipeline snapshot lineage.
     """
 
-    def __new__(cls, asset_selection: AbstractSet[AssetKey], parent_job_def: "JobDefinition"):
+    def __new__(
+        cls,
+        asset_selection: AbstractSet[AssetKey],
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
+        parent_job_def: "JobDefinition",
+    ):
         from dagster._core.definitions.job_definition import JobDefinition
+
+        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
         return super(AssetSelectionData, cls).__new__(
             cls,
             asset_selection=check.set_param(asset_selection, "asset_selection", AssetKey),
+            asset_check_selection=asset_check_selection,
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
@@ -446,9 +456,7 @@ def parse_step_selection(
         subset = clause_to_subset(graph, clause, lambda x: x)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified steps to execute found for step_selection={requested}".format(
-                    requested=step_selection
-                ),
+                f"No qualified steps to execute found for step_selection={step_selection}",
             )
         steps_set.update(subset)
 

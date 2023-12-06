@@ -2,7 +2,7 @@ import os
 from glob import glob
 from typing import List, Optional
 
-from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.steps.test_project import test_project_depends_fn
@@ -48,8 +48,10 @@ def build_library_packages_steps() -> List[BuildkiteStep]:
     )
 
 
-def build_dagit_screenshot_steps() -> List[BuildkiteStep]:
-    return _build_steps_from_package_specs([PackageSpec("docs/dagit-screenshot", run_pytest=False)])
+def build_dagster_ui_screenshot_steps() -> List[BuildkiteStep]:
+    return _build_steps_from_package_specs(
+        [PackageSpec("docs/dagster-ui-screenshot", run_pytest=False)]
+    )
 
 
 def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[BuildkiteStep]:
@@ -230,7 +232,7 @@ def k8s_extra_cmds(version: str, _) -> List[str]:
 
 gcp_extra_cmds = (
     [
-        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+        rf"aws s3 cp s3://\${{BUILDKITE_SECRETS_BUCKET}}/{GCP_CREDS_FILENAME} "
         + GCP_CREDS_LOCAL_FILE,
         "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
     ]
@@ -359,7 +361,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             "api_tests",
             "cli_tests",
-            "core_tests",
+            "core_tests_pydantic1",
+            "core_tests_pydantic2",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",
@@ -445,10 +448,21 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "dbt_14X_legacy",
             "dbt_15X_legacy",
             "dbt_16X_legacy",
+            "dbt_17X_legacy",
             "dbt_13X",
             "dbt_14X",
             "dbt_15X",
             "dbt_16X",
+            "dbt_17X",
+            "dbt_14X_pydantic1",
+            "dbt_14X_legacy_pydantic1",
+        ],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-snowflake",
+        pytest_tox_factors=[
+            "pydantic1",
+            "pydantic2",
         ],
     ),
     PackageSpec(
@@ -514,6 +528,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # pyspark not supported on 3.11
             AvailablePythonVersion.V3_11,
+        ],
+        pytest_tox_factors=[
+            "pydantic1",
+            "pydantic2",
         ],
     ),
     PackageSpec(

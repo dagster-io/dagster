@@ -3,7 +3,7 @@ from typing import Callable, List, Optional
 
 import packaging.version
 
-from ..defines import GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
+from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
 from ..package_spec import PackageSpec
 from ..python_version import AvailablePythonVersion
 from ..utils import (
@@ -248,7 +248,7 @@ def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
     # If integration tests are disabled, we won't have any gcp credentials to download.
     if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         cmds += [
-            r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+            rf"aws s3 cp s3://\${{BUILDKITE_SECRETS_BUCKET}}/{GCP_CREDS_FILENAME} "
             + GCP_CREDS_LOCAL_FILE,
             "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
         ]

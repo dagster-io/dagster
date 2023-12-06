@@ -4,6 +4,7 @@ from typing import Iterator, Sequence
 import sqlalchemy as db
 from alembic import op
 from sqlalchemy import inspect
+from sqlalchemy.dialects import sqlite
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
@@ -48,7 +49,7 @@ def upgrading_instance(instance: DagsterInstance) -> Iterator[None]:
     global _UPGRADING_INSTANCE  # noqa: PLW0603
     check.invariant(_UPGRADING_INSTANCE is None, "update already in progress")
     try:
-        _UPGRADING_INSTANCE = instance  # noqa: PLW0603
+        _UPGRADING_INSTANCE = instance
         yield
     finally:
         _UPGRADING_INSTANCE = None
@@ -74,7 +75,12 @@ def create_0_10_0_run_tables() -> None:
     if not has_table("secondary_indexes"):
         op.create_table(
             "secondary_indexes",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("name", db.String, unique=True),
             db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
             db.Column("migration_completed", db.DateTime),
@@ -97,7 +103,12 @@ def create_0_10_0_event_log_tables() -> None:
     if not has_table("secondary_indexes"):
         op.create_table(
             "secondary_indexes",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("name", db.String, unique=True),
             db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
             db.Column("migration_completed", db.DateTime),
@@ -106,7 +117,12 @@ def create_0_10_0_event_log_tables() -> None:
     if not has_table("asset_keys"):
         op.create_table(
             "asset_keys",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("asset_key", db.String, unique=True),
             db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
         )
@@ -119,7 +135,12 @@ def create_0_10_0_schedule_tables() -> None:
     if not has_table("jobs"):
         op.create_table(
             "jobs",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("job_origin_id", db.String(255), unique=True),
             db.Column("repository_origin_id", db.String(255)),
             db.Column("status", db.String(63)),
@@ -132,7 +153,12 @@ def create_0_10_0_schedule_tables() -> None:
     if not has_table("job_ticks"):
         op.create_table(
             "job_ticks",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("job_origin_id", db.String(255), index=True),
             db.Column("status", db.String(63)),
             db.Column("type", db.String(63)),
@@ -162,7 +188,12 @@ def create_bulk_actions_table() -> None:
     if not has_table("bulk_actions"):
         op.create_table(
             "bulk_actions",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("key", db.String(32), unique=True, nullable=False),
             db.Column("status", db.String(255), nullable=False),
             db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
@@ -271,7 +302,12 @@ def create_schedule_secondary_index_table() -> None:
     if not has_table("secondary_indexes"):
         op.create_table(
             "secondary_indexes",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("name", db.String, unique=True),
             db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
             db.Column("migration_completed", db.DateTime),
@@ -286,7 +322,12 @@ def create_instigators_table() -> None:
     if not has_table("instigators"):
         op.create_table(
             "instigators",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("selector_id", db.String(255), unique=True),
             db.Column("repository_selector_id", db.String(255)),
             db.Column("status", db.String(63)),

@@ -19,6 +19,7 @@ import Link from '../Link';
 
 import 'react-medium-image-zoom/dist/styles.css';
 import {RenderedDAG} from './RenderedDAG';
+import EnvVarsBenefits from './includes/EnvVarsBenefits.mdx';
 import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
 import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
@@ -58,6 +59,10 @@ const useHash = (): string => {
 
   return hash;
 };
+
+//////////////////////
+//    PYOBJECT      //
+//////////////////////
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -117,6 +122,10 @@ const PyObject: React.FunctionComponent<{
   );
 };
 
+//////////////////////
+//       CHECK      //
+//////////////////////
+
 const Check = () => {
   return (
     <svg
@@ -134,6 +143,10 @@ const Check = () => {
   );
 };
 
+//////////////////////
+//       CROSS      //
+//////////////////////
+
 const Cross = () => {
   return (
     <svg
@@ -150,6 +163,10 @@ const Cross = () => {
     </svg>
   );
 };
+
+//////////////////////
+//    LINKGRID      //
+//////////////////////
 
 const LinkGrid = ({children}) => {
   return (
@@ -186,6 +203,10 @@ const getColorForString = (s: string) => {
   return colors[Math.abs(hashCode(s)) % colors.length];
 };
 
+//////////////////////
+//       BADGE      //
+//////////////////////
+
 const Badge = ({text}) => {
   const colors = getColorForString(text);
   return (
@@ -196,6 +217,10 @@ const Badge = ({text}) => {
     </span>
   );
 };
+
+//////////////////////
+//  LINK GRID ITEM  //
+//////////////////////
 
 const LinkGridItem = ({title, href, children, tags = []}) => {
   return (
@@ -249,6 +274,10 @@ const ADMONITION_STYLES = {
   },
 };
 
+//////////////////////
+//    CALLOUTS      //
+//////////////////////
+
 const Admonition = ({style, children}) => {
   const {colors, icon} = ADMONITION_STYLES[style];
   return (
@@ -281,6 +310,11 @@ const Warning = ({children}) => {
   return <Admonition style="warning">{children}</Admonition>;
 };
 
+
+//////////////////////
+//  CODE REF LINK   //
+//////////////////////
+
 const CodeReferenceLink = ({filePath, isInline, children}) => {
   const url = `https://github.com/dagster-io/dagster/tree/${LATEST_VERSION}/${filePath}`;
 
@@ -301,6 +335,10 @@ const CodeReferenceLink = ({filePath, isInline, children}) => {
     );
   }
 };
+
+//////////////////////
+//    REF TABLE     //
+//////////////////////
 
 const ReferenceTable = ({children}) => {
   return (
@@ -347,6 +385,10 @@ const InstanceDiagramBox = ({href = '#', className = '', children}) => {
   );
 };
 
+//////////////////////
+//       TODO       //
+//////////////////////
+
 const TODO = () => {
   return (
     <div className="h-48 w-full bg-red-100 flex justify-center items-center rounded-lg">
@@ -354,6 +396,10 @@ const TODO = () => {
     </div>
   );
 };
+
+////////////////////////
+// IMAGE PLACEHOLDER  //
+////////////////////////
 
 const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
   return (
@@ -363,17 +409,37 @@ const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
   );
 };
 
+////////////////////////
+// EXPERIMENTAL BADGE //
+////////////////////////
+
 const Experimental = () => {
   return (
-    <div className="experimental-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green">
+    <div className="experimental-tag">
       <span className="hidden">(</span>Experimental<span className="hidden">)</span>
     </div>
   );
 };
 
+////////////////////////
+//  DEPRECATED BADGE  //
+////////////////////////
+
+const Deprecated = () => {
+  return (
+    <div className="deprecated-tag">
+      <span className="hidden">(</span>Deprecated<span className="hidden">)</span>
+    </div>
+  );
+};
+
+//////////////////////
+//  LEGACY BADGE    //
+//////////////////////
+
 const Legacy = () => {
   return (
-    <div className="legacy-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-yellow-200 text-yellow-700">
+    <div className="legacy-tag">
       <span className="hidden">(</span>Legacy<span className="hidden">)</span>
     </div>
   );
@@ -395,6 +461,10 @@ const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) =>
     </pre>
   );
 };
+
+//////////////////////
+//    CODE BLOCKS   //
+//////////////////////
 
 interface CodeProps extends React.HTMLProps<HTMLElement> {
   dagimage?: string;
@@ -487,6 +557,10 @@ const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
   );
 };
 
+//////////////////////
+//  ARTICLE LISTS   //
+//////////////////////
+
 const ArticleList = ({children}) => {
   return (
     <div className="category-container">
@@ -523,6 +597,10 @@ const ArticleListItem = ({title, href}) => {
     </li>
   );
 };
+
+//////////////////////
+//  EXAMPLE BOXES   //
+//////////////////////
 
 const ExampleItemSmall = ({title, tags = []}) => {
   return (
@@ -564,6 +642,10 @@ const ExampleItem = ({title, hrefDoc = null, hrefCode, children, tags = []}) => 
     </div>
   );
 };
+
+//////////////////////
+//       TABS       //
+//////////////////////
 
 interface TabItem {
   name: string;
@@ -624,7 +706,7 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
                   'w-full py-3 text-sm font-bold leading-5',
                   'focus:outline-none border-gray-200',
                   selected
-                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    ? 'border-b-2 border-primary-500 text-primary-500 bg-gray-150'
                     : 'border-b hover:border-gray-500 hover:text-gray-700',
                 )
               }
@@ -670,6 +752,10 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
   );
 };
 
+//////////////////////
+//      IMAGES      //
+//////////////////////
+
 const Image = ({children, ...props}) => {
   /* Only version images when all conditions meet:
    * - use <Image> component in mdx
@@ -692,6 +778,10 @@ const Image = ({children, ...props}) => {
     </Zoom>
   );
 };
+
+//////////////////////
+//     BUTTONS      //
+//////////////////////
 
 const Button = ({
   children,
@@ -754,6 +844,7 @@ export default {
   TODO,
   PlaceholderImage,
   Experimental,
+  Deprecated,
   Legacy,
   Icons,
   ReferenceTable,
@@ -767,6 +858,7 @@ export default {
   BDCreateConfigureAgent,
   DbtModelAssetExplanation,
   EnvironmentVariablesIntro,
+  EnvVarsBenefits,
   K8sEnvVarsConfiguration,
   DockerEnvVarsConfiguration,
   AmazonEcsEnvVarsConfiguration,

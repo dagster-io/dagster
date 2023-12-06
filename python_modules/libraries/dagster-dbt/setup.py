@@ -18,8 +18,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-dbt",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="A Dagster integration for dbt",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt",
@@ -36,13 +36,14 @@ setup(
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
-        "dbt-core<1.7",
+        "dbt-core<1.8",
         "Jinja2",
         "networkx",
         "orjson",
         "requests",
         "rich",
         "typer>=0.9.0",
+        "packaging",
     ],
     extras_require={
         "test": [

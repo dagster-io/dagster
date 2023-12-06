@@ -24,7 +24,7 @@ interface Props {
   view?: AssetViewType;
 }
 
-export const VirtualizedAssetTable: React.FC<Props> = (props) => {
+export const VirtualizedAssetTable = (props: Props) => {
   const {
     headerCheckbox,
     prefixPath,

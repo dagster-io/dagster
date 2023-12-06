@@ -5,7 +5,6 @@ from dagster import AssetKey, InputContext, OutputContext, asset, build_output_c
 from dagster._check import CheckError
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -380,6 +379,22 @@ def test_asset_schema_defaults():
 
     assert table_slice.schema == "public"
 
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = output_context = build_output_context(
+        asset_key=asset_key, metadata={"schema": "schema2"}, resource_config=resource_config
+    )
+    table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
+
+    assert table_slice.schema == "schema2"
+
+    asset_key = AssetKey(["table1"])
+    output_context = output_context = build_output_context(
+        asset_key=asset_key, metadata={"schema": "schema1"}, resource_config=resource_config
+    )
+    table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
+
+    assert table_slice.schema == "schema1"
+
     resource_config_w_schema = {
         "database": "database_abc",
         "account": "account_abc",
@@ -407,10 +422,18 @@ def test_asset_schema_defaults():
     output_context = build_output_context(
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
-    with pytest.raises(DagsterInvalidDefinitionError):
-        table_slice = manager_w_schema._get_table_slice(  # noqa: SLF001
-            output_context, output_context
-        )
+    table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
+    assert table_slice.schema == "my_schema"
+
+    asset_key = AssetKey(["table1"])
+    output_context = build_output_context(
+        asset_key=asset_key,
+        metadata={"schema": "schema1"},
+        resource_config=resource_config_w_schema,
+    )
+
+    table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
+    assert table_slice.schema == "schema1"
 
 
 def test_output_schema_defaults():
@@ -452,10 +475,8 @@ def test_output_schema_defaults():
     output_context = build_output_context(
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config_w_schema
     )
-    with pytest.raises(DagsterInvalidDefinitionError):
-        table_slice = manager_w_schema._get_table_slice(  # noqa: SLF001
-            output_context, output_context
-        )
+    table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
+    assert table_slice.schema == "schema1"
 
 
 def test_handle_none_output():

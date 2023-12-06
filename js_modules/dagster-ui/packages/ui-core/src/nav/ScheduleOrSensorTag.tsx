@@ -1,11 +1,11 @@
 import {
   Box,
   ButtonLink,
-  Colors,
   Tag,
   Tooltip,
   FontFamily,
   MiddleTruncate,
+  colorLinkDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -20,12 +20,17 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 
-export const ScheduleOrSensorTag: React.FC<{
+export const ScheduleOrSensorTag = ({
+  schedules,
+  sensors,
+  repoAddress,
+  showSwitch = true,
+}: {
   schedules: ScheduleSwitchFragment[];
   sensors: SensorSwitchFragment[];
   repoAddress: RepoAddress;
   showSwitch?: boolean;
-}> = ({schedules, sensors, repoAddress, showSwitch = true}) => {
+}) => {
   const [open, setOpen] = React.useState(false);
 
   const scheduleCount = schedules.length;
@@ -44,7 +49,7 @@ export const ScheduleOrSensorTag: React.FC<{
     return (
       <>
         <Tag icon={icon}>
-          <ButtonLink onClick={() => setOpen(true)} color={Colors.Link}>
+          <ButtonLink onClick={() => setOpen(true)} color={colorLinkDefault()}>
             {buttonText}
           </ButtonLink>
         </Tag>
@@ -79,11 +84,15 @@ export const ScheduleOrSensorTag: React.FC<{
   return null;
 };
 
-const MatchingSchedule: React.FC<{
+const MatchingSchedule = ({
+  schedule,
+  repoAddress,
+  showSwitch,
+}: {
   schedule: ScheduleSwitchFragment;
   repoAddress: RepoAddress;
   showSwitch: boolean;
-}> = ({schedule, repoAddress, showSwitch}) => {
+}) => {
   const {cronSchedule, executionTimezone, scheduleState} = schedule;
   const running = scheduleState.status === 'RUNNING';
   const tag = (
@@ -129,11 +138,15 @@ const MatchingSchedule: React.FC<{
   );
 };
 
-const MatchingSensor: React.FC<{
+const MatchingSensor = ({
+  sensor,
+  repoAddress,
+  showSwitch,
+}: {
   sensor: SensorSwitchFragment;
   repoAddress: RepoAddress;
   showSwitch: boolean;
-}> = ({sensor, repoAddress, showSwitch}) => {
+}) => {
   const running = sensor.sensorState.status === 'RUNNING';
   return (
     <Tag intent={running ? 'primary' : 'none'} icon="sensors">

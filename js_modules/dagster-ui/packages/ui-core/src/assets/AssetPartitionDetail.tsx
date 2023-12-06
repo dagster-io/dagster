@@ -2,14 +2,19 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  Colors,
   Group,
   Heading,
   Icon,
+  MiddleTruncate,
   Mono,
   Spinner,
   Subheading,
   Tag,
+  colorAccentGray,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -23,7 +28,7 @@ import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AllIndividualEventsLink} from './AllIndividualEventsLink';
+import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
@@ -35,33 +40,33 @@ import {
   AssetPartitionLatestRunFragment,
   AssetPartitionDetailQuery,
   AssetPartitionDetailQueryVariables,
+  AssetPartitionStaleQuery,
+  AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 
-export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partitionKey: string}> = (
-  props,
-) => {
+export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partitionKey: string}) => {
   const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
     ASSET_PARTITION_DETAIL_QUERY,
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
 
-  const {materializations, observations, ...rest} = React.useMemo(() => {
+  const stale = useQuery<AssetPartitionStaleQuery, AssetPartitionStaleQueryVariables>(
+    ASSET_PARTITION_STALE_QUERY,
+    {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
+  );
+  const {materializations, observations, hasLineage, latestRunForPartition} = React.useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         materializations: [],
         observations: [],
         hasLineage: false,
-        staleCauses: [],
-        staleStatus: StaleStatus.FRESH,
         latestRunForPartition: null,
       };
     }
 
     return {
       stepKey: stepKeyForAsset(result.data.assetNodeOrError),
-      staleStatus: result.data.assetNodeOrError.staleStatus,
-      staleCauses: result.data.assetNodeOrError.staleCauses,
       latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
       materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
         (a, b) => Number(b.timestamp) - Number(a.timestamp),
@@ -75,6 +80,19 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     };
   }, [result.data]);
 
+  const {staleStatus, staleCauses} = React.useMemo(() => {
+    if (stale.data?.assetNodeOrError?.__typename !== 'AssetNode') {
+      return {
+        staleCauses: [],
+        staleStatus: StaleStatus.FRESH,
+      };
+    }
+    return {
+      staleStatus: stale.data.assetNodeOrError.staleStatus,
+      staleCauses: stale.data.assetNodeOrError.staleCauses,
+    };
+  }, [stale.data]);
+
   const latest = materializations[0];
 
   if (result.loading || !result.data) {
@@ -83,7 +101,11 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
 
   return (
     <AssetPartitionDetail
-      {...rest}
+      hasLineage={hasLineage}
+      hasStaleLoadingState={stale.loading}
+      latestRunForPartition={latestRunForPartition}
+      staleStatus={staleStatus}
+      staleCauses={staleCauses}
       assetKey={props.assetKey}
       group={{
         latest: latest || null,
@@ -103,17 +125,6 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
       ... on AssetNode {
         id
         opNames
-        staleStatus(partition: $partitionKey)
-        staleCauses(partition: $partitionKey) {
-          key {
-            path
-          }
-          reason
-          category
-          dependency {
-            path
-          }
-        }
         latestRunForPartition(partition: $partitionKey) {
           id
           ...AssetPartitionLatestRunFragment
@@ -143,24 +154,47 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
   ${ASSET_OBSERVATION_FRAGMENT}
 `;
 
-export const AssetPartitionDetail: React.FC<{
-  assetKey: AssetKey;
-  group: AssetEventGroup;
-  latestRunForPartition: AssetPartitionLatestRunFragment | null;
-  hasLineage: boolean;
-  hasLoadingState?: boolean;
-  stepKey?: string;
-  staleCauses?: LiveDataForNode['staleCauses'];
-  staleStatus?: LiveDataForNode['staleStatus'];
-}> = ({
+export const ASSET_PARTITION_STALE_QUERY = gql`
+  query AssetPartitionStaleQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        staleStatus(partition: $partitionKey)
+        staleCauses(partition: $partitionKey) {
+          key {
+            path
+          }
+          reason
+          category
+          dependency {
+            path
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const AssetPartitionDetail = ({
   assetKey,
   stepKey,
   group,
   hasLineage,
   hasLoadingState,
+  hasStaleLoadingState,
   latestRunForPartition,
   staleCauses,
   staleStatus,
+}: {
+  assetKey: AssetKey;
+  group: AssetEventGroup;
+  latestRunForPartition: AssetPartitionLatestRunFragment | null;
+  hasLineage: boolean;
+  hasLoadingState?: boolean;
+  hasStaleLoadingState?: boolean;
+  stepKey?: string;
+  staleCauses?: LiveDataForNode['staleCauses'];
+  staleStatus?: LiveDataForNode['staleStatus'];
 }) => {
   const {latest, partition, all} = group;
 
@@ -193,33 +227,40 @@ export const AssetPartitionDetail: React.FC<{
         )
       : [];
 
-  const prior = latest ? all.slice(all.indexOf(latest)) : all;
-
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
-      <Box
-        padding={{vertical: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        flex={{alignItems: 'center'}}
-      >
+      <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center'}}>
         {partition ? (
-          <Box flex={{gap: 12, alignItems: 'center'}}>
-            <Heading>{partition}</Heading>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto auto',
+              gap: 12,
+              alignItems: 'center',
+            }}
+            data-tooltip={partition}
+            data-tooltip-style={PartitionHeadingTooltipStyle}
+          >
+            <Heading>
+              <MiddleTruncate text={partition} />
+            </Heading>
             {hasLoadingState ? (
               <Spinner purpose="body-text" />
             ) : latest ? (
               <Tag intent="success">Materialized</Tag>
             ) : undefined}
-            {staleCauses && staleStatus ? (
+            {hasStaleLoadingState ? (
+              <Spinner purpose="body-text" />
+            ) : staleCauses && staleStatus ? (
               <StaleReasonsTags
                 liveData={{staleCauses, staleStatus}}
                 assetKey={assetKey}
                 include="all"
               />
             ) : undefined}
-          </Box>
+          </div>
         ) : (
-          <Heading color={Colors.Gray400}>No partition selected</Heading>
+          <Heading color={colorTextLight()}>No partition selected</Heading>
         )}
         <div style={{flex: 1}} />
       </Box>
@@ -228,7 +269,7 @@ export const AssetPartitionDetail: React.FC<{
           run={currentRun}
           stepKey={stepKey}
           padding={{horizontal: 0, vertical: 16}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
         />
       )}
       {currentRun && currentRunStatusMessage && (
@@ -246,7 +287,7 @@ export const AssetPartitionDetail: React.FC<{
 
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, minHeight: 76}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16}}
       >
         {!latest ? (
@@ -271,11 +312,6 @@ export const AssetPartitionDetail: React.FC<{
                 <Icon name="observation" />
               )}
               <Timestamp timestamp={{ms: Number(latest.timestamp)}} />
-              {prior.length > 0 && (
-                <AllIndividualEventsLink hasPartitions hasLineage={hasLineage} events={all}>
-                  {`(${prior.length - 1} prior ${prior.length - 1 === 1 ? 'event' : 'events'})`}
-                </AllIndividualEventsLink>
-              )}
             </Box>
           </Box>
         )}
@@ -306,13 +342,23 @@ export const AssetPartitionDetail: React.FC<{
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={Colors.Gray400} />
+                <Icon name="linear_scale" color={colorAccentGray()} />
                 <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
               </Group>
             </Box>
           ) : (
             'None'
           )}
+        </Box>
+        <Box style={{textAlign: 'right'}}>
+          <AllIndividualEventsButton
+            hasPartitions
+            hasLineage={hasLineage}
+            events={all}
+            disabled={all.length === 0}
+          >
+            {`View all historical events (${all.length})`}
+          </AllIndividualEventsButton>
         </Box>
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
@@ -340,3 +386,11 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
     hasLoadingState
   />
 );
+
+const PartitionHeadingTooltipStyle = JSON.stringify({
+  background: colorBackgroundLight(),
+  border: `1px solid ${colorBorderDefault()}`,
+  fontSize: '18px',
+  fontWeight: '600',
+  color: colorTextDefault(),
+});

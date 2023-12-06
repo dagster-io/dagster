@@ -179,11 +179,9 @@ class FileCodePointer(
 
     def describe(self) -> str:
         if self.working_directory:
-            return "{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]".format(
-                self=self
-            )
+            return f"{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]"
         else:
-            return "{self.python_file}::{self.fn_name}".format(self=self)
+            return f"{self.python_file}::{self.fn_name}"
 
 
 def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
@@ -227,7 +225,7 @@ class ModuleCodePointer(
         )
 
     def describe(self) -> str:
-        return "from {self.module} import {self.fn_name}".format(self=self)
+        return f"from {self.module} import {self.fn_name}"
 
 
 @whitelist_for_serdes
@@ -253,7 +251,7 @@ class PackageCodePointer(
         )
 
     def describe(self) -> str:
-        return "from {self.module} import {self.attribute}".format(self=self)
+        return f"from {self.module} import {self.attribute}"
 
 
 def get_python_file_from_target(target: object) -> Optional[str]:
@@ -294,9 +292,7 @@ class CustomPointer(
             check.invariant(isinstance(reconstructable_kwarg[0], str), "Bad kwarg key")
             check.invariant(
                 len(reconstructable_kwarg) == 2,
-                "Bad kwarg of length {length}, should be 2".format(
-                    length=len(reconstructable_kwarg)
-                ),
+                f"Bad kwarg of length {len(reconstructable_kwarg)}, should be 2",
             )
 
         return super(CustomPointer, cls).__new__(

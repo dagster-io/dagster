@@ -4,8 +4,10 @@ from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
-    AutoMaterializeRuleEvaluation,
     DiscardOnMaxMaterializationsExceededRule,
+)
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
@@ -28,6 +30,8 @@ def test_without_rules():
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
+            AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
     )
 
@@ -40,6 +44,8 @@ def test_without_rules():
         rules={
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
+            AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
     )
 
@@ -74,9 +80,29 @@ def test_with_rules():
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
             AutoMaterializeRule.materialize_on_required_for_freshness(),
+            AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
         )
         == AutoMaterializePolicy.eager()
     )
+
+
+def test_with_rules_override_existing_instance():
+    simple_policy = AutoMaterializePolicy(
+        rules={
+            AutoMaterializeRule.materialize_on_parent_updated(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
+        }
+    )
+
+    simple_policy_with_override = simple_policy.with_rules(
+        AutoMaterializeRule.skip_on_backfill_in_progress(all_partitions=True),
+    )
+
+    assert simple_policy_with_override.rules == {
+        AutoMaterializeRule.skip_on_backfill_in_progress(all_partitions=True),
+        AutoMaterializeRule.materialize_on_parent_updated(),
+    }
 
 
 @pytest.mark.parametrize(

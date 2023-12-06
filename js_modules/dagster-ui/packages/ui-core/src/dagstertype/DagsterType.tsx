@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily} from '@dagster-io/ui-components';
+import {Box, FontFamily} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -22,10 +22,7 @@ export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}
   }
 };
 
-const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}> = ({
-  type,
-  className,
-}) => {
+const _DagsterTypeName = ({type, className}: {type: DagsterTypeFragment; className?: string}) => {
   const typeKind = dagsterTypeKind(type);
   const displayName = typeKind === 'standard' ? type.name : `${type.name} (${typeKind})`;
   return <Box className={className}>{displayName}</Box>;
@@ -38,10 +35,13 @@ const DagsterTypeName = styled(_DagsterTypeName)`
   text-overflow: ellipsis;
 `;
 
-export const DagsterTypeSummary: React.FC<{
+export const DagsterTypeSummary = ({
+  type,
+  horizontalPadding,
+}: {
   type: DagsterTypeFragment;
   horizontalPadding?: Spacing;
-}> = ({type, horizontalPadding}) => {
+}) => {
   horizontalPadding = horizontalPadding || 0;
   const tableSchemaEntry = (type.metadataEntries || []).find(
     gqlTypePredicate('TableSchemaMetadataEntry'),
@@ -63,11 +63,7 @@ export const DagsterTypeSummary: React.FC<{
         </Box>
       )}
       {tableSchemaEntry && (
-        <Box
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          style={{overflowY: 'auto', marginBottom: -12}}
-          margin={{top: 4}}
-        >
+        <Box border="top" style={{overflowY: 'auto', marginBottom: -12}} margin={{top: 4}}>
           <TableSchema schema={tableSchemaEntry.schema} itemHorizontalPadding={horizontalPadding} />
         </Box>
       )}

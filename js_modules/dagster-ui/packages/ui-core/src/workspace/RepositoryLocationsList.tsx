@@ -1,13 +1,36 @@
-import {Box, NonIdealState, Spinner, Table} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {CodeLocationRowSet} from './CodeLocationRowSet';
-import {WorkspaceContext} from './WorkspaceContext';
+import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
 
-export const RepositoryLocationsList = () => {
-  const {locationEntries, loading} = React.useContext(WorkspaceContext);
+import {
+  CodeLocationRowType,
+  VirtualizedCodeLocationErrorRow,
+  VirtualizedCodeLocationHeader,
+  VirtualizedCodeLocationRow,
+} from './VirtualizedCodeLocationRow';
 
-  if (loading && !locationEntries.length) {
+interface Props {
+  loading: boolean;
+  codeLocations: CodeLocationRowType[];
+  searchValue: string;
+}
+
+export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: Props) => {
+  const parentRef = React.useRef<HTMLDivElement | null>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: codeLocations.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 64,
+    overscan: 10,
+  });
+
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const items = rowVirtualizer.getVirtualItems();
+
+  if (loading && !items.length) {
     return (
       <Box flex={{gap: 8, alignItems: 'center'}} padding={{horizontal: 24}}>
         <Spinner purpose="body-text" />
@@ -16,7 +39,23 @@ export const RepositoryLocationsList = () => {
     );
   }
 
-  if (!locationEntries.length) {
+  if (!items.length) {
+    if (searchValue) {
+      return (
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="folder"
+            title="No matching code locations"
+            description={
+              <div>
+                No code locations were found for search query <strong>{searchValue}</strong>.
+              </div>
+            }
+          />
+        </Box>
+      );
+    }
+
     return (
       <Box padding={{vertical: 32}}>
         <NonIdealState
@@ -29,21 +68,37 @@ export const RepositoryLocationsList = () => {
   }
 
   return (
-    <Table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Status</th>
-          <th>Updated</th>
-          <th>Definitions</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {locationEntries.map((location) => (
-          <CodeLocationRowSet key={location.name} locationNode={location} />
-        ))}
-      </tbody>
-    </Table>
+    <>
+      <VirtualizedCodeLocationHeader />
+      <div style={{overflow: 'hidden'}}>
+        <Container ref={parentRef}>
+          <Inner $totalHeight={totalHeight}>
+            <DynamicRowContainer $start={items[0]?.start ?? 0}>
+              {items.map(({index, key, measureElement}) => {
+                const row: CodeLocationRowType = codeLocations[index]!;
+                if (row.type === 'error') {
+                  return (
+                    <VirtualizedCodeLocationErrorRow
+                      key={key}
+                      locationNode={row.node}
+                      measure={measureElement}
+                    />
+                  );
+                }
+
+                return (
+                  <VirtualizedCodeLocationRow
+                    key={key}
+                    codeLocation={row.codeLocation}
+                    repository={row.repository}
+                    measure={measureElement}
+                  />
+                );
+              })}
+            </DynamicRowContainer>
+          </Inner>
+        </Container>
+      </div>
+    </>
   );
 };

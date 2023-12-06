@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon, colorLinkDefault, colorTextLight} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -8,9 +8,7 @@ import {
   RunningBackfillsNoticeQueryVariables,
 } from './types/RunningBackfillsNotice.types';
 
-export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
-  partitionSetName,
-}) => {
+export const RunningBackfillsNotice = ({partitionSetName}: {partitionSetName: string}) => {
   const {data} = useQuery<RunningBackfillsNoticeQuery, RunningBackfillsNoticeQueryVariables>(
     RUNNING_BACKFILLS_NOTICE_QUERY,
   );
@@ -28,13 +26,13 @@ export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
     return <span />;
   }
   return (
-    <div style={{color: Colors.Gray400, maxWidth: 350}}>
+    <div style={{color: colorTextLight(), maxWidth: 350}}>
       {runningBackfillCount === 1
         ? 'Note: A backfill has been requested for this job and may be refreshing displayed assets. '
         : `Note: ${runningBackfillCount} backfills have been requested for this job and may be refreshing displayed assets. `}
       <Link to="/overview/backfills" target="_blank">
         <Box flex={{gap: 4, display: 'inline-flex', alignItems: 'center'}}>
-          View <Icon name="open_in_new" color={Colors.Link} />
+          View <Icon name="open_in_new" color={colorLinkDefault()} />
         </Box>
       </Link>
     </div>

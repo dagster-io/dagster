@@ -173,7 +173,11 @@ def test_fail_immediately(
     ).execute_in_process()
 
     if isinstance(good_dbt, DbtCliClientResource):
-        assert good_dbt.with_replaced_resource_context(build_init_resource_context()).get_dbt_client().get_run_results_json()  # type: ignore
+        assert (
+            good_dbt.with_replaced_resource_context(build_init_resource_context())
+            .get_dbt_client()
+            .get_run_results_json()
+        )
     elif isinstance(good_dbt, DbtCliResource):
         assert parse_run_results(test_project_dir)
     else:
@@ -590,6 +594,14 @@ def test_dagster_dbt_translator(
         def get_group_name(cls, dbt_resource_props):
             return "foo_group" if dbt_resource_props["name"] == "cereals" else None
 
+        @classmethod
+        def get_freshness_policy(cls, dbt_resource_props):
+            return FreshnessPolicy(maximum_lag_minutes=1)
+
+        @classmethod
+        def get_auto_materialize_policy(cls, dbt_resource_props):
+            return AutoMaterializePolicy.lazy()
+
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
@@ -608,6 +620,12 @@ def test_dagster_dbt_translator(
     )
     assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "cereals"])] == "foo_group"
     assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "least_caloric"])] == "default"
+
+    for freshness_policy in dbt_assets[0].freshness_policies_by_key.values():
+        assert freshness_policy == FreshnessPolicy(maximum_lag_minutes=1)
+
+    for auto_materialize_policy in dbt_assets[0].auto_materialize_policies_by_key.values():
+        assert auto_materialize_policy == AutoMaterializePolicy.lazy()
 
     result = materialize_to_memory(
         dbt_assets,

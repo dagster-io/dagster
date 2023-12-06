@@ -1,10 +1,10 @@
 import {
   Box,
-  Colors,
   NonIdealState,
   Caption,
   Subheading,
   ExternalAnchorButton,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
@@ -13,12 +13,12 @@ import * as React from 'react';
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
 import {AssetEventGroup} from './groupByPartition';
 
-export const AssetMaterializationGraphs: React.FC<{
+export const AssetMaterializationGraphs = (props: {
   groups: AssetEventGroup[];
   xAxis: 'partition' | 'time';
   asSidebarSection?: boolean;
   columnCount?: number;
-}> = (props) => {
+}) => {
   const [xHover, setXHover] = React.useState<string | number | null>(null);
 
   const reversed = React.useMemo(() => {
@@ -42,15 +42,8 @@ export const AssetMaterializationGraphs: React.FC<{
         }}
       >
         {graphLabels.map((label) => (
-          <Box
-            key={label}
-            style={{width: '100%'}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-          >
-            <Box
-              style={{width: '100%'}}
-              border={{side: 'right', width: 1, color: Colors.KeylineGray}}
-            >
+          <Box key={label} style={{width: '100%'}} border="bottom">
+            <Box style={{width: '100%'}} border="right">
               {props.asSidebarSection ? (
                 <Box padding={{horizontal: 24, top: 8}} flex={{justifyContent: 'space-between'}}>
                   <Caption style={{fontWeight: 700}}>{label}</Caption>
@@ -58,7 +51,7 @@ export const AssetMaterializationGraphs: React.FC<{
               ) : (
                 <Box
                   padding={{horizontal: 24, vertical: 16}}
-                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                  border="bottom"
                   flex={{justifyContent: 'space-between'}}
                 >
                   <Subheading>{label}</Subheading>
@@ -81,7 +74,7 @@ export const AssetMaterializationGraphs: React.FC<{
         props.asSidebarSection ? (
           <Box
             margin={{horizontal: 24, vertical: 12}}
-            style={{color: Colors.Gray500, fontSize: '0.8rem'}}
+            style={{color: colorTextLight(), fontSize: '0.8rem'}}
           >
             No numeric metadata entries available to be graphed.
           </Box>
@@ -102,7 +95,7 @@ export const AssetMaterializationGraphs: React.FC<{
         )
       ) : (
         props.xAxis === 'partition' && (
-          <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray400}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{color: colorTextLight()}}>
             When graphing values by partition, the highest data point for each materialized event
             label is displayed.
           </Box>

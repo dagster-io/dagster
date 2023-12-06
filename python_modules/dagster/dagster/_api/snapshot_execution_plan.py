@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -24,6 +25,7 @@ def sync_get_external_execution_plan_grpc(
     run_config: Mapping[str, Any],
     job_snapshot_id: str,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     op_selection: Optional[Sequence[str]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
@@ -36,6 +38,9 @@ def sync_get_external_execution_plan_grpc(
     op_selection = check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     asset_selection = check.opt_nullable_set_param(
         asset_selection, "asset_selection", of_type=AssetKey
+    )
+    asset_check_selection = check.opt_nullable_set_param(
+        asset_check_selection, "asset_check_selection", of_type=AssetCheckKey
     )
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
@@ -55,6 +60,7 @@ def sync_get_external_execution_plan_grpc(
                 known_state=known_state,
                 instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
                 asset_selection=asset_selection,
+                asset_check_selection=asset_check_selection,
             )
         ),
         (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),

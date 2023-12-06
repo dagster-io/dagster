@@ -1,18 +1,27 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Checkbox, Colors, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Checkbox,
+  MiddleTruncate,
+  Tooltip,
+  colorTextDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {SensorTargetList} from '../sensors/SensorTargetList';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
@@ -92,12 +101,11 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     return {disabled: false};
   }, [sensorState]);
 
+  const tick = sensorData?.sensorState.ticks[0];
+
   return (
     <Row $height={height} $start={start}>
-      <RowGrid
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        $showCheckboxColumn={showCheckboxColumn}
-      >
+      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -125,7 +133,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
             >
               <Caption
                 style={{
-                  color: Colors.Gray500,
+                  color: colorTextLight(),
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -149,7 +157,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         </RowCell>
         <RowCell>
           {sensorData ? (
-            <div style={{color: Colors.Dark}}>
+            <div style={{color: colorTextDefault()}}>
               {humanizeSensorInterval(sensorData.minIntervalSeconds)}
             </div>
           ) : (
@@ -157,12 +165,9 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           )}
         </RowCell>
         <RowCell>
-          {sensorData?.sensorState.ticks[0] ? (
+          {tick ? (
             <div>
-              <TickTag
-                tick={sensorData.sensorState.ticks[0]}
-                instigationType={InstigationType.SENSOR}
-              />
+              <TickStatusTag tick={tick} />
             </div>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
@@ -190,13 +195,13 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
   const {checkbox} = props;
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
       }}
     >
       {checkbox ? (

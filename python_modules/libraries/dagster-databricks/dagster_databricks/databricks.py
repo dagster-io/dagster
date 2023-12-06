@@ -1,7 +1,9 @@
 import base64
 import logging
+import os
 import time
-from typing import IO, Any, Mapping, Optional, Tuple, Union, cast
+from enum import Enum
+from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster
 import dagster._check as check
@@ -11,6 +13,13 @@ import databricks_cli.sdk
 import requests.exceptions
 from dagster._annotations import deprecated, public
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.core import (
+    Config,
+    DefaultCredentials,
+    azure_service_principal,
+    oauth_service_principal,
+    pat_auth,
+)
 from databricks.sdk.service import compute, jobs
 from typing_extensions import Final
 
@@ -29,28 +38,215 @@ class DatabricksError(Exception):
     pass
 
 
+class AuthTypeEnum(Enum):
+    OAUTH_M2M = "oauth-m2m"
+    PAT = "pat"
+    AZURE_CLIENT_SECRET = "azure-client-secret"
+    DEFAULT = "default"
+
+
+class WorkspaceClientFactory:
+    def __init__(
+        self,
+        host: Optional[str],
+        token: Optional[str],
+        oauth_client_id: Optional[str],
+        oauth_client_secret: Optional[str],
+        azure_client_id: Optional[str],
+        azure_client_secret: Optional[str],
+        azure_tenant_id: Optional[str],
+    ):
+        """Initialize the Databricks Workspace client. Users may provide explicit credentials for a PAT, databricks
+        service principal oauth credentials, or azure service principal credentials. If no credentials are provided,
+        the underlying WorkspaceClient from `databricks.sdk` will attempt to read credentials from the environment or
+        from the `~/.databrickscfg` file. For more information, see the Databricks SDK docs on various ways you can
+        authenticate with the WorkspaceClient, through which most interactions with the Databricks API occur.
+        <https://docs.databricks.com/en/dev-tools/auth.html#authentication-for-databricks-automation>`_.
+        """
+        self._raise_if_multiple_auth_types(
+            token=token,
+            oauth_client_id=oauth_client_id,
+            oauth_client_secret=oauth_client_secret,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
+            azure_tenant_id=azure_tenant_id,
+        )
+        self._assert_valid_credentials_combos(
+            oauth_client_id=oauth_client_id,
+            oauth_client_secret=oauth_client_secret,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
+            azure_tenant_id=azure_tenant_id,
+        )
+        auth_type = self._get_auth_type(
+            token,
+            oauth_client_id,
+            oauth_client_secret,
+            azure_client_id,
+            azure_client_secret,
+            azure_tenant_id,
+        )
+        product_info = {"product": "dagster-databricks", "product_version": __version__}
+
+        # Figure out what credentials provider to use based on any explicitly-provided credentials. If none were
+        # provided, then fallback to the default credentials provider, which will attempt to read credentials from
+        # the environment or from a `~/.databrickscfg` file, if it exists.
+
+        if auth_type == AuthTypeEnum.OAUTH_M2M:
+            host = self._resolve_host(host)
+            c = Config(
+                host=host,
+                client_id=oauth_client_id,
+                client_secret=oauth_client_secret,
+                credentials_provider=oauth_service_principal,
+                **product_info,
+            )
+        elif auth_type == AuthTypeEnum.PAT:
+            host = self._resolve_host(host)
+            c = Config(host=host, token=token, credentials_provider=pat_auth, **product_info)
+        elif auth_type == AuthTypeEnum.AZURE_CLIENT_SECRET:
+            host = self._resolve_host(host)
+            c = Config(
+                host=host,
+                azure_client_id=azure_client_id,
+                azure_client_secret=azure_client_secret,
+                azure_tenant_id=azure_tenant_id,
+                credentials_provider=azure_service_principal,
+                **product_info,
+            )
+        elif auth_type == AuthTypeEnum.DEFAULT:
+            # Can be used to automatically read credentials from environment or ~/.databrickscfg file. This is common
+            # when launching Databricks jobs from a laptop development setting through Dagster
+            if host is not None:
+                # This allows for explicit override of the host, while letting other credentials be read from the
+                # environment or ~/.databrickscfg file
+                c = Config(host=host, credentials_provider=DefaultCredentials(), **product_info)
+            else:
+                # The initialization machinery in the Config object will look for the host and other auth info in the
+                # environment, as long as no values are provided for those attributes (including None)
+                c = Config(credentials_provider=DefaultCredentials(), **product_info)
+        else:
+            raise ValueError(f"Unexpected auth type {auth_type}")
+        self.config = c
+
+    def _raise_if_multiple_auth_types(
+        self,
+        token: Optional[str] = None,
+        oauth_client_id: Optional[str] = None,
+        oauth_client_secret: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
+    ):
+        more_than_one_auth_type_provided = (
+            sum(
+                [
+                    True
+                    for _ in [
+                        token,
+                        (oauth_client_id and oauth_client_secret),
+                        (azure_client_id and azure_client_secret and azure_tenant_id),
+                    ]
+                    if _
+                ]
+            )
+            > 1
+        )
+        if more_than_one_auth_type_provided:
+            raise ValueError(
+                "Can only provide one of token, oauth credentials, or azure credentials"
+            )
+
+    @staticmethod
+    def _get_auth_type(
+        token: Optional[str],
+        oauth_client_id: Optional[str],
+        oauth_client_secret: Optional[str],
+        azure_client_id: Optional[str],
+        azure_client_secret: Optional[str],
+        azure_tenant_id: Optional[str],
+    ) -> AuthTypeEnum:
+        """Get the type of authentication used to initialize the WorkspaceClient."""
+        if oauth_client_id and oauth_client_secret:
+            auth_type = AuthTypeEnum.OAUTH_M2M
+        elif token:
+            auth_type = AuthTypeEnum.PAT
+        elif azure_client_id and azure_client_secret and azure_tenant_id:
+            auth_type = AuthTypeEnum.AZURE_CLIENT_SECRET
+        else:
+            auth_type = AuthTypeEnum.DEFAULT
+        return auth_type
+
+    @staticmethod
+    def _assert_valid_credentials_combos(
+        oauth_client_id: Optional[str] = None,
+        oauth_client_secret: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
+    ):
+        """Ensure that all required credentials are provided for the given auth type."""
+        if (
+            oauth_client_id
+            and not oauth_client_secret
+            or oauth_client_secret
+            and not oauth_client_id
+        ):
+            raise ValueError(
+                "If using databricks service principal oauth credentials, both oauth_client_id and"
+                " oauth_client_secret must be provided"
+            )
+        if (
+            (azure_client_id and not azure_client_secret and not azure_tenant_id)
+            or (azure_client_secret and not azure_client_id and not azure_tenant_id)
+            or (azure_tenant_id and not azure_client_id and not azure_client_secret)
+        ):
+            raise ValueError(
+                "If using azure service principal auth, azure_client_id, azure_client_secret, and"
+                " azure_tenant_id must be provided"
+            )
+
+    def get_workspace_client(self) -> WorkspaceClient:
+        return WorkspaceClient(config=self.config)
+
+    @staticmethod
+    def _resolve_host(host: Optional[str]) -> str:
+        host = host if host else os.getenv("DATABRICKS_HOST")
+        if host is None:
+            raise ValueError(
+                "Must provide host explicitly or in DATABRICKS_HOST env var when providing"
+                " credentials explicitly"
+            )
+        return host
+
+
 class DatabricksClient:
     """A thin wrapper over the Databricks REST API."""
 
     def __init__(
         self,
-        host: str,
+        host: Optional[str] = None,
         token: Optional[str] = None,
         oauth_client_id: Optional[str] = None,
         oauth_client_secret: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
         workspace_id: Optional[str] = None,
     ):
         self.host = host
         self.workspace_id = workspace_id
 
-        self._workspace_client = WorkspaceClient(
-            host=host,
+        workspace_client_factory = WorkspaceClientFactory(
+            oauth_client_id=oauth_client_id,
+            oauth_client_secret=oauth_client_secret,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
+            azure_tenant_id=azure_tenant_id,
             token=token,
-            client_id=oauth_client_id,
-            client_secret=oauth_client_secret,
-            product="dagster-databricks",
-            product_version=__version__,
+            host=host,
         )
+        self._workspace_client = workspace_client_factory.get_workspace_client()
 
         # TODO: This is the old shim client that we were previously using. Arguably this is
         # confusing for users to use since this is an unofficial wrapper around the documented
@@ -306,29 +502,35 @@ class DatabricksJobRunner:
 
     def __init__(
         self,
-        host: str,
+        host: Optional[str] = None,
         token: Optional[str] = None,
         oauth_client_id: Optional[str] = None,
         oauth_client_secret: Optional[str] = None,
+        azure_client_id: Optional[str] = None,
+        azure_client_secret: Optional[str] = None,
+        azure_tenant_id: Optional[str] = None,
         poll_interval_sec: float = 5,
         max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
-        self.host = check.str_param(host, "host")
-        check.invariant(
-            token is None or (oauth_client_id is None and oauth_client_secret is None),
-            "Must provide either databricks_token or oauth_credentials, but cannot provide both",
-        )
+        self.host = check.opt_str_param(host, "host")
         self.token = check.opt_str_param(token, "token")
-        self.oauth_client_id = check.opt_str_param(oauth_client_id, "oauth_client_id")
-        self.oauth_client_secret = check.opt_str_param(oauth_client_secret, "oauth_client_secret")
         self.poll_interval_sec = check.numeric_param(poll_interval_sec, "poll_interval_sec")
         self.max_wait_time_sec = check.int_param(max_wait_time_sec, "max_wait_time_sec")
+
+        oauth_client_id = check.opt_str_param(oauth_client_id, "oauth_client_id")
+        oauth_client_secret = check.opt_str_param(oauth_client_secret, "oauth_client_secret")
+        azure_client_id = check.opt_str_param(azure_client_id, "azure_client_id")
+        azure_client_secret = check.opt_str_param(azure_client_secret, "azure_client_secret")
+        azure_tenant_id = check.opt_str_param(azure_tenant_id, "azure_tenant_id")
 
         self._client: DatabricksClient = DatabricksClient(
             host=self.host,
             token=self.token,
             oauth_client_id=oauth_client_id,
             oauth_client_secret=oauth_client_secret,
+            azure_client_id=azure_client_id,
+            azure_client_secret=azure_client_secret,
+            azure_tenant_id=azure_tenant_id,
         )
 
     @property
@@ -349,8 +551,19 @@ class DatabricksJobRunner:
             new_cluster = new_cluster.copy()
 
             nodes = new_cluster.pop("nodes")
+
+            if "driver_instance_pool_id" in nodes:
+                check.invariant(
+                    "instance_pool_id" in nodes,
+                    "Usage of `driver_instance_pool_id` requires that `instance_pool_id` be specified"
+                    " for worker nodes",
+                )
+
             if "instance_pool_id" in nodes:
                 new_cluster["instance_pool_id"] = nodes["instance_pool_id"]
+
+                if "driver_instance_pool_id" in nodes:
+                    new_cluster["driver_node_type_id"] = nodes["driver_node_type_id"]
             else:
                 node_types = nodes["node_types"]
                 new_cluster["node_type_id"] = node_types["node_type_id"]
@@ -411,6 +624,9 @@ class DatabricksJobRunner:
             "Multiple tasks specified in Databricks run",
         )
 
+        notification_settings = self._get_notification_settings(run_config)
+        job_health_settings = self._get_job_health_settings(run_config)
+
         return self.client.workspace_client.jobs.submit(
             run_name=run_config.get("run_name"),
             tasks=[
@@ -425,20 +641,67 @@ class DatabricksJobRunner:
                     },
                 )
             ],
+            idempotency_token=run_config.get("idempotency_token"),
+            timeout_seconds=run_config.get("timeout_seconds"),
+            health=job_health_settings,
+            **notification_settings,
         ).bind()["run_id"]
+
+    def _get_job_health_settings(
+        self, run_config: Mapping[str, Any]
+    ) -> Optional[List[jobs.JobsHealthRule]]:
+        if "job_health_settings" in run_config:
+            job_health_settings = [
+                jobs.JobsHealthRule.from_dict(h) for h in run_config["job_health_settings"]
+            ]
+        else:
+            job_health_settings = None
+        return job_health_settings
+
+    def _get_notification_settings(
+        self, run_config: Mapping[str, Any]
+    ) -> Mapping[
+        str,
+        Union[jobs.JobEmailNotifications, jobs.JobNotificationSettings, jobs.WebhookNotifications],
+    ]:
+        notification_configs = {}
+        if "email_notifications" in run_config:
+            email_notifications = jobs.JobEmailNotifications.from_dict(
+                run_config["email_notifications"]
+            )
+            notification_configs.update({"email_notifications": email_notifications})
+        if "notification_settings" in run_config:
+            notification_settings = jobs.JobNotificationSettings.from_dict(
+                run_config["notification_settings"]
+            )
+            notification_configs.update({"notification_settings": notification_settings})
+        if "webhook_notifications" in run_config:
+            webhook_notifications = jobs.WebhookNotifications.from_dict(
+                run_config["webhook_notifications"]
+            )
+            notification_configs.update({"webhook_notifications": webhook_notifications})
+        return notification_configs
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int
     ) -> Optional[Tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
-        cluster = self.client.workspace_client.clusters.get(run.cluster_instance.cluster_id)
+
+        # Run.cluster_instance can be None. In that case, fall back to cluster instance on first
+        # task. Currently pyspark step launcher runs jobs with singleton tasks.
+        cluster_instance = run.cluster_instance or run.tasks[0].cluster_instance
+        cluster_id = check.inst(
+            cluster_instance.cluster_id,
+            str,
+            "cluster_id should be string like `1234-123456-abcdefgh` got:"
+            f" `{cluster_instance.cluster_id}`",
+        )
+        cluster = self.client.workspace_client.clusters.get(cluster_id)
         log_config = cluster.cluster_log_conf
         if log_config is None:
             log.warn(
-                "Logs not configured for cluster {cluster} used for run {run}".format(
-                    cluster=cluster.cluster_id, run=databricks_run_id
-                )
+                f"Logs not configured for cluster {cluster_id} used for run {databricks_run_id}"
             )
             return None
         if cast(Optional[compute.S3StorageInfo], log_config.s3) is not None:
@@ -447,8 +710,8 @@ class DatabricksJobRunner:
             return None
         elif cast(Optional[compute.DbfsStorageInfo], log_config.dbfs) is not None:
             logs_prefix = log_config.dbfs.destination
-            stdout = self.wait_for_dbfs_logs(log, logs_prefix, cluster.cluster_id, "stdout")
-            stderr = self.wait_for_dbfs_logs(log, logs_prefix, cluster.cluster_id, "stderr")
+            stdout = self.wait_for_dbfs_logs(log, logs_prefix, cluster_id, "stdout")
+            stderr = self.wait_for_dbfs_logs(log, logs_prefix, cluster_id, "stderr")
             return stdout, stderr
 
     def wait_for_dbfs_logs(

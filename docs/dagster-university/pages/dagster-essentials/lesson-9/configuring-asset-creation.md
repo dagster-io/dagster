@@ -1,7 +1,7 @@
 ---
-title: "Lesson 9: Configuring asset creation"
-module: "dagster_essentials"
-lesson: "9"
+title: 'Lesson 9: Configuring asset creation'
+module: 'dagster_essentials'
+lesson: '9'
 ---
 
 # Configuring asset creation
@@ -15,19 +15,20 @@ These configurations are most commonly added at the run-level and can be passed 
 Let’s write a new configuration that we can use to customize the asset materialization.
 
 1. In the `assets` directory, create a `requests.py` file.
+
 2. Add the following import to the top of the file:
-    
-    ```bash
-    from dagster import Config
-    ```
-    
-    This is used as the base class when making custom configurations.
-    
+
+   ```bash
+   from dagster import Config
+   ```
+
+   This is used as the base class when making custom configurations.
+
 3. Next, define a new subclass called `AdhocRequestsConfig` that takes in the following `str` attributes:
-    - `filename`: the name of the request’s JSON file
-    - `borough`: the New York City borough to be analyzed. The value should be one of `Manhattan`, `Brooklyn`, `Queens`, `Bronx`, or `Staten Island`
-    - `start_date`: The beginning of the date range of the request, in the format `YYYY-MM-DD`
-    - `end_date`: The end of the date range of the request, in the format `YYYY-MM-DD`
+   - `filename`: the name of the request’s JSON file
+   - `borough`: the New York City borough to be analyzed. The value should be one of `Manhattan`, `Brooklyn`, `Queens`, `Bronx`, or `Staten Island`
+   - `start_date`: The beginning of the date range of the request, in the format `YYYY-MM-DD`
+   - `end_date`: The end of the date range of the request, in the format `YYYY-MM-DD`
 
 The `requests.py` file should look like the code snippet below:
 

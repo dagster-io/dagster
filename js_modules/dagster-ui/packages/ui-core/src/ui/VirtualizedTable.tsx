@@ -1,12 +1,18 @@
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
+export const HeaderCell = ({
+  children,
+  style,
+}: {
+  children?: React.ReactNode;
+  style?: React.CSSProperties;
+}) => (
   <CellBox
     padding={{vertical: 8, horizontal: 12}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
-    style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}
+    border="right"
+    style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', ...(style || {})}}
   >
     {children}
   </CellBox>
@@ -22,8 +28,8 @@ export const RowCell = ({
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
-    style={{color: Colors.Gray500, overflow: 'hidden', ...(style || {})}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
+    style={{overflow: 'hidden', ...(style || {})}}
+    border="right"
   >
     {children}
   </CellBox>
@@ -70,4 +76,17 @@ export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   right: 0;
   top: 0;
   overflow: hidden;
+`;
+
+type DynamicRowContainerProps = {$start: number};
+
+export const DynamicRowContainer = styled.div.attrs<DynamicRowContainerProps>(({$start}) => ({
+  style: {
+    transform: `translateY(${$start}px)`,
+  },
+}))<DynamicRowContainerProps>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 `;

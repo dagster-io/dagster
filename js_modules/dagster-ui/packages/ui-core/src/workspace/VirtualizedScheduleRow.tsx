@@ -4,21 +4,22 @@ import {
   Button,
   Caption,
   Checkbox,
-  Colors,
   Icon,
   Menu,
   MiddleTruncate,
   Popover,
   Tooltip,
+  colorTextDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
@@ -26,6 +27,7 @@ import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwi
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
@@ -119,12 +121,11 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     return {disabled: false};
   }, [scheduleState]);
 
+  const tick = scheduleData?.scheduleState.ticks[0];
+
   return (
     <Row $height={height} $start={start}>
-      <RowGrid
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        $showCheckboxColumn={showCheckboxColumn}
-      >
+      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -163,7 +164,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                 <Tooltip position="top-left" content={scheduleData.cronSchedule} display="block">
                   <div
                     style={{
-                      color: Colors.Dark,
+                      color: colorTextDefault(),
                       overflow: 'hidden',
                       whiteSpace: 'nowrap',
                       maxWidth: '100%',
@@ -213,12 +214,9 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           ) : null}
         </RowCell>
         <RowCell>
-          {scheduleData?.scheduleState.ticks[0] ? (
+          {tick ? (
             <div>
-              <TickTag
-                tick={scheduleData.scheduleState.ticks[0]}
-                instigationType={InstigationType.SCHEDULE}
-              />
+              <TickStatusTag tick={tick} />
             </div>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
@@ -267,7 +265,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
           ) : (
-            <span style={{color: Colors.Gray400}}>{'\u2013'}</span>
+            <span style={{color: colorTextLight()}}>{'\u2013'}</span>
           )}
         </RowCell>
       </RowGrid>
@@ -279,13 +277,13 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
   const {checkbox} = props;
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
       }}
     >
       {checkbox ? (

@@ -16,7 +16,7 @@ interface ComputeLogPanelMaybeKeyProps extends ComputeLogPanelProps {
   computeLogFileKey?: string;
 }
 
-export const ComputeLogPanel: React.FC<ComputeLogPanelMaybeKeyProps> = (props) => {
+export const ComputeLogPanel = (props: ComputeLogPanelMaybeKeyProps) => {
   const {runId, computeLogFileKey, ioType, setComputeLogUrl} = props;
 
   if (!computeLogFileKey) {
@@ -52,7 +52,7 @@ const resolveDownloadUrl = (rootServerURI: string, downloadUrl: string | null) =
   return isRelativeUrl(downloadUrl) ? rootServerURI + downloadUrl : downloadUrl;
 };
 
-const ComputeLogsPanelWithKey: React.FC<ComputeLogPanelWithKeyProps> = React.memo((props) => {
+const ComputeLogsPanelWithKey = React.memo((props: ComputeLogPanelWithKeyProps) => {
   const {runId, computeLogFileKey, ioType, setComputeLogUrl} = props;
   const {rootServerURI} = React.useContext(AppContext);
 

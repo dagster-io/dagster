@@ -28,7 +28,14 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+)
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
 )
@@ -55,7 +62,6 @@ from ..decorator_utils import (
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -190,6 +196,10 @@ class SensorEvaluationContext:
     @property
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
+
+    @property
+    def sensor_name(self) -> str:
+        return check.not_none(self._sensor_name, "Only valid when sensor name provided")
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.
@@ -408,7 +418,7 @@ def validate_and_get_resource_dict(
                 f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
             )
 
-    return {k: getattr(resources, k) for k in required_resource_keys}
+    return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
 def _check_dynamic_partitions_requests(
@@ -479,8 +489,9 @@ class SensorDefinition(IHasInternalInit):
         jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
-        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
-            the sensor condition is met. This can be provided instead of specifying a job.
+        asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
+            (Experimental) an asset selection to launch a run for if the sensor condition is met.
+            This can be provided instead of specifying a job.
     """
 
     def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
@@ -523,7 +534,7 @@ class SensorDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        asset_selection: Optional[AssetSelection] = None,
+        asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
     ):
         from dagster._config.pythonic_config import validate_resource_annotated_function
@@ -589,8 +600,8 @@ class SensorDefinition(IHasInternalInit):
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
-        self._asset_selection = check.opt_inst_param(
-            asset_selection, "asset_selection", AssetSelection
+        self._asset_selection = (
+            AssetSelection.from_coercible(asset_selection) if asset_selection else None
         )
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
@@ -616,7 +627,7 @@ class SensorDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         jobs: Optional[Sequence[ExecutableDefinition]],
         default_status: DefaultSensorStatus,
-        asset_selection: Optional[AssetSelection],
+        asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[Set[str]],
     ) -> "SensorDefinition":
         return SensorDefinition(
@@ -723,6 +734,7 @@ class SensorDefinition(IHasInternalInit):
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = []
         updated_cursor = context.cursor
+        asset_events = []
 
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
@@ -743,11 +755,14 @@ class SensorDefinition(IHasInternalInit):
                 )
                 dynamic_partitions_requests = item.dynamic_partitions_requests or []
 
-                if item.cursor and context.cursor_updated:
+                if context.cursor_updated and item.cursor:
                     raise DagsterInvariantViolationError(
                         "SensorResult.cursor cannot be set if context.update_cursor() was called."
                     )
-                updated_cursor = item.cursor
+                elif item.cursor:
+                    updated_cursor = item.cursor  # overwrite value set from context above
+
+                asset_events = item.asset_events
 
             elif isinstance(item, RunRequest):
                 run_requests = [item]
@@ -799,6 +814,7 @@ class SensorDefinition(IHasInternalInit):
             dagster_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
+            asset_events=asset_events,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -939,6 +955,10 @@ class SensorExecutionData(
                     Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
                 ],
             ),
+            (
+                "asset_events",
+                Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
+            ),
         ],
     )
 ):
@@ -954,6 +974,9 @@ class SensorExecutionData(
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = None,
+        asset_events: Optional[
+            Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+        ] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -964,6 +987,11 @@ class SensorExecutionData(
             dynamic_partitions_requests,
             "dynamic_partitions_requests",
             (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
+        )
+        check.opt_sequence_param(
+            asset_events,
+            "asset_events",
+            (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
         )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
@@ -976,6 +1004,7 @@ class SensorExecutionData(
             dagster_run_reactions=dagster_run_reactions,
             captured_log_key=captured_log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
+            asset_events=asset_events or [],
         )
 
 
@@ -1094,7 +1123,7 @@ T = TypeVar("T")
 
 def get_sensor_context_from_args_or_kwargs(
     fn: Callable,
-    args: Tuple[Any],
+    args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
     context_type: Type[T],
 ) -> Optional[T]:
@@ -1139,6 +1168,7 @@ def get_sensor_context_from_args_or_kwargs(
 def get_or_create_sensor_context(
     fn: Callable,
     *args: Any,
+    context_type: Type = SensorEvaluationContext,
     **kwargs: Any,
 ) -> SensorEvaluationContext:
     """Based on the passed resource function and the arguments passed to it, returns the
@@ -1148,12 +1178,7 @@ def get_or_create_sensor_context(
     function requires a context parameter but none is passed.
     """
     context = (
-        get_sensor_context_from_args_or_kwargs(
-            fn,
-            args,
-            kwargs,
-            context_type=SensorEvaluationContext,
-        )
+        get_sensor_context_from_args_or_kwargs(fn, args, kwargs, context_type)
         or build_sensor_context()
     )
     resource_args_from_kwargs = {}
@@ -1197,7 +1222,8 @@ def _run_requests_with_base_asset_jobs(
         base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name, asset_selection=list(asset_keys)  # type: ignore  # (possible none)
+                job_name=base_job.name,  # type: ignore  # (possible none)
+                asset_selection=list(asset_keys),
             )
         )
 

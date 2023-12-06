@@ -246,9 +246,7 @@ class InProgressCompositionContext:
             self._pending_invocations.pop(node_name, None)
             if self._collisions.get(node_name):
                 self._collisions[node_name] += 1
-                node_name = "{node_name}_{n}".format(
-                    node_name=node_name, n=self._collisions[node_name]
-                )
+                node_name = f"{node_name}_{self._collisions[node_name]}"
             else:
                 self._collisions[node_name] = 1
         else:
@@ -257,8 +255,9 @@ class InProgressCompositionContext:
 
         if self._invocations.get(node_name):
             raise DagsterInvalidDefinitionError(
-                "{source} {name} invoked the same node ({node_name}) twice without aliasing."
-                .format(source=self.source, name=self.name, node_name=node_name)
+                "{source} {name} invoked the same node ({node_name}) twice without aliasing.".format(
+                    source=self.source, name=self.name, node_name=node_name
+                )
             )
 
         self._invocations[node_name] = InvokedNode(
@@ -314,9 +313,7 @@ class CompleteCompositionContext(NamedTuple):
             def_name = invocation.node_def.name
             if def_name in node_def_dict and node_def_dict[def_name] is not invocation.node_def:
                 raise DagsterInvalidDefinitionError(
-                    'Detected conflicting node definitions with the same name "{name}"'.format(
-                        name=def_name
-                    )
+                    f'Detected conflicting node definitions with the same name "{def_name}"'
                 )
             node_def_dict[def_name] = invocation.node_def
 
@@ -1045,7 +1042,7 @@ def do_composition(
     check.invariant(
         context.name == graph_name,
         "Composition context stack desync: received context for "
-        '"{context.name}" expected "{graph_name}"'.format(context=context, graph_name=graph_name),
+        f'"{context.name}" expected "{graph_name}"',
     )
 
     # line up mappings in definition order
@@ -1057,12 +1054,8 @@ def do_composition(
 
         if len(mappings) == 0:
             raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{graph_name}' has unmapped input '{input_name}'. "
-                "Remove it or pass it to the appropriate op/graph invocation.".format(
-                    decorator_name=decorator_name,
-                    graph_name=graph_name,
-                    input_name=defn.name,
-                )
+                f"{decorator_name} '{graph_name}' has unmapped input '{defn.name}'. "
+                "Remove it or pass it to the appropriate op/graph invocation."
             )
 
         input_mappings += mappings
@@ -1080,10 +1073,8 @@ def do_composition(
                 continue
 
             raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{graph_name}' has unmapped output '{output_name}'. "
-                "Remove it or return a value from the appropriate op/graph invocation.".format(
-                    decorator_name=decorator_name, graph_name=graph_name, output_name=defn.name
-                )
+                f"{decorator_name} '{graph_name}' has unmapped output '{defn.name}'. "
+                "Remove it or return a value from the appropriate op/graph invocation."
             )
         output_mappings.append(mapping)
 

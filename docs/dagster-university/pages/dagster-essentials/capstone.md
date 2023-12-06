@@ -1,7 +1,7 @@
 ---
-title: "Capstone"
-module: "dagster_essentials"
-lesson: "capstone"
+title: 'Capstone'
+module: 'dagster_essentials'
+lesson: 'capstone'
 ---
 
 # Capstone

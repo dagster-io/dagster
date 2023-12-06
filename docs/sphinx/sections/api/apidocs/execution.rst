@@ -68,12 +68,11 @@ Executors
 
 Contexts
 --------
-
-.. autoclass:: OpExecutionContext
+.. autoclass:: AssetExecutionContext
   :members:
   :inherited-members:
 
-.. autoclass:: AssetExecutionContext
+.. autoclass:: OpExecutionContext
   :members:
   :inherited-members:
 

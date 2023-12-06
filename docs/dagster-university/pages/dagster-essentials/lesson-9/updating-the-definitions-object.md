@@ -1,7 +1,7 @@
 ---
-title: "Lesson 9: Updating the Definitions object"
-module: "dagster_essentials"
-lesson: "9"
+title: 'Lesson 9: Updating the Definitions object'
+module: 'dagster_essentials'
+lesson: '9'
 ---
 
 # Updating the Definitions object
@@ -9,45 +9,46 @@ lesson: "9"
 As with your other Dagster definitions, the final step is to add the sensor, its related asset, and job into the `Definitions` object. This will be done in the top-level `__init__.py` file.
 
 1. Import the new asset, job, and sensor into the `__init__.py` file by updating the following imports:
-    
-    ```python
-    from .assets import trips, metrics, requests
-    ...
-    from .jobs import trip_update_job, weekly_update_job, adhoc_request_job
-    ...
-    from .sensors import adhoc_request_sensor
-    ```
-    
+
+   ```python
+   from .assets import trips, metrics, requests
+   ...
+   from .jobs import trip_update_job, weekly_update_job, adhoc_request_job
+   ...
+   from .sensors import adhoc_request_sensor
+   ```
+
 2. Beneath `metric_assets`, create a `request_assets` variable that loads the assets from `requests`:
-    
-    ```python
-    request_assets = load_assets_from_modules([requests])
-    ```
-    
+
+   ```python
+   request_assets = load_assets_from_modules([requests])
+   ```
+
 3. Add the `adhoc_request_job` to `all_jobs` :
-    
-    ```python
-    all_jobs = [trip_update_job, weekly_update_job**, adhoc_request_job**]
-    ```
-    
+
+   ```python
+   all_jobs = [trip_update_job, weekly_update_job**, adhoc_request_job**]
+   ```
+
 4. Beneath `all_schedules`, create a new variable named `all_sensors` and add the `adhoc_request_sensor` to it:
-    
-    ```python
-    all_sensors = [adhoc_request_sensor]
-    ```
-    
+
+   ```python
+   all_sensors = [adhoc_request_sensor]
+   ```
+
 5. Lastly, update the `Definitions` object by:
+
    1. Adding the new asset (`request_assets`) to the `assets` parameter:
-       
-       ```python
-       assets=[*trip_assets, *metric_assets, *request_assets],
-       ```
-       
+
+      ```python
+      assets=[*trip_assets, *metric_assets, *request_assets],
+      ```
+
    2. Adding the `sensors` parameter and setting it to `all_sensors`:
-       
-       ```python
-       sensors=all_sensors,
-       ```
+
+      ```python
+      sensors=all_sensors,
+      ```
 
 At this point, `__init__.py` should look like this:
 

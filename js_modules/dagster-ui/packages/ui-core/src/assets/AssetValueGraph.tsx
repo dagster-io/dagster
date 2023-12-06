@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorAccentBlue, colorBackgroundBlue} from '@dagster-io/ui-components';
 import {ActiveElement, ChartEvent} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
@@ -17,14 +17,14 @@ export interface AssetValueGraphData {
   }[];
 }
 
-export const AssetValueGraph: React.FC<{
+export const AssetValueGraph = (props: {
   label: string;
   width: string;
   yAxisLabel?: string;
   data: AssetValueGraphData;
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
-}> = (props) => {
+}) => {
   // Note: To get partitions on the X axis, we pass the partition names in as the `labels`,
   // and pass the partition index as the x value. This prevents ChartJS from auto-coercing
   // ISO date partition names to dates and then re-formatting the labels away from 2020-01-01.
@@ -47,12 +47,12 @@ export const AssetValueGraph: React.FC<{
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: Colors.Blue500,
-        backgroundColor: 'rgba(0,0,0,0)',
+        borderColor: colorAccentBlue(),
+        backgroundColor: colorBackgroundBlue(),
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: Colors.Blue500,
+        pointHoverBorderColor: colorAccentBlue(),
       },
     ],
   };

@@ -1,4 +1,4 @@
-import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui-components';
+import {Box, ButtonGroup, Spinner, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
@@ -13,19 +13,9 @@ interface Props {
   setParams: (params: AssetViewParams) => void;
 }
 
-export const AssetPlots: React.FC<Props> = ({
-  assetKey,
-  assetHasDefinedPartitions,
-  params,
-  setParams,
-}) => {
-  const {
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    loading,
-    xAxis,
-  } = useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
+export const AssetPlots = ({assetKey, assetHasDefinedPartitions, params, setParams}: Props) => {
+  const {materializations, observations, loadedPartitionKeys, loading, xAxis} =
+    useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions});
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
@@ -35,7 +25,7 @@ export const AssetPlots: React.FC<Props> = ({
       <Box>
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+          border="bottom"
           padding={{vertical: 16, left: 24, right: 12}}
           style={{marginBottom: -1}}
         >
@@ -52,7 +42,7 @@ export const AssetPlots: React.FC<Props> = ({
     <Box>
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
         padding={{vertical: 16, left: 24, right: 12}}
         style={{marginBottom: -1}}
       >

@@ -1,9 +1,7 @@
-import {ApolloError, gql, useQuery} from '@apollo/client';
+import {ApolloError, gql} from '@apollo/client';
 import {
-  Alert,
   Box,
   ButtonLink,
-  Colors,
   CursorHistoryControls,
   Heading,
   NonIdealState,
@@ -13,7 +11,6 @@ import {
 } from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
@@ -24,37 +21,34 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
-import {InstancePageContext} from '../instance/InstancePageContext';
-import {useCanSeeConfig} from '../instance/useCanSeeConfig';
+import {useStartTrace} from '../performance';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
+import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {useRunListTabs, useSelectedRunsTab} from './RunListTabs';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
+import {inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {RUN_TABLE_RUN_FRAGMENT, RunTable} from './RunTable';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
+  RunFilterToken,
   RunFilterTokenType,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-  RunFilterToken,
   useRunsFilterInput,
 } from './RunsFilterInput';
-import {
-  QueueDaemonStatusQuery,
-  QueueDaemonStatusQueryVariables,
-  RunsRootQuery,
-  RunsRootQueryVariables,
-} from './types/RunsRoot.types';
+import {TerminateAllRunsButton} from './TerminateAllRunsButton';
+import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRoot.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
   useTrackPageView();
+  const trace = useStartTrace('RunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
-  const canSeeConfig = useCanSeeConfig();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
@@ -116,6 +110,7 @@ export const RunsRoot = () => {
       'id',
       'job',
       'pipeline',
+      'partition',
       'backfill',
     ];
 
@@ -147,9 +142,32 @@ export const RunsRoot = () => {
 
   function actionBar() {
     return (
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        {tabs}
-        {filtersSlot}
+      <Box style={{width: '100%', marginRight: 8}} flex={{justifyContent: 'space-between'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+          {tabs}
+          {filtersSlot}
+        </Box>
+        {currentTab === 'queued' ? (
+          <TerminateAllRunsButton
+            refetch={combinedRefreshState.refetch}
+            filter={{statuses: Array.from(queuedStatuses)}}
+            disabled={
+              runQueryResult.data?.queuedCount.__typename === 'Runs'
+                ? runQueryResult.data?.queuedCount.count === 0
+                : true
+            }
+          />
+        ) : currentTab === 'in-progress' ? (
+          <TerminateAllRunsButton
+            refetch={combinedRefreshState.refetch}
+            filter={{statuses: Array.from(inProgressStatuses)}}
+            disabled={
+              runQueryResult.data?.inProgressCount.__typename === 'Runs'
+                ? runQueryResult.data?.inProgressCount.count === 0
+                : true
+            }
+          />
+        ) : undefined}
       </Box>
     );
   }
@@ -161,19 +179,6 @@ export const RunsRoot = () => {
         right={<QueryRefreshCountdown refreshState={combinedRefreshState} />}
       />
       {filtersPortal}
-      {currentTab === 'queued' && canSeeConfig ? (
-        <Box
-          flex={{direction: 'column', gap: 8}}
-          padding={{horizontal: 24, vertical: 16}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
-          <Alert
-            intent="info"
-            title={<Link to="/config#run_coordinator">View queue configuration</Link>}
-          />
-          <QueueDaemonAlert />
-        </Box>
-      ) : null}
       <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
         <Loading
           queryResult={queryResult}
@@ -220,6 +225,7 @@ export const RunsRoot = () => {
 
             return (
               <>
+                <RunsRootPerformanceEmitter trace={trace} />
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
@@ -227,16 +233,17 @@ export const RunsRoot = () => {
                     filter={filter}
                     actionBarComponents={actionBar()}
                     belowActionBarComponents={
-                      activeFiltersJsx.length ? (
+                      currentTab === 'queued' || activeFiltersJsx.length ? (
                         <>
-                          {activeFiltersJsx}
-                          <ButtonLink
-                            onClick={() => {
-                              setFilterTokensWithStatus([]);
-                            }}
-                          >
-                            Clear all
-                          </ButtonLink>
+                          {currentTab === 'queued' && <QueuedRunsBanners />}
+                          {activeFiltersJsx.length > 0 && (
+                            <>
+                              {activeFiltersJsx}
+                              <ButtonLink onClick={() => setFilterTokensWithStatus([])}>
+                                Clear all
+                              </ButtonLink>
+                            </>
+                          )}
                         </>
                       ) : null
                     }
@@ -254,6 +261,13 @@ export const RunsRoot = () => {
       </RunsQueryRefetchContext.Provider>
     </Page>
   );
+};
+
+const RunsRootPerformanceEmitter = ({trace}: {trace: ReturnType<typeof useStartTrace>}) => {
+  React.useLayoutEffect(() => {
+    trace.endTrace();
+  }, [trace]);
+  return null;
 };
 
 // Imported via React.lazy, which requires a default export.
@@ -278,43 +292,4 @@ export const RUNS_ROOT_QUERY = gql`
 
   ${RUN_TABLE_RUN_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const QueueDaemonAlert = () => {
-  const {data} = useQuery<QueueDaemonStatusQuery, QueueDaemonStatusQueryVariables>(
-    QUEUE_DAEMON_STATUS_QUERY,
-  );
-  const {pageTitle} = React.useContext(InstancePageContext);
-  const status = data?.instance.daemonHealth.daemonStatus;
-  if (status?.required && !status?.healthy) {
-    return (
-      <Alert
-        intent="warning"
-        title="The queued run coordinator is not healthy."
-        description={
-          <div>
-            View <Link to="/health">{pageTitle}</Link> for details.
-          </div>
-        }
-      />
-    );
-  }
-  return null;
-};
-
-const QUEUE_DAEMON_STATUS_QUERY = gql`
-  query QueueDaemonStatusQuery {
-    instance {
-      id
-      daemonHealth {
-        id
-        daemonStatus(daemonType: "QUEUED_RUN_COORDINATOR") {
-          id
-          daemonType
-          healthy
-          required
-        }
-      }
-    }
-  }
 `;

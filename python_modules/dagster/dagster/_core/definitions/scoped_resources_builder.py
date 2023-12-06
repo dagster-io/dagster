@@ -29,7 +29,7 @@ class Resources:
         raise DagsterUnknownResourceError(name)
 
     @property
-    def _original_resource_dict(self) -> Mapping[str, object]:
+    def original_resource_dict(self) -> Mapping[str, object]:
         raise NotImplementedError()
 
 
@@ -106,7 +106,7 @@ class ScopedResourcesBuilder(
                 IContainsGenerator,
             ):
                 @property
-                def _original_resource_dict(self) -> Mapping[str, object]:
+                def original_resource_dict(self) -> Mapping[str, object]:
                     return resource_instance_dict
 
             return _ScopedResourcesContainsGenerator(**resources_to_attach_to_context)
@@ -118,7 +118,7 @@ class ScopedResourcesBuilder(
                 Resources,
             ):
                 @property
-                def _original_resource_dict(self) -> Mapping[str, object]:
+                def original_resource_dict(self) -> Mapping[str, object]:
                     return resource_instance_dict
 
             return _ScopedResources(**resources_to_attach_to_context)

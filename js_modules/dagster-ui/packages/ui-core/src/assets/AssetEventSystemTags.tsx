@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Caption, Colors, Icon, Mono} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Caption, Icon, Mono, colorKeylineDefault} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -15,11 +15,15 @@ const ORDER = [
   DagsterTag.AssetEventCodeVersion.valueOf(),
 ];
 
-export const AssetEventSystemTags: React.FC<{
+export const AssetEventSystemTags = ({
+  event,
+  paddingLeft,
+  collapsible,
+}: {
   event: AssetEventGroup['latest'] | null;
   paddingLeft?: number;
   collapsible?: boolean;
-}> = ({event, paddingLeft, collapsible}) => {
+}) => {
   const [shown, setShown] = useStateWithStorage('show-asset-system-tags', Boolean);
 
   if (collapsible && !shown) {
@@ -82,7 +86,7 @@ const AssetEventSystemTagsTable = styled.table`
     width: 25%;
   }
   tr td {
-    border: 1px solid ${Colors.KeylineGray};
+    border: 1px solid ${colorKeylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     vertical-align: top;

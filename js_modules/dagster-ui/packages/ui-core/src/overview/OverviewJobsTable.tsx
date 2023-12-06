@@ -28,7 +28,7 @@ type RowType =
   | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
   | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
 
-export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
+export const OverviewJobsTable = ({repos}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),

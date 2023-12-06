@@ -144,7 +144,7 @@ function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
               idx === stepStat.attempts.length - 1
                 ? stepStatusToStepState(stepStat.status)
                 : IStepState.RETRY_REQUESTED,
-          } as IStepAttempt),
+          }) as IStepAttempt,
       ),
 
       // accumulated metadata
@@ -368,7 +368,7 @@ interface IRunMetadataProviderProps {
   children: (metadata: IRunMetadataDict) => React.ReactElement<any>;
 }
 
-export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, children}) => {
+export const RunMetadataProvider = ({logs, children}: IRunMetadataProviderProps) => {
   const run = React.useContext(RunContext);
   const runMetadata = React.useMemo(() => extractMetadataFromRun(run), [run]);
   const metadata = React.useMemo(

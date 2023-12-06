@@ -3,8 +3,9 @@ import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 
+import {colorAccentPrimary, colorBackgroundDefault, colorDialogBackground} from '../theme/color';
+
 import {Box} from './Box';
-import {Colors} from './Colors';
 import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
 import {IconName, Icon} from './Icon';
@@ -39,16 +40,16 @@ interface HeaderProps {
   label: React.ReactNode;
 }
 
-export const DialogHeader: React.FC<HeaderProps> = (props) => {
+export const DialogHeader = (props: HeaderProps) => {
   const {icon, label} = props;
   return (
     <Box
-      background={Colors.White}
+      background={colorBackgroundDefault()}
       padding={{vertical: 16, horizontal: 20}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
     >
       <Group direction="row" spacing={8} alignItems="center">
-        {icon ? <Icon name={icon} color={Colors.Gray800} /> : null}
+        {icon ? <Icon name={icon} color={colorAccentPrimary()} /> : null}
         <DialogHeaderText>{label}</DialogHeaderText>
       </Group>
     </Box>
@@ -61,7 +62,7 @@ interface BodyProps {
 
 export const DialogBody = ({children, ...rest}: BodyProps) => {
   return (
-    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White} {...rest}>
+    <Box padding={{vertical: 16, horizontal: 20}} background={colorBackgroundDefault()} {...rest}>
       {children}
     </Box>
   );
@@ -73,16 +74,12 @@ interface DialogFooterProps {
   left?: React.ReactNode;
 }
 
-export const DialogFooter: React.FC<DialogFooterProps> = ({
-  children,
-  left,
-  topBorder,
-}: DialogFooterProps) => {
+export const DialogFooter = ({children, left, topBorder}: DialogFooterProps) => {
   return (
     <Box
       padding={{bottom: 16, top: topBorder ? 16 : 8, horizontal: 20}}
-      border={topBorder ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
-      background={Colors.White}
+      border={topBorder ? 'top' : null}
+      background={colorBackgroundDefault()}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >
       <div>{left}</div>
@@ -102,7 +99,7 @@ export const DialogHeaderText = styled.div`
 
 export const GlobalDialogStyle = createGlobalStyle`
   .dagster-portal .bp4-overlay-backdrop {
-    background-color: ${Colors.WashGray};
+    background-color: ${colorDialogBackground()};
   }
 
   .dagster-portal .bp4-dialog-container {
@@ -112,7 +109,7 @@ export const GlobalDialogStyle = createGlobalStyle`
   }
 
   .dagster-portal .bp4-dialog {
-    background-color: ${Colors.White};
+    background-color: ${colorBackgroundDefault()};
     border-radius: 4px;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
     grid-row: 2;

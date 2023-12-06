@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional
 
+from dagster import ConfigurableResource
+
 # start_mock
 # resources.py
 
@@ -25,7 +27,7 @@ class StubHNClient:
         return 2
 
     @property
-    def item_field_names(self):
+    def item_field_names(self) -> list:
         return ["id", "type", "title", "by"]
 
 

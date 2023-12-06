@@ -88,15 +88,15 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
             parse_result.port
         )  # can be different, based on the backcompat mysql version or latest mysql version
 
-        url_cfg = """
+        url_cfg = f"""
         event_log_storage:
             module: dagster_mysql.event_log
             class: MySQLEventLogStorage
             config:
                 mysql_url: mysql+mysqlconnector://test:test@{hostname}:{port}/test
-        """.format(hostname=hostname, port=port)
+        """
 
-        explicit_cfg = """
+        explicit_cfg = f"""
         event_log_storage:
             module: dagster_mysql.event_log
             class: MySQLEventLogStorage
@@ -107,7 +107,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
                     hostname: {hostname}
                     port: {port}
                     db_name: test
-        """.format(hostname=hostname, port=port)
+        """
 
         with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
             from_url = from_url_instance._event_storage  # noqa: SLF001

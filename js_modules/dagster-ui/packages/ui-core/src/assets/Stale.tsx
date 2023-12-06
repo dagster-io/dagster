@@ -5,9 +5,10 @@ import {
   ButtonLink,
   Caption,
   CaptionMono,
-  Colors,
   Icon,
   Popover,
+  colorBackgroundYellow,
+  colorTextYellow,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
@@ -22,10 +23,10 @@ import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus'>;
 
-export const isAssetMissing = (liveData?: StaleDataForNode) =>
+export const isAssetMissing = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
 
-export const isAssetStale = (liveData?: StaleDataForNode) =>
+export const isAssetStale = (liveData?: Pick<StaleDataForNode, 'staleStatus'>) =>
   liveData && liveData.staleStatus === StaleStatus.STALE;
 
 const LABELS = {
@@ -41,17 +42,21 @@ const LABELS = {
   },
 };
 
-export const StaleReasonsLabel: React.FC<{
+export const StaleReasonsLabel = ({
+  liveData,
+  include,
+  assetKey,
+}: {
   assetKey: AssetKeyInput;
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
-}> = ({liveData, include, assetKey}) => {
+}) => {
   if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
     return null;
   }
 
   return (
-    <Body color={Colors.Yellow700}>
+    <Body color={colorTextYellow()}>
       <Popover
         position="top"
         content={<StaleCausesPopoverSummary causes={liveData.staleCauses} />}
@@ -64,12 +69,17 @@ export const StaleReasonsLabel: React.FC<{
   );
 };
 
-export const StaleReasonsTags: React.FC<{
+export const StaleReasonsTags = ({
+  liveData,
+  include,
+  assetKey,
+  onClick,
+}: {
   assetKey: AssetKeyInput;
   include: 'all' | 'upstream' | 'self';
   liveData?: StaleDataForNode;
   onClick?: () => void;
-}> = ({liveData, include, assetKey, onClick}) => {
+}) => {
   if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
     return null;
   }
@@ -85,13 +95,13 @@ export const StaleReasonsTags: React.FC<{
           className="chunk-popover-target"
         >
           <BaseTag
-            fillColor={Colors.Yellow50}
-            textColor={Colors.Yellow700}
+            fillColor={colorBackgroundYellow()}
+            textColor={colorTextYellow()}
             interactive={!!onClick}
-            icon={<Icon name="changes_present" color={Colors.Yellow700} />}
+            icon={<Icon name="changes_present" color={colorTextYellow()} />}
             label={
               onClick ? (
-                <ButtonLink underline="never" onClick={onClick} color={Colors.Yellow700}>
+                <ButtonLink underline="never" onClick={onClick} color={colorTextYellow()}>
                   {label}
                 </ButtonLink>
               ) : (
@@ -120,24 +130,14 @@ function groupedCauses(
   return groupBy(all, (cause) => cause.label);
 }
 
-const StaleCausesPopoverSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({
-  causes,
-}) => (
+const StaleCausesPopoverSummary = ({causes}: {causes: LiveDataForNode['staleCauses']}) => (
   <Box style={{width: '300px'}}>
-    <Box
-      padding={12}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      style={{fontWeight: 600}}
-    >
+    <Box padding={12} border="bottom" style={{fontWeight: 600}}>
       Changes since last materialization:
     </Box>
     <Box style={{maxHeight: '240px', overflowY: 'auto'}} onClick={(e) => e.stopPropagation()}>
       {causes.map((cause, idx) => (
-        <Box
-          key={idx}
-          border={idx > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
-          padding={{vertical: 8, horizontal: 12}}
-        >
+        <Box key={idx} border={idx > 0 ? 'top' : null} padding={{vertical: 8, horizontal: 12}}>
           <Link to={assetDetailsPathForKey(cause.key)}>
             <CaptionMono>{displayNameForAssetKey(cause.key)}</CaptionMono>
           </Link>
@@ -148,9 +148,12 @@ const StaleCausesPopoverSummary: React.FC<{causes: LiveDataForNode['staleCauses'
   </Box>
 );
 
-const StaleReason: React.FC<{reason: string; dependency: AssetNodeKeyFragment | null}> = ({
+const StaleReason = ({
   reason,
   dependency,
+}: {
+  reason: string;
+  dependency: AssetNodeKeyFragment | null;
 }) => {
   if (!dependency) {
     return <Caption>{` ${reason}`}</Caption>;

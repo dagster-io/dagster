@@ -1,12 +1,12 @@
 import {gql} from '@apollo/client';
-import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
+import {Alert, ButtonLink, Group, Mono, colorAccentReversed} from '@dagster-io/ui-components';
 import {History} from 'history';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {LaunchPartitionBackfillMutation} from '../instance/types/BackfillUtils.types';
+import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 
 import {
@@ -41,7 +41,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
-          color={Colors.White}
+          color={colorAccentReversed()}
           underline="always"
           onClick={() => {
             showCustomAlert({
@@ -71,6 +71,15 @@ export async function showBackfillSuccessToast(
   backfillId: string,
   isAssetBackfill: boolean,
 ) {
+  const url = isAssetBackfill
+    ? `/overview/backfills/${backfillId}`
+    : runsPathWithFilters([
+        {
+          token: 'tag',
+          value: `dagster/backfill=${backfillId}`,
+        },
+      ]);
+  const [pathname, search] = url.split('?');
   await showSharedToaster({
     intent: 'success',
     message: (
@@ -80,14 +89,7 @@ export async function showBackfillSuccessToast(
     ),
     action: {
       text: 'View',
-      href: isAssetBackfill
-        ? `/overview/backfills/${backfillId}`
-        : runsPathWithFilters([
-            {
-              token: 'tag',
-              value: `dagster/backfill=${backfillId}`,
-            },
-          ]),
+      href: history.createHref({pathname, search}),
     },
   });
 }
@@ -105,10 +107,11 @@ export const DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT = gql`
   }
 `;
 
-export const DaemonNotRunningAlert: React.FC<{
+export const DaemonNotRunningAlert = ({
+  instance,
+}: {
   instance: DaemonNotRunningAlertInstanceFragment;
-}> = ({instance}) =>
-  !instance.daemonHealth.daemonStatus.healthy ? <DaemonNotRunningAlertBody /> : null;
+}) => (!instance.daemonHealth.daemonStatus.healthy ? <DaemonNotRunningAlertBody /> : null);
 
 export const DaemonNotRunningAlertBody = () => (
   <Alert
@@ -140,9 +143,11 @@ export const USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT = gql`
   }
 `;
 
-export const UsingDefaultLauncherAlert: React.FC<{
+export const UsingDefaultLauncherAlert = ({
+  instance,
+}: {
   instance: UsingDefaultLauncherAlertInstanceFragment;
-}> = ({instance}) =>
+}) =>
   instance.runLauncher?.name === DEFAULT_RUN_LAUNCHER_NAME && !instance.runQueuingSupported ? (
     <Alert
       intent="warning"

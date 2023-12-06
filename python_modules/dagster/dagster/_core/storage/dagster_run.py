@@ -17,6 +17,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -32,6 +33,7 @@ from .tags import (
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
+    TICK_ID_TAG,
 )
 
 if TYPE_CHECKING:
@@ -236,6 +238,7 @@ class DagsterRun(
             ("run_id", str),
             ("run_config", Mapping[str, object]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("op_selection", Optional[Sequence[str]]),
             ("resolved_op_selection", Optional[AbstractSet[str]]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
@@ -261,6 +264,7 @@ class DagsterRun(
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
         op_selection: Optional[Sequence[str]] = None,
         resolved_op_selection: Optional[AbstractSet[str]] = None,
         step_keys_to_execute: Optional[Sequence[str]] = None,
@@ -292,6 +296,9 @@ class DagsterRun(
         asset_selection = check.opt_nullable_set_param(
             asset_selection, "asset_selection", of_type=AssetKey
         )
+        asset_check_selection = check.opt_nullable_set_param(
+            asset_check_selection, "asset_check_selection", of_type=AssetCheckKey
+        )
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
@@ -315,6 +322,7 @@ class DagsterRun(
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             resolved_op_selection=resolved_op_selection,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
@@ -372,9 +380,9 @@ class DagsterRun(
         if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from the Dagster UI.
-            repository_tags[REPOSITORY_LABEL_TAG] = (
-                self.external_job_origin.external_repository_origin.get_label()
-            )
+            repository_tags[
+                REPOSITORY_LABEL_TAG
+            ] = self.external_job_origin.external_repository_origin.get_label()
 
         if not self.tags:
             return repository_tags
@@ -428,24 +436,11 @@ class DagsterRun(
     def tags_for_backfill_id(backfill_id: str) -> Mapping[str, str]:
         return {BACKFILL_ID_TAG: backfill_id}
 
-
-class RunsFilterSerializer(NamedTupleSerializer["RunsFilter"]):
-    def before_unpack(
-        self,
-        context,
-        unpacked_dict: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        # We store empty run ids as [] but only accept None
-        if "run_ids" in unpacked_dict and unpacked_dict["run_ids"] == []:
-            unpacked_dict["run_ids"] = None
-        return unpacked_dict
+    @staticmethod
+    def tags_for_tick_id(tick_id: str) -> Mapping[str, str]:
+        return {TICK_ID_TAG: tick_id}
 
 
-@whitelist_for_serdes(
-    serializer=RunsFilterSerializer,
-    old_storage_names={"PipelineRunsFilter"},
-    storage_field_names={"job_name": "pipeline_name"},
-)
 class RunsFilter(
     NamedTuple(
         "_RunsFilter",

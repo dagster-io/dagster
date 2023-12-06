@@ -1,23 +1,30 @@
-import os
-
 import pandas as pd
-from dagster import DailyPartitionsDefinition, MetadataValue, asset
-from dagster_dbt import load_assets_from_dbt_project
+from dagster import (
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MetadataValue,
+    asset,
+)
+from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
 from .resources import (
-    DBT_PROFILE_DIR,
-    DBT_PROJECT_DIR,
+    ENV,
     HEX_PROJECT_ID,
     GithubResource,
     PyPiResource,
+    resource_def,
 )
 
-dbt_assets = load_assets_from_dbt_project(
-    project_dir=DBT_PROJECT_DIR,
-    profiles_dir=DBT_PROFILE_DIR,
-)
+dbt_parse_invocation = resource_def[ENV.upper()]["dbt"].cli(["parse"]).wait()
+dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+
 
 START_DATE = "2023-04-10"
+
+
+@dbt_assets(manifest=dbt_manifest_path)
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 
 
 @asset(
@@ -88,11 +95,15 @@ def github_stars(context, raw_github_stars) -> pd.DataFrame:
 
 
 @asset(
-    deps=["weekly_agg_activity", "daily_agg_activity", "monthly_agg_activity"],
+    deps=[
+        get_asset_key_for_model([dbt_project_assets], "weekly_agg_activity"),
+        get_asset_key_for_model([dbt_project_assets], "daily_agg_activity"),
+        get_asset_key_for_model([dbt_project_assets], "monthly_agg_activity"),
+    ],
     required_resource_keys={"hex"},
 )
 def hex_notebook(context) -> None:
-    if os.getenv("DAGSTER_ENV") == "PROD":
+    if ENV == "PROD":
         context.resources.hex.run_and_poll(project_id=HEX_PROJECT_ID, inputs=[])
     else:
         print("Skipping hex notebook in non-prod environment")

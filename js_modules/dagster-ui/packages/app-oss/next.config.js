@@ -41,9 +41,6 @@ const nextConfig = {
   },
   distDir: 'build',
   assetPrefix: 'BUILDTIME_ASSETPREFIX_REPLACE_ME',
-  experimental: {
-    appDir: false,
-  },
 };
 
 module.exports = (phase) => {

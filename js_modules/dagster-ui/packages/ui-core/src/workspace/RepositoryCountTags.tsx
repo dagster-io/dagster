@@ -9,10 +9,13 @@ import {DagsterRepoOption} from './WorkspaceContext';
 import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 
-export const RepositoryCountTags: React.FC<{
+export const RepositoryCountTags = ({
+  repo,
+  repoAddress,
+}: {
   repo: DagsterRepoOption['repository'];
   repoAddress: RepoAddress;
-}> = ({repo, repoAddress}) => {
+}) => {
   const assetGroupCount = repo.assetGroups.length;
   const jobCount = repo.pipelines.filter(({name}) => !isHiddenAssetGroupJob(name)).length;
   const scheduleCount = repo.schedules.length;

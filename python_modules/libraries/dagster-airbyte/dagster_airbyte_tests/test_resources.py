@@ -353,7 +353,62 @@ def test_assets(
 
     materializations = list(generate_materializations(airbyte_output, []))
     assert len(materializations) == 3
+    assert materializations[0].metadata["bytesEmitted"] == MetadataValue.int(1234)
+    assert materializations[0].metadata["recordsCommitted"] == MetadataValue.int(4321)
 
+
+@responses.activate
+@pytest.mark.parametrize(
+    "forward_logs",
+    [True, False],
+)
+def test_assets_with_mapping(
+    forward_logs, airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+) -> None:
+    ab_resource = airbyte_instance_constructor(
+        {
+            "host": "some_host",
+            "port": "8000",
+            "forward_logs": forward_logs,
+        }
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json=get_sample_connection_json(stream_prefix="test/"),
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json={"job": {"id": 1}},
+        status=200,
+    )
+
+    if forward_logs:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            json=get_sample_job_json("test/"),
+            status=200,
+        )
+    else:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json=get_sample_job_list_json("test/"),
+            status=200,
+        )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
+
+    airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
+
+    materializations = list(
+        generate_materializations(
+            airbyte_output, [], {"test/foo": "foo", "test/bar": "bar", "test/baz": "baz"}
+        )
+    )
+    assert len(materializations) == 3
     assert materializations[0].metadata["bytesEmitted"] == MetadataValue.int(1234)
     assert materializations[0].metadata["recordsCommitted"] == MetadataValue.int(4321)
 

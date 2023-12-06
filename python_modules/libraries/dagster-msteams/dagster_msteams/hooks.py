@@ -6,6 +6,7 @@ from dagster._core.execution.context.hook import HookContext
 from dagster._utils.warnings import normalize_renamed_param
 
 from dagster_msteams.card import Card
+from dagster_msteams.resources import MSTeamsResource
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
@@ -72,13 +73,13 @@ def teams_on_failure(
     def _hook(context: HookContext):
         text = message_fn(context)
         if webserver_base_url:
-            text += "<a href='{base_url}/runs/{run_id}'>View in Dagster UI</a>".format(
-                base_url=webserver_base_url,
-                run_id=context.run_id,
-            )
+            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in Dagster UI</a>"
         card = Card()
         card.add_attachment(text_message=text)
-        context.resources.msteams.post_message(payload=card.payload)
+        if isinstance(context.resources.msteams, MSTeamsResource):
+            context.resources.msteams.get_client().post_message(payload=card.payload)
+        else:
+            context.resources.msteams.post_message(payload=card.payload)
 
     return _hook
 
@@ -132,12 +133,12 @@ def teams_on_success(
     def _hook(context: HookContext):
         text = message_fn(context)
         if webserver_base_url:
-            text += "<a href='{base_url}/runs/{run_id}'>View in webserver</a>".format(
-                base_url=webserver_base_url,
-                run_id=context.run_id,
-            )
+            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in webserver</a>"
         card = Card()
         card.add_attachment(text_message=text)
-        context.resources.msteams.post_message(payload=card.payload)
+        if isinstance(context.resources.msteams, MSTeamsResource):
+            context.resources.msteams.get_client().post_message(payload=card.payload)
+        else:
+            context.resources.msteams.post_message(payload=card.payload)
 
     return _hook

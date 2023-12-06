@@ -20,7 +20,9 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 
@@ -362,7 +364,7 @@ class InputContext:
             )
 
         partition_key_ranges = subset.get_partition_key_ranges(
-            dynamic_partitions_store=self.instance
+            self.asset_partitions_def, dynamic_partitions_store=self.instance
         )
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -393,7 +395,8 @@ class InputContext:
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
-        - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
         """
         subset = self._asset_partitions_subset
 
@@ -402,20 +405,7 @@ class InputContext:
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        if not isinstance(subset, TimeWindowPartitionsSubset):
-            check.failed(
-                "Tried to access asset_partitions_time_window, but the asset is not partitioned"
-                " with time windows.",
-            )
-
-        time_windows = subset.included_time_windows
-        if len(time_windows) != 1:
-            check.failed(
-                "Tried to access asset_partitions_time_window, but there are "
-                f"({len(time_windows)}) time windows associated with this input.",
-            )
-
-        return time_windows[0]
+        return self.step_context.asset_partitions_time_window_for_input(self.name)
 
     @public
     def get_identifier(self) -> Sequence[str]:
@@ -605,7 +595,7 @@ def build_input_context(
     )
     if asset_partitions_def and asset_partition_key_range:
         asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partition_key_range, dynamic_partitions_store=instance
+            asset_partitions_def, asset_partition_key_range, dynamic_partitions_store=instance
         )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
@@ -640,6 +630,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def get_partition_keys_not_in_subset(
         self,
+        partitions_def: "PartitionsDefinition",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
@@ -653,6 +644,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def get_partition_key_ranges(
         self,
+        partitions_def: "PartitionsDefinition",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
@@ -672,7 +664,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @property
-    def partitions_def(self) -> "PartitionsDefinition":
+    def partitions_def(self) -> Optional["PartitionsDefinition"]:
         raise NotImplementedError()
 
     def __len__(self) -> int:
@@ -698,5 +690,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @classmethod
-    def empty_subset(cls, partitions_def: "PartitionsDefinition") -> "PartitionsSubset":
+    def empty_subset(
+        cls, partitions_def: Optional["PartitionsDefinition"] = None
+    ) -> "PartitionsSubset":
         raise NotImplementedError()

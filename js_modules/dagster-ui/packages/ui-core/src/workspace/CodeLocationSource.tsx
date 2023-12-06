@@ -1,4 +1,4 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon, colorLinkDefault, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 interface Metadata {
@@ -6,7 +6,7 @@ interface Metadata {
   value: string;
 }
 
-export const CodeLocationSource: React.FC<{metadata: Metadata[]}> = ({metadata}) => {
+export const CodeLocationSource = ({metadata}: {metadata: Metadata[]}) => {
   const metadataWithURL = metadata.find(({key}) => key === 'url');
   if (!metadataWithURL) {
     return <div>{'\u2013'}</div>;
@@ -44,12 +44,12 @@ export const CodeLocationSource: React.FC<{metadata: Metadata[]}> = ({metadata})
   return (
     <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name={isGithub ? 'github' : 'gitlab'} color={Colors.Link} />
+        <Icon name={isGithub ? 'github' : 'gitlab'} color={colorLinkDefault()} />
         <a href={metadataWithURL.value} target="_blank" rel="noreferrer">
           {extractProjectName(url.pathname)}
         </a>
       </Box>
-      <div style={{fontSize: 12, color: Colors.Gray700}}>{commitHash()}</div>
+      <div style={{fontSize: 12, color: colorTextLight()}}>{commitHash()}</div>
     </Box>
   );
 };

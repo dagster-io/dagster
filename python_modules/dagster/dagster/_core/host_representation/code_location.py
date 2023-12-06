@@ -129,7 +129,11 @@ class CodeLocation(AbstractContextManager):
         an op selection is specified, which requires access to the underlying JobDefinition
         to generate the subsetted pipeline snapshot.
         """
-        if not selector.op_selection and not selector.asset_selection:
+        if (
+            not selector.op_selection
+            and not selector.asset_selection
+            and not selector.asset_check_selection
+        ):
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.job_name
             )
@@ -358,8 +362,8 @@ class InProcessCodeLocation(CodeLocation):
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
-            " {self.name}".format(self=self, selector=selector),
+            f"PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            f" {self.name}",
         )
 
         from dagster._grpc.impl import get_external_pipeline_subset_result
@@ -369,6 +373,7 @@ class InProcessCodeLocation(CodeLocation):
             selector.job_name,
             selector.op_selection,
             selector.asset_selection,
+            selector.asset_check_selection,
         )
 
     def get_external_execution_plan(
@@ -393,6 +398,7 @@ class InProcessCodeLocation(CodeLocation):
             ).get_subset(
                 op_selection=external_job.resolved_op_selection,
                 asset_selection=external_job.asset_selection,
+                asset_check_selection=external_job.asset_check_selection,
             ),
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
@@ -731,6 +737,13 @@ class GrpcServerCodeLocation(CodeLocation):
             if external_job.asset_selection is not None
             else None
         )
+        asset_check_selection = (
+            frozenset(
+                check.opt_set_param(external_job.asset_check_selection, "asset_check_selection")
+            )
+            if external_job.asset_check_selection is not None
+            else None
+        )
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
@@ -738,6 +751,7 @@ class GrpcServerCodeLocation(CodeLocation):
             run_config=run_config,
             job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
             op_selection=external_job.op_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -752,8 +766,8 @@ class GrpcServerCodeLocation(CodeLocation):
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
-            " {self.name}".format(self=self, selector=selector),
+            f"PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            f" {self.name}",
         )
 
         external_repository = self.get_repository(selector.repository_name)
@@ -763,6 +777,7 @@ class GrpcServerCodeLocation(CodeLocation):
             job_handle.get_external_origin(),
             selector.op_selection,
             selector.asset_selection,
+            selector.asset_check_selection,
         )
 
     def get_external_partition_config(

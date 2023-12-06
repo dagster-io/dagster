@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
@@ -104,7 +103,11 @@ def result_to_events(
         status = (
             "fail"
             if result.get("fail")
-            else "skip" if result.get("skip") else "error" if result.get("error") else "success"
+            else "skip"
+            if result.get("skip")
+            else "error"
+            if result.get("error")
+            else "success"
         )
     else:
         status = result["status"]
@@ -233,63 +236,44 @@ def generate_materializations(
 def select_unique_ids_from_manifest(
     select: str,
     exclude: str,
-    state_path: Optional[str] = None,
-    manifest_json_path: Optional[str] = None,
-    manifest_json: Optional[Mapping[str, Any]] = None,
-    manifest_parsed: Optional[Any] = None,
+    manifest_json: Mapping[str, Any],
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
-    from dbt.contracts.graph.manifest import Manifest, WritableManifest
-    from dbt.contracts.state import PreviousState
+    from dbt.contracts.graph.manifest import Manifest
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
-    if state_path is not None:
-        previous_state = PreviousState(
-            path=Path(state_path),  # type: ignore  # (unused path, slated for deletion)
-            current_path=(  # type: ignore  # (unused path, slated for deletion)
-                Path("/tmp/null") if manifest_json_path is None else Path(manifest_json_path)
-            ),
-        )
-    else:
-        previous_state = None
+    class _DictShim(dict):
+        """Shim to enable hydrating a dictionary into a dot-accessible object."""
 
-    if manifest_json_path is not None:
-        manifest = WritableManifest.read_and_check_versions(manifest_json_path)
-        child_map = manifest.child_map
-    elif manifest_json is not None:
+        def __getattr__(self, item):
+            ret = super().get(item)
+            # allow recursive access e.g. foo.bar.baz
+            return _DictShim(ret) if isinstance(ret, dict) else ret
 
-        class _DictShim(dict):
-            """Shim to enable hydrating a dictionary into a dot-accessible object."""
+    manifest = Manifest(
+        # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
+        nodes={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["nodes"].items()  # type: ignore
+        },
+        sources={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["sources"].items()  # type: ignore
+        },
+        metrics={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+        },
+        exposures={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+        },
+    )
+    child_map = manifest_json["child_map"]
 
-            def __getattr__(self, item):
-                ret = super().get(item)
-                # allow recursive access e.g. foo.bar.baz
-                return _DictShim(ret) if isinstance(ret, dict) else ret
-
-        manifest = Manifest(
-            # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-            nodes={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()  # type: ignore
-            },
-            sources={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
-            },
-            metrics={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
-            },
-            exposures={
-                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
-            },
-        )
-        child_map = manifest_json["child_map"]
-    elif manifest_parsed is not None:
-        manifest = manifest_parsed
-        child_map = manifest.child_map
-    else:
-        check.failed("Must provide either a manifest_json_path, manifest_json, or manifest_parsed.")
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string
@@ -303,12 +287,11 @@ def select_unique_ids_from_manifest(
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
-        parsed_spec = graph_cli.SelectionDifference(
-            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
-        )
+        parsed_exclude_spec = graph_cli.parse_union([exclude], False)
+        parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
     # execute this selection against the graph
-    selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
+    selector = graph_selector.NodeSelector(graph, manifest)
     selected, _ = selector.select_nodes(parsed_spec)
     return selected
 

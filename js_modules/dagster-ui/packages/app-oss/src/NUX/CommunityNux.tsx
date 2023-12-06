@@ -4,13 +4,15 @@ import {
   Box,
   Button,
   Checkbox,
-  Colors,
   Dialog,
   ExternalAnchorButton,
   Heading,
   Icon,
   Spinner,
   TextInput,
+  colorAccentRed,
+  colorTextLight,
+  colorTextRed,
 } from '@dagster-io/ui-components';
 import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
 import React from 'react';
@@ -44,7 +46,7 @@ export const CommunityNux = () => {
 // Wait 1 second before trying to show Nux
 const TIMEOUT = 1000;
 
-const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
+const CommunityNuxImpl = ({dismiss}: {dismiss: () => void}) => {
   const [shouldShowNux, setShouldShowNux] = React.useState(false);
   React.useEffect(() => {
     const timeout = setTimeout(() => {
@@ -77,10 +79,12 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
   );
 };
 
-const Form: React.FC<{
+interface FormProps {
   dismiss: () => void;
   submit: (email: string, newsletter: boolean) => void;
-}> = ({dismiss, submit}) => {
+}
+
+const Form = ({dismiss, submit}: FormProps) => {
   const [email, setEmail] = React.useState('');
   const [newsletter, setNewsLetter] = React.useState(false);
   const validEmail = isEmail(email);
@@ -95,11 +99,11 @@ const Form: React.FC<{
       <Box
         flex={{direction: 'row', gap: 24, alignItems: 'center'}}
         padding={{bottom: 24}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <Box flex={{direction: 'column', gap: 8, alignItems: 'start', justifyContent: 'start'}}>
           <Heading>Join the Dagster community</Heading>
-          <Body style={{color: Colors.Gray700, marginBottom: '4px'}}>
+          <Body style={{color: colorTextLight(), marginBottom: '4px'}}>
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
           </Body>
@@ -124,11 +128,11 @@ const Form: React.FC<{
           }}
           onBlur={() => setBlurred(true)}
           placeholder="hello@dagster.io"
-          strokeColor={!emailChanged || validEmail ? undefined : Colors.Red500}
+          strokeColor={!emailChanged || validEmail ? undefined : colorAccentRed()}
           style={{width: '100%'}}
         />
         {emailChanged && blurred && !validEmail ? (
-          <div style={{paddingBottom: '12px', color: Colors.Red500, fontSize: '12px'}}>
+          <div style={{paddingBottom: '12px', color: colorTextRed(), fontSize: '12px'}}>
             Add your email to get updates from Dagster.
           </div>
         ) : null}
@@ -169,11 +173,13 @@ const Form: React.FC<{
   );
 };
 
-const RecaptchaIFrame: React.FC<{
+interface RecaptchaIFrameProps {
   newsletter: boolean;
   email: string;
   dismiss: () => void;
-}> = ({dismiss, newsletter, email}) => {
+}
+
+const RecaptchaIFrame = ({dismiss, newsletter, email}: RecaptchaIFrameProps) => {
   const [iframeLoaded, setIframeLoaded] = React.useState(false);
   const [width, setWidth] = React.useState(680);
   const [height, setHeight] = React.useState(462);

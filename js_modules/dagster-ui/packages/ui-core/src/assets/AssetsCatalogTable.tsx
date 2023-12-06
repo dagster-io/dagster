@@ -32,9 +32,7 @@ import {AssetViewType, useAssetView} from './useAssetView';
 
 type Asset = AssetTableFragment;
 
-function useAllAssets(
-  groupSelector?: AssetGroupSelector,
-): {
+function useAllAssets(groupSelector?: AssetGroupSelector): {
   query: QueryResult<AssetCatalogTableQuery, any> | QueryResult<AssetCatalogGroupTableQuery, any>;
   assets: Asset[] | undefined;
   error: PythonErrorFragment | undefined;
@@ -80,11 +78,11 @@ interface AssetCatalogTableProps {
   groupSelector?: AssetGroupSelector;
 }
 
-export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
+export const AssetsCatalogTable = ({
   prefixPath,
   setPrefixPath,
   groupSelector,
-}) => {
+}: AssetCatalogTableProps) => {
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
   const [searchGroups, setSearchGroups] = useQueryPersistedState<AssetGroupSelector[]>({

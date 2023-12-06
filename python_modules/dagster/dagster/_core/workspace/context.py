@@ -136,6 +136,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
+    def get_viewer_tags(self) -> Dict[str, str]:
+        return {}
+
+    def get_reporting_user_tags(self) -> Dict[str, str]:
+        return {}
+
     def get_code_location(self, location_name: str) -> CodeLocation:
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
@@ -607,11 +613,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
-            warnings.warn(
-                "Error loading repository location {location_name}:{error_string}".format(
-                    location_name=location_name, error_string=error.to_string()
-                )
-            )
+            warnings.warn(f"Error loading repository location {location_name}:{error.to_string()}")
 
         return CodeLocationEntry(
             origin=origin,

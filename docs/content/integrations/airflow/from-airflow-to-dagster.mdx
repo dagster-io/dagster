@@ -42,12 +42,14 @@ with DAG(
         retries=3,
     )
 
-    templated_command = dedent("""
+    templated_command = dedent(
+        """
     {% for i in range(5) %}
         echo "{{ ds }}"
         echo "{{ macros.ds_add(ds, 7)}}"
     {% endfor %}
-    """)
+    """
+    )
 
     t3 = BashOperator(
         task_id="templated",
@@ -73,7 +75,7 @@ In Dagster, the minimum unit of computation is an op. This directly corresponds 
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_ops endbefore=end_ops
 @op
-def print_date(context) -> datetime:
+def print_date(context: OpExecutionContext) -> datetime:
     ds = datetime.now()
     context.log.info(ds)
     return ds
@@ -85,7 +87,7 @@ def sleep():
 
 
 @op
-def templated(context, ds: datetime):
+def templated(context: OpExecutionContext, ds: datetime):
     for _i in range(5):
         context.log.info(ds)
         context.log.info(ds - timedelta(days=7))
@@ -167,6 +169,7 @@ from dagster import (
     Definitions,
     In,
     Nothing,
+    OpExecutionContext,
     RetryPolicy,
     ScheduleDefinition,
     job,
@@ -176,7 +179,7 @@ from dagster import (
 
 
 @op
-def print_date(context) -> datetime:
+def print_date(context: OpExecutionContext) -> datetime:
     ds = datetime.now()
     context.log.info(ds)
     return ds
@@ -188,7 +191,7 @@ def sleep():
 
 
 @op
-def templated(context, ds: datetime):
+def templated(context: OpExecutionContext, ds: datetime):
     for _i in range(5):
         context.log.info(ds)
         context.log.info(ds - timedelta(days=7))

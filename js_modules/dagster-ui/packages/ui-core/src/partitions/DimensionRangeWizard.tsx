@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Colors,
   TagSelectorDropdownProps,
   Icon,
   Menu,
@@ -10,6 +9,12 @@ import {
   MenuItem,
   TagSelectorWithSearch,
   TagSelectorDropdownItemProps,
+  MiddleTruncate,
+  colorLinkDefault,
+  colorTextLight,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorTextDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -25,16 +30,7 @@ import {CreatePartitionDialog} from './CreatePartitionDialog';
 import {DimensionRangeInput} from './DimensionRangeInput';
 import {PartitionStatusHealthSource, PartitionStatus} from './PartitionStatus';
 
-export const DimensionRangeWizard: React.FC<{
-  selected: string[];
-  setSelected: (selected: string[]) => void;
-  partitionKeys: string[];
-  health: PartitionStatusHealthSource;
-  dimensionType: PartitionDefinitionType;
-  partitionDefinitionName?: string | null;
-  repoAddress?: RepoAddress;
-  refetch?: () => Promise<void>;
-}> = ({
+export const DimensionRangeWizard = ({
   selected,
   setSelected,
   partitionKeys,
@@ -43,6 +39,15 @@ export const DimensionRangeWizard: React.FC<{
   partitionDefinitionName,
   repoAddress,
   refetch,
+}: {
+  selected: string[];
+  setSelected: (selected: string[]) => void;
+  partitionKeys: string[];
+  health: PartitionStatusHealthSource;
+  dimensionType: PartitionDefinitionType;
+  partitionDefinitionName?: string | null;
+  repoAddress?: RepoAddress;
+  refetch?: () => Promise<void>;
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
   const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
@@ -125,20 +130,20 @@ export const DimensionRangeWizard: React.FC<{
   );
 };
 
-const OrdinalPartitionSelector: React.FC<{
-  allPartitions: string[];
-  selectedPartitions: string[];
-  setSelectedPartitions: (tags: string[]) => void;
-  health: PartitionStatusHealthSource;
-  setShowCreatePartition: (show: boolean) => void;
-  isDynamic: boolean;
-}> = ({
+const OrdinalPartitionSelector = ({
   allPartitions,
   selectedPartitions,
   setSelectedPartitions,
   setShowCreatePartition,
   isDynamic,
   health,
+}: {
+  allPartitions: string[];
+  selectedPartitions: string[];
+  setSelectedPartitions: (tags: string[]) => void;
+  health: PartitionStatusHealthSource;
+  setShowCreatePartition: (show: boolean) => void;
+  isDynamic: boolean;
 }) => {
   const dotForPartitionKey = React.useCallback(
     (partitionKey: string) => {
@@ -171,14 +176,23 @@ const OrdinalPartitionSelector: React.FC<{
                 <MenuItem
                   tagName="div"
                   text={
-                    <Box flex={{alignItems: 'center', gap: 12}}>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'auto auto minmax(0, 1fr)',
+                        alignItems: 'center',
+                        gap: 12,
+                      }}
+                    >
                       <Checkbox
                         checked={dropdownItemProps.selected}
                         onChange={dropdownItemProps.toggle}
                       />
                       {dotForPartitionKey(tag)}
-                      <span>{tag}</span>
-                    </Box>
+                      <div data-tooltip={tag} data-tooltip-style={DropdownItemTooltipStyle}>
+                        <MiddleTruncate text={tag} />
+                      </div>
+                    </div>
                   }
                 />
               </label>
@@ -236,7 +250,7 @@ const OrdinalPartitionSelector: React.FC<{
                       {dropdown}
                     </>
                   ) : (
-                    <div style={{padding: '6px 6px 0px 6px', color: Colors.Gray700}}>
+                    <div style={{padding: '6px 6px 0px 6px', color: colorTextLight()}}>
                       No matching partitions found
                     </div>
                   )}
@@ -263,7 +277,7 @@ const StyledIcon = styled(Icon)`
 `;
 
 const LinkText = styled(Box)`
-  color: ${Colors.Link};
+  color: ${colorLinkDefault()};
   cursor: pointer;
   &:hover {
     text-decoration: underline;
@@ -274,3 +288,10 @@ const LinkText = styled(Box)`
     line-height: 24px;
   }
 `;
+
+const DropdownItemTooltipStyle = JSON.stringify({
+  background: colorBackgroundLight(),
+  border: `1px solid ${colorBorderDefault()}`,
+  color: colorTextDefault(),
+  fontSize: '14px',
+});

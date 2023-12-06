@@ -2,14 +2,22 @@ import {Tooltip, Spinner, FontFamily} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetViewParams} from '../assets/types';
+import {AssetKeyInput} from '../graphql/types';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
 
 import {LiveDataForNode} from './Utils';
 
-export const AssetLatestRunSpinner: React.FC<{
+interface AssetLatestRunSpinnerProps {
   liveData?: LiveDataForNode;
   purpose?: 'caption-text' | 'body-text' | 'section';
-}> = ({liveData, purpose = 'body-text'}) => {
+}
+
+export const AssetLatestRunSpinner = ({
+  liveData,
+  purpose = 'body-text',
+}: AssetLatestRunSpinnerProps) => {
   if (liveData?.inProgressRunIds?.length) {
     return (
       <Tooltip content="A run is currently rematerializing this asset.">
@@ -27,20 +35,34 @@ export const AssetLatestRunSpinner: React.FC<{
   return null;
 };
 
-export const AssetRunLink: React.FC<{
-  children?: React.ReactNode;
+interface AssetRunLinkProps {
   runId: string;
+  assetKey: AssetKeyInput;
+  children?: React.ReactNode;
   event?: Parameters<typeof linkToRunEvent>[1];
-}> = ({runId, children, event}) => (
-  <Link
-    to={event ? linkToRunEvent({id: runId}, event) : `/runs/${runId}`}
-    target="_blank"
-    rel="noreferrer"
-  >
-    {children || (
-      <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
-        {titleForRun({id: runId})}
-      </span>
-    )}
-  </Link>
-);
+}
+
+export const AssetRunLink = ({assetKey, runId, children, event}: AssetRunLinkProps) => {
+  const content = children || (
+    <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
+      {titleForRun({id: runId})}
+    </span>
+  );
+
+  const buildLink = () => {
+    if (runId === '') {
+      // reported event
+      const params: AssetViewParams = event
+        ? {view: 'events', time: `${event.timestamp}`}
+        : {view: 'events'};
+      return assetDetailsPathForKey(assetKey, params);
+    }
+    return event ? linkToRunEvent({id: runId}, event) : `/runs/${runId}`;
+  };
+
+  return (
+    <Link to={buildLink()} target="_blank" rel="noreferrer">
+      {content}
+    </Link>
+  );
+};

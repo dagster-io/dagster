@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import ExternalJobSubsetResult
@@ -17,6 +18,7 @@ def sync_get_external_job_subset_grpc(
     job_origin: ExternalJobOrigin,
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
 ) -> ExternalJobSubsetResult:
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -33,6 +35,7 @@ def sync_get_external_job_subset_grpc(
                 job_origin=job_origin,
                 op_selection=op_selection,
                 asset_selection=asset_selection,
+                asset_check_selection=asset_check_selection,
             ),
         ),
         ExternalJobSubsetResult,

@@ -107,6 +107,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
 
         # this attribute will be updated by the @dagster_maintained_resource and @dagster_maintained_io_manager decorators
         self._dagster_maintained = False
+        self._hardcoded_resource_type = None
 
     @staticmethod
     def dagster_internal_init(
@@ -182,7 +183,15 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         Returns:
             [ResourceDefinition]: A hardcoded resource.
         """
-        return ResourceDefinition(resource_fn=lambda _init_context: value, description=description)
+        resource_def = ResourceDefinition(
+            resource_fn=lambda _init_context: value, description=description
+        )
+        # Make sure telemetry info gets passed in to hardcoded resources
+        if hasattr(value, "_is_dagster_maintained"):
+            resource_def._dagster_maintained = value._is_dagster_maintained()  # noqa: SLF001
+            resource_def._hardcoded_resource_type = type(value)  # noqa: SLF001
+
+        return resource_def
 
     @public
     @staticmethod

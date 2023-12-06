@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple, cast
 
@@ -32,6 +31,7 @@ from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
 )
+from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -68,7 +68,7 @@ def execute_job_backfill_iteration(
         chunk, checkpoint, has_more = _get_partitions_chunk(
             instance, logger, backfill, CHECKPOINT_COUNT
         )
-        _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
+        check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
         if chunk:
             for _run_id in submit_backfill_runs(
@@ -83,7 +83,7 @@ def execute_job_backfill_iteration(
                 if backfill.status != BulkActionStatus.REQUESTED:
                     return
 
-        _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
+        check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
 
         if has_more:
             # refetch, in case the backfill was updated in the meantime
@@ -334,6 +334,7 @@ def create_backfill_run(
         asset_selection=(
             frozenset(backfill_job.asset_selection) if backfill_job.asset_selection else None
         ),
+        asset_check_selection=None,
     )
 
 
@@ -356,16 +357,3 @@ def _fetch_last_run(
     )
 
     return runs[0] if runs else None
-
-
-def _check_for_debug_crash(debug_crash_flags: Optional[Mapping[str, int]], key) -> None:
-    if not debug_crash_flags:
-        return
-
-    kill_signal = debug_crash_flags.get(key)
-    if not kill_signal:
-        return
-
-    os.kill(os.getpid(), kill_signal)
-    time.sleep(10)
-    raise Exception("Process didn't terminate after sending crash signal")

@@ -1,4 +1,5 @@
 from dagster._utils import file_relative_path
+from dagster_dbt import DbtCliResource
 from dagster_postgres.utils import get_conn_string
 
 # =========================================================================
@@ -25,8 +26,11 @@ PG_DESTINATION_CONFIG = {
 
 AIRBYTE_CONFIG = {"host": "localhost", "port": "8000"}
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
-DBT_PROFILES_DIR = file_relative_path(__file__, "../../dbt_project/config")
-DBT_CONFIG = {"project_dir": DBT_PROJECT_DIR, "profiles_dir": DBT_PROFILES_DIR}
+
+dbt_resource = DbtCliResource(project_dir=DBT_PROJECT_DIR)
+dbt_parse_invocation = dbt_resource.cli(["parse"]).wait()
+DBT_MANIFEST_PATH = dbt_parse_invocation.target_path.joinpath("manifest.json")
+
 POSTGRES_CONFIG = {
     "con_string": get_conn_string(
         username=PG_DESTINATION_CONFIG["username"],

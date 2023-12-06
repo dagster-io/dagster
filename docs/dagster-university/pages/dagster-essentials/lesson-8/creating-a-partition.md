@@ -1,7 +1,7 @@
 ---
-title: "Lesson 8: Creating a partition"
-module: "dagster_essentials"
-lesson: "8"
+title: 'Lesson 8: Creating a partition'
+module: 'dagster_essentials'
+lesson: '8'
 ---
 
 # Creating a partition

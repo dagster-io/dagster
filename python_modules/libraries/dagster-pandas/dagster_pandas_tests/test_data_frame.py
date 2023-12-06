@@ -204,7 +204,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
         )
     )
     def silly_loader(_, config):
-        which_door = list(config.keys())[0]
+        which_door = next(iter(config.keys()))
         if which_door == "door_a":
             return DataFrame({"foo": ["goat"]})
         elif which_door == "door_b":

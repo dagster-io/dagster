@@ -4,8 +4,9 @@ import * as React from 'react';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {TagAction} from '../ui/TagActions';
 
-import {DagsterTag, RunTag, TagAction, TagType} from './RunTag';
+import {DagsterTag, RunTag, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 
 // Sort these tags to the start of the list.
@@ -20,12 +21,15 @@ const canAddTagToFilter = (key: string) => {
   return key !== DagsterTag.SolidSelection && key !== DagsterTag.OpSelection && key !== 'mode';
 };
 
-export const RunTags: React.FC<{
+interface Props {
   tags: TagType[];
   mode?: string | null;
   onAddTag?: (token: RunFilterToken) => void;
   onToggleTagPin?: (key: string) => void;
-}> = React.memo(({tags, onAddTag, onToggleTagPin, mode}) => {
+}
+
+export const RunTags = React.memo((props: Props) => {
+  const {tags, onAddTag, onToggleTagPin, mode} = props;
   const copy = useCopyToClipboard();
 
   const copyAction = React.useMemo(

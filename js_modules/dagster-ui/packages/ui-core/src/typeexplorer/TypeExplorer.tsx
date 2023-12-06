@@ -18,7 +18,7 @@ interface ITypeExplorerProps {
   type: TypeExplorerFragment;
 }
 
-export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
+export const TypeExplorer = (props: ITypeExplorerProps) => {
   const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
   const typeKind = dagsterTypeKind(props.type);
   const displayName = typeKind === 'standard' ? name : `${name} (${typeKind})`;

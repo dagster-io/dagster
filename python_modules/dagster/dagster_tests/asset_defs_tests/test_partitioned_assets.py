@@ -11,11 +11,13 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    InputContext,
     IOManager,
     IOManagerDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    OutputContext,
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
@@ -71,10 +73,13 @@ def get_upstream_partitions_for_partition_range(
     upstream_partitions_subset = (
         downstream_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset,
+            downstream_partitions_def,
             upstream_partitions_def,
         ).partitions_subset
     )
-    upstream_key_ranges = upstream_partitions_subset.get_partition_key_ranges()
+    upstream_key_ranges = upstream_partitions_subset.get_partition_key_ranges(
+        upstream_partitions_def
+    )
     check.invariant(len(upstream_key_ranges) == 1)
     return upstream_key_ranges[0]
 
@@ -101,10 +106,13 @@ def get_downstream_partitions_for_partition_range(
     downstream_partitions_subset = (
         downstream_partition_mapping.get_downstream_partitions_for_partitions(
             upstream_partitions_subset,
+            upstream_partitions_def,
             downstream_assets_def.partitions_def,
         )
     )
-    downstream_key_ranges = downstream_partitions_subset.get_partition_key_ranges()
+    downstream_key_ranges = downstream_partitions_subset.get_partition_key_ranges(
+        downstream_assets_def.partitions_def
+    )
     check.invariant(len(downstream_key_ranges) == 1)
     return downstream_key_ranges[0]
 
@@ -597,9 +605,14 @@ def test_partition_range_single_run():
 
     @asset(partitions_def=partitions_def)
     def upstream_asset(context) -> None:
-        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
-            start="2020-01-01", end="2020-01-03"
+        key_range = PartitionKeyRange(start="2020-01-01", end="2020-01-03")
+        assert context.asset_partition_key_range_for_output() == key_range
+        assert context.partition_key_range == key_range
+        assert context.partition_time_window == TimeWindow(
+            partitions_def.time_window_for_partition_key(key_range.start).start,
+            partitions_def.time_window_for_partition_key(key_range.end).end,
         )
+        assert context.partition_keys == partitions_def.get_partition_keys_in_range(key_range)
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])
     def downstream_asset(context) -> None:
@@ -671,6 +684,36 @@ def test_multipartition_range_single_run():
         MultiPartitionKey({"date": "2020-01-02", "abc": "a"}),
         MultiPartitionKey({"date": "2020-01-03", "abc": "a"}),
     }
+
+
+def test_multipartitioned_asset_partitions_time_window():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2023-01-01"),
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def multipartitioned_asset(context) -> None:
+        pass
+
+    class CustomIOManager(IOManager):
+        def handle_output(self, context: OutputContext, obj):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+            )
+
+        def load_input(self, context: InputContext):
+            assert context.asset_partitions_time_window == TimeWindow(
+                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+            )
+
+    assert materialize(
+        assets=[multipartitioned_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key="a|2023-01-01",
+    ).success
 
 
 def test_error_on_nonexistent_upstream_partition():

@@ -38,9 +38,9 @@ dbt run
 dbt allows you to test your models in two ways:
 
 - **Schema Tests**: specify a schema for each column in your model. See `models/schema.yml` for an
-example.
+  example.
 - **Data Tests**: write SQL statements that returns 0 rows to signal that a test has passed. See
-`tests/*.sql` for examples.
+  `tests/*.sql` for examples.
 
 **Run your tests** with the following command:
 

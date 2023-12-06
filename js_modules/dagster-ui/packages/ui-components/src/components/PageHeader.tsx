@@ -1,8 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorBackgroundLight} from '../theme/color';
+
 import {Box} from './Box';
-import {Colors} from './Colors';
 import {IconName} from './Icon';
 
 interface Props {
@@ -19,12 +20,12 @@ export const PageHeader = (props: Props) => {
   const {title, tags, right, tabs} = props;
   return (
     <PageHeaderContainer
-      background={Colors.Gray50}
+      background={colorBackgroundLight()}
       padding={{top: 16, left: 24, right: 12}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
     >
       <Box flex={{direction: 'row', justifyContent: 'space-between'}} padding={{bottom: 16}}>
-        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12, wrap: 'wrap'}}>
           {title}
           {tags}
         </Box>

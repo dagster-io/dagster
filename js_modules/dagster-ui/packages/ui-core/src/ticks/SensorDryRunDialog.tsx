@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -14,6 +13,9 @@ import {
   Subheading,
   Tag,
   TextInput,
+  colorAccentGreen,
+  colorAccentReversed,
+  colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
@@ -54,7 +56,7 @@ type Props = {
   jobName: string;
 };
 
-export const SensorDryRunDialog: React.FC<Props> = (props) => {
+export const SensorDryRunDialog = (props: Props) => {
   const {isOpen, onClose, name} = props;
   return (
     <Dialog
@@ -69,7 +71,7 @@ export const SensorDryRunDialog: React.FC<Props> = (props) => {
   );
 };
 
-const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClose, jobName}) => {
+const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );
@@ -78,10 +80,8 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
 
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<PythonErrorFragment | null>(null);
-  const [
-    sensorExecutionData,
-    setSensorExecutionData,
-  ] = React.useState<DryRunInstigationTick | null>(null);
+  const [sensorExecutionData, setSensorExecutionData] =
+    React.useState<DryRunInstigationTick | null>(null);
 
   const sensorSelector = React.useMemo(
     () => ({
@@ -187,7 +187,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
           <Group direction="row" spacing={8}>
             <div>Could not set cursor value.</div>
             <ButtonLink
-              color={Colors.White}
+              color={colorAccentReversed()}
               underline="always"
               onClick={() => {
                 showCustomAlert({
@@ -265,7 +265,7 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
                       </span>
                     </Button>
                     {cursorState === 'Persisted' ? (
-                      <Icon name="check_circle" color={Colors.Green500} />
+                      <Icon name="check_circle" color={colorAccentGreen()} />
                     ) : null}
                   </Box>
                 )}
@@ -398,7 +398,7 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
   margin-bottom: 12px;
   ${Subheading} {
     padding-bottom: 4px;

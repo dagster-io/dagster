@@ -1,6 +1,11 @@
+from datetime import datetime, timedelta
+
 import pytest
 from dagster import (
     AllPartitionMapping,
+    AssetExecutionContext,
+    AssetKey,
+    DagsterInstance,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IdentityPartitionMapping,
@@ -11,8 +16,13 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    asset,
+    materialize,
+    multi_asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
@@ -30,10 +40,11 @@ def test_get_downstream_partitions_single_key_in_range():
     )
 
     single_dimension_subset = single_dimension_def.empty_subset().with_partition_key_range(
-        PartitionKeyRange("a", "a")
+        single_dimension_def, PartitionKeyRange("a", "a")
     )
     result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=single_dimension_subset,
+        upstream_partitions_def=single_dimension_def,
         downstream_partitions_def=multipartitions_def,
     )
     multipartitions_subset = multipartitions_def.empty_subset().with_partition_keys(
@@ -47,6 +58,7 @@ def test_get_downstream_partitions_single_key_in_range():
 
     result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=multipartitions_subset,
+        upstream_partitions_def=multipartitions_def,
         downstream_partitions_def=single_dimension_def,
     )
     assert result == single_dimension_subset
@@ -57,12 +69,12 @@ def test_get_downstream_partitions_single_key_in_range():
 
     result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=single_dimension_def.empty_subset().with_partition_key_range(
-            PartitionKeyRange("b", "b")
+            partitions_def=single_dimension_def, partition_key_range=PartitionKeyRange("b", "b")
         ),
+        upstream_partitions_def=single_dimension_def,
         downstream_partitions_def=multipartitions_def,
     )
     assert result == DefaultPartitionsSubset(
-        multipartitions_def,
         {
             MultiPartitionKey({"abc": "b", "xyz": "x"}),
             MultiPartitionKey({"abc": "b", "xyz": "y"}),
@@ -77,7 +89,7 @@ def test_get_downstream_partitions_multiple_keys_in_range():
         {"abc": single_dimension_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
     )
     single_dimension_subset = single_dimension_def.empty_subset().with_partition_key_range(
-        PartitionKeyRange("a", "b")
+        single_dimension_def, PartitionKeyRange("a", "b")
     )
     multipartitions_subset = multipartitions_def.empty_subset().with_partition_keys(
         {
@@ -92,60 +104,73 @@ def test_get_downstream_partitions_multiple_keys_in_range():
 
     result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=single_dimension_subset,
+        upstream_partitions_def=single_dimension_def,
         downstream_partitions_def=multipartitions_def,
     )
     assert result == multipartitions_subset
 
     result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=multipartitions_subset,
+        upstream_partitions_def=multipartitions_def,
         downstream_partitions_def=single_dimension_def,
     )
     assert result == single_dimension_subset
 
 
-single_dimension_def = StaticPartitionsDefinition(["a", "b", "c"])
-multipartitions_def = MultiPartitionsDefinition(
-    {"abc": single_dimension_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+static_multipartitions_def = MultiPartitionsDefinition(
+    {"abc": static_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
+)
+daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
+weekly_multipartitions_def = MultiPartitionsDefinition(
+    {
+        "week": WeeklyPartitionsDefinition("2023-01-01"),
+        "ab": StaticPartitionsDefinition(["a", "b"]),
+    }
 )
 
 
 @pytest.mark.parametrize(
-    "upstream_partitions_def,upstream_partitions_subset,downstream_partitions_subset",
+    "upstream_partitions_def,upstream_partitions_subset,downstream_partitions_subset,downstream_partitions_def",
     [
         (
-            single_dimension_def,
-            single_dimension_def.empty_subset().with_partition_keys({"a"}),
-            multipartitions_def.empty_subset().with_partition_key_range(
+            static_partitions_def,
+            static_partitions_def.empty_subset().with_partition_keys({"a"}),
+            static_multipartitions_def.empty_subset().with_partition_key_range(
+                static_multipartitions_def,
                 PartitionKeyRange(
                     MultiPartitionKey({"abc": "a", "123": "1"}),
                     MultiPartitionKey({"abc": "a", "123": "1"}),
-                )
+                ),
             ),
+            static_multipartitions_def,
         ),
         (
-            single_dimension_def,
-            single_dimension_def.empty_subset().with_partition_keys({"a", "b"}),
-            multipartitions_def.empty_subset().with_partition_keys(
+            static_partitions_def,
+            static_partitions_def.empty_subset().with_partition_keys({"a", "b"}),
+            static_multipartitions_def.empty_subset().with_partition_keys(
                 {
                     MultiPartitionKey({"abc": "b", "123": "2"}),
                     MultiPartitionKey({"abc": "a", "123": "2"}),
                 }
             ),
+            static_multipartitions_def,
         ),
         (
-            multipartitions_def,
-            multipartitions_def.empty_subset().with_partition_keys(
+            static_multipartitions_def,
+            static_multipartitions_def.empty_subset().with_partition_keys(
                 {
                     MultiPartitionKey({"abc": "a", "123": "1"}),
                     MultiPartitionKey({"abc": "a", "123": "2"}),
                     MultiPartitionKey({"abc": "a", "123": "3"}),
                 }
             ),
-            single_dimension_def.empty_subset().with_partition_keys({"a"}),
+            static_partitions_def.empty_subset().with_partition_keys({"a"}),
+            static_partitions_def,
         ),
         (
-            multipartitions_def,
-            multipartitions_def.empty_subset().with_partition_keys(
+            static_multipartitions_def,
+            static_multipartitions_def.empty_subset().with_partition_keys(
                 {
                     MultiPartitionKey({"abc": "a", "123": "1"}),
                     MultiPartitionKey({"abc": "a", "123": "2"}),
@@ -155,7 +180,27 @@ multipartitions_def = MultiPartitionsDefinition(
                     MultiPartitionKey({"abc": "b", "123": "3"}),
                 }
             ),
-            single_dimension_def.empty_subset().with_partition_keys({"a", "b"}),
+            static_partitions_def.empty_subset().with_partition_keys({"a", "b"}),
+            static_partitions_def,
+        ),
+        (
+            daily_partitions_def,
+            daily_partitions_def.empty_subset()
+            .with_partition_key_range(
+                daily_partitions_def, PartitionKeyRange(start="2023-01-08", end="2023-01-14")
+            )
+            .with_partition_key_range(
+                daily_partitions_def, PartitionKeyRange(start="2023-01-29", end="2023-02-04")
+            ),
+            weekly_multipartitions_def.empty_subset().with_partition_keys(
+                {
+                    MultiPartitionKey({"ab": "a", "week": "2023-01-08"}),
+                    MultiPartitionKey({"ab": "b", "week": "2023-01-08"}),
+                    MultiPartitionKey({"ab": "a", "week": "2023-01-29"}),
+                    MultiPartitionKey({"ab": "b", "week": "2023-01-29"}),
+                }
+            ),
+            weekly_multipartitions_def,
         ),
     ],
 )
@@ -163,11 +208,13 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping(
     upstream_partitions_def,
     upstream_partitions_subset,
     downstream_partitions_subset,
+    downstream_partitions_def,
 ):
     assert (
         MultiToSingleDimensionPartitionMapping()
         .get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset,
+            downstream_partitions_def,
             upstream_partitions_def,
         )
         .partitions_subset
@@ -188,38 +235,44 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
     with pytest.raises(CheckError, match="dimension name must be specified"):
         MultiToSingleDimensionPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
             multipartitions_def.empty_subset().with_partition_key_range(
+                multipartitions_def,
                 PartitionKeyRange(
                     MultiPartitionKey({"a": "1", "b": "1"}),
                     MultiPartitionKey({"a": "1", "b": "1"}),
-                )
+                ),
             ),
+            multipartitions_def,
             single_dimension_def,
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
         MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
             multipartitions_def.empty_subset().with_partition_key_range(
+                multipartitions_def,
                 PartitionKeyRange(
                     MultiPartitionKey({"a": "1", "b": "1"}),
                     MultiPartitionKey({"a": "1", "b": "1"}),
-                )
+                ),
             ),
+            multipartitions_def,
             single_dimension_def,
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
         MultiToSingleDimensionPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
             single_dimension_def.empty_subset().with_partition_key_range(
-                PartitionKeyRange("1", "1")
+                single_dimension_def, PartitionKeyRange("1", "1")
             ),
+            single_dimension_def,
             multipartitions_def,
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
         MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
             single_dimension_def.empty_subset().with_partition_key_range(
-                PartitionKeyRange("1", "1")
+                single_dimension_def, PartitionKeyRange("1", "1")
             ),
+            single_dimension_def,
             multipartitions_def,
         )
 
@@ -598,6 +651,7 @@ def test_multipartitions_mapping_get_upstream_partitions(
 ):
     result = partitions_mapping.get_upstream_mapped_partitions_result_for_partitions(
         downstream_partitions_def.empty_subset().with_partition_keys(downstream_partition_keys),
+        downstream_partitions_def,
         upstream_partitions_def,
     )
     assert result.partitions_subset.get_partition_keys() == set(upstream_partition_keys)
@@ -634,6 +688,7 @@ def test_multipartitions_required_but_invalid_upstream_partitions():
                 MultiPartitionKey({"time": "2023-06-01", "123": "1"}),
             ]
         ),
+        may_multipartitions_def,
         june_multipartitions_def,
     )
     assert result.partitions_subset.get_partition_keys() == set(
@@ -658,6 +713,7 @@ def test_multipartitions_mapping_get_downstream_partitions(
 ):
     assert partitions_mapping.get_downstream_partitions_for_partitions(
         upstream_partitions_def.empty_subset().with_partition_keys(upstream_partition_keys),
+        upstream_partitions_def,
         downstream_partitions_def,
     ).get_partition_keys() == set(downstream_partition_keys)
 
@@ -684,6 +740,7 @@ def test_multipartitions_mapping_dynamic():
             downstream_partitions_def.empty_subset().with_partition_keys(
                 [MultiPartitionKey({"dynamic": "a", "123": "1"})]
             ),
+            downstream_partitions_def,
             upstream_partitions_def,
             dynamic_partitions_store=instance,
         )
@@ -718,4 +775,204 @@ def test_error_multipartitions_mapping():
                     "other nonexistent dimension", SpecificPartitionsPartitionMapping(["c"])
                 )
             }
-        ).get_upstream_mapped_partitions_result_for_partitions(weekly_abc.empty_subset(), daily_123)
+        ).get_upstream_mapped_partitions_result_for_partitions(
+            weekly_abc.empty_subset(), weekly_abc, daily_123
+        )
+
+
+def test_multi_partition_mapping_with_asset_deps():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "time": DailyPartitionsDefinition("2023-01-01"),
+        }
+    )
+
+    ### With @asset and deps
+    @asset(partitions_def=partitions_def)
+    def upstream():
+        return
+
+    mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        }
+    )
+
+    @asset(partitions_def=partitions_def, deps=[AssetDep(upstream, partition_mapping=mapping)])
+    def downstream(context: AssetExecutionContext):
+        upstream_mp_key = context.asset_partition_key_for_input("upstream")
+        current_mp_key = context.partition_key
+
+        if isinstance(upstream_mp_key, MultiPartitionKey) and isinstance(
+            current_mp_key, MultiPartitionKey
+        ):
+            upstream_key = datetime.strptime(upstream_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+
+            current_partition_key = datetime.strptime(
+                current_mp_key.keys_by_dimension["time"], "%Y-%m-%d"
+            )
+
+            assert current_partition_key - upstream_key == timedelta(days=1)
+        else:
+            assert False, "partition keys for upstream and downstream should be MultiPartitionKeys"
+
+        return
+
+    materialize(
+        [upstream, downstream], partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"})
+    )
+
+    assert downstream.partition_mappings == {
+        AssetKey("upstream"): mapping,
+    }
+
+    ### With @multi_asset and AssetSpec
+    asset_1 = AssetSpec(key="asset_1")
+    asset_2 = AssetSpec(key="asset_2")
+
+    asset_1_partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        }
+    )
+    asset_2_partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+            ),
+        }
+    )
+
+    asset_3 = AssetSpec(
+        key="asset_3",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=asset_2_partition_mapping,
+            ),
+        ],
+    )
+    asset_4 = AssetSpec(
+        key="asset_4",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=asset_1_partition_mapping,
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=asset_2_partition_mapping,
+            ),
+        ],
+    )
+
+    @multi_asset(specs=[asset_1, asset_2], partitions_def=partitions_def)
+    def multi_asset_1():
+        return
+
+    @multi_asset(specs=[asset_3, asset_4], partitions_def=partitions_def)
+    def multi_asset_2(context: AssetExecutionContext):
+        asset_1_mp_key = context.asset_partition_key_for_input("asset_1")
+        asset_2_mp_key = context.asset_partition_key_for_input("asset_2")
+        current_mp_key = context.partition_key
+
+        if (
+            isinstance(asset_1_mp_key, MultiPartitionKey)
+            and isinstance(asset_2_mp_key, MultiPartitionKey)
+            and isinstance(current_mp_key, MultiPartitionKey)
+        ):
+            asset_1_key = datetime.strptime(asset_1_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+            asset_2_key = datetime.strptime(asset_2_mp_key.keys_by_dimension["time"], "%Y-%m-%d")
+
+            current_partition_key = datetime.strptime(
+                current_mp_key.keys_by_dimension["time"], "%Y-%m-%d"
+            )
+
+            assert current_partition_key - asset_1_key == timedelta(days=1)
+            assert current_partition_key - asset_2_key == timedelta(days=2)
+        else:
+            assert (
+                False
+            ), "partition keys for asset_1, asset_2, and multi_asset_2 should be MultiPartitionKeys"
+
+        return
+
+    materialize(
+        [multi_asset_1, multi_asset_2],
+        partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"}),
+    )
+
+    assert multi_asset_2.partition_mappings == {
+        AssetKey("asset_1"): asset_1_partition_mapping,
+        AssetKey("asset_2"): asset_2_partition_mapping,
+    }
+
+
+def test_dynamic_dimension_multipartition_mapping():
+    instance = DagsterInstance.ephemeral()
+
+    foo = DynamicPartitionsDefinition(name="foo")
+    foo_bar = MultiPartitionsDefinition(
+        {
+            "foo": foo,
+            "bar": DynamicPartitionsDefinition(name="bar"),
+        }
+    )
+
+    instance.add_dynamic_partitions("foo", ["a", "b", "c"])
+    instance.add_dynamic_partitions("bar", ["1", "2"])
+
+    result = MultiToSingleDimensionPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=foo.empty_subset().with_partition_keys(["a"]),
+        downstream_partitions_def=foo,
+        upstream_partitions_def=foo_bar,
+        dynamic_partitions_store=instance,
+    )
+    assert result.partitions_subset == foo_bar.empty_subset().with_partition_keys(["2|a", "1|a"])
+
+
+def test_description():
+    description = MultiPartitionMapping(
+        {
+            "abc": DimensionPartitionMapping(
+                dimension_name="abc", partition_mapping=IdentityPartitionMapping()
+            ),
+            "daily": DimensionPartitionMapping(
+                dimension_name="weekly",
+                partition_mapping=TimeWindowPartitionMapping(),
+            ),
+        }
+    ).description
+    assert (
+        "'abc' mapped to downstream dimension 'abc' using IdentityPartitionMapping" in description
+    )
+    assert (
+        "'daily' mapped to downstream dimension 'weekly' using TimeWindowPartitionMapping"
+        in description
+    )
+
+    assert MultiPartitionMapping({}).description == ""

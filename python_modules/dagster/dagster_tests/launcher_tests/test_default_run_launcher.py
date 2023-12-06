@@ -48,7 +48,7 @@ def noop_job():
 
 @op
 def crashy_op(_):
-    os._exit(1)  # noqa: SLF001
+    os._exit(1)
 
 
 @job
@@ -222,6 +222,7 @@ def test_successful_run_from_pending(
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         op_selection=None,
+        asset_check_selection=None,
     )
 
     run_id = created_run.run_id
@@ -298,8 +299,7 @@ def test_invalid_instance_run():
                         with pytest.raises(
                             DagsterLaunchFailedError,
                             match=re.escape(
-                                "gRPC server could not load run {run_id} in order to execute it"
-                                .format(run_id=run.run_id)
+                                f"gRPC server could not load run {run.run_id} in order to execute it"
                             ),
                         ):
                             instance.launch_run(run_id=run.run_id, workspace=workspace)
@@ -543,8 +543,7 @@ def test_cleanup_after_force_terminate(
         if any(
             [
                 "Computational resources were cleaned up after the run was forcibly marked as"
-                " canceled."
-                in str(event)
+                " canceled." in str(event)
                 for event in logs
             ]
         ):

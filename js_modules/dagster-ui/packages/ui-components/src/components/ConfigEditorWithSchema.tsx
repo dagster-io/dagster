@@ -2,7 +2,7 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
-import {ConfigEditor, ConfigSchema} from './ConfigEditor';
+import {ConfigSchema, ConfigEditorHandle, NewConfigEditor} from './NewConfigEditor';
 import {Spinner} from './Spinner';
 import {SplitPanelContainer} from './SplitPanelContainer';
 import {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
@@ -25,18 +25,18 @@ export const CodeMirrorInDialogStyle = createGlobalStyle`
   }
 `;
 
-export const ConfigEditorWithSchema: React.FC<Props> = ({
+export const ConfigEditorWithSchema = ({
   isLoading,
   identifier,
   config,
   onConfigChange,
   configSchema,
-}) => {
+}: Props) => {
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const [editorHelpContext, setEditorHelpContext] = React.useState<ConfigEditorHelpContext | null>(
     null,
   );
-  const editor = React.useRef<ConfigEditor | null>(null);
+  const editor = React.useRef<ConfigEditorHandle | null>(null);
 
   return (
     <>
@@ -49,7 +49,7 @@ export const ConfigEditorWithSchema: React.FC<Props> = ({
         firstInitialPercent={70}
         first={
           !isLoading ? (
-            <ConfigEditor
+            <NewConfigEditor
               ref={editor}
               configCode={config!}
               onConfigChange={onConfigChange}

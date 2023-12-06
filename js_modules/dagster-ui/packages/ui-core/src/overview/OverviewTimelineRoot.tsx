@@ -29,9 +29,10 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
 };
 
 type Props = {
-  Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
-  TabButton: React.FC<{selected: 'timeline' | 'assets'}>;
+  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
+
 export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
@@ -91,10 +92,10 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     return new Set(flat);
   }, [visibleRepos, searchValue]);
 
-  const visibleJobs = React.useMemo(() => jobs.filter(({key}) => visibleJobKeys.has(key)), [
-    jobs,
-    visibleJobKeys,
-  ]);
+  const visibleJobs = React.useMemo(
+    () => jobs.filter(({key}) => visibleJobKeys.has(key)),
+    [jobs, visibleJobKeys],
+  );
 
   return (
     <>

@@ -100,7 +100,7 @@ def test_invalid_config() -> None:
     with pytest.raises(
         ValidationError,
     ):
-        MyResource(foo="why")  # pyright: ignore[reportGeneralTypeIssues]
+        MyResource(foo="why")  # type: ignore
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
@@ -918,7 +918,7 @@ def test_context_on_resource_basic() -> None:
     # Can access context after binding one
     ContextUsingResource().with_replaced_resource_context(
         build_init_resource_context()
-    ).access_context()  # type: ignore  # (??)
+    ).access_context()
 
     @asset
     def my_test_asset(context_using: ContextUsingResource) -> None:
@@ -962,7 +962,7 @@ def test_context_on_resource_use_instance() -> None:
             assert (
                 OutputDirResource(output_dir=None)
                 .with_replaced_resource_context(build_init_resource_context(instance=instance))
-                .get_effective_output_dir()  # type: ignore  # (??)
+                .get_effective_output_dir()
                 == "/tmp"
             )
 
@@ -1082,3 +1082,26 @@ def test_telemetry_dagster_resource():
             return True
 
     assert MyResource(my_value="foo")._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_partial_resource_checks() -> None:
+    class IntResource(ConfigurableResource):
+        my_int: int
+
+    class StrResource(ConfigurableResource):
+        my_str: str
+
+    class MergeResource(ConfigurableResource):
+        str_res: StrResource
+        int_res: IntResource
+
+    MergeResource(
+        str_res=StrResource.configure_at_launch(),
+        int_res=IntResource.configure_at_launch(),
+    )
+
+    # this should fail but does not https://github.com/dagster-io/dagster/issues/18017
+    MergeResource(
+        int_res=StrResource.configure_at_launch(),  # type: ignore # type checker catches it though
+        str_res=IntResource.configure_at_launch(),  # type: ignore
+    )

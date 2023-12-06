@@ -56,7 +56,7 @@ interface Props {
  * - Locale timezones: other timezones for the user's locale, if possible.
  * - Everything else
  */
-export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
+export const TimezoneSelect = ({trigger}: Props) => {
   const {
     timezone: [timezone, setTimezone],
   } = React.useContext(TimeContext);
@@ -139,7 +139,7 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
   }, []);
 
   return (
-    <Select<typeof allTimezoneItems[0]>
+    <Select<(typeof allTimezoneItems)[0]>
       popoverProps={{
         position: 'bottom-left',
         modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},

@@ -126,9 +126,7 @@ class SqlRunStorage(RunStorage):
 
         if dagster_run.job_snapshot_id and not self.has_job_snapshot(dagster_run.job_snapshot_id):
             raise DagsterSnapshotDoesNotExist(
-                "Snapshot {ss_id} does not exist in run storage".format(
-                    ss_id=dagster_run.job_snapshot_id
-                )
+                f"Snapshot {dagster_run.job_snapshot_id} does not exist in run storage"
             )
 
         has_tags = dagster_run.tags and len(dagster_run.tags) > 0
@@ -228,7 +226,10 @@ class SqlRunStorage(RunStorage):
         """Helper function to deal with cursor/limit pagination args."""
         if cursor:
             cursor_query = db_select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
-            query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
+            if ascending:
+                query = query.where(RunsTable.c.id > db_scalar_subquery(cursor_query))
+            else:
+                query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
 
         if limit:
             query = query.limit(limit)
@@ -238,10 +239,6 @@ class SqlRunStorage(RunStorage):
         query = query.order_by(direction(sorting_column))
 
         return query
-
-    @property
-    def supports_intersect(self) -> bool:
-        return True
 
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
@@ -339,8 +336,9 @@ class SqlRunStorage(RunStorage):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        ascending: bool = False,
     ) -> Sequence[DagsterRun]:
-        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
+        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by, ascending=ascending)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
@@ -629,7 +627,11 @@ class SqlRunStorage(RunStorage):
 
         row = self.fetchone(query)
 
-        return defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]]) if row else None  # type: ignore
+        return (
+            defensively_unpack_execution_plan_snapshot_query(logging, [row["snapshot_body"]])  # type: ignore
+            if row
+            else None
+        )
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():

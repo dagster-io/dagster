@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Code} from '@blueprintjs/core';
-import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {FontFamily, colorBackgroundBlue} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -14,7 +14,7 @@ interface IOpTypeSignature {
   definition: OpTypeSignatureFragment;
 }
 
-export const OpTypeSignature: React.FC<IOpTypeSignature> = (props) => {
+export const OpTypeSignature = (props: IOpTypeSignature) => {
   const {inputDefinitions, outputDefinitions} = props.definition;
 
   const inputSide = inputDefinitions.map((input, i) => (
@@ -57,7 +57,7 @@ export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
 
 const TypeSignature = styled(Code)`
   && {
-    background: ${Colors.Blue50};
+    background: ${colorBackgroundBlue()};
     font-family: ${FontFamily.monospace};
     font-size: 14px;
     padding: 4px;

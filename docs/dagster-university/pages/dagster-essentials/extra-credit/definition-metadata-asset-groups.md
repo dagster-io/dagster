@@ -1,7 +1,7 @@
 ---
-title: "Extra credit: Definition metadata - Asset groups"
-module: "dagster_essentials"
-lesson: "extra-credit"
+title: 'Extra credit: Definition metadata - Asset groups'
+module: 'dagster_essentials'
+lesson: 'extra-credit'
 ---
 
 # Definition metadata - Asset groups

@@ -12,11 +12,15 @@ import {
 } from '../AssetPartitionDetail';
 import {
   buildAssetPartitionDetailMock,
+  buildAssetPartitionStaleMock,
   MaterializationUpstreamDataFullMock,
 } from '../__fixtures__/AssetEventDetail.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetPartitionDetail};
+export default {
+  title: 'Asset Details/Partition Detail',
+  component: AssetPartitionDetail,
+};
 
 export const EmptyState = () => {
   return (
@@ -31,7 +35,11 @@ export const EmptyState = () => {
 export const MaterializationFollowedByObservations = () => {
   return (
     <MockedProvider
-      mocks={[buildAssetPartitionDetailMock(), MaterializationUpstreamDataFullMock]}
+      mocks={[
+        buildAssetPartitionDetailMock(),
+        buildAssetPartitionStaleMock(),
+        MaterializationUpstreamDataFullMock,
+      ]}
       cache={createAppCache()}
     >
       <WorkspaceProvider>
@@ -47,7 +55,8 @@ export const MaterializationWithRecentFailure = () => {
   return (
     <MockedProvider
       mocks={[
-        buildAssetPartitionDetailMock(RunStatus.FAILURE, [buildStaleCause()]),
+        buildAssetPartitionDetailMock(RunStatus.FAILURE),
+        buildAssetPartitionStaleMock([buildStaleCause()]),
         MaterializationUpstreamDataFullMock,
       ]}
       cache={createAppCache()}
@@ -66,6 +75,7 @@ export const MaterializationWithInProgressRun = () => {
     <MockedProvider
       mocks={[
         buildAssetPartitionDetailMock(RunStatus.STARTING),
+        buildAssetPartitionStaleMock(),
         MaterializationUpstreamDataFullMock,
       ]}
       cache={createAppCache()}

@@ -1,5 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Spinner,
+  Tooltip,
+  colorAccentBlue,
+  colorAccentGray,
+  colorAccentGreen,
+  colorAccentRed,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -15,18 +23,23 @@ import {
 } from './types/SidebarOpExecutionGraphs.types';
 
 const StateColors = {
-  SUCCESS: Colors.Green500,
-  FAILURE: Colors.Red500,
-  SKIPPED: Colors.Gray500,
-  IN_PROGRESS: Colors.Gray200,
+  SUCCESS: colorAccentGreen(),
+  FAILURE: colorAccentRed(),
+  SKIPPED: colorAccentGray(),
+  IN_PROGRESS: colorAccentBlue(),
 };
 
-export const SidebarOpExecutionGraphs: React.FC<{
+export const SidebarOpExecutionGraphs = ({
+  repoAddress,
+  handleID,
+  pipelineName,
+  solidName,
+}: {
   handleID: string;
   solidName: string;
   pipelineName: string;
   repoAddress: RepoAddress;
-}> = ({repoAddress, handleID, pipelineName, solidName}) => {
+}) => {
   const [highlightedStartTime, setHighlightedStartTime] = React.useState<number | null>(null);
   const result = useQuery<SidebarOpGraphsQuery, SidebarOpGraphsQueryVariables>(
     SIDEBAR_OP_GRAPHS_QUERY,
@@ -117,10 +130,10 @@ export const SidebarOpExecutionGraphs: React.FC<{
                       style={{
                         border: `2px solid ${
                           startTime && startTime * 1000 === highlightedStartTime
-                            ? Colors.Blue500
+                            ? colorAccentBlue()
                             : 'transparent'
                         }`,
-                        backgroundColor: status ? StateColors[status] : Colors.Gray200,
+                        backgroundColor: status ? StateColors[status] : colorAccentGray(),
                       }}
                     />
                   </Link>

@@ -2,7 +2,6 @@ import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -15,6 +14,7 @@ import {
   Spinner,
   Subheading,
   Tag,
+  colorKeylineDefault,
   useViewport,
 } from '@dagster-io/ui-components';
 import React from 'react';
@@ -47,7 +47,7 @@ type Props = {
   jobName: string;
 };
 
-export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
+export const EvaluateScheduleDialog = (props: Props) => {
   return (
     <Dialog
       {...props}
@@ -64,7 +64,7 @@ export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
   );
 };
 
-const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}) => {
+const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
   const [_selectedTimestamp, setSelectedTimestamp] = React.useState<{ts: number; label: string}>();
   const {data} = useQuery<GetScheduleQuery, GetScheduleQueryVariables>(GET_SCHEDULE_QUERY, {
     variables: {
@@ -222,12 +222,17 @@ export const GET_SCHEDULE_QUERY = gql`
   }
 `;
 
-const EvaluateScheduleContent: React.FC<{
+const EvaluateScheduleContent = ({
+  repoAddress,
+  name,
+  timestamp,
+  jobName,
+}: {
   repoAddress: RepoAddress;
   name: string;
   timestamp: number;
   jobName: string;
-}> = ({repoAddress, name, timestamp, jobName}) => {
+}) => {
   const {
     timezone: [userTimezone],
   } = React.useContext(TimeContext);
@@ -391,7 +396,7 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
   margin-bottom: 12px;
   ${Subheading} {
     padding-bottom: 4px;

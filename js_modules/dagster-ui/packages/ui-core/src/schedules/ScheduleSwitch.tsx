@@ -26,7 +26,7 @@ interface Props {
   size?: 'small' | 'large';
 }
 
-export const ScheduleSwitch: React.FC<Props> = (props) => {
+export const ScheduleSwitch = (props: Props) => {
   const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
   const {status, id, selectorId} = scheduleState;

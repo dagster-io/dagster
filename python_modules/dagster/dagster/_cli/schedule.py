@@ -92,9 +92,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
 
         print_fn(
             click.style(
-                "  ~ {name} (update) [{id}]".format(
-                    name=external_schedule.name, id=schedule_origin_id
-                ),
+                f"  ~ {external_schedule.name} (update) [{schedule_origin_id}]",
                 fg="yellow",
             )
         )
@@ -225,11 +223,7 @@ def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) ->
         if len(schedule_name) == 1:
             return schedule_name[0]
         else:
-            check.failed(
-                "Can only handle zero or one schedule args. Got {schedule_name}".format(
-                    schedule_name=repr(schedule_name)
-                )
-            )
+            check.failed(f"Can only handle zero or one schedule args. Got {schedule_name!r}")
     return None
 
 
@@ -264,11 +258,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                     except DagsterInvariantViolationError as ex:
                         raise click.UsageError(ex)
 
-                print_fn(
-                    "Started all schedules for repository {repository_name}".format(
-                        repository_name=repository_name
-                    )
-                )
+                print_fn(f"Started all schedules for repository {repository_name}")
             else:
                 try:
                     instance.start_schedule(external_repo.get_external_schedule(schedule_name))
@@ -415,11 +405,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                         except DagsterInvariantViolationError as ex:
                             raise click.UsageError(ex)
 
-                print_fn(
-                    "Restarted all running schedules for repository {name}".format(
-                        name=repository_name
-                    )
-                )
+                print_fn(f"Restarted all running schedules for repository {repository_name}")
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 schedule_state = instance.get_instigator_state(

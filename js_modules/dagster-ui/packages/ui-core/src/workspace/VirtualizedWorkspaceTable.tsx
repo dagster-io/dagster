@@ -1,5 +1,5 @@
 import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
-import {Caption, Colors} from '@dagster-io/ui-components';
+import {Caption, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -8,16 +8,7 @@ import {Row} from '../ui/VirtualizedTable';
 
 import {RepoAddress} from './types';
 
-export const RepoRow: React.FC<{
-  repoAddress: RepoAddress;
-  height: number;
-  start: number;
-  showLocation: boolean;
-  rightElement: React.ReactNode;
-  expanded: boolean;
-  onToggle: (repoAddress: RepoAddress) => void;
-  onToggleAll: (expanded: boolean) => void;
-}> = ({
+export const RepoRow = ({
   repoAddress,
   height,
   start,
@@ -26,6 +17,15 @@ export const RepoRow: React.FC<{
   onToggleAll,
   showLocation,
   rightElement,
+}: {
+  repoAddress: RepoAddress;
+  height: number;
+  start: number;
+  showLocation: boolean;
+  rightElement: React.ReactNode;
+  expanded: boolean;
+  onToggle: (repoAddress: RepoAddress) => void;
+  onToggleAll: (expanded: boolean) => void;
 }) => {
   return (
     <Row $height={height} $start={start}>
@@ -43,13 +43,16 @@ export const RepoRow: React.FC<{
   );
 };
 
-export const LoadingOrNone: React.FC<{
+export const LoadingOrNone = ({
+  queryResult,
+  noneString = 'None',
+}: {
   queryResult: QueryResult<any, any>;
   noneString?: React.ReactNode;
-}> = ({queryResult, noneString = 'None'}) => {
+}) => {
   const {called, loading, data} = queryResult;
   return (
-    <div style={{color: Colors.Gray500}}>
+    <div style={{color: colorTextLight()}}>
       {!called || (loading && !data) ? 'Loading' : noneString}
     </div>
   );
@@ -69,7 +72,7 @@ const CaptionTextContainer = styled.div`
   text-overflow: ellipsis;
 
   ${Caption} {
-    color: ${Colors.Gray500};
+    color: ${colorTextLight()};
     white-space: nowrap;
   }
 `;

@@ -14,9 +14,11 @@ from dagster import (
     DynamicPartitionsDefinition,
     FreshnessPolicy,
     MultiPartitionsDefinition,
+    PipesSubprocessClient,
     SourceAsset,
     StaticPartitionsDefinition,
     asset,
+    asset_check,
     define_asset_job,
     io_manager,
     observable_source_asset,
@@ -347,6 +349,36 @@ def test_get_stats_from_external_repo_code_versions():
     assert stats["num_assets_with_code_versions_in_repo"] == "1"
 
 
+def test_get_stats_from_external_repo_code_checks():
+    @asset
+    def my_asset():
+        ...
+
+    @asset_check(asset=my_asset)
+    def my_check():
+        ...
+
+    @asset_check(asset=my_asset)
+    def my_check_2():
+        ...
+
+    @asset
+    def my_other_asset():
+        ...
+
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(
+                assets=[my_asset, my_other_asset], asset_checks=[my_check, my_check_2]
+            ).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["num_asset_checks"] == "2"
+    assert stats["num_assets_with_checks"] == "1"
+
+
 def test_get_stats_from_external_repo_dbt():
     @asset(compute_kind="dbt")
     def asset1():
@@ -510,6 +542,24 @@ def test_get_stats_from_external_repo_functional_io_managers():
         {"module_name": "dagster_tests", "class_name": "my_io_manager"}
     ]
     assert stats["has_custom_resources"] == "True"
+
+
+def test_get_stats_from_external_repo_pipes_client():
+    external_repo = ExternalRepository(
+        external_repository_data_from_def(
+            Definitions(
+                resources={
+                    "pipes_subprocess_client": PipesSubprocessClient(),
+                },
+            ).get_repository_def()
+        ),
+        repository_handle=MagicMock(spec=RepositoryHandle),
+    )
+    stats = get_stats_from_external_repo(external_repo)
+    assert stats["dagster_resources"] == [
+        {"module_name": "dagster", "class_name": "_PipesSubprocess"}
+    ]
+    assert stats["has_custom_resources"] == "False"
 
 
 def test_get_stats_from_external_repo_delayed_resource_configuration():

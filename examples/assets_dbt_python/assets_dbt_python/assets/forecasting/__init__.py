@@ -5,13 +5,15 @@ import pandas as pd
 from dagster import AssetIn, asset
 from scipy import optimize
 
+from ..dbt import daily_order_summary_asset_key
+
 
 def model_func(x, a, b):
     return a * np.exp(b * (x / 10**18 - 1.6095))
 
 
 @asset(
-    ins={"daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt_schema"])},
+    ins={"daily_order_summary": AssetIn(key=daily_order_summary_asset_key)},
     compute_kind="ml_tool",
     io_manager_key="model_io_manager",
 )
@@ -20,14 +22,17 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
     df = daily_order_summary
     return tuple(
         optimize.curve_fit(
-            f=model_func, xdata=df.order_date.astype(np.int64), ydata=df.num_orders, p0=[10, 100]
+            f=model_func,
+            xdata=df.order_date.astype(np.int64),
+            ydata=df.num_orders,
+            p0=[10, 100],
         )[0]
     )
 
 
 @asset(
     ins={
-        "daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt_schema"]),
+        "daily_order_summary": AssetIn(key=daily_order_summary_asset_key),
         "order_forecast_model": AssetIn(),
     },
     compute_kind="ml_tool",

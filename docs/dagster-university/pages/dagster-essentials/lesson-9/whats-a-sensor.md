@@ -1,7 +1,7 @@
 ---
 title: "Lesson 9: What's a sensor?"
-module: "dagster_essentials"
-lesson: "9"
+module: 'dagster_essentials'
+lesson: '9'
 ---
 
 # What's a sensor?
@@ -22,7 +22,7 @@ In this lesson, we’ll assume a hypothetical scenario. Assume that the stakehol
 
 They’ve been asking you similar questions, and it’s been taking up lots of your time and bandwidth. Therefore, you’d like to automate this process to enable self-service reporting for your stakeholders.
 
-You’ve created a request intake form that generates a structured JSON with the request and inserts them into the `data/requests` directory of your Dagster project. Now, you’ll automate answering these ad hoc requests by having a sensor listen to new requests come in. When a new JSON file representing a request lands in the directory, the sensor is triggered and materializes the asset. When the sensor has already materialized a report for all updated files in the directory, the sensor doesn’t kick off any materializations. 
+You’ve created a request intake form that generates a structured JSON with the request and inserts them into the `data/requests` directory of your Dagster project. Now, you’ll automate answering these ad hoc requests by having a sensor listen to new requests come in. When a new JSON file representing a request lands in the directory, the sensor is triggered and materializes the asset. When the sensor has already materialized a report for all updated files in the directory, the sensor doesn’t kick off any materializations.
 
 To fulfill the requirements above, we’ll:
 

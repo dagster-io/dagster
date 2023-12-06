@@ -9,40 +9,48 @@ import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {
-  ExplorerPath,
-  explorerPathFromString,
-  explorerPathToString,
-} from '../pipelines/PipelinePathUtils';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-import {AssetGroupSuggest, buildAssetGroupSelector} from './AssetGroupSuggest';
+import {buildAssetGroupSelector} from './AssetGroupSuggest';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  globalAssetGraphPathFromString,
+  globalAssetGraphPathToString,
+} from './globalAssetGraphPathToString';
 
 interface AssetGroupRootParams {
   0: string;
 }
 
-const __GLOBAL__ = '__GLOBAL__';
-
-export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
+export const AssetsGroupsGlobalGraphRoot = () => {
   const {0: path} = useParams<AssetGroupRootParams>();
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {visibleRepos} = React.useContext(WorkspaceContext);
   const history = useHistory();
 
-  const [filters, setFilters] = useQueryPersistedState<{groups: AssetGroupSelector[]}>({
-    encode: ({groups}) => ({groups: JSON.stringify(groups)}),
-    decode: (qs) => ({groups: qs.groups ? JSON.parse(qs.groups) : []}),
+  const [filters, setFilters] = useQueryPersistedState<{
+    groups: AssetGroupSelector[];
+    computeKindTags: string[];
+  }>({
+    encode: ({groups, computeKindTags}) => ({
+      groups: groups.length ? JSON.stringify(groups) : undefined,
+      computeKindTags: computeKindTags.length ? JSON.stringify(computeKindTags) : undefined,
+    }),
+    decode: (qs) => ({
+      groups: qs.groups ? JSON.parse(qs.groups) : [],
+      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
+    }),
   });
 
   useDocumentTitle(`Global Asset Lineage`);
 
   const onChangeExplorerPath = React.useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
-      const str = explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(__GLOBAL__, '');
-      history[mode]({pathname: `/asset-groups${str}`, search: history.location.search});
+      history[mode]({
+        pathname: globalAssetGraphPathToString(path),
+        search: history.location.search,
+      });
     },
     [history],
   );
@@ -80,40 +88,18 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
     return options;
   }, [filters.groups, visibleRepos]);
 
-  const assetGroups: AssetGroupSelector[] = React.useMemo(() => {
-    return visibleRepos.flatMap((repo) =>
-      repo.repository.assetGroups.map((g) => ({
-        groupName: g.groupName,
-        repositoryLocationName: repo.repositoryLocation.name,
-        repositoryName: repo.repository.name,
-      })),
-    );
-  }, [visibleRepos]);
-
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
         title={<Heading>Global Asset Lineage</Heading>}
-        right={
-          <div style={{marginBottom: -8}}>
-            <ReloadAllButton label="Reload definitions" />
-          </div>
-        }
+        right={<ReloadAllButton label="Reload definitions" />}
       />
       <AssetGraphExplorer
         fetchOptions={fetchOptions}
-        fetchOptionFilters={
-          <>
-            {allRepos.length > 1 && <RepoFilterButton />}
-            <AssetGroupSuggest
-              assetGroups={assetGroups}
-              value={filters.groups || []}
-              onChange={(groups) => setFilters({...filters, groups})}
-            />
-          </>
-        }
+        filters={filters}
+        setFilters={setFilters}
         options={{preferAssetRendering: true, explodeComposites: true}}
-        explorerPath={explorerPathFromString(__GLOBAL__ + path || '/')}
+        explorerPath={globalAssetGraphPathFromString(path)}
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
       />

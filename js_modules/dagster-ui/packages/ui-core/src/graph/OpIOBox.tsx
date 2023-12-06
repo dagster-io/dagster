@@ -1,4 +1,12 @@
-import {Colors, FontFamily} from '@dagster-io/ui-components';
+import {
+  FontFamily,
+  colorAccentBlue,
+  colorAccentGray,
+  colorBackgroundBlue,
+  colorBackgroundDefault,
+  colorTextBlue,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -34,7 +42,7 @@ interface OpIOBoxProps extends OpIORenderMetadata {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const OpIOBox: React.FC<OpIOBoxProps> = ({
+export const OpIOBox = ({
   minified,
   title,
   jumpTargetOp,
@@ -45,7 +53,7 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
   layoutInfo,
   onDoubleClick,
   onHighlightEdges,
-}) => {
+}: OpIOBoxProps) => {
   if (!layoutInfo) {
     return null;
   }
@@ -89,7 +97,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   align-items: center;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
-  background: ${(p) => (p.$highlighted ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.75)')};
+  background: ${(p) => (p.$highlighted ? colorBackgroundDefault() : colorBackgroundDefault())};
   font-size: 12px;
 
   &:last-child {
@@ -100,7 +108,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: ${(p) => (p.$highlighted ? Colors.Blue500 : Colors.Gray500)};
+    background: ${(p) => (p.$highlighted ? colorAccentBlue() : colorAccentGray())};
     display: inline-block;
     margin: 6px;
   }
@@ -114,15 +122,15 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   }
   .type {
     padding: 1px 6px;
-    background: #e7e6f0;
+    background: ${colorBackgroundBlue()};
     margin-right: 4px;
-    color: ${Colors.Blue500};
+    color: ${colorTextBlue()};
     font-family: ${FontFamily.monospace};
     font-weight: 700;
     border-radius: 4px;
   }
   .collapsedCount {
-    color: ${(p) => (p.$highlighted ? Colors.Blue500 : Colors.Gray500)};
+    color: ${(p) => (p.$highlighted ? colorTextBlue() : colorTextLight())};
     font-weight: 600;
     margin-left: -3px;
     padding-right: 4px;

@@ -3,10 +3,10 @@ import {
   Box,
   Button,
   ButtonLink,
-  Colors,
   DialogFooter,
   Dialog,
   Tag,
+  colorLinkDefault,
 } from '@dagster-io/ui-components';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -77,7 +77,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const JobMetadata: React.FC<Props> = (props) => {
+export const JobMetadata = (props: Props) => {
   const {pipelineName, repoAddress} = props;
   const metadata = useJobNavMetadata(repoAddress, pipelineName);
 
@@ -97,10 +97,13 @@ export const JobMetadata: React.FC<Props> = (props) => {
   );
 };
 
-const JobScheduleOrSensorTag: React.FC<{
+const JobScheduleOrSensorTag = ({
+  job,
+  repoAddress,
+}: {
   job: JobMetadataFragment;
   repoAddress: RepoAddress;
-}> = ({job, repoAddress}) => {
+}) => {
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
       return job.schedules;
@@ -134,7 +137,7 @@ function getRelatedAssets(metadata: JobMetadata) {
   );
 }
 
-const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) => {
+const RelatedAssetsTag = ({relatedAssets}: {relatedAssets: string[]}) => {
   const [open, setOpen] = React.useState(false);
 
   if (relatedAssets.length === 0) {
@@ -154,7 +157,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
     <>
       <Tag icon="asset">
         <ButtonLink
-          color={Colors.Link}
+          color={colorLinkDefault()}
           onClick={() => setOpen(true)}
         >{`View ${relatedAssets.length} assets`}</ButtonLink>
       </Tag>
@@ -170,11 +173,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
           <Box
             key={key}
             padding={{vertical: 12, horizontal: 20}}
-            border={
-              ii < relatedAssets.length - 1
-                ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                : null
-            }
+            border={ii < relatedAssets.length - 1 ? 'bottom' : null}
           >
             <Link key={key} to={`/assets/${key}`} style={{wordBreak: 'break-word'}}>
               {key}

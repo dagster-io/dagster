@@ -1,4 +1,11 @@
-import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  Subheading,
+  Tooltip,
+  colorAccentGray,
+  colorBackgroundLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -20,11 +27,11 @@ export const CollapsibleSection = ({header, details, headerRightSide, children}:
             grow: 1,
           }}
         >
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 4, grow: 1}}>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8, grow: 1}}>
             <Subheading>{header}</Subheading>
             {details ? (
               <Tooltip content={details} placement="top">
-                <Icon color={Colors.Gray500} name="info" />
+                <Icon color={colorAccentGray()} name="info" />
               </Tooltip>
             ) : null}
           </Box>
@@ -46,28 +53,27 @@ export const Collapsible = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   return (
-    <Box
-      flex={{direction: 'column'}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
-      <Box
-        flex={{direction: 'row', alignItems: 'center'}}
-        padding={{vertical: 8, horizontal: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
-        />
-        <SectionHeader onClick={() => setIsCollapsed(!isCollapsed)}>{header}</SectionHeader>
-      </Box>
+    <Box flex={{direction: 'column'}} border="bottom">
+      <SectionHeader onClick={() => setIsCollapsed(!isCollapsed)}>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', gap: 6}}
+          padding={{vertical: 8, horizontal: 12}}
+          border="bottom"
+        >
+          <Icon
+            name="arrow_drop_down"
+            style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
+          />
+          <div>{header}</div>
+        </Box>
+      </SectionHeader>
       {isCollapsed ? null : children}
     </Box>
   );
 };
 
 const SectionHeader = styled.button`
-  background-color: ${Colors.White};
+  background-color: ${colorBackgroundLight()};
   border: 0;
   cursor: pointer;
   padding: 0;

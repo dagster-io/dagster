@@ -8,7 +8,7 @@ import {
 import React from 'react';
 
 import {RepositorySelector} from '../graphql/types';
-import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
+import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
 import {Loading} from '../ui/Loading';
 
 import {JobBackfillsQuery, JobBackfillsQueryVariables} from './types/JobBackfillsTable.types';

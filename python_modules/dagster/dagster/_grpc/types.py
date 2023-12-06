@@ -4,6 +4,7 @@ from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
@@ -39,6 +40,7 @@ class ExecutionPlanSnapshotArgs(
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("mode", str),
         ],
     )
@@ -53,6 +55,7 @@ class ExecutionPlanSnapshotArgs(
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
         mode: str = DEFAULT_MODE_NAME,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
@@ -69,6 +72,9 @@ class ExecutionPlanSnapshotArgs(
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", of_type=AssetKey
+            ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", of_type=AssetCheckKey
             ),
         )
 
@@ -234,6 +240,7 @@ class ExecuteStepArgs(
             ("retry_mode", Optional[RetryMode]),
             ("known_state", Optional[KnownExecutionState]),
             ("should_verify_step", Optional[bool]),
+            ("print_serialized_events", bool),
         ],
     )
 ):
@@ -246,6 +253,7 @@ class ExecuteStepArgs(
         retry_mode: Optional[RetryMode] = None,
         known_state: Optional[KnownExecutionState] = None,
         should_verify_step: Optional[bool] = None,
+        print_serialized_events: Optional[bool] = None,
     ):
         return super(ExecuteStepArgs, cls).__new__(
             cls,
@@ -259,6 +267,9 @@ class ExecuteStepArgs(
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             should_verify_step=check.opt_bool_param(
                 should_verify_step, "should_verify_step", False
+            ),
+            print_serialized_events=check.opt_bool_param(
+                print_serialized_events, "print_serialized_events", False
             ),
         )
 
@@ -480,6 +491,7 @@ class JobSubsetSnapshotArgs(
             ("job_origin", ExternalJobOrigin),
             ("op_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     )
 ):
@@ -488,6 +500,7 @@ class JobSubsetSnapshotArgs(
         job_origin: ExternalJobOrigin,
         op_selection: Optional[Sequence[str]],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
@@ -496,6 +509,9 @@ class JobSubsetSnapshotArgs(
                 op_selection, "op_selection", of_type=str
             ),
             asset_selection=check.opt_nullable_set_param(asset_selection, "asset_selection"),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection"
+            ),
         )
 
 
@@ -527,6 +543,7 @@ class ExternalScheduleExecutionArgs(
             ("schedule_name", str),
             ("scheduled_execution_timestamp", Optional[float]),
             ("scheduled_execution_timezone", Optional[str]),
+            ("timeout", Optional[int]),
         ],
     )
 ):
@@ -537,6 +554,7 @@ class ExternalScheduleExecutionArgs(
         schedule_name: str,
         scheduled_execution_timestamp: Optional[float] = None,
         scheduled_execution_timezone: Optional[str] = None,
+        timeout: Optional[int] = None,
     ):
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
@@ -552,6 +570,7 @@ class ExternalScheduleExecutionArgs(
                 scheduled_execution_timezone,
                 "scheduled_execution_timezone",
             ),
+            timeout=check.opt_int_param(timeout, "timeout"),
         )
 
 
@@ -566,6 +585,7 @@ class SensorExecutionArgs(
             ("last_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
             ("cursor", Optional[str]),
+            ("timeout", Optional[int]),
         ],
     )
 ):
@@ -577,6 +597,7 @@ class SensorExecutionArgs(
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        timeout: Optional[int] = None,
     ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
@@ -590,6 +611,7 @@ class SensorExecutionArgs(
             ),
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
             cursor=check.opt_str_param(cursor, "cursor"),
+            timeout=timeout,
         )
 
 

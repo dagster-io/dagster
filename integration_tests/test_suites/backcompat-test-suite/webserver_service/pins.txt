@@ -13,6 +13,3 @@ grpcio<1.48.1; python_version < '3.10'
 
 # Added sqlalchemy pins in later versions
 sqlalchemy<2.0.0
-
-# https://github.com/dagster-io/dagster/pull/14089
-urllib3<2.0.0

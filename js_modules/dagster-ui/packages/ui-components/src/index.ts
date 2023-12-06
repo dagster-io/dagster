@@ -6,9 +6,7 @@ export * from './components/Button';
 export * from './components/ButtonGroup';
 export * from './components/ButtonLink';
 export * from './components/Checkbox';
-export * from './components/CodeMirror';
-export * from './components/Colors';
-export * from './components/ConfigEditor';
+export * from './components/LegacyColors';
 export * from './components/ConfigEditorDialog';
 export * from './components/ConfigEditorWithSchema';
 export * from './components/ConfigTypeSchema';
@@ -22,6 +20,7 @@ export * from './components/MainContent';
 export * from './components/Menu';
 export * from './components/MetadataTable';
 export * from './components/MiddleTruncate';
+export * from './components/NewConfigEditor';
 export * from './components/NonIdealState';
 export * from './components/Page';
 export * from './components/PageHeader';
@@ -51,6 +50,14 @@ export * from './components/styles';
 export * from './components/useSuggestionsForString';
 export * from './components/ErrorBoundary';
 export * from './components/useViewport';
+export * from './components/UnstyledButton';
+export * from './components/StyledRawCodeMirror';
+export * from './components/useDelayedState';
+export * from './components/ifPlural';
+export * from './theme/color';
+
+// todo dish: Delete this
+export * from './palettes/Colors';
 
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />

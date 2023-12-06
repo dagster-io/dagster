@@ -33,6 +33,10 @@ def test_resource_telemetry():
 
     # dagster-ge is out of date and is not installed in the dev environment
     libraries.remove("dagster_ge")
+    # airflow isn't correctly installed in the BuildKite environment
+    libraries.remove("dagster_airflow")
+    # new library, not added yet
+    libraries.remove("dagster_embedded_elt")
 
     resources_without_telemetry = []
 

@@ -1,8 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
+import {Box, Page, Spinner, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router';
-import {useParams} from 'react-router-dom';
+import {useHistory, useParams} from 'react-router-dom';
 
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -49,7 +48,7 @@ export const AssetsCatalogRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading assets…</div>
+            <div style={{color: colorTextLight()}}>Loading assets…</div>
           </Box>
         </Box>
       </Page>

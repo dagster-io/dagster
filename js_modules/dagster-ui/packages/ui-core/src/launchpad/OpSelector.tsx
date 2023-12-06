@@ -1,5 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Popover} from '@dagster-io/ui-components';
+import {
+  Box,
+  Popover,
+  colorAccentRed,
+  colorBackgroundRed,
+  colorTextRed,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -55,13 +61,8 @@ const SOLID_SELECTOR_QUERY = gql`
 `;
 
 export const OpSelector = (props: IOpSelectorProps) => {
-  const {
-    serverProvidedSubsetError,
-    onChange,
-    pipelineName,
-    repoAddress,
-    onFlattenGraphsChange,
-  } = props;
+  const {serverProvidedSubsetError, onChange, pipelineName, repoAddress, onFlattenGraphsChange} =
+    props;
   const [focused, setFocused] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -167,7 +168,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
 const PopoverErrorWrap = styled.div`
   padding: 4px 8px;
   border-radius: 2px;
-  border: 1px solid ${Colors.Red500};
-  background: ${Colors.Red200};
-  color: ${Colors.Red700};
+  border: 1px solid ${colorAccentRed()};
+  background: ${colorBackgroundRed()};
+  color: ${colorTextRed()};
 `;

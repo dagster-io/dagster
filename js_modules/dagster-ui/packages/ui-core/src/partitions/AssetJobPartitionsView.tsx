@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Subheading, useViewport} from '@dagster-io/ui-components';
+import {Box, Button, Subheading, useViewport} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
@@ -24,15 +24,19 @@ import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {allPartitionsRange} from './SpanRepresentation';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 
-export const AssetJobPartitionsView: React.FC<{
+export const AssetJobPartitionsView = ({
+  partitionSetName,
+  repoAddress,
+  pipelineName,
+}: {
   pipelineName: string;
   partitionSetName: string;
   repoAddress: RepoAddress;
-}> = ({partitionSetName, repoAddress, pipelineName}) => {
+}) => {
   const {viewport, containerProps} = useViewport();
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const assetGraph = useAssetGraphData('', {
+  const assetGraph = useAssetGraphData('*', {
     pipelineSelector: {
       pipelineName,
       repositoryName: repoAddress.name,
@@ -90,7 +94,7 @@ export const AssetJobPartitionsView: React.FC<{
     <div>
       <Box
         flex={{justifyContent: 'space-between', direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16, horizontal: 24}}
       >
         <Subheading>Status</Subheading>
@@ -104,11 +108,7 @@ export const AssetJobPartitionsView: React.FC<{
           />
         </Box>
       </Box>
-      <Box
-        flex={{direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
-        padding={{left: 8}}
-      >
+      <Box flex={{direction: 'row', alignItems: 'center'}} border="bottom" padding={{left: 8}}>
         <CountBox count={total} label="Total partitions" />
         <CountBox count={missing} label="Missing partitions" />
       </Box>
@@ -162,7 +162,7 @@ export const AssetJobPartitionsView: React.FC<{
       )}
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
+        border="top-and-bottom"
         style={{marginBottom: -1}}
       >
         <Subheading>Backfill history</Subheading>
@@ -179,17 +179,7 @@ export const AssetJobPartitionsView: React.FC<{
   );
 };
 
-const AssetJobPartitionGraphs: React.FC<{
-  repositorySelector: RepositorySelector;
-  pipelineName: string;
-  partitionSetName: string;
-  multidimensional: boolean;
-  dimensionName: string | null;
-  dimensionKeys: string[];
-  selected: string[];
-  pageSize: number;
-  offset: number;
-}> = ({
+const AssetJobPartitionGraphs = ({
   repositorySelector,
   dimensionKeys,
   dimensionName,
@@ -199,6 +189,16 @@ const AssetJobPartitionGraphs: React.FC<{
   multidimensional,
   pipelineName,
   offset,
+}: {
+  repositorySelector: RepositorySelector;
+  pipelineName: string;
+  partitionSetName: string;
+  multidimensional: boolean;
+  dimensionName: string | null;
+  dimensionKeys: string[];
+  selected: string[];
+  pageSize: number;
+  offset: number;
 }) => {
   const partitions = usePartitionStepQuery({
     partitionSetName,
@@ -218,10 +218,7 @@ const AssetJobPartitionGraphs: React.FC<{
 
   return (
     <>
-      <Box
-        padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
         <Subheading>Run duration</Subheading>
       </Box>
 
@@ -234,10 +231,7 @@ const AssetJobPartitionGraphs: React.FC<{
           jobDataByPartition={runDurationData}
         />
       </Box>
-      <Box
-        padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
         <Subheading>Step durations</Subheading>
       </Box>
       <Box margin={24}>

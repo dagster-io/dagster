@@ -50,6 +50,7 @@ const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = [
   'status',
   'tag',
+  'id',
   'created_date_before',
   'created_date_after',
 ];
@@ -58,7 +59,7 @@ interface Props {
   repoAddress?: RepoAddress;
 }
 
-export const PipelineRunsRoot: React.FC<Props> = (props) => {
+export const PipelineRunsRoot = (props: Props) => {
   useTrackPageView();
 
   const {pipelinePath} = useParams<{pipelinePath: string}>();

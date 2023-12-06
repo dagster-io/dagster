@@ -37,6 +37,7 @@ def construct_job_manifest(name, cmd, image="busybox", container_kwargs=None):
             template=kubernetes.client.V1PodTemplateSpec(
                 spec=construct_pod_spec(name, cmd, image=image, container_kwargs=container_kwargs)
             ),
+            backoff_limit=0,
         ),
     )
 
@@ -121,18 +122,20 @@ def test_pod_debug_info_failure(cluster_provider, namespace, should_cleanup):
 
         pod_names = api_client.get_pod_names_in_job("resourcelimit", namespace=namespace)
 
-        pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, container_name="resourcelimit"
-        )
+        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
 
 Pod status: Pending
 
+No logs for container 'resourcelimit'.
+
 Warning events for pod:
-FailedScheduling: 0/1 nodes are available: 1 Insufficient memory.""")
+FailedScheduling: 0/1 nodes are available: 1 Insufficient memory."""
+        )
 
         # Test case where the pod is still running
         api_client.batch_api.create_namespaced_job(
@@ -150,9 +153,7 @@ FailedScheduling: 0/1 nodes are available: 1 Insufficient memory.""")
 
             pod_names = api_client.get_pod_names_in_job("waitforever", namespace=namespace)
             if pod_names:
-                pod_debug_info = api_client.get_pod_debug_info(
-                    pod_names[0], namespace=namespace, container_name="waitforever"
-                )
+                pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
                 if "time for sleep" in pod_debug_info:
                     break
 
@@ -160,12 +161,14 @@ FailedScheduling: 0/1 nodes are available: 1 Insufficient memory.""")
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
 
 Pod status: Running
 Container 'waitforever' status: Ready
 
-Last 25 log lines:""")
+Last 25 log lines for container 'waitforever':"""
+        )
 
         assert "No warning events for pod." in pod_debug_info
 
@@ -185,22 +188,22 @@ Last 25 log lines:""")
 
         pod_names = api_client.get_pod_names_in_job("execformaterror", namespace=namespace)
 
-        pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, container_name="execformaterror"
-        )
+        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
 
 Pod status: Failed
 Container 'execformaterror' status: Terminated with exit code 1: Error
 
-Pod logs contained `exec format error`, which usually means that your Docker image was built using the wrong architecture.
+Logs for container 'execformaterror' contained `exec format error`, which usually means that your Docker image was built using the wrong architecture.
 Try rebuilding your docker image with the `--platform linux/amd64` flag set.
 
-Last 25 log lines:
-""")
+Last 25 log lines for container 'execformaterror':
+"""
+        )
 
         assert "exec /usr/local/bin/dagster: exec format error" in pod_debug_info
         assert "No warning events for pod." in pod_debug_info
@@ -231,26 +234,26 @@ Last 25 log lines:
             pod_names = api_client.get_pod_names_in_job("missingsecret", namespace=namespace)
 
             if pod_names:
-                pod_debug_info = api_client.get_pod_debug_info(
-                    pod_names[0], namespace=namespace, container_name="missingsecret"
-                )
+                pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
                 if "CreateContainerConfigError" in pod_debug_info:
                     break
 
             time.sleep(5)
 
-        pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, container_name="missingsecret"
-        )
+        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
 
 Pod status: Pending
 Container 'missingsecret' status: Waiting: CreateContainerConfigError: secret "missing-secret" not found
 
-Warning events for pod:""")
+No logs for container 'missingsecret'.
+
+Warning events for pod:"""
+        )
 
         # Test case where an unpullable image is used
         api_client.batch_api.create_namespaced_job(
@@ -268,21 +271,23 @@ Warning events for pod:""")
             pod_names = api_client.get_pod_names_in_job("pullfail", namespace=namespace)
 
             if pod_names:
-                pod_debug_info = api_client.get_pod_debug_info(
-                    pod_names[0], namespace=namespace, container_name="pullfail"
-                )
+                pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
                 if "ImagePullBackOff" in pod_debug_info:
                     break
 
             time.sleep(5)
 
         print(str(pod_debug_info))  # noqa
-        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
 
 Pod status: Pending
 Container 'pullfail' status: Waiting: ErrImagePull: rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/fakeimage:latest": failed to resolve reference "docker.io/library/fakeimage:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
 
-Warning events for pod:""")
+No logs for container 'pullfail'.
+
+Warning events for pod:"""
+        )
         assert "Failed: Error: ErrImagePull" in pod_debug_info
         assert "Failed: Error: ImagePullBackOff" in pod_debug_info
 
@@ -300,18 +305,18 @@ Warning events for pod:""")
 
         pod_names = api_client.get_pod_names_in_job("failpoddebug", namespace=namespace)
 
-        pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, container_name="failpoddebug"
-        )
+        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
 
         print(pod_debug_info)  # noqa
 
-        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
 
 Pod status: Failed
 Container 'failpoddebug' status: Terminated with exit code 1: Error
 
-Last 25 log lines:""")
+Last 25 log lines for container 'failpoddebug':"""
+        )
         assert " whoops!\n" in pod_debug_info
         assert pod_debug_info.endswith("No warning events for pod.")
 
@@ -323,19 +328,69 @@ Last 25 log lines:""")
 
         pod_names = api_client.get_pod_names_in_job("goodpod1", namespace=namespace)
 
-        pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, container_name="goodpod1"
-        )
+        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
         print(pod_debug_info)  # noqa
 
-        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
 
 Pod status: Succeeded
 Container 'goodpod1' status: Terminated with exit code 0: Completed
 
-Last 25 log lines:""")
+Last 25 log lines for container 'goodpod1':"""
+        )
         assert "hello world" in pod_debug_info
         assert "No warning events for pod." in pod_debug_info
+
+        # Test sidecars
+        api_client.batch_api.create_namespaced_job(
+            body=kubernetes.client.V1Job(
+                api_version="batch/v1",
+                kind="Job",
+                metadata=kubernetes.client.V1ObjectMeta(name="goodpod2"),
+                spec=kubernetes.client.V1JobSpec(
+                    template=kubernetes.client.V1PodTemplateSpec(
+                        spec=kubernetes.client.V1PodSpec(
+                            restart_policy="Never",
+                            containers=[
+                                kubernetes.client.V1Container(
+                                    name="goodcontainer1",
+                                    image="busybox",
+                                    args=["/bin/sh", "-c", 'echo "hello world"'],
+                                ),
+                                kubernetes.client.V1Container(
+                                    name="goodcontainer2",
+                                    image="busybox",
+                                    args=["/bin/sh", "-c", 'echo "hello again world"'],
+                                ),
+                            ],
+                        )
+                    ),
+                    backoff_limit=0,
+                ),
+            ),
+            namespace=namespace,
+        )
+        api_client.wait_for_job_success("goodpod2", namespace=namespace)
+
+        pod_names = api_client.get_pod_names_in_job("goodpod2", namespace=namespace)
+
+        pod_debug_info = api_client.get_pod_debug_info(pod_names[0], namespace=namespace)
+        print(pod_debug_info)  # noqa
+
+        assert pod_debug_info.startswith(
+            f"""Debug information for pod {pod_names[0]}:
+
+Pod status: Succeeded
+Container 'goodcontainer1' status: Terminated with exit code 0: Completed
+Container 'goodcontainer2' status: Terminated with exit code 0: Completed"""
+        )
+
+        assert "Last 25 log lines for container 'goodcontainer1':" in pod_debug_info
+        assert "Last 25 log lines for container 'goodcontainer2':" in pod_debug_info
+
+        assert "hello world" in pod_debug_info
+        assert "hello again world" in pod_debug_info
 
     finally:
         if should_cleanup:
@@ -344,7 +399,7 @@ Last 25 log lines:""")
                 "pullfail",
                 "missingsecret",
                 "goodpod1",
-                "waitforever",
+                "goodpod2" "waitforever",
                 "execformaterror",
                 "resourcelimit",
             ]:

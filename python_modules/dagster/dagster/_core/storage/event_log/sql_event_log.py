@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
@@ -32,14 +33,25 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import RunShardedEventsCursor
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
+from dagster._core.event_api import (
+    EventRecordsResult,
+    RunShardedEventsCursor,
+    RunStatusChangeRecordsFilter,
+)
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    MARKER_EVENTS,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.asset_check_execution_record import (
@@ -65,15 +77,18 @@ from dagster._utils import (
     utc_datetime_from_timestamp,
 )
 from dagster._utils.concurrency import (
+    ClaimedSlotInfo,
     ConcurrencyClaimStatus,
     ConcurrencyKeyInfo,
     ConcurrencySlotStatus,
+    PendingStepInfo,
 )
 
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
+    AssetRecordsFilter,
     EventLogConnection,
     EventLogCursor,
     EventLogRecord,
@@ -97,6 +112,26 @@ if TYPE_CHECKING:
 
 MAX_CONCURRENCY_SLOTS = 1000
 MIN_ASSET_ROWS = 25
+DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
+
+
+def get_max_event_records_limit() -> int:
+    max_value = os.getenv("MAX_LIMIT_GET_EVENT_RECORDS")
+    if not max_value:
+        return DEFAULT_MAX_LIMIT_EVENT_RECORDS
+    try:
+        return int(max_value)
+    except ValueError:
+        return DEFAULT_MAX_LIMIT_EVENT_RECORDS
+
+
+def enforce_max_records_limit(limit: int):
+    max_limit = get_max_event_records_limit()
+    if limit > max_limit:
+        raise DagsterInvariantViolationError(
+            f"Cannot fetch more than {max_limit} event records at a time. Requested {limit}."
+        )
+
 
 # We are using third-party library objects for DB connections-- at this time, these libraries are
 # untyped. When/if we upgrade to typed variants, the `Any` here can be replaced or the alias as a
@@ -692,6 +727,8 @@ class SqlEventLogStorage(EventLogStorage):
             self.delete_events_for_run(conn, run_id)
         with self.index_connection() as conn:
             self.delete_events_for_run(conn, run_id)
+        if self.supports_global_concurrency_limits:
+            self.free_concurrency_slots_for_run(run_id)
 
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
@@ -843,23 +880,6 @@ class SqlEventLogStorage(EventLogStorage):
                 isinstance(event_records_filter.asset_key, AssetKey),
                 "Asset key must be set in event records filter to filter by tags.",
             )
-            if self.supports_intersect:
-                intersections = [
-                    db_select([AssetEventTagsTable.c.event_id]).where(
-                        db.and_(
-                            AssetEventTagsTable.c.asset_key
-                            == event_records_filter.asset_key.to_string(),  # type: ignore  # (bad sig?)
-                            AssetEventTagsTable.c.key == key,
-                            (
-                                AssetEventTagsTable.c.value == value
-                                if isinstance(value, str)
-                                else AssetEventTagsTable.c.value.in_(value)
-                            ),
-                        )
-                    )
-                    for key, value in event_records_filter.tags.items()
-                ]
-                query = query.where(SqlEventLogStorageTable.c.id.in_(db.intersect(*intersections)))
 
         return query
 
@@ -897,6 +917,16 @@ class SqlEventLogStorage(EventLogStorage):
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
+        return self._get_event_records(
+            event_records_filter=event_records_filter, limit=limit, ascending=ascending
+        )
+
+    def _get_event_records(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
@@ -907,11 +937,7 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             asset_details = None
 
-        if (
-            event_records_filter.tags
-            and not self.supports_intersect
-            and self.has_table(AssetEventTagsTable.name)
-        ):
+        if event_records_filter.tags and self.has_table(AssetEventTagsTable.name):
             table = self._apply_tags_table_joins(
                 SqlEventLogStorageTable, event_records_filter.tags, event_records_filter.asset_key
             )
@@ -973,9 +999,130 @@ class SqlEventLogStorage(EventLogStorage):
     def supports_event_consumer_queries(self) -> bool:
         return True
 
-    @property
-    def supports_intersect(self) -> bool:
-        return True
+    def _get_event_records_result(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: int,
+        cursor: Optional[str],
+        ascending: bool,
+    ):
+        records = self._get_event_records(
+            event_records_filter=event_records_filter,
+            limit=limit,
+            ascending=ascending,
+        )
+        if records:
+            new_cursor = EventLogCursor.from_storage_id(records[-1].storage_id).to_string()
+        elif cursor:
+            new_cursor = cursor
+        else:
+            new_cursor = EventLogCursor.from_storage_id(-1).to_string()
+        has_more = len(records) == limit
+        return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
+
+    def fetch_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            asset_key = records_filter
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
+
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def fetch_observations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            asset_key = records_filter
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
+
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def fetch_planned_materializations(
+        self,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            asset_key = records_filter
+            event_records_filter = EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+            )
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def fetch_run_status_changes(
+        self,
+        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        enforce_max_records_limit(limit)
+        event_type = (
+            records_filter
+            if isinstance(records_filter, DagsterEventType)
+            else records_filter.event_type
+        )
+        if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            expected = ", ".join(EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys())
+            check.failed(f"Expected one of {expected}, received {event_type.value}")
+
+        before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+        event_records_filter = (
+            records_filter.to_event_records_filter(cursor, ascending)
+            if isinstance(records_filter, RunStatusChangeRecordsFilter)
+            else EventRecordsFilter(
+                event_type, before_cursor=before_cursor, after_cursor=after_cursor
+            )
+        )
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_logs_for_all_runs_by_log_id(
         self,
@@ -1375,7 +1522,9 @@ class SqlEventLogStorage(EventLogStorage):
         )
         with self.index_connection() as conn:
             backcompat_rows = db_fetch_mappings(conn, backcompat_query)
-        return {AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows}  # type: ignore
+        return {
+            AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows
+        }  # type: ignore
 
     def _can_mark_assets_as_migrated(self, rows):
         if not self.has_asset_key_index_cols():
@@ -1520,39 +1669,6 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_timestamp
                     > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
                 )
-        elif self.supports_intersect:
-
-            def get_tag_filter_query(tag_key, tag_value):
-                filter_query = db_select([AssetEventTagsTable.c.event_id]).where(
-                    db.and_(
-                        AssetEventTagsTable.c.asset_key == asset_key.to_string(),
-                        AssetEventTagsTable.c.key == tag_key,
-                        AssetEventTagsTable.c.value == tag_value,
-                    )
-                )
-                if asset_details and asset_details.last_wipe_timestamp:
-                    filter_query = filter_query.where(
-                        AssetEventTagsTable.c.event_timestamp
-                        > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
-                    )
-                return filter_query
-
-            intersections = [
-                get_tag_filter_query(tag_key, tag_value)
-                for tag_key, tag_value in filter_tags.items()
-            ]
-
-            tags_query = db_select(
-                [
-                    AssetEventTagsTable.c.key,
-                    AssetEventTagsTable.c.value,
-                    AssetEventTagsTable.c.event_id,
-                ]
-            ).where(
-                db.and_(
-                    AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)),
-                )
-            )
         else:
             table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
             tags_query = db_select(
@@ -1581,30 +1697,6 @@ class SqlEventLogStorage(EventLogStorage):
             tags_by_event_id[event_id][key] = value
 
         return list(tags_by_event_id.values())
-
-    def get_asset_run_ids(self, asset_key: AssetKey) -> Sequence[str]:
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        query = (
-            db_select(
-                [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
-            )
-            .where(
-                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-            )
-            .group_by(
-                SqlEventLogStorageTable.c.run_id,
-            )
-            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
-        )
-
-        asset_keys = [asset_key]
-        asset_details = self._get_assets_details(asset_keys)
-        query = self._add_assets_wipe_filter_to_query(query, asset_details, asset_keys)
-
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
-
-        return [run_id for (run_id, _timestamp) in results]
 
     def _asset_materialization_from_json_column(
         self, json_str: str
@@ -1666,50 +1758,42 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
 
-    def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
-    ) -> Mapping[AssetKey, Mapping[str, int]]:
-        check.sequence_param(asset_keys, "asset_keys", AssetKey)
-
+    def get_materialized_partitions(
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Set[str]:
         query = (
             db_select(
                 [
-                    SqlEventLogStorageTable.c.asset_key,
                     SqlEventLogStorageTable.c.partition,
-                    db.func.count(SqlEventLogStorageTable.c.id),
+                    db.func.max(SqlEventLogStorageTable.c.id),
                 ]
             )
             .where(
                 db.and_(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [asset_key.to_string() for asset_key in asset_keys]
-                    ),
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     SqlEventLogStorageTable.c.partition != None,  # noqa: E711
                     SqlEventLogStorageTable.c.dagster_event_type
                     == DagsterEventType.ASSET_MATERIALIZATION.value,
                 )
             )
-            .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
+            .group_by(SqlEventLogStorageTable.c.partition)
         )
 
-        assets_details = self._get_assets_details(asset_keys)
-        query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
+        assets_details = self._get_assets_details([asset_key])
+        query = self._add_assets_wipe_filter_to_query(query, assets_details, [asset_key])
 
         if after_cursor:
             query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
+        if before_cursor:
+            query = query.where(SqlEventLogStorageTable.c.id < before_cursor)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
-        materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
-            asset_key: {} for asset_key in asset_keys
-        }
-        for row in results:
-            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
-            if asset_key:
-                materialization_count_by_partition[asset_key][cast(str, row[1])] = cast(int, row[2])
-
-        return materialization_count_by_partition
+        return set([cast(str, row[0]) for row in results])
 
     def _latest_event_ids_by_partition_subquery(
         self,
@@ -1835,7 +1919,7 @@ class SqlEventLogStorage(EventLogStorage):
         return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: AssetKey
+        self, asset_key: AssetKey, after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
@@ -1852,6 +1936,7 @@ class SqlEventLogStorage(EventLogStorage):
                 DagsterEventType.ASSET_MATERIALIZATION,
                 DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
             ],
+            after_cursor=after_storage_id,
         )
 
         latest_events_subquery = db_subquery(
@@ -1922,7 +2007,9 @@ class SqlEventLogStorage(EventLogStorage):
                 " instance migrate`."
             )
 
-    def _fetch_partition_keys_for_partition_def(self, partitions_def_name: str) -> Sequence[str]:
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the list of partition keys for a partition definition."""
+        self._check_partitions_table()
         columns = [
             DynamicPartitionsTable.c.partitions_def_name,
             DynamicPartitionsTable.c.partition,
@@ -1937,14 +2024,22 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [cast(str, row[1]) for row in rows]
 
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        """Get the list of partition keys for a partition definition."""
-        self._check_partitions_table()
-        return self._fetch_partition_keys_for_partition_def(partitions_def_name)
-
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
-        return partition_key in self._fetch_partition_keys_for_partition_def(partitions_def_name)
+        query = (
+            db_select([DynamicPartitionsTable.c.partition])
+            .where(
+                db.and_(
+                    DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                    DynamicPartitionsTable.c.partition == partition_key,
+                )
+            )
+            .limit(1)
+        )
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        return len(results) > 0
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
@@ -2247,12 +2342,39 @@ class SqlEventLogStorage(EventLogStorage):
                 # do nothing
                 pass
 
-    def _remove_pending_steps(self, run_id: str, step_key: Optional[str] = None):
-        query = PendingStepsTable.delete().where(PendingStepsTable.c.run_id == run_id)
+    def _remove_pending_steps(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
+        # fetch the assigned steps to delete, while grabbing the concurrency keys so that we can
+        # assign the next set of queued steps, if necessary
+        select_query = (
+            db_select(
+                [
+                    PendingStepsTable.c.id,
+                    PendingStepsTable.c.assigned_timestamp,
+                    PendingStepsTable.c.concurrency_key,
+                ]
+            )
+            .select_from(PendingStepsTable)
+            .where(PendingStepsTable.c.run_id == run_id)
+            .with_for_update()
+        )
         if step_key:
-            query = query.where(PendingStepsTable.c.step_key == step_key)
+            select_query = select_query.where(PendingStepsTable.c.step_key == step_key)
+
         with self.index_connection() as conn:
-            conn.execute(query)
+            rows = conn.execute(select_query).fetchall()
+            if not rows:
+                return []
+
+            # now, actually delete the pending steps
+            conn.execute(
+                PendingStepsTable.delete().where(
+                    PendingStepsTable.c.id.in_([row[0] for row in rows])
+                )
+            )
+
+        # return the concurrency keys for the freed slots which were assigned
+        to_assign = [cast(str, row[2]) for row in rows if row[1] is not None]
+        return to_assign
 
     def claim_concurrency_slot(
         self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
@@ -2354,59 +2476,49 @@ class SqlEventLogStorage(EventLogStorage):
                 db_select(
                     [
                         ConcurrencySlotsTable.c.run_id,
+                        ConcurrencySlotsTable.c.step_key,
                         ConcurrencySlotsTable.c.deleted,
-                        db.func.count().label("count"),
                     ]
                 )
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
-                .group_by(ConcurrencySlotsTable.c.run_id, ConcurrencySlotsTable.c.deleted)
             )
             slot_rows = db_fetch_mappings(conn, slot_query)
             pending_query = (
                 db_select(
                     [
                         PendingStepsTable.c.run_id,
-                        db_case(
-                            [(PendingStepsTable.c.assigned_timestamp.is_(None), False)],
-                            else_=True,
-                        ).label("is_assigned"),
-                        db.func.count().label("count"),
+                        PendingStepsTable.c.step_key,
+                        PendingStepsTable.c.assigned_timestamp,
+                        PendingStepsTable.c.create_timestamp,
+                        PendingStepsTable.c.priority,
                     ]
                 )
                 .select_from(PendingStepsTable)
                 .where(PendingStepsTable.c.concurrency_key == concurrency_key)
-                .group_by(PendingStepsTable.c.run_id, "is_assigned")
             )
             pending_rows = db_fetch_mappings(conn, pending_query)
 
             return ConcurrencyKeyInfo(
                 concurrency_key=concurrency_key,
-                slot_count=sum(
-                    [
-                        cast(int, slot_row["count"])
-                        for slot_row in slot_rows
-                        if not slot_row["deleted"]
-                    ]
-                ),
-                active_slot_count=sum(
-                    [cast(int, slot_row["count"]) for slot_row in slot_rows if slot_row["run_id"]]
-                ),
-                active_run_ids={
-                    cast(str, slot_row["run_id"]) for slot_row in slot_rows if slot_row["run_id"]
-                },
-                pending_step_count=sum(
-                    [cast(int, row["count"]) for row in pending_rows if not row["is_assigned"]]
-                ),
-                pending_run_ids={
-                    cast(str, row["run_id"]) for row in pending_rows if not row["is_assigned"]
-                },
-                assigned_step_count=sum(
-                    [cast(int, row["count"]) for row in pending_rows if row["is_assigned"]]
-                ),
-                assigned_run_ids={
-                    cast(str, row["run_id"]) for row in pending_rows if row["is_assigned"]
-                },
+                slot_count=len([slot_row for slot_row in slot_rows if not slot_row["deleted"]]),
+                claimed_slots=[
+                    ClaimedSlotInfo(slot_row["run_id"], slot_row["step_key"])
+                    for slot_row in slot_rows
+                    if slot_row["run_id"]
+                ],
+                pending_steps=[
+                    PendingStepInfo(
+                        run_id=row["run_id"],
+                        step_key=row["step_key"],
+                        enqueued_timestamp=utc_datetime_from_naive(row["create_timestamp"]),
+                        assigned_timestamp=utc_datetime_from_naive(row["assigned_timestamp"])
+                        if row["assigned_timestamp"]
+                        else None,
+                        priority=row["priority"],
+                    )
+                    for row in pending_rows
+                ],
             )
 
     def get_concurrency_run_ids(self) -> Set[str]:
@@ -2415,18 +2527,20 @@ class SqlEventLogStorage(EventLogStorage):
             return set([cast(str, row[0]) for row in rows])
 
     def free_concurrency_slots_for_run(self, run_id: str) -> None:
-        freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id)
-        self._remove_pending_steps(run_id=run_id)
-        if freed_concurrency_keys:
+        self._free_concurrency_slots(run_id=run_id)
+        removed_assigned_concurrency_keys = self._remove_pending_steps(run_id=run_id)
+        if removed_assigned_concurrency_keys:
             # assign any pending steps that can now claim a slot
-            self.assign_pending_steps(freed_concurrency_keys)
+            self.assign_pending_steps(removed_assigned_concurrency_keys)
 
     def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
-        freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id, step_key=step_key)
-        self._remove_pending_steps(run_id=run_id, step_key=step_key)
-        if freed_concurrency_keys:
+        self._free_concurrency_slots(run_id=run_id, step_key=step_key)
+        removed_assigned_concurrency_keys = self._remove_pending_steps(
+            run_id=run_id, step_key=step_key
+        )
+        if removed_assigned_concurrency_keys:
             # assign any pending steps that can now claim a slot
-            self.assign_pending_steps(freed_concurrency_keys)
+            self.assign_pending_steps(removed_assigned_concurrency_keys)
 
     def _free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
         """Frees concurrency slots for a given run/step.
@@ -2456,7 +2570,7 @@ class SqlEventLogStorage(EventLogStorage):
                 db_select([ConcurrencySlotsTable.c.id, ConcurrencySlotsTable.c.concurrency_key])
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.run_id == run_id)
-                .with_for_update(skip_locked=True)
+                .with_for_update()
             )
             if step_key:
                 select_query = select_query.where(ConcurrencySlotsTable.c.step_key == step_key)
@@ -2490,7 +2604,10 @@ class SqlEventLogStorage(EventLogStorage):
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
             self._store_asset_check_evaluation_planned(event, event_id)
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
-            self._update_asset_check_evaluation(event, event_id)
+            if event.run_id == "" or event.run_id is None:
+                self._store_runless_asset_check_evaluation(event, event_id)
+            else:
+                self._update_asset_check_evaluation(event, event_id)
 
     def _store_asset_check_evaluation_planned(
         self, event: EventLogEntry, event_id: Optional[int]
@@ -2505,6 +2622,36 @@ class SqlEventLogStorage(EventLogStorage):
                     check_name=planned.check_name,
                     run_id=event.run_id,
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                    evaluation_event=serialize_value(event),
+                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                )
+            )
+
+    def _store_runless_asset_check_evaluation(
+        self, event: EventLogEntry, event_id: Optional[int]
+    ) -> None:
+        evaluation = cast(
+            AssetCheckEvaluation, check.not_none(event.dagster_event).event_specific_data
+        )
+        with self.index_connection() as conn:
+            conn.execute(
+                AssetCheckExecutionsTable.insert().values(
+                    asset_key=evaluation.asset_key.to_string(),
+                    check_name=evaluation.check_name,
+                    run_id=event.run_id,
+                    execution_status=(
+                        AssetCheckExecutionRecordStatus.SUCCEEDED.value
+                        if evaluation.passed
+                        else AssetCheckExecutionRecordStatus.FAILED.value
+                    ),
+                    evaluation_event=serialize_value(event),
+                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_storage_id=event_id,
+                    materialization_event_storage_id=(
+                        evaluation.target_materialization_data.storage_id
+                        if evaluation.target_materialization_data
+                        else None
+                    ),
                 )
             )
 
@@ -2526,7 +2673,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .values(
                     execution_status=(
                         AssetCheckExecutionRecordStatus.SUCCEEDED.value
-                        if evaluation.success
+                        if evaluation.passed
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
@@ -2545,15 +2692,16 @@ class SqlEventLogStorage(EventLogStorage):
                 f" {rows_updated}."
             )
 
-    def get_asset_check_executions(
+    def get_asset_check_execution_history(
         self,
-        asset_key: AssetKey,
-        check_name: str,
+        check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
+        check.inst_param(check_key, "key", AssetCheckKey)
+        check.int_param(limit, "limit")
+        check.opt_int_param(cursor, "cursor")
+
         query = (
             db_select(
                 [
@@ -2566,8 +2714,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .where(
                 db.and_(
-                    AssetCheckExecutionsTable.c.asset_key == asset_key.to_string(),
-                    AssetCheckExecutionsTable.c.check_name == check_name,
+                    AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
+                    AssetCheckExecutionsTable.c.check_name == check_key.name,
                 )
             )
             .order_by(AssetCheckExecutionsTable.c.id.desc())
@@ -2575,43 +2723,67 @@ class SqlEventLogStorage(EventLogStorage):
 
         if cursor:
             query = query.where(AssetCheckExecutionsTable.c.id < cursor)
-        if not include_planned:
-            query = query.where(
-                AssetCheckExecutionsTable.c.execution_status
-                != AssetCheckExecutionRecordStatus.PLANNED.value
-            )
-        if materialization_event_storage_id:
-            if include_planned:
-                # rows in PLANNED status are not associated with a materialization event yet
-                query = query.where(
-                    db.or_(
-                        AssetCheckExecutionsTable.c.materialization_event_storage_id
-                        == materialization_event_storage_id,
-                        AssetCheckExecutionsTable.c.execution_status
-                        == AssetCheckExecutionRecordStatus.PLANNED.value,
-                    )
-                )
-            else:
-                query = query.where(
-                    AssetCheckExecutionsTable.c.materialization_event_storage_id
-                    == materialization_event_storage_id
-                )
 
         with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
+            rows = db_fetch_mappings(conn, query)
 
-        return [
-            AssetCheckExecutionRecord(
-                id=cast(int, row[0]),
-                run_id=cast(str, row[1]),
-                status=AssetCheckExecutionRecordStatus(row[2]),
-                evaluation_event=(
-                    deserialize_value(cast(str, row[3]), EventLogEntry) if row[3] else None
-                ),
-                create_timestamp=datetime_as_float(cast(datetime, row[4])),
+        return [AssetCheckExecutionRecord.from_db_row(row) for row in rows]
+
+    def get_latest_asset_check_execution_by_key(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
+        if not check_keys:
+            return {}
+
+        latest_ids_subquery = db_subquery(
+            db_select(
+                [
+                    db.func.max(AssetCheckExecutionsTable.c.id).label("id"),
+                ]
             )
+            .where(
+                db.and_(
+                    AssetCheckExecutionsTable.c.asset_key.in_(
+                        [key.asset_key.to_string() for key in check_keys]
+                    ),
+                    AssetCheckExecutionsTable.c.check_name.in_([key.name for key in check_keys]),
+                )
+            )
+            .group_by(
+                AssetCheckExecutionsTable.c.asset_key,
+                AssetCheckExecutionsTable.c.check_name,
+            )
+        )
+
+        query = db_select(
+            [
+                AssetCheckExecutionsTable.c.id,
+                AssetCheckExecutionsTable.c.asset_key,
+                AssetCheckExecutionsTable.c.check_name,
+                AssetCheckExecutionsTable.c.run_id,
+                AssetCheckExecutionsTable.c.execution_status,
+                AssetCheckExecutionsTable.c.evaluation_event,
+                AssetCheckExecutionsTable.c.create_timestamp,
+            ]
+        ).select_from(
+            AssetCheckExecutionsTable.join(
+                latest_ids_subquery,
+                db.and_(
+                    AssetCheckExecutionsTable.c.id == latest_ids_subquery.c.id,
+                ),
+            )
+        )
+
+        with self.index_connection() as conn:
+            rows = db_fetch_mappings(conn, query)
+
+        return {
+            AssetCheckKey(
+                asset_key=check.not_none(AssetKey.from_db_string(cast(str, row["asset_key"]))),
+                name=cast(str, row["check_name"]),
+            ): AssetCheckExecutionRecord.from_db_row(row)
             for row in rows
-        ]
+        }
 
     @property
     def supports_asset_checks(self):

@@ -28,12 +28,10 @@ def _validate_hook_fn_params(fn, expected_positionals):
     missing_positional = validate_expected_params(params, expected_positionals)
     if missing_positional:
         raise DagsterInvalidDefinitionError(
-            "'{hook_name}' decorated function does not have required positional "
-            "parameter '{missing_param}'. Hook functions should only have keyword arguments "
+            f"'{fn.__name__}' decorated function does not have required positional "
+            f"parameter '{missing_positional}'. Hook functions should only have keyword arguments "
             "that match input names and a first positional parameter named 'context' and "
-            "a second positional parameter named 'event_list'.".format(
-                hook_name=fn.__name__, missing_param=missing_positional
-            )
+            "a second positional parameter named 'event_list'."
         )
 
 

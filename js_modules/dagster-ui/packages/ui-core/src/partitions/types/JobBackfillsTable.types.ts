@@ -21,28 +21,29 @@ export type JobBackfillsQuery = {
           id: string;
           status: Types.BulkActionStatus;
           isAssetBackfill: boolean;
-          hasCancelPermission: boolean;
-          hasResumePermission: boolean;
-          numCancelable: number;
-          partitionNames: Array<string> | null;
           isValidSerialization: boolean;
+          partitionNames: Array<string> | null;
           numPartitions: number | null;
           timestamp: number;
           partitionSetName: string | null;
+          hasCancelPermission: boolean;
+          hasResumePermission: boolean;
+          numCancelable: number;
           partitionSet: {
             __typename: 'PartitionSet';
             id: string;
             name: string;
-            mode: string;
             pipelineName: string;
+            mode: string;
             repositoryOrigin: {
               __typename: 'RepositoryOrigin';
-              id: string;
               repositoryName: string;
               repositoryLocationName: string;
+              id: string;
             };
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
           error: {
             __typename: 'PythonError';
             message: string;

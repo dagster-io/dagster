@@ -9,10 +9,13 @@ import {RepoAddress} from '../workspace/types';
 
 import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 
-export const AssetNodeInstigatorTag: React.FC<{
+export const AssetNodeInstigatorTag = ({
+  assetNode,
+  repoAddress,
+}: {
   assetNode: AssetNodeInstigatorsFragment;
   repoAddress: RepoAddress;
-}> = ({assetNode, repoAddress}) => {
+}) => {
   const schedules = flatMap(assetNode.jobs, (j) => j.schedules);
   const sensors = flatMap(assetNode.jobs, (j) => j.sensors);
 

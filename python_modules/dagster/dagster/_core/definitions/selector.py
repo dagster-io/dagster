@@ -3,6 +3,7 @@ from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
@@ -17,6 +18,7 @@ class JobSubsetSelector(
             ("job_name", str),
             ("op_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     )
 ):
@@ -29,8 +31,12 @@ class JobSubsetSelector(
         job_name: str,
         op_selection: Optional[Sequence[str]],
         asset_selection: Optional[Iterable[AssetKey]] = None,
+        asset_check_selection: Optional[Iterable[AssetCheckKey]] = None,
     ):
         asset_selection = set(asset_selection) if asset_selection else None
+        asset_check_selection = (
+            set(asset_check_selection) if asset_check_selection is not None else None
+        )
         return super(JobSubsetSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
@@ -39,6 +45,9 @@ class JobSubsetSelector(
             op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
             asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", AssetKey
+            ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", AssetCheckKey
             ),
         )
 

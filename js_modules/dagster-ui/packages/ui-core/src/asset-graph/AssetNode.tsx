@@ -1,5 +1,26 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  Spinner,
+  Tooltip,
+  colorAccentGray,
+  colorAccentGrayHover,
+  colorAccentGreen,
+  colorAccentRed,
+  colorAccentYellow,
+  colorBackgroundDefault,
+  colorBackgroundGray,
+  colorBackgroundLight,
+  colorTextDefault,
+  colorTextLight,
+  colorTextLighter,
+  colorLineageNodeBorder,
+  colorLineageNodeBorderSelected,
+  colorLineageNodeBorderHover,
+  colorLineageNodeBackground,
+} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
@@ -7,33 +28,39 @@ import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
+import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
+import {useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {AssetLatestRunSpinner} from './AssetRunLinking';
-import {LiveDataForNode} from './Utils';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {GraphData, GraphNode, LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
-export const AssetNode: React.FC<{
+interface Props {
   definition: AssetNodeFragment;
-  liveData?: LiveDataForNode;
   selected: boolean;
-}> = React.memo(({definition, selected, liveData}) => {
+}
+
+export const AssetNode = React.memo(({definition, selected}: Props) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
+  const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
       <AssetTopTags definition={definition} liveData={liveData} />
       <AssetNodeContainer $selected={selected}>
         <AssetNodeBox $selected={selected} $isSource={isSource}>
-          <Name $isSource={isSource}>
+          <AssetName $isSource={isSource}>
             <span style={{marginTop: 1}}>
               <Icon name={isSource ? 'source_asset' : 'asset'} />
             </span>
@@ -47,18 +74,14 @@ export const AssetNode: React.FC<{
               })}
             </div>
             <div style={{flex: 1}} />
-          </Name>
-          <Box
-            style={{padding: '6px 8px'}}
-            flex={{direction: 'column', gap: 4}}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          >
+          </AssetName>
+          <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
-              <Description $color={Colors.Gray800}>
+              <AssetDescription $color={colorTextDefault()}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
-              </Description>
+              </AssetDescription>
             ) : (
-              <Description $color={Colors.Gray400}>No description</Description>
+              <AssetDescription $color={colorTextLight()}>No description</AssetDescription>
             )}
             {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
@@ -72,17 +95,19 @@ export const AssetNode: React.FC<{
           {(liveData?.assetChecks || []).length > 0 && (
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
-          <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
         </AssetNodeBox>
+        <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
 }, isEqual);
 
-const AssetTopTags: React.FC<{
+interface AssetTopTagsProps {
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
-}> = ({definition, liveData}) => (
+}
+
+const AssetTopTags = ({definition, liveData}: AssetTopTagsProps) => (
   <Box flex={{gap: 4}} padding={{left: 4}} style={{height: 24}}>
     <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="upstream" />
   </Box>
@@ -97,8 +122,8 @@ const AssetNodeRowBox = styled(Box)`
     text-decoration: none;
   }
   &:last-child {
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 `;
 
@@ -107,7 +132,7 @@ interface StatusRowProps {
   liveData: LiveDataForNode | undefined;
 }
 
-const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) => {
+const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
   const {content, background} = buildAssetNodeStatusContent({
     assetKey: definition.assetKey,
     definition,
@@ -140,30 +165,67 @@ const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNod
   },
   {
     type: 'NOT_EVALUATED',
-    content: <Icon name="changes_present" color={Colors.Gray700} />,
+    content: <Icon name="dot" color={colorAccentGray()} />,
   },
   {
     type: 'ERROR',
-    content: <Icon name="cancel" color={Colors.Red700} />,
+    content: <Icon name="cancel" color={colorAccentRed()} />,
   },
   {
     type: 'WARN',
-    content: <Icon name="warning_outline" color={Colors.Yellow700} />,
+    content: <Icon name="warning_outline" color={colorAccentYellow()} />,
   },
   {
     type: AssetCheckExecutionResolvedStatus.SKIPPED,
-    content: <Icon name="dot" color={Colors.Gray500} />,
+    content: <Icon name="dot" color={colorAccentGray()} />,
   },
   {
     type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-    content: <Icon name="check_circle" color={Colors.Green700} />,
+    content: <Icon name="check_circle" color={colorAccentGreen()} />,
   },
 ];
 
-const AssetNodeChecksRow: React.FC<{
+export const AssetNodeContextMenuWrapper = React.memo(
+  ({
+    children,
+    graphData,
+    explorerPath,
+    onChangeExplorerPath,
+    selectNode,
+    node,
+  }: {
+    children: React.ReactNode;
+    graphData: GraphData;
+    node: GraphNode;
+    selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+    explorerPath?: ExplorerPath;
+    onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  }) => {
+    const {dialog, menu} = useAssetNodeMenu({
+      graphData,
+      explorerPath,
+      onChangeExplorerPath,
+      selectNode,
+      node,
+    });
+    return (
+      <>
+        <ContextMenuWrapper menu={menu} stopPropagation>
+          {children}
+        </ContextMenuWrapper>
+        {dialog}
+      </>
+    );
+  },
+);
+
+const AssetNodeChecksRow = ({
+  definition,
+  liveData,
+}: {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
-}> = ({definition, liveData}) => {
+}) => {
   if (!liveData || !liveData.assetChecks.length) {
     return <span />;
   }
@@ -187,8 +249,8 @@ const AssetNodeChecksRow: React.FC<{
     <AssetNodeRowBox
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-      border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      background={Colors.Gray50}
+      border="top"
+      background={colorBackgroundLight()}
     >
       Checks
       <Link
@@ -208,18 +270,23 @@ const AssetNodeChecksRow: React.FC<{
   );
 };
 
-export const AssetNodeMinimal: React.FC<{
+export const AssetNodeMinimal = ({
+  selected,
+  definition,
+  height,
+}: {
   selected: boolean;
-  liveData?: LiveDataForNode;
   definition: AssetNodeFragment;
-}> = ({selected, definition, liveData}) => {
+  height: number;
+}) => {
   const {isSource, assetKey} = definition;
+  const {liveData} = useAssetLiveData(assetKey);
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: (height - 64) / 2}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -232,15 +299,9 @@ export const AssetNodeMinimal: React.FC<{
             $background={background}
             $border={border}
           >
-            <div
-              style={{
-                top: '50%',
-                position: 'absolute',
-                transform: 'translate(8px, -16px)',
-              }}
-            >
+            <AssetNodeSpinnerContainer>
               <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-            </div>
+            </AssetNodeSpinnerContainer>
             <MinimalName style={{fontSize: 30}} $isSource={isSource}>
               {withMiddleTruncation(displayName, {maxLength: 14})}
             </MinimalName>
@@ -289,8 +350,9 @@ const AssetInsetForHoverEffect = styled.div`
 
 const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
-  cursor: default;
-  padding: 4px;
+  cursor: pointer;
+  padding: 6px;
+  overflow: clip;
 `;
 
 const AssetNodeShowOnHover = styled.span`
@@ -300,19 +362,21 @@ const AssetNodeShowOnHover = styled.span`
 const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
-      ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`
-      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200}`};
+      ? `border: 2px dashed ${p.$selected ? colorAccentGrayHover() : colorAccentGray()}`
+      : `border: 2px solid ${
+          p.$selected ? colorLineageNodeBorderSelected() : colorLineageNodeBorder()
+        }`};
+  ${(p) => p.$selected && `outline: 2px solid ${colorLineageNodeBorderSelected()}`};
 
-  ${(p) =>
-    p.$isSource
-      ? `outline: 3px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
-      : `outline: 3px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
-
-  background: ${Colors.White};
-  border-radius: 8px;
+  background: ${colorBackgroundDefault()};
+  border-radius: 10px;
   position: relative;
+  transition: all 150ms linear;
   &:hover {
+    ${(p) => !p.$selected && `border: 2px solid ${colorLineageNodeBorderHover()};`};
+
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+    scale: 1.03;
     ${AssetNodeShowOnHover} {
       display: initial;
     }
@@ -322,42 +386,46 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
 const NameCSS: CSSObject = {
   padding: '3px 6px',
-  color: Colors.Gray800,
+  color: colorTextDefault(),
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
 };
 
-const NameTooltipCSS: CSSObject = {
+export const NameTooltipCSS: CSSObject = {
   ...NameCSS,
   top: -9,
   left: -12,
   fontSize: 16.8,
 };
 
-const NameTooltipStyle = JSON.stringify({
+export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.Blue50,
-  border: `1px solid ${Colors.Blue100}`,
+  background: colorLineageNodeBackground(),
+  border: `none`,
 });
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
+  background: colorBackgroundGray(),
+  border: `none`,
 });
 
-const Name = styled.div<{$isSource: boolean}>`
+const AssetName = styled.div<{$isSource: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
-  background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
+  background: ${(p) => (p.$isSource ? colorBackgroundLight() : colorLineageNodeBackground())};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
 
+const AssetNodeSpinnerContainer = styled.div`
+  top: 50%;
+  position: absolute;
+  transform: translate(8px, -16px);
+`;
+
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  padding-top: 30px;
-  padding-bottom: 42px;
   height: 100%;
 `;
 
@@ -370,25 +438,20 @@ const MinimalAssetNodeBox = styled.div<{
   background: ${(p) => p.$background};
   ${(p) =>
     p.$isSource
-      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border}`
-      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border}`};
+      ? `border: 4px dashed ${p.$selected ? colorAccentGray() : p.$border}`
+      : `border: 4px solid ${p.$selected ? colorLineageNodeBorderSelected() : p.$border}`};
 
-  ${(p) =>
-    p.$isSource
-      ? `outline: 8px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
-      : `outline: 8px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
-
-  border-radius: 10px;
+  border-radius: 16px;
   position: relative;
   padding: 4px;
   height: 100%;
-  min-height: 46px;
+  min-height: 86px;
   &:hover {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
   }
 `;
 
-const MinimalName = styled(Name)`
+const MinimalName = styled(AssetName)`
   font-weight: 600;
   white-space: nowrap;
   position: absolute;
@@ -398,11 +461,11 @@ const MinimalName = styled(Name)`
   transform: translate(-50%, -50%);
 `;
 
-const Description = styled.div<{$color: string}>`
+export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${(p) => p.$color};
+  color: ${colorTextLighter()};
   font-size: 12px;
 `;
 

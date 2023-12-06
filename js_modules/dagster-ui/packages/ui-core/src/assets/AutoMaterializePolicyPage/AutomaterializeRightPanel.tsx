@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   Subheading,
   Body,
   ExternalAnchorButton,
@@ -15,10 +14,7 @@ import {Link, Redirect} from 'react-router-dom';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {
-  AutomaterializePolicyTag,
-  automaterializePolicyDescription,
-} from '../AutomaterializePolicyTag';
+import {AutomaterializePolicyTag} from '../AutomaterializePolicyTag';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
 
@@ -41,12 +37,8 @@ export const AutomaterializeRightPanel = ({assetKey}: Props) => {
   const {data, error} = queryResult;
 
   return (
-    <Box
-      flex={{direction: 'column'}}
-      style={{width: '294px', height: '100%'}}
-      border={{side: 'left', width: 1, color: Colors.KeylineGray}}
-    >
-      <Box padding={16} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+    <Box flex={{direction: 'column'}} style={{width: '294px', height: '100%'}} border="left">
+      <Box padding={16} border="bottom">
         <Subheading>Overview</Subheading>
       </Box>
       <div style={{overflowY: 'auto'}}>
@@ -76,7 +68,8 @@ export const AutomaterializeRightPanel = ({assetKey}: Props) => {
                 }
               >
                 <Body style={{flex: 1}}>
-                  {automaterializePolicyDescription(data.assetNodeOrError.autoMaterializePolicy)}
+                  This asset will be automatically materialized when at least one of the conditions
+                  to the left is met and no skip conditions are met.
                 </Body>
               </RightPanelSection>
             ) : (
@@ -167,7 +160,7 @@ const RightPanelSection = ({
   return (
     <Box
       flex={{direction: 'column', gap: 12}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       padding={{vertical: 12, horizontal: 16}}
     >
       <Subheading>{title}</Subheading>
@@ -205,6 +198,10 @@ export const GET_POLICY_INFO_QUERY = gql`
         autoMaterializePolicy {
           policyType
           maxMaterializationsPerMinute
+          rules {
+            description
+            decisionType
+          }
         }
       }
     }

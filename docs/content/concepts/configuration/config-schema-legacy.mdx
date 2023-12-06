@@ -44,18 +44,18 @@ Below we define a simple op and asset with identical `config_schemas` defining a
 
 ```python file=/concepts/configuration/configurable_op_asset_resource.py startafter=start endbefore=end
 @op(config_schema={"person_name": str})
-def op_using_config(context):
+def op_using_config(context: OpExecutionContext):
     return f'hello {context.op_config["person_name"]}'
 
 
 @asset(config_schema={"person_name": str})
-def asset_using_config(context):
+def asset_using_config(context: AssetExecutionContext):
     # Note how asset config is also accessed with context.op_config
     return f'hello {context.op_config["person_name"]}'
 
 
 @resource(config_schema={"url": str})
-def resource_using_config(context):
+def resource_using_config(context: InitResourceContext):
     return MyDatabaseConnection(context.resource_config["url"])
 ```
 
@@ -65,7 +65,7 @@ def resource_using_config(context):
   not recommended.
 </Note>
 
-You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs#configuring-jobs).
+You can also build config into [jobs](/concepts/ops-jobs-graphs/jobs).
 
 ---
 
@@ -143,18 +143,25 @@ asset_result = materialize(
 A common use case for configuration is passing secrets to connect to external services. Resources, which can be used to model connections to external services, accept secrets as configuration values. These secrets can be read from your environment variables:
 
 ```python file=/concepts/configuration/env_vars_config.py startafter=start_database_example endbefore=end_database_example
-from dagster import StringSource, job, op, resource
+from dagster import (
+    InitResourceContext,
+    OpExecutionContext,
+    StringSource,
+    job,
+    op,
+    resource,
+)
 
 
 @resource(config_schema={"username": StringSource, "password": StringSource})
-def database_client(context):
+def database_client(context: InitResourceContext):
     username = context.resource_config["username"]
     password = context.resource_config["password"]
     ...
 
 
 @op(required_resource_keys={"database"})
-def get_one(context):
+def get_one(context: OpExecutionContext):
     context.resources.database.execute_query("SELECT 1")
 
 
@@ -190,7 +197,7 @@ It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster 
 
 ```python file=/concepts/configuration/make_values_resource_any.py startafter=start_file_example endbefore=end_file_example
 @op(required_resource_keys={"file_dir"})
-def add_file(context):
+def add_file(context: OpExecutionContext):
     filename = f"{context.resources.file_dir}/new_file.txt"
     open(filename, "x", encoding="utf8").close()
 
@@ -198,7 +205,7 @@ def add_file(context):
 
 
 @op(required_resource_keys={"file_dir"})
-def total_num_files(context):
+def total_num_files(context: OpExecutionContext):
     files_in_dir = os.listdir(context.resources.file_dir)
     context.log.info(f"Total number of files: {len(files_in_dir)}")
 
@@ -221,7 +228,7 @@ Alternatively, if you want to provide different config values for each op within
 
 ```python file=/concepts/configuration/make_values_resource_config_schema.py startafter=start_file_example endbefore=end_file_example
 @op(required_resource_keys={"file_dirs"})
-def write_file(context):
+def write_file(context: OpExecutionContext):
     filename = f"{context.resources.file_dirs['write_file_dir']}/new_file.txt"
     open(filename, "x", encoding="utf8").close()
 
@@ -229,7 +236,7 @@ def write_file(context):
 
 
 @op(required_resource_keys={"file_dirs"})
-def total_num_files(context):
+def total_num_files(context: OpExecutionContext):
     files_in_dir = os.listdir(context.resources.file_dirs["count_file_dir"])
     context.log.info(f"Total number of files: {len(files_in_dir)}")
 

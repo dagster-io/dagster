@@ -138,8 +138,7 @@ def test_execute_run_iterator():
             )
             assert (
                 "Ignoring a duplicate run that was started from somewhere other than the run"
-                " monitor daemon"
-                in event.message
+                " monitor daemon" in event.message
             )
 
             with pytest.raises(
@@ -190,8 +189,7 @@ def test_restart_running_run_worker():
         assert any(
             [
                 f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"
-                " while the run was already in state DagsterRunStatus.STARTED. "
-                in event.message
+                " while the run was already in state DagsterRunStatus.STARTED. " in event.message
                 for event in events
             ]
         )
@@ -291,10 +289,8 @@ def test_execute_run_bad_state():
 
         with pytest.raises(
             check.CheckError,
-            match=r"Run basic_resource_pipeline \({}\) in state"
-            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
-                dagster_run.run_id
-            ),
+            match=rf"Run basic_resource_pipeline \({dagster_run.run_id}\) in state"
+            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING",
         ):
             execute_run(InMemoryJob(job_def), dagster_run, instance=instance)
 

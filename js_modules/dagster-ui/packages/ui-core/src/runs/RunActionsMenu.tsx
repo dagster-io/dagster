@@ -1,4 +1,4 @@
-import {gql, useLazyQuery, useMutation} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {
   Button,
   Icon,
@@ -10,14 +10,15 @@ import {
   Tooltip,
   DialogFooter,
   Dialog,
-  StyledReadOnlyCodeMirror,
   JoinedButtons,
   DialogBody,
   Box,
-  Colors,
+  StyledRawCodeMirror,
+  colorBackgroundLight,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
@@ -37,12 +38,7 @@ import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {RunTags} from './RunTags';
-import {
-  LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-  RunsQueryRefetchContext,
-  getReexecutionVariables,
-  handleLaunchResult,
-} from './RunUtils';
+import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {TerminationDialog} from './TerminationDialog';
 import {
@@ -50,33 +46,25 @@ import {
   PipelineEnvironmentQueryVariables,
 } from './types/RunActionsMenu.types';
 import {RunTableRunFragment} from './types/RunTable.types';
-import {
-  LaunchPipelineReexecutionMutation,
-  LaunchPipelineReexecutionMutationVariables,
-} from './types/RunUtils.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
+import {useJobReexecution} from './useJobReExecution';
 
-export const RunActionsMenu: React.FC<{
+interface Props {
   run: RunTableRunFragment;
   additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
   onAddTag?: (token: RunFilterToken) => void;
-}> = React.memo(({run, onAddTag, additionalActionsForRun}) => {
+}
+
+export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRun}: Props) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags'
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
-  const history = useHistory();
 
   const copyConfig = useCopyToClipboard();
-
-  const [reexecute] = useMutation<
-    LaunchPipelineReexecutionMutation,
-    LaunchPipelineReexecutionMutationVariables
-  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
-    onCompleted: refetch,
-  });
+  const reexecute = useJobReexecution({onCompleted: refetch});
 
   const [loadEnv, {called, loading, data}] = useLazyQuery<
     PipelineEnvironmentQuery,
@@ -130,6 +118,7 @@ export const RunActionsMenu: React.FC<{
             <Menu>
               <MenuItem
                 tagName="button"
+                style={{minWidth: 200}}
                 text={loading ? 'Loading configuration...' : 'View configuration...'}
                 disabled={!runConfigYaml}
                 icon="open_in_new"
@@ -205,24 +194,7 @@ export const RunActionsMenu: React.FC<{
                     disabled={reexecutionDisabledState.disabled}
                     icon="refresh"
                     onClick={async () => {
-                      if (repoMatch && runConfigYaml) {
-                        const result = await reexecute({
-                          variables: getReexecutionVariables({
-                            run: {...run, runConfigYaml},
-                            style: {type: 'all'},
-                            repositoryLocationName: repoMatch.match.repositoryLocation.name,
-                            repositoryName: repoMatch.match.repository.name,
-                          }),
-                        });
-                        handleLaunchResult(
-                          run.pipelineName,
-                          result.data?.launchPipelineReexecution,
-                          history,
-                          {
-                            behavior: 'open',
-                          },
-                        );
-                      }
+                      await reexecute(run, ReexecutionStrategy.ALL_STEPS);
                     }}
                   />
                 </Tooltip>
@@ -308,9 +280,9 @@ export const RunActionsMenu: React.FC<{
         canEscapeKeyClose
         onClose={closeDialogs}
       >
-        <StyledReadOnlyCodeMirror
+        <StyledRawCodeMirror
           value={runConfigYaml || ''}
-          options={{lineNumbers: true, mode: 'yaml'}}
+          options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
         />
         <DialogFooter topBorder>
           <Button
@@ -335,10 +307,13 @@ export const RunActionsMenu: React.FC<{
   );
 });
 
-export const RunBulkActionsMenu: React.FC<{
+interface RunBulkActionsMenuProps {
   selected: RunTableRunFragment[];
   clearSelection: () => void;
-}> = React.memo(({selected, clearSelection}) => {
+}
+
+export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) => {
+  const {selected, clearSelection} = props;
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -498,7 +473,7 @@ const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
-const PIPELINE_ENVIRONMENT_QUERY = gql`
+export const PIPELINE_ENVIRONMENT_QUERY = gql`
   query PipelineEnvironmentQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -521,8 +496,8 @@ const PIPELINE_ENVIRONMENT_QUERY = gql`
 const SlashShortcut = styled.div`
   border-radius: 4px;
   padding: 0px 6px;
-  background: ${Colors.Gray100};
-  color: ${Colors.Gray500};
+  background: ${colorBackgroundLight()};
+  color: ${colorTextLight()};
 `;
 
 const LinkNoUnderline = styled(Link)`

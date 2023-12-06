@@ -1,7 +1,7 @@
 ---
-title: "Lesson 6: Setting up a database resource"
-module: "dagster_essentials"
-lesson: "6"
+title: 'Lesson 6: Setting up a database resource'
+module: 'dagster_essentials'
+lesson: '6'
 ---
 
 # Setting up a database resource
@@ -13,9 +13,9 @@ Throughout this module, you’ve used DuckDB to store and transform your data. E
 	deps=["taxi_trips_file"],
 )
 def taxi_trips():
-		... 
-		conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-		...
+    ...
+    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+    ...
 ```
 
 Every asset that queries DuckDB contains the `duckdb.connect` line. As previously mentioned, this can become brittle and error-prone as your project grows, whether in the number of assets that use it or the complexity of the connections. For example, to MotherDuck, a specific S3 bucket, or loading an extension. To be exact, this brittleness is shared across the following assets:
@@ -55,7 +55,7 @@ When configuring resources, it’s best practice to load your configurations and
 
 However, in this project, our `.env` file only contains one environment variable: `DUCKDB_DATABASE`. This variable contains the hard-coded path to the DuckDB database file, which is `data/staging/data.duckdb`. Let’s clean up this code by using Dagster’s `EnvVar` utility.
 
-In  `resources/__init__.py`, replace the value of the `database` with an `EnvVar` as shown below:
+In `resources/__init__.py`, replace the value of the `database` with an `EnvVar` as shown below:
 
 ```python
 from dagster_duckdb import DuckDBResource
@@ -84,29 +84,32 @@ As resources are a type of Dagster definition, you’ll need to add them to the 
 Update `dagster_university/__init__.py` with the following changes:
 
 1. Import the `database_resource` you made from the `resources` sub-module:
-    
-    ```python
-    from .resources import database_resource
-    ```
-    
+
+   ```python
+   from .resources import database_resource
+   ```
+
 2. Add the imported `database_resource` to your `Definitions` object through the `resources` argument. We’ll give it the identifier `database`. This is the key that we’ll use to tell Dagster that we want the DuckDB resource.
-    
-    ```python
-    defs = Definitions(
-    	assets=[*trip_assets, *metric_assets],
-    		resources={
-        	"database": database_resource,
-      },
-    )
-    ```
-    
+
+   ```python
+   defs = Definitions(
+       assets=[*trip_assets, *metric_assets],
+       resources={
+           "database": database_resource,
+       },
+   )
+   ```
+
 3. In the Dagster UI, click **Deployment.**
+
 4. In the **Code locations** tab, click the **Reload** button next to the `dagster_university` code location.
+
 5. Click the code location to open it.
+
 6. In the code location page that displays, click the **Resources tab.** A resource named `database` should be displayed in the tab:
-    
-    ![The Resources tab in the Dagster UI, showing the `database` resource for the `dagster_university` code location](/images/dagster-essentials/lesson-6/resources-tab.png)
-    
-    Notice that the **Uses** column is currently **0.** This is because while the resource has been defined and loaded, none of the assets in the code location are currently using it.
+
+   ![The Resources tab in the Dagster UI, showing the database resource for the dagster_university code location](/images/dagster-essentials/lesson-6/resources-tab.png)
+
+   Notice that the **Uses** column is currently **0.** This is because while the resource has been defined and loaded, none of the assets in the code location are currently using it.
 
 Now that you've set up the resource, it's time to use it in your project. In the next section, you'll learn how to refactor your assets to use resources.

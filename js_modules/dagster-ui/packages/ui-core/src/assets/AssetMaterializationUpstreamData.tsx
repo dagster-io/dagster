@@ -1,5 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Icon,
+  MiddleTruncate,
+  colorKeylineDefault,
+  colorTextLight,
+  colorTextRed,
+} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
@@ -20,12 +28,17 @@ import {
 
 dayjs.extend(relativeTime);
 
-export const AssetMaterializationUpstreamTable: React.FC<{
+export const AssetMaterializationUpstreamTable = ({
+  data,
+  assetKey,
+  maximumLagMinutes,
+  relativeTo,
+}: {
   data: AssetMaterializationUpstreamTableFragment | undefined;
   assetKey: AssetKeyInput;
   relativeTo: number | 'now';
   maximumLagMinutes?: number; // pass to get red "late" highlighting
-}> = ({data, assetKey, maximumLagMinutes, relativeTo}) => {
+}) => {
   const displayName = displayNameForAssetKey(assetKey);
 
   if (!data) {
@@ -135,10 +148,13 @@ export const ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT = gql`
   }
 `;
 
-export const AssetMaterializationUpstreamData: React.FC<{
+export const AssetMaterializationUpstreamData = ({
+  assetKey,
+  timestamp = '',
+}: {
   assetKey: AssetKeyInput;
   timestamp?: string;
-}> = ({assetKey, timestamp = ''}) => {
+}) => {
   const result = useQuery<
     AssetMaterializationUpstreamQuery,
     AssetMaterializationUpstreamQueryVariables
@@ -146,6 +162,10 @@ export const AssetMaterializationUpstreamData: React.FC<{
     variables: {assetKey: {path: assetKey.path}, timestamp},
     skip: !timestamp,
   });
+
+  if (!timestamp) {
+    return <Caption color={colorTextLight()}>None</Caption>;
+  }
 
   const data =
     result.data?.assetNodeOrError.__typename === 'AssetNode'
@@ -161,20 +181,24 @@ export const AssetMaterializationUpstreamData: React.FC<{
   );
 };
 
-export const TimeSinceWithOverdueColor: React.FC<{
+export const TimeSinceWithOverdueColor = ({
+  timestamp,
+  maximumLagMinutes,
+  relativeTo = Date.now(),
+}: {
   timestamp: number;
   maximumLagMinutes?: number;
   relativeTo?: number | 'now';
-}> = ({timestamp, maximumLagMinutes, relativeTo = Date.now()}) => {
+}) => {
   const lagMinutes = ((relativeTo === 'now' ? Date.now() : relativeTo) - timestamp) / (60 * 1000);
   const isOverdue = maximumLagMinutes && lagMinutes > maximumLagMinutes;
 
   return relativeTo === 'now' ? (
-    <span style={{color: isOverdue ? Colors.Red700 : Colors.Gray700}}>
+    <span style={{color: isOverdue ? colorTextRed() : colorTextLight()}}>
       ({dayjs(timestamp).fromNow()})
     </span>
   ) : (
-    <span style={{color: isOverdue ? Colors.Red700 : Colors.Gray700}}>
+    <span style={{color: isOverdue ? colorTextRed() : colorTextLight()}}>
       ({dayjs(Number(timestamp)).from(relativeTo, true)} earlier)
     </span>
   );
@@ -198,7 +222,7 @@ const TableContainer = styled.table`
   border-collapse: collapse;
 
   tr td {
-    border: 1px solid ${Colors.KeylineGray};
+    border: 1px solid ${colorKeylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     vertical-align: top;

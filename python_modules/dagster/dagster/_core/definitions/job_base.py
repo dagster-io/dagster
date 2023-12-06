@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Iterable, Optional
 
 from typing_extensions import Self
 
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
@@ -26,6 +27,7 @@ class IJob(ABC):
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> "IJob":
         pass
 
@@ -37,6 +39,11 @@ class IJob(ABC):
     @property
     @abstractmethod
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+        pass
+
+    @property
+    @abstractmethod
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
         pass
 
     @property
@@ -59,10 +66,15 @@ class InMemoryJob(IJob):
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> Self:
         op_selection = set(op_selection) if op_selection else None
         return InMemoryJob(
-            self._job_def.get_subset(op_selection=op_selection, asset_selection=asset_selection)
+            self._job_def.get_subset(
+                op_selection=op_selection,
+                asset_selection=asset_selection,
+                asset_check_selection=asset_check_selection,
+            )
         )
 
     @property
@@ -72,3 +84,7 @@ class InMemoryJob(IJob):
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return self._job_def.asset_selection
+
+    @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return self._job_def.asset_check_selection

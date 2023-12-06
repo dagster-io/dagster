@@ -19,7 +19,9 @@ parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
 
 
 def main(
-    quiet: bool, extra_packages: List[str], include_prebuilt_grpcio_wheel: Optional[bool]
+    quiet: bool,
+    extra_packages: List[str],
+    include_prebuilt_grpcio_wheel: Optional[bool],
 ) -> None:
     """Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -40,8 +42,8 @@ def main(
 
     # Supported on all Python versions.
     install_targets += [
-        "-e python_modules/dagster[black,pyright,ruff,test]",
-        "-e python_modules/dagster-ext",
+        "-e python_modules/dagster[pyright,ruff,test]",
+        "-e python_modules/dagster-pipes",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
         "-e python_modules/dagster-webserver",
@@ -62,6 +64,7 @@ def main(
         "-e python_modules/libraries/dagster-gcp",
         "-e python_modules/libraries/dagster-gcp-pandas",
         "-e python_modules/libraries/dagster-gcp-pyspark",
+        "-e python_modules/libraries/dagster-embedded-elt",
         "-e python_modules/libraries/dagster-fivetran",
         "-e python_modules/libraries/dagster-k8s",
         "-e python_modules/libraries/dagster-celery-k8s",
@@ -88,6 +91,9 @@ def main(
         "-e python_modules/libraries/dagster-duckdb-polars",
         "-e python_modules/libraries/dagster-duckdb-pyspark",
         "-e python_modules/libraries/dagster-wandb",
+        "-e python_modules/libraries/dagster-deltalake",
+        "-e python_modules/libraries/dagster-deltalake-pandas",
+        "-e python_modules/libraries/dagster-deltalake-polars",
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
     ]

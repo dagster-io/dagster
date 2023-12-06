@@ -14,14 +14,6 @@ export type AssetPartitionDetailQuery = {
         __typename: 'AssetNode';
         id: string;
         opNames: Array<string>;
-        staleStatus: Types.StaleStatus | null;
-        staleCauses: Array<{
-          __typename: 'StaleCause';
-          reason: string;
-          category: Types.StaleCauseCategory;
-          key: {__typename: 'AssetKey'; path: Array<string>};
-          dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
-        }>;
         latestRunForPartition: {
           __typename: 'Run';
           id: string;
@@ -77,6 +69,14 @@ export type AssetPartitionDetailQuery = {
                 __typename: 'IntMetadataEntry';
                 intValue: number | null;
                 intRepr: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
                 label: string;
                 description: string | null;
               }
@@ -236,6 +236,14 @@ export type AssetPartitionDetailQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'JsonMetadataEntry';
                 jsonString: string;
                 label: string;
@@ -342,4 +350,27 @@ export type AssetPartitionLatestRunFragment = {
   id: string;
   status: Types.RunStatus;
   endTime: number | null;
+};
+
+export type AssetPartitionStaleQueryVariables = Types.Exact<{
+  assetKey: Types.AssetKeyInput;
+  partitionKey: Types.Scalars['String'];
+}>;
+
+export type AssetPartitionStaleQuery = {
+  __typename: 'Query';
+  assetNodeOrError:
+    | {
+        __typename: 'AssetNode';
+        id: string;
+        staleStatus: Types.StaleStatus | null;
+        staleCauses: Array<{
+          __typename: 'StaleCause';
+          reason: string;
+          category: Types.StaleCauseCategory;
+          key: {__typename: 'AssetKey'; path: Array<string>};
+          dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
+        }>;
+      }
+    | {__typename: 'AssetNotFoundError'};
 };

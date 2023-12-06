@@ -202,10 +202,13 @@ With this configuration, each unique value of the `use-case` tag will be limited
 
 <Note>
   <strong>Looking for global op/asset concurrency?</strong> Check out Dagster's
-  experimental support for [global op/asset concurrency
-  limits](#limiting-opasset-concurrency-across-runs). For more fine-grained
-  control, you can also check out our{" "}
-  <a href="/deployment/guides/celery">integration with Celery</a>.
+  experimental support for{" "}
+  <a href="/guides/limiting-concurrency-in-data-pipelines#limiting-opasset-concurrency-across-runs">
+    global op/asset concurrency limits
+  </a>
+  . For more fine-grained control, you can also check out our <a href="/deployment/guides/celery">
+    integration with Celery
+  </a>.
 </Note>
 
 Utilizing op/asset-level concurrency provides fine-grained control for the maximum number of ops/assets that can be executed at once within a single run, ensuring that shared resources aren't overwhelmed.
@@ -503,7 +506,7 @@ If runs aren’t being dequeued in Dagster Open Source, the root cause is likely
   ></ArticleListItem>
   <ArticleListItem
     title="Managing Dagster Cloud deployments"
-    href="/dagster-cloud/developing-testing/managing-deployments"
+    href="/dagster-cloud/managing-deployments/managing-deployments"
   ></ArticleListItem>
   <ArticleListItem
     title="Ops"
@@ -521,4 +524,4 @@ If runs aren’t being dequeued in Dagster Open Source, the root cause is likely
 
 [custom-run-queue]: /guides/customizing-run-queue-priority
 
-[cloud-deployment-settings]: /dagster-cloud/developing-testing/managing-deployments#configuring-deployment-settings
+[cloud-deployment-settings]: /dagster-cloud/managing-deployments/managing-deployments#configuring-deployment-settings

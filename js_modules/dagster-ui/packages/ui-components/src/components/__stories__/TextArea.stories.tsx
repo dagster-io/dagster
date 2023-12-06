@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {Colors} from '../Colors';
+import {colorAccentRed} from '../../theme/color';
 import {TextArea} from '../TextInput';
 
 // eslint-disable-next-line import/no-default-export
@@ -42,7 +42,7 @@ export const StrokeColor = () => {
       value={value}
       onChange={(e) => setValue(e.target.value)}
       $resize="none"
-      $strokeColor={Colors.Red500}
+      $strokeColor={colorAccentRed()}
     />
   );
 };

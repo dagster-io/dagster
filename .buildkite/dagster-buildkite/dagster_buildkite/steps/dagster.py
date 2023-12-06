@@ -13,7 +13,9 @@ from ..utils import (
     is_feature_branch,
     is_release_branch,
     safe_getenv,
+    skip_if_no_non_docs_markdown_changes,
     skip_if_no_python_changes,
+    skip_if_no_yaml_changes,
 )
 from .helm import build_helm_steps
 from .integration import build_integration_steps
@@ -25,13 +27,13 @@ branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 def build_repo_wide_steps() -> List[BuildkiteStep]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
-    # the target. `black`, `check-manifest`, and `ruff` are run for the whole repo at once.
+    # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
     return [
         *build_check_changelog_steps(),
-        *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
+        *build_repo_wide_prettier_steps(),
     ]
 
 
@@ -58,22 +60,30 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     return steps
 
 
-def build_repo_wide_black_steps() -> List[CommandStep]:
+def build_repo_wide_ruff_steps() -> List[CommandStep]:
     return [
-        CommandStepBuilder(":python-black: black")
-        .run("pip install -e python_modules/dagster[black]", "make check_black")
-        .with_skip(skip_if_no_python_changes())
+        CommandStepBuilder(":zap: ruff")
+        .run(
+            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes",
+            "make check_ruff",
+        )
         .on_test_image(AvailablePythonVersion.get_default())
+        .with_skip(skip_if_no_python_changes())
         .build(),
     ]
 
 
-def build_repo_wide_ruff_steps() -> List[CommandStep]:
+def build_repo_wide_prettier_steps() -> List[CommandStep]:
     return [
-        CommandStepBuilder(":zap: ruff")
-        .run("pip install -e python_modules/dagster[ruff]", "make check_ruff")
+        CommandStepBuilder(":prettier: prettier")
+        .run(
+            "pushd js_modules/dagster-ui/packages/eslint-config",
+            "yarn install",
+            "popd",
+            "make check_prettier",
+        )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_python_changes())
+        .with_skip(skip_if_no_yaml_changes() and skip_if_no_non_docs_markdown_changes())
         .build(),
     ]
 
@@ -97,7 +107,7 @@ def build_repo_wide_pyright_steps() -> List[CommandStep]:
         CommandStepBuilder(":pyright: pyright")
         .run(
             "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-            "pip install -e python_modules/dagster[pyright]",
+            "pip install -e python_modules/dagster[pyright] -e python_modules/dagster-pipes",
             "make pyright",
         )
         .on_test_image(AvailablePythonVersion.get_default())
@@ -140,7 +150,10 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":mysql: mysql-schema")
         .on_test_image(AvailablePythonVersion.get_default())
-        .run("pip install -e python_modules/dagster", "python scripts/check_schemas.py")
+        .run(
+            "pip install -e python_modules/dagster -e python_modules/dagster-pipes",
+            "python scripts/check_schemas.py",
+        )
         .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
         .build()
     ]
@@ -151,8 +164,8 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
         CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
-            "pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e"
-            " python_modules/automation",
+            "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes -e"
+            " python_modules/dagster-graphql -e python_modules/automation",
             "dagster-graphql-client query check",
         )
         .with_skip(

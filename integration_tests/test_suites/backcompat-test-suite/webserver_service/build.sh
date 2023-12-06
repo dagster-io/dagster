@@ -51,6 +51,7 @@ alias copy_py="rsync -av \
       --exclude .coverage"
 
 copy_py $ROOT/python_modules/dagster \
+        $ROOT/python_modules/dagster-pipes \
         $ROOT/python_modules/dagit \
         $ROOT/python_modules/dagster-webserver \
         $ROOT/python_modules/dagster-graphql \

@@ -120,11 +120,17 @@ from dagster_dbt import DbtCliResource
 dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 
-# If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
+# If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at run time.
 # Otherwise, we expect a manifest to be present in the project's target directory.
 if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-    dbt_parse_invocation = dbt.cli(["parse"], manifest={}).wait()
-    dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+    dbt_manifest_path = (
+        dbt.cli(
+            ["--quiet", "parse"],
+            target_path=Path("target"),
+        )
+        .wait()
+        .target_path.joinpath("manifest.json")
+    )
 else:
     dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 ```
@@ -139,14 +145,14 @@ In this tutorial, we're going with the first option: When we ran `dagster dev`, 
 Once you've got a path to a `manifest.json`, it's time to define your Dagster assets using it. The following code, in your project's `assets.py`, does this:
 
 ```python file=integrations/dbt/tutorial/load_dbt_models/assets.py startafter=start_dbt_assets endbefore=end_dbt_assets
-from dagster import OpExecutionContext
+from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, dbt_assets
 
 from .constants import dbt_manifest_path
 
 
 @dbt_assets(manifest=dbt_manifest_path)
-def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 

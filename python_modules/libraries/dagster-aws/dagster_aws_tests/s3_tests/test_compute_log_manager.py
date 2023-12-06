@@ -102,15 +102,15 @@ def test_compute_log_manager(mock_s3_bucket):
 def test_compute_log_manager_from_config(mock_s3_bucket):
     s3_prefix = "foobar"
 
-    dagster_yaml = """
+    dagster_yaml = f"""
 compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
   config:
-    bucket: "{s3_bucket}"
+    bucket: "{mock_s3_bucket.name}"
     local_dir: "/tmp/cool"
     prefix: "{s3_prefix}"
-""".format(s3_bucket=mock_s3_bucket.name, s3_prefix=s3_prefix)
+"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:

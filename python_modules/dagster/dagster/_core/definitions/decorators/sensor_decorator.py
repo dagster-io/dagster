@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 
 from ...errors import DagsterInvariantViolationError
 from ..asset_sensor_definition import AssetSensorDefinition
@@ -35,7 +35,7 @@ def sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    asset_selection: Optional[AssetSelection] = None,
+    asset_selection: Optional[CoercibleToAssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """Creates a sensor where the decorated function is used as the sensor's evaluation function.
@@ -62,8 +62,9 @@ def sensor(
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
-        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
-            the sensor condition is met. This can be provided instead of specifying a job.
+        asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
+            (Experimental) an asset selection to launch a run for if the sensor condition is met.
+            This can be provided instead of specifying a job.
     """
     check.opt_str_param(name, "name")
 
@@ -101,7 +102,12 @@ def asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     required_resource_keys: Optional[Set[str]] = None,
-) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
+) -> Callable[
+    [
+        AssetMaterializationFunction,
+    ],
+    AssetSensorDefinition,
+]:
     """Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
     function.
 
@@ -181,11 +187,9 @@ def asset_sensor(
 
             elif result is not None:
                 raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
+                    f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                    f"{result} of type {type(result)}.  Should only return SkipReason or "
+                    "RunRequest objects."
                 )
 
         # Preserve any resource arguments from the underlying function, for when we inspect the
@@ -221,7 +225,12 @@ def multi_asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
-) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
+) -> Callable[
+    [
+        MultiAssetMaterializationFunction,
+    ],
+    MultiAssetSensorDefinition,
+]:
     """Creates an asset sensor that can monitor multiple assets.
 
     The decorated function is used as the asset sensor's evaluation

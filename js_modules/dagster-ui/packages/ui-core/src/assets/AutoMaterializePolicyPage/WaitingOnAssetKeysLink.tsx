@@ -1,11 +1,11 @@
 import {ButtonLink} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {AssetLink} from '../AssetLink';
 import {AssetKey} from '../types';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
-import {VirtualizedAssetListForDialog} from './VirtualizedAssetListForDialog';
 import {useFilterAssetKeys} from './assetFilters';
 
 interface Props {
@@ -46,8 +46,8 @@ export const WaitingOnAssetKeysLink = ({assetKeys}: Props) => {
               }
             />
           ) : (
-            <VirtualizedAssetListForDialog
-              assetKeys={filteredAssetKeys}
+            <VirtualizedItemListForDialog
+              items={filteredAssetKeys}
               renderItem={(item: AssetKey) => <AssetLink path={item.path} icon="asset" />}
             />
           )

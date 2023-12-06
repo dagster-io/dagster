@@ -23,6 +23,7 @@ import attach_file from '../icon-svgs/attach_file.svg';
 import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
 import auto_observe from '../icon-svgs/auto-observe.svg';
 import backfill from '../icon-svgs/backfill.svg';
+import badge from '../icon-svgs/badge.svg';
 import bar_chart from '../icon-svgs/bar-chart.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
@@ -38,7 +39,9 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
+import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
+import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
@@ -54,6 +57,7 @@ import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
 import execute from '../icon-svgs/execute.svg';
 import expand from '../icon-svgs/expand.svg';
+import expand_arrows from '../icon-svgs/expand_arrows.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
 import filter_alt from '../icon-svgs/filter_alt.svg';
@@ -74,6 +78,7 @@ import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
+import id from '../icon-svgs/id.svg';
 import infinity from '../icon-svgs/infinity.svg';
 import info from '../icon-svgs/info.svg';
 import job from '../icon-svgs/job.svg';
@@ -147,8 +152,7 @@ import wysiwyg from '../icon-svgs/wysiwyg.svg';
 import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
-
-import {Colors} from './Colors';
+import {colorAccentPrimary} from '../theme/color';
 
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
@@ -163,6 +167,7 @@ export const Icons = {
   asset_non_sda,
   asset_group,
   backfill,
+  badge,
   date,
   expectation,
   execute,
@@ -214,6 +219,7 @@ export const Icons = {
   youtube,
   arrow_indent,
   editor_role,
+  id,
 
   graph,
   graph_downstream,
@@ -243,7 +249,9 @@ export const Icons = {
   chevron_right,
   chevron_left,
   close,
+  console: console_icon,
   content_copy,
+  collapse_arrows,
   delete: deleteSVG,
   done,
   dot,
@@ -255,6 +263,7 @@ export const Icons = {
   error,
   error_outline,
   expand,
+  expand_arrows,
   expand_less,
   expand_more,
   filter_alt,
@@ -340,7 +349,8 @@ export const Icon = React.memo((props: Props) => {
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
   const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
 
-  const color: string | null = props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.Dark);
+  const color: string | null =
+    props.color || (SVGS_WITH_COLORS.has(img) ? null : colorAccentPrimary());
   return (
     <IconWrapper
       role="img"
@@ -381,6 +391,7 @@ export const IconWrapper = styled.div<WrapperProps>`
         background: ${p.$color};
         mask-size: contain;
         mask-repeat: no-repeat;
+        mask-position: center;
         mask-image: url(${p.$img});
       `}
   object-fit: contain;

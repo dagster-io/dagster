@@ -25,18 +25,15 @@ class TestMySQLRunStorage(TestRunStorage):
             parse_result.port
         )  # can be different, based on the backcompat mysql version or latest mysql version
 
-        url_cfg = """
+        url_cfg = f"""
           run_storage:
             module: dagster_mysql.run_storage
             class: MySQLRunStorage
             config:
               mysql_url: mysql+mysqlconnector://test:test@{hostname}:{port}/test
-        """.format(
-            hostname=hostname,
-            port=port,
-        )
+        """
 
-        explicit_cfg = """
+        explicit_cfg = f"""
           run_storage:
             module: dagster_mysql.run_storage
             class: MySQLRunStorage
@@ -47,13 +44,10 @@ class TestMySQLRunStorage(TestRunStorage):
                 hostname: {hostname}
                 db_name: test
                 port: {port}
-        """.format(
-            hostname=hostname,
-            port=port,
-        )
+        """
 
         with environ({"TEST_MYSQL_PASSWORD": "test"}):
-            env_cfg = """
+            env_cfg = f"""
             run_storage:
               module: dagster_mysql.run_storage
               class: MySQLRunStorage
@@ -65,7 +59,7 @@ class TestMySQLRunStorage(TestRunStorage):
                   hostname: {hostname}
                   db_name: test
                   port: {port}
-            """.format(hostname=hostname, port=port)
+            """
 
             with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
                 with instance_for_test(

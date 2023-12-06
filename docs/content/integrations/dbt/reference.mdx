@@ -25,6 +25,7 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 | <PyObject module="dagster_dbt" object="DbtCliResource" />                                      | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                                                                                         |
 | <PyObject module="dagster_dbt" object="DbtCliInvocation" />                                    | A class that defines the representation of an invoked dbt command.                                                                                                                                                |
 | <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />                                | A class that can be overridden to customize how Dagster asset metadata is derived from a dbt manifest.                                                                                                            |
+| <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" />                        | A class with settings to enable Dagster features for a dbt project.                                                                                                                                               |
 | <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" />                           | A class that defines a selection of assets from a dbt manifest and a dbt selection string.                                                                                                                        |
 | <PyObject module="dagster_dbt" object="build_dbt_asset_selection" />                           | A helper method that builds a <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" /> from a dbt manifest and dbt selection string.                                                                  |
 | <PyObject module="dagster_dbt" object="build_schedule_from_dbt_selection" />                   | A helper method that builds a <PyObject module="dagster" object="ScheduleDefinition" /> from a dbt manifest, dbt selection string, and cron string.                                                               |
@@ -95,8 +96,14 @@ dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
 # Otherwise, we expect a manifest to be present in the project's target directory.
 if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-    dbt_parse_invocation = dbt.cli(["parse"], manifest={}).wait()
-    dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+    dbt_manifest_path = (
+        dbt.cli(
+            ["--quiet", "parse"],
+            target_path=Path("target"),
+        )
+        .wait()
+        .target_path.joinpath("manifest.json")
+    )
 else:
     dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 ```
@@ -260,7 +267,7 @@ Alternatively, to override the asset key generation for all dbt nodes in your db
 
 ```python startafter=start_custom_asset_key_dagster_dbt_translator endbefore=end_custom_asset_key_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import AssetKey, OpExecutionContext
+from dagster import AssetKey, AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping
 
@@ -274,7 +281,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -308,7 +315,7 @@ Alternatively, to override the Dagster group name generation for all dbt nodes i
 
 ```python startafter=start_custom_group_name_dagster_dbt_translator endbefore=end_custom_group_name_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import OpExecutionContext
+from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping, Optional
 
@@ -324,7 +331,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -337,7 +344,7 @@ To override the Dagster description for all dbt nodes in your dbt project, you c
 ```python startafter=start_custom_description_dagster_dbt_translator endbefore=end_custom_description_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 import textwrap
 from pathlib import Path
-from dagster import OpExecutionContext
+from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping
 
@@ -351,7 +358,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -363,7 +370,7 @@ To override the Dagster metadata for all dbt nodes in your dbt project, you can 
 
 ```python startafter=start_custom_metadata_dagster_dbt_translator endbefore=end_custom_metadata_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import MetadataValue, OpExecutionContext
+from dagster import MetadataValue, AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping
 
@@ -381,7 +388,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -410,7 +417,7 @@ Alternatively, to override the Dagster auto-materialize policy generation for al
 
 ```python startafter=start_custom_auto_materialize_policy_dagster_dbt_translator endbefore=end_custom_auto_materialize_policy_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import OpExecutionContext, AutoMaterializePolicy
+from dagster import AssetExecutionContext, AutoMaterializePolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping, Optional
 
@@ -426,7 +433,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -457,7 +464,7 @@ Alternatively, to override the Dagster freshness policy generation for all dbt n
 
 ```python startafter=start_custom_freshness_policy_dagster_dbt_translator endbefore=end_custom_freshness_policy_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
-from dagster import OpExecutionContext, FreshnessPolicy
+from dagster import AssetExecutionContext, FreshnessPolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 from typing import Any, Mapping, Optional
 
@@ -473,7 +480,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     manifest=manifest_path,
     dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -482,6 +489,46 @@ def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
 ## dbt models, code versions, and staleness
 
 Note that Dagster allows the optional specification of a [`code_version`](/concepts/assets/software-defined-assets#asset-code-versions) for each software-defined asset, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to indicate which dbt models have new SQL since they were last materialized.
+
+---
+
+## Loading dbt tests as asset checks <Experimental />
+
+<Note>
+  <strong>Dagster asset checks are currently an experimental feature. </strong>{" "}
+  To provide feedback, join our{" "}
+  <a href="https://github.com/dagster-io/dagster/discussions/16527">
+    GitHub discussion
+  </a>{" "}
+  to share your use case with Dagster asset checks and dbt.
+</Note>
+
+Dagster allows you to model your existing dbt tests as [asset checks](/concepts/assets/asset-checks).
+
+To enable this for your dbt project, you'll need to define a <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have asset checks enabled. The following example enables asset checks when using <PyObject module="dagster_dbt" object="dbt_assets" decorator/>:
+
+```python startafter=start_enable_asset_check_dagster_dbt_translator endbefore=end_enable_asset_check_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetExecutionContext
+from dagster_dbt import (
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+    DbtCliResource,
+    dbt_assets,
+)
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+dagster_dbt_translator = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
+)
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=dagster_dbt_translator,
+)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
 
 ---
 
@@ -550,11 +597,11 @@ Then this model has an upstream source with the `jaffle_shop/orders` asset key.
 In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject module="dagster_dbt" object="get_asset_key_for_source"/>:
 
 ```python startafter=start_upstream_asset endbefore=end_upstream_asset file=/integrations/dbt/dbt.py dedent=4
-from dagster import asset, OpExecutionContext
+from dagster import asset, AssetExecutionContext
 from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
 
 @dbt_assets(manifest=MANIFEST_PATH)
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     ...
 
 @asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
@@ -588,7 +635,7 @@ from dagster_dbt import get_asset_keys_by_output_name_for_source
         ).items()
     }
 )
-def jaffle_shop(context):
+def jaffle_shop(context: AssetExecutionContext):
     output_names = list(context.selected_output_names)
     yield Output(value=..., output_name=output_names[0])
     yield Output(value=..., output_name=output_names[1])
@@ -649,13 +696,11 @@ from dagster_dbt import DbtCliResource, dbt_assets
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
 )
 def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-    time_window = context.asset_partitions_time_window_for_output(
-        list(context.selected_output_names)[0]
-    )
+    start, end = context.partition_time_window
 
     dbt_vars = {
-        "min_date": time_window.start.isoformat(),
-        "max_date": time_window.end.isoformat()
+        "min_date": start.isoformat(),
+        "max_date": end.isoformat()
     }
     dbt_build_args = ["build", "--vars", json.dumps(dbt_vars)]
 

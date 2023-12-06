@@ -1,5 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, Alert, ButtonLink, Colors, Group, Box} from '@dagster-io/ui-components';
+import {
+  Page,
+  Alert,
+  ButtonLink,
+  Group,
+  Box,
+  PageHeader,
+  Heading,
+  colorLinkDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -45,12 +54,15 @@ export const ScheduledRunListRoot = () => {
 
   return (
     <Page>
+      <PageHeader
+        title={<Heading>Runs</Heading>}
+        right={<QueryRefreshCountdown refreshState={combinedRefreshState} />}
+      />
       <Box
         flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
-        padding={{vertical: 8, left: 24, right: 12}}
+        padding={{vertical: 12, left: 24, right: 12}}
       >
         {tabs}
-        <QueryRefreshCountdown refreshState={combinedRefreshState} />
       </Box>
       <Loading queryResult={queryResult} allowStaleData>
         {(result) => {
@@ -64,7 +76,7 @@ export const ScheduledRunListRoot = () => {
                   <Group direction="row" spacing={4}>
                     <div>Could not load scheduled ticks.</div>
                     <ButtonLink
-                      color={Colors.Link}
+                      color={colorLinkDefault()}
                       underline="always"
                       onClick={() => {
                         showCustomAlert({

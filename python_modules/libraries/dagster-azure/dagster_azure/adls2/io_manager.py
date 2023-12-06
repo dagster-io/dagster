@@ -58,13 +58,17 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return f"Writing ADLS2 object at: {self._uri_for_path(path)}"
 
     def unlink(self, path: UPath) -> None:
-        file_client = self.file_system_client.get_file_client(str(path))
+        file_client = self.file_system_client.get_file_client(path.as_posix())
         with self._acquire_lease(file_client, is_rm=True) as lease:
             file_client.delete_file(lease=lease, recursive=True)
 
+    def make_directory(self, path: UPath) -> None:
+        # It is not necessary to create directories in ADLS2
+        return None
+
     def path_exists(self, path: UPath) -> bool:
         try:
-            self.file_system_client.get_file_client(str(path)).get_file_properties()
+            self.file_system_client.get_file_client(path.as_posix()).get_file_properties()
         except ResourceNotFoundError:
             return False
         return True
@@ -74,7 +78,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
             protocol=protocol,
             filesystem=self.file_system_client.file_system_name,
             account=self.file_system_client.account_name,
-            key=path,
+            key=path.as_posix(),
         )
 
     @contextmanager
@@ -91,7 +95,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         if context.dagster_type.typing_type == type(None):
             return None
-        file = self.file_system_client.get_file_client(str(path))
+        file = self.file_system_client.get_file_client(path.as_posix())
         stream = file.download_file()
         return pickle.loads(stream.readall())
 
@@ -101,7 +105,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
             self.unlink(path)
 
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
-        file = self.file_system_client.create_file(str(path))
+        file = self.file_system_client.create_file(path.as_posix())
         with self._acquire_lease(file) as lease:
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 

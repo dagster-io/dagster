@@ -35,7 +35,7 @@ class ShellOpConfig(Config):
         description="An optional dict of environment variables to pass to the subprocess.",
     )
     output_logging: OutputType = Field(
-        OutputType.BUFFER.value,
+        default=OutputType.BUFFER.value,
     )
     cwd: Optional[str] = Field(
         default=None, description="Working directory in which to execute shell script"
@@ -157,11 +157,7 @@ def create_shell_command_op(
         )
 
         if return_code:
-            raise Failure(
-                description="Shell command execution failed with output: {output}".format(
-                    output=output
-                )
-            )
+            raise Failure(description=f"Shell command execution failed with output: {output}")
 
         return output
 
@@ -237,11 +233,7 @@ def create_shell_script_op(
         )
 
         if return_code:
-            raise Failure(
-                description="Shell command execution failed with output: {output}".format(
-                    output=output
-                )
-            )
+            raise Failure(description=f"Shell command execution failed with output: {output}")
 
         return output
 

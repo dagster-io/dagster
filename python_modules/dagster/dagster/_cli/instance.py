@@ -4,6 +4,7 @@ import click
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.migration.bigint_migration import run_bigint_migration
 
 from .utils import get_instance_for_cli
 
@@ -40,7 +41,12 @@ def info_command():
 
 
 @instance_cli.command(name="migrate", help="Automatically migrate an out of date instance.")
-def migrate_command():
+@click.option("--bigint-migration", is_flag=True, help="Run an optional bigint migration")
+def migrate_command(**kwargs):
+    if kwargs.get("bigint_migration"):
+        _run_bigint_migration()
+        return
+
     with get_instance_for_cli() as instance:
         home = os.environ.get("DAGSTER_HOME")
         if not home:
@@ -121,7 +127,7 @@ def get_concurrency(key, **kwargs):
 
 def concurrency_print_key(instance: DagsterInstance, key: str):
     key_info = instance.event_log_storage.get_concurrency_info(key)
-    click.echo(f'"{key}": {key_info.active_slot_count} / {key_info.slot_count} slots occupied')
+    click.echo(f'"{key}": {len(key_info.claimed_slots)} / {key_info.slot_count} slots occupied')
 
 
 @concurrency_cli.command(name="set", help="Set op concurrency limits")
@@ -154,3 +160,22 @@ def check_concurrency_support(instance: DagsterInstance):
         "to run `dagster instance migrate` to add the necessary tables in your dagster storage to "
         "support this feature."
     )
+
+
+def _run_bigint_migration():
+    with get_instance_for_cli() as instance:
+        home = os.environ.get("DAGSTER_HOME")
+        if not home:
+            click.echo("$DAGSTER_HOME is not set; ephemeral instances do not need to be migrated.")
+            return
+
+        confirmation = click.prompt(
+            "Are you sure you want to migrate all your id cols from int to bigint? This may lock "
+            "tables for an extended period of time while the migration is under way. Type MIGRATE "
+            "to confirm"
+        )
+
+        if confirmation == "MIGRATE":
+            run_bigint_migration(instance, click.echo)
+        else:
+            click.echo("Exiting without running bigint migration")

@@ -2,7 +2,6 @@ import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
-  Colors,
   Icon,
   MenuItem,
   Menu,
@@ -10,6 +9,9 @@ import {
   Tooltip,
   Checkbox,
   NonIdealState,
+  colorBackgroundDefault,
+  colorTextDisabled,
+  colorAccentRed,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
@@ -40,7 +42,7 @@ interface Props {
   searchGroups: AssetGroupSelector[];
 }
 
-export const AssetTable: React.FC<Props> = ({
+export const AssetTable = ({
   assets,
   actionBarComponents,
   refreshState,
@@ -50,15 +52,14 @@ export const AssetTable: React.FC<Props> = ({
   searchPath,
   searchGroups,
   view,
-}) => {
+}: Props) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
   const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
   const displayKeys = Object.keys(groupedByDisplayKey).sort();
 
-  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    displayKeys,
-  );
+  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(displayKeys);
 
   const checkedAssets: Asset[] = [];
   displayKeys.forEach((displayKey) => {
@@ -150,7 +151,7 @@ export const AssetTable: React.FC<Props> = ({
     <>
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <Box
-          background={Colors.White}
+          background={colorBackgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
           padding={{vertical: 8, left: 24, right: 12}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
@@ -196,11 +197,14 @@ export const AssetTable: React.FC<Props> = ({
   );
 };
 
-const MoreActionsDropdown: React.FC<{
+interface MoreActionsDropdownProps {
   selected: Asset[];
   clearSelection: () => void;
   requery?: RefetchQueriesFunction;
-}> = React.memo(({selected, clearSelection, requery}) => {
+}
+
+const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
+  const {selected, clearSelection, requery} = props;
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
   const {
     permissions: {canWipeAssets},
@@ -221,7 +225,9 @@ const MoreActionsDropdown: React.FC<{
             <MenuItem
               text="Wipe materializations"
               onClick={() => setShowBulkWipeDialog(true)}
-              icon={<Icon name="delete" color={disabled ? Colors.Gray600 : Colors.Red500} />}
+              icon={
+                <Icon name="delete" color={disabled ? colorTextDisabled() : colorAccentRed()} />
+              }
               disabled={disabled}
               intent="danger"
             />

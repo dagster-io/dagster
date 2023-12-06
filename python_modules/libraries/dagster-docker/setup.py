@@ -18,8 +18,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-docker",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="A Dagster integration for docker",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-docker",
@@ -32,8 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_docker_tests*"]),
-    # urllib3<2 pin needed until docker-py is updated
-    # see: https://github.com/docker/docker-py/issues/3113
-    install_requires=[f"dagster{pin}", "docker", "docker-image-py", "urllib3<2"],
+    install_requires=[f"dagster{pin}", "docker", "docker-image-py"],
     zip_safe=False,
 )

@@ -3,10 +3,10 @@ import {gql} from '@apollo/client';
 import {Breadcrumbs} from '@blueprintjs/core';
 import {
   Checkbox,
-  Colors,
   SplitPanelContainer,
   TextInput,
   ErrorBoundary,
+  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import Color from 'color';
 import qs from 'qs';
@@ -22,12 +22,7 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
-import {
-  EmptyDAGNotice,
-  EntirelyFilteredDAGNotice,
-  LargeDAGNotice,
-  LoadingNotice,
-} from './GraphNotices';
+import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
@@ -51,7 +46,7 @@ interface GraphExplorerProps {
   isGraph: boolean;
 }
 
-export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
+export const GraphExplorer = (props: GraphExplorerProps) => {
   const {
     getInvocations,
     handles,
@@ -164,10 +159,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
   const queryResultOps = React.useMemo(
-    () =>
-      solidsQueryEnabled
-        ? filterByQuery(solids, opsQuery)
-        : {all: solids, focus: [], applyingEmptyDefault: false},
+    () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
     [opsQuery, solids, solidsQueryEnabled],
   );
 
@@ -197,7 +189,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   return (
     <SplitPanelContainer
-      identifier="explorer"
+      identifier="graph-explorer"
       firstInitialPercent={70}
       first={
         <ErrorBoundary region="op graph">
@@ -262,8 +254,6 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
           {solids.length === 0 ? (
             <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
-          ) : queryResultOps.applyingEmptyDefault ? (
-            <LargeDAGNotice nodeType="op" />
           ) : Object.keys(queryResultOps.all).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
@@ -361,7 +351,7 @@ export const RightInfoPanel = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: ${Colors.White};
+  background: ${colorBackgroundDefault()};
 `;
 
 export const RightInfoPanelContent = styled.div`
@@ -370,7 +360,7 @@ export const RightInfoPanelContent = styled.div`
 `;
 
 export const OptionsOverlay = styled.div`
-  background-color: ${Color(Colors.White).fade(0.6).toString()};
+  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 15px 20px;
   display: inline-flex;
@@ -383,7 +373,7 @@ export const OptionsOverlay = styled.div`
 `;
 
 const HighlightOverlay = styled.div`
-  background-color: ${Color(Colors.White).fade(0.6).toString()};
+  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 8px 12px 0 0;
   display: inline-flex;
@@ -404,7 +394,7 @@ export const QueryOverlay = styled.div`
 `;
 
 const BreadcrumbsOverlay = styled.div`
-  background-color: ${Color(Colors.White).fade(0.6).toString()};
+  background-color: ${Color(colorBackgroundDefault()).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
   height: 42px;

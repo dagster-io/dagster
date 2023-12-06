@@ -18,6 +18,7 @@ GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDec
 class GrapheneAutoMaterializeRule(graphene.ObjectType):
     description = graphene.NonNull(graphene.String)
     decisionType = graphene.NonNull(GrapheneAutoMaterializeDecisionType)
+    className = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "AutoMaterializeRule"
@@ -26,6 +27,7 @@ class GrapheneAutoMaterializeRule(graphene.ObjectType):
         super().__init__(
             decisionType=auto_materialize_rule_snapshot.decision_type,
             description=auto_materialize_rule_snapshot.description,
+            className=auto_materialize_rule_snapshot.class_name,
         )
 
 

@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors} from '@dagster-io/ui-components';
+import {Box, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -28,7 +28,7 @@ function groupTypes(types: TypeListFragment[]): {[key: string]: TypeListFragment
   return groups;
 }
 
-export const TypeList: React.FC<ITypeListProps> = (props) => {
+export const TypeList = (props: ITypeListProps) => {
   const groups = groupTypes(props.types);
   return (
     <>
@@ -50,7 +50,7 @@ export const TypeList: React.FC<ITypeListProps> = (props) => {
                   ))}
                 </StyledUL>
               ) : (
-                <div style={{color: Colors.Gray500, fontSize: '12px'}}>None</div>
+                <div style={{color: colorTextLight(), fontSize: '12px'}}>None</div>
               )}
             </Box>
           </SidebarSection>

@@ -9,7 +9,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
 )
 from dagster._core.definitions.time_window_partitions import (
@@ -53,6 +53,12 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
                 evaluation._replace(
                     partition_subsets_by_condition=sorted(
                         evaluation.partition_subsets_by_condition, key=repr
+                    )
+                )._replace(
+                    rule_snapshots=(
+                        sorted(evaluation.rule_snapshots, key=repr)
+                        if evaluation.rule_snapshots
+                        else None
                     )
                 )
                 for evaluation in evaluations

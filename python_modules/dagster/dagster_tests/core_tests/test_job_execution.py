@@ -52,7 +52,7 @@ from dagster._core.workspace.load import location_origin_from_python_file
 
 def _default_passthrough_compute_fn(*args, **kwargs):
     check.invariant(not args, "There should be no positional args")
-    return list(kwargs.values())[0]
+    return next(iter(kwargs.values()))
 
 
 def create_dep_input_fn(name):
@@ -65,7 +65,7 @@ def make_compute_fn():
         seen = set()
         for row in inputs.values():
             for item in row:
-                key = list(item.keys())[0]
+                key = next(iter(item.keys()))
                 if key not in seen:
                     seen.add(key)
                     passed_rows.append(item)

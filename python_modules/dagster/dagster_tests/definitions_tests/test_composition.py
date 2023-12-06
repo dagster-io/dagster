@@ -817,7 +817,7 @@ def test_tags():
         emit.tag({"invoke": "2"})()
 
     plan = create_execution_plan(tag)
-    step = list(plan.step_dict.values())[0]
+    step = next(iter(plan.step_dict.values()))
     assert step.tags == {"def": "1", "invoke": "2"}
 
 
@@ -844,7 +844,7 @@ def test_tag_subset():
         emit.tag({"invoke": "2"})()
 
     plan = create_execution_plan(tag.get_subset(op_selection=["emit"]))
-    step = list(plan.step_dict.values())[0]
+    step = next(iter(plan.step_dict.values()))
     assert step.tags == {"def": "1", "invoke": "2"}
 
 

@@ -1,4 +1,4 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon, colorAccentGray} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -20,7 +20,7 @@ export interface Props {
 const DEFAULT_TRUNCATION_THRESHOLD = 40;
 const TRUNCATION_BUFFER = 5;
 
-export const PipelineReference: React.FC<Props> = ({
+export const PipelineReference = ({
   pipelineName,
   pipelineHrefContext,
   isJob,
@@ -28,7 +28,7 @@ export const PipelineReference: React.FC<Props> = ({
   showIcon,
   truncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
   size = 'normal',
-}) => {
+}: Props) => {
   const truncatedName =
     truncationThreshold > 0 && pipelineName.length > truncationThreshold
       ? `${pipelineName.slice(0, truncationThreshold - TRUNCATION_BUFFER)}…`
@@ -36,7 +36,7 @@ export const PipelineReference: React.FC<Props> = ({
 
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
-      <Link to={workspacePipelinePathGuessRepo(pipelineName, isJob)}>{truncatedName}</Link>
+      <Link to={workspacePipelinePathGuessRepo(pipelineName)}>{truncatedName}</Link>
     ) : pipelineHrefContext === 'no-link' ? (
       <>{truncatedName}</>
     ) : (
@@ -56,7 +56,7 @@ export const PipelineReference: React.FC<Props> = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <Icon color={Colors.Gray400} name="job" />
+          <Icon color={colorAccentGray()} name="job" />
         </Box>
       )}
       <span>

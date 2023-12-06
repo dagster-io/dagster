@@ -7,7 +7,10 @@ import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {useMaterializationAction} from './LaunchAssetExecutionButton';
+import {
+  executionDisabledMessageForAssets,
+  useMaterializationAction,
+} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 
@@ -18,13 +21,16 @@ interface Props {
   onWipe?: (assets: AssetKeyInput[]) => void;
 }
 
-export const AssetActionMenu: React.FC<Props> = (props) => {
+export const AssetActionMenu = (props: Props) => {
   const {repoAddress, path, definition, onWipe} = props;
   const {
-    permissions: {canWipeAssets, canLaunchPipelineExecution},
+    permissions: {canWipeAssets},
   } = usePermissionsForLocation(repoAddress?.location);
 
   const {onClick, loading, launchpadElement} = useMaterializationAction();
+  const disabledMessage = definition
+    ? executionDisabledMessageForAssets([definition])
+    : 'Asset definition not found in a code location';
 
   return (
     <>
@@ -33,11 +39,7 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
         content={
           <Menu>
             <Tooltip
-              content={
-                !canLaunchPipelineExecution
-                  ? 'You do not have permission to materialize assets'
-                  : 'Shift+click to add configuration'
-              }
+              content={disabledMessage || 'Shift+click to add configuration'}
               placement="left"
               display="block"
               useDisabledButtonTooltipFix
@@ -45,7 +47,7 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
               <MenuItem
                 text="Materialize"
                 icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}
-                disabled={!canLaunchPipelineExecution || loading}
+                disabled={!!disabledMessage || loading}
                 onClick={(e) => onClick([{path}], e)}
               />
             </Tooltip>

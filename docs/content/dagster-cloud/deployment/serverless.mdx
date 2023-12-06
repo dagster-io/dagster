@@ -19,7 +19,7 @@ If any of the following are applicable, you should select [Hybrid deployment](/d
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process.
 - Your dataset is too large to fit in memory. For example, training a large machine learning (ML) model in-process on a terabyte of data.
 - You need to distribute computation across many nodes for a single run. Dagster Cloud runs currently execute on a single node with 4 CPUs.
-- You don't want to add Elementl as a data processor.
+- You don't want to add Dagster Labs as a data processor.
 
 ---
 
@@ -33,7 +33,7 @@ Serverless is subject to the following limitations:
 - Sensors receive 0.25 vCPU cores and 1 GB of RAM
 - All Serverless jobs run in the United States
 
-Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@elementl.com).
+Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@dagsterlabs.com).
 
 ---
 
@@ -99,6 +99,8 @@ dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
   --package-name assets_modern_data_stack
 ```
+
+**Note:** Windows users should use the `deploy` command instead of `deploy-python-executable`.
 
 ### Adding secrets
 
@@ -299,7 +301,7 @@ Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to 
 
 ## Whitelisting Dagster's IP addresses
 
-To communicate with Dagster Cloud, you may need to whitelist the following static IP addresses:
+Serverless code will make requests from one of the following IP addresses. You may need to whitelist them for services your code interacts with.
 
 ```plain
 34.216.9.66

@@ -1,5 +1,14 @@
 import {gql} from '@apollo/client';
-import {Button, Icon, FontFamily, Colors} from '@dagster-io/ui-components';
+import {
+  Button,
+  Icon,
+  FontFamily,
+  colorKeylineDefault,
+  colorAccentRed,
+  colorBackgroundRed,
+  colorTextLight,
+  colorTextRed,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -26,7 +35,7 @@ interface IPythonErrorInfoProps {
   errorSource?: ErrorSource | null;
 }
 
-export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
+export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
   const {message, stack = [], errorChain = []} = props.error;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
@@ -80,7 +89,7 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   );
 };
 
-const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
+const ErrorContext = ({errorSource}: {errorSource: ErrorSource}) => {
   switch (errorSource) {
     case ErrorSource.UNEXPECTED_ERROR:
       return (
@@ -122,7 +131,7 @@ const CopyErrorButtonWrapper = styled.button`
   gap: 8px;
   top: 0px;
   right: -8px;
-  border: 1px solid ${Colors.KeylineGray};
+  border: 1px solid ${colorKeylineDefault()};
   background: transparent;
   cursor: pointer;
   border: none;
@@ -141,14 +150,14 @@ const CauseHeader = styled.h3`
 `;
 
 const ErrorHeader = styled.h3`
-  color: #b05c47;
+  color: ${colorTextRed()};
   font-weight: 400;
   margin: 0.5em 0 0.25em;
   white-space: pre-wrap;
 `;
 
 const Trace = styled.div`
-  color: rgb(41, 50, 56);
+  color: ${colorTextLight()};
   font-family: ${FontFamily.monospace};
   font-size: 1em;
   white-space: pre;
@@ -156,8 +165,8 @@ const Trace = styled.div`
 `;
 
 export const ErrorWrapper = styled.div`
-  background-color: #fdf2f4;
-  border: 1px solid #d17257;
+  background-color: ${colorBackgroundRed()};
+  border: 1px solid ${colorAccentRed()};
   border-radius: 3px;
   max-width: 90vw;
   max-height: calc(100vh - 250px);

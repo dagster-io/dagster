@@ -1,12 +1,13 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   Icon,
   Mono,
   Spinner,
+  colorBackgroundDefault,
+  colorLinkDefault,
 } from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -55,11 +56,15 @@ export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: strin
   };
 }
 
-export const StepLogsDialog: React.FC<{
+export const StepLogsDialog = ({
+  runId,
+  stepKeys,
+  onClose,
+}: {
   runId?: string;
   stepKeys: string[];
   onClose: () => void;
-}> = ({runId, stepKeys, onClose}) => {
+}) => {
   return (
     <Dialog
       isOpen={!!runId}
@@ -86,7 +91,7 @@ export const StepLogsDialog: React.FC<{
       ) : (
         ''
       )}
-      <div style={{zIndex: 2, background: Colors.White}}>
+      <div style={{zIndex: 2, background: colorBackgroundDefault()}}>
         <DialogFooter topBorder>
           <Button intent="primary" onClick={onClose}>
             Done
@@ -97,12 +102,17 @@ export const StepLogsDialog: React.FC<{
   );
 };
 
-export const StepLogsModalContent: React.FC<{
+export const StepLogsModalContent = ({
+  runId,
+  stepKeys,
+  metadata,
+  logs,
+}: {
   runId: string;
   stepKeys: string[];
   metadata: IRunMetadataDict;
   logs: LogsProviderLogs;
-}> = ({runId, stepKeys, metadata, logs}) => {
+}) => {
   const supportsCapturedLogs = useSupportsCapturedLogs();
   const [logType, setComputeLogType] = useState<LogType>(LogType.structured);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
@@ -124,15 +134,12 @@ export const StepLogsModalContent: React.FC<{
     setFilter((filter) => ({...filter, focusedTime: firstLogForStepTime}));
   }, [firstLogForStepTime]);
 
-  const {
-    computeLogFileKey,
-    setComputeLogFileKey,
-    logCaptureInfo,
-  } = useComputeLogFileKeyForSelection({
-    metadata,
-    stepKeys,
-    selectionStepKeys: stepKeys,
-  });
+  const {computeLogFileKey, setComputeLogFileKey, logCaptureInfo} =
+    useComputeLogFileKeyForSelection({
+      metadata,
+      stepKeys,
+      selectionStepKeys: stepKeys,
+    });
 
   return (
     <LogsContainer>
@@ -154,7 +161,7 @@ export const StepLogsModalContent: React.FC<{
               <Spinner purpose="body-text" />
             )}
             View Run <Mono>{titleForRun({id: runId})}</Mono>
-            <Icon name="open_in_new" color={Colors.Link} />
+            <Icon name="open_in_new" color={colorLinkDefault()} />
           </Box>
         </Link>
       </LogsToolbar>

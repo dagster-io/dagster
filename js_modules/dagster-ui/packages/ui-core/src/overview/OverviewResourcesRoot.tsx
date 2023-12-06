@@ -1,12 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   Heading,
   NonIdealState,
   PageHeader,
   Spinner,
   TextInput,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -18,6 +18,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {RESOURCE_ENTRY_FRAGMENT} from '../resources/WorkspaceResourcesRoot';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesRoot.types';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -36,7 +37,7 @@ export const OverviewResourcesRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Resources');
 
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
@@ -82,7 +83,7 @@ export const OverviewResourcesRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading resources…</div>
+            <div style={{color: colorTextLight()}}>Loading resources…</div>
           </Box>
         </Box>
       );
@@ -133,6 +134,8 @@ export const OverviewResourcesRoot = () => {
     return <OverviewResourcesTable repos={filteredBySearch} />;
   };
 
+  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
@@ -147,6 +150,11 @@ export const OverviewResourcesRoot = () => {
         <TextInput
           icon="search"
           value={searchValue}
+          rightElement={
+            showSearchSpinner ? (
+              <SearchInputSpinner tooltipContent="Loading resources…" />
+            ) : undefined
+          }
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Filter by resource name…"
           style={{width: '340px'}}
@@ -212,6 +220,7 @@ const OVERVIEW_RESOURCES_QUERY = gql`
                 id
                 name
                 allTopLevelResourceDetails {
+                  id
                   ...ResourceEntryFragment
                 }
               }

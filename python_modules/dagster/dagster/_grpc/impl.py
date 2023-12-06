@@ -9,6 +9,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -204,9 +205,7 @@ def _run_in_subprocess(
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
         event = IPCErrorMessage(
             serializable_error_info=serializable_error_info,
-            message="Error during RPC setup for executing run: {message}".format(
-                message=serializable_error_info.message
-            ),
+            message=f"Error during RPC setup for executing run: {serializable_error_info.message}",
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())
@@ -264,12 +263,14 @@ def get_external_pipeline_subset_result(
     job_name: str,
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
             job_name,
             op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
         )
         external_job_data = external_job_data_from_def(definition)
         return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
@@ -318,8 +319,7 @@ def get_external_schedule_execution(
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: (
-                    "Error occurred during the execution function for schedule {schedule_name}"
-                    .format(schedule_name=schedule_def.name)
+                    f"Error occurred during the execution function for schedule {schedule_def.name}"
                 ),
             ):
                 return schedule_def.evaluate_tick(schedule_context)
@@ -364,8 +364,7 @@ def get_external_sensor_execution(
             with user_code_error_boundary(
                 SensorExecutionError,
                 lambda: (
-                    "Error occurred during the execution of evaluation_fn for sensor {sensor_name}"
-                    .format(sensor_name=sensor_def.name)
+                    f"Error occurred during the execution of evaluation_fn for sensor {sensor_def.name}"
                 ),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
@@ -504,6 +503,7 @@ def get_external_execution_plan_snapshot(
             job_name,
             op_selection=args.op_selection,
             asset_selection=args.asset_selection,
+            asset_check_selection=args.asset_check_selection,
         )
 
         return snapshot_from_execution_plan(
@@ -553,11 +553,9 @@ def get_partition_set_execution_param_data(
             for key in partition_keys:
 
                 def _error_message_fn(partition_name: str):
-                    return (
-                        lambda: (
-                            "Error occurred during the partition config and tag generation for"
-                            f" '{partition_name}' in partitioned config on job '{job_def.name}'"
-                        )
+                    return lambda: (
+                        "Error occurred during the partition config and tag generation for"
+                        f" '{partition_name}' in partitioned config on job '{job_def.name}'"
                     )
 
                 with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):

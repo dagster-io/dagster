@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui-components';
+import {Alert, Box, ButtonLink, colorTextYellow} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -16,11 +16,15 @@ import {
 
 export const MULTIPLE_DEFINITIONS_WARNING = 'Multiple asset definitions found';
 
-export const AssetDefinedInMultipleReposNotice: React.FC<{
+export const AssetDefinedInMultipleReposNotice = ({
+  assetKey,
+  loadedFromRepo,
+  padded,
+}: {
   assetKey: AssetKey;
   loadedFromRepo: RepoAddress;
   padded?: boolean;
-}> = ({assetKey, loadedFromRepo, padded}) => {
+}) => {
   const {data} = useQuery<AssetDefinitionCollisionQuery, AssetDefinitionCollisionQueryVariables>(
     ASSET_DEFINITION_COLLISION_QUERY,
     {
@@ -38,10 +42,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   );
 
   return (
-    <Box
-      padding={padded ? {vertical: 16, left: 24, right: 12} : {}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
+    <Box padding={padded ? {vertical: 16, left: 24, right: 12} : {}} border="bottom">
       <Alert
         intent="warning"
         title={MULTIPLE_DEFINITIONS_WARNING}
@@ -52,7 +53,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
             definitions were found in{' '}
             <ButtonLink
               underline="always"
-              color={Colors.Yellow700}
+              color={colorTextYellow()}
               onClick={() =>
                 showCustomAlert({
                   title: MULTIPLE_DEFINITIONS_WARNING,

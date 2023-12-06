@@ -179,7 +179,10 @@ def io_manager(
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-) -> Union[IOManagerDefinition, Callable[[IOManagerFunction], IOManagerDefinition],]:
+) -> Union[
+    IOManagerDefinition,
+    Callable[[IOManagerFunction], IOManagerDefinition],
+]:
     """Define an IO manager.
 
     IOManagers are used to store op outputs and load them as inputs to downstream ops.

@@ -1,6 +1,7 @@
 import {promises as fs} from 'fs';
 import path from 'path';
 import {latestAllDynamicPaths} from 'util/navigation';
+import zlib from 'zlib';
 
 import FeedbackModal from 'components/FeedbackModal';
 import {Shimmer} from 'components/Shimmer';
@@ -108,13 +109,26 @@ async function getContent(asPath: string) {
   return contentString;
 }
 
+async function getGzJsonContent(asPath: string) {
+  const basePath = path.resolve('../content');
+  const pathToFile = path.join(basePath, asPath);
+  const buffer = await fs.readFile(pathToFile);
+  return new Promise<any>((resolve, reject) => {
+    zlib.gunzip(buffer, (err, result) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(JSON.parse(result.toString()));
+    });
+  });
+}
+
 async function getSphinxData(sphinxPrefix: SphinxPrefix, path: string) {
   const page = path.split('/').splice(1);
   if (sphinxPrefix === SphinxPrefix.API_DOCS) {
-    const content = await getContent('/api/sections.json');
     const {
       api: {apidocs: data},
-    } = JSON.parse(content);
+    } = await getGzJsonContent('/api/sections.json.gz');
 
     let curr = data;
     for (const part of page) {
@@ -127,8 +141,7 @@ async function getSphinxData(sphinxPrefix: SphinxPrefix, path: string) {
       props: {type: PageType.HTML, data: {body, toc, path: `/${SphinxPrefix.API_DOCS}${path}`}},
     };
   } else {
-    const content = await getContent('/api/modules.json');
-    const data = JSON.parse(content);
+    const data = await getGzJsonContent('/api/modules.json.gz');
     let curr = data;
     for (const part of page) {
       curr = curr[part];
@@ -164,8 +177,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
 
   try {
     // 1. Read and parse versioned search
-    const searchContent = await getContent('/api/searchindex.json');
-    const searchIndex = JSON.parse(searchContent);
+    const searchIndex = await getGzJsonContent('/api/searchindex.json.gz');
 
     // 2. Read and parse versioned MDX content
     const source = await getContent(asPath + '.mdx');

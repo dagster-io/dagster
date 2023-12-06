@@ -1,4 +1,4 @@
-from dagster import asset, build_op_context
+from dagster import AssetExecutionContext, asset, build_asset_context
 
 # start_simple_asset
 
@@ -44,7 +44,7 @@ def test_more_complex_asset():
 
 
 @asset
-def uses_context(context):
+def uses_context(context: AssetExecutionContext):
     context.log.info(context.run_id)
     return "bar"
 
@@ -55,7 +55,7 @@ def uses_context(context):
 
 
 def test_uses_context():
-    context = build_op_context()
+    context = build_asset_context()
     result = uses_context(context)
     assert result == "bar"
 

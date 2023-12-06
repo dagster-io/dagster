@@ -24,6 +24,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generic,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -89,6 +90,31 @@ UnpackedValue: TypeAlias = Union[
     Enum,
     "UnknownSerdesValue",
 ]
+
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+class SerializableNonScalarKeyMapping(Mapping[_K, _V]):
+    """Wrapper class for non-scalar key mappings, used to performantly type check when serializing
+    without impacting the performance of serializing the more common scalar key dicts.
+    May be replaceable with a different clever scheme.
+    """
+
+    def __init__(self, mapping: Mapping[_K, _V] = {}) -> None:
+        self.mapping: Mapping[_K, _V] = mapping
+
+    def __setitem__(self, key: _K, item: _V):
+        raise NotImplementedError("SerializableNonScalarKeyMapping is immutable")
+
+    def __getitem__(self, item: _K) -> _V:
+        return self.mapping[item]
+
+    def __len__(self) -> int:
+        return len(self.mapping)
+
+    def __iter__(self) -> Iterator[_K]:
+        return iter(self.mapping)
 
 
 ###################################################################################################
@@ -208,6 +234,7 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
+    is_pickleable: bool = True,
 ) -> Callable[[T_Type], T_Type]:
     ...
 
@@ -222,6 +249,7 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
+    is_pickleable: bool = True,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorator to whitelist a NamedTuple or Enum subclass to be serializable. Various arguments can be passed
     to alter serialization behavior for backcompat purposes.
@@ -276,7 +304,10 @@ def whitelist_for_serdes(
         )
     if __cls is not None:  # decorator invoked directly on class
         check.class_param(__cls, "__cls")
-        return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP)(__cls)
+        return _whitelist_for_serdes(
+            whitelist_map=_WHITELIST_MAP,
+            is_pickleable=is_pickleable,
+        )(__cls)
     else:  # decorator passed params
         check.opt_class_param(serializer, "serializer", superclass=Serializer)
         return _whitelist_for_serdes(
@@ -288,6 +319,7 @@ def whitelist_for_serdes(
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
             field_serializers=field_serializers,
+            is_pickleable=is_pickleable,
         )
 
 
@@ -300,6 +332,7 @@ def _whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
+    is_pickleable: bool = True,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if issubclass(klass, Enum) and (
@@ -316,7 +349,7 @@ def _whitelist_for_serdes(
         elif is_named_tuple_subclass(klass) and (
             serializer is None or issubclass(serializer, NamedTupleSerializer)
         ):
-            _check_serdes_tuple_class_invariants(klass)
+            _check_serdes_tuple_class_invariants(klass, is_pickleable=is_pickleable)
             whitelist_map.register_tuple(
                 klass.__name__,
                 klass,
@@ -372,7 +405,7 @@ class UnpackContext:
             for inner in obj:
                 self.clear_ignored_unknown_values(inner)
         elif isinstance(obj, dict):
-            for k, v in obj.items():
+            for v in obj.values():
                 self.clear_ignored_unknown_values(v)
 
         return obj
@@ -509,7 +542,7 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
     ) -> Dict[str, JsonSerializableValue]:
         packed: Dict[str, JsonSerializableValue] = {}
         packed["__class__"] = self.get_storage_name()
-        for key, inner_value in value._asdict().items():
+        for key, inner_value in self.before_pack(value)._asdict().items():
             if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
             storage_key = self.storage_field_names.get(key, key)
@@ -530,6 +563,10 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
             packed[key] = default
         packed = self.after_pack(**packed)
         return packed
+
+    # Hook: Modify the contents of the named tuple before packing
+    def before_pack(self, value: T_NamedTuple) -> T_NamedTuple:
+        return value
 
     # Hook: Modify the contents of the packed, json-serializable dict before it is converted to a
     # string.
@@ -674,6 +711,16 @@ def _pack_value(
         return {
             key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in cast(dict, val).items()
+        }
+    if tval is SerializableNonScalarKeyMapping:
+        return {
+            "__mapping_items__": [
+                [
+                    _pack_value(k, whitelist_map, f"{descent_path}.{k}"),
+                    _pack_value(v, whitelist_map, f"{descent_path}.{k}"),
+                ]
+                for k, v in cast(dict, val).items()
+            ]
         }
 
     # inlined is_named_tuple_instance
@@ -845,6 +892,12 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
         return frozenset(items)
 
+    if "__mapping_items__" in val:
+        return {
+            _unpack_value(k, whitelist_map, context): _unpack_value(v, whitelist_map, context)
+            for k, v in val["__mapping_items__"]
+        }
+
     return val
 
 
@@ -932,7 +985,9 @@ def _unpack_value(
 ###################################################################################################
 
 
-def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
+def _check_serdes_tuple_class_invariants(
+    klass: Type[NamedTuple], is_pickleable: bool = True
+) -> None:
     sig_params = signature(klass.__new__).parameters
     dunder_new_params = list(sig_params.values())
 
@@ -955,19 +1010,20 @@ def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
                 "in the named tuple that are not present as parameters to the "
                 "to the __new__ method. In order for "
                 "both serdes serialization and pickling to work, "
-                "these must match. Missing: {missing_fields}"
-            ).format(missing_fields=repr(list(klass._fields[index:])))
+                f"these must match. Missing: {list(klass._fields[index:])!r}"
+            )
 
             raise SerdesUsageError(_with_header(error_msg))
 
-        value_param = value_params[index]
-        if value_param.name != field:
-            error_msg = (
-                "Params to __new__ must match the order of field declaration in the namedtuple. "
-                'Declared field number {one_based_index} in the namedtuple is "{field_name}". '
-                'Parameter {one_based_index} in __new__ method is "{param_name}".'
-            ).format(one_based_index=index + 1, field_name=field, param_name=value_param.name)
-            raise SerdesUsageError(_with_header(error_msg))
+        if is_pickleable:
+            value_param = value_params[index]
+            if value_param.name != field:
+                error_msg = (
+                    "Params to __new__ must match the order of field declaration in the namedtuple. "
+                    f'Declared field number {index + 1} in the namedtuple is "{field}". '
+                    f'Parameter {index + 1} in __new__ method is "{value_param.name}".'
+                )
+                raise SerdesUsageError(_with_header(error_msg))
 
     if len(value_params) > len(klass._fields):
         # Ensure that remaining parameters have default values

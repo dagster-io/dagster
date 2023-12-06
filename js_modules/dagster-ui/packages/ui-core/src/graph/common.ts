@@ -37,7 +37,7 @@ export const isNodeOffscreen = (
 export const closestNodeInDirection = (
   layout: OpGraphLayout | AssetGraphLayout,
   selectedNodeKey: string | undefined,
-  dir: string,
+  dir: 'left' | 'right' | 'up' | 'down',
 ): string | undefined => {
   if (!selectedNodeKey) {
     return;

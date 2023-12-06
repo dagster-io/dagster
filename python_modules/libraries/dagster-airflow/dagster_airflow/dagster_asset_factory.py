@@ -83,9 +83,9 @@ def _build_asset_dependencies(
                     asset_upstream_deps
                 )
             else:
-                internal_asset_deps[f"result_{normalized_name(dag.dag_id, task_id)}"] = (
-                    asset_upstream_deps
-                )
+                internal_asset_deps[
+                    f"result_{normalized_name(dag.dag_id, task_id)}"
+                ] = asset_upstream_deps
 
     # add new upstream asset dependencies to the internal deps
     for asset_key in upstream_dependencies_by_asset_key:

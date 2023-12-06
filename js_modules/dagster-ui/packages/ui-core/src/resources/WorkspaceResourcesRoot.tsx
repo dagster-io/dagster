@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Spinner, TextInput, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -59,7 +59,7 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading resources…</div>
+            <div style={{color: colorTextLight()}}>Loading resources…</div>
           </Box>
         </Box>
       );
@@ -140,6 +140,8 @@ export const RESOURCE_ENTRY_FRAGMENT = gql`
         id
       }
     }
+    schedulesUsing
+    sensorsUsing
   }
 `;
 
@@ -150,6 +152,7 @@ const WORKSPACE_RESOURCES_QUERY = gql`
         id
         name
         allTopLevelResourceDetails {
+          id
           ...ResourceEntryFragment
         }
       }

@@ -1,11 +1,12 @@
 import {ButtonLink, Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {sortAssetKeys} from '../../asset-graph/Utils';
+import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {AssetLink} from '../AssetLink';
 import {AssetKey} from '../types';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
-import {VirtualizedAssetListForDialog} from './VirtualizedAssetListForDialog';
 import {AssetDetailType, detailTypeToLabel} from './assetDetailUtils';
 import {useFilterAssetKeys} from './assetFilters';
 
@@ -27,11 +28,11 @@ export const ParentUpdatedLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props
 
   const filteredAssetKeys: AssetKeyDetail[] = React.useMemo(() => {
     return [
-      ...filteredUpdatedAssetKeys.map((assetKey) => ({
+      ...[...filteredUpdatedAssetKeys].sort(sortAssetKeys).map((assetKey) => ({
         assetKey,
         detailType: AssetDetailType.Updated,
       })),
-      ...filteredWillUpdateAssetKeys.map((assetKey) => ({
+      ...[...filteredWillUpdateAssetKeys].sort(sortAssetKeys).map((assetKey) => ({
         assetKey,
         detailType: AssetDetailType.WillUpdate,
       })),
@@ -66,8 +67,8 @@ export const ParentUpdatedLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props
               }
             />
           ) : (
-            <VirtualizedAssetListForDialog
-              assetKeys={filteredAssetKeys}
+            <VirtualizedItemListForDialog
+              items={filteredAssetKeys}
               renderItem={(item) => (
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                   <AssetLink path={item.assetKey.path} icon="asset" />

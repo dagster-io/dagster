@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip, Tag, Popover, Box, Colors} from '@dagster-io/ui-components';
+import {Tooltip, Tag, Popover, Box} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -7,6 +7,7 @@ import React from 'react';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
@@ -38,11 +39,15 @@ export function isAssetOverdue(liveData?: LiveDataForNode): liveData is LiveData
 export const humanizedMinutesLateString = (minLate: number) =>
   dayjs.duration(minLate, 'minutes').humanize(false);
 
-export const OverdueTag: React.FC<{
-  liveData: LiveDataForNode | undefined;
+export const OverdueTag = ({
+  policy,
+  assetKey,
+}: {
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
-}> = ({liveData, policy, assetKey}) => {
+}) => {
+  const {liveData} = useAssetLiveData(assetKey);
+
   if (!liveData?.freshnessInfo) {
     return null;
   }
@@ -87,9 +92,13 @@ type OverdueLineagePopoverProps = {
   liveData: LiveDataForNode;
 };
 
-export const OverdueLineagePopover: React.FC<
-  OverdueLineagePopoverProps & {children: React.ReactNode}
-> = ({children, assetKey, liveData}) => {
+export const OverdueLineagePopover = ({
+  children,
+  assetKey,
+  liveData,
+}: OverdueLineagePopoverProps & {
+  children: React.ReactNode;
+}) => {
   return (
     <Popover
       position="top"
@@ -107,10 +116,13 @@ export const OverdueLineagePopover: React.FC<
   );
 };
 
-const OverdueLineagePopoverContent: React.FC<{
+const OverdueLineagePopoverContent = ({
+  assetKey,
+  timestamp,
+}: {
   assetKey: AssetKeyInput;
   timestamp: string;
-}> = ({assetKey, timestamp}) => {
+}) => {
   const result = useQuery<OverduePopoverQuery, OverduePopoverQueryVariables>(
     OVERDUE_POPOVER_QUERY,
     {variables: {assetKey: {path: assetKey.path}, timestamp}},
@@ -133,12 +145,8 @@ const OverdueLineagePopoverContent: React.FC<{
 
   const hasUpstreams = data.assetMaterializationUsedData.length > 0;
   const {currentLagMinutes, currentMinutesLate} = data.freshnessInfo;
-  const {
-    lastEvaluationTimestamp,
-    cronSchedule,
-    cronScheduleTimezone,
-    maximumLagMinutes,
-  } = data.freshnessPolicy;
+  const {lastEvaluationTimestamp, cronSchedule, cronScheduleTimezone, maximumLagMinutes} =
+    data.freshnessPolicy;
   const maxLagMinutesStr = humanizedMinutesLateString(maximumLagMinutes);
   const lagMinutesStr = humanizedMinutesLateString(currentLagMinutes || 0);
   const derivedStr = hasUpstreams ? ` is derived from source data that` : '';
@@ -153,7 +161,7 @@ const OverdueLineagePopoverContent: React.FC<{
 
   return (
     <Box style={{width: 600}}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <Box padding={12} border="bottom">
         {currentMinutesLate === 0 // fresh
           ? cronSchedule
             ? `The latest materialization contains all data up to ${maxLagMinutesStr} before ${lastEvaluationStr}. `
@@ -185,18 +193,10 @@ const OverdueLineagePopoverContent: React.FC<{
         </>
       ) : (
         <>
-          <Box
-            padding={12}
-            style={{fontWeight: 600}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-          >
+          <Box padding={12} style={{fontWeight: 600}} border="bottom">
             Latest materialization:
           </Box>
-          <Box
-            padding={12}
-            flex={{justifyContent: 'space-between'}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-          >
+          <Box padding={12} flex={{justifyContent: 'space-between'}} border="bottom">
             <Timestamp timestamp={{ms: Number(timestamp)}} />
             <TimeSinceWithOverdueColor
               timestamp={Number(timestamp)}

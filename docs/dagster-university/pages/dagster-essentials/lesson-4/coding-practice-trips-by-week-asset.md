@@ -1,7 +1,7 @@
 ---
-title: "Lesson 4: Practice: Create a trips_by_week asset"
-module: "dagster_essentials"
-lesson: "4"
+title: 'Lesson 4: Practice: Create a trips_by_week asset'
+module: 'dagster_essentials'
+lesson: '4'
 ---
 
 # Practice: Create a trips_by_week asset
@@ -10,16 +10,20 @@ To practice what you’ve learned, create an asset in `metrics.py` that:
 
 - Is named `trips_by_week`
 - Produces a CSV that:
-    - Is saved in `constants.TRIPS_BY_WEEK_FILE_PATH`
-    - Has the following schema:
-        - `period` - a string representing the Sunday of the week aggregated by, ex. `2023-03-05`
-        - `num_trips` - The total number of trips that started in that week
-        - `passenger_count` - The total number of passengers that were on a taxi trip that week
-        - `total_amount` - The total sum of the revenue produced by trips that week
-        - `trip_distance` - The total miles driven in all trips that happened that week
+  - Is saved in `constants.TRIPS_BY_WEEK_FILE_PATH`
+  - Has the following schema:
+    - `period` - a string representing the Sunday of the week aggregated by, ex. `2023-03-05`
+    - `num_trips` - The total number of trips that started in that week
+    - `passenger_count` - The total number of passengers that were on a taxi trip that week
+    - `total_amount` - The total sum of the revenue produced by trips that week
+    - `trip_distance` - The total miles driven in all trips that happened that week
 
-> **Extra credit!** If want a challenge, follow this constraint:
+{% callout %}
+
+> 💡 **Extra credit!** If want a challenge, follow this constraint:
 > Imagine that the entire `trips` data is too big to fit into memory. However, a week’s worth of data fits comfortably. How would you structure your asset’s function to accommodate this?
+
+{% /callout %}
 
 ---
 
@@ -29,7 +33,7 @@ To practice what you’ve learned, create an asset in `metrics.py` that:
 - There are many ways to solve these problems, such as within a database or aggregating a DataFrame
 - No additional imports are needed, but you can import whatever you need
 - For convenience and to accommodate for data quality issues, you can hard code the start date and end dates of the analysis to be the range of data you have (ex. `2023-03-01` to `2023-03-03`)
-- DuckDB has a [`date_trunc](https://duckdb.org/docs/sql/functions/date.html#date-functions)` function that accepts `'week’` as a valid precision to truncate down to
+- DuckDB has a [`date_trunc`](https://duckdb.org/docs/sql/functions/date.html#date-functions) function that accepts `'week’` as a valid precision to truncate down to
 - DuckDB also supports adding time: `+ interval '1 week'`
 
 The numbers might not add up exactly this way, but the following is an example of what the output may look like:
@@ -45,13 +49,15 @@ period,num_trips,total_amount,trip_distance,passenger_count
 
 ## Check your work
 
-The asset you built should look similar to the code contained in the **View answer** toggle. Click to open it.
+The asset you built should look similar to the following code. Click **View answer** to view it.
 
 Note that the solution below is one of many possible ways to solve this challenge. Your way can be completely valid and more performant than this one!
 
 We’ll assume your code looks like the following for the rest of the module. Despite not being the highest quality code, it’s flexible enough for us to extend in a later section.
 
-```python
+**If there are differences**, compare what you wrote to the asset below, change it, and then re-materialize the asset to prepare for the next lesson.
+
+```python {% obfuscated="true" %}
 from datetime import datetime, timedelta
 from . import constants
 
@@ -62,7 +68,7 @@ import pandas as pd
 )
 def trips_by_week():
     conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-    
+
     current_date = datetime.strptime("2023-03-01", constants.DATE_FORMAT)
     end_date = datetime.strptime("2023-04-01", constants.DATE_FORMAT)
 
@@ -91,7 +97,7 @@ def trips_by_week():
         result = pd.concat([result, aggregate])
 
         current_date += timedelta(days=7)
-    
+
     # clean up the formatting of the dataframe
     result['num_trips'] = result['num_trips'].astype(int)
     result['passenger_count'] = result['passenger_count'].astype(int)
@@ -102,5 +108,3 @@ def trips_by_week():
 
     result.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
 ```
-
-**If there are differences**, compare what you wrote to the asset above, change them, and then re-materialize the asset to prepare for the next lesson.

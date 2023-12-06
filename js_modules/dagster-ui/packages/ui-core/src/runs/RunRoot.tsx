@@ -1,33 +1,24 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  NonIdealState,
-  PageHeader,
-  Popover,
-  Tag,
-  Heading,
-  FontFamily,
-} from '@dagster-io/ui-components';
+import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {formatElapsedTime} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
-import {AssetKeyTagCollection} from './AssetKeyTagCollection';
+import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
-import {RunConfigDialog, RunDetails} from './RunDetails';
+import {RunConfigDialog} from './RunConfigDialog';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
+import {RunTimingTags} from './RunTimingTags';
 import {assetKeysForRun} from './RunUtils';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 
@@ -85,80 +76,37 @@ export const RunRoot = () => {
           }
           tags={
             run ? (
-              <>
+              <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
                 <RunStatusTag status={run.status} />
-                {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} useTags />
-                ) : (
-                  <>
-                    <Tag icon="run">
-                      Run of{' '}
-                      <PipelineReference
-                        pipelineName={run?.pipelineName}
-                        pipelineHrefContext={repoAddress || 'repo-unknown'}
-                        snapshotId={snapshotID}
-                        size="small"
-                        isJob={isJob}
-                      />
-                    </Tag>
-                    <AssetKeyTagCollection assetKeys={run.assets.map((a) => a.key)} useTags />
-                  </>
-                )}
-                <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
-                  {run?.startTime ? (
-                    <Popover
-                      interactionKind="hover"
-                      placement="bottom"
-                      content={
-                        <Box padding={16}>
-                          <RunDetails run={run} loading={loading} />
-                        </Box>
-                      }
-                    >
-                      <Tag icon="schedule">
-                        <TimestampDisplay
-                          timestamp={run.startTime}
-                          timeFormat={{showSeconds: true, showTimezone: false}}
-                        />
-                      </Tag>
-                    </Popover>
-                  ) : run.updateTime ? (
-                    <Tag icon="schedule">
-                      <TimestampDisplay
-                        timestamp={run.updateTime}
-                        timeFormat={{showSeconds: true, showTimezone: false}}
-                      />
-                    </Tag>
-                  ) : undefined}
-                  {run?.startTime && run?.endTime ? (
-                    <Popover
-                      interactionKind="hover"
-                      placement="bottom"
-                      content={
-                        <Box padding={16}>
-                          <RunDetails run={run} loading={loading} />
-                        </Box>
-                      }
-                    >
-                      <Tag icon="timer">
-                        <span style={{fontVariantNumeric: 'tabular-nums'}}>
-                          {run?.startTime
-                            ? formatElapsedTime(
-                                (run?.endTime * 1000 || Date.now()) - run?.startTime * 1000,
-                              )
-                            : '–'}
-                        </span>
-                      </Tag>
-                    </Popover>
-                  ) : null}
-                  {automaterializeTag && run.assetSelection?.length ? (
-                    <AutomaterializeTagWithEvaluation
-                      assetKeys={run.assetSelection}
-                      evaluationId={automaterializeTag.value}
+                {!isHiddenAssetGroupJob(run.pipelineName) ? (
+                  <Tag icon="run">
+                    Run of{' '}
+                    <PipelineReference
+                      pipelineName={run?.pipelineName}
+                      pipelineHrefContext={repoAddress || 'repo-unknown'}
+                      snapshotId={snapshotID}
+                      size="small"
+                      isJob={isJob}
                     />
-                  ) : null}
-                </Box>
-              </>
+                  </Tag>
+                ) : null}
+                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
+                <AssetKeyTagCollection
+                  useTags
+                  assetKeys={
+                    isHiddenAssetGroupJob(run.pipelineName)
+                      ? assetKeysForRun(run)
+                      : run.assets.map((a) => a.key)
+                  }
+                />
+                <RunTimingTags run={run} loading={loading} />
+                {automaterializeTag && run.assetSelection?.length ? (
+                  <AutomaterializeTagWithEvaluation
+                    assetKeys={run.assetSelection}
+                    evaluationId={automaterializeTag.value}
+                  />
+                ) : null}
+              </Box>
             ) : null
           }
           right={run ? <RunConfigDialog run={run} isJob={isJob} /> : null}
@@ -173,7 +121,7 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
+const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
   const {data, runId} = props;
 
   if (!data || !data.pipelineRunOrError) {

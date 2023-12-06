@@ -15,6 +15,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
 from dagster._core.definitions.assets_job import (
     ASSET_BASE_JOB_PREFIX,
@@ -305,9 +306,14 @@ class RepositoryDefinition:
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         defn = self.get_job(job_name)
-        return defn.get_subset(op_selection=op_selection, asset_selection=asset_selection)
+        return defn.get_subset(
+            op_selection=op_selection,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+        )
 
     @public
     def load_asset_value(

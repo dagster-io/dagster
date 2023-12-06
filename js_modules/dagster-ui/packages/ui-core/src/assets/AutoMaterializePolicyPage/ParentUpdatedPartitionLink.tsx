@@ -1,6 +1,7 @@
 import {ButtonLink, Box, Tag, Caption} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {sortAssetKeys} from '../../asset-graph/Utils';
 import {AssetLink} from '../AssetLink';
 import {AssetKey} from '../types';
 
@@ -33,14 +34,14 @@ export const ParentUpdatedPartitionLink = ({updatedAssetKeys, willUpdateAssetKey
         return [
           partitionName,
           [
-            ...(updatedAssetKeys[partitionName]?.map((assetKey) => ({
+            ...(updatedAssetKeys[partitionName] || []).sort(sortAssetKeys).map((assetKey) => ({
               assetKey,
               detailType: AssetDetailType.Updated,
-            })) || []),
-            ...(willUpdateAssetKeys[partitionName]?.map((assetKey) => ({
+            })),
+            ...(willUpdateAssetKeys[partitionName] || []).sort(sortAssetKeys).map((assetKey) => ({
               assetKey,
               detailType: AssetDetailType.WillUpdate,
-            })) || []),
+            })),
           ],
         ];
       }),

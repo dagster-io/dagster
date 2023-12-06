@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {Colors} from '../Colors';
+import {colorAccentPrimary, colorAccentRed} from '../../theme/color';
 import {Icon} from '../Icon';
 import {TextInput} from '../TextInput';
 
@@ -42,7 +42,7 @@ export const StrokeColor = () => {
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      strokeColor={Colors.Red500}
+      strokeColor={colorAccentRed()}
     />
   );
 };
@@ -55,7 +55,7 @@ export const RightElement = () => {
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      rightElement={<Icon name="info" color={Colors.Gray500} />}
+      rightElement={<Icon name="info" color={colorAccentPrimary()} />}
     />
   );
 };

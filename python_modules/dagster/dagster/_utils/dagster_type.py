@@ -33,10 +33,8 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     """
     if is_typing_type(dagster_type):
         raise DagsterInvariantViolationError(
-            (
-                "Must pass in a type from dagster module. You passed {dagster_type} "
-                "which is part of python's typing module."
-            ).format(dagster_type=dagster_type)
+            f"Must pass in a type from dagster module. You passed {dagster_type} "
+            "which is part of python's typing module."
         )
 
     dagster_type = resolve_dagster_type(dagster_type)

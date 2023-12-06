@@ -94,11 +94,13 @@ def _generate_pythonic_config_error_message(
         PYTHONIC_CONFIG_ERROR_VERBIAGE + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else "")
     ).format(invalid_type_str=invalid_type_name)
 
-    return ("""
+    return (
+        """
 Error defining Dagster config class{config_class}{field_name}.
 Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
-{PYTHONIC_CONFIG_ERROR_VERBIAGE}""").format(
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
+    ).format(
         config_class=f" {config_class!r}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
@@ -195,8 +197,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
             (
                 "Error defining config. Original value passed: {original_root}. "
                 "{stack_str}{current_value} "
-                "cannot be resolved.{reason_str}"
-                + CONFIG_ERROR_VERBIAGE
+                "cannot be resolved.{reason_str}" + CONFIG_ERROR_VERBIAGE
             ).format(
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
@@ -392,9 +393,9 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
     def __init__(self, resource_name, *args, **kwargs):
         self.resource_name = check.str_param(resource_name, "resource_name")
         msg = (
-            "Unknown resource `{resource_name}`. Specify `{resource_name}` as a required resource "
+            f"Unknown resource `{resource_name}`. Specify `{resource_name}` as a required resource "
             "on the compute / config function that accessed it."
-        ).format(resource_name=resource_name)
+        )
         super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
 
 
@@ -421,9 +422,7 @@ class DagsterInvalidConfigError(DagsterError):
 
         for i_error, error in enumerate(self.errors):
             error_messages.append(error.message)
-            error_msg += "\n    Error {i_error}: {error_message}".format(
-                i_error=i_error + 1, error_message=error.message
-            )
+            error_msg += f"\n    Error {i_error + 1}: {error.message}"
 
         self.message = error_msg
         self.error_messages = error_messages
@@ -674,5 +673,5 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """
 
 
-class DagsterExternalExecutionError(DagsterError):
+class DagsterPipesExecutionError(DagsterError):
     """Indicates that an error occurred during the execution of an external process."""

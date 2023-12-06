@@ -14,7 +14,8 @@ import styled from 'styled-components';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {RunTag, TagAction} from '../runs/RunTag';
+import {RunTag} from '../runs/RunTag';
+import {TagAction} from '../ui/TagActions';
 
 interface ITagEditorProps {
   tagsFromDefinition?: PipelineRunTag[];
@@ -31,13 +32,13 @@ interface ITagContainerProps {
   actions?: TagAction[];
 }
 
-export const TagEditor: React.FC<ITagEditorProps> = ({
+export const TagEditor = ({
   tagsFromDefinition = [],
   tagsFromSession = [],
   open,
   onChange,
   onRequestClose,
-}) => {
+}: ITagEditorProps) => {
   const [editState, setEditState] = React.useState(() =>
     tagsFromSession.length ? tagsFromSession : [{key: '', value: ''}],
   );

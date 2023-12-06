@@ -1,7 +1,7 @@
 ---
-title: "Lesson 2: Requirements and installation"
-module: "dagster_essentials"
-lesson: "2"
+title: 'Lesson 2: Requirements and installation'
+module: 'dagster_essentials'
+lesson: '2'
 ---
 
 ## Requirements
@@ -24,7 +24,9 @@ pip --version
 
 ## Installation
 
-> 💡 Heads up! We strongly recommend installing Dagster inside a Python virtual environment. If you need a primer on virtual environments, including creating and activating one, check out this [blog post](https://dagster.io/blog/python-packages-primer-2).
+{% callout %}
+💡 **Heads up!** We strongly recommend installing Dagster inside a Python virtual environment. If you need a primer on virtual environments, including creating and activating one, check out this [blog post](https://dagster.io/blog/python-packages-primer-2).
+{% /callout %}
 
 To install Dagster into your current Python environment:
 

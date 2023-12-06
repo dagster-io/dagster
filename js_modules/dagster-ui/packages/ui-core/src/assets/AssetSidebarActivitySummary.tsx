@@ -1,5 +1,13 @@
-import {Body, Box, Colors, Icon, Spinner, Table} from '@dagster-io/ui-components';
-import qs from 'qs';
+import {
+  Body,
+  Box,
+  Icon,
+  MiddleTruncate,
+  Spinner,
+  colorKeylineDefault,
+  colorLinkDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -18,8 +26,10 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
+import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
+import {isRunlessEvent} from './isRunlessEvent';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
@@ -33,25 +43,19 @@ interface Props {
   assetLastMaterializedAt: string | undefined;
 }
 
-export const AssetSidebarActivitySummary: React.FC<Props> = ({
+export const AssetSidebarActivitySummary = ({
   asset,
   assetLastMaterializedAt,
   isSourceAsset,
   liveData,
   stepKey,
-}) => {
-  const {
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    loading,
-    refetch,
-    xAxis,
-  } = useRecentAssetEvents(
-    asset.assetKey,
-    {},
-    {assetHasDefinedPartitions: !!asset.partitionDefinition},
-  );
+}: Props) => {
+  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
+    useRecentAssetEvents(
+      asset.assetKey,
+      {},
+      {assetHasDefinedPartitions: !!asset.partitionDefinition},
+    );
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
@@ -66,14 +70,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <>
           <FailedRunSinceMaterializationBanner
             stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
             run={liveData?.runWhichFailedToMaterialize || null}
           />
-          <CurrentRunsBanner
-            stepKey={stepKey}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-            liveData={liveData}
-          />
+          <CurrentRunsBanner stepKey={stepKey} border="top" liveData={liveData} />
         </>
       )}
 
@@ -81,11 +81,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
-            <OverdueTag
-              liveData={liveData}
-              policy={asset.freshnessPolicy}
-              assetKey={asset.assetKey}
-            />
+            <OverdueTag policy={asset.freshnessPolicy} assetKey={asset.assetKey} />
           </Box>
         </SidebarSection>
       )}
@@ -99,10 +95,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'auto-materialize-history'})}>
               View auto-materialize history
             </Link>
-            <Icon name="open_in_new" color={Colors.Link} />
+            <Icon name="open_in_new" color={colorLinkDefault()} />
           </Box>
           <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>
+            <Body style={{flex: 1, marginBottom: 12}}>
               {automaterializePolicyDescription(asset.autoMaterializePolicy)}
             </Body>
             <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />
@@ -110,10 +106,24 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         </SidebarSection>
       )}
 
+      {asset.backfillPolicy && (
+        <SidebarSection title="Backfill policy">
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
+            <Body style={{flex: 1}}>{asset.backfillPolicy.description}</Body>
+          </Box>
+        </SidebarSection>
+      )}
+
       {loadedPartitionKeys.length > 1 ? null : (
         <>
           <SidebarSection
-            title={!isSourceAsset ? 'Materialization in last run' : 'Observation in last run'}
+            title={
+              !isSourceAsset
+                ? displayedEvent && isRunlessEvent(displayedEvent)
+                  ? 'Last reported materialization'
+                  : 'Materialization in last run'
+                : 'Observation in last run'
+            }
           >
             {displayedEvent ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
@@ -130,7 +140,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             ) : (
               <Box
                 margin={{horizontal: 24, vertical: 12}}
-                style={{color: Colors.Gray500, fontSize: '0.8rem'}}
+                style={{color: colorTextLight(), fontSize: '0.8rem'}}
               >
                 {!isSourceAsset ? `No materializations found` : `No observations found`}
               </Box>
@@ -151,7 +161,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
             ) : (
               <Box
                 margin={{horizontal: 24, vertical: 12}}
-                style={{color: Colors.Gray500, fontSize: '0.8rem'}}
+                style={{color: colorTextLight(), fontSize: '0.8rem'}}
               >
                 {!isSourceAsset ? `No materializations found` : `No observations found`}
               </Box>
@@ -167,41 +177,56 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
           columnCount={1}
         />
       </SidebarSection>
-      {liveData && liveData.assetChecks.length > 0 && (
-        <SidebarSection title="Checks">
-          <Box padding={{horizontal: 24, vertical: 12}}>
-            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
-              View all check details
-            </Link>
-          </Box>
+      {asset.assetChecksOrError.__typename === 'AssetChecks' &&
+        asset.assetChecksOrError.checks.length > 0 && (
+          <SidebarSection title="Checks">
+            <Box padding={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
+              <ExecuteChecksButton assetNode={asset} checks={asset.assetChecksOrError.checks} />
+              <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
+                View all check details
+              </Link>
+            </Box>
 
-          <Table $compact>
-            <tbody>
-              {liveData.assetChecks.map((check) => (
-                <tr key={check.name}>
-                  <td style={{paddingLeft: 24}}>{check.name}</td>
-                  <td>
-                    {check.executionForLatestMaterialization === null ? (
-                      <AssetCheckStatusTag notChecked={true} />
-                    ) : (
-                      <Link
-                        to={`/runs/${check.executionForLatestMaterialization.runId}?${qs.stringify({
-                          logs: check.name,
-                        })}`}
-                      >
-                        <AssetCheckStatusTag
-                          severity={check.executionForLatestMaterialization.evaluation?.severity}
-                          status={check.executionForLatestMaterialization.status}
-                        />
-                      </Link>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </SidebarSection>
-      )}
+            {asset.assetChecksOrError.checks.slice(0, 10).map((check) => {
+              const execution =
+                liveData &&
+                liveData.assetChecks?.find((c) => c.name === check.name)
+                  ?.executionForLatestMaterialization;
+
+              return (
+                <Box
+                  key={check.name}
+                  style={{minHeight: 40}}
+                  border={{side: 'top', width: 1, color: colorKeylineDefault()}}
+                  padding={{vertical: 8, right: 12, left: 24}}
+                  flex={{
+                    gap: 8,
+                    direction: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <MiddleTruncate text={`${check.name}`} />
+                  {execution ? (
+                    <AssetCheckStatusTag execution={execution} />
+                  ) : (
+                    <Spinner purpose="caption-text" />
+                  )}
+                </Box>
+              );
+            })}
+            {asset.assetChecksOrError.checks.length > 10 && (
+              <Box
+                padding={{vertical: 12, right: 12, left: 24}}
+                border={{side: 'top', width: 1, color: colorKeylineDefault()}}
+              >
+                <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'checks'})}>
+                  View {asset.assetChecksOrError.checks.length - 10} more…
+                </Link>
+              </Box>
+            )}
+          </SidebarSection>
+        )}
     </>
   );
 };

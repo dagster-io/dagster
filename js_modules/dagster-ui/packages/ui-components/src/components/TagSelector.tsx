@@ -2,11 +2,18 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import styled from 'styled-components';
 
+import {
+  colorBackgroundDefault,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextDisabled,
+} from '../theme/color';
+
 import {Box} from './Box';
 import {Checkbox} from './Checkbox';
-import {Colors} from './Colors';
 import {Icon} from './Icon';
 import {MenuItem, Menu} from './Menu';
+import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
 import {TextInput, TextInputStyles} from './TextInput';
@@ -47,12 +54,23 @@ type Props = {
 const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps) => {
   return (
     <Tag key={tag}>
-      <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between', alignItems: 'center'}}>
-        <span>{tag}</span>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: 4,
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          maxWidth: '120px',
+        }}
+        data-tooltip={tag}
+        data-tooltip-style={DefaultTagTooltipStyle}
+      >
+        <MiddleTruncate text={tag} />
         <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
           <Icon name="close" />
         </Box>
-      </Box>
+      </div>
     </Tag>
   );
 };
@@ -216,7 +234,7 @@ const Container = styled.div`
 `;
 
 const Placeholder = styled.div`
-  color: ${Colors.Gray400};
+  color: ${colorTextDisabled()};
 `;
 
 const TagsContainer = styled(Box)`
@@ -284,3 +302,9 @@ export const TagSelectorWithSearch = (
     />
   );
 };
+
+const DefaultTagTooltipStyle = JSON.stringify({
+  background: colorBackgroundDefault(),
+  border: `1px solid ${colorBorderDefault()}`,
+  color: colorTextDefault(),
+});

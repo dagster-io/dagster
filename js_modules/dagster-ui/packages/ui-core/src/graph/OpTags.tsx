@@ -1,4 +1,12 @@
-import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  IconWrapper,
+  colorAccentPrimary,
+  colorBackgroundGray,
+  colorLineageNodeBackground,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -46,6 +54,7 @@ import scikitlearn from './optag-images/scikitlearn.svg';
 import scipy from './optag-images/scipy.svg';
 import segment from './optag-images/segment.svg';
 import slack from './optag-images/slack.svg';
+import sling from './optag-images/sling.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import stitch from './optag-images/stitch.svg';
@@ -70,7 +79,7 @@ interface OpTagsProps {
 
 export const KNOWN_TAGS = {
   jupyter: {
-    color: '#4E4E4E',
+    color: '#929292',
     icon: jupyter,
     content: 'Jupyter',
   },
@@ -83,12 +92,16 @@ export const KNOWN_TAGS = {
     color: '#00D2D2',
     icon: noteable,
     content: 'Noteable',
-    reversed: true,
   },
   airbyte: {
     color: '#655CFC',
     icon: airbyte,
     content: 'Airbyte',
+  },
+  sling: {
+    color: '#2176EA',
+    icon: sling,
+    content: 'Sling',
   },
   snowflake: {
     color: '#29B5E8',
@@ -96,7 +109,7 @@ export const KNOWN_TAGS = {
     content: 'Snowflake',
   },
   python: {
-    color: '#35668F',
+    color: '#367EF0',
     icon: python,
     content: 'Python',
   },
@@ -111,7 +124,7 @@ export const KNOWN_TAGS = {
     content: 'dbt',
   },
   slack: {
-    color: '#4A144A',
+    color: '#803A80',
     icon: slack,
     content: 'Slack',
   },
@@ -134,18 +147,17 @@ export const KNOWN_TAGS = {
     color: '#FCBC41',
     icon: duckdb,
     content: 'DuckDB',
-    reversed: true,
   },
   tensorflow: {
     color: '#FE9413',
     icon: tensorflow,
     content: 'TensorFlow',
-    reversed: true,
   },
   pandas: {
-    color: '#130754',
+    color: '#E40385',
     icon: pandas,
     content: 'pandas',
+    reversed: true,
   },
   googlesheets: {
     color: '#23A566',
@@ -158,10 +170,9 @@ export const KNOWN_TAGS = {
     content: 'SQL',
   },
   wandb: {
-    color: '#FCB119',
+    color: '#FFBE00',
     icon: weights_and_biases,
     content: 'Weights & Biases',
-    reversed: true,
   },
   databricks: {
     color: '#FD3820',
@@ -174,12 +185,12 @@ export const KNOWN_TAGS = {
     content: 'Airflow',
   },
   datadog: {
-    color: '#632CA6',
+    color: '#7633C8',
     icon: datadog,
     content: 'Datadog',
   },
   postgres: {
-    color: '#336791',
+    color: '#136FBA',
     icon: postgres,
     content: 'Postgres',
   },
@@ -189,7 +200,7 @@ export const KNOWN_TAGS = {
     content: 'Stripe',
   },
   hightouch: {
-    color: '#07484D',
+    color: '#4EBB6C',
     icon: hightouch,
     content: 'Hightouch',
   },
@@ -199,7 +210,7 @@ export const KNOWN_TAGS = {
     content: 'Census',
   },
   hex: {
-    color: '#F5C0C0',
+    color: '#473982',
     icon: hex,
     content: 'Hex',
     reversed: true,
@@ -243,7 +254,6 @@ export const KNOWN_TAGS = {
     color: '#EDC947',
     icon: powerbi,
     content: 'Power BI',
-    reversed: true,
   },
   gcp: {
     color: '#4285F4',
@@ -256,12 +266,12 @@ export const KNOWN_TAGS = {
     content: 'Google Cloud',
   },
   looker: {
-    color: '#5F6368',
+    color: '#929292',
     icon: looker,
     content: 'Looker',
   },
   tableau: {
-    color: '#25447A',
+    color: '#2E5EB1',
     icon: tableau,
     content: 'Tableau',
   },
@@ -274,25 +284,21 @@ export const KNOWN_TAGS = {
     color: '#FF9900',
     icon: aws,
     content: 'Athena',
-    reversed: true,
   },
   s3: {
     color: '#FF9900',
     icon: aws,
     content: 'S3',
-    reversed: true,
   },
   aws: {
     color: '#FF9900',
     icon: aws,
     content: 'AWS',
-    reversed: true,
   },
   stitch: {
     color: '#FFD201',
     icon: stitch,
     content: 'Stitch',
-    reversed: true,
   },
   openai: {
     color: '#4AA081',
@@ -300,12 +306,13 @@ export const KNOWN_TAGS = {
     content: 'Open AI',
   },
   vercel: {
-    color: '#171615',
+    color: '#787878',
     icon: vercel,
     content: 'Vercel',
+    reversed: true,
   },
   github: {
-    color: '#171615',
+    color: '#A970C1',
     icon: github,
     content: 'Github',
   },
@@ -320,18 +327,18 @@ export const KNOWN_TAGS = {
     content: 'plotly',
   },
   modal: {
-    color: '#9AEE86',
+    color: '#4CDE29',
     icon: modal,
     content: 'Modal',
     reversed: true,
   },
   meltano: {
-    color: '#311772',
+    color: '#3537BE',
     icon: meltano,
     content: 'Meltano',
   },
   matplotlib: {
-    color: '#2B597C',
+    color: '#055998',
     icon: matplotlib,
     content: 'matplotlib',
   },
@@ -373,27 +380,21 @@ export const KNOWN_TAGS = {
   expand: {color: '#D7A540', content: 'Expand'},
 };
 
-function generateColorForLabel(label = '') {
-  return `hsl(${
-    label
-      .split('')
-      .map((c) => c.charCodeAt(0))
-      .reduce((n, a) => n + a) % 360
-  }, 75%, 45%)`;
-}
-
 // google-sheets to googlesheets, Duckdb to duckdb
 function coerceToStandardLabel(label: string) {
   return label.replace(/[ _-]/g, '').toLowerCase();
 }
 
-export const AssetComputeKindTag: React.FC<{
+export const AssetComputeKindTag = ({
+  definition,
+  ...rest
+}: {
   definition: {computeKind: string | null};
   style: React.CSSProperties;
   reduceColor?: boolean;
   reduceText?: boolean;
   reversed?: boolean;
-}> = ({definition, ...rest}) => {
+}) => {
   if (!definition.computeKind) {
     return null;
   }
@@ -418,8 +419,8 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
         const text = known?.content || tag.label;
-        const color = known?.color || generateColorForLabel(tag.label);
-        const textcolor = known && 'reversed' in known ? Colors.Gray900 : Colors.White;
+        const color = known?.color || colorTextLight();
+        const reversed = known && 'reversed' in known ? known.reversed : false;
         return (
           <Box
             key={tag.label}
@@ -427,9 +428,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
             data-tooltip={reduceText ? text : undefined}
             onClick={tag.onClick}
             style={{
-              background:
-                reduceColor && reduceText ? Colors.White : reduceColor ? Colors.Gray100 : color,
-              color: reduceColor ? Colors.Gray700 : textcolor,
+              background: reduceColor ? colorBackgroundGray() : colorLineageNodeBackground(),
               fontWeight: reduceColor ? 500 : 700,
             }}
           >
@@ -438,10 +437,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
                 role="img"
                 $size={16}
                 $img={known.icon.src}
-                $color={
-                  reduceColor ? (known && 'reversed' in known ? Colors.Gray900 : color) : textcolor
-                }
-                //$color={reduceColor ? color : textcolor}
+                $color={reversed ? colorAccentPrimary() : color}
                 $rotation={null}
                 aria-label={tag.label}
               />
@@ -467,6 +463,7 @@ const OpTagsContainer = styled.div`
   gap: 6px;
   position: absolute;
   display: flex;
+  margin-right: 14px;
 
   & > div {
     padding: 0 8px;

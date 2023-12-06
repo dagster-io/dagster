@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {colorBackgroundBlue} from '../theme/color';
+
 import {FontFamily} from './styles';
 
 interface TextProps {
@@ -83,7 +84,7 @@ export const CaptionSubtitle = styled(Text)`
 `;
 
 export const Code = styled(Text)`
-  background-color: ${Colors.Blue50};
+  background-color: ${colorBackgroundBlue()};
   border-radius: 2px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;

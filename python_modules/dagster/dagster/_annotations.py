@@ -556,7 +556,7 @@ def _get_subject(obj: Annotatable, param: Optional[str] = None) -> str:
         elif inspect.isfunction(obj):
             return f"Function `{obj.__qualname__}`"
         elif is_resource_def(obj):
-            return f"Dagster resource `{obj.__qualname__}`"  # type: ignore  # (bad stubs)
+            return f"Dagster resource `{obj.__qualname__}`"
         else:
             check.failed(f"Unexpected object type: {type(obj)}")
 

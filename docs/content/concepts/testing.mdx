@@ -5,7 +5,7 @@ description: Dagster enables you to build testable and maintainable data applica
 
 # Testing
 
-Dagster enables you to build testable and maintainable data applications. It provides ways to allow you unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
+Dagster enables you to build testable and maintainable data applications. It provides ways to allow you to unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
 
 In data applications, testing computations and jobs is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
 
@@ -36,7 +36,7 @@ Consider the following:
 - Principal: Errors that can be caught by unit tests should be caught by unit tests.
 - Corollary: Do not attempt to unit test for errors that unit tests cannot catch.
 
-Using unit tests without keeping these principles in mind is why the data community frequently treats unit tests with skepticism. It is too often interpreted as simulating an external system such as Spark or data warehouse in a granular manner. Those are very complex systems that are impossible to emulate faithfully. Do not try to do so.
+Using unit tests without keeping these principles in mind is why the data community frequently treats unit tests with skepticism. It is too often interpreted as simulating an external system such as Spark or a data warehouse in a granular manner. Those are very complex systems that are impossible to emulate faithfully. Do not try to do so.
 
 Unit tests are not acceptance tests. They should not be the judge of whether a computation is correct. However, unit testing -- when properly scoped -- is still valuable in data applications. There are massive classes of errors that we can address without interacting with external services and catch earlier in the process: refactoring errors, syntax errors in interpreted languages, configuration errors, graph structure errors, and so on. Errors caught in a fast feedback loop of unit testing can be addressed orders of magnitude faster than those caught during an expensive batch computation in staging or production.
 
@@ -90,7 +90,7 @@ def get_data_without_resource():
 Dagster allows you to define multiple "jobs" from the same computation graph. With resources, you can modify the op above to:
 
 ```python file=/concepts/resources/tests.py startafter=start_test_after_marker endbefore=end_test_after_marker
-from dagster import graph, op, ConfigurableResource
+from dagster import graph, op, ConfigurableResource, OpExecutionContext
 
 
 class MyApi(ConfigurableResource):
@@ -104,7 +104,7 @@ def get_data(api: MyApi):
 
 
 @op
-def do_something(context, data):
+def do_something(context: OpExecutionContext, data):
     output = process(data)
     return output
 
@@ -333,7 +333,7 @@ def test_asset_with_inputs():
 If your asset has a config schema, you can pass a config value to the invocation. The following asset relies on attached config:
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_config_asset endbefore=end_test_config_asset
-from dagster import asset, Config, build_op_context
+from dagster import asset, Config
 
 
 class MyAssetConfig(Config):
@@ -354,10 +354,10 @@ def test_asset_requires_config():
 
 If your asset requires resources, you can specify them as arguments when invoking the asset directly.
 
-Consider the following asset, which requires a resource `foo`.
+Consider the following asset, which requires a resource `bar`.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
-from dagster import asset, ConfigurableResource, build_op_context, with_resources
+from dagster import asset, ConfigurableResource
 
 
 class BarResource(ConfigurableResource):

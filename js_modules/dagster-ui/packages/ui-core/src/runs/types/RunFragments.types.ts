@@ -35,6 +35,11 @@ export type RunFragment = {
     key: {__typename: 'AssetKey'; path: Array<string>};
   }>;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+  assetCheckSelection: Array<{
+    __typename: 'AssetCheckhandle';
+    name: string;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }> | null;
   executionPlan: {
     __typename: 'ExecutionPlan';
     artifactsPersisted: boolean;
@@ -126,6 +131,14 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -270,6 +283,14 @@ export type RunDagsterRunEventFragment_EngineEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -405,6 +426,14 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
+          label: string;
+          description: string | null;
+        }
+      | {
           __typename: 'JsonMetadataEntry';
           jsonString: string;
           label: string;
@@ -525,6 +554,14 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -650,6 +687,14 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -754,6 +799,14 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -935,6 +988,14 @@ export type RunDagsterRunEventFragment_HandledOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1090,6 +1151,14 @@ export type RunDagsterRunEventFragment_LoadedInputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1228,6 +1297,14 @@ export type RunDagsterRunEventFragment_MaterializationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1340,6 +1417,14 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -1464,6 +1549,14 @@ export type RunDagsterRunEventFragment_ObservationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1577,6 +1670,14 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1707,6 +1808,14 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -1819,6 +1928,14 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -2022,6 +2139,14 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
+          label: string;
+          description: string | null;
+        }
+      | {
           __typename: 'JsonMetadataEntry';
           jsonString: string;
           label: string;
@@ -2144,6 +2269,14 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -2256,6 +2389,14 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -2413,6 +2554,11 @@ export type RunPageFragment = {
     key: {__typename: 'AssetKey'; path: Array<string>};
   }>;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+  assetCheckSelection: Array<{
+    __typename: 'AssetCheckhandle';
+    name: string;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }> | null;
   executionPlan: {
     __typename: 'ExecutionPlan';
     artifactsPersisted: boolean;

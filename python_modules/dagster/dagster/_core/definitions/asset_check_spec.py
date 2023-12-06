@@ -1,9 +1,13 @@
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -27,15 +31,25 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-@experimental
-@whitelist_for_serdes
-class AssetCheckHandle(NamedTuple):
+@experimental(emit_runtime_warning=False)
+@whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
+class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
     check name uniquely identifies an asset check within a deployment.
     """
 
     asset_key: PublicAttr[AssetKey]
     name: PublicAttr[str]
+
+    @staticmethod
+    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
+        return AssetCheckKey(
+            asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
+            name=graphql_input["name"],
+        )
+
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
+        return self._replace(asset_key=self.asset_key.with_prefix(prefix))
 
 
 @experimental
@@ -49,7 +63,7 @@ class AssetCheckSpec(
         ],
     )
 ):
-    """Defines information about an check, except how to execute it.
+    """Defines information about an asset check, except how to execute it.
 
     AssetCheckSpec is often used as an argument to decorators that decorator a function that can
     execute multiple checks - e.g. `@asset`, and `@multi_asset`. It defines one of the checks that
@@ -83,5 +97,8 @@ class AssetCheckSpec(
         return f"{self.asset_key.to_python_identifier()}_{self.name}"
 
     @property
-    def handle(self) -> AssetCheckHandle:
-        return AssetCheckHandle(self.asset_key, self.name)
+    def key(self) -> AssetCheckKey:
+        return AssetCheckKey(self.asset_key, self.name)
+
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckSpec":
+        return self._replace(asset_key=self.asset_key.with_prefix(prefix))

@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, Tag, Tooltip, colorKeylineDefault} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -17,7 +17,7 @@ interface ITableSchemaProps {
   itemHorizontalPadding?: Spacing;
 }
 
-export const TableSchema: React.FC<ITableSchemaProps> = ({schema, itemHorizontalPadding}) => {
+export const TableSchema = ({schema, itemHorizontalPadding}: ITableSchemaProps) => {
   const multiColumnConstraints = schema.constraints?.other || [];
   return (
     <div>
@@ -51,14 +51,20 @@ export const TableSchema: React.FC<ITableSchemaProps> = ({schema, itemHorizontal
   );
 };
 
-const _ColumnItem: React.FC<{
+const _ColumnItem = ({
+  name,
+  type,
+  description,
+  constraints,
+  className,
+}: {
   name: string;
   type: string;
   description?: string;
   constraints: ColumnConstraints;
   horizontalPadding: number;
   className?: string;
-}> = ({name, type, description, constraints, className}) => {
+}) => {
   return (
     <div className={className}>
       <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
@@ -80,7 +86,7 @@ const ColumnItem = styled(_ColumnItem)`
   flex-direction: column;
   gap: 4px;
   padding: 12px ${(props) => props.horizontalPadding}px;
-  border-top: 1px solid ${Colors.KeylineGray};
+  border-top: 1px solid ${colorKeylineDefault()};
   :first-child {
     border-top: none;
   }
@@ -92,13 +98,13 @@ const ColumnName = styled.div`
   padding-right: 4px;
 `;
 
-const TypeTag: React.FC<{type: string}> = ({type}) => <Tag intent="none">{type}</Tag>;
+const TypeTag = ({type}: {type: string}) => <Tag intent="none">{type}</Tag>;
 
 const NonNullableTag = <Tag intent="primary">non-nullable</Tag>;
 
 const UniqueTag = <Tag intent="primary">unique</Tag>;
 
-const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) => {
+const ArbitraryConstraintTag = ({constraint}: {constraint: string}) => {
   if (constraint.length > MAX_CONSTRAINT_TAG_CHARS) {
     const content = constraint.substring(0, MAX_CONSTRAINT_TAG_CHARS - 3) + '...';
     return (

@@ -2,15 +2,17 @@ import {
   Box,
   Button,
   ButtonGroup,
-  Colors,
   Icon,
   JoinedButtons,
   TextInput,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {GraphData, LiveData} from '../asset-graph/Utils';
+import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
@@ -18,27 +20,25 @@ import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetLineageScope, AssetViewParams} from './types';
 
-export const AssetNodeLineage: React.FC<{
+export const AssetNodeLineage = ({
+  params,
+  setParams,
+  assetKey,
+  assetGraphData,
+  graphQueryItems,
+  requestedDepth,
+}: {
   params: AssetViewParams;
   setParams: (params: AssetViewParams) => void;
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
-  liveDataByNode: LiveData;
   requestedDepth: number;
   graphQueryItems: AssetGraphQueryItem[];
-}> = ({
-  params,
-  setParams,
-  assetKey,
-  liveDataByNode,
-  assetGraphData,
-  graphQueryItems,
-  requestedDepth,
 }) => {
-  const maxDistances = React.useMemo(() => calculateGraphDistances(graphQueryItems, assetKey), [
-    graphQueryItems,
-    assetKey,
-  ]);
+  const maxDistances = React.useMemo(
+    () => calculateGraphDistances(graphQueryItems, assetKey),
+    [graphQueryItems, assetKey],
+  );
   const maxDepth =
     params.lineageScope === 'upstream'
       ? maxDistances.upstream
@@ -56,7 +56,7 @@ export const AssetNodeLineage: React.FC<{
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center', gap: 12}}
         padding={{left: 24, right: 12, vertical: 12}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        border="bottom"
       >
         <ButtonGroup<AssetLineageScope>
           activeItems={new Set([params.lineageScope || 'neighbors'])}
@@ -76,8 +76,8 @@ export const AssetNodeLineage: React.FC<{
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
             intent="none"
-            liveDataForStale={liveDataByNode}
             scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
+            showChangedAndMissingOption
           />
         ) : (
           <Button icon={<Icon name="materialization" />} disabled>
@@ -90,20 +90,15 @@ export const AssetNodeLineage: React.FC<{
           Not all upstream/downstream assets shown. Increase the depth to show more.
         </DepthHidesAssetsNotice>
       )}
-      <AssetNodeLineageGraph
-        assetKey={assetKey}
-        liveDataByNode={liveDataByNode}
-        assetGraphData={assetGraphData}
-        params={params}
-      />
+      <AssetNodeLineageGraph assetKey={assetKey} assetGraphData={assetGraphData} params={params} />
     </Box>
   );
 };
 
 const DepthHidesAssetsNotice = styled.div`
-  background: ${Colors.Gray100};
+  background: ${colorBackgroundLight()};
   border-radius: 8px;
-  color: ${Colors.Gray500};
+  color: ${colorTextLight()};
   align-items: center;
   display: flex;
   padding: 4px 8px;
@@ -114,11 +109,15 @@ const DepthHidesAssetsNotice = styled.div`
   z-index: 2;
 `;
 
-const LineageDepthControl: React.FC<{
+const LineageDepthControl = ({
+  value,
+  max,
+  onChange,
+}: {
   value: number;
   max: number;
   onChange: (v: number) => void;
-}> = ({value, max, onChange}) => {
+}) => {
   const [text, setText] = React.useState(`${value}`);
   React.useEffect(() => {
     setText(`${value}`);
@@ -154,7 +153,7 @@ const LineageDepthControl: React.FC<{
             padding: 6,
             borderRadius: 0,
             boxShadow: 'none',
-            border: `1px solid ${Colors.Gray300}`,
+            border: `1px solid ${colorBorderDefault()}`,
           }}
           key={value}
           value={text}

@@ -23,6 +23,10 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
 
   const queryData = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
     notifyOnNetworkStatusChange: true,
+    // With a very large number of runs, operating on the Apollo cache is too expensive and
+    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
+    // skip the cache entirely.
+    fetchPolicy: 'no-cache',
     variables: {
       inProgressFilter: {
         ...runsFilter,
@@ -175,10 +179,13 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
       }
     }
 
-    const earliest = jobs.reduce((accum, job) => {
-      const startTimes = job.runs.map((job) => job.startTime);
-      return {...accum, [job.key]: Math.min(...startTimes)};
-    }, {} as {[jobKey: string]: number});
+    const earliest = jobs.reduce(
+      (accum, job) => {
+        const startTimes = job.runs.map((job) => job.startTime);
+        return {...accum, [job.key]: Math.min(...startTimes)};
+      },
+      {} as {[jobKey: string]: number},
+    );
 
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, end]);

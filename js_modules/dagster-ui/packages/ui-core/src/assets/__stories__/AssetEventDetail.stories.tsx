@@ -15,7 +15,10 @@ import {
 } from '../__fixtures__/AssetEventDetail.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetEventDetail};
+export default {
+  title: 'Asset Details/Event Detail',
+  component: AssetEventDetail,
+};
 
 export const EmptyState = () => {
   return (

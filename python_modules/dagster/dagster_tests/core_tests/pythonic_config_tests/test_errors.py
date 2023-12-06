@@ -1,3 +1,4 @@
+import warnings
 from typing import Tuple
 
 import pytest
@@ -10,6 +11,7 @@ from dagster import (
     sensor,
 )
 from dagster._config.pythonic_config import ConfigurableResource, ConfigurableResourceFactory
+from dagster._config.pythonic_config.pydantic_compat_layer import USING_PYDANTIC_2
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
     DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
@@ -186,14 +188,22 @@ def test_annotate_with_resource_factory() -> None:
         def create_resource(self, context: None) -> str:
             return "hello"
 
+    # https://github.com/dagster-io/dagster/issues/18017
+    if USING_PYDANTIC_2:  # pydantic 2 causing issues with Generic
+        target = "an unknown"  # should be "a '<class 'str'>'"
+        ttype = "Any"  # should be "str"
+    else:
+        target = "a '<class 'str'>'"
+        ttype = "str"
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
             "Resource param 'my_string' is annotated as '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 
@@ -207,8 +217,8 @@ def test_annotate_with_resource_factory() -> None:
             "Resource param 'my_string' is annotated as '<class"
             " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
             " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 
@@ -258,6 +268,14 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
         def create_resource(self, context: None) -> str:
             return "hello"
 
+    # https://github.com/dagster-io/dagster/issues/18017
+    if USING_PYDANTIC_2:  # pydantic 2 causing issues with Generic
+        target = "an unknown"  # should be "a '<class 'str'>'"
+        ttype = "Any"  # should be "str"
+    else:
+        target = "a '<class 'str'>'"
+        ttype = "str"
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
@@ -265,8 +283,8 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 
@@ -281,8 +299,8 @@ def test_annotate_with_resource_factory_schedule_sensor() -> None:
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>',"
             " but '<class"
             " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
-            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
-            " annotation should instead be 'ResourceParam\\[str\\]'"
+            f" outputs {target} value to user code such as @ops and @assets. This"
+            f" annotation should instead be 'ResourceParam\\[{ttype}\\]'"
         ),
     ):
 
@@ -389,6 +407,7 @@ def test_trying_to_set_a_field_resource() -> None:
         my_resource.my_str = "bar"
 
 
+@pytest.mark.skipif(USING_PYDANTIC_2, reason="Does not throw error in Pydantic 2")
 def test_trying_to_set_an_undefined_field() -> None:
     class MyConfig(Config):
         my_str: str
@@ -405,6 +424,7 @@ def test_trying_to_set_an_undefined_field() -> None:
         my_config._my_random_other_field = "bar"  # noqa: SLF001
 
 
+@pytest.mark.skipif(USING_PYDANTIC_2, reason="Does not throw error in Pydantic 2")
 def test_trying_to_set_an_undefined_field_resource() -> None:
     class MyResource(ConfigurableResource):
         my_str: str
@@ -449,3 +469,39 @@ This config type can be a:
 
         class MyOpConfig(Config):
             dagster_type_field: DagsterDatetime = datetime(year=2023, month=4, day=30)  # type: ignore
+
+
+def test_config_named_wrong_thing() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        class DoSomethingConfig(Config):
+            a_str: str
+
+        assert len(w) == 0
+
+        @op
+        def my_op(config_named_wrong: DoSomethingConfig):
+            pass
+
+        assert len(w) == 1
+        assert (
+            w[0]
+            .message.args[0]  # type: ignore
+            .startswith(
+                "Parameter 'config_named_wrong' on op/asset function 'my_op' was annotated as a dagster.Config type. Did you mean to name this parameter 'config' instead?"
+            )
+        )
+
+        @asset
+        def my_asset(config_named_wrong: DoSomethingConfig):
+            pass
+
+        assert len(w) == 2
+        assert (
+            w[1]
+            .message.args[0]  # type: ignore
+            .startswith(
+                "Parameter 'config_named_wrong' on op/asset function 'my_asset' was annotated as a dagster.Config type. Did you mean to name this parameter 'config' instead?"
+            )
+        )

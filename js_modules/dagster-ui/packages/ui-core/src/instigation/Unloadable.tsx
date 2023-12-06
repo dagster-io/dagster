@@ -3,17 +3,17 @@ import {
   Alert,
   Box,
   Checkbox,
-  Colors,
   Group,
   Table,
   Subheading,
   Tooltip,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus} from '../graphql/types';
 import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
@@ -28,16 +28,19 @@ import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from '../sensors/types/SensorMutations.types';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
-import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationUtils.types';
 
-export const UnloadableSensors: React.FC<{
+export const UnloadableSensors = ({
+  sensorStates,
+  showSubheading = true,
+}: {
   sensorStates: InstigationStateFragment[];
   showSubheading?: boolean;
-}> = ({sensorStates, showSubheading = true}) => {
+}) => {
   if (!sensorStates.length) {
     return null;
   }
@@ -66,10 +69,13 @@ export const UnloadableSensors: React.FC<{
   );
 };
 
-export const UnloadableSchedules: React.FC<{
+export const UnloadableSchedules = ({
+  scheduleStates,
+  showSubheading = true,
+}: {
   scheduleStates: InstigationStateFragment[];
   showSubheading?: boolean;
-}> = ({scheduleStates, showSubheading = true}) => {
+}) => {
   if (!scheduleStates.length) {
     return null;
   }
@@ -191,9 +197,9 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
       </td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
+          <TickStatusTag tick={latestTick} />
         ) : (
-          <span style={{color: Colors.Gray300}}>None</span>
+          <span style={{color: colorTextLight()}}>None</span>
         )}
       </td>
       <td>
@@ -205,9 +211,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
   );
 };
 
-const ScheduleStateRow: React.FC<{
-  scheduleState: InstigationStateFragment;
-}> = ({scheduleState}) => {
+const ScheduleStateRow = ({scheduleState}: {scheduleState: InstigationStateFragment}) => {
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
     StopScheduleMutation,
     StopScheduleMutationVariables
@@ -279,11 +283,7 @@ const ScheduleStateRow: React.FC<{
           )}
         </div>
       </td>
-      <td>
-        {latestTick ? (
-          <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
-        ) : null}
-      </td>
+      <td>{latestTick ? <TickStatusTag tick={latestTick} /> : null}</td>
       <td>
         <InstigatedRunStatus instigationState={scheduleState} />
       </td>

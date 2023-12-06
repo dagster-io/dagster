@@ -15,7 +15,7 @@ import {NoRunningBackfills} from '../__fixtures__/RunningBackfillsNoticeQuery.fi
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'LaunchAssetChoosePartitionsDialog',
+  title: 'Assets/LaunchAssetChoosePartitionsDialog',
   component: LaunchAssetChoosePartitionsDialog,
 } as Meta;
 

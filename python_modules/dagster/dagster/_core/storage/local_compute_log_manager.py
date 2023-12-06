@@ -1,4 +1,3 @@
-import hashlib
 import os
 import shutil
 import sys
@@ -22,6 +21,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._seven import json
 from dagster._utils import ensure_dir, ensure_file, touch_file
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .captured_log_manager import (
     CapturedLogContext,
@@ -225,8 +225,12 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         if partial:
             filename = f"{filename}.partial"
         if len(filename) > MAX_FILENAME_LENGTH:
-            filename = "{}.{}".format(hashlib.md5(filebase.encode("utf-8")).hexdigest(), extension)
-        return os.path.join(self._base_dir, *namespace, filename)
+            filename = "{}.{}".format(non_secure_md5_hash_str(filebase.encode("utf-8")), extension)
+        location = os.path.join(self._base_dir, *namespace, filename)
+        location = os.path.abspath(location)
+        if not location.startswith(self._base_dir):
+            raise ValueError("Invalid path")
+        return location
 
     def subscribe(
         self, log_key: Sequence[str], cursor: Optional[str] = None

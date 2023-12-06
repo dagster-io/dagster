@@ -1,10 +1,10 @@
 import * as React from 'react';
 
 import {Button} from './Button';
-import {ConfigSchema} from './ConfigEditor';
 import {ConfigEditorWithSchema} from './ConfigEditorWithSchema';
 import {Dialog, DialogFooter} from './Dialog';
 import {Icon} from './Icon';
+import {ConfigSchema} from './NewConfigEditor';
 import {Tooltip} from './Tooltip';
 
 interface Props {
@@ -22,7 +22,7 @@ interface Props {
   isOpen: boolean;
 }
 
-export const ConfigEditorDialog: React.FC<Props> = ({
+export const ConfigEditorDialog = ({
   config,
   configSchema,
   isLoading,
@@ -35,7 +35,7 @@ export const ConfigEditorDialog: React.FC<Props> = ({
   title,
   saveText,
   isOpen,
-}) => {
+}: Props) => {
   return (
     <Dialog
       isOpen={isOpen}

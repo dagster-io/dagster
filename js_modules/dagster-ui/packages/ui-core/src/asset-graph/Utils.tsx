@@ -1,26 +1,22 @@
-import {pathVerticalDiagonal, pathHorizontalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
+import memoize from 'lodash/memoize';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
+import {COMMON_COLLATOR} from '../app/Util';
 import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  Maybe,
-  RunStatus,
-  StaleCauseCategory,
-  StaleStatus,
-} from '../graphql/types';
-
-import {AssetNodeKeyFragment} from './types/AssetNode.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {
+  AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
-  AssetGraphLiveQuery,
   AssetNodeLiveFragment,
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-} from './types/useLiveDataForAssetKeys.types';
+  AssetCheckLiveFragment,
+} from '../asset-data/types/AssetLiveDataProvider.types';
+import {RunStatus, StaleStatus} from '../graphql/types';
+
+import {AssetNodeKeyFragment} from './types/AssetNode.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
@@ -42,6 +38,10 @@ export function isHiddenAssetGroupJob(jobName: string) {
 //
 export type GraphId = string;
 export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
+export const fromGraphID = (graphId: GraphId): AssetNodeKeyFragment => ({
+  path: JSON.parse(graphId),
+  __typename: 'AssetKey',
+});
 
 export interface GraphNode {
   id: GraphId;
@@ -53,6 +53,7 @@ export interface GraphData {
   nodes: {[assetId: GraphId]: GraphNode};
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
+  expandedGroups?: string[];
 }
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
@@ -122,7 +123,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
+export const buildSVGPath = featureEnabled(FeatureFlag.flagDAGSidebar)
   ? pathHorizontalDiagonal({
       source: (s: any) => s.source,
       target: (s: any) => s.target,
@@ -146,28 +147,15 @@ export interface LiveDataForNode {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
-  staleCauses: {
-    dependency: Maybe<AssetKey>;
-    category: StaleCauseCategory;
-    key: AssetKey;
-    reason: string;
-  }[];
+  staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
+  assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
     numMaterialized: number;
     numMaterializing: number;
     numPartitions: number;
     numFailed: number;
   } | null;
-  assetChecks: {
-    name: string;
-    executionForLatestMaterialization: {
-      runId: string;
-      status: AssetCheckExecutionResolvedStatus;
-      evaluation: {
-        severity: AssetCheckSeverity;
-      } | null;
-    } | null;
-  }[];
+  opNames: string[];
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -182,6 +170,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],
+  opNames: [],
   stepKey: '',
 };
 
@@ -189,7 +178,10 @@ export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
 
-export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
+export const buildLiveData = ({
+  assetNodes,
+  assetsLatestInfo,
+}: Pick<AssetGraphLiveQuery, 'assetNodes' | 'assetsLatestInfo'>) => {
   const data: LiveData = {};
 
   for (const liveNode of assetNodes) {
@@ -225,7 +217,10 @@ export const buildLiveDataForNode = (
         ? latestRunForAsset.status
         : null,
     lastObservation,
-    assetChecks: assetNode.assetChecks,
+    assetChecks:
+      assetNode.assetChecksOrError.__typename === 'AssetChecks'
+        ? assetNode.assetChecksOrError.checks
+        : [],
     staleStatus: assetNode.staleStatus,
     staleCauses: assetNode.staleCauses,
     stepKey: stepKeyForAsset(assetNode),
@@ -234,6 +229,7 @@ export const buildLiveDataForNode = (
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,
     runWhichFailedToMaterialize,
+    opNames: assetNode.opNames,
   };
 };
 
@@ -243,6 +239,10 @@ export function tokenForAssetKey(key: {path: string[]}) {
 
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
+}
+
+export function sortAssetKeys(a: {path: string[]}, b: {path: string[]}) {
+  return COMMON_COLLATOR.compare(displayNameForAssetKey(a), displayNameForAssetKey(b));
 }
 
 export function stepKeyForAsset(definition: {opNames: string[]}) {
@@ -256,3 +256,32 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   const token = tokenForAssetKey(key);
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
+
+export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:[^@:]+$/.test(str);
+
+export const groupIdForNode = (node: GraphNode) =>
+  [
+    node.definition.repository.name,
+    '@',
+    node.definition.repository.location.name,
+    ':',
+    node.definition.groupName,
+  ].join('');
+
+// Inclusive
+export const getUpstreamNodes = memoize(
+  (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
+    const upstream = Object.keys(graphData.upstream[toGraphId(assetKey)] || {});
+    const currentUpstream = upstream.map((graphId) => fromGraphID(graphId));
+    return [
+      assetKey,
+      ...currentUpstream,
+      ...currentUpstream.map((graphId) => getUpstreamNodes(graphId, graphData)).flat(),
+    ].filter(
+      (key, index, arr) =>
+        // Filter out non uniques
+        arr.findIndex((key2) => JSON.stringify(key2) === JSON.stringify(key)) === index,
+    );
+  },
+  (key, data) => JSON.stringify({key, data}),
+);

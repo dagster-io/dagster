@@ -1,8 +1,22 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {
+  colorAccentBlue,
+  colorAccentGreen,
+  colorAccentRed,
+  colorAccentYellow,
+  colorBackgroundBlue,
+  colorBackgroundGreen,
+  colorBackgroundRed,
+  colorBackgroundYellow,
+  colorTextBlue,
+  colorTextGreen,
+  colorTextRed,
+  colorTextYellow,
+} from '../theme/color';
+
 import {Box} from './Box';
-import {Colors} from './Colors';
 import {Group} from './Group';
 import {IconName, Icon} from './Icon';
 
@@ -16,43 +30,43 @@ interface Props {
   onClose?: () => void;
 }
 
-export const Alert: React.FC<Props> = (props) => {
+export const Alert = (props: Props) => {
   const {intent, title, description, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
       case 'warning':
         return {
-          backgroundColor: Colors.Yellow50,
-          borderColor: Colors.Yellow500,
+          backgroundColor: colorBackgroundYellow(),
+          borderColor: colorAccentYellow(),
           icon: 'warning',
-          iconColor: Colors.Yellow500,
-          textColor: Colors.Yellow700,
+          iconColor: colorAccentYellow(),
+          textColor: colorTextYellow(),
         };
       case 'error':
         return {
-          backgroundColor: Colors.Red50,
-          borderColor: Colors.Red500,
+          backgroundColor: colorBackgroundRed(),
+          borderColor: colorAccentRed(),
           icon: 'error',
-          iconColor: Colors.Red500,
-          textColor: Colors.Red700,
+          iconColor: colorAccentRed(),
+          textColor: colorTextRed(),
         };
       case 'success':
         return {
-          backgroundColor: Colors.Green50,
-          borderColor: Colors.Green500,
+          backgroundColor: colorBackgroundGreen(),
+          borderColor: colorAccentGreen(),
           icon: 'done',
-          iconColor: Colors.Green500,
-          textColor: Colors.Green700,
+          iconColor: colorAccentGreen(),
+          textColor: colorTextGreen(),
         };
       case 'info':
       default:
         return {
-          backgroundColor: Colors.Blue50,
-          borderColor: Colors.Blue500,
+          backgroundColor: colorBackgroundBlue(),
+          borderColor: colorAccentBlue(),
           icon: 'info',
-          iconColor: Colors.Blue500,
-          textColor: Colors.Blue700,
+          iconColor: colorAccentBlue(),
+          textColor: colorTextBlue(),
         };
     }
   }, [intent]);

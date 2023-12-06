@@ -7,7 +7,9 @@ import * as React from 'react';
 import {List as _List} from 'react-virtualized';
 import {createGlobalStyle} from 'styled-components';
 
-import {Colors} from './Colors';
+import {colorAccentGray, colorTextDisabled} from '../theme/color';
+
+import {Box} from './Box';
 import {IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 
@@ -19,7 +21,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
     ${TextInputContainerStyles}
 
     &:disabled ${IconWrapper}:first-child {
-      background-color: ${Colors.Gray400};
+      background-color: ${colorAccentGray()};
     }
 
     .bp4-input {
@@ -28,7 +30,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
       height: auto;
 
       ::placeholder {
-        color: ${Colors.Gray500};
+        color: ${colorTextDisabled()};
       }
     }
 
@@ -59,7 +61,13 @@ interface Props<T> extends React.PropsWithChildren<SuggestProps<T>> {
 }
 
 export const Suggest = <T,>(props: Props<T>) => {
-  const {popoverProps = {}, itemHeight = MENU_ITEM_HEIGHT, menuWidth = MENU_WIDTH, ...rest} = props;
+  const {
+    popoverProps = {},
+    itemHeight = MENU_ITEM_HEIGHT,
+    menuWidth = MENU_WIDTH,
+    noResults,
+    ...rest
+  } = props;
 
   const allPopoverProps: Partial<IPopoverProps> = {
     ...popoverProps,
@@ -77,25 +85,39 @@ export const Suggest = <T,>(props: Props<T>) => {
     <BlueprintSuggest<T>
       {...rest}
       inputProps={inputProps as any}
-      itemListRenderer={(props) => (
-        <List
-          style={{outline: 'none', marginRight: -5, paddingRight: 5}}
-          rowCount={props.filteredItems.length}
-          scrollToIndex={
-            props.activeItem && !isCreateNewItem(props.activeItem)
-              ? props.filteredItems.indexOf(props.activeItem)
-              : undefined
-          }
-          rowHeight={itemHeight}
-          rowRenderer={(a: any) => (
-            <div key={a.index} style={a.style}>
-              {props.renderItem(props.filteredItems[a.index] as T, a.index)}
-            </div>
-          )}
-          width={menuWidth}
-          height={Math.min(props.filteredItems.length * itemHeight, itemHeight * VISIBLE_ITEMS)}
-        />
-      )}
+      itemListRenderer={(props) => {
+        const {filteredItems} = props;
+        if (filteredItems.length === 0 && noResults) {
+          return (
+            <Box
+              padding={{vertical: 8, horizontal: 12}}
+              style={{width: menuWidth, outline: 'none', marginRight: -5, paddingRight: 5}}
+            >
+              {noResults}
+            </Box>
+          );
+        }
+
+        return (
+          <List
+            style={{outline: 'none', marginRight: -5, paddingRight: 5}}
+            rowCount={props.filteredItems.length}
+            scrollToIndex={
+              props.activeItem && !isCreateNewItem(props.activeItem)
+                ? props.filteredItems.indexOf(props.activeItem)
+                : undefined
+            }
+            rowHeight={itemHeight}
+            rowRenderer={(a: any) => (
+              <div key={a.index} style={a.style}>
+                {props.renderItem(props.filteredItems[a.index] as T, a.index)}
+              </div>
+            )}
+            width={menuWidth}
+            height={Math.min(props.filteredItems.length * itemHeight, itemHeight * VISIBLE_ITEMS)}
+          />
+        );
+      }}
       popoverProps={allPopoverProps}
     />
   );

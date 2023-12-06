@@ -10,14 +10,21 @@ export type AssetNodeDefinitionFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
+  isSource: boolean;
+  isExecutable: boolean;
   hasMaterializePermission: boolean;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  isSource: boolean;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
+    rules: Array<{
+      __typename: 'AutoMaterializeRule';
+      className: string;
+      description: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+    }>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
@@ -25,6 +32,7 @@ export type AssetNodeDefinitionFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
+  backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   repository: {
     __typename: 'Repository';
@@ -613,6 +621,14 @@ export type AssetNodeDefinitionFragment = {
         description: string | null;
       }
     | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
         __typename: 'JsonMetadataEntry';
         jsonString: string;
         label: string;
@@ -734,6 +750,14 @@ export type AssetNodeDefinitionFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -1976,6 +2000,14 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -3214,6 +3246,14 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -4439,6 +4479,14 @@ export type AssetNodeDefinitionFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -5687,6 +5735,14 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6921,6 +6977,14 @@ export type AssetNodeDefinitionFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -8163,6 +8227,14 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -9388,6 +9460,14 @@ export type AssetNodeDefinitionFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -10636,6 +10716,14 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -11870,6 +11958,14 @@ export type AssetNodeDefinitionFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -13112,6 +13208,14 @@ export type AssetNodeDefinitionFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -14337,6 +14441,14 @@ export type AssetNodeDefinitionFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }

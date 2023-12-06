@@ -11,6 +11,8 @@ This guide assumes you have some familiarity with several Dagster concepts, incl
 
 Dagster offers a few different ways of automating data pipelines, and choosing the right Dagster tool depends on your specific needs. In this guide we'll walk through a few different cases, and which Dagster tool you should use in each case.
 
+---
+
 ## Things to think through
 
 When thinking about automating your data pipelines, it’s helpful to think through how and when your data needs to be refreshed. A few helpful things to think through:
@@ -53,56 +55,6 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
             "ops": {"configurable_op": {"config": {"activity": activity_selection}}}
         }
     )
-```
-
-### I want specify how fresh each asset needs to be and let Dagster figure out when to run them
-
-As an alternative to thinking about specific times that you want to run jobs, Dagster offers a declarative approach to scheduling, based on how up-to-date you need each of your data assets to be. When you opt for this approach, you specify <PyObject object="FreshnessPolicy" pluralize /> on each of the assets that you need to be updated, and then tell Dagster to use those freshness policies to figure out when to auto-materialize your assets.
-
-In the following example:
-
-- By 9 am each morning, we want the `finance_report` to include data on all the transactions from the previous day, so that the finance team can review it.
-- We want the `sales_report` to always include data on all the transactions that occurred two hours before or earlier.
-- The `transactions_cleaned` table feeds both of these reports. We don't have any direct requirements for it, but it needs to be updated so that the reports can have up-to-date transaction data.
-
-We accomplish this by setting <PyObject object="FreshnessPolicy" pluralize /> on the report assets and lazy <PyObject object="AutoMaterializePolicy" pluralize /> on all the assets. When possible, Dagster will time runs of `transactions_cleaned` intelligently so that it doesn't need to be updated separately on behalf of each downstream report.
-
-Note that this way of scheduling is currently marked experimental, and some of the APIs may change in the future.
-
-```python file=/guides/dagster/automating_pipelines/declare_schedule.py
-from dagster import (
-    AutoMaterializePolicy,
-    Definitions,
-    FreshnessPolicy,
-    asset,
-    load_assets_from_current_module,
-)
-
-
-@asset
-def transactions_cleaned():
-    ...
-
-
-@asset(
-    freshness_policy=FreshnessPolicy(
-        maximum_lag_minutes=9 * 24, cron_schedule="0 9 * * *"
-    )
-)
-def sales_report(transactions_cleaned):
-    ...
-
-
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=120))
-def finance_report(transactions_cleaned):
-    ...
-
-
-defs = Definitions(
-    assets=load_assets_from_current_module(
-        auto_materialize_policy=AutoMaterializePolicy.lazy(),
-    )
-)
 ```
 
 ---
@@ -159,9 +111,9 @@ Let’s say you have a database with all your credit card transactions. When a r
 
 In this case, you want your data pipeline to include all the latest data, but it doesn’t make sense to continuously process data from two years or two days ago when you know it hasn’t changed. What you want is to process yesterday’s data and not waste compute on the rest of the data.
 
-Dagster [partitions](/concepts/partitions-schedules-sensors/partitions#defining-partitioned-assets) do just that. A partition is a slice of your data; in this case, each partition represents a day of transactions. You can partition or ‘split’ your data based on whatever makes the most sense, by one or [multiple dimensions](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#multi-dimensionally-partitioned-assets).
+Dagster [partitions](/concepts/partitions-schedules-sensors/partitioning-assets#defining-partitioned-assets) do just that. A partition is a slice of your data; in this case, each partition represents a day of transactions. You can partition or ‘split’ your data based on whatever makes the most sense, by one or [multiple dimensions](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitioning-assets#multi-dimensionally-partitioned-assets).
 
-Partitions can be used with both schedules and sensors. You can use schedules to kick off a partitioned job to [update slices of data](/concepts/partitions-schedules-sensors/partitions#creating-schedules-from-partitioned-jobs). You can also trigger runs once a specific partition has been updated using auto-materialize policies based on [partitioned materializations](/concepts/partitions-schedules-sensors/asset-sensors#triggering-runs-upon-partitioned-materializations).
+Partitions can be used with both schedules and sensors. You can use schedules to kick off a partitioned job to [update slices of data](/concepts/partitions-schedules-sensors/partitioning-assets#partitioned-asset-jobs). You can also trigger runs once a specific partition has been updated using auto-materialize policies based on [partitioned materializations](/concepts/partitions-schedules-sensors/asset-sensors#triggering-runs-upon-partitioned-materializations).
 
 ---
 
@@ -169,9 +121,8 @@ Partitions can be used with both schedules and sensors. You can use schedules to
 
 Use this table as a quick reference when building out your data pipelines:
 
-| Name                                               | Good for automating data pipelines that need to be refreshed: | Asset Support | Op/Graph Support |
-| -------------------------------------------------- | ------------------------------------------------------------- | ------------- | ---------------- |
-| Basic (cron) scheduling                            | by kicking off updates at a predictable time interval         | ✅             | ✅                |
-| Sensors                                            | when a specific event occurs                                  | ✅             | ✅                |
-| Eager auto-materialize policies                    | when assets are out of date with other assets                 | ✅             |                  |
-| Lazy auto-materialize policies w/freshness polices | when assets are beyond an acceptable lag time                 | ✅             |                  |
+| Name                            | Good for automating data pipelines that need to be refreshed: | Asset Support | Op/Graph Support |
+| ------------------------------- | ------------------------------------------------------------- | ------------- | ---------------- |
+| Basic (cron) scheduling         | by kicking off updates at a predictable time interval         | ✅             | ✅                |
+| Sensors                         | when a specific event occurs                                  | ✅             | ✅                |
+| Eager auto-materialize policies | when assets are out of date with other assets                 | ✅             |                  |

@@ -16,6 +16,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
+from dagster._annotations import public
 from dagster._config import (
     ALL_CONFIG_BUILTINS,
     ConfigType,
@@ -227,6 +228,7 @@ def get_inputs_field(
         elif (
             # if you have asset definitions, input will be loaded from the source asset
             asset_layer.has_assets_defs
+            or asset_layer.has_asset_check_defs
             and asset_layer.asset_key_for_input(handle, name)
             and not has_upstream
         ):
@@ -573,10 +575,8 @@ def construct_config_type_dictionary(
         if name and name in type_dict_by_name:
             if type(config_type) is not type(type_dict_by_name[name]):
                 raise DagsterInvalidDefinitionError(
-                    (
-                        "Type names must be unique. You have constructed two different "
-                        'instances of types with the same name "{name}".'
-                    ).format(name=name)
+                    "Type names must be unique. You have constructed two different "
+                    f'instances of types with the same name "{name}".'
                 )
         elif name:
             type_dict_by_name[name] = config_type
@@ -640,13 +640,25 @@ class RunConfig:
         self.loggers = check.opt_dict_param(loggers, "loggers")
         self.execution = check.opt_dict_param(execution, "execution")
 
+    @public
     def to_config_dict(self):
+        """Converts the RunConfig to a dictionary representation.
+
+        Returns:
+            Dict[str, Any]: The dictionary representation of the RunConfig.
+        """
         return {
             "loggers": self.loggers,
             "resources": _convert_config_classes(self.resources),
             "ops": _convert_config_classes(self.ops),
             "execution": self.execution,
         }
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RunConfig):
+            return False
+
+        return self.to_config_dict() == other.to_config_dict()
 
 
 CoercibleToRunConfig: TypeAlias = Union[Dict[str, Any], RunConfig]

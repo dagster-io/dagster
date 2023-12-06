@@ -59,22 +59,26 @@ def topstories() -> None:
 
 Dependencies between assets are defined using the `deps` parameter of the `@asset` decorator. In this case, `topstory_ids` (the list of IDs) is a dependency of `topstories` (the CSV file).
 
-In your browser, navigate to Dagster's UI (`localhost:3000`) and look at the asset graph to see the relationship between your assets.
+In your browser, navigate back to Dagster's Global Asset Lineage (`localhost:3000/asset-groups`), and click on the **Reload Definitions** button on the top-right region of the page. This will tell Dagster to re-scan your code for new assets and other definitions without stopping Dagster. You can also use the Command + Option + R (Mac) or Control + Alt (Windows) + R keyboard shortcut to perform the same action.
+
+After reloading your definitions, look at the asset graph to see the relationship between your assets.
 
 ### Logging during asset materialization
 
-In the code above, a `print` statement is used to show progress while fetching stories from the Hacker News API. Dagster has a built-in logger that extends past `print` and other Python logging methods. This logger shows exactly where logging happens in your Dagster project, such as which asset and materialization the log came from.
+In the code above, a `print` statement is used to show progress while fetching stories from the Hacker News API. Dagster has a built-in logger that extends past `print` and other Python logging methods. This logger shows exactly where logging happens in your Dagster project, such as which asset and step during a run the log came from.
 
-To access the logger, use the <PyObject module="dagster" object="get_dagster_logger" displayText="get_dagster_logger"/> function. The code below replaces the `print` statement with the Dagster logger:
+Dagster's logger can be accessed through the `context` argument, which is available through any asset-decorated function if the first keyword argument in it is named `context`. The `context` argument contains the logger, information about the current run, and other Dagster-specific utilities.
+
+The Dagster framework uses Python type hints, such as how the `context` argument is of type <PyObject module="dagster" object="AssetExecutionContext" displayText="AssetExecutionContext"/>. By annotating the `context` argument, most code editors will enable autocomplete for the methods available on the `context` object, such as `context.log.info`.
+
+The code below replaces the `print` statement with the Dagster logger:
 
 ```python file=/tutorial/building_an_asset_graph/asset_with_logger.py startafter=start_topstories_asset_with_logger endbefore=end_topstories_asset_with_logger
-from dagster import asset, get_dagster_logger
+from dagster import asset, AssetExecutionContext
 
 
 @asset(deps=[topstory_ids])
-def topstories() -> None:
-    logger = get_dagster_logger()
-
+def topstories(context: AssetExecutionContext) -> None:
     with open("data/topstory_ids.json", "r") as f:
         topstory_ids = json.load(f)
 
@@ -86,7 +90,7 @@ def topstories() -> None:
         results.append(item)
 
         if len(results) % 20 == 0:
-            logger.info(f"Got {len(results)} items so far.")
+            context.log.info(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
     df.to_csv("data/topstories.csv")
@@ -98,7 +102,7 @@ For more information about loggers, such as the different types of logging, refe
 
 ## Step 2: Creating an unstructured data asset
 
-Along with structured data like tables, Dagster's assets can also be unstructured data, such as images. Your next and final asset will take the DataFrame of stories and create a dictionary of the most frequent words in the titles.
+Along with structured data like tables, Dagster's assets can also be unstructured data, such as JSON files or images. Your next and final asset will take the DataFrame of stories and create a dictionary of the most frequent words in the titles.
 
 Below is the finished code for a `most_frequent_words` asset. Copy and paste the code into `assets.py`:
 
@@ -132,14 +136,16 @@ def most_frequent_words() -> None:
 
 ## Step 3: Educating users with metadata
 
-Software-defined assets can be enriched with different types of metadata. Anything can be used as metadata for an SDA. Common details to add are:
+Up until now, you've annotated your asset functions with `None`, meaning the asset doesn't return anything. In this section, you'll learn about the <PyObject object="MaterializeResult" /> object, which lets you record metadata about your asset.
+
+Software-defined Assets can be enriched with different types of metadata. Anything can be used as metadata for an asset. Common details to add are:
 
 - Statistics about the data, such as row counts or other data profiling
 - Test results or assertions about the data
 - Images or tabular previews of the asset
 - Information about who owns the asset, where it's stored, and links to external documentation
 
-The following code adds a row count and a preview of the `topstories` asset. It uses the `context` object to attach metadata to the asset. Update your code for the `topstories` asset to match the changes below. The `context` is automatically provided by Dagster during asset materialization and contains some useful methods. In this case, we will use the `add_output_metadata` method.
+The following code adds a row count and a preview of the `topstories` asset. Update your code for the `topstories` asset to match the changes below. The `None` type annotation is replaced with <PyObject object="MaterializeResult" /> from the `dagster` module, which allows you to add metadata to the materialization of your asset.
 
 ```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py startafter=start_topstories_asset_with_metadata endbefore=end_topstories_asset_with_metadata
 import base64
@@ -147,20 +153,13 @@ from io import BytesIO
 
 import matplotlib.pyplot as plt
 
-from dagster import (
-    AssetExecutionContext,
-    MetadataValue,
-    asset,
-    get_dagster_logger,
-)
+from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult
 
 # Add the imports above to the top of `assets.py`
 
 
 @asset(deps=[topstory_ids])
-def topstories(context: AssetExecutionContext) -> None:
-    logger = get_dagster_logger()
-
+def topstories(context: AssetExecutionContext) -> MaterializeResult:
     with open("data/topstory_ids.json", "r") as f:
         topstory_ids = json.load(f)
 
@@ -172,12 +171,12 @@ def topstories(context: AssetExecutionContext) -> None:
         results.append(item)
 
         if len(results) % 20 == 0:
-            logger.info(f"Got {len(results)} items so far.")
+            context.log.info(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
     df.to_csv("data/topstories.csv")
 
-    context.add_output_metadata(
+    return MaterializeResult(
         metadata={
             "num_records": len(df),  # Metadata can be any key-value pair
             "preview": MetadataValue.md(df.head().to_markdown()),
@@ -214,7 +213,7 @@ Below is code that changes shows how to add an an image of a bar chart in asset 
 
 ```python file=/tutorial/building_an_asset_graph/assets_with_metadata.py startafter=start_most_frequent_words_asset_with_metadata endbefore=end_most_frequent_words_asset_with_metadata
 @asset(deps=[topstories])
-def most_frequent_words(context: AssetExecutionContext) -> None:
+def most_frequent_words() -> MaterializeResult:
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
 
     topstories = pd.read_csv("data/topstories.csv")
@@ -236,7 +235,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
 
     # Make a bar chart of the top 25 words
     plt.figure(figsize=(10, 6))
-    plt.bar(top_words.keys(), top_words.values())
+    plt.bar(list(top_words.keys()), list(top_words.values()))
     plt.xticks(rotation=45, ha="right")
     plt.title("Top 25 Words in Hacker News Titles")
     plt.tight_layout()
@@ -253,7 +252,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
         json.dump(top_words, f)
 
     # Attach the Markdown content as metadata to the asset
-    context.add_output_metadata(metadata={"plot": MetadataValue.md(md_content)})
+    return MaterializeResult(metadata={"plot": MetadataValue.md(md_content)})
 ```
 
 Reload your definitions and rematerialize your assets. The bar chart will be visible with the rest of your materialization metadata for the `most_frequent_words` asset. The `path` key in the metadata will contain a link that says **\[Show Markdown]**. Clicking on the link will open the preview in the Dagster UI. The bar chart will change throughout the day as the top stories change. Here's an example of what `most_frequent_words` looked like at the time we wrote this tutorial:

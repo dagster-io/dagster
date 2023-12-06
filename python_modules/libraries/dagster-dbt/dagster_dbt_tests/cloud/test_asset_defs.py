@@ -67,11 +67,11 @@ def dbt_cloud_fixture(resource_type) -> Any:
 @pytest.fixture(name="dbt_cloud_service")
 def dbt_cloud_service_fixture(resource_type) -> Any:
     if resource_type == "pythonic":
-        yield DbtCloudClientResource(
-            auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID
-        ).with_replaced_resource_context(
-            build_init_resource_context()
-        ).get_dbt_client()  # type: ignore
+        yield (
+            DbtCloudClientResource(auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID)
+            .with_replaced_resource_context(build_init_resource_context())
+            .get_dbt_client()
+        )
     else:
         yield dbt_cloud_resource(
             build_init_resource_context(
@@ -713,7 +713,7 @@ def test_load_from_dbt_cloud_with_env_var(dbt_cloud_service) -> None:
         )
 
         dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
-            dbt_cloud=dbt_cloud,  # type: ignore
+            dbt_cloud=dbt_cloud,
             job_id=DBT_CLOUD_JOB_ID,
         )
         dbt_cloud_cacheable_assets.compute_cacheable_data()

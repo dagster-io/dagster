@@ -1,9 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorAccentGray, colorKeylineDefault} from '../theme/color';
+
 import {Button} from './Button';
-import {ButtonGroup} from './ButtonGroup';
-import {Colors} from './Colors';
 import {Icon} from './Icon';
 
 const DIVIDER_THICKNESS = 2;
@@ -43,6 +43,10 @@ export class SplitPanelContainer extends React.Component<
   onChangeSize = (size: number) => {
     this.setState({size});
     window.localStorage.setItem(this.state.key, `${size}`);
+  };
+
+  getSize = () => {
+    return this.state.size;
   };
 
   render() {
@@ -137,41 +141,6 @@ interface PanelToggleProps {
   container: React.RefObject<SplitPanelContainer>;
 }
 
-export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) => {
-  const onClick = (id: string) => {
-    let size = 50;
-    if (id === 'first-pane') {
-      size = 100;
-    } else if (id === 'second-pane') {
-      size = 0;
-    }
-    container.current?.onChangeSize(size);
-  };
-
-  return (
-    <ButtonGroup
-      buttons={[
-        {
-          id: 'first-pane',
-          icon: axis === 'vertical' ? 'panel_show_top' : 'panel_show_left',
-          tooltip: axis === 'vertical' ? 'Show only top pane' : 'Show only left pane',
-        },
-        {
-          id: 'split',
-          icon: 'panel_show_both',
-          tooltip: 'Show both panes',
-        },
-        {
-          id: 'second-pane',
-          icon: axis === 'vertical' ? 'panel_show_bottom' : 'panel_show_right',
-          tooltip: axis === 'vertical' ? 'Show only bottom pane' : 'Show only right pane',
-        },
-      ]}
-      onClick={onClick}
-    />
-  );
-};
-
 // Todo: This component attempts to sync itself with the container, but it can't
 // observe the container's width without a React context or adding a listener, etc.
 // If we keep making components that manipulate panel state we may want to move it
@@ -226,7 +195,7 @@ const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
+    background: ${(p) => (p.resizing ? colorAccentGray() : colorKeylineDefault())};
     margin-left: -1px;
     overflow: visible;
     position: relative;
@@ -234,7 +203,7 @@ const DividerWrapper = {
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
+    background: ${(p) => (p.resizing ? colorAccentGray() : colorKeylineDefault())};
     margin-top: -1px;
     overflow: visible;
     position: relative;

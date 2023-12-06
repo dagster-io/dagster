@@ -112,20 +112,25 @@ from dagster._config.source import (
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
 from dagster._core.definitions.asset_check_spec import (
+    AssetCheckKey as AssetCheckKey,
     AssetCheckSeverity as AssetCheckSeverity,
     AssetCheckSpec as AssetCheckSpec,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition as AssetChecksDefinition
+from dagster._core.definitions.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
 )
+from dagster._core.definitions.asset_spec import AssetSpec as AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
 )
 from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
     AutoMaterializeRule as AutoMaterializeRule,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
@@ -196,6 +201,10 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
+from dagster._core.definitions.external_asset import (
+    external_asset_from_spec as external_asset_from_spec,
+    external_assets_from_specs as external_assets_from_specs,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy_sensor_definition import (
     FreshnessPolicySensorContext as FreshnessPolicySensorContext,
@@ -211,6 +220,12 @@ from dagster._core.definitions.input import (
     InputMapping as InputMapping,
 )
 from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
+from dagster._core.definitions.load_asset_checks_from_modules import (
+    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
+    load_asset_checks_from_modules as load_asset_checks_from_modules,
+    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
+    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
+)
 from dagster._core.definitions.load_assets_from_modules import (
     load_assets_from_current_module as load_assets_from_current_module,
     load_assets_from_modules as load_assets_from_modules,
@@ -229,6 +244,7 @@ from dagster._core.definitions.materialize import (
 from dagster._core.definitions.metadata import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
+    DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,
@@ -314,6 +330,7 @@ from dagster._core.definitions.resource_definition import (
     make_values_resource as make_values_resource,
     resource as resource,
 )
+from dagster._core.definitions.result import MaterializeResult as MaterializeResult
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
@@ -407,9 +424,12 @@ from dagster._core.errors import (
     raise_execution_interrupts as raise_execution_interrupts,
 )
 from dagster._core.event_api import (
+    AssetRecordsFilter as AssetRecordsFilter,
     EventLogRecord as EventLogRecord,
     EventRecordsFilter as EventRecordsFilter,
+    EventRecordsResult as EventRecordsResult,
     RunShardedEventsCursor as RunShardedEventsCursor,
+    RunStatusChangeRecordsFilter as RunStatusChangeRecordsFilter,
 )
 from dagster._core.events import (
     DagsterEvent as DagsterEvent,
@@ -469,6 +489,26 @@ from dagster._core.instance import DagsterInstance as DagsterInstance
 from dagster._core.instance_for_test import instance_for_test as instance_for_test
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as DefaultRunLauncher
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
+from dagster._core.pipes.client import (
+    PipesClient as PipesClient,
+    PipesContextInjector as PipesContextInjector,
+    PipesMessageReader as PipesMessageReader,
+)
+from dagster._core.pipes.context import (
+    PipesMessageHandler as PipesMessageHandler,
+    PipesSession as PipesSession,
+)
+from dagster._core.pipes.subprocess import PipesSubprocessClient as PipesSubprocessClient
+from dagster._core.pipes.utils import (
+    PipesBlobStoreMessageReader as PipesBlobStoreMessageReader,
+    PipesEnvContextInjector as PipesEnvContextInjector,
+    PipesFileContextInjector as PipesFileContextInjector,
+    PipesFileMessageReader as PipesFileMessageReader,
+    PipesLogReader as PipesLogReader,
+    PipesTempFileContextInjector as PipesTempFileContextInjector,
+    PipesTempFileMessageReader as PipesTempFileMessageReader,
+    open_pipes_session as open_pipes_session,
+)
 from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator as QueuedRunCoordinator,
     SubmitRunContext as SubmitRunContext,
@@ -546,7 +586,10 @@ from dagster._utils.alert import (
 )
 from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
-from dagster._utils.warnings import ExperimentalWarning as ExperimentalWarning
+from dagster._utils.warnings import (
+    ConfigArgumentWarning as ConfigArgumentWarning,
+    ExperimentalWarning as ExperimentalWarning,
+)
 from dagster.version import __version__ as __version__
 
 # ruff: isort: split

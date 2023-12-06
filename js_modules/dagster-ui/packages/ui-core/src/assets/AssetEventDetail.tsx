@@ -1,10 +1,20 @@
-import {Box, Colors, Group, Heading, Icon, Mono, Subheading} from '@dagster-io/ui-components';
+import {
+  Box,
+  Group,
+  Heading,
+  Icon,
+  Mono,
+  Subheading,
+  colorAccentGray,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
+import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -15,15 +25,20 @@ import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
+import {RunlessEventTag} from './RunlessEventTag';
+import {isRunlessEvent} from './isRunlessEvent';
 import {
   AssetMaterializationFragment,
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 
-export const AssetEventDetail: React.FC<{
+export const AssetEventDetail = ({
+  event,
+  assetKey,
+}: {
   assetKey: AssetKeyInput;
   event: AssetMaterializationFragment | AssetObservationFragment;
-}> = ({event, assetKey}) => {
+}) => {
   const run = event.runOrError?.__typename === 'Run' ? event.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -34,18 +49,15 @@ export const AssetEventDetail: React.FC<{
 
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
-      <Box
-        padding={{vertical: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        flex={{alignItems: 'center', justifyContent: 'space-between'}}
-      >
+      <Box padding={{vertical: 24}} border="bottom" flex={{alignItems: 'center', gap: 12}}>
         <Heading>
           <Timestamp timestamp={{ms: Number(event.timestamp)}} />
         </Heading>
+        {isRunlessEvent(event) ? <RunlessEventTag tags={event.tags} /> : undefined}
       </Box>
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16}}
       >
         <Box flex={{gap: 4, direction: 'column'}}>
@@ -65,7 +77,7 @@ export const AssetEventDetail: React.FC<{
         {event.partition && (
           <Box flex={{gap: 4, direction: 'column'}}>
             <Subheading>Partition</Subheading>
-            <Box flex={{gap: 4}}>{event.partition}</Box>
+            <Link to={`?view=partitions&partition=${event.partition}`}>{event.partition}</Link>
           </Box>
         )}
         <Box flex={{gap: 4, direction: 'column'}} style={{minHeight: 64}}>
@@ -95,7 +107,7 @@ export const AssetEventDetail: React.FC<{
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
-                <Icon name="linear_scale" color={Colors.Gray400} />
+                <Icon name="linear_scale" color={colorAccentGray()} />
                 <Link to={linkToRunEvent(run, event)}>{event.stepKey}</Link>
               </Group>
             </Box>
@@ -108,7 +120,7 @@ export const AssetEventDetail: React.FC<{
       {event.description && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
           <Subheading>Description</Subheading>
-          {event.description}
+          <Description description={event.description} />
         </Box>
       )}
 
@@ -143,14 +155,14 @@ export const AssetEventDetailEmpty = () => (
   <Box padding={{horizontal: 24}} style={{flex: 1}}>
     <Box
       padding={{vertical: 24}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
-      <Heading color={Colors.Gray400}>No event selected</Heading>
+      <Heading color={colorTextLight()}>No event selected</Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
       padding={{vertical: 16}}
     >
       <Box flex={{gap: 4, direction: 'column'}}>

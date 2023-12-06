@@ -83,9 +83,7 @@ class DataFrameConstraintViolationException(ConstraintViolationException):
 
     def __init__(self, constraint_name, constraint_description):
         super(DataFrameConstraintViolationException, self).__init__(
-            "Violated {constraint_name} - {constraint_description}".format(
-                constraint_name=constraint_name, constraint_description=constraint_description
-            )
+            f"Violated {constraint_name} - {constraint_description}"
         )
 
 
@@ -107,13 +105,10 @@ class ColumnConstraintViolationException(ConstraintViolationException):
         super(ColumnConstraintViolationException, self).__init__(self.construct_message())
 
     def construct_message(self):
-        base_message = (
-            'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'
-            .format(
-                constraint_name=self.constraint_name,
-                constraint_description=self.constraint_description,
-                column_name=self.column_name,
-            )
+        base_message = 'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'.format(
+            constraint_name=self.constraint_name,
+            constraint_description=self.constraint_description,
+            column_name=self.column_name,
         )
         if self.offending_rows is not None:
             base_message += "The offending (index, row values) are the following: {}".format(
@@ -203,9 +198,7 @@ class ConstraintWithMetadata:
             )
         return DagsterType(
             name=self.name,
-            description="A Pandas DataFrame with the following validation: {}".format(
-                self.description
-            ),
+            description=f"A Pandas DataFrame with the following validation: {self.description}",
             type_check_fn=lambda x: self.validate(x, *args),
             **kwargs,
         )
@@ -367,9 +360,7 @@ class RowCountConstraint(DataFrameConstraint):
         self.error_tolerance = abs(check.int_param(error_tolerance, "error_tolerance"))
         if self.error_tolerance > self.num_allowed_rows:
             raise ValueError("Tolerance can't be greater than the number of rows you expect.")
-        description = "Dataframe must have {} +- {} rows.".format(
-            self.num_allowed_rows, self.error_tolerance
-        )
+        description = f"Dataframe must have {self.num_allowed_rows} +- {self.error_tolerance} rows."
         super(RowCountConstraint, self).__init__(
             error_description=description, markdown_description=description
         )
@@ -749,9 +740,7 @@ def column_range_validation_factory(minim=None, maxim=None, ignore_missing_vals=
             return True, {}
         return (isinstance(x, (type(minim), type(maxim)))) and (x <= maxim) and (x >= minim), {}
 
-    in_range_validation_fn.__doc__ = "checks whether values are between {} and {}".format(
-        minim, maxim
-    )
+    in_range_validation_fn.__doc__ = f"checks whether values are between {minim} and {maxim}"
     if ignore_missing_vals:
         in_range_validation_fn.__doc__ += ", ignoring nulls"
 
@@ -856,9 +845,7 @@ def dtype_in_set_validation_factory(datatypes, ignore_missing_vals=False):
             return True, {}
         return isinstance(x, datatypes), {}
 
-    dtype_in_set_validation_fn.__doc__ = "checks whether values are this type/types: {}".format(
-        datatypes
-    )
+    dtype_in_set_validation_fn.__doc__ = f"checks whether values are this type/types: {datatypes}"
     if ignore_missing_vals:
         dtype_in_set_validation_fn.__doc__ += ", ignoring nulls"
 
@@ -942,9 +929,7 @@ class ColumnDTypeInSetConstraint(ColumnConstraint):
 
     def __init__(self, expected_dtype_set):
         self.expected_dtype_set = check.set_param(expected_dtype_set, "expected_dtype_set")
-        description = "Column dtype must be in the following set {}.".format(
-            self.expected_dtype_set
-        )
+        description = f"Column dtype must be in the following set {self.expected_dtype_set}."
         super(ColumnDTypeInSetConstraint, self).__init__(
             error_description=description, markdown_description=description
         )
@@ -955,9 +940,7 @@ class ColumnDTypeInSetConstraint(ColumnConstraint):
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
                 constraint_description=(
-                    "{base_error_message}. DTypes received: {received_dtypes}".format(
-                        base_error_message=self.error_description, received_dtypes=received_dtypes
-                    )
+                    f"{self.error_description}. DTypes received: {received_dtypes}"
                 ),
                 column_name=column_name,
             )

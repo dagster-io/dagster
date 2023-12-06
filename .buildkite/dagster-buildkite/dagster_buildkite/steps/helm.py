@@ -9,6 +9,7 @@ from ..utils import (
     BuildkiteStep,
     CommandStep,
     GroupStep,
+    has_helm_changes,
     is_command_step,
     skip_if_no_helm_changes,
 )
@@ -25,15 +26,17 @@ def build_helm_steps() -> List[BuildkiteStep]:
         ],
         name="dagster-helm",
         retries=2,
+        always_run_if=has_helm_changes,
     )
 
     steps: List[BuildkiteLeafStep] = []
     steps += _build_lint_steps(package_spec)
-    pkg_step = package_spec.build_steps()[0]
-    if is_command_step(pkg_step):
-        steps.append(pkg_step)
-    else:
-        steps += pkg_step["steps"]  # type: ignore  # (strict type guard)
+    pkg_steps = package_spec.build_steps()
+    assert len(pkg_steps) == 1
+    # We're only testing the latest python version, so we only expect one step.
+    # Otherwise we'd be putting a group in a group which isn't supported.
+    assert is_command_step(pkg_steps[0])
+    steps.append(pkg_steps[0])
 
     return [
         GroupStep(
@@ -46,14 +49,6 @@ def build_helm_steps() -> List[BuildkiteStep]:
 
 def _build_lint_steps(package_spec) -> List[CommandStep]:
     return [
-        CommandStepBuilder(":yaml: :lint-roller:")
-        .run(
-            "pip install yamllint",
-            "make yamllint",
-        )
-        .with_skip(skip_if_no_helm_changes() and package_spec.skip_reason)
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
         CommandStepBuilder("dagster-json-schema")
         .run(
             "pip install -e helm/dagster/schema",

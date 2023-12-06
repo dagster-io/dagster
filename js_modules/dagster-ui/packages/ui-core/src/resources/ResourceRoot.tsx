@@ -4,7 +4,6 @@ import {
   Box,
   ButtonLink,
   CaptionMono,
-  Colors,
   Group,
   Heading,
   Icon,
@@ -18,6 +17,12 @@ import {
   Table,
   Tag,
   Tooltip,
+  colorAccentBlue,
+  colorAccentGray,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorLinkDefault,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useParams, useRouteMatch} from 'react-router-dom';
@@ -74,17 +79,13 @@ const resourceDisplayName = (
 
 const SectionHeader = (props: {children: React.ReactNode}) => {
   return (
-    <Box
-      padding={{left: 24, vertical: 16}}
-      background={Colors.Gray50}
-      border={{width: 1, color: Colors.KeylineGray, side: 'all'}}
-    >
+    <Box padding={{left: 24, vertical: 16}} background={colorBackgroundLight()} border="all">
       {props.children}
     </Box>
   );
 };
 
-export const ResourceRoot: React.FC<Props> = (props) => {
+export const ResourceRoot = (props: Props) => {
   useTrackPageView();
 
   const {repoAddress} = props;
@@ -111,7 +112,9 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails'
       ? queryResult.data.topLevelResourceDetailsOrError.parentResources.length +
         queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length +
-        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length
+        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.schedulesUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.sensorsUsing.length
       : 0;
 
   const tab = useRouteMatch<{tab?: string}>(['/locations/:repoPath/resources/:name/:tab?'])?.params
@@ -141,7 +144,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                     <div>Could not load resource.</div>
                     {message && (
                       <ButtonLink
-                        color={Colors.Link}
+                        color={colorLinkDefault()}
                         underline="always"
                         onClick={() => {
                           showCustomAlert({
@@ -164,7 +167,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           return (
             <div style={{height: '100%', display: 'flex'}}>
               <SplitPanelContainer
-                identifier="explorer"
+                identifier="resource-explorer"
                 firstInitialPercent={50}
                 firstMinSize={400}
                 first={
@@ -224,10 +227,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
   );
 };
 
-const ResourceConfig: React.FC<{
+const ResourceConfig = (props: {
   resourceDetails: ResourceDetailsFragment;
   repoAddress: RepoAddress;
-}> = (props) => {
+}) => {
   const {resourceDetails, repoAddress} = props;
 
   const configuredValues = Object.fromEntries(
@@ -254,12 +257,13 @@ const ResourceConfig: React.FC<{
                 const resourceEntry =
                   resource.type === 'TOP_LEVEL' && resource.resource ? (
                     <ResourceEntry
+                      key={resource.name}
                       url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
                       name={resourceDisplayName(resource.resource) || ''}
                       description={resource.resource.description || undefined}
                     />
                   ) : (
-                    <ResourceEntry name={resource.name} />
+                    <ResourceEntry key={resource.name} name={resource.name} />
                   );
 
                 return (
@@ -316,7 +320,9 @@ const ResourceConfig: React.FC<{
                     <td>
                       <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
                         <strong>{field.name}</strong>
-                        <div style={{fontSize: 12, color: Colors.Gray700}}>{field.description}</div>
+                        <div style={{fontSize: 12, color: colorTextLight()}}>
+                          {field.description}
+                        </div>
                       </Box>
                     </td>
                     <td>{remapName(field.configTypeKey)}</td>
@@ -343,11 +349,11 @@ const ResourceConfig: React.FC<{
   );
 };
 
-const ResourceUses: React.FC<{
+const ResourceUses = (props: {
   resourceDetails: ResourceDetailsFragment;
   repoAddress: RepoAddress;
   numUses: number;
-}> = (props) => {
+}) => {
   const {resourceDetails, repoAddress, numUses} = props;
 
   if (numUses === 0) {
@@ -447,7 +453,7 @@ const ResourceUses: React.FC<{
                         }}
                         style={{maxWidth: '100%'}}
                       >
-                        <Icon name="job" color={Colors.Gray400} />
+                        <Icon name="job" color={colorAccentGray()} />
 
                         <Link
                           to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.job.name}`)}
@@ -477,7 +483,7 @@ const ResourceUses: React.FC<{
                             style={{maxWidth: '100%'}}
                             key={op.handleID}
                           >
-                            <Icon name="op" color={Colors.Gray400} />
+                            <Icon name="op" color={colorAccentGray()} />
 
                             <Link
                               to={workspacePathFromAddress(
@@ -498,21 +504,74 @@ const ResourceUses: React.FC<{
           </Table>
         </Box>
       )}
+      {[
+        {
+          name: 'Schedules',
+          objects: resourceDetails.schedulesUsing,
+          icon: <Icon name="schedule" color={colorAccentGray()} />,
+        },
+        {
+          name: 'Sensors',
+          objects: resourceDetails.sensorsUsing,
+          icon: <Icon name="sensors" color={colorAccentGray()} />,
+        },
+      ]
+        .filter(({objects}) => objects.length > 0)
+        .map(({name, objects, icon}) => (
+          <div key={name}>
+            <SectionHeader>
+              <Subheading>{name}</Subheading>
+            </SectionHeader>
+            <Table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {objects.map((itemName) => {
+                  return (
+                    <tr key={name + ':' + itemName}>
+                      <td>
+                        <Box
+                          flex={{
+                            direction: 'row',
+                            alignItems: 'center',
+                            display: 'inline-flex',
+                            gap: 8,
+                          }}
+                          style={{maxWidth: '100%'}}
+                        >
+                          {icon}
+
+                          <Link
+                            to={workspacePathFromAddress(
+                              repoAddress,
+                              `/${name.toLowerCase()}/${itemName}`,
+                            )}
+                          >
+                            <MiddleTruncate text={itemName} />
+                          </Link>
+                        </Box>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </div>
+        ))}
     </>
   );
 };
 
-const ResourceEntry: React.FC<{
-  name: string;
-  url?: string;
-  description?: string;
-}> = (props) => {
+const ResourceEntry = (props: {name: string; url?: string; description?: string}) => {
   const {url, name, description} = props;
 
   return (
     <Box flex={{direction: 'column'}}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{maxWidth: '100%'}}>
-        <Icon name="resource" color={Colors.Blue700} />
+        <Icon name="resource" color={colorAccentBlue()} />
         <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
           {url ? (
             <Link to={url} style={{overflow: 'hidden'}}>
@@ -536,7 +595,7 @@ const RightInfoPanel = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: ${Colors.White};
+  background: ${colorBackgroundDefault()};
 `;
 
 const RightInfoPanelContent = styled.div`
@@ -580,6 +639,8 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
     assetKeysUsing {
       path
     }
+    schedulesUsing
+    sensorsUsing
     jobsOpsUsing {
       job {
         id

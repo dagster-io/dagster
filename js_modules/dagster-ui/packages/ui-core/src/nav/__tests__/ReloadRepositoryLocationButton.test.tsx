@@ -7,7 +7,7 @@ import {ChildProps, ReloadRepositoryLocationButton} from '../ReloadRepositoryLoc
 import {buildPermissionsQuery} from '../__fixtures__/ReloadRepositoryLocationButton.fixtures';
 
 describe('ReloadRepositoryLocationButton', () => {
-  const Test: React.FC<ChildProps> = (props) => {
+  const Test = (props: ChildProps) => {
     const {tryReload, hasReloadPermission} = props;
     const {loading} = usePermissionsForLocation(props.codeLocation);
     return (

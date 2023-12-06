@@ -4,7 +4,7 @@ import * as React from 'react';
 import {RepoSelector} from '../nav/RepoSelector';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-export const RepoFilterButton: React.FC = () => {
+export const RepoFilterButton = () => {
   const {allRepos, visibleRepos, toggleVisible} = React.useContext(WorkspaceContext);
   const [open, setOpen] = React.useState(false);
   return (
@@ -33,7 +33,7 @@ export const RepoFilterButton: React.FC = () => {
       </Dialog>
 
       <Button
-        intent="none"
+        outlined
         icon={<Icon name="folder" />}
         rightIcon={<Icon name="expand_more" />}
         onClick={() => setOpen(true)}

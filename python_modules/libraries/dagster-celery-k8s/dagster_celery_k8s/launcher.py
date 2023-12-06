@@ -212,9 +212,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             "dagster/run-id": run.run_id,
         }
         if run.external_job_origin:
-            labels["dagster/code-location"] = (
-                run.external_job_origin.external_repository_origin.code_location_origin.location_name
-            )
+            labels[
+                "dagster/code-location"
+            ] = run.external_job_origin.external_repository_origin.code_location_origin.location_name
 
         job = construct_dagster_k8s_job(
             job_config,
@@ -298,8 +298,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             else:
                 self._instance.report_engine_event(
                     message=(
-                        "Dagster Job was not terminated successfully; delete_job returned {}"
-                        .format(termination_result)
+                        "Dagster Job was not terminated successfully; delete_job returned {}".format(
+                            termination_result
+                        )
                     ),
                     dagster_run=run,
                     cls=self.__class__,
@@ -365,11 +366,8 @@ def _get_validated_celery_k8s_executor_config(run_config):
         res.success,
         "Incorrect execution schema provided. Note: You may also be seeing this error "
         "because you are using the configured API. "
-        "Using configured with the {config_key} executor is not supported at this time, "
-        "and all executor config must be directly in the run config without using configured."
-        .format(
-            config_key=CELERY_K8S_CONFIG_KEY,
-        ),
+        f"Using configured with the {CELERY_K8S_CONFIG_KEY} executor is not supported at this time, "
+        "and all executor config must be directly in the run config without using configured.",
     )
 
     return res.value

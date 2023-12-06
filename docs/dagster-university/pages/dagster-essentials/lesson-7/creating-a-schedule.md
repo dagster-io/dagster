@@ -1,7 +1,7 @@
 ---
-title: "Lesson 7: Creating a schedule"
-module: "dagster_essentials"
-lesson: "7"
+title: 'Lesson 7: Creating a schedule'
+module: 'dagster_essentials'
+lesson: '7'
 ---
 
 # Creating a schedule

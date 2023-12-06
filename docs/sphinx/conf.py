@@ -17,6 +17,7 @@ paths = [
     ### dagster packages
     "../../python_modules/automation",
     "../../python_modules/dagster",
+    "../../python_modules/dagster-pipes",
     "../../python_modules/dagster-graphql",
     "../../python_modules/dagit",
     "../../python_modules/dagster-webserver",
@@ -31,6 +32,8 @@ paths = [
     "../../python_modules/libraries/dagster-datadog",
     "../../python_modules/libraries/dagster-datahub",
     "../../python_modules/libraries/dagster-docker",
+    "../../python_modules/libraries/dagster-embedded-elt",
+    "../../python_modules/libraries/dagster-embedded-elt/sling",
     "../../python_modules/libraries/dagster-fivetran",
     "../../python_modules/libraries/dagster-github",
     "../../python_modules/libraries/dagster-k8s",
@@ -66,6 +69,8 @@ paths = [
     "../../python_modules/libraries/dagster-duckdb-polars",
     "../../python_modules/libraries/dagster-duckdb-pyspark",
     "../../python_modules/libraries/dagster-wandb",
+    "../../python_modules/libraries/dagster-deltalake",
+    "../../python_modules/libraries/dagster-deltalake-pandas",
     ### autodoc_dagster extension
     "./_ext",
 ]
@@ -76,13 +81,8 @@ for path in paths:
 # -- Project information -----------------------------------------------------
 
 project = "Dagster"
-copyright = "2019, Elementl, Inc"  # noqa: A001
-author = "The Dagster Team"
-
-# The short X.Y version
-version = ""
-# The full version, including alpha/beta/rc tags
-release = ""
+copyright = "2019, Dagster Labs, Inc"  # noqa: A001
+author = "Dagster Labs"
 
 # -- General configuration ---------------------------------------------------
 
@@ -101,8 +101,8 @@ extensions = [
     "sphinx.ext.viewcode",
     # Directives for automatically documenting CLIs built with the `click` package.
     "sphinx_click.ext",
-    # Elementl-authored extension with custom directives and sphinx processing.
-    "autodoc_dagster",
+    # Dagster-labs-authored extension with custom directives and sphinx processing.
+    "dagster_sphinx",
     # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
 ]

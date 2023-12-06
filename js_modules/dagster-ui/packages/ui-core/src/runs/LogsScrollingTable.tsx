@@ -1,5 +1,9 @@
 import {gql} from '@apollo/client';
-import {Colors, NonIdealState} from '@dagster-io/ui-components';
+import {
+  NonIdealState,
+  colorBackgroundDefault,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {
@@ -60,7 +64,10 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
   const filteredNodes = logs.allNodes.filter((node) => {
     // These events are used to determine which assets a run will materialize and are not intended
     // to be displayed in the Dagster UI. Pagination is offset based, so we remove these logs client-side.
-    if (node.__typename === 'AssetMaterializationPlannedEvent') {
+    if (
+      node.__typename === 'AssetMaterializationPlannedEvent' ||
+      node.__typename === 'AssetCheckEvaluationPlannedEvent'
+    ) {
       return false;
     }
     const l = logNodeLevel(node);
@@ -101,7 +108,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
   };
 }
 
-export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) => {
+export const LogsScrollingTable = (props: ILogsScrollingTableProps) => {
   const {filterKey, filterStepKeys, metadata, filter, logs} = props;
   const table = React.useRef<LogsScrollingTableSized>(null);
 
@@ -294,7 +301,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const isLastRow = index === this.props.filteredNodes.length - 1;
     const lastRowStyles = isLastRow
       ? {
-          borderBottom: `1px solid ${Colors.Gray100}`,
+          borderBottom: `1px solid ${colorKeylineDefault()}`,
         }
       : {};
 
@@ -407,7 +414,7 @@ class AutoSizer extends React.Component<{
 }
 
 const ListEmptyState = styled.div`
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: ${colorBackgroundDefault()};
   z-index: 100;
   position: absolute;
   width: 100%;

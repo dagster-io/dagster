@@ -332,10 +332,8 @@ def config_map_objects(
     check.inst(
         obj_def,
         def_type,
-        (
-            "Could not find a {def_type} definition on the selected mode that matches the "
-            '{def_type} "{obj_name}" given in run config'
-        ).format(def_type=def_type, obj_name=obj_name),
+        f"Could not find a {def_type} definition on the selected mode that matches the "
+        f'{def_type} "{obj_name}" given in run config',
     )
     obj_def = cast(ConfigurableDefinition, obj_def)
 

@@ -62,12 +62,11 @@ We love to see our community members get involved! If you are planning to contri
 
 Some notes on developing in Dagster:
 
-- **Black/Ruff/Pyright**: We use [black](https://github.com/python/black) to enforce a consistent code style, [ruff](https://github.com/charliermarsh/ruff) for linting and import sorting, and [pyright](https://github.com/microsoft/pyright) for static type-checking. We test these in our CI/CD pipeline.
-  - Run `make black` from the repo root to automatically format your files.
-  - Run `make ruff` from the repo root to sort imports and autofix some lint errors. It will also print out errors that need to be manually fixed.
+- **Ruff/Pyright**: We use [ruff](https://github.com/charliermarsh/ruff) for formatting, linting and import sorting, and [pyright](https://github.com/microsoft/pyright) for static type-checking. We test these in our CI/CD pipeline.
+  - Run `make ruff` from the repo root to format, sort imports, and autofix some lint errors. It will also print out errors that need to be manually fixed.
   - Run `make pyright` from the repo root to analyze the whole repo for type-correctness. Note that the first time you run this, it will take several minutes because a new virtualenv will be constructed.
 - **Line Width**: We use a line width of 100.
-- **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
+- **IDE**: We recommend setting up your IDE to format and check with ruff on save, but you can always run `make ruff` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
 
 ## Developing the Dagster webserver/UI
@@ -121,7 +120,7 @@ In `.mdx` files, you'll see a code snippet with `python file=/path/to/file.py st
 
 <Image src="/images/community/md-code-block.png" width={1434} height={368} />
 
-You can find the corresponding Python file at `dagster/examples/docs_snippets/docs_snippets/concepts/asset/asset_dependenyy.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments.
+You can find the corresponding Python file at `dagster/examples/docs_snippets/docs_snippets/concepts/asset/asset_dependency.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments.
 
 <Image src="/images/community/py-code-block.png" width={736} height={496} />
 
@@ -135,9 +134,7 @@ You can find more information about developing documentation in `docs/README.md`
 
 ## Picking a Github Issue
 
-We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
-
-Then, you can work on the issue labeled as [`good second issue`](https://github.com/dagster-io/dagster/labels/good%20second%20issue) which is more like a medium task.
+We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aopen+is%3Aissue+label%3A%22type%3A+good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
 When you are ready for more of a challenge, you can tackle issues with the [most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc). We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest.
 

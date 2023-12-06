@@ -16,6 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
@@ -51,6 +52,7 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 from .external_data import (
     DEFAULT_MODE_NAME,
     EnvVarConsumer,
+    ExternalAssetCheck,
     ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
@@ -115,10 +117,12 @@ class ExternalRepository:
         self._asset_jobs: Dict[str, List[ExternalAssetNode]] = {}
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
-                if job_name not in self._asset_jobs:
-                    self._asset_jobs[job_name] = [asset_node]
-                else:
-                    self._asset_jobs[job_name].append(asset_node)
+                self._asset_jobs.setdefault(job_name, []).append(asset_node)
+
+        self._asset_check_jobs: Dict[str, List[ExternalAssetCheck]] = {}
+        for asset_check in external_repository_data.external_asset_checks or []:
+            for job_name in asset_check.job_names:
+                self._asset_check_jobs.setdefault(job_name, []).append(asset_check)
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
@@ -280,6 +284,14 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
+    def get_external_asset_checks(
+        self, job_name: Optional[str] = None
+    ) -> Sequence[ExternalAssetCheck]:
+        if job_name:
+            return self._asset_check_jobs.get(job_name, [])
+        else:
+            return self.external_repository_data.external_asset_checks or []
+
     def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata
 
@@ -381,6 +393,14 @@ class ExternalJob(RepresentedJob):
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return (
             self._job_index.job_snapshot.lineage_snapshot.asset_selection
+            if self._job_index.job_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return (
+            self._job_index.job_snapshot.lineage_snapshot.asset_check_selection
             if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
@@ -583,6 +603,14 @@ class ExternalResource:
         return self._external_resource_data.job_ops_using
 
     @property
+    def schedules_using(self) -> List[str]:
+        return self._external_resource_data.schedules_using
+
+    @property
+    def sensors_using(self) -> List[str]:
+        return self._external_resource_data.sensors_using
+
+    @property
     def is_dagster_maintained(self) -> bool:
         return self._external_resource_data.dagster_maintained
 
@@ -746,7 +774,7 @@ class ExternalSensor:
 
     def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:
-            return list(self._external_sensor_data.target_dict.values())[0]
+            return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 

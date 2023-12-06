@@ -778,7 +778,7 @@ def test_type_annotations_with_generator():
     def my_op_yields_output() -> Generator[Output, None, None]:
         yield Output(5)
 
-    assert list(my_op_yields_output())[0].value == 5
+    assert next(iter(my_op_yields_output())).value == 5
     result = execute_op_in_graph(my_op_yields_output)
     assert result.output_for_node("my_op_yields_output") == 5
 
@@ -906,14 +906,16 @@ def test_metadata_logging():
 def test_metadata_logging_multiple_entries():
     @op
     def basic(context):
-        context.add_output_metadata({"foo": "bar"})
-        context.add_output_metadata({"baz": "bat"})
+        context.add_output_metadata({"foo": "first_value"})
+        context.add_output_metadata({"foo": "second_value"})  # overwrites first
+        context.add_output_metadata({"boo": "bot"})
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="In op 'basic', attempted to log metadata for output 'result' more than once.",
-    ):
-        execute_op_in_graph(basic)
+    result = execute_op_in_graph(basic)
+    assert result.success
+    events = result.events_for_node("basic")
+    assert len(events[1].event_specific_data.metadata) == 2
+    assert events[1].event_specific_data.metadata["foo"].text == "second_value"
+    assert events[1].event_specific_data.metadata["boo"].text == "bot"
 
 
 def test_log_event_multi_output():

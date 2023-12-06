@@ -34,9 +34,12 @@ interface AssetGroupRootParams {
   0: string;
 }
 
-export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' | 'list'}> = ({
+export const AssetGroupRoot = ({
   repoAddress,
   tab,
+}: {
+  repoAddress: RepoAddress;
+  tab: 'lineage' | 'list';
 }) => {
   useTrackPageView();
 
@@ -65,7 +68,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
   const onNavigateToSourceAssetNode = React.useCallback(
     (node: AssetLocation) => {
       if (node.groupName && node.repoAddress) {
-        history.replace(
+        history.push(
           workspacePathFromAddress(
             node.repoAddress,
             `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
@@ -84,11 +87,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
         title={<Heading>{groupName}</Heading>}
-        right={
-          <div style={{marginBottom: -8}}>
-            <ReloadAllButton label="Reload definitions" />
-          </div>
-        }
+        right={<ReloadAllButton label="Reload definitions" />}
         tags={<AssetGroupTags groupSelector={groupSelector} repoAddress={repoAddress} />}
         tabs={
           <Box
@@ -135,9 +134,12 @@ const ASSET_GROUP_METADATA_QUERY = gql`
   }
 `;
 
-const AssetGroupTags: React.FC<{groupSelector: AssetGroupSelector; repoAddress: RepoAddress}> = ({
+const AssetGroupTags = ({
   repoAddress,
   groupSelector,
+}: {
+  groupSelector: AssetGroupSelector;
+  repoAddress: RepoAddress;
 }) => {
   const {data} = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
     ASSET_GROUP_METADATA_QUERY,

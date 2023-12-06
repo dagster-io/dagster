@@ -1,6 +1,5 @@
 import {
   Box,
-  Colors,
   Popover,
   Mono,
   FontFamily,
@@ -10,6 +9,13 @@ import {
   Spinner,
   MiddleTruncate,
   useViewport,
+  colorKeylineDefault,
+  colorTextLighter,
+  colorAccentReversed,
+  colorTextDefault,
+  colorBackgroundDefault,
+  colorBackgroundDefaultHover,
+  colorAccentPrimary,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -84,12 +90,15 @@ export const RunTimeline = (props: Props) => {
   const [_, end] = range;
   const includesTicks = now <= end;
 
-  const buckets = jobs.reduce((accum, job) => {
-    const {repoAddress} = job;
-    const repoKey = repoAddressAsURLString(repoAddress);
-    const jobsForRepo = accum[repoKey] || [];
-    return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {} as Record<string, TimelineJob[]>);
+  const buckets = jobs.reduce(
+    (accum, job) => {
+      const {repoAddress} = job;
+      const repoKey = repoAddressAsURLString(repoAddress);
+      const jobsForRepo = accum[repoKey] || [];
+      return {...accum, [repoKey]: [...jobsForRepo, job]};
+    },
+    {} as Record<string, TimelineJob[]>,
+  );
 
   const allKeys = Object.keys(buckets);
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
@@ -150,7 +159,7 @@ export const RunTimeline = (props: Props) => {
         padding={{left: 24}}
         flex={{direction: 'column', justifyContent: 'center'}}
         style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        border="top-and-bottom"
       >
         Jobs
       </Box>
@@ -215,16 +224,8 @@ interface TimelineHeaderRowProps {
 }
 
 const TimelineHeaderRow = (props: TimelineHeaderRowProps) => {
-  const {
-    expanded,
-    onToggle,
-    onToggleAll,
-    repoAddress,
-    isDuplicateRepoName,
-    jobs,
-    height,
-    top,
-  } = props;
+  const {expanded, onToggle, onToggleAll, repoAddress, isDuplicateRepoName, jobs, height, top} =
+    props;
 
   return (
     <RepoRow
@@ -433,14 +434,16 @@ const TimeDividers = (props: TimeDividersProps) => {
         ))}
       </DividerLabels>
       <DividerLines>
-        <DividerLine style={{left: 0, backgroundColor: Colors.Gray200}} />
+        <DividerLine style={{left: 0, backgroundColor: colorKeylineDefault()}} />
         {timeMarkers.map((marker) => (
           <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
         ))}
         {now >= start && now <= end ? (
           <>
             <NowMarker style={{left: nowLeft}}>Now</NowMarker>
-            <DividerLine style={{left: nowLeft, backgroundColor: Colors.Blue500, zIndex: 1}} />
+            <DividerLine
+              style={{left: nowLeft, backgroundColor: colorAccentPrimary(), zIndex: 1}}
+            />
           </>
         ) : null}
       </DividerLines>
@@ -454,33 +457,44 @@ const DividerContainer = styled.div`
   left: ${LEFT_SIDE_SPACE_ALLOTTED}px;
   right: 0;
   font-family: ${FontFamily.monospace};
-  color: ${Colors.Gray800};
+  color: ${colorTextLighter()};
 `;
 
 const DividerLabels = styled.div`
   display: flex;
   align-items: center;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset 0 1px 0 ${Colors.KeylineGray},
-    inset -1px 0 0 ${Colors.KeylineGray};
+  box-shadow:
+    inset 1px 0 0 ${colorKeylineDefault()},
+    inset 0 1px 0 ${colorKeylineDefault()},
+    inset -1px 0 0 ${colorKeylineDefault()};
   height: ${TIME_HEADER_HEIGHT}px;
   position: relative;
   user-select: none;
   font-size: 12px;
   width: 100%;
   overflow: hidden;
+
+  :first-child {
+    box-shadow:
+      inset 1px 0 0 ${colorKeylineDefault()},
+      inset -1px 0 0 ${colorKeylineDefault()};
+  }
 `;
 
 const DateLabel = styled.div`
   position: absolute;
   padding: 8px 0;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray};
   white-space: nowrap;
+
+  :not(:first-child) {
+    box-shadow: inset 1px 0 0 ${colorKeylineDefault()};
+  }
 `;
 
 const TimeLabel = styled.div`
   position: absolute;
   padding: 8px;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray};
+  box-shadow: inset 1px 0 0 ${colorKeylineDefault()};
   white-space: nowrap;
 `;
 
@@ -488,11 +502,13 @@ const DividerLines = styled.div`
   height: 100%;
   position: relative;
   width: 100%;
-  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset -1px 0 0 ${Colors.KeylineGray};
+  box-shadow:
+    inset 1px 0 0 ${colorKeylineDefault()},
+    inset -1px 0 0 ${colorKeylineDefault()};
 `;
 
 const DividerLine = styled.div`
-  background-color: ${Colors.KeylineGray};
+  background-color: ${colorKeylineDefault()};
   height: 100%;
   position: absolute;
   top: 0;
@@ -500,9 +516,9 @@ const DividerLine = styled.div`
 `;
 
 const NowMarker = styled.div`
-  background-color: ${Colors.Blue500};
+  background-color: ${colorAccentPrimary()};
   border-radius: 1px;
-  color: ${Colors.White};
+  color: ${colorAccentReversed()};
   cursor: default;
   font-size: 12px;
   line-height: 12px;
@@ -513,7 +529,7 @@ const NowMarker = styled.div`
   user-select: none;
 `;
 
-const MIN_CHUNK_WIDTH = 2;
+const MIN_CHUNK_WIDTH = 4;
 const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
@@ -557,7 +573,7 @@ const RunTimelineRow = ({
         <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
         <div style={{width: LABEL_WIDTH}}>
           {job.jobType === 'asset' ? (
-            <span style={{color: Colors.Gray900}}>
+            <span style={{color: colorTextDefault()}}>
               <MiddleTruncate text={job.jobName} />
             </span>
           ) : (
@@ -637,10 +653,10 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
 
   return (
     <Box
-      background={Colors.White}
+      background={colorBackgroundDefault()}
       padding={{vertical: 24}}
       flex={{direction: 'row', justifyContent: 'center'}}
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
     >
       {content()}
     </Box>
@@ -656,7 +672,7 @@ const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   },
 }))<RowProps>`
   align-items: center;
-  box-shadow: inset 0 -1px 0 ${Colors.KeylineGray};
+  box-shadow: inset 0 -1px 0 ${colorKeylineDefault()};
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -666,9 +682,10 @@ const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   right: 0;
   top: 0;
   overflow: hidden;
+  transition: background-color 100ms linear;
 
   :hover {
-    background-color: ${Colors.Gray10};
+    background-color: ${colorBackgroundDefaultHover()};
   }
 `;
 
@@ -700,14 +717,20 @@ interface ChunkProps {
 const RunChunk = styled.div<ChunkProps>`
   align-items: center;
   background: ${({$background}) => $background};
-  border-radius: 2px;
-  height: ${ROW_HEIGHT - 4}px;
+  border-radius: 1px;
+  height: ${ROW_HEIGHT - 8}px;
   position: absolute;
-  top: 2px;
+  top: 4px;
   ${({$multiple}) => ($multiple ? `min-width: ${MIN_WIDTH_FOR_MULTIPLE}px` : null)};
 
-  transition: background-color 300ms linear, width 300ms ease-in-out;
+  transition:
+    background 200ms linear,
+    opacity 200ms linear,
+    width 200ms ease-in-out;
 
+  :hover {
+    opacity: 0.7;
+  }
   .chunk-popover-target {
     display: block;
     height: 100%;
@@ -716,7 +739,7 @@ const RunChunk = styled.div<ChunkProps>`
 `;
 
 const BatchCount = styled.div`
-  color: ${Colors.White};
+  color: ${colorAccentReversed()};
   cursor: default;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
@@ -736,14 +759,14 @@ const RunHoverContent = (props: RunHoverContentProps) => {
 
   return (
     <Box style={{width: '260px'}}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <Box padding={12} border="bottom">
         <HoverContentJobName>{job.jobName}</HoverContentJobName>
       </Box>
       <div style={{maxHeight: '240px', overflowY: 'auto'}}>
         {sliced.map((run, ii) => (
           <Box
             key={run.id}
-            border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
+            border={ii > 0 ? 'top' : null}
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
             padding={{vertical: 8, horizontal: 12}}
           >
@@ -768,7 +791,7 @@ const RunHoverContent = (props: RunHoverContentProps) => {
         ))}
       </div>
       {remaining > 0 ? (
-        <Box padding={12} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+        <Box padding={12} border="top">
           <Link to={`${job.path}/runs`}>+ {remaining} more</Link>
         </Box>
       ) : null}

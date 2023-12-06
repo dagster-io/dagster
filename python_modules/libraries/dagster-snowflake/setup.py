@@ -18,8 +18,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-snowflake",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for Snowflake Dagster framework components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake",
@@ -32,13 +32,19 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_snowflake_tests*"]),
-    install_requires=[f"dagster{pin}", "snowflake-connector-python>=2.1.0"],
+    install_requires=[
+        f"dagster{pin}",
+        "snowflake-connector-python>=2.1.0,<3.5.0",
+    ],
     extras_require={
         "snowflake.sqlalchemy": [
             "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
             "snowflake-sqlalchemy",
         ],
-        "pandas": ["pandas", "snowflake-connector-python[pandas]>=2.1.0"],
+        "pandas": [
+            "pandas",
+            "snowflake-connector-python[pandas]>=2.1.0,<3.5.0",
+        ],
     },
     zip_safe=False,
 )

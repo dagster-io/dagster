@@ -3,5 +3,10 @@ import {CodeBlock} from '../../components';
 
 export const fence = {
   render: CodeBlock,
-  attributes: nodes.fence.attributes,
+  attributes: {
+    obfuscated: {
+      type: Boolean,
+    },
+    ...nodes.fence.attributes,
+  },
 };

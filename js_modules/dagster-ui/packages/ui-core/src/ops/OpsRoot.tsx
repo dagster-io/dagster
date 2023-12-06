@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   NonIdealState,
   SplitPanelContainer,
   SuggestionProvider,
@@ -10,6 +9,11 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
   FontFamily,
+  colorKeylineDefault,
+  colorBackgroundLight,
+  colorBackgroundDefault,
+  colorAccentLime,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
@@ -122,7 +126,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const OpsRoot: React.FC<Props> = (props) => {
+export const OpsRoot = (props: Props) => {
   useTrackPageView();
   useDocumentTitle('Ops');
 
@@ -136,7 +140,7 @@ export const OpsRoot: React.FC<Props> = (props) => {
   });
 
   return (
-    <div style={{height: '100%'}}>
+    <div style={{flex: 1, minHeight: 0}}>
       <Loading queryResult={queryResult}>
         {({repositoryOrError}) => {
           if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
@@ -156,7 +160,12 @@ export const OpsRoot: React.FC<Props> = (props) => {
   );
 };
 
-const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = (props) => {
+interface OpsRootWithDataProps extends Props {
+  name?: string;
+  usedSolids: Solid[];
+}
+
+const OpsRootWithData = (props: OpsRootWithDataProps) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
@@ -190,19 +199,18 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
     }
   });
 
-  const onClickInvocation: React.ComponentProps<
-    typeof UsedSolidDetails
-  >['onClickInvocation'] = React.useCallback(
-    ({pipelineName, handleID}) => {
-      history.push(
-        workspacePathFromAddress(
-          repoAddress,
-          `/pipeline_or_job/${pipelineName}/${handleID.split('.').join('/')}`,
-        ),
-      );
-    },
-    [history, repoAddress],
-  );
+  const onClickInvocation: React.ComponentProps<typeof UsedSolidDetails>['onClickInvocation'] =
+    React.useCallback(
+      ({pipelineName, handleID}) => {
+        history.push(
+          workspacePathFromAddress(
+            repoAddress,
+            `/pipeline_or_job/${pipelineName}/${handleID.split('.').join('/')}`,
+          ),
+        );
+      },
+      [history, repoAddress],
+    );
 
   return (
     <div style={{height: '100%', display: 'flex'}}>
@@ -212,10 +220,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
         firstMinSize={420}
         first={
           <OpListColumnContainer>
-            <Box
-              padding={{vertical: 12, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
+            <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
               <TokenizingField
                 values={search}
                 onChange={(search) => onSearch(search)}
@@ -272,7 +277,7 @@ interface OpListProps {
   onClickOp: (name: string) => void;
 }
 
-const OpList: React.FC<OpListProps> = (props) => {
+const OpList = (props: OpListProps) => {
   const {items, selected} = props;
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
@@ -352,10 +357,11 @@ const OPS_ROOT_QUERY = gql`
 `;
 
 const OpListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
-  box-shadow: ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
-    ${Colors.KeylineGray} 0 -1px 0 inset;
-  color: ${Colors.Gray800};
+  background: ${({selected}) => (selected ? colorBackgroundLight() : colorBackgroundDefault())};
+  box-shadow:
+    ${({selected}) => (selected ? colorAccentLime() : 'transparent')} 4px 0 0 inset,
+    ${colorKeylineDefault()} 0 -1px 0 inset;
+  color: ${colorTextLight()};
   cursor: pointer;
   font-size: 14px;
   display: flex;
@@ -364,7 +370,7 @@ const OpListItem = styled.div<{selected: boolean}>`
   user-select: none;
 
   & > code.bp4-code {
-    color: ${Colors.Gray800};
+    color: ${colorTextLight()};
     background: transparent;
     font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;

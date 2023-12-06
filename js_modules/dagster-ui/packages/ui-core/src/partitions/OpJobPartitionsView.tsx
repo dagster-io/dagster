@@ -5,7 +5,6 @@ import {
   Dialog,
   Icon,
   Tooltip,
-  Colors,
   Subheading,
   useViewport,
   NonIdealState,
@@ -38,10 +37,13 @@ import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 type PartitionStatus = OpJobPartitionStatusFragment;
 
-export const OpJobPartitionsView: React.FC<{
+export const OpJobPartitionsView = ({
+  partitionSetName,
+  repoAddress,
+}: {
   partitionSetName: string;
   repoAddress: RepoAddress;
-}> = ({partitionSetName, repoAddress}) => {
+}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const {data, loading} = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
     PARTITIONS_STATUS_QUERY,
@@ -139,11 +141,15 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
   }, [partitions]);
 }
 
-export const OpJobPartitionsViewContent: React.FC<{
+export const OpJobPartitionsViewContent = ({
+  partitionSet,
+  partitionNames,
+  repoAddress,
+}: {
   partitionNames: string[];
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
-}> = ({partitionSet, partitionNames, repoAddress}) => {
+}) => {
   const {
     permissions: {canLaunchPartitionBackfill},
     disabledReasons,
@@ -247,7 +253,7 @@ export const OpJobPartitionsViewContent: React.FC<{
 
       <Box
         flex={{justifyContent: 'space-between', direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16, horizontal: 24}}
       >
         <Subheading>Status</Subheading>
@@ -272,11 +278,7 @@ export const OpJobPartitionsViewContent: React.FC<{
           )}
         </Box>
       </Box>
-      <Box
-        flex={{direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
-        padding={{left: 8}}
-      >
+      <Box flex={{direction: 'row', alignItems: 'center'}} border="bottom" padding={{left: 8}}>
         <CountBox count={partitionNames.length} label="Total partitions" />
         <CountBox
           count={partitionNames.filter((x) => runStatusData[x] === RunStatus.FAILURE).length}
@@ -327,10 +329,7 @@ export const OpJobPartitionsViewContent: React.FC<{
           </Box>
         ) : null}
       </Box>
-      <Box
-        padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
         <Subheading>Run duration</Subheading>
       </Box>
       <Box margin={24}>
@@ -360,7 +359,7 @@ export const OpJobPartitionsViewContent: React.FC<{
       ) : null}
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
+        border="top-and-bottom"
         style={{marginBottom: -1}}
       >
         <Subheading>Backfill history</Subheading>
@@ -377,11 +376,8 @@ export const OpJobPartitionsViewContent: React.FC<{
   );
 };
 
-export const CountBox: React.FC<{
-  count: number;
-  label: string;
-}> = ({count, label}) => (
-  <Box padding={16} style={{flex: 1}} border={{side: 'right', width: 1, color: Colors.KeylineGray}}>
+export const CountBox = ({count, label}: {count: number; label: string}) => (
+  <Box padding={16} style={{flex: 1}} border="right">
     <div style={{fontSize: 18, marginBottom: 4}}>
       <strong>{count}</strong>
     </div>

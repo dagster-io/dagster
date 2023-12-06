@@ -11,11 +11,11 @@ const titles: {[key: string]: string} = {
   uses: 'Uses',
 };
 
-export const ResourceTabs: React.FC<{
+export const ResourceTabs = (props: {
   repoAddress: RepoAddress;
   resourceName: string;
   numUses: number;
-}> = (props) => {
+}) => {
   const {repoAddress, resourceName, numUses} = props;
 
   const match = useRouteMatch<{tab?: string; selector: string}>([

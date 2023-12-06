@@ -1,5 +1,5 @@
 import {gql, useQuery, useSubscription} from '@apollo/client';
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon, CoreColors} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
@@ -27,8 +27,8 @@ interface CapturedOrExternalLogPanelProps extends CapturedLogProps {
   logCaptureInfo?: ILogCaptureInfo;
 }
 
-export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProps> = React.memo(
-  ({logCaptureInfo, ...props}) => {
+export const CapturedOrExternalLogPanel = React.memo(
+  ({logCaptureInfo, ...props}: CapturedOrExternalLogPanelProps) => {
     const externalUrl =
       logCaptureInfo &&
       (props.visibleIOType === 'stdout'
@@ -38,8 +38,8 @@ export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProp
       return (
         <Box
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 1}}
-          background={Colors.Gray900}
-          style={{color: Colors.White, flex: 1, minHeight: 0}}
+          background={CoreColors.Gray900}
+          style={{color: CoreColors.White, flex: 1, minHeight: 0}}
         >
           View logs at
           <a
@@ -47,7 +47,7 @@ export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProp
             target="_blank"
             rel="noreferrer"
             style={{
-              color: Colors.White,
+              color: CoreColors.White,
               textDecoration: 'underline',
               marginLeft: 4,
               marginRight: 4,
@@ -55,7 +55,7 @@ export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProp
           >
             {externalUrl}
           </a>
-          <Icon name="open_in_new" color={Colors.White} size={20} style={{marginTop: 2}} />
+          <Icon name="open_in_new" color={CoreColors.White} size={20} style={{marginTop: 2}} />
         </Box>
       );
     }
@@ -125,10 +125,13 @@ const initialState: State = {
   isLoading: true,
 };
 
-const CapturedLogSubscription: React.FC<{
+interface CapturedLogSubscriptionProps {
   logKey: string[];
   onLogData: (logData: CapturedLogFragment) => void;
-}> = React.memo(({logKey, onLogData}) => {
+}
+
+const CapturedLogSubscription = React.memo((props: CapturedLogSubscriptionProps) => {
+  const {logKey, onLogData} = props;
   useSubscription<CapturedLogsSubscription, CapturedLogsSubscriptionVariables>(
     CAPTURED_LOGS_SUBSCRIPTION,
     {
@@ -238,8 +241,8 @@ const CAPTURED_LOGS_QUERY = gql`
   }
 `;
 
-const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
-  ({logKey, visibleIOType, onSetDownloadUrl}) => {
+const CapturedLogPanel = React.memo(
+  ({logKey, visibleIOType, onSetDownloadUrl}: CapturedLogProps) => {
     const {rootServerURI} = React.useContext(AppContext);
     const {availability, disabled} = React.useContext(WebSocketContext);
     const queryResult = useQuery<CapturedLogsMetadataQuery, CapturedLogsMetadataQueryVariables>(

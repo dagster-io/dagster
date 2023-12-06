@@ -7,6 +7,7 @@ export type SidebarAssetFragment = {
   id: string;
   description: string | null;
   opVersion: string | null;
+  jobNames: Array<string>;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -30,6 +31,14 @@ export type SidebarAssetFragment = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -119,8 +128,14 @@ export type SidebarAssetFragment = {
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
-    rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
+    rules: Array<{
+      __typename: 'AutoMaterializeRule';
+      className: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+      description: string;
+    }>;
   } | null;
+  backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   op: {
@@ -136,6 +151,18 @@ export type SidebarAssetFragment = {
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+  assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+    | {__typename: 'AssetCheckNeedsMigrationError'}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+    | {
+        __typename: 'AssetChecks';
+        checks: Array<{
+          __typename: 'AssetCheck';
+          name: string;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+        }>;
+      };
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -733,6 +760,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -1975,6 +2010,14 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -3213,6 +3256,14 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -4438,6 +4489,14 @@ export type SidebarAssetFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -5686,6 +5745,14 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -6920,6 +6987,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -8162,6 +8237,14 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -9387,6 +9470,14 @@ export type SidebarAssetFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -10635,6 +10726,14 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -11869,6 +11968,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -13111,6 +13218,14 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'JsonMetadataEntry';
                     jsonString: string;
                     label: string;
@@ -14336,6 +14451,14 @@ export type SidebarAssetFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -15551,6 +15674,7 @@ export type SidebarAssetQuery = {
         id: string;
         description: string | null;
         opVersion: string | null;
+        jobNames: Array<string>;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -15574,6 +15698,14 @@ export type SidebarAssetQuery = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -15678,8 +15810,14 @@ export type SidebarAssetQuery = {
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
           policyType: Types.AutoMaterializePolicyType;
-          rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
+          rules: Array<{
+            __typename: 'AutoMaterializeRule';
+            className: string;
+            decisionType: Types.AutoMaterializeDecisionType;
+            description: string;
+          }>;
         } | null;
+        backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
         op: {
@@ -15695,6 +15833,18 @@ export type SidebarAssetQuery = {
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
         };
         requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+        assetChecksOrError:
+          | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+          | {__typename: 'AssetCheckNeedsMigrationError'}
+          | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+          | {
+              __typename: 'AssetChecks';
+              checks: Array<{
+                __typename: 'AssetCheck';
+                name: string;
+                canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+              }>;
+            };
         configField: {
           __typename: 'ConfigTypeField';
           name: string;
@@ -16296,6 +16446,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -17544,6 +17702,14 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'JsonMetadataEntry';
                           jsonString: string;
                           label: string;
@@ -18788,6 +18954,14 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'JsonMetadataEntry';
                           jsonString: string;
                           label: string;
@@ -20019,6 +20193,14 @@ export type SidebarAssetQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -21272,6 +21454,14 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'JsonMetadataEntry';
                           jsonString: string;
                           label: string;
@@ -22512,6 +22702,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -23760,6 +23958,14 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'JsonMetadataEntry';
                           jsonString: string;
                           label: string;
@@ -24991,6 +25197,14 @@ export type SidebarAssetQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -26244,6 +26458,14 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'JsonMetadataEntry';
                           jsonString: string;
                           label: string;
@@ -27484,6 +27706,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -28732,6 +28962,14 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'JsonMetadataEntry';
                           jsonString: string;
                           label: string;
@@ -29963,6 +30201,14 @@ export type SidebarAssetQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }

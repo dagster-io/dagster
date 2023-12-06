@@ -13,7 +13,7 @@ def test_all_libraries_register() -> None:
     for library in os.listdir(library_dir):
         if library.endswith("CONTRIBUTING.md"):
             continue
-        result = subprocess.run(["grep", register_call, (library_dir / library), "-r"])
+        result = subprocess.run(["grep", register_call, (library_dir / library), "-r"], check=False)
         assert (
             result.returncode == 0
         ), f"Dagster library {library} is missing call to {register_call}."

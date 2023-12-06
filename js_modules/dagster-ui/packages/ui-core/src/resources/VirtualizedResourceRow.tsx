@@ -1,4 +1,13 @@
-import {Box, Caption, Colors, Icon, MiddleTruncate, Mono, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Caption,
+  Icon,
+  MiddleTruncate,
+  Mono,
+  Tooltip,
+  colorAccentGray,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -29,17 +38,24 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
     parentResources,
     jobsOpsUsing,
     assetKeysUsing,
+    schedulesUsing,
+    sensorsUsing,
   } = props;
   const resourceTypeSuccinct = succinctType(resourceType);
-  const uses = parentResources.length + jobsOpsUsing.length + assetKeysUsing.length;
+  const uses =
+    parentResources.length +
+    jobsOpsUsing.length +
+    assetKeysUsing.length +
+    schedulesUsing.length +
+    sensorsUsing.length;
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              <Icon name="resource" color={Colors.Gray400} />
+              <Icon name="resource" color={colorAccentGray()} />
 
               <span style={{fontWeight: 500}}>
                 <Link to={workspacePathFromAddress(repoAddress, `/resources/${name}`)}>
@@ -56,7 +72,7 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
             >
               <Caption
                 style={{
-                  color: Colors.Gray500,
+                  color: colorTextLight(),
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -81,13 +97,13 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
 export const VirtualizedResourceHeader = () => {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
       }}
     >
       <HeaderCell>Name</HeaderCell>

@@ -1,12 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   Heading,
   NonIdealState,
   PageHeader,
   Spinner,
   TextInput,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -17,6 +17,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -32,7 +33,7 @@ export const OverviewJobsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Jobs');
 
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
@@ -78,7 +79,7 @@ export const OverviewJobsRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading jobs…</div>
+            <div style={{color: colorTextLight()}}>Loading jobs…</div>
           </Box>
         </Box>
       );
@@ -128,6 +129,8 @@ export const OverviewJobsRoot = () => {
     return <OverviewJobsTable repos={filteredBySearch} />;
   };
 
+  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
@@ -142,6 +145,9 @@ export const OverviewJobsRoot = () => {
         <TextInput
           icon="search"
           value={searchValue}
+          rightElement={
+            showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+          }
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Filter by job name…"
           style={{width: '340px'}}

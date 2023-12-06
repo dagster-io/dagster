@@ -332,7 +332,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
     start_cfg: Dict[str, object] = {}
     start_selector = check.opt_dict_elem(config, "start_method")
     if start_selector:
-        start_method, start_cfg = list(start_selector.items())[0]
+        start_method, start_cfg = next(iter(start_selector.items()))
 
     return MultiprocessExecutor(
         max_concurrent=check.opt_int_elem(config, "max_concurrent"),

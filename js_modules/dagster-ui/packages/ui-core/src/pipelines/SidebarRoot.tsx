@@ -1,4 +1,4 @@
-import {Box, Colors, Tabs, ErrorBoundary} from '@dagster-io/ui-components';
+import {Box, Tabs, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
@@ -34,7 +34,7 @@ interface SidebarRootProps {
   repoAddress?: RepoAddress;
 }
 
-export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
+export const SidebarRoot = (props: SidebarRootProps) => {
   const {
     tab,
     typeName,
@@ -100,10 +100,7 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
 
   return (
     <>
-      <Box
-        padding={{horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24}} border="bottom">
         <Tabs selectedTabId={activeTab}>
           {TabDefinitions.map(({name, key}) => (
             <TabLink id={key} key={key} to={{search: `?tab=${key}`}} title={name} />

@@ -36,6 +36,7 @@ export type InstanceHealthForBackfillsQuery = {
 };
 
 export type InstanceBackfillsQueryVariables = Types.Exact<{
+  status?: Types.InputMaybe<Types.BulkActionStatus>;
   cursor?: Types.InputMaybe<Types.Scalars['String']>;
   limit?: Types.InputMaybe<Types.Scalars['Int']>;
 }>;
@@ -54,10 +55,10 @@ export type InstanceBackfillsQuery = {
           timestamp: number;
           partitionSetName: string | null;
           isAssetBackfill: boolean;
+          partitionNames: Array<string> | null;
           hasCancelPermission: boolean;
           hasResumePermission: boolean;
           numCancelable: number;
-          partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';
             id: string;
@@ -82,6 +83,7 @@ export type InstanceBackfillsQuery = {
             }>;
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         }>;
       }
     | {

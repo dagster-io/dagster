@@ -74,9 +74,6 @@ def execute_run_command(input_json):
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
 
-            for line in buffer:
-                click.echo(line)
-
             if return_code != 0:
                 sys.exit(return_code)
 
@@ -174,9 +171,6 @@ def resume_run_command(input_json):
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
-
-            for line in buffer:
-                click.echo(line)
 
             if return_code != 0:
                 sys.exit(return_code)
@@ -278,8 +272,8 @@ def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
             # If this is the first attempt, there shouldn't be any step stats for this
             # event yet.
             instance.report_engine_event(
-                "Attempted to run {step_key} again even though it was already started. "
-                "Exiting to prevent re-running the step.".format(step_key=step_key),
+                f"Attempted to run {step_key} again even though it was already started. "
+                "Exiting to prevent re-running the step.",
                 dagster_run,
             )
             return False
@@ -289,18 +283,16 @@ def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
 
             if step_stat_for_key.attempts != current_attempt - 1:
                 instance.report_engine_event(
-                    "Attempted to run retry attempt {current_attempt} for step {step_key} again "
+                    f"Attempted to run retry attempt {current_attempt} for step {step_key} again "
                     "even though it was already started. Exiting to prevent re-running "
-                    "the step.".format(current_attempt=current_attempt, step_key=step_key),
+                    "the step.",
                     dagster_run,
                 )
                 return False
         elif current_attempt > 1 and not step_stat_for_key:
             instance.report_engine_event(
-                "Attempting to retry attempt {current_attempt} for step {step_key} "
-                "but there is no record of the original attempt".format(
-                    current_attempt=current_attempt, step_key=step_key
-                ),
+                f"Attempting to retry attempt {current_attempt} for step {step_key} "
+                "but there is no record of the original attempt",
                 dagster_run,
             )
             return False
@@ -346,8 +338,9 @@ def execute_step_command(input_json, compressed_input_json):
             ):
                 buff.append(serialize_value(event))
 
-            for line in buff:
-                click.echo(line)
+            if args.print_serialized_events:
+                for line in buff:
+                    click.echo(line)
 
 
 def _execute_step_command_body(
@@ -412,6 +405,7 @@ def _execute_step_command_body(
             .get_subset(
                 op_selection=dagster_run.resolved_op_selection,
                 asset_selection=dagster_run.asset_selection,
+                asset_check_selection=dagster_run.asset_check_selection,
             )
         )
 

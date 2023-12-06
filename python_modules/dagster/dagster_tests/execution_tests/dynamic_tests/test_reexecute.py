@@ -181,12 +181,10 @@ def dynamic_with_optional_output_job():
         for i in range(10):
             if (
                 # re-execution run skipped odd numbers
-                context.run.parent_run_id
-                and i % 2 == 0
+                context.run.parent_run_id and i % 2 == 0
             ) or (
                 # root run skipped even numbers
-                not context.run.parent_run_id
-                and i % 2 == 1
+                not context.run.parent_run_id and i % 2 == 1
             ):
                 yield DynamicOutput(value=i, mapping_key=str(i))
 
@@ -645,3 +643,41 @@ def test_assets():
             "mapped_fail_asset.echo",
             "echo_mapped",
         }
+
+
+@op(out={"enable_a": Out(is_required=False), "enable_b": Out(is_required=False)})
+def if_op():
+    yield Output(0, "enable_a")
+
+
+@op
+def a(_enable, arg):
+    return arg
+
+
+@op
+def b(_enable, arg):
+    return arg
+
+
+@job(executor_def=in_process_executor)
+def conditional_job():
+    arg = fail_once(emit_ten())
+    enable_a, enable_b = if_op()
+    a(enable_a, arg)
+    b(enable_b, arg)
+
+
+def test_conditional():
+    with instance_for_test() as instance:
+        parent_result = execute_job(reconstructable(conditional_job), instance=instance)
+        parent_run_id = parent_result.run_id
+        with execute_job(
+            reconstructable(conditional_job),
+            instance=instance,
+            reexecution_options=ReexecutionOptions.from_failure(
+                run_id=parent_run_id,
+                instance=instance,
+            ),
+        ) as reexec_result:
+            assert reexec_result.success

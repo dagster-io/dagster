@@ -9,7 +9,6 @@ import {
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {
-  Colors,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -19,6 +18,10 @@ import {
   CustomTooltipProvider,
   GlobalInter,
   GlobalInconsolata,
+  colorLinkDefault,
+  colorBackgroundDefault,
+  colorTextDefault,
+  browserColorScheme,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -26,6 +29,7 @@ import {CompatRouter} from 'react-router-dom-v5-compat';
 import {createGlobalStyle} from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
@@ -56,7 +60,9 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${Colors.Gray800};
+    color-scheme: ${browserColorScheme()};
+    background-color: ${colorBackgroundDefault()};
+    color: ${colorTextDefault()};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -69,7 +75,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${Colors.Link};
+    color: ${colorLinkDefault()};
   }
 
   #root {
@@ -88,6 +94,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   button {
+    color: ${colorTextDefault()};
     font-family: inherit;
   }
 
@@ -110,7 +117,7 @@ export interface AppProviderProps {
   };
 }
 
-export const AppProvider: React.FC<AppProviderProps> = (props) => {
+export const AppProvider = (props: AppProviderProps) => {
   const {appCache, config} = props;
   const {
     apolloLinks,
@@ -197,30 +204,32 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
         <GlobalDialogStyle />
         <GlobalSuggestStyle />
         <ApolloProvider client={apolloClient}>
-          <PermissionsProvider>
-            <BrowserRouter basename={basePath || ''}>
-              <CompatRouter>
-                <TimeProvider>
-                  <WorkspaceProvider>
-                    <DeploymentStatusProvider include={statusPolling}>
-                      <CustomConfirmationProvider>
-                        <AnalyticsContext.Provider value={analytics}>
-                          <InstancePageContext.Provider value={instancePageValue}>
-                            <JobFeatureProvider>
-                              <LayoutProvider>{props.children}</LayoutProvider>
-                            </JobFeatureProvider>
-                          </InstancePageContext.Provider>
-                        </AnalyticsContext.Provider>
-                      </CustomConfirmationProvider>
-                      <CustomTooltipProvider />
-                      <CustomAlertProvider />
-                      <AssetRunLogObserver />
-                    </DeploymentStatusProvider>
-                  </WorkspaceProvider>
-                </TimeProvider>
-              </CompatRouter>
-            </BrowserRouter>
-          </PermissionsProvider>
+          <AssetLiveDataProvider>
+            <PermissionsProvider>
+              <BrowserRouter basename={basePath || ''}>
+                <CompatRouter>
+                  <TimeProvider>
+                    <WorkspaceProvider>
+                      <DeploymentStatusProvider include={statusPolling}>
+                        <CustomConfirmationProvider>
+                          <AnalyticsContext.Provider value={analytics}>
+                            <InstancePageContext.Provider value={instancePageValue}>
+                              <JobFeatureProvider>
+                                <LayoutProvider>{props.children}</LayoutProvider>
+                              </JobFeatureProvider>
+                            </InstancePageContext.Provider>
+                          </AnalyticsContext.Provider>
+                        </CustomConfirmationProvider>
+                        <CustomTooltipProvider />
+                        <CustomAlertProvider />
+                        <AssetRunLogObserver />
+                      </DeploymentStatusProvider>
+                    </WorkspaceProvider>
+                  </TimeProvider>
+                </CompatRouter>
+              </BrowserRouter>
+            </PermissionsProvider>
+          </AssetLiveDataProvider>
         </ApolloProvider>
       </WebSocketProvider>
     </AppContext.Provider>

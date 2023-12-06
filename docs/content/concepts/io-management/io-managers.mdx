@@ -152,7 +152,7 @@ defs = Definitions(
 )
 ```
 
-This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
+This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-that-depend-on-other-resources) documentation.
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
@@ -391,7 +391,7 @@ If your I/O manager is more complex, or needs to manage internal state, it may m
 In this case, we implement a stateful I/O manager which maintains a cache.
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_io_manager_factory_marker endbefore=end_io_manager_factory_marker
-from dagster import IOManager, ConfigurableIOManagerFactory
+from dagster import IOManager, ConfigurableIOManagerFactory, OutputContext, InputContext
 import requests
 
 
@@ -401,10 +401,10 @@ class ExternalIOManager(IOManager):
         # setup stateful cache
         self._cache = {}
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         ...
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         if context.asset_key in self._cache:
             return self._cache[context.asset_key]
         ...
@@ -415,6 +415,43 @@ class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
 
     def create_io_manager(self, context) -> ExternalIOManager:
         return ExternalIOManager(self.api_token)
+```
+
+### Defining Pythonic I/O managers
+
+<Note>
+  <strong>Heads up!</strong> This section applies to Dagster 1.3 and later.
+  Refer to the <a href="/concepts/resources">Resources</a> documentation for
+  more info on Pythonic resources.
+</Note>
+
+Pythonic I/O managers are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to [Pythonic resources](/concepts/resources) specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4
+from dagster import (
+    Definitions,
+    AssetKey,
+    OutputContext,
+    InputContext,
+    ConfigurableIOManager,
+)
+
+class MyIOManager(ConfigurableIOManager):
+    root_path: str
+
+    def _get_path(self, asset_key: AssetKey) -> str:
+        return self.root_path + "/".join(asset_key.path)
+
+    def handle_output(self, context: OutputContext, obj):
+        write_csv(self._get_path(context.asset_key), obj)
+
+    def load_input(self, context: InputContext):
+        return read_csv(self._get_path(context.asset_key))
+
+defs = Definitions(
+    assets=...,
+    resources={"io_manager": MyIOManager(root_path="/tmp/")},
+)
 ```
 
 ### Handling partitioned assets
@@ -433,10 +470,10 @@ class MyPartitionedIOManager(IOManager):
         else:
             return "/".join(context.asset_key.path)
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         write_csv(self._get_path(context), obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return read_csv(self._get_path(context))
 ```
 
@@ -505,7 +542,7 @@ Since the method for loading an input is directly affected by the way the corres
 ```python file=/concepts/io_management/input_managers.py startafter=start_plain_input_manager endbefore=end_plain_input_manager
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context: InputContext) -> np.ndarray:
         file_path = "path/to/dataframe"
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -534,19 +571,19 @@ class BetterPandasIOManager(ConfigurableIOManager):
             f"{output_context.step_key}_{output_context.name}.csv",
         )
 
-    def handle_output(self, context, obj: pd.DataFrame):
+    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
         file_path = self._get_path(context)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         if obj is not None:
             obj.to_csv(file_path, index=False)
 
-    def load_input(self, context) -> pd.DataFrame:
+    def load_input(self, context: InputContext) -> pd.DataFrame:
         return pd.read_csv(self._get_path(context.upstream_output))
 
 
 # write a subclass that uses _get_path for your custom loading logic
 class MyBetterNumpyLoader(BetterPandasIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context: InputContext) -> np.ndarray:
         file_path = self._get_path(context.upstream_output)
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -579,15 +616,16 @@ from dagster import ConfigurableIOManager, io_manager
 
 
 class DataframeTableIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         # name is the name given to the Out that we're storing for
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         # upstream_output.name is the name given to the Out that we're loading for
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
+        if context.upstream_output:
+            table_name = context.upstream_output.name
+            return read_dataframe_from_table(name=table_name)
 
 
 @job(resource_defs={"io_manager": DataframeTableIOManager()})
@@ -687,15 +725,23 @@ In this case, the table names are encoded in the job definition. If, instead, yo
 
 ```python file=/concepts/io_management/metadata.py startafter=io_manager_start_marker endbefore=io_manager_end_marker
 class MyIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
-        table_name = context.metadata["table"]
-        schema = context.metadata["schema"]
-        write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+    def handle_output(self, context: OutputContext, obj):
+        if context.metadata:
+            table_name = context.metadata["table"]
+            schema = context.metadata["schema"]
+            write_dataframe_to_table(name=table_name, schema=schema, dataframe=obj)
+        else:
+            raise Exception(
+                f"op {context.op_def.name} doesn't have schema and metadata set"
+            )
 
-    def load_input(self, context):
-        table_name = context.upstream_output.metadata["table"]
-        schema = context.upstream_output.metadata["schema"]
-        return read_dataframe_from_table(name=table_name, schema=schema)
+    def load_input(self, context: InputContext):
+        if context.upstream_output and context.upstream_output.metadata:
+            table_name = context.upstream_output.metadata["table"]
+            schema = context.upstream_output.metadata["schema"]
+            return read_dataframe_from_table(name=table_name, schema=schema)
+        else:
+            raise Exception("Upstream output doesn't have schema and metadata set")
 ```
 
 ### Per-input loading in assets
@@ -706,7 +752,7 @@ In this example, we store `upstream_asset` as a Pandas DataFrame, and we write a
 
 ```python file=/concepts/assets/asset_input_managers_numpy.py startafter=start_numpy_example endbefore=end_numpy_example
 class PandasAssetIOManager(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         file_path = self._get_path(context)
         store_pandas_dataframe(name=file_path, table=obj)
 
@@ -716,13 +762,13 @@ class PandasAssetIOManager(ConfigurableIOManager):
             f"{context.asset_key.path[-1]}.csv",
         )
 
-    def load_input(self, context) -> pd.DataFrame:
+    def load_input(self, context: InputContext) -> pd.DataFrame:
         file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
 class NumpyAssetIOManager(PandasAssetIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context: InputContext) -> np.ndarray:
         file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 
@@ -756,7 +802,9 @@ Here's an example for a simple I/O manager that stores outputs in an in-memory d
 
 ```python file=/concepts/io_management/test_io_manager.py
 from dagster import (
+    InputContext,
     IOManager,
+    OutputContext,
     build_input_context,
     build_output_context,
 )
@@ -766,13 +814,14 @@ class MyIOManager(IOManager):
     def __init__(self):
         self.storage_dict = {}
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         self.storage_dict[(context.step_key, context.name)] = obj
 
-    def load_input(self, context):
-        return self.storage_dict[
-            (context.upstream_output.step_key, context.upstream_output.name)
-        ]
+    def load_input(self, context: InputContext):
+        if context.upstream_output:
+            return self.storage_dict[
+                (context.upstream_output.step_key, context.upstream_output.name)
+            ]
 
 
 def test_my_io_manager_handle_output():
@@ -798,15 +847,16 @@ Sometimes, you may want to record some metadata while handling an output in an I
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
 class DataframeTableIOManagerWithMetadata(ConfigurableIOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
         context.add_output_metadata({"num_rows": len(obj), "table_name": table_name})
 
-    def load_input(self, context):
-        table_name = context.upstream_output.name
-        return read_dataframe_from_table(name=table_name)
+    def load_input(self, context: InputContext):
+        if context.upstream_output:
+            table_name = context.upstream_output.name
+            return read_dataframe_from_table(name=table_name)
 ```
 
 Any entries yielded this way will be attached to the `Handled Output` event for this output.

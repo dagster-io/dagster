@@ -31,7 +31,7 @@ interface Props extends ApolloTestProps {
   typeDefs: DocumentNode;
 }
 
-export const ApolloTestProvider: React.FC<Props> = (props) => {
+export const ApolloTestProvider = (props: Props) => {
   const {children, mocks = [], typeDefs, resolvers = []} = props;
 
   const client = React.useMemo(() => {

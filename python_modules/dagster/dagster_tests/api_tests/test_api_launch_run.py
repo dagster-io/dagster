@@ -140,9 +140,7 @@ def test_launch_unloadable_run_grpc():
 
                 assert not res.success
                 assert (
-                    "gRPC server could not load run {run_id} in order to execute it. "
-                    "Make sure that the gRPC server has access to your run storage.".format(
-                        run_id=run_id
-                    )
+                    f"gRPC server could not load run {run_id} in order to execute it. "
+                    "Make sure that the gRPC server has access to your run storage."
                     in res.serializable_error_info.message
                 )

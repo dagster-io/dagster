@@ -1,5 +1,11 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@dagster-io/ui-components';
+import {
+  colorAccentBlue,
+  colorBackgroundBlue,
+  colorBackgroundBlueHover,
+  colorBackgroundYellow,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -8,7 +14,7 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {OpEdges} from './OpEdges';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
 import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
-import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
+import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {
   Edge,
@@ -46,7 +52,7 @@ interface OpGraphContentsProps extends OpGraphProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
+const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
   const [highlighted, setHighlighted] = React.useState<Edge[]>(() => []);
 
   const {
@@ -71,7 +77,7 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
           {...layout.parent.invocationBoundingBox}
           key={`composite-rect-${parentHandleID}`}
           label=""
-          fill={Colors.Yellow50}
+          fill={colorBackgroundYellow()}
           minified={minified}
         />
       )}
@@ -90,14 +96,14 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
       <OpEdges
         ops={ops}
         layout={layout}
-        color={Colors.KeylineGray}
+        color={colorKeylineDefault()}
         edges={layout.edges}
         onHighlight={setHighlighted}
       />
       <OpEdges
         ops={ops}
         layout={layout}
-        color={Colors.Blue500}
+        color={colorAccentBlue()}
         onHighlight={setHighlighted}
         edges={layout.edges.filter(({from, to}) =>
           isHighlighted(highlighted, {a: from.opName, b: to.opName}),
@@ -107,8 +113,8 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
         <rect
           key={idx}
           {...box}
-          stroke="rgb(230, 219, 238)"
-          fill="rgba(230, 219, 238, 0.2)"
+          stroke={colorBackgroundBlue()}
+          fill={colorBackgroundBlueHover()}
           strokeWidth={2}
         />
       ))}
@@ -185,7 +191,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
     }
   }
 
-  onArrowKeyDown = (_e: React.KeyboardEvent<any>, dir: string) => {
+  onArrowKeyDown = (_e: React.KeyboardEvent<any>, dir: 'left' | 'right' | 'up' | 'down') => {
     const nextOp = closestNodeInDirection(this.props.layout, this.props.selectedOp?.name, dir);
     if (nextOp && this.props.onClickOp) {
       this.props.onClickOp({name: nextOp});
@@ -199,7 +205,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
       <SVGViewport
         ref={this.viewportEl}
         key={jobName}
-        maxZoom={1.2}
+        maxZoom={DEFAULT_MAX_ZOOM}
         defaultZoom="zoom-to-fit"
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}

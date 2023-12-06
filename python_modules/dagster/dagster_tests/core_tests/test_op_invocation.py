@@ -545,7 +545,7 @@ def test_optional_output_yielded():
     def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
-    assert list(op_multiple_outputs_not_sent())[0].value == 2
+    assert next(iter(op_multiple_outputs_not_sent())).value == 2
 
 
 def test_optional_output_yielded_async():
@@ -597,8 +597,8 @@ def test_missing_required_output_generator():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Invocation of op 'op_multiple_outputs_not_sent' did not return an output "
-            "for non-optional output '1'"
+            'Invocation of op "op_multiple_outputs_not_sent" did not return an output '
+            'for non-optional output "1"'
         ),
     ):
         list(op_multiple_outputs_not_sent())
@@ -711,9 +711,7 @@ def test_invalid_properties_on_bound_context(property_or_method_name: str, val_t
         result = getattr(context, property_or_method_name)
         (  # for the case where property_or_method_name is a method, getting an attribute won't cause
             # an error, but invoking the method should.
-            result(val_to_pass)
-            if val_to_pass
-            else result()
+            result(val_to_pass) if val_to_pass else result()
         )
 
     with pytest.raises(DagsterInvalidPropertyError):
@@ -1240,11 +1238,14 @@ def test_assets_def_invocation():
     def non_asset_op(context):
         context.assets_def  # noqa: B018
 
-    with build_op_context(
+    with build_asset_context(
         partition_key="2023-02-02",
     ) as context:
         my_asset(context)
 
+    with build_op_context(
+        partition_key="2023-02-02",
+    ) as context:
         with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
             non_asset_op(context)
 
@@ -1260,7 +1261,7 @@ def test_partitions_time_window_asset_invocation():
         assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
         assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="2023-02-02",
     )
     partitioned_asset(context)
@@ -1289,7 +1290,7 @@ def test_multipartitioned_time_window_asset_invocation():
         assert context.asset_partitions_time_window_for_output() == time_window
         return 1
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="2020-01-01|a",
     )
     my_asset(context)
@@ -1309,7 +1310,7 @@ def test_multipartitioned_time_window_asset_invocation():
         ):
             context.asset_partitions_time_window_for_output()
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key="a|a",
     )
     static_multipartitioned_asset(context)
@@ -1323,7 +1324,7 @@ def test_partition_range_asset_invocation():
         keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
         return {k: True for k in keys}
 
-    context = build_op_context(
+    context = build_asset_context(
         partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
     )
     assert foo(context) == {"2023-01-01": True, "2023-01-02": True}

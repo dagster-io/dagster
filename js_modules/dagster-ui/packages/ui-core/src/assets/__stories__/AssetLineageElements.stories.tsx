@@ -6,7 +6,7 @@ import {AssetLineageFragment} from '../types/AssetLineageElements.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'AssetLineageElements',
+  title: 'Assets/Asset Lineage',
   component: AssetLineageElements,
 } as Meta;
 

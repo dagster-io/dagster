@@ -1,4 +1,11 @@
-import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Spinner,
+  Tooltip,
+  colorBackgroundLight,
+  colorBackgroundLightHover,
+  colorKeylineDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -25,7 +32,7 @@ interface GanttStatusPanelProps {
   onDoubleClickStep?: (step: string) => void;
 }
 
-export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
+export const GanttStatusPanel = ({
   runId,
   nowMs,
   graph,
@@ -34,7 +41,7 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   onClickStep,
   onDoubleClickStep,
   onHighlightStep,
-}) => {
+}: GanttStatusPanelProps) => {
   const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
     const keys = Object.keys(metadata.steps);
     const preparing = [];
@@ -137,7 +144,15 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   );
 };
 
-const StepItem: React.FC<{
+const StepItem = ({
+  nowMs,
+  name,
+  selected,
+  metadata,
+  onClick,
+  onHover,
+  onDoubleClick,
+}: {
   name: string;
   selected: boolean;
   metadata: IRunMetadataDict;
@@ -145,7 +160,7 @@ const StepItem: React.FC<{
   onClick?: (step: string, evt: React.MouseEvent<any>) => void;
   onHover?: (name: string | null) => void;
   onDoubleClick?: (name: string) => void;
-}> = ({nowMs, name, selected, metadata, onClick, onHover, onDoubleClick}) => {
+}) => {
   const step = metadata.steps[name];
   const end = (step && step.end) ?? nowMs;
   return (
@@ -200,12 +215,12 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   padding: 0 14px 0 6px;
   gap: 6px;
   align-items: center;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
   font-size: 12px;
-  ${({selected}) => selected && `background: ${Colors.Gray100};`}
+  ${({selected}) => selected && `background: ${colorBackgroundLight()};`}
 
   &:hover {
-    background: ${Colors.Gray100};
+    background: ${colorBackgroundLightHover()};
   }
 `;
 
@@ -219,7 +234,7 @@ export const StepStatusDot = styled.div`
 `;
 
 const Elapsed = styled.div`
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
   font-variant-numeric: tabular-nums;
 `;
 
@@ -227,5 +242,5 @@ const EmptyNotice = styled.div`
   min-height: 32px;
   font-size: 12px;
   padding: 8px 24px;
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
 `;

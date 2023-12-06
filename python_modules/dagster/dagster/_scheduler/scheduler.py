@@ -1,9 +1,7 @@
 import datetime
 import logging
-import os
 import sys
 import threading
-import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
@@ -16,7 +14,10 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalJob
@@ -38,7 +39,7 @@ from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._seven.compat.pendulum import to_timezone
-from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
+from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
 from dagster._utils.merger import merge_dicts
@@ -75,6 +76,10 @@ class _ScheduleLaunchContext:
     @property
     def failure_count(self) -> int:
         return self._tick.tick_data.failure_count
+
+    @property
+    def tick_id(self) -> str:
+        return str(self._tick.tick_id)
 
     def update_state(self, status, error=None, **kwargs):
         skip_reason = kwargs.get("skip_reason")
@@ -136,7 +141,7 @@ def execute_scheduler_iteration_loop(
     threadpool_executor = None
 
     with ExitStack() as stack:
-        settings = workspace_process_context.instance.get_settings("schedules")
+        settings = workspace_process_context.instance.get_scheduler_settings()
         if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
                 InheritContextThreadPoolExecutor(
@@ -535,13 +540,13 @@ def launch_scheduled_runs_for_schedule_iterator(
                 )
             )
 
-            _check_for_debug_crash(schedule_debug_crash_flags, "TICK_CREATED")
+            check_for_debug_crash(schedule_debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(
             external_schedule, tick, instance, logger, tick_retention_settings
         ) as tick_context:
             try:
-                _check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")
+                check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")
 
                 yield from _schedule_runs_at_time(
                     workspace_process_context,
@@ -553,7 +558,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                     schedule_debug_crash_flags,
                 )
             except Exception as e:
-                if isinstance(e, DagsterUserCodeUnreachableError):
+                if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
                     try:
                         raise DagsterSchedulerError(
                             f"Unable to reach the user code server for schedule {schedule_name}."
@@ -595,21 +600,6 @@ def launch_scheduled_runs_for_schedule_iterator(
         instigator_data,
         end_datetime_utc.timestamp(),
     )
-
-
-def _check_for_debug_crash(
-    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
-) -> None:
-    if not debug_crash_flags:
-        return
-
-    kill_signal = debug_crash_flags.get(key)
-    if not kill_signal:
-        return
-
-    os.kill(os.getpid(), kill_signal)
-    time.sleep(10)
-    raise Exception("Process didn't terminate after sending crash signal")
 
 
 class SubmitRunRequestResult(NamedTuple):
@@ -673,7 +663,7 @@ def _submit_run_request(
             run_request,
         )
 
-    _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
+    check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 
     error_info = None
 
@@ -747,17 +737,26 @@ def _schedule_runs_at_time(
     run_requests = []
 
     for raw_run_request in schedule_execution_data.run_requests:
-        if raw_run_request.stale_assets_only:
-            stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_schedule)  # type: ignore
+        run_request = raw_run_request.with_replaced_attrs(
+            tags=merge_dicts(
+                raw_run_request.tags,
+                DagsterRun.tags_for_tick_id(tick_context.tick_id),
+            )
+        )
+
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_or_missing_assets(
+                workspace_process_context,  # type: ignore
+                run_request,
+                external_schedule,
+            )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
             else:
-                run_request = raw_run_request.with_replaced_attrs(
+                run_request = run_request.with_replaced_attrs(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
-        else:
-            run_request = raw_run_request
 
         run_requests.append(run_request)
 
@@ -784,11 +783,11 @@ def _schedule_runs_at_time(
             )
         else:
             run = check.not_none(run_request_result.submitted_run)
-            _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
+            check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
             tick_context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
-            _check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
+            check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
 
-    _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
+    check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
     tick_context.update_state(TickStatus.SUCCESS)
 
 
@@ -888,6 +887,7 @@ def _create_scheduler_run(
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
+        asset_check_selection=None,
     )
 
 

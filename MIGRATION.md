@@ -2,6 +2,43 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.5.0
+
+### Breaking changes
+
+- The UI dialog for launching a backfill no longer includes a toggle to determine whether the backfill is launched as a single run or multiple runs. This toggle was misleading, because it implied that all backfills could be launched as single-run backfills, when it actually required special handling in the implementations of the assets targeted by the backfill to achieve this behavior. Instead, whether to execute a backfill as a single run is now determined by a setting on the asset definition. To enable single-run backfills, set `backfill_policy=BackfillPolicy.single_run()` on the asset definitions. Refer to the [docs on single-run backfills](/concepts/partitions-schedules-sensors/backfills#single-run-backfills) for more information.
+
+- `AssetExecutionContext` is now a subclass of `OpExecutionContext`, not a type alias. The code
+
+```python
+def my_helper_function(context: AssetExecutionContext):
+    ...
+
+@op
+def my_op(context: OpExecutionContext):
+    my_helper_function(context)
+```
+
+will cause type checking errors. To migrate, update type hints to respect the new subclassing.
+
+- `AssetExecutionContext` cannot be used as the type annotation for `@op`s. To migrate, update the type hint in `@op` to `OpExecutionContext`. `@op`s that are used in `@graph_assets` may still use the `AssetExecutionContext` type hint.
+
+```python
+# old
+@op
+def my_op(context: AssetExecutionContext):
+    ...
+
+# correct
+@op
+def my_op(context: OpExecutionContext):
+    ...
+```
+
+- `AssetCheckResult(success=True)` is renamed to `AssetCheckResult(passed=True)`
+
+- Asset checks defined with Dagster version 1.4 will no longer work with Dagster Cloud, or with Dagster UI 1.5. Upgrade your `dagster` library to continue using checks.
+
 ## Migrating to 1.4.0
 
 ### Deprecations
@@ -323,7 +360,7 @@ to make sure the correct library version is installed.
 
 ### Legacy API Removals
 
-- Dagster's legacy APIs, which were marked "legacy" in 0.13.0, have been removed. This includes `@solid`, `SolidDefinition`, `@pipeline`, `PipelineDefinition`, `@composite_solid`, `CompositeSolidDefinition`, `ModeDefinition`, `PresetDefinition`, `PartitionSetDefinition`, `InputDefinition`, `OutputDefinition`, `DynamicOutputDefinition`, `pipeline_failure_sensor`, `@hourly_schedule`, `@daily_schedule`, `@weekly_schedule`, and `@monthly_schedule`. [Here is a guide](https://docs.dagster.io/0.15.6/guides/dagster/graph_job_op) to migrating from the legacy APIs to the stable APIs.
+- Dagster's legacy APIs, which were marked "legacy" in 0.13.0, have been removed. This includes `@solid`, `SolidDefinition`, `@pipeline`, `PipelineDefinition`, `@composite_solid`, `CompositeSolidDefinition`, `ModeDefinition`, `PresetDefinition`, `PartitionSetDefinition`, `InputDefinition`, `OutputDefinition`, `DynamicOutputDefinition`, `pipeline_failure_sensor`, `@hourly_schedule`, `@daily_schedule`, `@weekly_schedule`, and `@monthly_schedule`. [Here is a guide](https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.6/guides/dagster/graph_job_op) to migrating from the legacy APIs to the stable APIs.
 - Deprecated arguments to library ops have been switched to reflect stable APIs. This includes `input_defs`/`output_defs` arguments on `define_dagstermill_op`, which have been changed to `ins`/`outs` respectively, and `input_defs` argument on `create_shell_script_op`, which has been changed to `ins`.
 - The `pipeline_selection` argument has been removed from `run_failure_sensor` and related decorators / functions, and `job_selection` has been deprecated. Instead, use `monitored_jobs`.
 - `ScheduleExecutionContext` and `SensorExecutionContext` APIs have been removed. In 0.13.0, these were renamed to `ScheduleEvaluationContext` and `SensorEvaluationContext` respectively, and marked deprecated.
@@ -509,7 +546,7 @@ Dagster’s metadata API has undergone a signficant overhaul. Changes include:
 ## Migrating to 0.13.0
 
 Jobs, ops, and graphs have replaced pipelines, solids, modes, and presets as the stable core of the
-system. [Here](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
+system. [Here](https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.7/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
 
 ## Migrating to 0.12.0
 
@@ -625,7 +662,7 @@ set up and run the daemon process for local development, Docker, or Kubernetes d
 3. Start the `dagster-daemon` process. Guides can be found in our
    [deployment documentations](https://docs.dagster.io/deployment).
 
-See our [schedules troubleshooting guide](https://docs.dagster.io/troubleshooting/schedules) for
+See our [schedules troubleshooting guide](/concepts/partitions-schedules-sensors/schedules) for
 help if you experience any problems with the new scheduler.
 
 **If you are not using a legacy scheduler:**
@@ -768,7 +805,7 @@ should now be expressed as:
     location_name: dagster_examples
 ```
 
-See our [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces#loading-from-an-external-environment)
+See our [Workspaces Overview](/concepts/code-locations/workspace-files)
 for more information and examples.
 
 ### Removal: config_field property on definition classes

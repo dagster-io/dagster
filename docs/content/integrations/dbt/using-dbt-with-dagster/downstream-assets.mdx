@@ -47,7 +47,7 @@ To add the `order_count_chart` asset:
    import duckdb
    import pandas as pd
    import plotly.express as px
-   from dagster import MetadataValue, OpExecutionContext, asset
+   from dagster import MetadataValue, AssetExecutionContext, asset
    from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
    from .constants import dbt_manifest_path, dbt_project_dir
@@ -62,7 +62,7 @@ To add the `order_count_chart` asset:
        compute_kind="python",
        deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"),
    )
-   def order_count_chart(context):
+   def order_count_chart(context: AssetExecutionContext):
        # read the contents of the customers table into a Pandas DataFrame
        connection = duckdb.connect(os.fspath(duckdb_database_path))
        customers = connection.sql("select * from customers").df()

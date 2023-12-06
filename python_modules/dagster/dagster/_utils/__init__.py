@@ -78,8 +78,27 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 
-SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int]
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, Union[int, Exception]]
 DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
+
+
+def check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
+    if not debug_crash_flags:
+        return
+
+    kill_signal_or_exception = debug_crash_flags.get(key)
+
+    if not kill_signal_or_exception:
+        return
+
+    if isinstance(kill_signal_or_exception, Exception):
+        raise kill_signal_or_exception
+
+    os.kill(os.getpid(), kill_signal_or_exception)
+    time.sleep(10)
+    raise Exception("Process didn't terminate after sending crash signal")
 
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
@@ -182,7 +201,7 @@ def camelcase(string: str) -> str:
 def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
-    return list(ddict.items())[0]
+    return next(iter(ddict.items()))
 
 
 @contextlib.contextmanager
@@ -224,7 +243,7 @@ def mkdir_p(path: str) -> str:
 def hash_collection(
     collection: Union[
         Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], Tuple[Any, ...], NamedTuple
-    ]
+    ],
 ) -> int:
     """Hash a mutable collection or immutable collection containing mutable elements.
 
@@ -668,8 +687,7 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
         if posix_signal == get_terminate_signal():
             exit_clause = (
-                exit_clause
-                + " This usually indicates that the process was"
+                exit_clause + " This usually indicates that the process was"
                 " killed by the operating system due to running out of"
                 " memory. Possible solutions include increasing the"
                 " amount of memory available to the run, reducing"

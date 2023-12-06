@@ -10,6 +10,7 @@ from dagster import (
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
     FreshnessPolicy,
+    GraphIn,
     IdentityPartitionMapping,
     In,
     MultiPartitionMapping,
@@ -23,6 +24,8 @@ from dagster import (
     TimeWindowPartitionMapping,
     _check as check,
     build_asset_context,
+    build_op_context,
+    graph,
     graph_asset,
     graph_multi_asset,
     io_manager,
@@ -611,7 +614,7 @@ def test_kwargs_with_context():
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
     assert my_asset(build_asset_context(), upstream=5) == 7
-    assert my_asset.op(build_asset_context(), upstream=5) == 7
+    assert my_asset.op(build_op_context(), upstream=5) == 7
 
     @asset
     def upstream():
@@ -652,7 +655,7 @@ def test_kwargs_multi_asset_with_context():
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
     assert my_asset(build_asset_context(), upstream=5) == (7,)
-    assert my_asset.op(build_asset_context(), upstream=5) == (7,)
+    assert my_asset.op(build_op_context(), upstream=5) == (7,)
 
     @asset
     def upstream():
@@ -1007,6 +1010,18 @@ def test_graph_asset_w_config_dict():
     assert result.success
     assert result.output_for_node("foo") == 1
 
+    @graph_multi_asset(
+        outs={"first_asset": AssetOut()},
+        config={"foo_op": {"config": {"val": 1}}},
+    )
+    def bar():
+        x = foo_op()
+        return {"first_asset": x}
+
+    result = materialize_to_memory([bar])
+    assert result.success
+    assert result.output_for_node("bar", "first_asset") == 1
+
 
 def test_graph_asset_w_config_mapping():
     class FooConfig(Config):
@@ -1027,6 +1042,18 @@ def test_graph_asset_w_config_mapping():
     result = materialize_to_memory([foo], run_config={"ops": {"foo": {"config": 1}}})
     assert result.success
     assert result.output_for_node("foo") == 1
+
+    @graph_multi_asset(
+        outs={"first_asset": AssetOut()},
+        config=foo_config_mapping,
+    )
+    def bar():
+        x = foo_op()
+        return {"first_asset": x}
+
+    result = materialize_to_memory([bar], run_config={"ops": {"bar": {"config": 1}}})
+    assert result.success
+    assert result.output_for_node("bar", "first_asset") == 1
 
 
 @ignore_warning("Class `FreshnessPolicy` is experimental")
@@ -1240,3 +1267,23 @@ def test_dynamic_graph_asset_ins():
         return wait_until_job_done(run_id)
 
     assert materialize([some_graph_asset, foo]).success
+
+
+def test_graph_inputs_error():
+    try:
+
+        @graph_asset(ins={"start": AssetIn(dagster_type=Nothing)})
+        def _():
+            ...
+
+    except DagsterInvalidDefinitionError as err:
+        assert "except for Ins that have the Nothing dagster_type" not in str(err)
+
+    try:
+
+        @graph(ins={"start": GraphIn()})
+        def _():
+            ...
+
+    except DagsterInvalidDefinitionError as err:
+        assert "except for Ins that have the Nothing dagster_type" not in str(err)

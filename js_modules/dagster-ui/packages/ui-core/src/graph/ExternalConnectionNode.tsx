@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui-components';
+import {colorBackgroundLight, colorBackgroundLightHover} from '@dagster-io/ui-components';
 import {LinkVertical as Link} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -21,7 +21,7 @@ interface ExternalConnectionNodeProps {
   onDoubleClickLabel: () => void;
 }
 
-export const ExternalConnectionNode: React.FC<ExternalConnectionNodeProps> = ({
+export const ExternalConnectionNode = ({
   layout,
   target,
   edges,
@@ -31,7 +31,7 @@ export const ExternalConnectionNode: React.FC<ExternalConnectionNodeProps> = ({
   highlightedEdges,
   onHighlightEdges,
   onDoubleClickLabel,
-}) => {
+}: ExternalConnectionNodeProps) => {
   const textProps = {width: 0, size: minified ? 24 : 12, text: label};
   const textSize = SVGMonospaceText.intrinsicSizeForProps(textProps);
   const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));
@@ -67,10 +67,10 @@ export const ExternalConnectionNode: React.FC<ExternalConnectionNodeProps> = ({
 
 const BackingRect = styled('rect')`
   stroke-width: 10px;
-  fill: ${Colors.Gray100};
-  stroke: ${Colors.Gray100};
+  fill: ${colorBackgroundLight()};
+  stroke: ${colorBackgroundLight()};
   &:hover {
-    fill: ${Colors.Gray200};
-    stroke: ${Colors.Gray200};
+    fill: ${colorBackgroundLightHover()};
+    stroke: ${colorBackgroundLightHover()};
   }
 `;

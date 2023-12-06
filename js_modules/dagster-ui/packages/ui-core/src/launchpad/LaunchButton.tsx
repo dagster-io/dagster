@@ -1,6 +1,5 @@
 import {
   Button,
-  Colors,
   Icon,
   IconName,
   Menu,
@@ -8,6 +7,8 @@ import {
   Popover,
   Spinner,
   Tooltip,
+  colorAccentReversed,
+  colorKeylineDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -187,7 +188,7 @@ interface ButtonWithConfigurationProps {
 
 // Basic helper components
 
-const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
+const ButtonWithConfiguration = ({
   tooltip,
   icon,
   title,
@@ -197,7 +198,7 @@ const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
   onClick,
   joined,
   disabled,
-}) => {
+}: ButtonWithConfigurationProps) => {
   const confirm = useConfirmation();
 
   const onClickWithWarning = async () => {
@@ -232,7 +233,7 @@ const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
         disabled={disabled}
         icon={
           icon === 'dagster-spinner' ? (
-            <Spinner purpose="body-text" fillColor={Colors.White} />
+            <Spinner purpose="body-text" fillColor={colorAccentReversed()} />
           ) : typeof icon === 'string' ? (
             <Icon name={icon} size={16} style={{textAlign: 'center', marginRight: 5}} />
           ) : (
@@ -253,7 +254,7 @@ const ButtonContainer = styled(Button)<{
   border-top-${({joined}) => joined}-radius: 0;
   border-bottom-${({joined}) => joined}-radius: 0;
   border-left: ${({joined}) =>
-    joined === 'left' ? `1px solid rgba(255,255,255,0.2)` : 'transparent'};
+    joined === 'left' ? `1px solid ${colorKeylineDefault()}` : 'transparent'};
   cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
   margin-left: ${({joined}) => (joined ? '0' : '6px')};
   ${({joined}) => (joined === 'right' ? 'padding-right: 8px;' : null)}

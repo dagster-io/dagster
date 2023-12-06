@@ -1,10 +1,13 @@
 import {
-  Colors,
   Popover,
   TextInput,
   SuggestionProvider,
   useSuggestionsForString,
   Icon,
+  colorBackgroundDefault,
+  colorAccentPrimary,
+  colorBackgroundBlue,
+  colorBackgroundGray,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -56,7 +59,7 @@ const fuseOptions = {
   threshold: 0.3,
 };
 
-export const LogsFilterInput: React.FC<Props> = (props) => {
+export const LogsFilterInput = (props: Props) => {
   const {value, onChange, suggestionProviders} = props;
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -64,12 +67,15 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const {empty, perProvider} = React.useMemo(() => {
-    const perProvider = suggestionProviders.reduce((accum, provider) => {
-      const values = provider.values();
-      return provider.token
-        ? {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}}
-        : accum;
-    }, {} as {[token: string]: {fuse: Fuse<string>; all: string[]}});
+    const perProvider = suggestionProviders.reduce(
+      (accum, provider) => {
+        const values = provider.values();
+        return provider.token
+          ? {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}}
+          : accum;
+      },
+      {} as {[token: string]: {fuse: Fuse<string>; all: string[]}},
+    );
     const providerKeys = suggestionProviders
       .map((provider) => provider.token)
       .filter((token) => token) as string[];
@@ -194,11 +200,11 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
   );
 };
 
-const ResultItem: React.FC<{
+const ResultItem = (props: {
   suggestion: string;
   isHighlight: boolean;
   onSelect: (suggestion: string) => void;
-}> = (props) => {
+}) => {
   const {suggestion, isHighlight, onSelect} = props;
   const element = React.useRef<HTMLLIElement>(null);
 
@@ -242,8 +248,9 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.White)};
-  color: ${({isHighlight}) => (isHighlight ? Colors.White : 'default')};
+  background-color: ${({isHighlight}) =>
+    isHighlight ? colorBackgroundBlue() : colorBackgroundDefault()};
+  color: ${({isHighlight}) => (isHighlight ? colorAccentPrimary() : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -255,6 +262,7 @@ const Item = styled.li<HighlightableTextProps>`
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.Gray100)};
+    background-color: ${({isHighlight}) =>
+      isHighlight ? colorBackgroundBlue() : colorBackgroundGray()};
   }
 `;

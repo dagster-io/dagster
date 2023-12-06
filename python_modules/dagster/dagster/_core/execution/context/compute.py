@@ -1,4 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
+from contextlib import contextmanager
+from contextvars import ContextVar
+from inspect import _empty as EmptyAnnotation
 from typing import (
     AbstractSet,
     Any,
@@ -9,20 +12,21 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
     cast,
 )
 
-from typing_extensions import TypeAlias
-
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
     DataVersion,
     extract_data_provenance_from_entry,
 )
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
@@ -38,6 +42,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
@@ -45,12 +50,21 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._utils.cached_method import cached_method
 from dagster._utils.forked_pdb import ForkedPdb
+from dagster._utils.warnings import (
+    deprecation_warning,
+)
 
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):
+# This metaclass has to exist for OpExecutionContext to have a metaclass
+class AbstractComputeMetaclass(ABCMeta):
+    pass
+
+
+class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
     """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
@@ -97,7 +111,25 @@ class AbstractComputeExecutionContext(ABC):
         """The parsed config specific to this op."""
 
 
-class OpExecutionContext(AbstractComputeExecutionContext):
+class OpExecutionContextMetaClass(AbstractComputeMetaclass):
+    def __instancecheck__(cls, instance) -> bool:
+        # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
+        # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
+        # has been split into it's own class in 1.7.0
+        if type(instance) is AssetExecutionContext and cls is not AssetExecutionContext:
+            deprecation_warning(
+                subject="AssetExecutionContext",
+                additional_warn_text=(
+                    "Starting in version 1.7.0 AssetExecutionContext will no longer be a subclass"
+                    " of OpExecutionContext."
+                ),
+                breaking_version="1.7.0",
+                stacklevel=1,
+            )
+        return super().__instancecheck__(instance)
+
+
+class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 
@@ -260,9 +292,58 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def partition_key(self) -> str:
         """The partition key for the current run.
 
-        Raises an error if the current run is not a partitioned run.
+        Raises an error if the current run is not a partitioned run. Or if the current run is operating
+        over a range of partitions (ie. a backfill of several partitions executed in a single run).
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def my_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_key)
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
         """
         return self._step_execution_context.partition_key
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
+        """Returns a list of the partition keys for the current run.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``partition_keys`` to get all of the partitions being materialized
+        by the backfill.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(partitions_def=partitions_def)
+                def an_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_keys)
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+        """
+        key_range = self.partition_key_range
+        partitions_def = self.assets_def.partitions_def
+        if partitions_def is None:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_keys for a non-partitioned run"
+            )
+
+        return partitions_def.get_partition_keys_in_range(
+            key_range,
+            dynamic_partitions_store=self.instance,
+        )
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
@@ -280,8 +361,22 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def partition_key_range(self) -> PartitionKeyRange:
         """The range of partition keys for the current run.
 
-        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        If run is for a single partition key, returns a `PartitionKeyRange` with the same start and
         end. Raises an error if the current run is not a partitioned run.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def my_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_key_range)
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
         """
         return self._step_execution_context.asset_partition_key_range
 
@@ -292,6 +387,20 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         Raises an error if the current run is not a partitioned run, or if the job's partition
         definition is not a TimeWindowPartitionsDefinition.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def my_asset(context: AssetExecutionContext):
+                    context.log.info(context.partition_time_window)
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
         """
         return self._step_execution_context.partition_time_window
 
@@ -368,6 +477,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         else:
             check.failed(f"Unexpected event {event}")
 
+    @public
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
@@ -376,11 +486,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     ) -> None:
         """Add metadata to one of the outputs of an op.
 
-        This can only be used once per output in the body of an op. Using this method with the same output_name more than once within an op will result in an error.
+        This can be invoked multiple times per output in the body of an op. If the same key is
+        passed multiple times, the value associated with the last call will be used.
 
         Args:
             metadata (Mapping[str, Any]): The metadata to attach to the output
             output_name (Optional[str]): The name of the output to attach metadata to. If there is only one output on the op, then this argument does not need to be provided. The metadata will automatically be attached to the only output.
+            mapping_key (Optional[str]): The mapping key of the output to attach metadata to. If the
+                output is not dynamic, this argument does not need to be provided.
 
         **Examples:**
 
@@ -455,10 +568,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 "Cannot call `context.asset_key` in a multi_asset with more than one asset. Use"
                 " `context.asset_key_for_output` instead."
             )
-        # pass in the output name to handle the case when a multi_asset has a single AssetOut
-        return self.asset_key_for_output(
-            output_name=list(self.assets_def.keys_by_output_name.keys())[0]
-        )
+        return next(iter(self.assets_def.keys_by_output_name.values()))
 
     @public
     @property
@@ -485,6 +595,54 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         if not self.has_assets_def:
             return set()
         return self.assets_def.keys
+
+    @public
+    @property
+    def has_asset_checks_def(self) -> bool:
+        """Return a boolean indicating the presence of a backing AssetChecksDefinition
+        for the current execution.
+
+        Returns:
+            bool: True if there is a backing AssetChecksDefinition for the current execution, otherwise False.
+        """
+        return self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle) is not None
+
+    @public
+    @property
+    def asset_checks_def(self) -> AssetChecksDefinition:
+        """The backing AssetChecksDefinition for what is currently executing, errors if not
+        available.
+
+        Returns:
+            AssetChecksDefinition.
+        """
+        asset_checks_def = self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle)
+        if asset_checks_def is None:
+            raise DagsterInvalidPropertyError(
+                f"Op '{self.op.name}' does not have an asset checks definition."
+            )
+
+        return asset_checks_def
+
+    @property
+    def is_subset(self):
+        """Whether the current AssetsDefinition is subsetted. Note that this can be True inside a
+        a graph asset for an op that's not subsetted, if the graph asset is subsetted elsewhere.
+        """
+        if not self.has_assets_def:
+            return False
+        return self.assets_def.is_subset
+
+    @public
+    @property
+    def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        if self.has_assets_def:
+            return self.assets_def.check_keys
+
+        if self.has_asset_checks_def:
+            check.failed("Subset selection is not yet supported within an AssetChecksDefinition")
+
+        return set()
 
     @public
     @property
@@ -542,8 +700,58 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """Returns the asset partition key for the given output. Defaults to "result", which is the
-        name of the default output.
+        """Returns the asset partition key for the given output.
+
+        Args:
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the partition key for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partition_key_for_output())
+
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
+
+                @multi_asset(
+                    outs={
+                        "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                    }
+                    partitions_def=partitions_def,
+                )
+                def a_multi_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partition_key_for_output("first_asset"))
+                    context.log.info(context.asset_partition_key_for_output("second_asset"))
+
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
+                #   "2023-08-21"
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partition_key_for_output())
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
+
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
@@ -551,10 +759,74 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the output asset.
 
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``asset_partitions_time_window_for_output`` to get the TimeWindow of all of the partitions
+        being materialized by the backfill.
+
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Args:
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the time window for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partitions_time_window_for_output())
+
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-26")
+
+                @multi_asset(
+                    outs={
+                        "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                    }
+                    partitions_def=partitions_def,
+                )
+                def a_multi_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partitions_time_window_for_output("first_asset"))
+                    context.log.info(context.asset_partitions_time_window_for_output("second_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-26")
+                #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partitions_time_window_for_output())
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-26")
+
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
@@ -562,22 +834,211 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding output. Errors if not present."""
+        """Return the PartitionKeyRange for the corresponding output. Errors if the run is not partitioned.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``asset_partition_key_range_for_output`` to get all of the partitions being materialized
+        by the backfill.
+
+        Args:
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the partition key range for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partition_key_range_for_output())
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+                @multi_asset(
+                    outs={
+                        "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                    }
+                    partitions_def=partitions_def,
+                )
+                def a_multi_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partition_key_range_for_output("first_asset"))
+                    context.log.info(context.asset_partition_key_range_for_output("second_asset"))
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partition_key_range_for_output())
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+        """
         return self._step_execution_context.asset_partition_key_range_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one."""
+        """Return the PartitionKeyRange for the corresponding input. Errors if the asset depends on a
+        non-contiguous chunk of the input.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``asset_partition_key_range_for_input`` to get the range of partitions keys of the input that
+        are relevant to that backfill.
+
+        Args:
+            input_name (str): The name of the input to get the time window for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset():
+                    ...
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partition_key_range_for_input("upstream_asset"))
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+                @asset(
+                    ins={
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                    partitions_def=partitions_def,
+                )
+                def another_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partition_key_range_for_input("upstream_asset"))
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partition_key_range_for_input("self_dependent_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+
+
+        """
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
-        """Returns the partition key of the upstream asset corresponding to the given input."""
+        """Returns the partition key of the upstream asset corresponding to the given input.
+
+        Args:
+            input_name (str): The name of the input to get the partition key for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset():
+                    ...
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partition_key_for_input("upstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-21"
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partition_key_for_input("self_dependent_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   "2023-08-20"
+
+        """
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        """The PartitionsDefinition on the asset corresponding to this output.
+
+        Args:
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the PartitionsDefinition for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partitions_def_for_output())
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   DailyPartitionsDefinition("2023-08-20")
+
+                @multi_asset(
+                    outs={
+                        "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                    }
+                    partitions_def=partitions_def,
+                )
+                def a_multi_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partitions_def_for_output("first_asset"))
+                    context.log.info(context.asset_partitions_def_for_output("second_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   DailyPartitionsDefinition("2023-08-20")
+                #   DailyPartitionsDefinition("2023-08-20")
+
+        """
         asset_key = self.asset_key_for_output(output_name)
         result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
@@ -592,7 +1053,32 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        """The PartitionsDefinition on the upstream asset corresponding to this input.
+
+        Args:
+            input_name (str): The name of the input to get the PartitionsDefinition for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset():
+                    ...
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partitions_def_for_input("upstream_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   DailyPartitionsDefinition("2023-08-20")
+
+        """
         asset_key = self.asset_key_for_input(input_name)
         result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
@@ -607,7 +1093,62 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        """Returns a list of the partition keys for the given output."""
+        """Returns a list of the partition keys for the given output.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``asset_partition_keys_for_output`` to get all of the partitions being materialized
+        by the backfill.
+
+        Args:
+            output_name (str): For assets defined with the ``@asset`` decorator, the name of the output
+                will be automatically provided. For assets defined with ``@multi_asset``, ``output_name``
+                should be the op output associated with the asset key (as determined by AssetOut)
+                to get the partition keys for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partition_keys_for_output())
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+                @multi_asset(
+                    outs={
+                        "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                    }
+                    partitions_def=partitions_def,
+                )
+                def a_multi_asset(context: AssetExecutionContext):
+                    context.log.info(context.asset_partition_keys_for_output("first_asset"))
+                    context.log.info(context.asset_partition_keys_for_output("second_asset"))
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partition_keys_for_output())
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+        """
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
             self._step_execution_context.asset_partition_key_range_for_output(output_name),
             dynamic_partitions_store=self.instance,
@@ -617,6 +1158,60 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
         """Returns a list of the partition keys of the upstream asset corresponding to the
         given input.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``asset_partition_keys_for_input`` to get all of the partition keys of the input that
+        are relevant to that backfill.
+
+        Args:
+            input_name (str): The name of the input to get the time window for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset():
+                    ...
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partition_keys_for_input("upstream_asset"))
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+                @asset(
+                    ins={
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                    partitions_def=partitions_def,
+                )
+                def another_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partition_keys_for_input("upstream_asset"))
+
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partition_keys_for_input("self_dependent_asset"))
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
         """
         return list(
             self._step_execution_context.asset_partitions_subset_for_input(
@@ -628,10 +1223,75 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the input asset.
 
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use ``asset_partitions_time_window_for_input`` to get the time window of the input that
+        are relevant to that backfill.
+
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
         - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Args:
+            input_name (str): The name of the input to get the partition key for.
+
+        Examples:
+            .. code-block:: python
+
+                partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def upstream_asset():
+                    ...
+
+                @asset(
+                    partitions_def=partitions_def
+                )
+                def an_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partitions_time_window_for_input("upstream_asset"))
+
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-22")
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+                @asset(
+                    ins={
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                    partitions_def=partitions_def,
+                )
+                def another_asset(context: AssetExecutionContext, upstream_asset):
+                    context.log.info(context.asset_partitions_time_window_for_input("upstream_asset"))
+
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-20", "2023-08-21")
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+                @asset(
+                    partitions_def=partitions_def,
+                    ins={
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                    }
+                )
+                def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                    context.log.info(context.asset_partitions_time_window_for_input("self_dependent_asset"))
+
+                # materializing the 2023-08-21 partition of this asset will log:
+                #   TimeWindow("2023-08-20", "2023-08-21")
+
+                # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+                #   TimeWindow("2023-08-20", "2023-08-25")
+
         """
         return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
@@ -673,9 +1333,121 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
         return asset_checks_def.spec
 
+    # In this mode no conversion is done on returned values and missing but expected outputs are not
+    # allowed.
+    @property
+    def requires_typed_event_stream(self) -> bool:
+        return self._step_execution_context.requires_typed_event_stream
 
-# actually forking the object type for assets is tricky for users in the cases of:
-#  * manually constructing ops to make AssetsDefinitions
-#  * having ops in a graph that form a graph backed asset
-# so we have a single type that users can call by their preferred name where appropriate
-AssetExecutionContext: TypeAlias = OpExecutionContext
+    @property
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self._step_execution_context.typed_event_stream_error_message
+
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
+        self._step_execution_context.set_requires_typed_event_stream(error_message=error_message)
+
+    @staticmethod
+    def get() -> "OpExecutionContext":
+        ctx = _current_asset_execution_context.get()
+        if ctx is None:
+            raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
+        return ctx.get_op_execution_context()
+
+
+class AssetExecutionContext(OpExecutionContext):
+    def __init__(self, step_execution_context: StepExecutionContext):
+        super().__init__(step_execution_context=step_execution_context)
+
+    @staticmethod
+    def get() -> "AssetExecutionContext":
+        ctx = _current_asset_execution_context.get()
+        if ctx is None:
+            raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
+        return ctx
+
+    @cached_method
+    def get_op_execution_context(self) -> "OpExecutionContext":
+        return OpExecutionContext(self._step_execution_context)
+
+
+@contextmanager
+def enter_execution_context(
+    step_context: StepExecutionContext,
+) -> Iterator[Union[OpExecutionContext, AssetExecutionContext]]:
+    """Get the correct context based on the type of step (op or asset) and the user provided context
+    type annotation. Follows these rules.
+
+    step type     annotation                result
+    asset         AssetExecutionContext     AssetExecutionContext
+    asset         OpExecutionContext        OpExecutionContext
+    asset         None                      AssetExecutionContext
+    op            AssetExecutionContext     Error - we cannot init an AssetExecutionContext w/o an AssetsDefinition
+    op            OpExecutionContext        OpExecutionContext
+    op            None                      OpExecutionContext
+    asset_check   AssetExecutionContext     AssetExecutionContext
+    asset_check   OpExecutionContext        OpExecutionContext
+    asset_check   None                      AssetExecutionContext
+
+    For ops in graph-backed assets
+    step type     annotation                result
+    op            AssetExecutionContext     AssetExecutionContext
+    op            OpExecutionContext        OpExecutionContext
+    op            None                      OpExecutionContext
+    """
+    is_sda_step = step_context.is_sda_step
+    is_op_in_graph_asset = step_context.is_in_graph_asset
+    is_asset_check = step_context.is_asset_check_step
+    context_annotation = EmptyAnnotation
+    compute_fn = step_context.op_def._compute_fn  # noqa: SLF001
+    compute_fn = (
+        compute_fn
+        if isinstance(compute_fn, DecoratedOpFunction)
+        else DecoratedOpFunction(compute_fn)
+    )
+    if compute_fn.has_context_arg():
+        context_param = compute_fn.get_context_arg()
+        context_annotation = context_param.annotation
+
+    # It would be nice to do this check at definition time, rather than at run time, but we don't
+    # know if the op is part of an op job or a graph-backed asset until we have the step execution context
+    if (
+        context_annotation is AssetExecutionContext
+        and not is_sda_step
+        and not is_asset_check
+        and not is_op_in_graph_asset
+    ):
+        # AssetExecutionContext requires an AssetsDefinition during init, so an op in an op job
+        # cannot be annotated with AssetExecutionContext
+        raise DagsterInvalidDefinitionError(
+            "Cannot annotate @op `context` parameter with type AssetExecutionContext unless the"
+            " op is part of a graph-backed asset. `context` must be annotated with"
+            " OpExecutionContext, or left blank."
+        )
+
+    # Structured assuming upcoming changes to make AssetExecutionContext contain an OpExecutionContext
+    asset_ctx = AssetExecutionContext(step_context)
+    asset_token = _current_asset_execution_context.set(asset_ctx)
+
+    try:
+        if context_annotation is EmptyAnnotation:
+            # if no type hint has been given, default to:
+            # * AssetExecutionContext for sda steps not in graph-backed assets, and asset_checks
+            # * OpExecutionContext for non sda steps
+            # * OpExecutionContext for ops in graph-backed assets
+            if is_asset_check:
+                yield asset_ctx
+            elif is_op_in_graph_asset or not is_sda_step:
+                yield asset_ctx.get_op_execution_context()
+            else:
+                yield asset_ctx
+        elif context_annotation is AssetExecutionContext:
+            yield asset_ctx
+        else:
+            yield asset_ctx.get_op_execution_context()
+    finally:
+        _current_asset_execution_context.reset(asset_token)
+
+
+_current_asset_execution_context: ContextVar[Optional[AssetExecutionContext]] = ContextVar(
+    "_current_asset_execution_context", default=None
+)

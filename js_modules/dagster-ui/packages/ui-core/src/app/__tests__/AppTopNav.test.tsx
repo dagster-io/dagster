@@ -56,9 +56,12 @@ describe('AppTopNav', () => {
     }),
   };
 
-  const Test: React.FC<{statusPolling?: Set<DeploymentStatusType>; children: React.ReactNode}> = ({
+  const Test = ({
     children,
     statusPolling = new Set(['code-locations', 'daemons']),
+  }: {
+    statusPolling?: Set<DeploymentStatusType>;
+    children: React.ReactNode;
   }) => {
     return <DeploymentStatusProvider include={statusPolling}>{children}</DeploymentStatusProvider>;
   };

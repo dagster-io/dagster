@@ -17,8 +17,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-mysql",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="A Dagster integration for MySQL",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-mysql",

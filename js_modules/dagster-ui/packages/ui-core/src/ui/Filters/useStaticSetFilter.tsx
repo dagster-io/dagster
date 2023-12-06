@@ -2,10 +2,11 @@ import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {LaunchpadHooksContext} from '../../launchpad/LaunchpadHooksContext';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
-type SetFilterValue<T> = {
+export type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
@@ -16,12 +17,14 @@ type Args<TValue> = {
   renderActiveStateLabel?: (props: {value: TValue; isActive: boolean}) => JSX.Element;
   getKey?: (value: TValue) => string;
   getStringValue: (value: TValue) => string;
+  getTooltipText?: (value: TValue) => string;
   allValues: SetFilterValue<TValue>[];
   initialState?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
   allowMultipleSelections?: boolean;
   matchType?: 'any-of' | 'all-of';
   menuWidth?: number | string;
+  closeOnSelect?: boolean;
 };
 
 export type StaticSetFilter<TValue> = FilterObject & {
@@ -33,16 +36,28 @@ export function useStaticSetFilter<TValue>({
   name,
   icon,
   getKey,
-  allValues,
+  allValues: _unsortedValues,
   renderLabel,
   renderActiveStateLabel,
   initialState,
   getStringValue,
+  getTooltipText,
   onStateChanged,
   menuWidth,
   allowMultipleSelections = true,
   matchType = 'any-of',
+  closeOnSelect = false,
 }: Args<TValue>): StaticSetFilter<TValue> {
+  const {StaticFilterSorter} = React.useContext(LaunchpadHooksContext);
+
+  const allValues = React.useMemo(() => {
+    const sorter = StaticFilterSorter?.[name];
+    if (sorter) {
+      return _unsortedValues.sort(sorter);
+    }
+    return _unsortedValues;
+  }, [StaticFilterSorter, name, _unsortedValues]);
+
   const [state, setState] = React.useState(() => new Set(initialState || []));
 
   React.useEffect(() => {
@@ -93,7 +108,7 @@ export function useStaticSetFilter<TValue>({
             value,
           }));
       },
-      onSelect: ({value}) => {
+      onSelect: ({value, close}) => {
         let newState = new Set(filterObjRef.current.state);
         if (newState.has(value)) {
           newState.delete(value);
@@ -105,6 +120,9 @@ export function useStaticSetFilter<TValue>({
           }
         }
         setState(newState);
+        if (closeOnSelect) {
+          close();
+        }
       },
 
       activeJSX: (
@@ -112,6 +130,7 @@ export function useStaticSetFilter<TValue>({
           name={name}
           state={state}
           getStringValue={getStringValue}
+          getTooltipText={getTooltipText}
           renderLabel={renderActiveStateLabel || renderLabel}
           onRemove={() => {
             setState(new Set());
@@ -151,11 +170,13 @@ export function SetFilterActiveState({
   onRemove,
   renderLabel,
   matchType,
+  getTooltipText,
 }: {
   name: string;
   icon: IconName;
   state: Set<any>;
   getStringValue: (value: any) => string;
+  getTooltipText: ((value: any) => string) | undefined;
   onRemove: () => void;
   renderLabel: (value: any) => JSX.Element;
   matchType: 'any-of' | 'all-of';
@@ -169,12 +190,16 @@ export function SetFilterActiveState({
       return (
         <>
           is&nbsp;{arr.length === 1 ? '' : <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>}
-          {arr.map((value, index) => (
-            <React.Fragment key={index}>
-              <FilterTagHighlightedText>{getStringValue(value)}</FilterTagHighlightedText>
-              {index < arr.length - 1 ? <>,&nbsp;</> : ''}
-            </React.Fragment>
-          ))}
+          {arr.map((value, index) => {
+            return (
+              <React.Fragment key={index}>
+                <FilterTagHighlightedText tooltipText={getTooltipText?.(value)}>
+                  {getStringValue(value)}
+                </FilterTagHighlightedText>
+                {index < arr.length - 1 ? <>,&nbsp;</> : ''}
+              </React.Fragment>
+            );
+          })}
         </>
       );
     } else {
@@ -186,9 +211,9 @@ export function SetFilterActiveState({
             position="bottom"
             content={
               <Box padding={{vertical: 8, horizontal: 12}} flex={{direction: 'column', gap: 4}}>
-                {arr.map((value) => (
+                {arr.map((value, index) => (
                   <div
-                    key={getStringValue(value)}
+                    key={index}
                     style={{
                       maxWidth: '500px',
                       overflow: 'hidden',
@@ -207,7 +232,7 @@ export function SetFilterActiveState({
         </Box>
       );
     }
-  }, [arr, getStringValue, isAnyOf, renderLabel]);
+  }, [arr, getStringValue, getTooltipText, isAnyOf, renderLabel]);
 
   if (arr.length === 0) {
     return null;
@@ -242,12 +267,12 @@ export function SetFilterLabel(props: SetFilterLabelProps) {
   const labelRef = React.useRef<HTMLDivElement>(null);
 
   return (
-    // 4 px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
+    // 2px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
     // SVG it contains with size="small"
     <Box
       flex={{direction: 'row', gap: 6, alignItems: 'center'}}
       ref={labelRef}
-      margin={{left: 4}}
+      margin={allowMultipleSelections ? {left: 2} : {}}
       style={{maxWidth: '500px'}}
     >
       {allowMultipleSelections ? <Checkbox checked={isActive} size="small" readOnly /> : null}

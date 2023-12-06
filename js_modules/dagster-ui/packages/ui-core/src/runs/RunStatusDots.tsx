@@ -8,8 +8,13 @@ import {RunStats} from './RunStats';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 
-export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(
-  ({runId, ...rest}) => (
+export const RunStatusWithStats = React.memo(
+  ({
+    runId,
+    ...rest
+  }: RunStatusProps & {
+    runId: string;
+  }) => (
     <Popover
       position="bottom"
       interactionKind="hover"
@@ -26,7 +31,7 @@ interface RunStatusProps {
   size?: number;
 }
 
-export const RunStatusIndicator: React.FC<RunStatusProps> = React.memo(({status, size}) => {
+export const RunStatusIndicator = React.memo(({status, size}: RunStatusProps) => {
   if (status === 'STARTED' || status === 'CANCELING') {
     return <Spinner purpose="caption-text" />;
   }
@@ -48,7 +53,7 @@ const pulseAnimation = keyframes`
   }
 
   50% {
-    filter: brightness(0.7);
+    filter: brightness(0.6);
   }
 
   100% {
@@ -75,6 +80,6 @@ export const RunStatusDot = styled.div<{
   background: ${({status}) => RUN_STATUS_COLORS[status]};
   &:hover {
     animation: none;
-    filter: brightness(0.7);
+    filter: brightness(0.6);
   }
 `;

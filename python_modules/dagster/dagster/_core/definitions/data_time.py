@@ -28,8 +28,8 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessMinutes
 from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
     TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
@@ -84,10 +84,12 @@ class CachingDataTimeResolver:
         partition_subset = partitions_def.empty_subset().with_partition_keys(
             partition_key
             for partition_key in self._instance_queryer.get_materialized_partitions(asset_key)
-            if partitions_def.is_valid_partition_key(partition_key)
+            if partitions_def.has_partition_key(
+                partition_key, current_time=self._instance_queryer.evaluation_time
+            )
         )
 
-        if not isinstance(partition_subset, TimeWindowPartitionsSubset):
+        if not isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
             check.failed(f"Invalid partition subset {type(partition_subset)}")
 
         sorted_time_windows = sorted(partition_subset.included_time_windows)
@@ -115,18 +117,16 @@ class CachingDataTimeResolver:
             return first_filled_time_window.end
 
         # get a per-partition count of the new materializations
-        new_partition_counts = self._instance_queryer.get_materialized_partition_counts(
-            asset_key, after_cursor=cursor
+        partitions = self._instance_queryer.get_materialized_partitions(asset_key)
+        prev_partitions = self._instance_queryer.get_materialized_partitions(
+            asset_key, before_cursor=cursor + 1
         )
-
-        total_partition_counts = self._instance_queryer.get_materialized_partition_counts(asset_key)
-
-        # these are the partitions that did not exist before this record was created
         net_new_partitions = {
             partition_key
-            for partition_key, new_count in new_partition_counts.items()
-            if new_count == total_partition_counts.get(partition_key)
-            and partitions_def.is_valid_partition_key(partition_key)
+            for partition_key in (partitions - prev_partitions)
+            if partitions_def.has_partition_key(
+                partition_key, current_time=self._instance_queryer.evaluation_time
+            )
         }
 
         # there are new materializations, but they don't fill any new partitions

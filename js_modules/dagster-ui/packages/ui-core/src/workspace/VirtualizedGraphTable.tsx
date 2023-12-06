@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors} from '@dagster-io/ui-components';
+import {Box, Caption, colorTextLight} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -19,7 +19,7 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
-export const VirtualizedGraphTable: React.FC<Props> = ({repoAddress, graphs}) => {
+export const VirtualizedGraphTable = ({repoAddress, graphs}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -35,13 +35,13 @@ export const VirtualizedGraphTable: React.FC<Props> = ({repoAddress, graphs}) =>
   return (
     <>
       <Box
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        border="top-and-bottom"
         style={{
           display: 'grid',
           gridTemplateColumns: '100%',
           height: '32px',
           fontSize: '12px',
-          color: Colors.Gray600,
+          color: colorTextLight(),
         }}
       >
         <HeaderCell>Graph</HeaderCell>
@@ -110,7 +110,7 @@ const GraphRow = (props: GraphRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <RowCell>
           <Box flex={{direction: 'column'}}>
             <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>
@@ -126,7 +126,7 @@ const GraphRow = (props: GraphRowProps) => {
               >
                 <Caption
                   style={{
-                    color: Colors.Gray500,
+                    color: colorTextLight(),
                     whiteSpace: 'nowrap',
                   }}
                 >

@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   Heading,
@@ -12,6 +11,7 @@ import {
   Spinner,
   TextInput,
   Tooltip,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -33,6 +33,7 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -55,7 +56,7 @@ export const OverviewSensorsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Sensors');
 
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -65,10 +66,10 @@ export const OverviewSensorsRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
 
-  const filters = React.useMemo(() => [codeLocationFilter, runningStateFilter], [
-    codeLocationFilter,
-    runningStateFilter,
-  ]);
+  const filters = React.useMemo(
+    () => [codeLocationFilter, runningStateFilter],
+    [codeLocationFilter, runningStateFilter],
+  );
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<OverviewSensorsQuery, OverviewSensorsQueryVariables>(
@@ -143,9 +144,8 @@ export const OverviewSensorsRoot = () => {
     );
   }, [allPermissionedSensors]);
 
-  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    allPermissionedSensorKeys,
-  );
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(allPermissionedSensorKeys);
 
   // Filter to find keys that are visible given any text search.
   const permissionedKeysOnScreen = React.useMemo(() => {
@@ -179,7 +179,7 @@ export const OverviewSensorsRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading sensors…</div>
+            <div style={{color: colorTextLight()}}>Loading sensors…</div>
           </Box>
         </Box>
       );
@@ -245,6 +245,8 @@ export const OverviewSensorsRoot = () => {
     );
   };
 
+  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
@@ -266,6 +268,11 @@ export const OverviewSensorsRoot = () => {
           <TextInput
             icon="search"
             value={searchValue}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading sensors…" />
+              ) : undefined
+            }
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by sensor name…"
             style={{width: '340px'}}
@@ -283,7 +290,7 @@ export const OverviewSensorsRoot = () => {
       {activeFiltersJsx.length ? (
         <Box
           padding={{vertical: 8, horizontal: 24}}
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          border="top-and-bottom"
           flex={{direction: 'row', gap: 8}}
         >
           {activeFiltersJsx}
@@ -303,7 +310,7 @@ export const OverviewSensorsRoot = () => {
           <SensorInfo
             daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
           />
           {content()}
         </>
@@ -312,9 +319,7 @@ export const OverviewSensorsRoot = () => {
   );
 };
 
-const UnloadableSensorsAlert: React.FC<{
-  count: number;
-}> = ({count}) => {
+const UnloadableSensorsAlert = ({count}: {count: number}) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   if (!count) {
@@ -325,10 +330,7 @@ const UnloadableSensorsAlert: React.FC<{
 
   return (
     <>
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{vertical: 16, horizontal: 24}} border="top">
         <Alert
           intent="warning"
           title={title}
@@ -364,7 +366,7 @@ const UnloadableSensorsAlert: React.FC<{
   );
 };
 
-const UnloadableSensorDialog: React.FC = () => {
+const UnloadableSensorDialog = () => {
   const {data} = useQuery<UnloadableSensorsQuery, UnloadableSensorsQueryVariables>(
     UNLOADABLE_SENSORS_QUERY,
   );

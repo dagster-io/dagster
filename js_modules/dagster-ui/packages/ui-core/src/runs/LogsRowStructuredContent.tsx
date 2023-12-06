@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import {Box, Colors, Tag} from '@dagster-io/ui-components';
+import {Box, Tag, colorTextRed} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -8,7 +8,10 @@ import {Link, useLocation} from 'react-router-dom';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {
+  assetDetailsPathForAssetCheck,
+  assetDetailsPathForKey,
+} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 import {ErrorSource, DagsterEventType} from '../graphql/types';
 import {
@@ -31,7 +34,7 @@ interface IStructuredContentProps {
   metadata: IRunMetadataDict;
 }
 
-export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node, metadata}) => {
+export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentProps) => {
   const location = useLocation();
   const eventType = node.eventType as string;
   switch (node.__typename) {
@@ -260,14 +263,20 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
 
 // Structured Content Renderers
 
-const DefaultContent: React.FC<{
+const DefaultContent = ({
+  message,
+  eventType,
+  eventColor,
+  eventIntent,
+  children,
+}: {
   message: string;
   eventType?: string;
   eventColor?: string;
   eventIntent?: Intent;
   metadataEntries?: MetadataEntryFragment[];
   children?: React.ReactElement;
-}> = ({message, eventType, eventColor, eventIntent, children}) => {
+}) => {
   return (
     <>
       <EventTypeColumn>
@@ -298,13 +307,19 @@ const DefaultContent: React.FC<{
   );
 };
 
-const FailureContent: React.FC<{
+const FailureContent = ({
+  message,
+  error,
+  errorSource,
+  eventType,
+  metadataEntries,
+}: {
   message?: string;
   eventType: string;
   error?: PythonErrorFragment | null;
   errorSource?: ErrorSource | null;
   metadataEntries?: MetadataEntryFragment[];
-}> = ({message, error, errorSource, eventType, metadataEntries}) => {
+}) => {
   let contextMessage = null;
   let errorMessage = null;
   let errorStack = null;
@@ -320,7 +335,7 @@ const FailureContent: React.FC<{
   }
 
   if (error) {
-    errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
+    errorMessage = <span style={{color: colorTextRed()}}>{`${error.message}`}</span>;
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
@@ -328,7 +343,7 @@ const FailureContent: React.FC<{
       error.stack.length &&
       !(errorSource === ErrorSource.USER_CODE_ERROR && error.errorChain.length)
     ) {
-      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
+      errorStack = <span style={{color: colorTextRed()}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
     if (error.errorChain.length) {
@@ -337,9 +352,11 @@ const FailureContent: React.FC<{
           {chainLink.isExplicitLink
             ? `The above exception was caused by the following exception:\n`
             : `The above exception occurred during handling of the following exception:\n`}
-          <span style={{color: Colors.Red500}}>{`${chainLink.error.message}`}</span>
+          <span style={{color: colorTextRed()}}>{`${chainLink.error.message}`}</span>
           {chainLink.error.stack.length ? (
-            <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${chainLink.error.stack}`}</span>
+            <span
+              style={{color: colorTextRed()}}
+            >{`\nStack Trace:\n${chainLink.error.stack}`}</span>
           ) : null}
         </React.Fragment>
       ));
@@ -364,10 +381,13 @@ const FailureContent: React.FC<{
   );
 };
 
-const StepUpForRetryContent: React.FC<{
+const StepUpForRetryContent = ({
+  message,
+  error,
+}: {
   message?: string;
   error?: PythonErrorFragment | null;
-}> = ({message, error}) => {
+}) => {
   let contextMessage = null;
   let errorCause = null;
   let errorMessage = null;
@@ -385,8 +405,8 @@ const StepUpForRetryContent: React.FC<{
   if (error) {
     // If no cause, this was a `raise RetryRequest` inside the op. Show the trace for the main error.
     if (!error.errorChain.length) {
-      errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
-      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
+      errorMessage = <span style={{color: colorTextRed()}}>{`${error.message}`}</span>;
+      errorStack = <span style={{color: colorTextRed()}}>{`\nStack Trace:\n${error.stack}`}</span>;
     } else {
       // If there is a cause, this was a different exception. Show that instead.
       errorCause = (
@@ -396,9 +416,9 @@ const StepUpForRetryContent: React.FC<{
               {index === 0
                 ? `The retry request was caused by the following exception:\n`
                 : `The above exception was caused by the following exception:\n`}
-              <span style={{color: Colors.Red500}}>{`${chainLink.error.message}`}</span>
+              <span style={{color: colorTextRed()}}>{`${chainLink.error.message}`}</span>
               <span
-                style={{color: Colors.Red500}}
+                style={{color: colorTextRed()}}
               >{`\nStack Trace:\n${chainLink.error.stack}`}</span>
             </React.Fragment>
           ))}
@@ -424,26 +444,29 @@ const StepUpForRetryContent: React.FC<{
   );
 };
 
-const AssetCheckEvaluationContent: React.FC<{
+const AssetCheckEvaluationContent = ({
+  node,
+  eventType,
+}: {
   node: LogsRowStructuredFragment_AssetCheckEvaluationEvent_;
   eventType: string;
-}> = ({node, eventType}) => {
+}) => {
   const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;
 
-  const checkLink = assetDetailsPathForKey(assetKey, {
-    view: 'checks',
-    checkDetail: checkName,
-  });
-
+  const checkLink = assetDetailsPathForAssetCheck({assetKey, name: checkName});
   const matLink = assetDetailsPathForKey(assetKey, {
     view: 'events',
     asOf: targetMaterialization ? `${targetMaterialization.timestamp}` : undefined,
   });
 
   return (
-    <DefaultContent message="" eventType={eventType}>
+    <DefaultContent
+      message=""
+      eventType={eventType}
+      eventIntent={success ? Intent.SUCCESS : Intent.DANGER}
+    >
       <div>
-        <div>
+        <div style={{color: success ? 'inherit' : colorTextRed()}}>
           Check <MetadataEntryLink to={checkLink}>{checkName}</MetadataEntryLink>
           {` ${success ? 'succeeded' : 'failed'} for materialization of `}
           <MetadataEntryLink to={matLink}>{displayNameForAssetKey(assetKey)}</MetadataEntryLink>.
@@ -454,13 +477,19 @@ const AssetCheckEvaluationContent: React.FC<{
   );
 };
 
-const AssetMetadataContent: React.FC<{
+const AssetMetadataContent = ({
+  message,
+  assetKey,
+  metadataEntries,
+  eventType,
+  timestamp,
+}: {
   message: string;
   assetKey: AssetKey | null;
   metadataEntries: MetadataEntryFragment[];
   eventType: string;
   timestamp: string;
-}> = ({message, assetKey, metadataEntries, eventType, timestamp}) => {
+}) => {
   if (!assetKey) {
     return (
       <DefaultContent message={message} eventType={eventType}>

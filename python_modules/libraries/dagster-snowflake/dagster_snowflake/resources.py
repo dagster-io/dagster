@@ -14,10 +14,11 @@ from dagster import (
     resource,
 )
 from dagster._annotations import public
+from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
-from pydantic import Field, root_validator, validator
+from pydantic import Field, validator
 
 try:
     import snowflake.connector
@@ -271,7 +272,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
         return v
 
-    @root_validator
+    @compat_model_validator(mode="before")
     def validate_authentication(cls, values):
         auths_set = 0
         auths_set += 1 if values.get("password") is not None else 0
@@ -660,8 +661,7 @@ class SnowflakeConnection:
             f"CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);",
             "CREATE OR REPLACE FILE FORMAT parquet_format TYPE = 'parquet';",
             f"PUT {src} @%{table};",
-            "COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = 'parquet_format');"
-            .format(table=table),
+            f"COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = 'parquet_format');",
         ]
 
         self.execute_queries(sql_queries)

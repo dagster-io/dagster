@@ -63,9 +63,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for sensor_origin_id in added_sensors:
         print_fn(
             click.style(
-                "  + {name} (add) [{id}]".format(
-                    name=external_sensors_dict[sensor_origin_id].name, id=sensor_origin_id
-                ),
+                f"  + {external_sensors_dict[sensor_origin_id].name} (add) [{sensor_origin_id}]",
                 fg="green",
             )
         )
@@ -73,9 +71,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for sensor_origin_id in removed_sensors:
         print_fn(
             click.style(
-                "  + {name} (delete) [{id}]".format(
-                    name=external_sensors_dict[sensor_origin_id].name, id=sensor_origin_id
-                ),
+                f"  + {external_sensors_dict[sensor_origin_id].name} (delete) [{sensor_origin_id}]",
                 fg="red",
             )
         )
@@ -199,11 +195,7 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
                 try:
                     for external_sensor in external_repo.get_external_sensors():
                         instance.start_sensor(external_sensor)
-                    print_fn(
-                        "Started all sensors for repository {repository_name}".format(
-                            repository_name=repository_name
-                        )
-                    )
+                    print_fn(f"Started all sensors for repository {repository_name}")
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
             else:
@@ -305,18 +297,13 @@ def execute_preview_command(
                 if not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
-                            "Sensor returned false for {sensor_name}, skipping: {skip_message}"
-                            .format(
+                            "Sensor returned false for {sensor_name}, skipping: {skip_message}".format(
                                 sensor_name=external_sensor.name,
                                 skip_message=sensor_runtime_data.skip_message,
                             )
                         )
                     else:
-                        print_fn(
-                            "Sensor returned false for {sensor_name}, skipping".format(
-                                sensor_name=external_sensor.name
-                            )
-                        )
+                        print_fn(f"Sensor returned false for {external_sensor.name}, skipping")
                 else:
                     print_fn(
                         "Sensor returning run requests for {num} run(s):\n\n{run_requests}".format(

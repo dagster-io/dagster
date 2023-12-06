@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import itertools
+import json
 import logging
 import os
 import random
@@ -18,6 +19,7 @@ from typing import (
     Union,
 )
 
+import dagster._check as check
 import mock
 import pendulum
 import pytest
@@ -50,15 +52,15 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
     AutoMaterializeDecisionType,
-    AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -77,6 +79,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
 class RunSpec(NamedTuple):
@@ -92,6 +95,16 @@ class AssetEvaluationSpec(NamedTuple):
     num_requested: int = 0
     num_skipped: int = 0
     num_discarded: int = 0
+
+    @staticmethod
+    def empty(asset_key: str) -> "AssetEvaluationSpec":
+        return AssetEvaluationSpec(
+            asset_key=asset_key,
+            rule_evaluations=[],
+            num_requested=0,
+            num_skipped=0,
+            num_discarded=0,
+        )
 
     @staticmethod
     def from_single_rule(
@@ -153,7 +166,10 @@ class AssetReconciliationScenario(
             ("cursor_from", Optional["AssetReconciliationScenario"]),
             ("current_time", Optional[datetime.datetime]),
             ("asset_selection", Optional[AssetSelection]),
-            ("active_backfill_targets", Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]]),
+            (
+                "active_backfill_targets",
+                Optional[Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]],
+            ),
             ("dagster_runs", Optional[Sequence[DagsterRun]]),
             ("event_log_entries", Optional[Sequence[EventLogEntry]]),
             ("expected_run_requests", Optional[Sequence[RunRequest]]),
@@ -163,6 +179,8 @@ class AssetReconciliationScenario(
             ),
             ("expected_evaluations", Optional[Sequence[AssetEvaluationSpec]]),
             ("requires_respect_materialization_data_versions", bool),
+            ("supports_with_external_asset_graph", bool),
+            ("expected_error_message", Optional[str]),
         ],
     )
 ):
@@ -175,7 +193,9 @@ class AssetReconciliationScenario(
         cursor_from: Optional["AssetReconciliationScenario"] = None,
         current_time: Optional[datetime.datetime] = None,
         asset_selection: Optional[AssetSelection] = None,
-        active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None,
+        active_backfill_targets: Optional[
+            Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]
+        ] = None,
         dagster_runs: Optional[Sequence[DagsterRun]] = None,
         event_log_entries: Optional[Sequence[EventLogEntry]] = None,
         expected_run_requests: Optional[Sequence[RunRequest]] = None,
@@ -184,6 +204,8 @@ class AssetReconciliationScenario(
         ] = None,
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
+        supports_with_external_asset_graph: bool = True,
+        expected_error_message: Optional[str] = None,
     ) -> "AssetReconciliationScenario":
         # For scenarios with no auto-materialize policies, we infer auto-materialize policies
         # and add them to the assets.
@@ -219,6 +241,8 @@ class AssetReconciliationScenario(
             code_locations=code_locations,
             expected_evaluations=expected_evaluations,
             requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
+            supports_with_external_asset_graph=supports_with_external_asset_graph,
+            expected_error_message=expected_error_message,
         )
 
     def _get_code_location_origin(
@@ -281,13 +305,17 @@ class AssetReconciliationScenario(
 
             # add any backfills to the instance
             for i, target in enumerate(self.active_backfill_targets or []):
-                target_subset = AssetGraphSubset(
-                    asset_graph=repo.asset_graph,
-                    partitions_subsets_by_asset_key=target,
-                    non_partitioned_asset_keys=set(),
-                )
+                if isinstance(target, Mapping):
+                    target_subset = AssetGraphSubset(
+                        partitions_subsets_by_asset_key=target,
+                        non_partitioned_asset_keys=set(),
+                    )
+                else:
+                    target_subset = AssetGraphSubset(
+                        partitions_subsets_by_asset_key={},
+                        non_partitioned_asset_keys=target,
+                    )
                 empty_subset = AssetGraphSubset(
-                    asset_graph=repo.asset_graph,
                     partitions_subsets_by_asset_key={},
                     non_partitioned_asset_keys=set(),
                 )
@@ -307,7 +335,7 @@ class AssetReconciliationScenario(
                     tags={},
                     backfill_timestamp=test_time.timestamp(),
                     serialized_asset_backfill_data=asset_backfill_data.serialize(
-                        dynamic_partitions_store=instance
+                        dynamic_partitions_store=instance, asset_graph=repo.asset_graph
                     ),
                 )
                 instance.add_backfill(backfill)
@@ -395,6 +423,7 @@ class AssetReconciliationScenario(
             )
 
             run_requests, cursor, evaluations = AssetDaemonContext(
+                evaluation_id=cursor.evaluation_id + 1,
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
@@ -412,7 +441,12 @@ class AssetReconciliationScenario(
 
         return run_requests, cursor, evaluations
 
-    def do_daemon_scenario(self, instance, scenario_name):
+    def do_daemon_scenario(
+        self,
+        instance,
+        scenario_name,
+        debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+    ):
         assert bool(self.assets) != bool(
             self.code_locations
         ), "Must specify either assets or code_locations"
@@ -451,7 +485,9 @@ class AssetReconciliationScenario(
                     )
                 else:
                     all_assets = [
-                        asset for assets in self.code_locations.values() for asset in assets
+                        asset
+                        for assets in check.not_none(self.code_locations).values()
+                        for asset in assets
                     ]
                     do_run(
                         asset_keys=run.asset_keys,
@@ -487,7 +523,23 @@ class AssetReconciliationScenario(
                     workspace.get_code_location_error("test_location") is None
                 ), workspace.get_code_location_error("test_location")
 
-                list(AssetDaemon(interval_seconds=42).run_iteration(workspace_context))
+                try:
+                    list(
+                        AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                            workspace_context, debug_crash_flags or {}
+                        )
+                    )
+
+                    if self.expected_error_message:
+                        raise Exception(
+                            f"Failed to raise expected error {self.expected_error_message}"
+                        )
+
+                except Exception:
+                    if not self.expected_error_message:
+                        raise
+
+                    assert self.expected_error_message in str(sys.exc_info())
 
 
 def do_run(
@@ -510,8 +562,12 @@ def do_run(
             elif not selected_keys:
                 assets_in_run.extend(a.to_source_assets())
             else:
-                assets_in_run.append(a.subset_for(asset_keys_set))
-                assets_in_run.extend(a.subset_for(a.keys - selected_keys).to_source_assets())
+                assets_in_run.append(a.subset_for(asset_keys_set, selected_asset_check_keys=None))
+                assets_in_run.extend(
+                    a.subset_for(
+                        a.keys - selected_keys, selected_asset_check_keys=None
+                    ).to_source_assets()
+                )
     materialize_to_memory(
         instance=instance,
         partition_key=partition_key,
@@ -547,10 +603,19 @@ def run(
     )
 
 
-def run_request(asset_keys: List[str], partition_key: Optional[str] = None) -> RunRequest:
+FAIL_TAG = "test/fail"
+
+
+def run_request(
+    asset_keys: Sequence[CoercibleToAssetKey],
+    partition_key: Optional[str] = None,
+    fail_keys: Optional[Sequence[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> RunRequest:
     return RunRequest(
-        asset_selection=[AssetKey(key) for key in asset_keys],
+        asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
         partition_key=partition_key,
+        tags={**(tags or {}), **({FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {})},
     )
 
 
@@ -561,6 +626,7 @@ def asset_def(
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     code_version: Optional[str] = None,
+    config_schema: Optional[Mapping[str, Field]] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = None
@@ -580,7 +646,7 @@ def asset_def(
         partitions_def=partitions_def,
         deps=non_argument_deps,
         ins=ins,
-        config_schema={"fail": Field(bool, default_value=False)},
+        config_schema=config_schema or {"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         code_version=code_version,
@@ -651,6 +717,18 @@ def observable_source_asset_def(
             )
 
     return _observable
+
+
+def with_auto_materialize_policy(
+    assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
+) -> Sequence[AssetsDefinition]:
+    """Note: this should be implemented in core dagster at some point, and this implementation is
+    a lazy hack.
+    """
+    ret = []
+    for assets_def in assets_defs:
+        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
+    return ret
 
 
 def with_implicit_auto_materialize_policies(

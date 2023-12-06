@@ -1,4 +1,4 @@
-import {Body, Box, Colors} from '@dagster-io/ui-components';
+import {Body, Box, colorBackgroundLight, colorTextLighter} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -9,11 +9,15 @@ import {RepoAddress} from '../workspace/types';
 import {RepoNavItem} from './RepoNavItem';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
-const LoadedRepositorySection: React.FC<{
+const LoadedRepositorySection = ({
+  allRepos,
+  visibleRepos,
+  toggleVisible,
+}: {
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
   toggleVisible: (repoAddresses: RepoAddress[]) => void;
-}> = ({allRepos, visibleRepos, toggleVisible}) => {
+}) => {
   const listContent = () => {
     if (visibleRepos.length) {
       return (
@@ -54,7 +58,7 @@ const LoadedRepositorySection: React.FC<{
 };
 
 const Container = styled.div`
-  background: ${Colors.Gray100};
+  background: ${colorBackgroundLight()};
   display: flex;
   flex: 1;
   overflow: none;
@@ -70,7 +74,7 @@ const ListContainer = styled.div`
 `;
 
 const EmptyState = styled.div`
-  color: ${Colors.Gray400};
+  color: ${colorTextLighter()};
   line-height: 20px;
   padding: 6px 24px 0;
 `;

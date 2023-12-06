@@ -4,7 +4,7 @@ from typing import Optional, Sequence, Tuple
 import dagster._check as check
 import graphene
 from dagster import PartitionsDefinition
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
@@ -181,6 +181,8 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     rulesWithRuleEvaluations = non_null_list(GrapheneAutoMaterializeRuleWithRuleEvaluations)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
+    rules = graphene.Field(graphene.List(graphene.NonNull(GrapheneAutoMaterializeRule)))
+    assetKey = graphene.NonNull(GrapheneAssetKey)
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecord"
@@ -201,12 +203,20 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             ),
             timestamp=record.timestamp,
             runIds=record.evaluation.run_ids,
+            rules=(
+                [
+                    GrapheneAutoMaterializeRule(snapshot)
+                    for snapshot in record.evaluation.rule_snapshots
+                ]
+                if record.evaluation.rule_snapshots is not None
+                else None  # Return None if no rules serialized in evaluation
+            ),
+            assetKey=GrapheneAssetKey(path=record.asset_key.path),
         )
 
 
 class GrapheneAutoMaterializeAssetEvaluationRecords(graphene.ObjectType):
     records = non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord)
-    currentEvaluationId = graphene.Int()
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecords"

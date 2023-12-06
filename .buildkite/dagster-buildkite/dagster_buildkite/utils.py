@@ -12,9 +12,9 @@ from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 from dagster_buildkite.git import ChangedFiles, get_commit_message
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
-    "rex@elementl.com": "eng-buildkite-rex",
-    "dish@elementl.com": "eng-buildkite-dish",
-    "johann@elementl.com": "eng-buildkite-johann",
+    "rex@dagsterlabs.com": "eng-buildkite-rex",
+    "dish@dagsterlabs.com": "eng-buildkite-dish",
+    "johann@dagsterlabs.com": "eng-buildkite-johann",
 }
 
 # ########################
@@ -135,9 +135,7 @@ def network_buildkite_container(network_name: str) -> List[str]:
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
         # network to make the target containers visible...
-        "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
-            network_name=network_name
-        ),
+        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
     ]
 
 
@@ -203,6 +201,26 @@ def skip_if_no_python_changes():
         return None
 
     return "No python changes"
+
+
+def skip_if_no_yaml_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all):
+        return None
+
+    return "No yaml changes"
+
+
+def skip_if_no_non_docs_markdown_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+        return None
+
+    return "No markdown changes outside of docs"
 
 
 @functools.lru_cache(maxsize=None)

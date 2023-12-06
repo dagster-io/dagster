@@ -1,15 +1,19 @@
 import {useQuery} from '@apollo/client';
 import {
   Box,
-  Spinner,
-  Colors,
-  Icon,
-  Tag,
-  useViewport,
-  Select,
-  MenuItem,
   Caption,
+  Icon,
+  MenuItem,
+  Select,
+  Spinner,
+  Tag,
   TextInput,
+  colorAccentGreen,
+  colorBackgroundDefault,
+  colorBorderDefault,
+  colorTextDefault,
+  colorTextLight,
+  useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -19,9 +23,9 @@ import styled from 'styled-components';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
-import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
-import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -37,8 +41,8 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
-  Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
-  TabButton: React.FC<{selected: 'timeline' | 'assets'}>;
+  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
@@ -189,17 +193,17 @@ const TEMPLATE_COLUMNS = '5fr 1fr 1fr 1fr 1fr';
 function VirtualHeaderRow() {
   return (
     <Box
-      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      border="top-and-bottom"
       style={{
         display: 'grid',
         gridTemplateColumns: TEMPLATE_COLUMNS,
         height: '32px',
         fontSize: '12px',
-        color: Colors.Gray600,
+        color: colorTextLight(),
         position: 'sticky',
         top: 0,
         zIndex: 1,
-        background: Colors.White,
+        background: colorBackgroundDefault(),
       }}
     >
       <HeaderCell>Group name</HeaderCell>
@@ -218,14 +222,15 @@ type RowProps = {
   group: ReturnType<typeof groupAssets>[0];
 };
 function VirtualRow({height, start, group}: RowProps) {
-  const assetKeys = React.useMemo(() => group.assets.map((asset) => ({path: asset.key.path})), [
-    group.assets,
-  ]);
+  const assetKeys = React.useMemo(
+    () => group.assets.map((asset) => ({path: asset.key.path})),
+    [group.assets],
+  );
 
-  const {liveDataByNode} = useLiveDataForAssetKeys(assetKeys);
+  const {liveDataByNode} = useAssetsLiveData(assetKeys);
 
   const statuses = React.useMemo(() => {
-    type assetType = typeof group['assets'][0];
+    type assetType = (typeof group)['assets'][0];
     type StatusesType = {asset: assetType; status: ReturnType<typeof buildAssetNodeStatusContent>};
     const statuses = {
       successful: [] as StatusesType[],
@@ -240,13 +245,14 @@ function VirtualRow({height, start, group}: RowProps) {
     }
     Object.keys(liveDataByNode).forEach((key) => {
       const assetLiveData = liveDataByNode[key];
-      const asset = group.assets.find((asset) => toGraphId(asset.key) === key)!;
-      if (!asset.definition) {
+      const asset = group.assets.find((asset) => tokenForAssetKey(asset.key) === key);
+      if (!asset?.definition) {
         console.warn('Expected a definition for asset with key', key);
+        return;
       }
       const status = buildAssetNodeStatusContent({
-        assetKey: {path: JSON.parse(key)},
-        definition: asset.definition!,
+        assetKey: asset.key,
+        definition: asset.definition,
         liveData: assetLiveData,
         expanded: true,
       });
@@ -297,32 +303,40 @@ function VirtualRow({height, start, group}: RowProps) {
 
   const {containerProps, viewport} = useViewport();
 
+  const isBatchStillLoading = assetKeys.length !== Object.keys(liveDataByNode).length;
+  const zeroOrBlank = isBatchStillLoading ? '' : '0';
+
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+      <RowGrid border="bottom">
         <Cell>
-          <Box flex={{direction: 'column', gap: 2}}>
-            <Box flex={{direction: 'row', gap: 8}}>
-              <Icon name="asset_group" />
-              {group.groupName ? (
-                <Link
-                  style={{fontWeight: 700}}
-                  to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
-                >
-                  {group.groupName}
-                </Link>
-              ) : (
-                UNGROUPED_ASSETS
-              )}
+          <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
+            <Box flex={{direction: 'column', gap: 2, grow: 1}}>
+              <Box flex={{direction: 'row', gap: 8}}>
+                <Icon name="asset_group" />
+                {group.groupName ? (
+                  <Link
+                    style={{fontWeight: 700}}
+                    to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
+                  >
+                    {group.groupName}
+                  </Link>
+                ) : (
+                  UNGROUPED_ASSETS
+                )}
+              </Box>
+              <div {...containerProps}>
+                <RepositoryLinkWrapper maxWidth={viewport.width}>
+                  <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
+                </RepositoryLinkWrapper>
+              </div>
             </Box>
-            <div {...containerProps}>
-              <RepositoryLinkWrapper maxWidth={viewport.width}>
-                <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
-              </RepositoryLinkWrapper>
-            </div>
+            <Box flex={{direction: 'column', justifyContent: 'center'}}>
+              {isBatchStillLoading ? <Spinner purpose="body-text" /> : null}
+            </Box>
           </Box>
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.missing.length ? (
             <SelectOnHover
               assets={statuses.missing}
@@ -340,7 +354,7 @@ function VirtualRow({height, start, group}: RowProps) {
                     style={{
                       width: '12px',
                       height: '12px',
-                      border: `2px solid ${Colors.Gray500}`,
+                      border: `2px solid ${colorBorderDefault()}`,
                       borderRadius: '50%',
                     }}
                   />
@@ -349,10 +363,10 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.failed.length ? (
             <SelectOnHover
               assets={statuses.failed}
@@ -381,10 +395,10 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.inprogress.length ? (
             <SelectOnHover
               assets={statuses.inprogress}
@@ -401,10 +415,10 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
-        <Cell isLoading={!!statuses.loading}>
+        <Cell>
           {statuses.successful.length ? (
             <SelectOnHover
               assets={statuses.successful}
@@ -420,7 +434,7 @@ function VirtualRow({height, start, group}: RowProps) {
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                   <div
                     style={{
-                      backgroundColor: Colors.Green500,
+                      backgroundColor: colorAccentGreen(),
                       width: '10px',
                       height: '10px',
                       borderRadius: '50%',
@@ -431,7 +445,7 @@ function VirtualRow({height, start, group}: RowProps) {
               </Tag>
             </SelectOnHover>
           ) : (
-            0
+            zeroOrBlank
           )}
         </Cell>
       </RowGrid>
@@ -444,20 +458,14 @@ const RowGrid = styled(Box)`
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
   > * {
-    padding-top: 26px 0px;
+    vertical-align: middle;
   }
 `;
 
-const Cell = ({children, isLoading}: {children: React.ReactNode; isLoading?: boolean}) => {
+const Cell = ({children}: {children: React.ReactNode}) => {
   return (
-    <RowCell style={{color: Colors.Gray900}}>
-      {isLoading ? (
-        <Box flex={{justifyContent: 'center', alignItems: 'center'}} style={{height: '82px'}}>
-          <Spinner purpose="body-text" />
-        </Box>
-      ) : (
-        <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>{children}</Box>
-      )}
+    <RowCell style={{color: colorTextDefault()}}>
+      <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>{children}</Box>
     </RowCell>
   );
 };
@@ -466,7 +474,7 @@ const RepositoryLinkWrapper = styled.div<{maxWidth?: number}>`
   font-size: 12px;
   pointer-events: none;
   a {
-    color: ${Colors.Gray600};
+    color: ${colorTextLight()};
     pointer-events: none;
     max-width: ${({maxWidth}) => (maxWidth ? 'unset' : `${maxWidth}px`)};
   }
@@ -513,7 +521,7 @@ function SelectOnHover({
                       {displayNameForAssetKey(item.asset.key)}
                     </div>
                     {count && count > 0 ? (
-                      <Caption style={{color: Colors.Gray700}}>
+                      <Caption style={{color: colorTextLight()}}>
                         {partitionCountString(count)} {adjective}
                       </Caption>
                     ) : null}

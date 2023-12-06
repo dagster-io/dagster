@@ -1,5 +1,12 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Icon, IconWrapper, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  IconWrapper,
+  Tag,
+  colorBackgroundLight,
+  colorLinkDefault,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -30,7 +37,7 @@ type RowType =
 const UNGROUPED_NAME = 'UNGROUPED';
 const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-state';
 
-export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}) => {
+export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const repoKey = repoAddressAsHumanString(repoAddress);
   const {expandedKeys, onToggle} = useAssetGroupExpansionState(
@@ -117,7 +124,15 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
   );
 };
 
-const GroupNameRow: React.FC<{
+const GroupNameRow = ({
+  repoAddress,
+  groupName,
+  assetCount,
+  expanded,
+  height,
+  start,
+  onToggle,
+}: {
   repoAddress: RepoAddress;
   groupName: string;
   assetCount: number;
@@ -125,7 +140,7 @@ const GroupNameRow: React.FC<{
   height: number;
   start: number;
   onToggle: (groupName: string) => void;
-}> = ({repoAddress, groupName, assetCount, expanded, height, start, onToggle}) => {
+}) => {
   return (
     <ClickableRow
       $height={height}
@@ -141,10 +156,10 @@ const GroupNameRow: React.FC<{
       }}
     >
       <Box
-        background={Colors.Gray50}
+        background={colorBackgroundLight()}
         flex={{direction: 'row', alignItems: 'center', gap: 8, justifyContent: 'space-between'}}
         padding={{horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
         style={{height: '100%'}}
       >
         <Box flex={{alignItems: 'center', gap: 8}}>
@@ -159,7 +174,7 @@ const GroupNameRow: React.FC<{
                   <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`)}>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                       <span>View lineage</span>
-                      <Icon name="open_in_new" size={16} color={Colors.Link} />
+                      <Icon name="open_in_new" size={16} color={colorLinkDefault()} />
                     </Box>
                   </Link>
                 </Box>

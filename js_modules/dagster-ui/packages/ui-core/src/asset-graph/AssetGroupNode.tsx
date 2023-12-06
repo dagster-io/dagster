@@ -1,4 +1,11 @@
-import {Box, Colors, FontFamily, Icon, Mono} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  Mono,
+  colorLineageGroupNodeBorder,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -10,13 +17,13 @@ import {workspacePath} from '../workspace/workspacePath';
 import {MINIMAL_SCALE, GROUPS_ONLY_SCALE} from './AssetGraphExplorer';
 import {GroupLayout} from './layout';
 
-export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({group, scale}) => {
-  const {
-    repositoryLocationName,
-    repositoryDisambiguationRequired,
-    repositoryName,
-    groupName,
-  } = group;
+interface Props {
+  group: GroupLayout;
+  scale: number;
+}
+
+export const AssetGroupNode = ({group, scale}: Props) => {
+  const {repositoryLocationName, repositoryName, groupName} = group;
 
   return (
     <div style={{position: 'relative', width: '100%', height: '100%'}}>
@@ -33,12 +40,12 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
           >
             <Icon
               name="asset_group"
-              color={Colors.Gray400}
+              color={colorTextLight()}
               size={scale > MINIMAL_SCALE ? 20 : 48}
             />
             <Box flex={{direction: 'column'}}>
               <Link
-                style={{color: Colors.Gray400}}
+                style={{color: colorTextLight()}}
                 onClick={(e) => e.stopPropagation()}
                 to={workspacePath(
                   repositoryName,
@@ -48,16 +55,14 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
               >
                 {groupName}
               </Link>
-              {repositoryDisambiguationRequired && (
-                <GroupRepoName style={{marginBottom: '0.5em'}}>
-                  {withMiddleTruncation(
-                    buildRepoPathForHuman(repositoryName, repositoryLocationName),
-                    {
-                      maxLength: 45,
-                    },
-                  )}
-                </GroupRepoName>
-              )}
+              <GroupRepoName style={{marginBottom: '0.5em'}}>
+                {withMiddleTruncation(
+                  buildRepoPathForHuman(repositoryName, repositoryLocationName),
+                  {
+                    maxLength: 45,
+                  },
+                )}
+              </GroupRepoName>
             </Box>
           </Mono>
         </Box>
@@ -69,7 +74,9 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
           top: 75,
           position: 'absolute',
           background:
-            scale < GROUPS_ONLY_SCALE ? `rgba(234, 234, 234, 1)` : `rgba(217, 217, 217, 0.25)`,
+            scale < GROUPS_ONLY_SCALE
+              ? colorLineageGroupNodeBorder()
+              : colorLineageGroupNodeBorder(),
         }}
       />
 
@@ -83,16 +90,11 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
             style={{fontWeight: 600, fontFamily: FontFamily.monospace}}
           >
             {groupName}
-            {repositoryDisambiguationRequired && (
-              <GroupRepoName>
-                {withMiddleTruncation(
-                  buildRepoPathForHuman(repositoryName, repositoryLocationName),
-                  {
-                    maxLength: 45,
-                  },
-                )}
-              </GroupRepoName>
-            )}
+            <GroupRepoName>
+              {withMiddleTruncation(buildRepoPathForHuman(repositoryName, repositoryLocationName), {
+                maxLength: 45,
+              })}
+            </GroupRepoName>
           </Box>
         </Box>
       ) : undefined}
@@ -110,5 +112,5 @@ const GroupRepoName = styled.div`
   font-size: 0.8em;
   line-height: 0.6em;
   white-space: nowrap;
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
 `;

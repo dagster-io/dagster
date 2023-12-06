@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, ConfigTypeSchema, Icon, IconWrapper, Box} from '@dagster-io/ui-components';
+import {ConfigTypeSchema, Icon, IconWrapper, Box, colorAccentGray} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -11,10 +11,13 @@ import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.t
 
 const NO_DESCRIPTION = '';
 
-export const SidebarResourcesSection: React.FC<{
+export const SidebarResourcesSection = ({
+  mode,
+  showModeName,
+}: {
   mode: SidebarResourcesSectionFragment;
   showModeName?: boolean;
-}> = ({mode, showModeName}) => {
+}) => {
   return (
     <SectionItemContainer key={mode.name}>
       {showModeName && (
@@ -26,7 +29,7 @@ export const SidebarResourcesSection: React.FC<{
       <Box flex={{direction: 'column', gap: 16}}>
         {[...mode.resources, ...mode.loggers].map((resource) => (
           <ContextResourceContainer key={resource.name}>
-            <Icon name="resource" color={Colors.Gray700} />
+            <Icon name="resource" color={colorAccentGray()} />
             <div>
               <ContextResourceHeader>{resource.name}</ContextResourceHeader>
               <Description description={resource.description || NO_DESCRIPTION} />

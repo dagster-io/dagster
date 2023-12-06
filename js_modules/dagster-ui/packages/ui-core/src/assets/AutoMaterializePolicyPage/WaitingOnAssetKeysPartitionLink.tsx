@@ -1,6 +1,7 @@
 import {ButtonLink, Box, Tag, Caption} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {sortAssetKeys} from '../../asset-graph/Utils';
 import {AssetLink} from '../AssetLink';
 import {AssetKey} from '../types';
 
@@ -23,7 +24,7 @@ export const WaitingOnAssetKeysPartitionLink = ({assetKeysByPartition}: Props) =
     return Object.fromEntries(
       filteredPartitionNames.map((partitionName) => [
         partitionName,
-        assetKeysByPartition[partitionName]!,
+        [...assetKeysByPartition[partitionName]!].sort(sortAssetKeys),
       ]),
     );
   }, [assetKeysByPartition, filteredPartitionNames]);

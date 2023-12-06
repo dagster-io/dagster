@@ -1,12 +1,10 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Sequence, Type, cast
 
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._config.pythonic_config import (
-    ConfigurableIOManagerFactory,
-)
+from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -50,17 +48,43 @@ def build_duckdb_io_manager(
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
-                )
+            defs = Definitions(
+                assets=[my_table]
+                resources={"io_manager" duckdb_io_manager.configured({"database": "my_db.duckdb"})}
+            )
 
-    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key. For ops, the schema can be
-    specified by including a "schema" entry in output metadata. If none of these is provided, the schema will
-    default to "public".
+    You can set a default schema to store the assets using the ``schema`` configuration value of the DuckDB I/O
+    Manager. This schema will be used if no other schema is specified directly on an asset or op.
+
+    .. code-block:: python
+
+        defs = Definitions(
+            assets=[my_table]
+            resources={"io_manager" duckdb_io_manager.configured(
+                {"database": "my_db.duckdb", "schema": "my_schema"} # will be used as the schema
+            )}
+        )
+
+
+    On individual assets, you an also specify the schema where they should be stored using metadata or
+    by adding a ``key_prefix`` to the asset key. If both ``key_prefix`` and metadata are defined, the metadata will
+    take precedence.
+
+    .. code-block:: python
+
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema in duckdb
+        )
+        def my_table() -> pd.DataFrame:
+            ...
+
+        @asset(
+            metadata={"schema": "my_schema"}  # will be used as the schema in duckdb
+        )
+        def my_other_table() -> pd.DataFrame:
+            ...
+
+    For ops, the schema can be specified by including a "schema" entry in output metadata.
 
     .. code-block:: python
 
@@ -69,6 +93,8 @@ def build_duckdb_io_manager(
         )
         def make_my_table() -> pd.DataFrame:
             ...
+
+    If none of these is provided, the schema will default to "public".
 
     To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
     In or AssetIn.
@@ -131,10 +157,35 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
 
-    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
-    For ops, the schema can be specified by including a "schema" entry in output metadata. If none
-    of these is provided, the schema will default to "public".
+    You can set a default schema to store the assets using the ``schema`` configuration value of the DuckDB I/O
+    Manager. This schema will be used if no other schema is specified directly on an asset or op.
+
+    .. code-block:: python
+
+        defs = Definitions(
+            assets=[my_table],
+            resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb", schema="my_schema")}
+        )
+
+    On individual assets, you an also specify the schema where they should be stored using metadata or
+    by adding a ``key_prefix`` to the asset key. If both ``key_prefix`` and metadata are defined, the metadata will
+    take precedence.
+
+    .. code-block:: python
+
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema in duckdb
+        )
+        def my_table() -> pd.DataFrame:
+            ...
+
+        @asset(
+            metadata={"schema": "my_schema"}  # will be used as the schema in duckdb
+        )
+        def my_other_table() -> pd.DataFrame:
+            ...
+
+    For ops, the schema can be specified by including a "schema" entry in output metadata.
 
     .. code-block:: python
 
@@ -143,6 +194,8 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
         )
         def make_my_table() -> pd.DataFrame:
             ...
+
+    If none of these is provided, the schema will default to "public".
 
     To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
     In or AssetIn.
@@ -156,9 +209,27 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             # my_table will just contain the data from column "a"
             ...
 
+    Set DuckDB configuration options using the connection_config field. See
+    https://duckdb.org/docs/sql/configuration.html for all available settings.
+
+    .. code-block:: python
+
+        defs = Definitions(
+            assets=[my_table],
+            resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb",
+                                                       connection_config={"arrow_large_buffer_size": True})}
+        )
+
     """
 
     database: str = Field(description="Path to the DuckDB database.")
+    connection_config: Dict[str, Any] = Field(
+        description=(
+            "DuckDB connection configuration options. See"
+            " https://duckdb.org/docs/sql/configuration.html"
+        ),
+        default={},
+    )
     schema_: Optional[str] = Field(
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
@@ -212,7 +283,11 @@ class DuckDbClient(DbClient):
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
-            kwargs={"database": context.resource_config["database"], "read_only": False},
+            kwargs={
+                "database": context.resource_config["database"],
+                "read_only": False,
+                "config": context.resource_config["connection_config"],
+            },
             max_retries=10,
         )
 

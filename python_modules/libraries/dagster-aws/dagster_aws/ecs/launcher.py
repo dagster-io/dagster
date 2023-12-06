@@ -713,13 +713,23 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def include_cluster_info_in_failure_messages(self):
         return True
 
+    def _is_transient_stop_reason(self, stopped_reason: str):
+        if "Timeout waiting for network interface provisioning to complete" in stopped_reason:
+            return True
+
+        if "Timeout waiting for EphemeralStorage provisioning to complete" in stopped_reason:
+            return True
+
+        if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
+            return True
+
+        return False
+
     def _is_transient_startup_failure(self, run, task):
         if not task.get("stoppedReason"):
             return False
-        return (
-            run.status == DagsterRunStatus.STARTING
-            and "Timeout waiting for network interface provisioning to complete"
-            in task.get("stoppedReason")
+        return run.status == DagsterRunStatus.STARTING and self._is_transient_stop_reason(
+            task.get("stoppedReason")
         )
 
     def check_run_worker_health(self, run: DagsterRun):
@@ -745,19 +755,24 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 if c.get("exitCode") != 0:
                     failed_containers.append(c)
             if len(failed_containers) > 0:
-                if len(failed_containers) > 1:
-                    container_str = "Containers"
-                else:
-                    container_str = "Container"
+                failure_text = ""
 
-                failure_text = []
+                cluster_failure_info = (
+                    f"Task {t.get('taskArn')} failed.\n"
+                    f"Stop code: {t.get('stopCode')}.\n"
+                    f"Stop reason: {t.get('stoppedReason')}.\n"
+                )
+                for c in failed_containers:
+                    exit_code = c.get("exitCode")
+                    exit_code_msg = f" - exit code {exit_code}" if exit_code is not None else ""
+                    cluster_failure_info += f"Container '{c.get('name')}' failed{exit_code_msg}.\n"
+
+                logging.warning(
+                    "Run monitoring detected run worker failure: " + cluster_failure_info
+                )
 
                 if self.include_cluster_info_in_failure_messages:
-                    failure_text.append(
-                        f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
-                        f" reason: {t.get('stoppedReason')}."
-                        + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
-                    )
+                    failure_text += cluster_failure_info
 
                 logs = []
 
@@ -770,18 +785,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         container_name=self._get_container_name(container_context),
                     )
                 except:
-                    logging.exception(
-                        "Error trying to get logs for failed task {task_arn}".format(
-                            task_arn=tags.arn,
-                        )
-                    )
+                    logging.exception(f"Error trying to get logs for failed task {tags.arn}")
 
                 if logs:
-                    failure_text.append("Run worker logs:\n" + "\n".join(logs))
+                    failure_text += "Run worker logs:\n" + "\n".join(logs)
 
                 return CheckRunHealthResult(
                     WorkerStatus.FAILED,
-                    "\n\n".join(failure_text),
+                    failure_text,
                     transient=self._is_transient_startup_failure(run, t),
                     run_worker_id=run_worker_id,
                 )

@@ -5,7 +5,9 @@ description: Dagster includes a rich and extensible logging system.
 
 # Loggers
 
-As part of its rich, extensible logging system, Dagster includes loggers. Loggers can be applied to all jobs within a [code location](/concepts/code-locations) or, in advanced cases, overriden at the job level. Logging handlers will be automatically invoked whenever [ops](/concepts/ops-jobs-graphs/ops) in a [job](/concepts/ops-jobs-graphs/jobs) log messages, meaning out-of-the-box loggers track all execution events. Loggers can also be customized to meet your specific needs.
+As part of its rich, extensible logging system, Dagster includes loggers. Loggers can be applied to all jobs within a [code location](/concepts/code-locations) or, in advanced cases, overriden at the job level.
+
+Logging handlers are automatically invoked whenever [ops](/concepts/ops-jobs-graphs/ops) in a [job](/concepts/ops-jobs-graphs/jobs) log messages, meaning out-of-the-box loggers track all execution events. Loggers can also be customized to meet your specific needs.
 
 ---
 
@@ -23,11 +25,9 @@ As part of its rich, extensible logging system, Dagster includes loggers. Logger
 
 ## Defining loggers
 
-By default, Dagster comes with a built-in logger that tracks all the execution events. You can find an example in the [Using built-in loggers](#using-built-in-loggers) section.
+By default, Dagster comes with a built-in logger that tracks all execution events. Built-in loggers are defined internally using the <PyObject object="LoggerDefinition" /> class. The <PyObject object="logger" decorator /> decorator exposes a simpler API for the common logging use case, which is typically what should be used to define your own loggers.
 
-The built-in loggers are defined internally using the <PyObject object="LoggerDefinition" /> class. The <PyObject object="logger" decorator /> decorator exposes a simpler API for the common logging use case, which is typically what you'll use to define your own loggers.
-
-The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`. You can find an example in the [Customizing loggers](#customizing-loggers) section.
+The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`. Refer to the [Customizing loggers guide](/concepts/logging/custom-loggers) for an example.
 
 ---
 
@@ -38,16 +38,16 @@ The decorated function should take a single argument, the `init_context` availab
 
 ### Logging from an op
 
-Any op can emit log messages at any point in its computation:
+Any op can emit log messages at any point in its computation. For example:
 
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_marker_0 endbefore=end_builtin_logger_marker_0
 # demo_logger.py
 
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 @op
-def hello_logs(context):
+def hello_logs(context: OpExecutionContext):
     context.log.info("Hello, world!")
 
 
@@ -58,45 +58,56 @@ def demo_job():
 
 ### Using built-in loggers
 
-When you run the above job in the Terminal:
+When the above `demo_job` is run in the terminal:
 
 ```shell
 dagster job execute -f demo_logger.py -j demo_job
 ```
 
-You'll find the messages have been logged through a built-in logger:
+The messages will display in the terminal, having been logged through a built-in logger:
 
 ```shell
-2022-12-15 14:29:33 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - RUN_START - Started execution of run for "demo_job".
-2022-12-15 14:29:33 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - ENGINE_EVENT - Executing steps using multiprocess executor: parent process (pid: 12151)
-2022-12-15 14:29:33 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - hello_logs - STEP_WORKER_STARTING - Launching subprocess for "hello_logs".
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - STEP_WORKER_STARTED - Executing step "hello_logs" in subprocess.
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - LOGS_CAPTURED - Started capturing logs in process (pid: 12167).
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - STEP_START - Started execution of step "hello_logs".
-2022-12-15 14:29:34 -0500 - dagster - INFO - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - hello_logs - Hello, world!
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - hello_logs - Writing file at: /Users/erincochran/Desktop/asset_tutorial/my_dagster_project/tmppe9yyr4b/storage/26304743-8f52-4342-950c-4f2cd5ee436c/hello_logs/result
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12167 - hello_logs - STEP_SUCCESS - Finished execution of step "hello_logs" in 25ms.
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - ENGINE_EVENT - Multiprocess executor: parent process exiting after 1.34s (pid: 12151)
-2022-12-15 14:29:34 -0500 - dagster - DEBUG - demo_job - 26304743-8f52-4342-950c-4f2cd5ee436c - 12151 - RUN_SUCCESS - Finished execution of run for "demo_job".
+2023-09-21 12:07:26 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - RUN_START - Started execution of run for "demo_job".
+2023-09-21 12:07:26 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - ENGINE_EVENT - Executing steps using multiprocess executor: parent process (pid: 25434)
+2023-09-21 12:07:26 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - hello_logs - STEP_WORKER_STARTING - Launching subprocess for "hello_logs".
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - STEP_WORKER_STARTED - Executing step "hello_logs" in subprocess.
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - LOGS_CAPTURED - Started capturing logs in process (pid: 25438).
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - STEP_START - Started execution of step "hello_logs".
+2023-09-21 12:07:30 -0400 - dagster - INFO - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - hello_logs - Hello, world!
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - hello_logs - Writing file at: /Users/erincochran/Desktop/dagster-examples/project-dagster-university/tmpzis_rf84/storage/219c7b51-b62f-4e5b-8de8-0e7a616b961c/hello_logs/result using PickledObjectFilesystemIOManager...
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+2023-09-21 12:07:30 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25438 - hello_logs - STEP_SUCCESS - Finished execution of step "hello_logs" in 49ms.
+2023-09-21 12:07:31 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - ENGINE_EVENT - Multiprocess executor: parent process exiting after 4.52s (pid: 25434)
+2023-09-21 12:07:31 -0400 - dagster - DEBUG - demo_job - 219c7b51-b62f-4e5b-8de8-0e7a616b961c - 25434 - RUN_SUCCESS - Finished execution of run for "demo_job".
 ```
 
 The `context` object passed to every op execution includes the built-in log manager, `context.log`. It exposes the usual `debug`, `info`, `warning`, `error`, and `critical` methods you would expect anywhere else in Python.
 
-When you run Dagster jobs in the Dagster UI, you'll notice that log messages are visible as colored messages in the console. For example:
+---
 
-- **Logs stream back to the the UI frontend in real time**:
+## Viewing logs in the Dagster UI
+
+When jobs are run, the logs stream back to the [**Run details** page](/concepts/webserver/ui#run-details) in real time. The UI contains two types of logs, which you can learn about using the tabs below.
+
+<TabGroup>
+<TabItem name="Structured event logs">
+
+### Structured event logs
+
+Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset’s metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
+
+- **Logs stream back to the UI in real time**:
 
   <!-- ![Real time logs in the Dagster UI](/images/concepts/logging/job-log-ui.png) -->
 
   <Image
   alt="Real time logs in the Dagster UI"
   src="/images/concepts/logging/job-log-ui.png"
-  width={3574}
-  height={1962}
+  width={3046}
+  height={1618}
   />
 
 - **Filtering log messages based on execution steps and log levels**:
@@ -106,24 +117,47 @@ When you run Dagster jobs in the Dagster UI, you'll notice that log messages are
   <Image
   alt="Log filtering in the Dagster UI"
   src="/images/concepts/logging/job-ui-filter.png"
-  width={3574}
-  height={1962}
+  width={3046}
+  height={1618}
   />
+
+</TabItem>
+<TabItem name="Raw compute logs">
+
+### Raw compute logs
+
+The raw compute logs contain logs for both [`stdout` and `stderr`](https://stackoverflow.com/questions/3385201/confused-about-stdin-stdout-and-stderr), which you can toggle between. To download the logs, click the **arrow icon** near the top right corner of the logs.
+
+Custom log messages are also included in these logs. Notice in the following image that the `Hello world!` message is included on line three:
+
+<!-- ![Raw compute logs in the Run details page](/images/concepts/logging/loggers-compute-logs.png) -->
+
+<Image
+alt="Raw compute logs in the Run details page"
+src="/images/concepts/logging/loggers-compute-logs.png"
+width={3046}
+height={1618}
+/>
+
+</TabItem>
+</TabGroup>
 
 ---
 
 ## Debugging using logs
 
-What happens if we introduce an error into our op logic?
+Errors in user code are caught by Dagster machinery to ensure jobs gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to the UI.
+
+For example, if an error is introduced into an op's logic:
 
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_error_marker_0 endbefore=end_builtin_logger_error_marker_0
 # demo_logger_error.py
 
-from dagster import job, op
+from dagster import job, op, OpExecutionContext
 
 
 @op
-def hello_logs_error(context):
+def hello_logs_error(context: OpExecutionContext):
     raise Exception("Somebody set up us the bomb")
 
 
@@ -132,8 +166,6 @@ def demo_job_error():
     hello_logs_error()
 ```
 
-Errors in user code are caught by the Dagster machinery to ensure jobs gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to the UI.
-
 Messages at level `ERROR` or above are highlighted both in the UI and in the console logs, so they can be easily identified even without filtering:
 
 <!-- ![ERROR level in logs in the Dagster UI](/images/concepts/logging/job-ui-error.png) -->
@@ -141,22 +173,15 @@ Messages at level `ERROR` or above are highlighted both in the UI and in the con
 <Image
 alt="ERROR level in logs in the Dagster UI"
 src="/images/concepts/logging/job-ui-error.png"
-width={4586}
-height={3054}
+width={3046}
+height={1618}
 />
 
 In many cases, especially for local development, this log viewer, coupled with op reexecution, is sufficient to enable a fast debug cycle for job implementation.
 
 ---
 
-## Examples
-
-- [Configuring built-in loggers](#configuring-built-in-loggers)
-- [Customizing loggers](#customizing-loggers)
-- [Specifying default code location loggers](#specifying-default-code-location-loggers)
-- [Testing custom loggers](#testing-custom-loggers)
-
-### Configuring built-in loggers
+## Configuring loggers
 
 Suppose that we've gotten the kinks out of our jobs developing locally, and now we want to run in production—without all of the log spew from `DEBUG` messages that was helpful during development.
 
@@ -171,88 +196,45 @@ loggers:
 
 When a job with the above config is executed, you'll only see the `ERROR` level logs.
 
-### Customizing loggers
+### Environment-specific logging using jobs
 
-You may find yourself wanting to add or supplement the built-in loggers so that Dagster logs are integrated with the rest of your log aggregation and monitoring infrastructure.
+Logging is environment-specific: for example, you don't want messages generated by data scientists' local development loops to be aggregated with production messages. On the other hand, you may find that console logging is irrelevant or even counterproductive in production.
 
-For example, you may be operating in a containerized environment where container `stdout` is aggregated by a tool such as Logstash. In this kind of environment, where logs will be aggregated and parsed by machine, the multi-line output from the default colored console logger is unhelpful. Instead, we'd much prefer to see single-line, structured log messages like:
+Dagster recognizes this by attaching loggers to jobs so that you can seamlessly switch from environment to environment without changing any code. For example, let's say you want to switch from Cloudwatch logging in production to console logging in development and test:
 
-```json
-{"orig_message": "Hello, world!", "log_message_id": "49854579-e4d1-4289-8453-b3e177b20056", ...}
-```
-
-Good news - Dagster already includes a logger that prints JSON-formatted single-line messages like this to the console (<PyObject object="json_console_logger"/>). But let's look at how we might implement a simplified version of this logger.
-
-Loggers are defined internally using the <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" /> class, but, following a common pattern in the Dagster codebase, the <PyObject module="dagster" object="logger" displayText="@logger" /> decorator exposes a simpler API for the common use case and is typically what you'll use to define your own loggers. The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`:
-
-```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_marker_0 endbefore=end_custom_logger_marker_0
-@logger(
-    {
-        "log_level": Field(str, is_required=False, default_value="INFO"),
-        "name": Field(str, is_required=False, default_value="dagster"),
-    },
-    description="A JSON-formatted console logger",
-)
-def json_console_logger(init_context):
-    level = init_context.logger_config["log_level"]
-    name = init_context.logger_config["name"]
-
-    klass = logging.getLoggerClass()
-    logger_ = klass(name, level=level)
-
-    handler = logging.StreamHandler()
-
-    class JsonFormatter(logging.Formatter):
-        def format(self, record):
-            return json.dumps(record.__dict__)
-
-    handler.setFormatter(JsonFormatter())
-    logger_.addHandler(handler)
-
-    return logger_
-
-
+```python file=/concepts/logging/logging_jobs.py startafter=start_logging_mode_marker_0 endbefore=end_logging_mode_marker_0
 @op
-def hello_logs(context):
+def log_op(context: OpExecutionContext):
     context.log.info("Hello, world!")
 
 
-@job(logger_defs={"my_json_logger": json_console_logger})
-def demo_job():
-    hello_logs()
+@graph
+def hello_logs():
+    log_op()
+
+
+local_logs = hello_logs.to_job(
+    name="local_logs", logger_defs={"console": colored_console_logger}
+)
+prod_logs = hello_logs.to_job(
+    name="prod_logs", logger_defs={"cloudwatch": cloudwatch_logger}
+)
 ```
 
-As you can see, you can specify the logger name in the run config. It also takes a `config` argument, representing the config that users can pass to the logger. For example:
+In the UI, you can view and execute the `prod_logs` job and edit config to use the new Cloudwatch logger. For example:
 
-```yaml file=/concepts/logging/config_custom_logger.yaml
+```yaml file=/concepts/logging/config_prod_job.yaml
 loggers:
-  my_json_logger:
+  cloudwatch:
     config:
-      log_level: INFO
+      log_level: ERROR
+      log_group_name: /my/cool/cloudwatch/log/group
+      log_stream_name: very_good_log_stream
 ```
 
-When you execute the job:
+---
 
-```shell
-dagster job execute -f custom_logger.py -c config_custom_logger.yaml
-```
-
-You'll see that the custom JSON logger is now being used:
-
-<!-- ![Custom logger Terminal output](/images/concepts/logging/job-custom-logger.png) -->
-
-<Image
-alt="Custom logger Terminal output"
-src="/images/concepts/logging/job-custom-logger.png"
-width={2408}
-height={428}
-/>
-
-### Specifying default code location loggers
-
-<Note>
-  This feature is <strong>experimental</strong>.
-</Note>
+## Specifying default code location loggers <Experimental />
 
 Defalt loggers can be specified on a <PyObject object="Definitions" /> object by supplying an object containing a logger to the `loggers` argument.
 
@@ -277,67 +259,25 @@ defs = Definitions(
 
 **Note**: If loggers are explicitly specified at the job level, they will override those provided to the <PyObject object="Definitions" /> object.
 
-### Testing custom loggers
-
-You can unit test the initialization method of a logger by invoking it:
-
-```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing endbefore=end_custom_logger_testing
-def test_init_json_console_logger():
-    logger_ = json_console_logger(None)
-    assert logger_.level == 20
-    assert logger_.name == "dagster"
-```
-
-If you need to provide config to the initialization of your logger, you can use the <PyObject object="build_init_logger_context" /> function:
-
-```python file=/concepts/logging/custom_logger.py startafter=start_custom_logger_testing_context endbefore=end_custom_logger_testing_context
-from dagster import build_init_logger_context
-
-
-def test_init_json_console_logger_with_context():
-    logger_ = json_console_logger(
-        build_init_logger_context(logger_config={"name": "my_logger"})
-    )
-    assert logger_.level == 20
-    assert logger_.name == "my_logger"
-```
-
 ---
 
-## Patterns
+## Related
 
-### Environment-specific logging using jobs
-
-Logging is environment-specific: you don't want messages generated by data scientists' local development loops to be aggregated with production messages. On the other hand, you may find that in production console logging is irrelevant or even counterproductive.
-
-Dagster recognizes this by attaching loggers to jobs so that you can seamlessly switch from, e.g., Cloudwatch logging in production to console logging in development and test, without changing any of your code. For example:
-
-```python file=/concepts/logging/logging_jobs.py startafter=start_logging_mode_marker_0 endbefore=end_logging_mode_marker_0
-@op
-def log_op(context):
-    context.log.info("Hello, world!")
-
-
-@graph
-def hello_logs():
-    log_op()
-
-
-local_logs = hello_logs.to_job(
-    name="local_logs", logger_defs={"console": colored_console_logger}
-)
-prod_logs = hello_logs.to_job(
-    name="prod_logs", logger_defs={"cloudwatch": cloudwatch_logger}
-)
-```
-
-From the UI, you can view and execute the `prod_logs` job and edit config in order to use the new Cloudwatch logger, for example:
-
-```yaml file=/concepts/logging/config_prod_job.yaml
-loggers:
-  cloudwatch:
-    config:
-      log_level: ERROR
-      log_group_name: /my/cool/cloudwatch/log/group
-      log_stream_name: very_good_log_stream
-```
+<ArticleList>
+  <ArticleListItem
+    href="/concepts/logging/python-logging"
+    title="Python logging"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/logging/custom-loggers"
+    title="Custom loggers"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/webserver/ui"
+    title="Dagster UI"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/code-locations"
+    title="Code locations"
+  ></ArticleListItem>
+</ArticleList>

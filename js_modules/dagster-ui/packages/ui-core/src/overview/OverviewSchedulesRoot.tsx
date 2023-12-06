@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   Heading,
@@ -12,6 +11,7 @@ import {
   Spinner,
   TextInput,
   Tooltip,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -33,6 +33,7 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -55,7 +56,7 @@ export const OverviewSchedulesRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Schedules');
 
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -65,10 +66,10 @@ export const OverviewSchedulesRoot = () => {
   const codeLocationFilter = useCodeLocationFilter();
   const runningStateFilter = useInstigationStatusFilter();
 
-  const filters = React.useMemo(() => [codeLocationFilter, runningStateFilter], [
-    codeLocationFilter,
-    runningStateFilter,
-  ]);
+  const filters = React.useMemo(
+    () => [codeLocationFilter, runningStateFilter],
+    [codeLocationFilter, runningStateFilter],
+  );
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<OverviewSchedulesQuery, OverviewSchedulesQueryVariables>(
@@ -179,7 +180,7 @@ export const OverviewSchedulesRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading schedules…</div>
+            <div style={{color: colorTextLight()}}>Loading schedules…</div>
           </Box>
         </Box>
       );
@@ -245,6 +246,8 @@ export const OverviewSchedulesRoot = () => {
     );
   };
 
+  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
@@ -260,6 +263,11 @@ export const OverviewSchedulesRoot = () => {
           <TextInput
             icon="search"
             value={searchValue}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading schedules…" />
+              ) : undefined
+            }
             onChange={(e) => {
               setSearchValue(e.target.value);
               onToggleAll(false);
@@ -283,7 +291,7 @@ export const OverviewSchedulesRoot = () => {
       {activeFiltersJsx.length ? (
         <Box
           padding={{vertical: 8, horizontal: 24}}
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          border="top-and-bottom"
           flex={{direction: 'row', gap: 8}}
         >
           {activeFiltersJsx}
@@ -303,7 +311,7 @@ export const OverviewSchedulesRoot = () => {
           <SchedulerInfo
             daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            border="top"
           />
           {content()}
         </>
@@ -312,9 +320,7 @@ export const OverviewSchedulesRoot = () => {
   );
 };
 
-const UnloadableSchedulesAlert: React.FC<{
-  count: number;
-}> = ({count}) => {
+const UnloadableSchedulesAlert = ({count}: {count: number}) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   if (!count) {
@@ -325,10 +331,7 @@ const UnloadableSchedulesAlert: React.FC<{
 
   return (
     <>
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{vertical: 16, horizontal: 24}} border="top">
         <Alert
           intent="warning"
           title={title}
@@ -364,7 +367,7 @@ const UnloadableSchedulesAlert: React.FC<{
   );
 };
 
-const UnloadableScheduleDialog: React.FC = () => {
+const UnloadableScheduleDialog = () => {
   const {data} = useQuery<UnloadableSchedulesQuery, UnloadableSchedulesQueryVariables>(
     UNLOADABLE_SCHEDULES_QUERY,
   );

@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, waitFor, screen, getByText, getAllByText} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {getAllByText, getByText, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
@@ -15,8 +14,10 @@ import {
   buildPythonError,
   buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
-import {BACKFILL_DETAILS_QUERY, BackfillPage, PartitionSelection} from '../BackfillPage';
+import {BACKFILL_DETAILS_QUERY, BackfillPage} from '../BackfillPage';
 
+// This file must be mocked because Jest can't handle `import.meta.url`.
+jest.mock('../../../graph/asyncGraphLayout', () => ({}));
 jest.mock('../../../app/QueryRefresh', () => {
   return {
     useQueryRefreshAtInterval: jest.fn(),
@@ -37,8 +38,11 @@ const mocks = [
       data: {
         partitionBackfillOrError: buildPartitionBackfill({
           assetBackfillData: buildAssetBackfillData({
-            rootAssetTargetedPartitions: ['1', '2', '3'],
-            rootAssetTargetedRanges: [buildPartitionKeyRange({start: '1', end: '2'})],
+            rootTargetedPartitions: {
+              __typename: 'AssetBackfillTargetPartitions',
+              partitionKeys: ['1', '2', '3'],
+              ranges: [buildPartitionKeyRange({start: '1', end: '2'})],
+            },
             assetBackfillStatuses: [
               {
                 ...buildAssetPartitionsStatusCounts({
@@ -142,7 +146,7 @@ describe('BackfillPage', () => {
     // Check if the loaded content is displayed
     const detailRow = await screen.findByTestId('backfill-page-details');
 
-    expect(screen.getByText('Partition Selection')).toBeVisible();
+    expect(screen.getByText('Partition selection')).toBeVisible();
     expect(screen.getByText('Asset name')).toBeVisible();
 
     expect(getByText(detailRow, 'Jan 1, 1970, 12:16:40 AM')).toBeVisible();
@@ -160,64 +164,5 @@ describe('BackfillPage', () => {
     expect(getByText(assetBRow, 'assetB')).toBeVisible();
     expect(getByText(assetBRow, 'Completed')).toBeVisible();
     expect(getAllByText(assetBRow, '-').length).toBe(3);
-  });
-});
-
-describe('PartitionSelection', () => {
-  it('renders the targeted partitions when rootAssetTargetedPartitions is provided and length <= 3', async () => {
-    const {getByText} = render(
-      <PartitionSelection numPartitions={3} rootAssetTargetedPartitions={['1', '2', '3']} />,
-    );
-
-    expect(getByText('1')).toBeInTheDocument();
-    expect(getByText('2')).toBeInTheDocument();
-    expect(getByText('3')).toBeInTheDocument();
-  });
-
-  it('renders the targeted partitions in a dialog when rootAssetTargetedPartitions is provided and length > 3', async () => {
-    const {getByText} = render(
-      <PartitionSelection numPartitions={4} rootAssetTargetedPartitions={['1', '2', '3', '4']} />,
-    );
-
-    await userEvent.click(getByText('4 partitions'));
-
-    expect(getByText('1')).toBeInTheDocument();
-    expect(getByText('2')).toBeInTheDocument();
-    expect(getByText('3')).toBeInTheDocument();
-    expect(getByText('4')).toBeInTheDocument();
-  });
-
-  it('renders the single targeted range when rootAssetTargetedRanges is provided and length === 1', async () => {
-    const {getByText} = render(
-      <PartitionSelection
-        numPartitions={1}
-        rootAssetTargetedRanges={[buildPartitionKeyRange({start: '1', end: '2'})]}
-      />,
-    );
-
-    expect(getByText('1...2')).toBeInTheDocument();
-  });
-
-  it('renders the targeted ranges in a dialog when rootAssetTargetedRanges is provided and length > 1', async () => {
-    const {getByText} = render(
-      <PartitionSelection
-        numPartitions={2}
-        rootAssetTargetedRanges={[
-          buildPartitionKeyRange({start: '1', end: '2'}),
-          buildPartitionKeyRange({start: '3', end: '4'}),
-        ]}
-      />,
-    );
-
-    await userEvent.click(getByText('2 partitions'));
-
-    expect(getByText('1...2')).toBeInTheDocument();
-    expect(getByText('3...4')).toBeInTheDocument();
-  });
-
-  it('renders the numPartitions in a ButtonLink when neither rootAssetTargetedPartitions nor rootAssetTargetedRanges are provided', async () => {
-    const {getByText} = render(<PartitionSelection numPartitions={2} />);
-
-    expect(getByText('2 partitions')).toBeInTheDocument();
   });
 });

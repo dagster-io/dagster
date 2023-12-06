@@ -1,4 +1,3 @@
-
 version: 2
 
 sources:
@@ -9,52 +8,52 @@ sources:
       - name: sort_by_calories
 
 models:
-    - name: sort_by_calories
-      description: "Sort the cereals table by calorie count"
-      columns:
-        - name: calories
-          tests:
-            - not_null
-        - name: type
-          tests:
-            - accepted_values:
-                values: ['H', 'C']
-        - name: mfr
-          tests:
-            - not_null
-        - name: protein
-          tests:
-            - not_null
-        - name: fat
-          tests:
-            - not_null
-        - name: sodium
-          tests:
-            - not_null
-        - name: fiber
-          tests:
-            - not_null
-        - name: carbo
-          tests:
-            - not_null
-        - name: sugars
-          tests:
-            - not_null
-        - name: potass
-          tests:
-            - not_null
-        - name: vitamins
-          tests:
-            - not_null
-        - name: shelf
-          tests:
-            - not_null
-        - name: weight
-          tests:
-            - not_null
-        - name: cups
-          tests:
-            - not_null
-        - name: rating
-          tests:
-            - not_null
+  - name: sort_by_calories
+    description: "Sort the cereals table by calorie count"
+    columns:
+      - name: calories
+        tests:
+          - not_null
+      - name: type
+        tests:
+          - accepted_values:
+              values: ["H", "C"]
+      - name: mfr
+        tests:
+          - not_null
+      - name: protein
+        tests:
+          - not_null
+      - name: fat
+        tests:
+          - not_null
+      - name: sodium
+        tests:
+          - not_null
+      - name: fiber
+        tests:
+          - not_null
+      - name: carbo
+        tests:
+          - not_null
+      - name: sugars
+        tests:
+          - not_null
+      - name: potass
+        tests:
+          - not_null
+      - name: vitamins
+        tests:
+          - not_null
+      - name: shelf
+        tests:
+          - not_null
+      - name: weight
+        tests:
+          - not_null
+      - name: cups
+        tests:
+          - not_null
+      - name: rating
+        tests:
+          - not_null

@@ -1,8 +1,6 @@
 import logging
-import os
 import sys
 import threading
-import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
@@ -55,7 +53,7 @@ from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
-from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
+from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 
@@ -111,6 +109,10 @@ class SensorLaunchContext:
     @property
     def run_count(self) -> int:
         return len(self._tick.run_ids)
+
+    @property
+    def tick_id(self) -> str:
+        return str(self._tick.tick_id)
 
     def update_state(self, status: TickStatus, **kwargs: object):
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
@@ -181,7 +183,8 @@ class SensorLaunchContext:
                 cursor = self._tick.cursor
 
             marked_timestamp = max(
-                self._tick.timestamp, state.instigator_data.last_tick_start_timestamp or 0  # type: ignore  # (possible none)
+                self._tick.timestamp,
+                state.instigator_data.last_tick_start_timestamp or 0,  # type: ignore  # (possible none)
             )
             self._instance.update_instigator_state(
                 state.with_data(  # type: ignore  # (possible none)
@@ -225,21 +228,6 @@ class SensorLaunchContext:
             )
 
 
-def _check_for_debug_crash(
-    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
-) -> None:
-    if not debug_crash_flags:
-        return
-
-    kill_signal = debug_crash_flags.get(key)
-    if not kill_signal:
-        return
-
-    os.kill(os.getpid(), kill_signal)
-    time.sleep(10)
-    raise Exception("Process didn't terminate after sending crash signal")
-
-
 VERBOSE_LOGS_INTERVAL = 60
 
 
@@ -259,7 +247,7 @@ def execute_sensor_iteration_loop(
     submit_threadpool_executor = None
     threadpool_executor = None
     with ExitStack() as stack:
-        settings = workspace_process_context.instance.get_settings("sensors")
+        settings = workspace_process_context.instance.get_sensor_settings()
         if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
                 InheritContextThreadPoolExecutor(
@@ -525,12 +513,12 @@ def _process_tick_generator(
             )
         )
 
-        _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
+        check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
         with SensorLaunchContext(
             external_sensor, tick, instance, logger, tick_retention_settings, sensor_state_lock
         ) as tick_context:
-            _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+            check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
             yield from _evaluate_sensor(
                 workspace_process_context,
                 tick_context,
@@ -624,22 +612,18 @@ def _submit_run_request(
     if isinstance(run, SkippedSensorRun):
         return SubmitRunRequestResult(run_key=run_request.run_key, error_info=None, run=run)
 
-    _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
+    check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
 
     error_info = None
     try:
         logger.info(f"Launching run for {external_sensor.name}")
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
-        logger.info(
-            "Completed launch of run {run_id} for {sensor_name}".format(
-                run_id=run.run_id, sensor_name=external_sensor.name
-            )
-        )
+        logger.info(f"Completed launch of run {run.run_id} for {external_sensor.name}")
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")
 
-    _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
+    check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
     return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)
 
 
@@ -682,6 +666,9 @@ def _evaluate_sensor(
         context.add_log_info(sensor_runtime_data.captured_log_key)
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
+
+    for asset_event in sensor_runtime_data.asset_events:
+        instance.report_runless_asset_event(asset_event)
 
     if sensor_runtime_data.dynamic_partitions_requests:
         for request in sensor_runtime_data.dynamic_partitions_requests:
@@ -813,17 +800,26 @@ def _evaluate_sensor(
     run_requests = []
 
     for raw_run_request in sensor_runtime_data.run_requests:
-        if raw_run_request.stale_assets_only:
-            stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_sensor)  # type: ignore
+        run_request = raw_run_request.with_replaced_attrs(
+            tags=merge_dicts(
+                raw_run_request.tags,
+                DagsterRun.tags_for_tick_id(context.tick_id),
+            )
+        )
+
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_or_missing_assets(
+                workspace_process_context,  # type: ignore
+                run_request,
+                external_sensor,
+            )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
             else:
-                run_request = raw_run_request.with_replaced_attrs(
+                run_request = run_request.with_replaced_attrs(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
-        else:
-            run_request = raw_run_request
 
         run_requests.append(run_request)
 
@@ -1027,4 +1023,5 @@ def _create_sensor_run(
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
+        asset_check_selection=None,
     )

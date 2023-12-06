@@ -18,8 +18,8 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, experimental_param, public
-from dagster._core.definitions.data_version import DataVersion
+from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -248,7 +248,7 @@ T = TypeVar("T")
 
 @experimental_param(param="data_version")
 class Output(Generic[T]):
-    """Event corresponding to one of a op's outputs.
+    """Event corresponding to one of an op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
     one output, or when they also yield events of other types, or when defining a op using the
@@ -263,7 +263,7 @@ class Output(Generic[T]):
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
         data_version (Optional[DataVersion]): (Experimental) A data version to manually set
@@ -438,7 +438,7 @@ class AssetObservation(
                 "The tags argument is reserved for system-populated tags."
             )
 
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -446,7 +446,7 @@ class AssetObservation(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
             tags=tags,
             partition=check.opt_str_param(partition, "partition"),
         )
@@ -454,6 +454,10 @@ class AssetObservation(
     @property
     def label(self) -> str:
         return " ".join(self.asset_key.path)
+
+    @property
+    def data_version(self) -> Optional[str]:
+        return self.tags.get(DATA_VERSION_TAG)
 
 
 UNDEFINED_ASSET_KEY_PATH = ["__undefined__"]
@@ -539,7 +543,7 @@ class AssetMaterialization(
                 " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -560,7 +564,7 @@ class AssetMaterialization(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
             tags=tags,
             partition=partition,
         )
@@ -592,6 +596,10 @@ class AssetMaterialization(
         )
 
 
+@deprecated(
+    breaking_version="1.7",
+    additional_warn_text="Please use AssetCheckResult and @asset_check instead.",
+)
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
@@ -630,7 +638,7 @@ class ExpectationResult(
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -639,7 +647,7 @@ class ExpectationResult(
             success=check.bool_param(success, "success"),
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
         )
 
 
@@ -682,7 +690,7 @@ class TypeCheck(
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = normalize_metadata(
+        normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
@@ -690,7 +698,7 @@ class TypeCheck(
             cls,
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
-            metadata=metadata,
+            metadata=normed_metadata,
         )
 
 

@@ -616,9 +616,7 @@ def _helm_chart_helper(
             else:
                 assert (
                     len(pod_names) == 0
-                ), "celery-worker pods {pod_names} exists when celery is not enabled.".format(
-                    pod_names=pod_names
-                )
+                ), f"celery-worker pods {pod_names} exists when celery is not enabled."
 
         dagster_user_deployments_values = helm_config.get("dagster-user-deployments", {})
         if (
@@ -713,9 +711,8 @@ def helm_chart_for_k8s_run_launcher(
                 "config": {
                     "k8sRunLauncher": {
                         "jobNamespace": user_code_namespace,
-                        "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}] + (
-                            [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []
-                        ),
+                        "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
+                        + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
                         "envSecrets": [{"name": TEST_SECRET_NAME}],
                         "envVars": ["BUILDKITE=1"] if os.getenv("BUILDKITE") else [],
                         "imagePullPolicy": image_pull_policy(),
@@ -858,9 +855,8 @@ def _deployment_config(docker_image):
                 [{"name": "BUILDKITE", "value": os.getenv("BUILDKITE")}]
                 if os.getenv("BUILDKITE")
                 else []
-            ) + [
-                {"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}
-            ],
+            )
+            + [{"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}],
             "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else [],
             "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},

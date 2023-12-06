@@ -75,7 +75,7 @@ def test_load_grpc_server(entrypoint):
         subprocess.check_call(["dagster", "api", "grpc-health-check", "--port", str(port)])
 
         ssl_result = subprocess.run(
-            ["dagster", "api", "grpc-health-check", "--port", str(port), "--use-ssl"]
+            ["dagster", "api", "grpc-health-check", "--port", str(port), "--use-ssl"], check=False
         )
         assert ssl_result.returncode == 1
 
@@ -825,8 +825,8 @@ def test_sensor_timeout(entrypoint):
                         last_completion_time=None,
                         last_run_key=None,
                         cursor=None,
+                        timeout=2,
                     ),
-                    timeout=2,
                 )
 
             assert "Deadline Exceeded" in str(exc_info.getrepr())

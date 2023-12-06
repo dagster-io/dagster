@@ -11,3 +11,5 @@ package-lock.json
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+*.tsbuildinfo

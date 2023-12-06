@@ -11,6 +11,7 @@ from dagster import (
     Out,
     op,
     graph,
+    build_op_context,
 )
 
 
@@ -330,7 +331,7 @@ def test_asset_with_inputs():
 
 
 # start_test_resource_asset
-from dagster import asset, ConfigurableResource, build_op_context, with_resources
+from dagster import asset, ConfigurableResource
 
 
 class BarResource(ConfigurableResource):
@@ -351,7 +352,7 @@ def test_asset_requires_bar():
 
 
 # start_test_config_asset
-from dagster import asset, Config, build_op_context
+from dagster import asset, Config
 
 
 class MyAssetConfig(Config):

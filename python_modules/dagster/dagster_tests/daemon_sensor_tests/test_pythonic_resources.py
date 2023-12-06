@@ -7,6 +7,7 @@ import pendulum
 import pytest
 from dagster import (
     AssetKey,
+    IAttachDifferentObjectToOpContext,
     SensorEvaluationContext,
     job,
     multi_asset_sensor,
@@ -82,6 +83,13 @@ class MyResource(ConfigurableResource):
     a_str: str
 
 
+class MyResourceAttachDifferentObject(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    a_str: str
+
+    def get_object_to_set_on_execution_context(self) -> str:
+        return self.a_str
+
+
 @sensor(job_name="the_job", required_resource_keys={"my_resource"})
 def sensor_from_context(context: SensorEvaluationContext):
     return RunRequest(context.resources.my_resource.a_str, run_config={}, tags={})
@@ -107,6 +115,15 @@ def sensor_with_job_with_resource_dep(context: SensorEvaluationContext, my_resou
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
+@sensor(job_name="the_job")
+def sensor_with_resource_from_context(
+    context: SensorEvaluationContext, my_resource_attach: MyResourceAttachDifferentObject
+):
+    assert context.resources.my_resource_attach == my_resource_attach.a_str
+
+    return RunRequest(my_resource_attach.a_str, run_config={}, tags={})
+
+
 is_in_cm = False
 
 
@@ -114,7 +131,7 @@ is_in_cm = False
 @contextmanager
 def my_cm_resource(_) -> Iterator[str]:
     global is_in_cm  # noqa: PLW0603
-    is_in_cm = True  # noqa: PLW0603
+    is_in_cm = True
     yield "foo"
     is_in_cm = False
 
@@ -293,6 +310,7 @@ the_repo = Definitions(
         sensor_from_context,
         sensor_from_fn_arg,
         sensor_with_job_with_resource_dep,
+        sensor_with_resource_from_context,
         sensor_with_cm,
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
@@ -314,6 +332,7 @@ the_repo = Definitions(
     resources={
         "my_resource": MyResource(a_str="foo"),
         "my_cm_resource": my_cm_resource,
+        "my_resource_attach": MyResourceAttachDifferentObject(a_str="foo"),
         "the_inner": the_inner,
         "the_outer": the_outer,
     },
@@ -376,6 +395,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
         "sensor_from_context",
         "sensor_from_fn_arg",
         "sensor_with_job_with_resource_dep",
+        "sensor_with_resource_from_context",
         "sensor_with_cm",
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",

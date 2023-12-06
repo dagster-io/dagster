@@ -1,7 +1,6 @@
 import {
   Box,
   ButtonLink,
-  Colors,
   Group,
   MetadataTableWIP,
   PageHeader,
@@ -11,16 +10,18 @@ import {
   Mono,
   Tooltip,
   Button,
+  colorTextLight,
+  colorTextDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
-import {InstigationStatus, InstigationType} from '../graphql/types';
-import {TickTag} from '../instigation/InstigationTick';
+import {InstigationStatus} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
+import {TickStatusTag} from '../ticks/TickStatusTag';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -32,11 +33,11 @@ import {ScheduleFragment} from './types/ScheduleUtils.types';
 
 const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 
-export const ScheduleDetails: React.FC<{
+export const ScheduleDetails = (props: {
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
   refreshState: QueryRefreshState;
-}> = (props) => {
+}) => {
   const {repoAddress, schedule, refreshState} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
   const copyToClipboard = useCopyToClipboard();
@@ -98,7 +99,10 @@ export const ScheduleDetails: React.FC<{
             ) : null}
             <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
               <Tooltip content={copyText}>
-                <ButtonLink color={{link: Colors.Gray400, hover: Colors.Gray600}} onClick={copyId}>
+                <ButtonLink
+                  color={{link: colorTextLight(), hover: colorTextDefault()}}
+                  onClick={copyId}
+                >
                   <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
                 </ButtonLink>
               </Tooltip>
@@ -146,7 +150,7 @@ export const ScheduleDetails: React.FC<{
                     timezone={executionTimezone}
                     timeFormat={TIME_FORMAT}
                   />
-                  <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
+                  <TickStatusTag tick={latestTick} />
                 </Group>
               ) : (
                 'Schedule has never run'

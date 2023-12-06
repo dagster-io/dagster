@@ -19,7 +19,7 @@ import {AssetNodeDefinition} from '../AssetNodeDefinition';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'AssetNodeDefinition',
+  title: 'Asset Details/Definition',
   component: AssetNodeDefinition,
 } as Meta;
 
@@ -30,7 +30,6 @@ export const MinimalAsset = () => {
         dependsOnSelf={false}
         downstream={[]}
         upstream={[]}
-        liveDataByNode={{}}
         assetNode={
           buildAssetNode({
             description: null,
@@ -56,7 +55,6 @@ export const FullUseAsset = () => {
           buildAssetNode({assetKey: buildAssetKey({path: ['downstream_1']})}),
           buildAssetNode({assetKey: buildAssetKey({path: ['downstream_2']})}),
         ]}
-        liveDataByNode={{}}
         assetNode={
           buildAssetNode({
             description: `

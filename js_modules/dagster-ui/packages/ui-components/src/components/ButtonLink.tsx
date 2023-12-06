@@ -1,7 +1,9 @@
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {Colors} from './Colors';
+import {colorLinkDefault} from '../theme/color';
+
+import {Box} from './Box';
 
 type Color =
   | string
@@ -51,6 +53,9 @@ const textDecoration = (underline: Underline) => {
       return css`
         &:hover {
           text-decoration: underline;
+          & > ${Box} {
+            text-decoration: underline;
+          }
         }
       `;
     case 'never':
@@ -91,6 +96,6 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
 `;
 
 ButtonLink.defaultProps = {
-  color: Colors.Link,
+  color: colorLinkDefault(),
   underline: 'hover',
 };

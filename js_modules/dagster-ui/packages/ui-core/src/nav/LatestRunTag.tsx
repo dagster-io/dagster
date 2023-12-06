@@ -1,13 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, StyledTable, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, StyledTable, Tag, Tooltip, colorTextLighter} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {RunStatus} from '../graphql/types';
-import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
+import {timingStringForStatus} from '../runs/RunTimingDetails';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
@@ -17,9 +17,12 @@ import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTa
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddress}> = ({
+export const LatestRunTag = ({
   pipelineName,
   repoAddress,
+}: {
+  pipelineName: string;
+  repoAddress: RepoAddress;
 }) => {
   const lastRunQuery = useQuery<LatestRunTagQuery, LatestRunTagQueryVariables>(
     LATEST_RUN_TAG_QUERY,
@@ -79,7 +82,7 @@ export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddr
               <StyledTable>
                 <tbody>
                   <tr>
-                    <td style={{color: Colors.Gray300}}>
+                    <td style={{color: colorTextLighter()}}>
                       <Box padding={{right: 16}}>Started</Box>
                     </td>
                     <td>
@@ -91,7 +94,7 @@ export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddr
                     </td>
                   </tr>
                   <tr>
-                    <td style={{color: Colors.Gray300}}>Ended</td>
+                    <td style={{color: colorTextLighter()}}>Ended</td>
                     <td>
                       {stats.end ? (
                         <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />

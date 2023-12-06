@@ -37,6 +37,7 @@ def execute_script_file(
     log: Logger,
     cwd: Optional[str] = None,
     env: Optional[Mapping[str, str]] = None,
+    log_shell_command: bool = True,
 ) -> Tuple[str, int]:
     """Execute a shell script file specified by the argument ``shell_script_path``. The script will be
     invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
@@ -56,6 +57,7 @@ def execute_script_file(
             temporary path where we store the shell command in a script file.
         env (Dict[str, str], optional): Environment dictionary to pass to ``subprocess.Popen``.
             Unused by default.
+        log_shell_command (bool, optional): Whether to log the shell command before executing it.
 
     Raises:
         Exception: When an invalid output_logging is selected. Unreachable from op-based
@@ -84,7 +86,8 @@ def execute_script_file(
     with open(shell_script_path, "rb") as f:
         shell_command = f.read().decode("utf-8")
 
-    log.info(f"Running command:\n{shell_command}")
+    if log_shell_command:
+        log.info(f"Running command:\n{shell_command}")
 
     sub_process = None
     try:
@@ -99,7 +102,7 @@ def execute_script_file(
             stderr=stderr_pipe,
             cwd=cwd,
             env=env,
-            preexec_fn=pre_exec,
+            preexec_fn=pre_exec,  # noqa: PLW1509
             encoding="UTF-8",
         )
 
@@ -135,6 +138,7 @@ def execute(
     log: Logger,
     cwd: Optional[str] = None,
     env: Optional[Mapping[str, str]] = None,
+    log_shell_command: bool = True,
 ) -> Tuple[str, int]:
     """This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
     It can be used to execute shell commands on either op input data, or any data generated within a generic python op.
@@ -157,6 +161,7 @@ def execute(
             temporary path where we store the shell command in a script file.
         env (Dict[str, str], optional): Environment dictionary to pass to ``subprocess.Popen``.
             Unused by default.
+        log_shell_command (bool, optional): Whether to log the shell command before executing it.
 
     Returns:
         Tuple[str, int]: A tuple where the first element is the combined stdout/stderr output of running the shell
@@ -180,4 +185,5 @@ def execute(
                 log=log,
                 cwd=(cwd or tmp_path),
                 env=env,
+                log_shell_command=log_shell_command,
             )

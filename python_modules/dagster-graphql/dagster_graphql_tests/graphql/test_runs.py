@@ -13,7 +13,7 @@ from dagster._utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
-    infer_pipeline_selector,
+    infer_job_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -156,6 +156,16 @@ query PipelineRunsRootQuery($filter: RunsFilter!) {
 }
 """
 
+RUN_IDS_QUERY = """
+query RunIds($filter: RunsFilter, $cursor: String, $limit: Int) {
+  runIdsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
+    ... on RunIds {
+      results
+    }
+  }
+}
+"""
+
 FILTERED_RUN_COUNT_QUERY = """
 query PipelineRunsRootQuery($filter: RunsFilter!) {
   pipelineRunsOrError(filter: $filter) {
@@ -284,7 +294,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         # other code in this file which reads itself to load a repo
         from .utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         payload_one = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -387,7 +397,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         # other code in this file which reads itself to load a repo
         from .utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         sync_execute_get_run_log_data(
             context=graphql_context,
@@ -723,6 +733,44 @@ def test_filtered_runs_count():
             assert result.data
             count = result.data["pipelineRunsOrError"]["count"]
             assert count == 1
+
+
+def test_run_ids():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        run_id_1 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
+        ).run_id
+        run_id_2 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        run_id_3 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_3, run_id_2]
+
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}, "limit": 1},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_3]
+
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"cursor": run_id_2},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_1]
 
 
 def test_run_group():

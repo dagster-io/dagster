@@ -1,18 +1,27 @@
 import {Alert, Box} from '@dagster-io/ui-components';
-import {BorderSetting, DirectionalSpacing} from '@dagster-io/ui-components/src/components/types';
+import {
+  BorderSide,
+  BorderSetting,
+  DirectionalSpacing,
+} from '@dagster-io/ui-components/src/components/types';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {AssetLatestInfoRunFragment} from '../asset-graph/types/useLiveDataForAssetKeys.types';
+import {AssetLatestInfoRunFragment} from '../asset-data/types/AssetLiveDataProvider.types';
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 
-export const FailedRunSinceMaterializationBanner: React.FC<{
+export const FailedRunSinceMaterializationBanner = ({
+  run,
+  stepKey,
+  border,
+  padding = {vertical: 16, left: 24, right: 12},
+}: {
   run: AssetLatestInfoRunFragment | null;
   padding?: DirectionalSpacing;
-  border?: BorderSetting;
+  border?: BorderSide | BorderSetting;
   stepKey?: string;
-}> = ({run, stepKey, border, padding = {vertical: 16, left: 24, right: 12}}) => {
+}) => {
   const stepLogs = useStepLogs({runId: run?.id, stepKeys: stepKey ? [stepKey] : []});
 
   return (

@@ -15,13 +15,17 @@ import {PartitionDimensionSelection, usePartitionHealthData} from '../usePartiti
 
 // eslint-disable-next-line import/no-default-export
 export default {
+  title: 'Assets/PartitionHealthSummary',
   component: PartitionHealthSummary,
 };
 
-const PartitionHealthSummaryWithData: React.FC<{
+const PartitionHealthSummaryWithData = ({
+  assetKey,
+  ranges,
+}: {
   assetKey: AssetKey;
   ranges?: [string, string][];
-}> = ({assetKey, ranges}) => {
+}) => {
   const data = usePartitionHealthData([assetKey]);
 
   // Convert the convenient test shorthand into a PartitionDimensionSelection

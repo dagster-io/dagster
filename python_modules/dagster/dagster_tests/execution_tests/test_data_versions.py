@@ -1016,7 +1016,7 @@ def test_legacy_data_version_tags():
         assert extract_data_provenance_from_entry(record.event_log_entry) == DataProvenance(
             code_version="1",
             input_data_versions={AssetKey(["foo"]): DataVersion("alpha")},
-            input_storage_ids={AssetKey(["foo"]): 3},
+            input_storage_ids={AssetKey(["foo"]): 4},
             is_user_provided=True,
         )
 

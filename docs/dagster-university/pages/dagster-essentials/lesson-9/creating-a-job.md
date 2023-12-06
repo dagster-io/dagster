@@ -1,7 +1,7 @@
 ---
-title: "Lesson 9: Creating a job"
-module: "dagster_essentials"
-lesson: "9"
+title: 'Lesson 9: Creating a job'
+module: 'dagster_essentials'
+lesson: '9'
 ---
 
 # Creating a job

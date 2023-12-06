@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
+import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
 import {InstanceBackfills} from '../instance/InstanceBackfills';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
@@ -24,6 +25,9 @@ export const OverviewRoot = () => {
       </Route>
       <Route path="/overview/sensors">
         <OverviewSensorsRoot />
+      </Route>
+      <Route path="/overview/automaterialize">
+        <AutomaterializationRoot />
       </Route>
       <Route path="/overview/backfills/:backfillId">
         <BackfillPage />

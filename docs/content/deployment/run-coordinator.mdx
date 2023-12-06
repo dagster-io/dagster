@@ -84,19 +84,6 @@ The following run coordinators can be configured on your [Dagster instance](/dep
         </a>.
       </td>
     </tr>
-    <tr>
-      <td>
-        <strong>Custom run coordinator</strong>
-      </td>
-      <td>
-        Using a subclass of one of the <code>RunCoordinator</code>s, you can
-        define a custom queueing strategy when submitting runs to the{" "}
-        <a href="/deployment/dagster-daemon">Dagster daemon</a> or executing
-        custom hooks before runs are submitted. For example, you can read HTTP
-        headers to inject run tags for{" "}
-        <a href="/guides/dagster/run-attribution">run attribution</a>.
-      </td>
-    </tr>
   </tbody>
 </table>
 
@@ -122,16 +109,12 @@ However, if using the `QueuedRunCoordinator` or building a custom implementation
     href="/guides/limiting-concurrency-in-data-pipelines"
   ></ArticleListItem>
   <ArticleListItem
-    title="Setting up run attribution"
-    href="/guides/dagster/run-attribution"
-  ></ArticleListItem>
-  <ArticleListItem
     title="Run launchers"
     href="/deployment/run-launcher"
   ></ArticleListItem>
   <ArticleListItem
     title="Managing Dagster Cloud deployments"
-    href="/dagster-cloud/developing-testing/managing-deployments"
+    href="/dagster-cloud/managing-deployments/managing-deployments"
   ></ArticleListItem>
   <ArticleListItem
     title="Dagster instance"

@@ -46,6 +46,7 @@ def _default_sort_key(step: ExecutionStep) -> float:
 
 
 CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
+CONCURRENCY_CLAIM_MESSAGE_INTERVAL = 300
 
 
 class ActiveExecution:
@@ -106,6 +107,7 @@ class ActiveExecution:
         self._pending_retry: List[str] = []
         self._pending_abandon: List[str] = []
         self._waiting_to_retry: Dict[str, float] = {}
+        self._messaged_concurrency_slots: Dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
         self._in_flight: Set[str] = set()
@@ -161,14 +163,14 @@ class ActiveExecution:
         if len(self._unknown_state) > 0:
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
-                    "Execution exited with steps {step_list} in an unknown state after "
-                    "being interrupted.".format(step_list=self._unknown_state)
+                    f"Execution exited with steps {self._unknown_state} in an unknown state after "
+                    "being interrupted."
                 )
             else:
                 raise DagsterUnknownStepStateError(
-                    "Execution exited with steps {step_list} in an unknown state to this"
+                    f"Execution exited with steps {self._unknown_state} in an unknown state to this"
                     " process.\nThis was likely caused by losing communication with the process"
-                    " performing step execution.".format(step_list=self._unknown_state)
+                    " performing step execution."
                 )
 
     def _pending_state_str(self) -> str:
@@ -196,6 +198,28 @@ class ActiveExecution:
             ),
         )
 
+    def _should_skip_step(self, step_key: str, successful_or_skipped_steps: Set[str]) -> bool:
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            missing_source_handles = []
+
+            for source_handle in step_input.get_step_output_handle_dependencies():
+                if (
+                    source_handle.step_key in successful_or_skipped_steps
+                    and source_handle not in self._step_outputs
+                ):
+                    missing_source_handles.append(source_handle)
+
+            if missing_source_handles:
+                if len(missing_source_handles) == len(
+                    step_input.get_step_output_handle_dependencies()
+                ):
+                    self._skipped_deps[step_key] = [
+                        f"{h.step_key}.{h.output_name}" for h in missing_source_handles
+                    ]
+                    return True
+        return False
+
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
@@ -206,6 +230,7 @@ class ActiveExecution:
 
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
+        resolved_steps = self._success | self._skipped | self._failed | self._abandoned
 
         if self._new_dynamic_mappings:
             new_step_deps = self._plan.resolve(self._completed_dynamic_outputs)
@@ -214,39 +239,12 @@ class ActiveExecution:
 
             self._new_dynamic_mappings = False
 
-        for step_key, requirements in self._pending.items():
-            # If any upstream deps failed - this is not executable
-            if requirements.intersection(failed_or_abandoned_steps):
-                new_steps_to_abandon.append(step_key)
-
-            # If all the upstream steps of a step are complete or skipped
-            elif requirements.issubset(successful_or_skipped_steps):
-                step = self.get_step_by_key(step_key)
-
-                # The base case is downstream step won't skip
-                should_skip = False
-
-                # If there is at least one of the step's inputs, none of whose upstream steps has
-                # yielded an output, we should skip that step.
-                for step_input in step.step_inputs:
-                    missing_source_handles = [
-                        source_handle
-                        for source_handle in step_input.get_step_output_handle_dependencies()
-                        if source_handle.step_key in requirements
-                        and source_handle not in self._step_outputs
-                    ]
-                    if missing_source_handles:
-                        if len(missing_source_handles) == len(
-                            step_input.get_step_output_handle_dependencies()
-                        ):
-                            should_skip = True
-                            self._skipped_deps[step_key] = [
-                                f"{h.step_key}.{h.output_name}" for h in missing_source_handles
-                            ]
-                            break
-
-                if should_skip:
+        for step_key, depends_on_steps in self._pending.items():
+            if depends_on_steps.issubset(resolved_steps):
+                if self._should_skip_step(step_key, successful_or_skipped_steps):
                     new_steps_to_skip.append(step_key)
+                elif depends_on_steps.intersection(failed_or_abandoned_steps):
+                    new_steps_to_abandon.append(step_key)
                 else:
                     new_steps_to_execute.append(step_key)
 
@@ -495,9 +493,7 @@ class ActiveExecution:
     def _mark_complete(self, step_key: str) -> None:
         check.invariant(
             step_key in self._in_flight,
-            "Attempted to mark step {} as complete that was not known to be in flight".format(
-                step_key
-            ),
+            f"Attempted to mark step {step_key} as complete that was not known to be in flight",
         )
         self._in_flight.remove(step_key)
 
@@ -538,6 +534,8 @@ class ActiveExecution:
                     else None
                 ),
             )
+            if self._instance_concurrency_context:
+                self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_successful_output:
             event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
             self.mark_step_produced_output(event_specific_data.step_output_handle)
@@ -639,3 +637,25 @@ class ActiveExecution:
             self.get_steps_to_execute()
 
         return [self.get_step_by_key(step_key) for step_key in self._in_flight]
+
+    def concurrency_event_iterator(
+        self, plan_context: Union[PlanExecutionContext, PlanOrchestrationContext]
+    ) -> Iterator[DagsterEvent]:
+        if not self._instance_concurrency_context:
+            return
+
+        pending_claims = self._instance_concurrency_context.pending_claim_steps()
+        for step_key in pending_claims:
+            last_messaged_timestamp = self._messaged_concurrency_slots.get(step_key)
+            if (
+                not last_messaged_timestamp
+                or time.time() - last_messaged_timestamp > CONCURRENCY_CLAIM_MESSAGE_INTERVAL
+            ):
+                step = self.get_step_by_key(step_key)
+                step_context = plan_context.for_step(step)
+                step_concurrency_key = cast(str, step.tags.get(GLOBAL_CONCURRENCY_TAG))
+                self._messaged_concurrency_slots[step_key] = time.time()
+                is_initial_message = last_messaged_timestamp is None
+                yield DagsterEvent.step_concurrency_blocked(
+                    step_context, step_concurrency_key, initial=is_initial_message
+                )

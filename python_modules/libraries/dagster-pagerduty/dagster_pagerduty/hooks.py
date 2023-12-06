@@ -77,11 +77,7 @@ def pagerduty_on_failure(
     def _hook(context: HookContext):
         custom_details = {}
         if webserver_base_url:
-            custom_details = {
-                "webserver url": "{base_url}/runs/{run_id}".format(
-                    base_url=webserver_base_url, run_id=context.run_id
-                )
-            }
+            custom_details = {"webserver url": f"{webserver_base_url}/runs/{context.run_id}"}
         context.resources.pagerduty.EventV2_create(
             summary=summary_fn(context),
             source=_source_fn(context),

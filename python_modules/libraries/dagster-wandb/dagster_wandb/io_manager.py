@@ -179,8 +179,8 @@ class ArtifactsIOManager(IOManager):
             serialization_module_parameters = serialization_module.get("parameters", {})
             serialization_module_parameters_with_protocol = {
                 "protocol": (
-                    pickle.HIGHEST_PROTOCOL
-                ),  # we use the highest available protocol if we don't pass one
+                    pickle.HIGHEST_PROTOCOL  # we use the highest available protocol if we don't pass one
+                ),
                 **serialization_module_parameters,
             }
 
@@ -479,7 +479,7 @@ class ArtifactsIOManager(IOManager):
 
                 if len(output) == 1:
                     # If there's only one partition, return the value directly
-                    return list(output.values())[0]
+                    return next(iter(output.values()))
 
                 return output
 
@@ -699,19 +699,15 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
     wandb_run_name = None
     wandb_run_id = None
     wandb_run_tags = None
+    base_dir = (
+        context.instance.storage_directory() if context.instance else os.environ["DAGSTER_HOME"]
+    )
     cache_duration_in_minutes = None
     if context.resource_config is not None:
         wandb_run_name = context.resource_config.get("run_name")
         wandb_run_id = context.resource_config.get("run_id")
         wandb_run_tags = context.resource_config.get("run_tags")
-        base_dir = context.resource_config.get(
-            "base_dir",
-            (
-                context.instance.storage_directory()
-                if context.instance
-                else os.environ["DAGSTER_HOME"]
-            ),
-        )
+        base_dir = context.resource_config.get("base_dir", base_dir)
         cache_duration_in_minutes = context.resource_config.get("cache_duration_in_minutes")
 
     if "PYTEST_CURRENT_TEST" in os.environ:

@@ -7,7 +7,15 @@ from dagster import (
     Bool,
     _check as check,
 )
-from dagster._config import Field, Permissive, ScalarUnion, Selector, StringSource, validate_config
+from dagster._config import (
+    Field,
+    IntSource,
+    Permissive,
+    ScalarUnion,
+    Selector,
+    StringSource,
+    validate_config,
+)
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
@@ -182,7 +190,7 @@ def get_default_tick_retention_settings(
             TickStatus.SUCCESS: -1,
             TickStatus.FAILURE: -1,
         }
-    # for sensor
+    # for sensor / auto-materialize
     return {
         TickStatus.STARTED: -1,
         TickStatus.SKIPPED: 7,
@@ -213,6 +221,7 @@ def retention_config_schema() -> Field:
         {
             "schedule": _tick_retention_config_schema(),
             "sensor": _tick_retention_config_schema(),
+            "auto_materialize": _tick_retention_config_schema(),
         },
         is_required=False,
     )
@@ -358,6 +367,14 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                 "minimum_interval_seconds": Field(int, is_required=False),
                 "run_tags": Field(dict, is_required=False),
                 "respect_materialization_data_versions": Field(Bool, is_required=False),
+                "max_tick_retries": Field(
+                    IntSource,
+                    default_value=3,
+                    is_required=False,
+                    description=(
+                        "For each auto-materialize tick that raises an error, how many times to retry that tick"
+                    ),
+                ),
             }
         ),
     }

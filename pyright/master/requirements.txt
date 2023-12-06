@@ -26,12 +26,14 @@
 
 ### LIBRARIES
 
+-e docs/dagster-ui-screenshot
+-e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/automation
 -e python_modules/dagster[pyright,test]
 -e python_modules/dagit
 -e python_modules/dagster-graphql
 -e python_modules/dagster-test
--e python_modules/dagster-ext
+-e python_modules/dagster-pipes
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
 -e python_modules/libraries/dagster-airflow[test_airflow_2]
@@ -46,11 +48,15 @@
 -e python_modules/libraries/dagster-datadog/
 -e python_modules/libraries/dagster-datahub/
 -e python_modules/libraries/dagster-dbt/
+-e python_modules/libraries/dagster-deltalake/
+-e python_modules/libraries/dagster-deltalake-pandas/
+-e python_modules/libraries/dagster-deltalake-polars/
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
 -e python_modules/libraries/dagster-duckdb-pandas/
 -e python_modules/libraries/dagster-duckdb-pyspark/
 -e python_modules/libraries/dagster-duckdb-polars/
+-e python_modules/libraries/dagster-embedded-elt
 -e python_modules/libraries/dagster-fivetran/
 -e python_modules/libraries/dagster-gcp/
 -e python_modules/libraries/dagster-gcp-pandas[test]

@@ -1,5 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {Box, Button, Colors, CustomTooltipProvider} from '@dagster-io/ui-components';
+import {Box, Button, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import React, {useState} from 'react';
 
@@ -67,11 +67,15 @@ const runGroupMock: MockedResponse<RunGroupPanelQuery, RunGroupPanelQueryVariabl
   },
 };
 
-const GanttTestCase: React.FC<{
+const GanttTestCase = ({
+  graph,
+  logs,
+  focusedTime,
+}: {
   graph: GraphQueryItem[];
   logs: RunMetadataProviderMessageFragment[];
   focusedTime: number;
-}> = ({graph, logs, focusedTime}) => {
+}) => {
   const [selectionQuery, setSelectionQuery] = useState<string>('');
   const [selectionKeys, setSelectionKeys] = useState<string[]>([]);
   const [progress, setProgress] = useState<number>(5);
@@ -86,11 +90,7 @@ const GanttTestCase: React.FC<{
     <MockedProvider mocks={[runGroupMock]}>
       <WorkspaceProvider>
         <CustomTooltipProvider />
-        <Box
-          flex={{gap: 8, alignItems: 'center'}}
-          padding={8}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
+        <Box flex={{gap: 8, alignItems: 'center'}} padding={8} border="bottom">
           <Button onClick={() => setProgress(5)}>Reset</Button>
           <Button onClick={() => setProgress(Math.min(logs.length - 1, progress + 1))}>
             Send Next Log
