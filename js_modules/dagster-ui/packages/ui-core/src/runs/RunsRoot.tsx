@@ -21,7 +21,7 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
-import {useStartTrace} from '../performance';
+import {useTrace} from '../performance';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
@@ -45,7 +45,7 @@ const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
   useTrackPageView();
-  const trace = useStartTrace('RunsRoot');
+  const trace = useTrace('RunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);

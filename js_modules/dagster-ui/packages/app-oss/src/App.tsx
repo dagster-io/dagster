@@ -8,11 +8,14 @@ import {UserSettingsButton} from '@dagster-io/ui-core/app/UserSettingsButton';
 import {logLink, timeStartLink} from '@dagster-io/ui-core/app/apolloLinks';
 import {LiveDataPollRateContext} from '@dagster-io/ui-core/asset-data/AssetLiveDataProvider';
 import {DeploymentStatusType} from '@dagster-io/ui-core/instance/DeploymentStatusProvider';
+import {init} from '@dagster-io/ui-core/performance';
 import React from 'react';
 
 import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
+
+init();
 
 const {pathPrefix, telemetryEnabled, liveDataPollRate} = extractInitializationData();
 

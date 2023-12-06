@@ -19,6 +19,9 @@
   },
   "packageManager": "yarn@3.6.4",
   "dependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/core": "^1.18.1",
+    "@opentelemetry/web": "^0.24.0",
     "graphql.macro": "^1.4.2",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0"

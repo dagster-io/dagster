@@ -1,64 +1,49 @@
+import {trace, Span} from '@opentelemetry/api';
+import {WebTracerProvider} from '@opentelemetry/web';
 import React from 'react';
 
-type Trace = {
-  name: string;
-  startTime: number;
-  endTime: number | null;
-};
+import {usePageContext} from './app/analytics';
 
-class PointToPointInstrumentation {
-  private traces: {[traceId: string]: Trace} = {};
+// Initialize OpenTelemetry
+const tracerProvider = new WebTracerProvider();
+trace.setGlobalTracerProvider(tracerProvider);
 
-  startTrace(traceId: string, name: string): void {
-    if (!traceId) {
-      console.error('Trace ID is required to start a trace.');
-      return;
-    }
+const tracer = trace.getTracer('custom-tracer');
 
-    if (this.traces[traceId]) {
-      return;
-    }
+// Start a span when the page starts loading to represent page-load
+let pageloadSpan: Span | undefined;
 
-    const startTime = performance.now();
-    this.traces[traceId] = {name, startTime, endTime: null};
-  }
-
-  endTrace(traceId: string): void {
-    if (!traceId) {
-      return;
-    }
-
-    const trace = this.traces[traceId];
-
-    if (!trace) {
-      return;
-    }
-
-    if (trace.endTime) {
-      return;
-    }
-
-    trace.endTime = performance.now();
-    document.dispatchEvent(
-      new CustomEvent('PerformanceTrace', {
-        detail: trace,
-      }),
-    );
-  }
+export function init() {
+  pageloadSpan = tracer.startSpan('page-load', {
+    startTime: performance.timeOrigin,
+  });
 }
 
-const instrumentation = new PointToPointInstrumentation();
-
-let counter = 0;
-export function useStartTrace(name: string) {
-  const traceId = React.useMemo(() => `${counter++}:${name}`, [name]);
-
-  instrumentation.startTrace(traceId, name);
+let didPageload = false;
+export function useTrace(name: string) {
+  const {path} = usePageContext();
+  if (!didPageload && pageloadSpan) {
+    pageloadSpan.setAttribute('scenario', name);
+    pageloadSpan.setAttribute('path', path);
+    pageloadSpan.setAttribute('url', document.location.href);
+  }
 
   return React.useMemo(
     () => ({
-      endTrace: instrumentation.endTrace.bind(instrumentation, traceId),
+      endTrace: () => {
+        if (didPageload || !pageloadSpan) {
+          return;
+        }
+        didPageload = true;
+        pageloadSpan.setAttribute('pageload_end_ms', performance.now());
+        pageloadSpan.end();
+        document.dispatchEvent(
+          new CustomEvent('PerformanceTrace', {
+            detail: pageloadSpan,
+          }),
+        );
+      },
     }),
-    [traceId],
+    [],
   );
 }

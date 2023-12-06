@@ -2265,6 +2265,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/dagster-ui-workspace@workspace:."
   dependencies:
+    "@opentelemetry/api": ^1.7.0
+    "@opentelemetry/core": ^1.18.1
+    "@opentelemetry/web": ^0.24.0
     "@types/dagre": ^0
     file-loader: ^6.2.0
     graphql.macro: ^1.4.2
@@ -4321,6 +4324,89 @@ __metadata:
   dependencies:
     semver: ^7.3.5
   checksum: a50a6818de5fc557d0b0e6f50ec780a7a02ab8ad07e5ac8b16bf519e0ad60a144ac64f97d05c443c3367235d337182e1d012bbac0eb8dbae8dc7b40b193efd0e
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/api@npm:^1.7.0":
+  version: 1.7.0
+  resolution: "@opentelemetry/api@npm:1.7.0"
+  checksum: 2398cbe65f199c3a7050125b3ad9c835f789bb0a616665e9c7f4475a29ac8334b6a3c15f38db48d345b522180c41c00b04cc174cd0eeffba98eb4874a565fa7e
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/core@npm:0.24.0":
+  version: 0.24.0
+  resolution: "@opentelemetry/core@npm:0.24.0"
+  dependencies:
+    "@opentelemetry/semantic-conventions": 0.24.0
+    semver: ^7.1.3
+  peerDependencies:
+    "@opentelemetry/api": ^1.0.1
+  checksum: 388693eef05f3135bb881e4b8107799ca517186fb24aeb54ba3b65961376ae2e22f1970d583e716463578cecd5f0dceb085bdc84dae8751330bebd0098e9a97f
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/core@npm:^1.18.1":
+  version: 1.18.1
+  resolution: "@opentelemetry/core@npm:1.18.1"
+  dependencies:
+    "@opentelemetry/semantic-conventions": 1.18.1
+  peerDependencies:
+    "@opentelemetry/api": ">=1.0.0 <1.8.0"
+  checksum: dfb3181836ce04d2e983c0e8382e4bd0228ec42280e0a3f5330e2742903c0fb1db0efc2792479d27f928533a386f163c2e0fce2a2f45b05e66b2809d268915dc
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/resources@npm:0.24.0":
+  version: 0.24.0
+  resolution: "@opentelemetry/resources@npm:0.24.0"
+  dependencies:
+    "@opentelemetry/core": 0.24.0
+    "@opentelemetry/semantic-conventions": 0.24.0
+  peerDependencies:
+    "@opentelemetry/api": ^1.0.1
+  checksum: 37e6ea95d369d2da58a7fd6ff1782db2a6ffe85c60ba104623039f5cd22925cd4a0e6945857d13b4ea28a851131ba33976cb24d36c0f81a9292fcad75618038a
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/semantic-conventions@npm:0.24.0":
+  version: 0.24.0
+  resolution: "@opentelemetry/semantic-conventions@npm:0.24.0"
+  checksum: 56e0e817a048ea6fcf28d5193b59ca5ed3b57bfb62bb1386be774d898951351c97afd9b41e6821858cbe5599c9ce3514ec64407e09fe73ccedaa7c90d358e5e7
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/semantic-conventions@npm:1.18.1":
+  version: 1.18.1
+  resolution: "@opentelemetry/semantic-conventions@npm:1.18.1"
+  checksum: b60c008c01067c0e8f130ab5d61f5207c85b6db08fa926f629c854ab9917ca93fbabd7ae8d1586f9f82e3b29706b0444ded9d6781f7fb7a003eeb27d89af468f
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/tracing@npm:0.24.0":
+  version: 0.24.0
+  resolution: "@opentelemetry/tracing@npm:0.24.0"
+  dependencies:
+    "@opentelemetry/core": 0.24.0
+    "@opentelemetry/resources": 0.24.0
+    "@opentelemetry/semantic-conventions": 0.24.0
+    lodash.merge: ^4.6.2
+  peerDependencies:
+    "@opentelemetry/api": ^1.0.1
+  checksum: e691e1f44115f06b1c6039dcb144fd58efc819f440ad77588c68f7b9f32d6f10b22c58c0b05cfeb215178338aa506189bce7767f08e3d4d522774af227472845
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/web@npm:^0.24.0":
+  version: 0.24.0
+  resolution: "@opentelemetry/web@npm:0.24.0"
+  dependencies:
+    "@opentelemetry/core": 0.24.0
+    "@opentelemetry/semantic-conventions": 0.24.0
+    "@opentelemetry/tracing": 0.24.0
+  peerDependencies:
+    "@opentelemetry/api": ^1.0.1
+  checksum: 766e46a6355ada1b7f3e0ce9bd47dbfbee8da972daa855f5ceb55954854b0ff5e5a096e7f8b116809dcd770b3b1e1440a443bc84de1791b403f5ec022b0a9bd9
   languageName: node
   linkType: hard
 
@@ -21657,7 +21743,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.3.5, semver@npm:^7.3.7, semver@npm:^7.3.8, semver@npm:^7.5.3, semver@npm:^7.5.4":
+"semver@npm:^7.1.3, semver@npm:^7.3.5, semver@npm:^7.3.7, semver@npm:^7.3.8, semver@npm:^7.5.3, semver@npm:^7.5.4":
   version: 7.5.4
   resolution: "semver@npm:7.5.4"
   dependencies:
