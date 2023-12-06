@@ -2,9 +2,9 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorShadowDefault} from '../../theme/color';
 import {Group} from '../Group';
 import {Menu, MenuItem, MenuDivider} from '../Menu';
-import { colorShadowDefault } from '../../theme/color';
 
 // eslint-disable-next-line import/no-default-export
 export default {

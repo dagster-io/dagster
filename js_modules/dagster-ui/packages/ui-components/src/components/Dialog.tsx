@@ -3,7 +3,12 @@ import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 
-import {colorAccentPrimary, colorBackgroundDefault, colorDialogBackground, colorShadowDefault} from '../theme/color';
+import {
+  colorAccentPrimary,
+  colorBackgroundDefault,
+  colorDialogBackground,
+  colorShadowDefault,
+} from '../theme/color';
 
 import {Box} from './Box';
 import {ErrorBoundary} from './ErrorBoundary';

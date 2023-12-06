@@ -4,12 +4,12 @@ import React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
 import {CoreColors} from '../palettes/Colors';
+import {colorShadowDefault} from '../theme/color';
 
 import {Box} from './Box';
 import {Button} from './Button';
 import {Popover} from './Popover';
 import {Subheading} from './Text';
-import { colorShadowDefault } from '../theme/color';
 
 export enum ProductTourPosition {
   TOP_LEFT = 'top-start',

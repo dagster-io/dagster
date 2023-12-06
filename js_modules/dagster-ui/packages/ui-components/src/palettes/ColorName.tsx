@@ -71,7 +71,7 @@ export enum ColorName {
   PopoverBackground = 'PopoverBackground',
   PopoverBackgroundHover = 'PopoverBackgroundHover',
   ShadowDefault = 'ShadowDefault',
-  
+
   // Header
   NavBackground = 'NavBackground',
   NavText = 'NavText',
