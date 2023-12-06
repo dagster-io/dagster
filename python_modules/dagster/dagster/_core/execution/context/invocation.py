@@ -76,6 +76,7 @@ class BoundProperties(
             ("assets_def", Optional[AssetsDefinition]),
             ("resources", Resources),
             ("op_config", Any),
+            ("step_description", str),
         ],
     )
 ):
@@ -88,6 +89,7 @@ class BoundProperties(
         assets_def: Optional[AssetsDefinition],
         resources: Resources,
         op_config: Any,
+        step_description: str,
     ):
         """Maintains the properties of the context that are provided at bind time."""
 
@@ -101,6 +103,7 @@ class BoundProperties(
                 assets_def=check.opt_inst_param(assets_def, "assets_def", AssetsDefinition),
                 resources=check.inst_param(resources, "resources", Resources),
                 op_config=op_config,
+                step_description=step_description,
             )
 
 
@@ -365,6 +368,11 @@ class RunlessOpExecutionContext(OpExecutionContext):
             raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
         op_config = resolve_bound_config(config_from_args or self._op_config, op_def)
 
+        if isinstance(op_def, OpDefinition):
+            step_description = f'op "{op_def.name}"'
+        else:
+            step_description = f'solid "{op_def.name}"'
+
         self._bound_properties = BoundProperties(
             op_def=op_def,
             tags=tags,
@@ -373,12 +381,21 @@ class RunlessOpExecutionContext(OpExecutionContext):
             assets_def=assets_def,
             resources=resources,
             op_config=op_config,
+            step_description=step_description,
         )
 
         return self
 
     def unbind(self):
         self._bound_properties = None
+
+    @property
+    def execution_properties(self) -> RunlessExecutionProperties:
+        return self._execution_properties
+
+    @property
+    def bound_properties(self) -> BoundProperties:
+        return self._check_bound(fn_name="bound_properties", fn_type="property")
 
     @property
     def op_config(self) -> Any:
@@ -592,11 +609,8 @@ class RunlessOpExecutionContext(OpExecutionContext):
         )
 
     def describe_op(self) -> str:
-        self._check_bound(fn_name="describe_op", fn_type="method")
-        if isinstance(self.op_def, OpDefinition):
-            return f'op "{self.op_def.name}"'
-
-        return f'solid "{self.op_def.name}"'
+        bound_properties = self._check_bound(fn_name="describe_op", fn_type="method")
+        return bound_properties.step_description
 
     def log_event(self, event: UserEvent) -> None:
         self._check_bound(fn_name="log_event", fn_type="method")
