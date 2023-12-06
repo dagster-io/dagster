@@ -29,6 +29,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -488,8 +489,9 @@ class SensorDefinition(IHasInternalInit):
         jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
-        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
-            the sensor condition is met. This can be provided instead of specifying a job.
+        asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
+            (Experimental) an asset selection to launch a run for if the sensor condition is met.
+            This can be provided instead of specifying a job.
     """
 
     def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
@@ -532,7 +534,7 @@ class SensorDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        asset_selection: Optional[AssetSelection] = None,
+        asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
     ):
         from dagster._config.pythonic_config import validate_resource_annotated_function
@@ -598,8 +600,8 @@ class SensorDefinition(IHasInternalInit):
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
-        self._asset_selection = check.opt_inst_param(
-            asset_selection, "asset_selection", AssetSelection
+        self._asset_selection = (
+            AssetSelection.from_coercible(asset_selection) if asset_selection else None
         )
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
@@ -625,7 +627,7 @@ class SensorDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         jobs: Optional[Sequence[ExecutableDefinition]],
         default_status: DefaultSensorStatus,
-        asset_selection: Optional[AssetSelection],
+        asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[Set[str]],
     ) -> "SensorDefinition":
         return SensorDefinition(
