@@ -80,6 +80,7 @@ export const colorTooltipBackground = () => color(ColorName.TooltipBackground);
 export const colorTooltipText = () => color(ColorName.TooltipText);
 export const colorPopoverBackground = () => color(ColorName.PopoverBackground);
 export const colorPopoverBackgroundHover = () => color(ColorName.PopoverBackgroundHover);
+export const colorShadowDefault = () => color(ColorName.ShadowDefault);
 
 // NAV COLORS
 export const colorNavBackground = () => color(ColorName.NavBackground);

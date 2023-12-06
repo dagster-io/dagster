@@ -2,6 +2,7 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {colorShadowDefault} from '../../theme/color';
 import {Group} from '../Group';
 import {Menu, MenuItem, MenuDivider} from '../Menu';
 
@@ -52,5 +53,5 @@ export const Default = () => {
 };
 
 const Container = styled.div`
-  box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
+  box-shadow: ${colorShadowDefault()} 0px 2px 12px;
 `;

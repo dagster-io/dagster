@@ -73,6 +73,7 @@ export const LightPalette = {
   [ColorName.TooltipText]: CoreColors.White,
   [ColorName.PopoverBackground]: CoreColors.White,
   [ColorName.PopoverBackgroundHover]: CoreColors.Gray50,
+  [ColorName.ShadowDefault]: TranslucentColors.Gray30,
 
   // Nav
   [ColorName.NavBackground]: CoreColors.Gray990,

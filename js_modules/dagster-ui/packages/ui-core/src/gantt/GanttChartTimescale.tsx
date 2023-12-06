@@ -5,6 +5,7 @@ import {
   colorBackgroundLight,
   colorBorderDefault,
   colorKeylineDefault,
+  colorShadowDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -219,7 +220,7 @@ const TimescaleContainer = styled.div`
   & .tick.duration {
     color: ${colorTextLight()};
     background: ${colorBackgroundLight()};
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 1px ${colorShadowDefault()};
   }
   & .tick.highlight {
     color: ${colorAccentReversed()};

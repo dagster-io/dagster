@@ -13,6 +13,7 @@ import {
   colorAccentGray,
   colorAccentGrayHover,
   colorBackgroundLighter,
+  colorShadowDefault,
 } from '../theme/color';
 
 interface SliderProps extends BlueprintSliderProps {
@@ -66,12 +67,12 @@ export const SliderStyles = css<{$fillColor: string}>`
     box-shadow: none;
     &:hover {
       border: 2px solid ${colorAccentGrayHover()};
-      box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+      box-shadow: ${colorShadowDefault()} 0px 2px 12px 0px;
     }
 
     .bp4-slider-label {
       background: ${colorAccentBlue()};
-      box-shadow: 0 1px 4px rgba(0,0,0,0.15)
+      box-shadow: 0 1px 4px ${colorShadowDefault()};
       padding: 4px 8px;
     }
   }

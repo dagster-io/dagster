@@ -4,6 +4,7 @@ import React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
 import {CoreColors} from '../palettes/Colors';
+import {colorShadowDefault} from '../theme/color';
 
 import {Box} from './Box';
 import {Button} from './Button';
@@ -101,7 +102,7 @@ const ProductTourContainer = styled(Box)`
   background: ${CoreColors.Gray900};
   border-radius: 4px;
   padding: 16px;
-  box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0px 2px 12px ${colorShadowDefault()};
 
   &,
   button {
