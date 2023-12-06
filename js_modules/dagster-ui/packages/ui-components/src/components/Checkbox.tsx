@@ -101,8 +101,8 @@ const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) =>
             ? colorBorderDefault()
             : fillColor
           : disabled
-          ? colorAccentGray()
-          : colorBorderDefault()
+          ? colorBorderDefault()
+          : colorAccentGray()
       }
       style={{
         transition: 'fill 100ms linear',
