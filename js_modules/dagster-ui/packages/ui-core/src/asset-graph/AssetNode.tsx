@@ -375,7 +375,7 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   &:hover {
     ${(p) => !p.$selected && `border: 2px solid ${colorLineageNodeBorderHover()};`};
 
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 4px 0px;
     scale: 1.03;
     ${AssetNodeShowOnHover} {
       display: initial;
