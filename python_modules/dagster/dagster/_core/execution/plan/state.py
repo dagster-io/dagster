@@ -40,7 +40,7 @@ class StepOutputVersionData(NamedTuple):
 
     @staticmethod
     def get_version_list_from_dict(
-        step_output_versions: Mapping[StepOutputHandle, str]
+        step_output_versions: Mapping[StepOutputHandle, str],
     ) -> Sequence["StepOutputVersionData"]:
         return [
             StepOutputVersionData(step_output_handle=step_output_handle, version=version)

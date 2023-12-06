@@ -35,7 +35,7 @@ T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 
 
 def normalize_dependency_dict(
-    dependencies: Optional[Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]]
+    dependencies: Optional[Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]],
 ) -> DependencyMapping[NodeInvocation]:
     prelude = (
         'The expected type for "dependencies" is Union[Mapping[str, Mapping[str, '

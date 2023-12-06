@@ -385,7 +385,7 @@ def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
 
 
 def ensure_gen(
-    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]]
+    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]],
 ) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
         thing_or_gen = cast(T, thing_or_gen)

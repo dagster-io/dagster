@@ -136,7 +136,7 @@ ALLOWED_PARTITION_DIMENSION_TYPES = (
 
 
 def _check_valid_partitions_dimensions(
-    partitions_dimensions: Mapping[str, PartitionsDefinition]
+    partitions_dimensions: Mapping[str, PartitionsDefinition],
 ) -> None:
     for dim_name, partitions_def in partitions_dimensions.items():
         if not any(isinstance(partitions_def, t) for t in ALLOWED_PARTITION_DIMENSION_TYPES):

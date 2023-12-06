@@ -112,7 +112,8 @@ def telemetry_wrapper(target_fn: T_Callable) -> T_Callable:
 
 @overload
 def telemetry_wrapper(
-    *, metadata: Optional[Mapping[str, str]]
+    *,
+    metadata: Optional[Mapping[str, str]],
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     ...
 
