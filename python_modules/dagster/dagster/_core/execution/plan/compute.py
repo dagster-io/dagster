@@ -61,6 +61,14 @@ OpOutputUnion: TypeAlias = Union[
 ]
 
 
+def _get_op_context(
+    context: Union[OpExecutionContext, AssetExecutionContext]
+) -> OpExecutionContext:
+    if isinstance(context, AssetExecutionContext):
+        return context.op_execution_context
+    return context
+
+
 def create_step_outputs(
     node: Node,
     handle: NodeHandle,
@@ -189,12 +197,12 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        if compute_context.has_events():
-            yield from compute_context.consume_events()
+        if _get_op_context(compute_context).has_events():
+            yield from _get_op_context(compute_context).consume_events()
         yield _validate_event(event, step_context)
 
-    if compute_context.has_events():
-        yield from compute_context.consume_events()
+    if _get_op_context(compute_context).has_events():
+        yield from _get_op_context(compute_context).consume_events()
 
 
 def execute_core_compute(
