@@ -56,8 +56,7 @@ Update the imports in `assets/metrics.py` to the following:
 
 ```python {% obfuscated="true" %}
 import requests
-from dagster_duckdb
-import DuckDBResource
+from dagster_duckdb import DuckDBResource
 from . import constants
 from dagster import asset
 ```
