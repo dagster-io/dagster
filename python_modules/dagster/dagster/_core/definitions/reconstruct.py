@@ -21,7 +21,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -274,7 +274,7 @@ class ReconstructableJob(
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-    ) -> Self:
+    ) -> "ReconstructableJob":
         if op_selection and (asset_selection or asset_check_selection):
             check.failed(
                 "op_selection and asset_selection or asset_check_selection cannot both be provided"

@@ -36,7 +36,7 @@ from .resource import (
     PartialResource,
     ResourceId,
     ResourceWithKeyMapping,
-    Self,
+    T_Self,
 )
 from .type_check_utils import safe_is_subclass
 
@@ -173,7 +173,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
         return self.create_io_manager(context)
 
     @classmethod
-    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
+    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialIOManager[T_Self]":
         """Returns a partially initialized copy of the IO manager, with remaining config fields
         set at runtime.
         """
@@ -230,7 +230,7 @@ class PartialIOManager(
             nested_resources=self._state__internal__.nested_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
 

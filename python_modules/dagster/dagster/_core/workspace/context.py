@@ -211,7 +211,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def shutdown_code_location(self, name: str):
         self.process_context.shutdown_code_location(name)
 
-    def reload_workspace(self) -> Self:
+    def reload_workspace(self) -> "BaseWorkspaceRequestContext":
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 

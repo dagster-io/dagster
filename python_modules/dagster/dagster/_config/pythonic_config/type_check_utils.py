@@ -1,4 +1,4 @@
-from typing import Any, Literal, Type, Union
+from typing import Any, Literal, Tuple, Type, Union
 
 from typing_extensions import Literal as ExtLiteral
 
@@ -11,7 +11,7 @@ except ImportError:
 from typing_extensions import get_args, get_origin
 
 
-def safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
+def safe_is_subclass(cls: Any, possible_parent_cls: Union[Type, Tuple[Type, ...]]) -> bool:
     """Version of issubclass that returns False if cls is not a Type."""
     if not isinstance(cls, type):
         return False

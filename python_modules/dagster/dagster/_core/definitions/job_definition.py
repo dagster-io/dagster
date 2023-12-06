@@ -19,8 +19,6 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Self
-
 import dagster._check as check
 from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
@@ -736,7 +734,7 @@ class JobDefinition(IHasInternalInit):
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-    ) -> Self:
+    ) -> "JobDefinition":
         check.invariant(
             not (op_selection and (asset_selection or asset_check_selection)),
             "op_selection cannot be provided with asset_selection or asset_check_selection to"
@@ -755,7 +753,7 @@ class JobDefinition(IHasInternalInit):
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-    ) -> Self:
+    ) -> "JobDefinition":
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
         check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckKey)
 
@@ -821,7 +819,7 @@ class JobDefinition(IHasInternalInit):
         )
         return new_job
 
-    def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> Self:
+    def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
         try:
             sub_graph = get_graph_subset(self.graph, op_selection)
 

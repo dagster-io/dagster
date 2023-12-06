@@ -514,7 +514,7 @@ class GraphDefinition(NodeDefinition):
         tags: Optional[Mapping[str, str]] = None,
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
     ) -> Self:
-        return GraphDefinition(
+        return self.__class__(
             node_defs=self.node_defs,
             dependencies=self.dependencies,
             name=name or self.name,
@@ -531,7 +531,7 @@ class GraphDefinition(NodeDefinition):
         name: str,
         description: Optional[str],
         config_schema: Any,
-    ) -> "GraphDefinition":
+    ) -> Self:
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only graphs utilizing config mapping can be pre-configured. The graph "
