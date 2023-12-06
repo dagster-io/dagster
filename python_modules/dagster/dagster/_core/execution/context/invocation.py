@@ -104,7 +104,7 @@ class BoundProperties(
             )
 
 
-class InvocationProperties:
+class RunlessExecutionProperties:
     """Maintains information about the invocation that is updated during execution time. This information
     needs to be available to the user once invocation is complete, so that they can assert on events and
     outputs. It needs to be cleared before the context is used for another invocation.
@@ -264,13 +264,13 @@ class RunlessOpExecutionContext(OpExecutionContext):
         # Maintains the properties on the context that are modified during invocation
         # @op
         # def my_op(context):
-        #     # context._invocation_properties can be modified with output metadata etc.
+        #     # context._execution_properties can be modified with output metadata etc.
         #     ...
-        # ctx = build_op_context() # ctx._invocation_properties is empty
+        # ctx = build_op_context() # ctx._execution_properties is empty
         # my_op(ctx)
-        # ctx._invocation_properties.output_metadata # information is retained after invocation
-        # my_op(ctx) # ctx._invocation_properties is cleared at the beginning of the next invocation
-        self._invocation_properties = InvocationProperties()
+        # ctx._execution_properties.output_metadata # information is retained after invocation
+        # my_op(ctx) # ctx._execution_properties is cleared at the beginning of the next invocation
+        self._execution_properties = RunlessExecutionProperties()
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -304,8 +304,8 @@ class RunlessOpExecutionContext(OpExecutionContext):
                 f"This context is currently being used to execute {self.alias}. The context cannot be used to execute another op until {self.alias} has finished executing."
             )
 
-        # reset invocation_properties
-        self._invocation_properties = InvocationProperties()
+        # reset execution_properties
+        self._execution_properties = RunlessExecutionProperties()
 
         # update the bound context with properties relevant to the execution of the op
 
@@ -557,7 +557,7 @@ class RunlessOpExecutionContext(OpExecutionContext):
                 expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
                 ...
         """
-        return self._invocation_properties.user_events
+        return self._execution_properties.user_events
 
     def get_output_metadata(
         self, output_name: str, mapping_key: Optional[str] = None
@@ -573,7 +573,7 @@ class RunlessOpExecutionContext(OpExecutionContext):
         Returns:
             Optional[Mapping[str, Any]]: The metadata values present for the output_name/mapping_key combination, if present.
         """
-        metadata = self._invocation_properties.output_metadata.get(output_name)
+        metadata = self._execution_properties.output_metadata.get(output_name)
         if mapping_key and metadata:
             return metadata.get(mapping_key)
         return metadata
@@ -600,14 +600,14 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
     def log_event(self, event: UserEvent) -> None:
         self._check_bound(fn_name="log_event", fn_type="method")
-        self._invocation_properties.log_event(event)
+        self._execution_properties.log_event(event)
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         self._check_bound(fn_name="observe_output", fn_type="method")
-        self._invocation_properties.observe_output(output_name=output_name, mapping_key=mapping_key)
+        self._execution_properties.observe_output(output_name=output_name, mapping_key=mapping_key)
 
     def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
-        return self._invocation_properties.has_seen_output(
+        return self._execution_properties.has_seen_output(
             output_name=output_name, mapping_key=mapping_key
         )
 
@@ -662,7 +662,7 @@ class RunlessOpExecutionContext(OpExecutionContext):
 
         """
         self._check_bound(fn_name="add_output_metadata", fn_type="method")
-        self._invocation_properties.add_output_metadata(
+        self._execution_properties.add_output_metadata(
             metadata=metadata, op_def=self.op_def, output_name=output_name, mapping_key=mapping_key
         )
 
@@ -671,16 +671,16 @@ class RunlessOpExecutionContext(OpExecutionContext):
     @property
     def requires_typed_event_stream(self) -> bool:
         self._check_bound(fn_name="requires_typed_event_stream", fn_type="property")
-        return self._invocation_properties.requires_typed_event_stream
+        return self._execution_properties.requires_typed_event_stream
 
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
         self._check_bound(fn_name="typed_event_stream_error_message", fn_type="property")
-        return self._invocation_properties.typed_event_stream_error_message
+        return self._execution_properties.typed_event_stream_error_message
 
     def set_requires_typed_event_stream(self, *, error_message: Optional[str]) -> None:
         self._check_bound(fn_name="set_requires_typed_event_stream", fn_type="method")
-        self._invocation_properties.set_requires_typed_event_stream(error_message=error_message)
+        self._execution_properties.set_requires_typed_event_stream(error_message=error_message)
 
 
 def _validate_resource_requirements(

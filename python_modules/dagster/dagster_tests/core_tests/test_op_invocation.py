@@ -1398,21 +1398,21 @@ def assert_context_bound(context: RunlessOpExecutionContext):
     assert context._bound_properties is not None  # noqa: SLF001
 
 
-def assert_invocation_properties_cleared(context: RunlessOpExecutionContext):
+def assert_execution_properties_cleared(context: RunlessOpExecutionContext):
     # to assert that the invocation properties are reset at the beginning of op invocation
-    assert len(context._invocation_properties.output_metadata.keys()) == 0  # noqa: SLF001
+    assert len(context._execution_properties.output_metadata.keys()) == 0  # noqa: SLF001
 
 
-def assert_invocation_properties_exist(context: RunlessOpExecutionContext):
+def assert_execution_properties_exist(context: RunlessOpExecutionContext):
     # to assert that the invocation properties remain accessible after op invocation
-    assert len(context._invocation_properties.output_metadata.keys()) > 0  # noqa: SLF001
+    assert len(context._execution_properties.output_metadata.keys()) > 0  # noqa: SLF001
 
 
 def test_context_bound_state_non_generator():
     @asset
     def my_asset(context):
         assert_context_bound(context)
-        assert_invocation_properties_cleared(context)
+        assert_execution_properties_cleared(context)
         context.add_output_metadata({"foo": "bar"})
 
     ctx = build_op_context()
@@ -1420,18 +1420,18 @@ def test_context_bound_state_non_generator():
 
     my_asset(ctx)
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
     my_asset(ctx)
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
 
 def test_context_bound_state_generator():
     @op(out={"first": Out(), "second": Out()})
     def generator(context):
         assert_context_bound(context)
-        assert_invocation_properties_cleared(context)
+        assert_execution_properties_cleared(context)
         context.add_output_metadata({"foo": "bar"}, output_name="one")
         yield Output("one", output_name="first")
         yield Output("two", output_name="second")
@@ -1442,20 +1442,20 @@ def test_context_bound_state_generator():
     assert result[0].value == "one"
     assert result[1].value == "two"
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
     result = list(generator(ctx))
     assert result[0].value == "one"
     assert result[1].value == "two"
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
 
 def test_context_bound_state_async():
     @asset
     async def async_asset(context):
         assert_context_bound(context)
-        assert_invocation_properties_cleared(context)
+        assert_execution_properties_cleared(context)
         assert context.asset_key.to_user_string() == "async_asset"
         context.add_output_metadata({"foo": "bar"})
         await asyncio.sleep(0.01)
@@ -1466,19 +1466,19 @@ def test_context_bound_state_async():
     result = asyncio.run(async_asset(ctx))
     assert result == "one"
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
     result = asyncio.run(async_asset(ctx))
     assert result == "one"
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
 
 def test_context_bound_state_async_generator():
     @op(out={"first": Out(), "second": Out()})
     async def async_generator(context):
         assert_context_bound(context)
-        assert_invocation_properties_cleared(context)
+        assert_execution_properties_cleared(context)
         context.add_output_metadata({"foo": "bar"}, output_name="one")
         yield Output("one", output_name="first")
         await asyncio.sleep(0.01)
@@ -1496,13 +1496,13 @@ def test_context_bound_state_async_generator():
     assert result[0].value == "one"
     assert result[1].value == "two"
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
     result = asyncio.run(get_results())
     assert result[0].value == "one"
     assert result[1].value == "two"
     assert_context_unbound(ctx)
-    assert_invocation_properties_exist(ctx)
+    assert_execution_properties_exist(ctx)
 
 
 def test_bound_state_with_error_assets():
