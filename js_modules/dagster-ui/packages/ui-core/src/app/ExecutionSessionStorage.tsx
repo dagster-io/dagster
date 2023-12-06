@@ -44,7 +44,10 @@ export interface IExecutionSession {
   needsRefresh: boolean;
   assetSelection: {assetKey: AssetKeyInput; opNames: string[]}[] | null;
   // Nullable for backwards compatibility
-  assetChecksAvailable?: Pick<AssetCheck, 'name' | 'canExecuteIndividually' | 'assetKey'>[];
+  assetChecksAvailable?: Pick<
+    AssetCheck,
+    'name' | 'canExecuteIndividually' | 'assetKey' | 'jobNames'
+  >[];
   includeSeparatelyExecutableChecks: boolean;
   solidSelection: string[] | null;
   solidSelectionQuery: string | null;

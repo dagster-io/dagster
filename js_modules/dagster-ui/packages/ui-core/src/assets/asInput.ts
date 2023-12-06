@@ -1,6 +1,21 @@
-import {AssetCheckHandleInput} from '../graphql/types';
+import {
+  AssetCheck,
+  AssetCheckCanExecuteIndividually,
+  AssetCheckHandleInput,
+} from '../graphql/types';
 
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionButton.types';
+
+export function inMaterializeFunctionOrInJob(
+  check: Pick<AssetCheck, 'jobNames' | 'canExecuteIndividually'>,
+  jobName?: string,
+) {
+  const inMaterialize =
+    check.canExecuteIndividually === AssetCheckCanExecuteIndividually.REQUIRES_MATERIALIZATION;
+  const inJob = !jobName || check.jobNames.includes(jobName);
+
+  return inMaterialize || inJob;
+}
 
 export function getAssetCheckHandleInputs(
   assets: Pick<LaunchAssetExecutionAssetNodeFragment, 'assetKey' | 'assetChecksOrError'>[],
@@ -9,7 +24,7 @@ export function getAssetCheckHandleInputs(
   return assets.flatMap((a) =>
     a.assetChecksOrError.__typename === 'AssetChecks'
       ? a.assetChecksOrError.checks
-          .filter((check) => !jobName || check.jobNames.includes(jobName))
+          .filter((check) => inMaterializeFunctionOrInJob(check, jobName))
           .map((check) => ({
             name: check.name,
             assetKey: {path: a.assetKey.path},

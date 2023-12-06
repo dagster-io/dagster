@@ -37,7 +37,7 @@ import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice'
 import {CalculateChangedAndMissingDialog} from './CalculateChangedAndMissingDialog';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {asAssetKeyInput, getAssetCheckHandleInputs} from './asInput';
+import {asAssetKeyInput, getAssetCheckHandleInputs, inMaterializeFunctionOrInJob} from './asInput';
 import {AssetKey} from './types';
 import {
   LaunchAssetCheckUpstreamQuery,
@@ -538,7 +538,7 @@ async function stateForLaunchingAssets(
         assetChecksAvailable: assets.flatMap((a) =>
           a.assetChecksOrError.__typename === 'AssetChecks'
             ? a.assetChecksOrError.checks
-                .filter((check) => check.jobNames.includes(jobName))
+                .filter((check) => inMaterializeFunctionOrInJob(check, jobName))
                 .map((check) => ({...check, assetKey: a.assetKey}))
             : [],
         ),
