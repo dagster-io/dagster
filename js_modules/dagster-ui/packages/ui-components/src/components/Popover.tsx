@@ -13,6 +13,7 @@ import {
   colorTextDefault,
   colorTextDisabled,
   colorPopoverBackground,
+  colorShadowDefault,
 } from '../theme/color';
 
 import {FontFamily} from './styles';
@@ -20,7 +21,7 @@ import {FontFamily} from './styles';
 export const GlobalPopoverStyle = createGlobalStyle`
   .dagster-popover.bp4-popover2,
   .dagster-popover.bp4-popover {
-    box-shadow: rgba(0, 0, 0, 0.18) 0px 2px 12px;
+    box-shadow: ${colorShadowDefault()} 0px 2px 12px;
   }
 
   .dagster-popover .bp4-popover2-content,

@@ -24,6 +24,7 @@ import {
   colorTextLight,
   colorBorderDefault,
   colorAccentGray,
+  colorShadowDefault,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -546,7 +547,7 @@ const CustomTable = styled(Table)`
 
   &&& tr {
     &:last-child td {
-      box-shadow: inset 1px 1px 0 rgba(233, 232, 232, 1) !important;
+      box-shadow: inset 1px 1px 0 ${colorKeylineDefault()} !important;
     }
     &:last-child td:first-child,
     td:first-child,
@@ -572,7 +573,7 @@ const OpInfoWrap = styled.div`
   font-size: 0.85rem;
   background: ${colorBackgroundDefault()};
   color: ${colorTextLight()};
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 1px 3px ${colorShadowDefault()};
   z-index: 2;
   left: 0;
 `;
