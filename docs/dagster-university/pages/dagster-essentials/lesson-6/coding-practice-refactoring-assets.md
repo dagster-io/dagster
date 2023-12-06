@@ -53,8 +53,7 @@ We’ll assume your code looks like the following for the rest of the module. If
 
       ```python
       import requests 
-      from dagster_duckdb 
-      import DuckDBResource 
+      from dagster_duckdb import DuckDBResource 
       from . import constants 
       from dagster import asset
       ```
