@@ -99,15 +99,8 @@ class ExecutionProperties:
     def has_events(self) -> bool:
         return bool(self._events)
 
-    def log_event(self, event: UserEvent, step_execution_context: StepExecutionContext) -> None:
-        if isinstance(event, AssetMaterialization):
-            self._events.append(DagsterEvent.asset_materialization(step_execution_context, event))
-        elif isinstance(event, AssetObservation):
-            self._events.append(DagsterEvent.asset_observation(step_execution_context, event))
-        elif isinstance(event, ExpectationResult):
-            self._events.append(DagsterEvent.step_expectation_result(step_execution_context, event))
-        else:
-            check.failed(f"Unexpected event {event}")
+    def log_event(self, event: DagsterEvent):
+        self._events.append(event)
 
     @property
     def requires_typed_event_stream(self) -> bool:
@@ -549,9 +542,17 @@ class OpExecutionContext(
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-        self.execution_properties.log_event(
-            event=event, step_execution_context=self._step_execution_context
-        )
+        if isinstance(event, AssetMaterialization):
+            dagster_event = DagsterEvent.asset_materialization(self._step_execution_context, event)
+        elif isinstance(event, AssetObservation):
+            dagster_event = DagsterEvent.asset_observation(self._step_execution_context, event)
+        elif isinstance(event, ExpectationResult):
+            dagster_event = DagsterEvent.step_expectation_result(
+                self._step_execution_context, event
+            )
+        else:
+            check.failed(f"Unexpected event {event}")
+        self.execution_properties.log_event(event=dagster_event)
 
     @public
     def add_output_metadata(

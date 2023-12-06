@@ -114,6 +114,8 @@ def invoke_compute_fn(
     config_arg_cls: Optional[Type[Config]],
     resource_args: Optional[Dict[str, str]] = None,
 ) -> Any:
+    # TODO - this is a possible execution pathway for both direct invocation and normal execution. Need to figure
+    # out the implications for the context
     args_to_pass = {**kwargs}
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
