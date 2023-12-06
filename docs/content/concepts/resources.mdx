@@ -50,7 +50,13 @@ So, why use resources?
 
 ## Defining a resource
 
-Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/concepts/configuration/config-schema), which are used to specify things like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class. The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the UI and can be set dynamically using environment variables. Binding resource config values can also be delayed so that they can be specified at run launch time.
+Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/concepts/configuration/config-schema), which are used to specify things like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
+
+The configuration system has a few advantages over plain Python parameter passing. Configured values can be:
+
+1. Replaced at run launch time in the Launchpad in Dagster UI, the GraphQL API, or the Python API
+2. Displayed in the Dagster UI
+3. Set dynamically using environment variables, resolved at runtime
 
 ### With Software-defined Assets
 
