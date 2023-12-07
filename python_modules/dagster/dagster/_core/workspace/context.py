@@ -605,10 +605,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     heartbeat=True,
                     watch_server=False,
                     grpc_server_registry=self._grpc_server_registry,
+                    instance=self._instance,
                 )
             else:
                 location = (
-                    origin.reload_location(self.instance) if reload else origin.create_location()
+                    origin.reload_location(self.instance)
+                    if reload
+                    else origin.create_location(self.instance)
                 )
 
         except Exception:
