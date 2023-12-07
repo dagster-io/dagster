@@ -21,7 +21,7 @@ from databricks.sdk.core import (
     pat_auth,
 )
 from databricks.sdk.service import compute, jobs
-from importlib_metadata import version
+from importlib.metadata import version
 from typing_extensions import Final
 
 import dagster_databricks
