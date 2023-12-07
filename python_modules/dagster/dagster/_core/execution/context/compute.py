@@ -1387,8 +1387,8 @@ class AssetExecutionContext(OpExecutionContext):
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
 
-    @_copy_docs_from_op_execution_context
     @property
+    @_copy_docs_from_op_execution_context
     def run(self) -> DagsterRun:
         return self.op_execution_context.run
 
