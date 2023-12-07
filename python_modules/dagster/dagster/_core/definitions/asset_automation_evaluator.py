@@ -2,6 +2,7 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional, Sequence, Tuple
 
+import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -41,7 +42,7 @@ class ConditionEvaluation(NamedTuple):
 
     @property
     def all_results(
-        self
+        self,
     ) -> Sequence[Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]]:
         """This method is a placeholder to allow us to convert this into a shape that other parts
         of the system understand.
@@ -207,13 +208,7 @@ class AutomationCondition(ABC):
         return OrAutomationCondition(children=[self, other])
 
     def __invert__(self) -> "AutomationCondition":
-        # convert a negated OrAutomationCondition into a NorAutomationCondition
-        if isinstance(self, OrAutomationCondition):
-            return NorAutomationCondition(children=self.children)
-        # convert a negated NorAutomationCondition into an OrAutomationCondition
-        elif isinstance(self, NorAutomationCondition):
-            return OrAutomationCondition(children=self.children)
-        return NorAutomationCondition(children=[self])
+        return NotAutomationCondition(children=[self])
 
     @property
     def is_legacy(self) -> bool:
@@ -224,7 +219,7 @@ class AutomationCondition(ABC):
             isinstance(self, AndAutomationCondition)
             and len(self.children) == 2
             and isinstance(self.children[0], OrAutomationCondition)
-            and isinstance(self.children[1], NorAutomationCondition)
+            and isinstance(self.children[1], NotAutomationCondition)
         )
 
 
@@ -301,25 +296,32 @@ class OrAutomationCondition(
         )
 
 
-class NorAutomationCondition(
-    NamedTuple("_NorAutomationCondition", [("children", Sequence[AutomationCondition])]),
+class NotAutomationCondition(
+    NamedTuple("_NotAutomationCondition", [("children", Sequence[AutomationCondition])]),
     AutomationCondition,
 ):
     """This class represents the condition that none of its children evaluate to true."""
 
+    def __new__(cls, children: Sequence[AutomationCondition]):
+        check.invariant(len(children) == 1)
+        return super().__new__(cls, children)
+
+    @property
+    def child(self) -> AutomationCondition:
+        return self.children[0]
+
     def evaluate(self, context: AssetAutomationConditionEvaluationContext) -> ConditionEvaluation:
-        child_evaluations: List[ConditionEvaluation] = []
-        true_subset = context.candidate_subset
-        for child in self.children:
-            child_context = context.for_child(condition=child, candidate_subset=true_subset)
-            result = child.evaluate(child_context)
-            child_evaluations.append(result)
-            true_subset -= result.true_subset
+        child_context = context.for_child(
+            condition=self.child, candidate_subset=context.candidate_subset
+        )
+        result = self.child.evaluate(child_context)
+        true_subset = context.candidate_subset - result.true_subset
+
         return ConditionEvaluation(
             condition=self,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
-            child_evaluations=child_evaluations,
+            child_evaluations=[result],
         )
 
 

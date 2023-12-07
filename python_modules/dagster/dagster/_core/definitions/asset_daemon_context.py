@@ -314,12 +314,11 @@ class AssetDaemonContext:
                 else self._logger.debug
             )
 
+            to_request_asset_partitions = evaluation.true_subset.asset_partitions
             to_request_str = ",".join(
-                [
-                    (to_request.partition_key or "No partition")
-                    for to_request in evaluation.true_subset.asset_partitions
-                ]
+                [(ap.partition_key or "No partition") for ap in to_request_asset_partitions]
             )
+            to_request |= to_request_asset_partitions
 
             log_fn(
                 f"Asset {asset_key.to_user_string()} evaluation result: {legacy_evaluation.num_requested}"
@@ -343,12 +342,6 @@ class AssetDaemonContext:
                         for ap in evaluation.true_subset.asset_partitions
                     }
 
-        to_request = set().union(
-            *(
-                evaluation.true_subset.asset_partitions
-                for evaluation in evaluation_results_by_key.values()
-            )
-        )
         return (list(legacy_evaluation_results_by_key.values()), asset_cursors, to_request)
 
     def evaluate(

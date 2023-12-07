@@ -152,7 +152,7 @@ def get_expected_data_time_for_asset_key(
 
 
 def freshness_evaluation_results_for_asset_key(
-    context: "AssetAutomationEvaluationContext"
+    context: "AssetAutomationEvaluationContext",
 ) -> "RuleEvaluationResults":
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.

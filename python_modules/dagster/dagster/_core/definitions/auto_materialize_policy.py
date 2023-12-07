@@ -258,7 +258,7 @@ class AutoMaterializePolicy(
         from .asset_automation_evaluator import (
             AndAutomationCondition,
             AssetAutomationEvaluator,
-            NorAutomationCondition,
+            NotAutomationCondition,
             OrAutomationCondition,
             RuleCondition,
         )
@@ -266,12 +266,14 @@ class AutoMaterializePolicy(
         materialize_condition = OrAutomationCondition(
             children=[RuleCondition(rule) for rule in self.materialize_rules]
         )
-        not_skip_condition = NorAutomationCondition(
+        skip_condition = OrAutomationCondition(
             children=[RuleCondition(rule) for rule in self.skip_rules]
         )
 
         # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn)
-        condition = AndAutomationCondition(children=[materialize_condition, not_skip_condition])
+        condition = AndAutomationCondition(
+            children=[materialize_condition, NotAutomationCondition([skip_condition])]
+        )
         return AssetAutomationEvaluator(
             condition=condition,
             max_materializations_per_minute=self.max_materializations_per_minute,
