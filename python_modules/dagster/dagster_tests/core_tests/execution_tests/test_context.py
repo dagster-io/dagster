@@ -58,8 +58,8 @@ def test_instance_check():
     @op
     def test_op_context_instance_check(context: OpExecutionContext):
         step_context = context._step_execution_context  # noqa: SLF001
-        asset_context = AssetExecutionContext(step_execution_context=step_context)
         op_context = OpExecutionContext(step_execution_context=step_context)
+        asset_context = AssetExecutionContext(op_execution_context=op_context)
         with pytest.raises(DeprecationWarning):
             isinstance(asset_context, OpExecutionContext)
         assert not isinstance(op_context, AssetExecutionContext)
