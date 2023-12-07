@@ -31,7 +31,7 @@ class ConditionEvaluation(NamedTuple):
 
     @property
     def all_results(
-        self
+        self,
     ) -> Sequence[Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]]:
         """This method is a placeholder to allow us to convert this into a shape that other parts
         of the system understand.
