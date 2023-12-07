@@ -1381,17 +1381,7 @@ def _get_deprecation_kwargs(attr: str):
     return deprecation_kwargs
 
 
-class RunProperties(
-    NamedTuple(
-        "_RunProperties",
-        [
-            ("run_id", PublicAttr[str]),
-            ("dagster_run", PublicAttr[DagsterRun]),
-            ("run_config", PublicAttr[Mapping[str, object]]),
-            ("retry_number", PublicAttr[int]),
-        ],
-    )
-):
+class RunProperties(NamedTuple):
     """Relevant information about a run while it is executing. Contains:
     * The run ID
     * The DagsterRun object, which contains further information about the run
@@ -1399,20 +1389,10 @@ class RunProperties(
     * The retry number - how many times this step has been retried.
     """
 
-    def __new__(
-        cls,
-        run_id: str,
-        dagster_run: DagsterRun,
-        run_config: Mapping[str, object],
-        retry_number: int,
-    ):
-        return super(RunProperties, cls).__new__(
-            cls,
-            run_id=run_id,
-            dagster_run=dagster_run,
-            run_config=run_config,
-            retry_number=retry_number,
-        )
+    run_id: PublicAttr[str]
+    dagster_run: PublicAttr[DagsterRun]
+    run_config: PublicAttr[Mapping[str, object]]
+    retry_number: PublicAttr[int]
 
 
 class AssetExecutionContext(OpExecutionContext):

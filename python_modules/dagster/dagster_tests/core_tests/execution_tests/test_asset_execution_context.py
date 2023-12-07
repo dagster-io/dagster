@@ -113,7 +113,7 @@ def test_deprecation_warnings():
         assert received_info.subject == expected_info["subject"]
 
     for attr in dir(OpExecutionContext):
-        if attr[:2] == "__" or attr in other_ignores:
+        if attr.startswith("__") or attr in other_ignores:
             continue
         if not hasattr(AssetExecutionContext, attr):
             raise Exception(
