@@ -71,8 +71,9 @@ class BranchingIOManager(ConfigurableIOManager):
             # we are dealing with an asset input
 
             partition_keys = []
-            if context.has_partition_key:
+            if context.has_asset_partitions:
                 partition_keys = context.asset_partition_keys
+
             if len(partition_keys) == 0:
                 partition_keys = [None]
 
