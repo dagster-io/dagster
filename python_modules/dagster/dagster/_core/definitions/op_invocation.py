@@ -32,8 +32,7 @@ from .output import DynamicOutputDefinition, OutputDefinition
 from .result import MaterializeResult
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.compute import OpExecutionContext
-
+    from ..execution.context.compute import OpExecutionContext
     from ..execution.context.invocation import BaseRunlessContext
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
