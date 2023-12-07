@@ -19,7 +19,6 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
 )
-from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 
 from .events import (
     AssetKey,
@@ -33,6 +32,8 @@ from .output import DynamicOutputDefinition, OutputDefinition
 from .result import MaterializeResult
 
 if TYPE_CHECKING:
+    from dagster._core.execution.context.compute import OpExecutionContext
+
     from ..execution.context.invocation import BaseRunlessContext
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
@@ -102,8 +103,10 @@ def _separate_args_and_kwargs(
 
 
 def _get_op_context(
-    context: Union[OpExecutionContext, AssetExecutionContext]
-) -> OpExecutionContext:
+    context,  # TODO - type hint
+) -> "OpExecutionContext":
+    from dagster._core.execution.context.compute import AssetExecutionContext
+
     if isinstance(context, AssetExecutionContext):
         return context.op_execution_context
     return context
