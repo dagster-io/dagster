@@ -216,8 +216,8 @@ class DagsterLogHandler(logging.Handler):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
         self._handlers = handlers
-        self.local_thread_context = threading.local()
-        self.local_thread_context._should_capture = True
+        self._local_thread_context = threading.local()
+        self._local_thread_context.should_capture = True
         super().__init__()
 
     @property
@@ -272,10 +272,10 @@ class DagsterLogHandler(logging.Handler):
         multiple times, as the DagsterLogHandler will be invoked at each level of the hierarchy as
         the message is propagated. This filter prevents this from happening.
         """
-        if not hasattr(self.local_thread_context, "_should_capture"):
-            self.local_thread_context._should_capture = True
+        if not hasattr(self._local_thread_context, "should_capture"):
+            self._local_thread_context.should_capture = True
 
-        return self.local_thread_context._should_capture and not isinstance(
+        return self._local_thread_context.should_capture and not isinstance(
             getattr(record, DAGSTER_META_KEY, None), dict
         )
 
@@ -285,7 +285,7 @@ class DagsterLogHandler(logging.Handler):
             # to prevent the potential for infinite loops in which a handler produces log messages
             # which are then captured and then handled by that same handler (etc.), do not capture
             # any log messages while one is currently being emitted
-            self.local_thread_context._should_capture = False
+            self._local_thread_context.should_capture = False
             dagster_record = self._convert_record(record)
             # built-in handlers
             for handler in self._handlers:
@@ -300,7 +300,7 @@ class DagsterLogHandler(logging.Handler):
                     extra=self._extract_extra(record),
                 )
         finally:
-            self.local_thread_context._should_capture = True
+            self._local_thread_context.should_capture = True
 
 
 class DagsterLogManager(logging.Logger):

@@ -20,24 +20,24 @@ class DispatchingLogHandler(logging.Handler):
     """
 
     def __init__(self, downstream_loggers: List[logging.Logger]):
-        self.local_thread_context = threading.local()
-        self.local_thread_context._should_capture = True
+        self._local_thread_context = threading.local()
+        self._local_thread_context.should_capture = True
         self._downstream_loggers = [*downstream_loggers]
         super().__init__()
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if not hasattr(self.local_thread_context, "_should_capture"):
-            self.local_thread_context._should_capture = True
-        return self.local_thread_context._should_capture
+        if not hasattr(self._local_thread_context, "should_capture"):
+            self._local_thread_context.should_capture = True
+        return self._local_thread_context.should_capture
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add metadata, and have handlers handle it."""
         try:
-            self.local_thread_context._should_capture = False
+            self._local_thread_context.should_capture = False
             for logger in self._downstream_loggers:
                 logger.handle(record)
         finally:
-            self.local_thread_context._should_capture = True
+            self._local_thread_context.should_capture = True
 
 
 class CapturedLogHandler(logging.Handler):

@@ -2,7 +2,9 @@ import json
 import logging
 import re
 import sys
+import threading
 from contextlib import contextmanager
+from functools import partial
 
 import pytest
 from dagster import (
@@ -462,6 +464,38 @@ def test_error_when_logger_defined_yaml():
     with pytest.raises(DagsterInvalidConfigError):
         with instance_for_test(overrides=config_settings) as instance:
             log_job.execute_in_process(instance=instance)
+
+
+def test_python_multithread_context_logging():
+    def logging_background_thread(thread_name, context):
+        for i in range(1, 4):
+            context.log.info(f"Background thread: {thread_name}, message #: {i}")
+
+    @op
+    def logged_op(context):
+        threads = []
+        for thread_name in range(1, 5):
+            thread = threading.Thread(
+                target=partial(logging_background_thread, thread_name, context),
+            )
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+    @job
+    def foo_job():
+        logged_op()
+
+    with instance_for_test() as instance:
+        result = foo_job.execute_in_process(instance=instance)
+        logs = instance.event_log_storage.get_logs_for_run(result.run_id)
+
+    relevant_logs = [log for log in logs if "Background thread: " in log.user_message]
+
+    # We would expect 4 log messages per our 4 threads
+    assert len(relevant_logs) == 3 * 4
 
 
 def test_python_log_level_context_logging():
