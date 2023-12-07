@@ -20,6 +20,9 @@ class DispatchingLogHandler(logging.Handler):
     """
 
     def __init__(self, downstream_loggers: List[logging.Logger]):
+        # Setting up a local thread context here to allow the DispatchingLogHandler
+        # to be used in multi threading environments where the handler is called by
+        # different threads with different log messages in parallel.
         self._local_thread_context = threading.local()
         self._local_thread_context.should_capture = True
         self._downstream_loggers = [*downstream_loggers]
@@ -27,6 +30,9 @@ class DispatchingLogHandler(logging.Handler):
 
     def filter(self, record: logging.LogRecord) -> bool:
         if not hasattr(self._local_thread_context, "should_capture"):
+            # Since only the "main" thread gets an initialized
+            # "_local_thread_context.should_capture" variable  through the __init__()
+            # we need to set a default value for all other threads here.
             self._local_thread_context.should_capture = True
         return self._local_thread_context.should_capture
 

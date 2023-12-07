@@ -216,6 +216,9 @@ class DagsterLogHandler(logging.Handler):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
         self._handlers = handlers
+        # Setting up a local thread context here to allow the DispatchingLogHandler
+        # to be used in multi threading environments where the handler is called by
+        # different threads with different log messages in parallel.
         self._local_thread_context = threading.local()
         self._local_thread_context.should_capture = True
         super().__init__()
@@ -273,6 +276,9 @@ class DagsterLogHandler(logging.Handler):
         the message is propagated. This filter prevents this from happening.
         """
         if not hasattr(self._local_thread_context, "should_capture"):
+            # Since only the "main" thread gets an initialized
+            # "_local_thread_context.should_capture" variable through the __init__()
+            # we need to set a default value for all other threads here.
             self._local_thread_context.should_capture = True
 
         return self._local_thread_context.should_capture and not isinstance(
