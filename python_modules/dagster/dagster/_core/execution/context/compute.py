@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from inspect import (
     _empty as EmptyAnnotation,
-    isfunction,
 )
 from typing import (
     AbstractSet,
@@ -21,8 +20,6 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import (
-    T_Annotatable,
-    _get_annotation_target,
     deprecated,
     experimental,
     public,
@@ -59,7 +56,6 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._utils.cached_method import cached_method
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.warnings import (
     deprecation_warning,
@@ -1352,10 +1348,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return ctx.get_op_execution_context()
 
 
-def _copy_docs_from_op_execution_context(obj: T_Annotatable) -> T_Annotatable:
-    target = _get_annotation_target(obj)
-    if isfunction(target):
-        setattr(target, "__doc__", getattr(OpExecutionContext, target.__name__).__doc__)
+def _copy_docs_from_op_execution_context(obj):
+    setattr(obj, "__doc__", getattr(OpExecutionContext, obj.__name__).__doc__)
     return obj
 
 
@@ -1728,7 +1722,6 @@ class AssetExecutionContext(OpExecutionContext):
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
         self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
 
-    @cached_method
     def get_op_execution_context(self) -> "OpExecutionContext":
         return self.op_execution_context
 
