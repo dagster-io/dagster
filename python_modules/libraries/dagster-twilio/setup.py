@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_twilio_tests*"]),
-    install_requires=[f"dagster{pin}", "twilio"],
+    install_requires=["dagster==1.5.11", "twilio"],
     zip_safe=False,
 )
