@@ -216,7 +216,7 @@ class DagsterLogHandler(logging.Handler):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
         self._handlers = handlers
-        # Setting up a local thread context here to allow the DispatchingLogHandler
+        # Setting up a local thread context here to allow the DagsterLogHandler
         # to be used in multi threading environments where the handler is called by
         # different threads with different log messages in parallel.
         self._local_thread_context = threading.local()
