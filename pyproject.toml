@@ -167,7 +167,7 @@ ignore = [
 
 # Codebase-wide default line length. Override in package-specific pyproject.toml where a different
 # length is desired.
-line-length = 100
+line-length = 80
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
 # Here we append to the defaults.
