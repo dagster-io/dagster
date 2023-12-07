@@ -1,18 +1,27 @@
 import math
 import time
-from typing import Any
+from typing import Any, Dict, List
 
 from dagster import AssetIn, DagsterInstance, Definitions, StaticPartitionMapping, asset
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
 from .utils import AssetBasedInMemoryIOManager, DefinitionsRunner
 
 partitioning_scheme = StaticPartitionsDefinition(["A", "B", "C"])
 secondary_partitioning_scheme = StaticPartitionsDefinition(["1", "2", "3"])
+tertiary_partitioning_scheme = StaticPartitionsDefinition(["ab", "bc", "ca"])
 
-partition_mapping = StaticPartitionMapping({"A": "1", "B": "2", "C": "3"})
+primary_secondary_partition_mapping = StaticPartitionMapping({"A": "1", "B": "2", "C": "3"})
+primary_tertiary_partition_mapping = StaticPartitionMapping(
+    {
+        "A": ["ab", "ca"],
+        "B": ["bc", "ab"],
+        "C": ["bc", "ca"],
+    }
+)
 
 
 @asset(partitions_def=partitioning_scheme)
@@ -22,7 +31,9 @@ def now_time():
 
 @asset(
     partitions_def=secondary_partitioning_scheme,
-    ins={"now_time": AssetIn(key="now_time", partition_mapping=partition_mapping)},
+    ins={
+        "now_time": AssetIn(key="now_time", partition_mapping=primary_secondary_partition_mapping)
+    },
 )
 def now_time_times_two(now_time: int) -> int:
     return now_time * 2
@@ -284,3 +295,108 @@ def test_partition_mapping_workflow() -> Any:
         ) == prod_runner.load_asset_value("now_time_times_two", partition_key="2")
 
         assert dev_io_manager.has_value("now_time_times_two", partition_key="2")
+
+
+# Asset factory which produces a partitioned asset w/ each partition having a different seeded value
+def get_base_values(seed_values: List[int]) -> AssetsDefinition:
+    assert len(seed_values) == 3
+    seed_value_dict = {
+        "A": seed_values[0],
+        "B": seed_values[1],
+        "C": seed_values[2],
+    }
+
+    @asset(partitions_def=partitioning_scheme)
+    def base_values(context: AssetExecutionContext) -> int:
+        return seed_value_dict[context.partition_key]
+
+    return base_values
+
+
+# Asset with a many-to-one mapping from input partitions to output partitions
+# e.g. to materialize partition "ab" in the output asset, we need as input partitions "A" and "B" of
+# now_time
+@asset(
+    partitions_def=tertiary_partitioning_scheme,
+    ins={
+        "upstream_values": AssetIn(
+            key="base_values", partition_mapping=primary_tertiary_partition_mapping
+        )
+    },
+)
+def average_upstream(upstream_values: Dict[str, int]) -> int:
+    return sum(upstream_values.values()) // len(upstream_values)
+
+
+def test_multi_partition_mapping_workflow() -> Any:
+    prod_io_manager = AssetBasedInMemoryIOManager()
+    dev_io_manager = AssetBasedInMemoryIOManager()
+
+    prod_defs = Definitions(
+        assets=[get_base_values([10, 20, 30]), average_upstream],
+        resources={
+            "io_manager": prod_io_manager,
+        },
+    )
+
+    dev_defs = Definitions(
+        assets=[get_base_values([50, 100, 150]), average_upstream],
+        resources={
+            "io_manager": BranchingIOManager(
+                parent_io_manager=prod_io_manager, branch_io_manager=dev_io_manager
+            )
+        },
+    )
+
+    with DagsterInstance.ephemeral() as dev_instance, DagsterInstance.ephemeral() as prod_instance:
+        # Simulate a full prod run. All partitions are full
+        prod_runner = DefinitionsRunner(prod_defs, prod_instance)
+        prod_runner.materialize_asset("base_values", partition_key="A")
+        prod_runner.materialize_asset("base_values", partition_key="B")
+        prod_runner.materialize_asset("base_values", partition_key="C")
+
+        prod_runner.materialize_asset("average_upstream", partition_key="ab")
+        prod_runner.materialize_asset("average_upstream", partition_key="bc")
+        prod_runner.materialize_asset("average_upstream", partition_key="ca")
+
+        for partition_key in ["A", "B", "C"]:
+            assert prod_io_manager.has_value("base_values", partition_key)
+
+        for partition_key in ["ab", "bc", "ca"]:
+            assert prod_io_manager.has_value("average_upstream", partition_key)
+
+        # Verify that, since we haven't materialized the upstream asset in dev, we are reading from
+        # the values generated in prod
+        assert prod_io_manager.get_value("base_values", partition_key="A") == 10
+        assert not dev_io_manager.has_value("base_values", partition_key="A")
+
+        assert prod_io_manager.get_value("average_upstream", partition_key="ab") == 15
+        assert not dev_io_manager.has_value("average_upstream", partition_key="ab") == 15
+
+        dev_runner = DefinitionsRunner(dev_defs, dev_instance)
+
+        # First, we try rematerializing the averages in dev. Since we haven't materialized the
+        # upstream asset, we should be reading from prod, and the values should be the same
+        dev_runner.materialize_asset("average_upstream", partition_key="ab")
+        assert dev_io_manager.has_value("average_upstream", partition_key="ab")
+        assert dev_io_manager.get_value("average_upstream", partition_key="ab") == 15
+
+        # Now, we materialize the upstream asset in dev, but only a single partition
+        # The branching IO manager logic will only read from the upstream asset in dev if all
+        # upstream partitions are materialized in dev, so the average will be unchanged
+        dev_runner.materialize_asset("base_values", partition_key="A")
+        assert dev_io_manager.has_value("base_values", partition_key="A")
+        assert dev_io_manager.get_value("base_values", partition_key="A") == 50
+
+        dev_runner.materialize_asset("average_upstream", partition_key="ab")
+        assert dev_io_manager.get_value("average_upstream", partition_key="ab") == 15
+
+        # Now, we materialize the upstream asset in dev for the "B" partition. Since we have
+        # materialized all needed upstream partitions in dev, the branching IO manager logic
+        # will read from the upstream asset in dev, and the average will be updated
+        dev_runner.materialize_asset("base_values", partition_key="B")
+        assert dev_io_manager.has_value("base_values", partition_key="B")
+        assert dev_io_manager.get_value("base_values", partition_key="B") == 100
+
+        dev_runner.materialize_asset("average_upstream", partition_key="ab")
+        assert dev_io_manager.get_value("average_upstream", partition_key="ab") == 75

@@ -1,7 +1,6 @@
 from typing import Any, Optional
 
 from dagster import InputContext, OutputContext
-from dagster._check import CheckError
 from dagster._config.pythonic_config import (
     ConfigurableIOManager,
     ResourceDependency,
@@ -70,28 +69,29 @@ class BranchingIOManager(ConfigurableIOManager):
             return self.branch_io_manager.load_input(context)
         else:
             # we are dealing with an asset input
-            partition_key = (
-                context.upstream_output.partition_key
-                if context.upstream_output and context.upstream_output.has_partition_key
-                else None
-            )
-            try:
-                partition_key = context.asset_partition_key
-            except CheckError:
-                pass
 
-            event_log_entry = latest_materialization_log_entry(
-                instance=context.instance,
-                asset_key=context.asset_key,
-                partition_key=(partition_key),
-            )
-            if (
-                event_log_entry
+            partition_keys = []
+            if context.has_partition_key:
+                partition_keys = context.asset_partition_keys
+            if len(partition_keys) == 0:
+                partition_keys = [None]
+
+            event_log_entries = [
+                latest_materialization_log_entry(
+                    instance=context.instance,
+                    asset_key=context.asset_key,
+                    partition_key=partition_key,
+                )
+                for partition_key in partition_keys
+            ]
+            if all(
+                event_log_entry is not None
                 and event_log_entry.asset_materialization
                 and get_text_metadata_value(
                     event_log_entry.asset_materialization, self.branch_metadata_key
                 )
                 == self.branch_name
+                for event_log_entry in event_log_entries
             ):
                 context.log.info(
                     f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'
