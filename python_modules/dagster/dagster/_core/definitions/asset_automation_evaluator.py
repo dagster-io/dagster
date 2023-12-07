@@ -24,7 +24,9 @@ if TYPE_CHECKING:
     from .auto_materialize_rule import AutoMaterializeRule, RuleEvaluationResults
 
 
-class AutomationConditionSnapshot(NamedTuple):
+class AutomationConditionNodeSnapshot(NamedTuple):
+    """A serializable snapshot of a node in the AutomationCondition tree."""
+
     class_name: str
     description: str
 
@@ -32,7 +34,7 @@ class AutomationConditionSnapshot(NamedTuple):
 class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
-    condition_snapshot: AutomationConditionSnapshot
+    condition_snapshot: AutomationConditionNodeSnapshot
     true_subset: AssetSubset
     candidate_subset: AssetSubset
 
@@ -246,9 +248,9 @@ class AutomationCondition(ABC):
     def indexed_children(self) -> Sequence[Tuple[int, "AutomationCondition"]]:
         return list(enumerate(self.children))
 
-    def to_snapshot(self, child_index: Optional[int] = None) -> AutomationConditionSnapshot:
+    def to_snapshot(self) -> AutomationConditionNodeSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
-        return AutomationConditionSnapshot(
+        return AutomationConditionNodeSnapshot(
             class_name=self.__class__.__name__, description=str(self)
         )
 
