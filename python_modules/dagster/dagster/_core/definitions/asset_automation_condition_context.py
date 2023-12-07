@@ -307,13 +307,13 @@ class AssetAutomationConditionEvaluationContext:
         return self.asset_context.empty_subset()
 
     def for_child(
-        self, condition: "AutomationCondition", candidate_subset: AssetSubset
+        self, condition: "AutomationCondition", candidate_subset: AssetSubset, child_index: int
     ) -> "AssetAutomationConditionEvaluationContext":
         return AssetAutomationConditionEvaluationContext(
             asset_context=self.asset_context,
             condition=condition,
             candidate_subset=candidate_subset,
-            latest_evaluation=self.latest_evaluation.for_child(condition)
+            latest_evaluation=self.latest_evaluation.for_child(condition, child_index)
             if self.latest_evaluation
             else None,
         )
