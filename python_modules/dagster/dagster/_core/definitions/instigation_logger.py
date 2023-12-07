@@ -31,7 +31,7 @@ class DispatchingLogHandler(logging.Handler):
     def filter(self, record: logging.LogRecord) -> bool:
         if not hasattr(self._local_thread_context, "should_capture"):
             # Since only the "main" thread gets an initialized
-            # "_local_thread_context.should_capture" variable  through the __init__()
+            # "_local_thread_context.should_capture" variable through the __init__()
             # we need to set a default value for all other threads here.
             self._local_thread_context.should_capture = True
         return self._local_thread_context.should_capture

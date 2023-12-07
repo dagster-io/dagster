@@ -494,7 +494,7 @@ def test_python_multithread_context_logging():
 
     relevant_logs = [log for log in logs if "Background thread: " in log.user_message]
 
-    # We would expect 4 log messages per our 4 threads
+    # We would expect 3 log messages per our 4 threads
     assert len(relevant_logs) == 3 * 4
 
 
