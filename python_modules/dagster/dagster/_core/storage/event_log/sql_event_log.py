@@ -732,9 +732,29 @@ class SqlEventLogStorage(EventLogStorage):
 
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
+        records = conn.execute(
+            db_select([SqlEventLogStorageTable.c.id]).where(
+                db.and_(
+                    SqlEventLogStorageTable.c.run_id == run_id,
+                    db.or_(
+                        SqlEventLogStorageTable.c.dagster_event_type
+                        == DagsterEventType.ASSET_MATERIALIZATION.value,
+                        SqlEventLogStorageTable.c.dagster_event_type
+                        == DagsterEventType.ASSET_OBSERVATION.value,
+                    ),
+                )
+            )
+        ).fetchall()
+        asset_event_ids = [record[0] for record in records]
         conn.execute(
             SqlEventLogStorageTable.delete().where(SqlEventLogStorageTable.c.run_id == run_id)
         )
+        if asset_event_ids:
+            conn.execute(
+                AssetEventTagsTable.delete().where(
+                    AssetEventTagsTable.c.event_id.in_(asset_event_ids)
+                )
+            )
 
     @property
     def is_persistent(self) -> bool:
