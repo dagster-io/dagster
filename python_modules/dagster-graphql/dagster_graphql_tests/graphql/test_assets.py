@@ -1,7 +1,7 @@
 import datetime
 import os
 import time
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import pytest
 from dagster import (
@@ -17,7 +17,9 @@ from dagster import (
     define_asset_job,
     repository,
 )
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
@@ -541,10 +543,14 @@ CROSS_REPO_ASSET_GRAPH = """
     query AssetNodeQuery {
         assetNodes {
             id
+            assetKey { path }
             dependencyKeys {
                 path
             }
             dependedByKeys {
+                path
+            }
+            cycle {
                 path
             }
         }
@@ -2939,3 +2945,89 @@ def test_2d_subset_backcompat():
             assert len(ranges[1]["secondaryDim"]["materializedPartitions"]) == 2
             assert set(ranges[1]["secondaryDim"]["materializedPartitions"]) == {"a", "c"}
             assert set(ranges[1]["secondaryDim"]["unmaterializedPartitions"]) == {"b", "d"}
+
+
+def cycle_loc_1():
+    delta = SourceAsset("delta")
+    gamma = SourceAsset("gamma")
+
+    @asset
+    def alpha(delta, gamma):
+        ...
+
+    @asset
+    def beta(alpha):
+        ...
+
+    return Definitions(
+        assets=[alpha, beta, delta, gamma],
+    )
+
+
+def cycle_loc_2():
+    beta = SourceAsset("beta")
+
+    @asset
+    def delta(beta):
+        ...
+
+    @asset
+    def epsilon(delta):
+        ...
+
+    return Definitions(
+        assets=[beta, delta, epsilon],
+    )
+
+
+def cycle_loc_3():
+    delta = SourceAsset("delta")
+
+    @asset
+    def gamma(delta):
+        ...
+
+    return Definitions(
+        assets=[delta, gamma],
+    )
+
+
+def _get_asset_node(result: Any, asset_key: str) -> Dict[str, Any]:
+    return next(
+        node for node in result.data["assetNodes"] if node["assetKey"]["path"] == [asset_key]
+    )
+
+
+def test_cross_location_asset_cycles():
+    with instance_for_test() as instance:
+        instance.can_cache_asset_status_data = lambda: False
+        assert instance.can_cache_asset_status_data() is False
+
+        with define_out_of_process_context(
+            __file__, ["cycle_loc_1", "cycle_loc_2", "cycle_loc_3"], instance
+        ) as graphql_context:
+            result = execute_dagster_graphql(
+                graphql_context,
+                CROSS_REPO_ASSET_GRAPH,
+            )
+            assert result.data
+            assert len(result.data["assetNodes"]) == 5
+
+            alpha = _get_asset_node(result, "alpha")
+            beta = _get_asset_node(result, "beta")
+            delta = _get_asset_node(result, "delta")
+            epsilon = _get_asset_node(result, "epsilon")
+            gamma = _get_asset_node(result, "gamma")
+
+            assert alpha["cycle"]
+            assert sorted({x["path"][0] for x in alpha["cycle"]}) == [
+                "alpha",
+                "beta",
+                "delta",
+                "gamma",
+            ]
+
+            assert beta["cycle"] == alpha["cycle"]
+            assert delta["cycle"] == alpha["cycle"]
+            assert gamma["cycle"] == alpha["cycle"]
+            assert epsilon["cycle"] is None

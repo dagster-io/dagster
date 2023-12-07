@@ -1,13 +1,16 @@
 import asyncio
+import os
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
+from tempfile import NamedTemporaryFile
+from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
+import yaml
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster._core.workspace.load_target import PythonFileTarget
+from dagster._core.workspace.load_target import WorkspaceFileTarget
 from typing_extensions import Protocol, TypeAlias, TypedDict
 
 from dagster_graphql.schema import create_schema
@@ -108,7 +111,7 @@ def execute_dagster_graphql_and_finish_runs(
 @contextmanager
 def define_out_of_process_context(
     python_file: str,
-    fn_name: str,
+    fn_name: Union[str, Sequence[str]],
     instance: DagsterInstance,
     read_only: bool = False,
     read_only_locations: Optional[Mapping[str, bool]] = None,
@@ -116,7 +119,7 @@ def define_out_of_process_context(
     check.inst_param(instance, "instance", DagsterInstance)
 
     with define_out_of_process_workspace(
-        python_file, fn_name, instance, read_only=read_only
+        python_file=python_file, fn_name=fn_name, instance=instance, read_only=read_only
     ) as workspace_process_context:
         yield WorkspaceRequestContext(
             instance=instance,
@@ -129,20 +132,35 @@ def define_out_of_process_context(
         )
 
 
+@contextmanager
+def temp_workspace_file(python_file: str, fn_names: Sequence[str]) -> Iterator[str]:
+    workspace_dict = {
+        "load_from": [
+            {"python_file": {"relative_path": python_file, "attribute": fn_name}}
+            for fn_name in fn_names
+        ]
+    }
+    with NamedTemporaryFile(dir=os.path.dirname(python_file), mode="w") as file:
+        yaml.dump(workspace_dict, file)
+        file.flush()
+        yield file.name
+
+
+@contextmanager
 def define_out_of_process_workspace(
-    python_file: str, fn_name: str, instance: DagsterInstance, read_only: bool = False
-) -> WorkspaceProcessContext:
-    return WorkspaceProcessContext(
-        instance,
-        PythonFileTarget(
-            python_file=python_file,
-            attribute=fn_name,
-            working_directory=None,
-            location_name=main_repo_location_name(),
-        ),
-        version="",
-        read_only=read_only,
-    )
+    python_file: str,
+    fn_name: Union[str, Sequence[str]],
+    instance: DagsterInstance,
+    read_only: bool = False,
+) -> Iterator[WorkspaceProcessContext]:
+    fn_names = [fn_name] if isinstance(fn_name, str) else fn_name
+    with temp_workspace_file(python_file, fn_names) as workspace_file:
+        yield WorkspaceProcessContext(
+            instance,
+            WorkspaceFileTarget(paths=[workspace_file]),
+            version="",
+            read_only=read_only,
+        )
 
 
 def infer_repository(graphql_context: WorkspaceRequestContext) -> ExternalRepository:

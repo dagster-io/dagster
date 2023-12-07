@@ -242,6 +242,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     backfillPolicy = graphene.Field(GrapheneBackfillPolicy)
     computeKind = graphene.String()
     configField = graphene.Field(GrapheneConfigTypeField)
+    cycle = graphene.List(graphene.NonNull(GrapheneAssetKey))
     dataVersion = graphene.Field(graphene.String(), partition=graphene.String())
     dataVersionByPartition = graphene.Field(
         graphene.NonNull(graphene.List(graphene.String)),
@@ -641,6 +642,14 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_computeKind(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._external_asset_node.compute_kind
+
+    def resolve_cycle(self, _graphene_info: ResolveInfo) -> Optional[Sequence[GrapheneAssetKey]]:
+        _depended_by_loader = check.not_none(
+            self._depended_by_loader,
+            "depended_by_loader must exist in order to resolve cycles",
+        )
+        cycle = _depended_by_loader.get_cycle_for_key(self._external_asset_node.asset_key)
+        return [GrapheneAssetKey(path=asset_key.path) for asset_key in cycle] if cycle else None
 
     def resolve_staleStatus(
         self, graphene_info: ResolveInfo, partition: Optional[str] = None

@@ -374,6 +374,7 @@ export type AssetNode = {
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   currentAutoMaterializeEvaluationId: Maybe<Scalars['Int']>;
+  cycle: Maybe<Array<AssetKey>>;
   dataVersion: Maybe<Scalars['String']>;
   dataVersionByPartition: Array<Maybe<Scalars['String']>>;
   dependedBy: Array<AssetDependency>;
@@ -5290,26 +5291,13 @@ export const buildArrayConfigType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
@@ -5933,6 +5921,7 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('currentAutoMaterializeEvaluationId')
         ? overrides.currentAutoMaterializeEvaluationId!
         : 6693,
+    cycle: overrides && overrides.hasOwnProperty('cycle') ? overrides.cycle! : [],
     dataVersion:
       overrides && overrides.hasOwnProperty('dataVersion') ? overrides.dataVersion! : 'a',
     dataVersionByPartition:
@@ -6052,15 +6041,7 @@ export const buildAssetNode = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : relationshipsToOmit.has('ListDagsterType')
-        ? ({} as ListDagsterType)
-        : buildListDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableDagsterType')
-        ? ({} as NullableDagsterType)
-        : buildNullableDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularDagsterType')
-        ? ({} as RegularDagsterType)
-        : buildRegularDagsterType({}, relationshipsToOmit),
+        : buildListDagsterType() || buildNullableDagsterType() || buildRegularDagsterType(),
   };
 };
 
@@ -6614,26 +6595,13 @@ export const buildConfigTypeField = (
     configType:
       overrides && overrides.hasOwnProperty('configType')
         ? overrides.configType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     configTypeKey:
       overrides && overrides.hasOwnProperty('configTypeKey')
         ? overrides.configTypeKey!
@@ -6774,26 +6742,13 @@ export const buildDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : true,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -6805,26 +6760,13 @@ export const buildDagsterType = (
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
   };
 };
 
@@ -8071,15 +8013,7 @@ export const buildInputDefinition = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : relationshipsToOmit.has('ListDagsterType')
-        ? ({} as ListDagsterType)
-        : buildListDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableDagsterType')
-        ? ({} as NullableDagsterType)
-        : buildNullableDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularDagsterType')
-        ? ({} as RegularDagsterType)
-        : buildRegularDagsterType({}, relationshipsToOmit),
+        : buildListDagsterType() || buildNullableDagsterType() || buildRegularDagsterType(),
   };
 };
 
@@ -8771,26 +8705,13 @@ export const buildListDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : true,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -8802,38 +8723,17 @@ export const buildListDagsterType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ListDagsterType')
-        ? ({} as ListDagsterType)
-        : buildListDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableDagsterType')
-        ? ({} as NullableDagsterType)
-        : buildNullableDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularDagsterType')
-        ? ({} as RegularDagsterType)
-        : buildRegularDagsterType({}, relationshipsToOmit),
+        : buildListDagsterType() || buildNullableDagsterType() || buildRegularDagsterType(),
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
   };
 };
 
@@ -9023,26 +8923,13 @@ export const buildMapConfigType = (
     keyType:
       overrides && overrides.hasOwnProperty('keyType')
         ? overrides.keyType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
@@ -9052,26 +8939,13 @@ export const buildMapConfigType = (
     valueType:
       overrides && overrides.hasOwnProperty('valueType')
         ? overrides.valueType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
   };
 };
 
@@ -9702,26 +9576,13 @@ export const buildNullableConfigType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
@@ -9749,26 +9610,13 @@ export const buildNullableDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : false,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : false,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -9780,38 +9628,17 @@ export const buildNullableDagsterType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ListDagsterType')
-        ? ({} as ListDagsterType)
-        : buildListDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableDagsterType')
-        ? ({} as NullableDagsterType)
-        : buildNullableDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularDagsterType')
-        ? ({} as RegularDagsterType)
-        : buildRegularDagsterType({}, relationshipsToOmit),
+        : buildListDagsterType() || buildNullableDagsterType() || buildRegularDagsterType(),
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
   };
 };
 
@@ -9955,15 +9782,7 @@ export const buildOutputDefinition = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : relationshipsToOmit.has('ListDagsterType')
-        ? ({} as ListDagsterType)
-        : buildListDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableDagsterType')
-        ? ({} as NullableDagsterType)
-        : buildNullableDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularDagsterType')
-        ? ({} as RegularDagsterType)
-        : buildRegularDagsterType({}, relationshipsToOmit),
+        : buildListDagsterType() || buildNullableDagsterType() || buildRegularDagsterType(),
   };
 };
 
@@ -10751,12 +10570,7 @@ export const buildPipelineRun = (
     pipeline:
       overrides && overrides.hasOwnProperty('pipeline')
         ? overrides.pipeline!
-        : relationshipsToOmit.has('PipelineSnapshot')
-        ? ({} as PipelineSnapshot)
-        : buildPipelineSnapshot({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('UnknownPipeline')
-        ? ({} as UnknownPipeline)
-        : buildUnknownPipeline({}, relationshipsToOmit),
+        : buildPipelineSnapshot() || buildUnknownPipeline(),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'animi',
     pipelineSnapshotId:
@@ -11450,26 +11264,13 @@ export const buildRegularDagsterType = (
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : false,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : false,
@@ -11481,26 +11282,13 @@ export const buildRegularDagsterType = (
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
   };
 };
 
@@ -12119,12 +11907,7 @@ export const buildRun = (
     pipeline:
       overrides && overrides.hasOwnProperty('pipeline')
         ? overrides.pipeline!
-        : relationshipsToOmit.has('PipelineSnapshot')
-        ? ({} as PipelineSnapshot)
-        : buildPipelineSnapshot({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('UnknownPipeline')
-        ? ({} as UnknownPipeline)
-        : buildUnknownPipeline({}, relationshipsToOmit),
+        : buildPipelineSnapshot() || buildUnknownPipeline(),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'enim',
     pipelineSnapshotId:
@@ -12235,26 +12018,13 @@ export const buildRunConfigSchema = (
     rootConfigType:
       overrides && overrides.hasOwnProperty('rootConfigType')
         ? overrides.rootConfigType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     rootDefaultYaml:
       overrides && overrides.hasOwnProperty('rootDefaultYaml') ? overrides.rootDefaultYaml! : 'cum',
   };
@@ -12739,26 +12509,13 @@ export const buildScalarUnionConfigType = (
     nonScalarType:
       overrides && overrides.hasOwnProperty('nonScalarType')
         ? overrides.nonScalarType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     nonScalarTypeKey:
       overrides && overrides.hasOwnProperty('nonScalarTypeKey')
         ? overrides.nonScalarTypeKey!
@@ -12770,26 +12527,13 @@ export const buildScalarUnionConfigType = (
     scalarType:
       overrides && overrides.hasOwnProperty('scalarType')
         ? overrides.scalarType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
     scalarTypeKey:
       overrides && overrides.hasOwnProperty('scalarTypeKey') ? overrides.scalarTypeKey! : 'esse',
     typeParamKeys:
@@ -13229,12 +12973,7 @@ export const buildSolid = (
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : relationshipsToOmit.has('CompositeSolidDefinition')
-        ? ({} as CompositeSolidDefinition)
-        : buildCompositeSolidDefinition({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('SolidDefinition')
-        ? ({} as SolidDefinition)
-        : buildSolidDefinition({}, relationshipsToOmit),
+        : buildCompositeSolidDefinition() || buildSolidDefinition(),
     inputs: overrides && overrides.hasOwnProperty('inputs') ? overrides.inputs! : [],
     isDynamicMapped:
       overrides && overrides.hasOwnProperty('isDynamicMapped') ? overrides.isDynamicMapped! : true,
@@ -14061,12 +13800,7 @@ export const buildUsedSolid = (
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : relationshipsToOmit.has('CompositeSolidDefinition')
-        ? ({} as CompositeSolidDefinition)
-        : buildCompositeSolidDefinition({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('SolidDefinition')
-        ? ({} as SolidDefinition)
-        : buildSolidDefinition({}, relationshipsToOmit),
+        : buildCompositeSolidDefinition() || buildSolidDefinition(),
     invocations: overrides && overrides.hasOwnProperty('invocations') ? overrides.invocations! : [],
   };
 };
@@ -14180,26 +13914,13 @@ export const buildWrappingConfigType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ArrayConfigType')
-        ? ({} as ArrayConfigType)
-        : buildArrayConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('CompositeConfigType')
-        ? ({} as CompositeConfigType)
-        : buildCompositeConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('EnumConfigType')
-        ? ({} as EnumConfigType)
-        : buildEnumConfigType({}, relationshipsToOmit) || relationshipsToOmit.has('MapConfigType')
-        ? ({} as MapConfigType)
-        : buildMapConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableConfigType')
-        ? ({} as NullableConfigType)
-        : buildNullableConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularConfigType')
-        ? ({} as RegularConfigType)
-        : buildRegularConfigType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('ScalarUnionConfigType')
-        ? ({} as ScalarUnionConfigType)
-        : buildScalarUnionConfigType({}, relationshipsToOmit),
+        : buildArrayConfigType() ||
+          buildCompositeConfigType() ||
+          buildEnumConfigType() ||
+          buildMapConfigType() ||
+          buildNullableConfigType() ||
+          buildRegularConfigType() ||
+          buildScalarUnionConfigType(),
   };
 };
 
@@ -14214,14 +13935,6 @@ export const buildWrappingDagsterType = (
     ofType:
       overrides && overrides.hasOwnProperty('ofType')
         ? overrides.ofType!
-        : relationshipsToOmit.has('ListDagsterType')
-        ? ({} as ListDagsterType)
-        : buildListDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('NullableDagsterType')
-        ? ({} as NullableDagsterType)
-        : buildNullableDagsterType({}, relationshipsToOmit) ||
-          relationshipsToOmit.has('RegularDagsterType')
-        ? ({} as RegularDagsterType)
-        : buildRegularDagsterType({}, relationshipsToOmit),
+        : buildListDagsterType() || buildNullableDagsterType() || buildRegularDagsterType(),
   };
 };

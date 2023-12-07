@@ -649,6 +649,7 @@ type AssetNode {
   backfillPolicy: BackfillPolicy
   computeKind: String
   configField: ConfigTypeField
+  cycle: [AssetKey!]
   dataVersion(partition: String): String
   dataVersionByPartition(partitions: [String!]): [String]!
   dependedBy: [AssetDependency!]!

@@ -18,6 +18,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.storage.dagster_run import RunRecord, RunsFilter
+from dagster._core.utils import find_strongly_connected_components
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
@@ -232,11 +233,12 @@ class CrossRepoAssetDependedByLoader:
         self._context = context
 
     @lru_cache(maxsize=1)
-    def _build_cross_repo_deps(
+    def _build_dep_data(
         self,
     ) -> Tuple[
         Dict[AssetKey, ExternalAssetNode],
         Dict[Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]],
+        Dict[AssetKey, Set[AssetKey]],
     ]:
         """For asset X, find all "sink assets" and define them as ExternalAssetNodes. A "sink asset" is
         any asset that depends on X and exists in other repository. This enables displaying cross-repo
@@ -246,6 +248,8 @@ class CrossRepoAssetDependedByLoader:
         that depend on that asset key. When get_cross_repo_dependent_assets is called with
         a source asset key and its location, all dependent ExternalAssetDependedBy nodes outside of the
         source asset location are returned.
+
+        Also returns a code-location-agonstic mapping of all asset dependencies.
         """
         depended_by_assets_by_location_by_source_asset: Dict[
             AssetKey, Dict[Tuple[str, str], List[ExternalAssetDependedBy]]
@@ -255,6 +259,8 @@ class CrossRepoAssetDependedByLoader:
         map_derived_asset_to_location: Dict[
             AssetKey, Tuple[str, str]
         ] = {}  # key is asset key, value is tuple (location_name, repo_name)
+
+        all_deps: Dict[AssetKey, Set[AssetKey]] = {}
 
         for location in self._context.code_locations:
             repositories = location.get_repositories()
@@ -266,8 +272,13 @@ class CrossRepoAssetDependedByLoader:
                         depended_by_assets_by_location_by_source_asset[asset_node.asset_key][
                             location_tuple
                         ].extend(asset_node.depended_by)
+                        if asset_node.asset_key not in all_deps:
+                            all_deps[asset_node.asset_key] = set()
                     else:  # derived asset
                         map_derived_asset_to_location[asset_node.asset_key] = location_tuple
+                        all_deps[asset_node.asset_key] = {
+                            dep.upstream_asset_key for dep in asset_node.dependencies
+                        }
 
         sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
         external_asset_deps: Dict[
@@ -317,19 +328,36 @@ class CrossRepoAssetDependedByLoader:
                     depended_by=[],
                 )
 
-        return sink_assets, external_asset_deps
+        return sink_assets, external_asset_deps, all_deps
 
     def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
-        sink_assets, _ = self._build_cross_repo_deps()
+        sink_assets, _, _ = self._build_dep_data()
         return sink_assets[asset_key]
 
     def get_cross_repo_dependent_assets(
         self, repository_location_name: str, repository_name: str, asset_key: AssetKey
     ) -> Sequence[ExternalAssetDependedBy]:
-        _, external_asset_deps = self._build_cross_repo_deps()
+        _, external_asset_deps, _ = self._build_dep_data()
         return external_asset_deps.get((repository_location_name, repository_name), {}).get(
             asset_key, []
         )
+
+    def get_cycle_for_key(self, key: AssetKey) -> Optional[Sequence[AssetKey]]:
+        return self._get_key_to_cycle_map().get(key)
+
+    def has_cycles(self) -> bool:
+        return len(self._get_key_to_cycle_map()) > 0
+
+    @lru_cache(maxsize=1)
+    def _get_key_to_cycle_map(self) -> Mapping[AssetKey, Sequence[AssetKey]]:
+        _, _, all_deps = self._build_dep_data()
+        sccs = find_strongly_connected_components(all_deps)
+        key_to_cycle: Dict[AssetKey, Sequence[AssetKey]] = {}
+        for scc in sccs:
+            # scc can contain multiple cycles but there is always a path cycling through all nodes
+            for key in scc:
+                key_to_cycle[key] = scc
+        return key_to_cycle
 
 
 # CachingStaleStatusResolver from core can be used directly as a GQL batch loader.

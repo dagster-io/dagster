@@ -191,3 +191,56 @@ class InheritContextThreadPoolExecutor(FuturesAwareThreadPoolExecutor):
     def submit(self, fn, *args, **kwargs):
         ctx = copy_context()
         return super().submit(ctx.run, fn, *args, **kwargs)
+
+
+T = TypeVar("T")
+
+
+def find_strongly_connected_components(graph: Mapping[T, Iterable[T]]):
+    """This function implements Tarjan's algorithm to find strongly connected components ("sccs") in
+    a graph. Each strongly connected component contains at least one cycle.
+
+    Args:
+        graph: A dictionary where the key is a node and the value is a list of its neighbors.
+
+    Returns:
+        A list of strongly connected components found in the graph. Each scc is a list of nodes.
+    """
+    index = 0
+    ids = {}
+    lowlink = {}
+    on_stack = set()
+    stack = []
+    sccs = []
+
+    def dfs(node):
+        nonlocal index, ids, lowlink, on_stack, stack, sccs
+
+        index += 1
+        ids[node] = index
+        lowlink[node] = index
+        on_stack.add(node)
+        stack.append(node)
+
+        for neighbor in graph[node]:
+            if neighbor not in ids:
+                dfs(neighbor)
+                lowlink[node] = min(lowlink[node], lowlink[neighbor])
+            elif neighbor in on_stack:
+                lowlink[node] = min(lowlink[node], ids[neighbor])
+
+        head = None
+        if lowlink[node] == ids[node]:
+            scc = []
+            while head != node:
+                head = stack.pop()
+                on_stack.remove(head)
+                scc.append(head)
+            if len(scc) > 1:
+                sccs.append(scc)
+
+    for node in graph:
+        if node not in ids:
+            dfs(node)
+
+    return sccs
