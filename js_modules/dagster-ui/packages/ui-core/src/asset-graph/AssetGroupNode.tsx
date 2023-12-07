@@ -3,7 +3,7 @@ import {
   FontFamily,
   Icon,
   Mono,
-  colorLineageGroupNodeBorder,
+  colorLineageGroupBackground,
   colorTextLight,
 } from '@dagster-io/ui-components';
 import React from 'react';
@@ -75,8 +75,8 @@ export const AssetGroupNode = ({group, scale}: Props) => {
           position: 'absolute',
           background:
             scale < GROUPS_ONLY_SCALE
-              ? colorLineageGroupNodeBorder()
-              : colorLineageGroupNodeBorder(),
+              ? colorLineageGroupBackground()
+              : colorLineageGroupBackground(),
         }}
       />
 
