@@ -1,11 +1,21 @@
 import math
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
-from dagster import AssetIn, DagsterInstance, Definitions, StaticPartitionMapping, asset
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster import (
+    AssetExecutionContext,
+    AssetIn,
+    AssetsDefinition,
+    DagsterInstance,
+    Definitions,
+    In,
+    StaticPartitionMapping,
+    StaticPartitionsDefinition,
+    asset,
+    job,
+    op,
+)
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
 from .utils import AssetBasedInMemoryIOManager, DefinitionsRunner
@@ -400,3 +410,54 @@ def test_multi_partition_mapping_workflow() -> Any:
 
         dev_runner.materialize_asset("average_upstream", partition_key="ab")
         assert dev_io_manager.get_value("average_upstream", partition_key="ab") == 75
+
+
+@op
+def fixed_value_op(context: OpExecutionContext) -> int:
+    if context.partition_key == "A":
+        return 10
+    elif context.partition_key == "B":
+        return 20
+    elif context.partition_key == "C":
+        return 30
+    else:
+        raise Exception("Invalid partition key")
+
+
+@op(ins={"input_value": In(int)})
+def divide_input_by_two(input_value: int) -> int:
+    return input_value // 2
+
+
+@job(partitions_def=partitioning_scheme)
+def my_math_job():
+    divide_input_by_two(fixed_value_op())
+
+
+def test_job_op_usecase_partitioned() -> Any:
+    with DefinitionsRunner.ephemeral(
+        Definitions(
+            jobs=[my_math_job],
+            resources={
+                "io_manager": BranchingIOManager(
+                    parent_io_manager=AssetBasedInMemoryIOManager(),
+                    branch_io_manager=AssetBasedInMemoryIOManager(),
+                )
+            },
+        ),
+    ) as runner:
+        result = (
+            cast(DefinitionsRunner, runner)
+            .defs.get_job_def("my_math_job")
+            .execute_in_process(instance=runner.instance, partition_key="A")
+        )
+        assert result.success
+        assert result.output_for_node("divide_input_by_two") == 5
+
+        result = (
+            cast(DefinitionsRunner, runner)
+            .defs.get_job_def("my_math_job")
+            .execute_in_process(instance=runner.instance, partition_key="B")
+        )
+        assert result.success
+        assert result.output_for_node("divide_input_by_two") == 10
