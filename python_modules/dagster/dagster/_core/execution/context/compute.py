@@ -1,7 +1,10 @@
 from abc import ABC, ABCMeta, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
-from inspect import _empty as EmptyAnnotation
+from inspect import (
+    _empty as EmptyAnnotation,
+    isfunction,
+)
 from typing import (
     AbstractSet,
     Any,
@@ -17,7 +20,13 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import (
+    T_Annotatable,
+    _get_annotation_target,
+    deprecated,
+    experimental,
+    public,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
@@ -1343,9 +1352,18 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return ctx.get_op_execution_context()
 
 
+def _copy_docs_from_op_execution_context(obj: T_Annotatable) -> T_Annotatable:
+    target = _get_annotation_target(obj)
+    if isfunction(target):
+        setattr(target, "__doc__", getattr(OpExecutionContext, target.__name__).__doc__)
+    return obj
+
+
 class AssetExecutionContext(OpExecutionContext):
-    def __init__(self, step_execution_context: StepExecutionContext):
-        super().__init__(step_execution_context=step_execution_context)
+    def __init__(self, op_execution_context: OpExecutionContext) -> None:
+        self._op_execution_context = check.inst_param(
+            op_execution_context, "op_execution_context", OpExecutionContext
+        )
 
     @staticmethod
     def get() -> "AssetExecutionContext":
@@ -1354,9 +1372,365 @@ class AssetExecutionContext(OpExecutionContext):
             raise DagsterInvariantViolationError("No current AssetExecutionContext in scope.")
         return ctx
 
+    @property
+    def op_execution_context(self) -> OpExecutionContext:
+        return self._op_execution_context
+
+    @_copy_docs_from_op_execution_context
+    @property
+    def run(self) -> DagsterRun:
+        return self.op_execution_context.run
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def dagster_run(self) -> DagsterRun:
+        return self.op_execution_context.dagster_run
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def run_id(self) -> str:
+        return self.op_execution_context.run_id
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def run_config(self) -> Mapping[str, object]:
+        return self.op_execution_context.run_config
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def retry_number(self) -> int:
+        return self.op_execution_context.retry_number
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_config(self) -> Any:
+        return self.op_execution_context.op_config
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def instance(self) -> DagsterInstance:
+        return self.op_execution_context.instance
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def pdb(self) -> ForkedPdb:
+        return self.op_execution_context.pdb
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def file_manager(self):
+        raise DagsterInvalidPropertyError(
+            "You have attempted to access the file manager which has been moved to resources in"
+            " 0.10.0. Please access it via `context.resources.file_manager` instead."
+        )
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def resources(self) -> Any:
+        return self.op_execution_context.resources
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def step_launcher(self) -> Optional[StepLauncher]:
+        return self.op_execution_context.step_launcher
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def job_def(self) -> JobDefinition:
+        return self.op_execution_context.job_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def job_name(self) -> str:
+        return self.op_execution_context.job_name
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def log(self) -> DagsterLogManager:
+        return self.op_execution_context.log
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def node_handle(self) -> NodeHandle:
+        return self.op_execution_context.node_handle
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_handle(self) -> NodeHandle:
+        return self.op_execution_context.op_handle
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def op(self) -> Node:
+        return self.op_execution_context.op
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def op_def(self) -> OpDefinition:
+        return self.op_execution_context.op_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_partition_key(self) -> bool:
+        return self.op_execution_context.has_partition_key
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_key(self) -> str:
+        return self.op_execution_context.partition_key
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_keys(self) -> Sequence[str]:
+        return self.op_execution_context.partition_keys
+
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_key_range(self) -> PartitionKeyRange:
+        return self.op_execution_context.partition_key_range
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def partition_time_window(self) -> TimeWindow:
+        return self.op_execution_context.partition_time_window
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def has_tag(self, key: str) -> bool:
+        return self.op_execution_context.has_tag(key)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def get_tag(self, key: str) -> Optional[str]:
+        return self.op_execution_context.get_tag(key)
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def run_tags(self) -> Mapping[str, str]:
+        return self.op_execution_context.run_tags
+
+    @_copy_docs_from_op_execution_context
+    def has_events(self) -> bool:
+        return self.op_execution_context.has_events()
+
+    @_copy_docs_from_op_execution_context
+    def consume_events(self) -> Iterator[DagsterEvent]:
+        yield from self.op_execution_context.consume_events()
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def log_event(self, event: UserEvent) -> None:
+        return self.op_execution_context.log_event(event)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def add_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+        return self.op_execution_context.add_output_metadata(
+            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+        )
+
+    @_copy_docs_from_op_execution_context
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        return self.op_execution_context.get_output_metadata(
+            output_name=output_name, mapping_key=mapping_key
+        )
+
+    @_copy_docs_from_op_execution_context
+    def get_step_execution_context(self) -> StepExecutionContext:
+        return self.op_execution_context.get_step_execution_context()
+
+    @_copy_docs_from_op_execution_context
+    def describe_op(self) -> str:
+        return self.op_execution_context.describe_op()
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def get_mapping_key(self) -> Optional[str]:
+        return self.op_execution_context.get_mapping_key()
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_key(self) -> AssetKey:
+        return self.op_execution_context.asset_key
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_assets_def(self) -> bool:
+        return self.op_execution_context.has_assets_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def assets_def(self) -> AssetsDefinition:
+        return self.op_execution_context.assets_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self.op_execution_context.selected_asset_keys
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_asset_checks_def(self) -> bool:
+        return self.op_execution_context.has_asset_checks_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_checks_def(self) -> AssetChecksDefinition:
+        return self.op_execution_context.asset_checks_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return self.op_execution_context.selected_asset_check_keys
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_output_names(self) -> AbstractSet[str]:
+        return self.op_execution_context.selected_output_names
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        return self.op_execution_context.asset_key_for_output(output_name=output_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def output_for_asset_key(self, asset_key: AssetKey) -> str:
+        return self.op_execution_context.output_for_asset_key(asset_key=asset_key)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_key_for_input(self, input_name: str) -> AssetKey:
+        return self.op_execution_context.asset_key_for_input(input_name=input_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
+        return self.op_execution_context.asset_partitions_time_window_for_output(output_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_range_for_output(
+        self, output_name: str = "result"
+    ) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range_for_output(output_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        return self.op_execution_context.asset_partition_key_range_for_input(input_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        return self.op_execution_context.asset_partition_key_for_input(input_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
+        return self.op_execution_context.asset_partitions_def_for_input(input_name=input_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
+        return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
+        return self.op_execution_context.asset_partition_keys_for_input(input_name=input_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        return self.op_execution_context.asset_partitions_time_window_for_input(input_name)
+
+    @public
+    @experimental
+    @_copy_docs_from_op_execution_context
+    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
+        return self.op_execution_context.get_asset_provenance(asset_key=asset_key)
+
+    @_copy_docs_from_op_execution_context
+    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
+        return self.op_execution_context.set_data_version(
+            asset_key=asset_key, data_version=data_version
+        )
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_check_spec(self) -> AssetCheckSpec:
+        return self.op_execution_context.asset_check_spec
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def is_subset(self):
+        return self.op_execution_context.is_subset
+
+    # In this mode no conversion is done on returned values and missing but expected outputs are not
+    # allowed.
+    @property
+    @_copy_docs_from_op_execution_context
+    def requires_typed_event_stream(self) -> bool:
+        return self.op_execution_context.requires_typed_event_stream
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def typed_event_stream_error_message(self) -> Optional[str]:
+        return self.op_execution_context.typed_event_stream_error_message
+
+    @_copy_docs_from_op_execution_context
+    def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
+        self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
+
     @cached_method
     def get_op_execution_context(self) -> "OpExecutionContext":
-        return OpExecutionContext(self._step_execution_context)
+        return self.op_execution_context
 
 
 @contextmanager
@@ -1414,7 +1788,7 @@ def enter_execution_context(
         )
 
     # Structured assuming upcoming changes to make AssetExecutionContext contain an OpExecutionContext
-    asset_ctx = AssetExecutionContext(step_context)
+    asset_ctx = AssetExecutionContext(op_execution_context=OpExecutionContext(step_context))
     asset_token = _current_asset_execution_context.set(asset_ctx)
 
     try:
@@ -1426,13 +1800,13 @@ def enter_execution_context(
             if is_asset_check:
                 yield asset_ctx
             elif is_op_in_graph_asset or not is_sda_step:
-                yield asset_ctx.get_op_execution_context()
+                yield asset_ctx.op_execution_context
             else:
                 yield asset_ctx
         elif context_annotation is AssetExecutionContext:
             yield asset_ctx
         else:
-            yield asset_ctx.get_op_execution_context()
+            yield asset_ctx.op_execution_context
     finally:
         _current_asset_execution_context.reset(asset_token)
 
