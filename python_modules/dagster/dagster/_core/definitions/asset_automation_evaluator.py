@@ -24,6 +24,12 @@ if TYPE_CHECKING:
     from .auto_materialize_rule import AutoMaterializeRule, RuleEvaluationResults
 
 
+class AutomationConditionSnapshot(NamedTuple):
+    class_name: str
+    description: str
+    children: Sequence["AutomationConditionSnapshot"]
+
+
 class ConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
