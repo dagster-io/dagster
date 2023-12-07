@@ -1263,19 +1263,6 @@ def execute_asset_backfill_iteration_inner(
         failed_and_downstream_subset = AssetGraphSubset()
         next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
     else:
-        parent_materialized_asset_partitions = set().union(
-            *(
-                instance_queryer.asset_partitions_with_newly_updated_parents(
-                    latest_storage_id=asset_backfill_data.latest_storage_id,
-                    child_asset_key=asset_key,
-                )
-                for asset_key in asset_backfill_data.target_subset.asset_keys
-            )
-        )
-        initial_candidates.update(parent_materialized_asset_partitions)
-
-        yield None
-
         updated_materialized_subset_data = None
         for (
             updated_materialized_subset_data
@@ -1291,6 +1278,25 @@ def execute_asset_backfill_iteration_inner(
             )
         updated_materialized_subset = updated_materialized_subset_data.materialized_subset
         next_latest_storage_id = updated_materialized_subset_data.latest_storage_id
+
+        # The following block fetches asset partitions whose parents have been materialized since
+        # the last backfill iteration. This block must be executed after the materialized subset
+        # is updated. Otherwise, a race condition occurs where parent_materialized_asset_partitions
+        # is fetched, a materialization occurs, and then materialized_subset is updated. This
+        # results in the partition existing in the materialized subset, but its downstreams
+        # not being requested.
+        parent_materialized_asset_partitions = set().union(
+            *(
+                instance_queryer.asset_partitions_with_newly_updated_parents(
+                    latest_storage_id=asset_backfill_data.latest_storage_id,
+                    child_asset_key=asset_key,
+                )
+                for asset_key in asset_backfill_data.target_subset.asset_keys
+            )
+        )
+        initial_candidates.update(parent_materialized_asset_partitions)
+
+        yield None
 
         failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
             backfill_id, asset_backfill_data, asset_graph, instance_queryer, backfill_start_time
