@@ -159,14 +159,11 @@ def create_pg_connection(
     engine: sqlalchemy.engine.Engine,
 ) -> Iterator[Connection]:
     check.inst_param(engine, "engine", sqlalchemy.engine.Engine)
-    conn = None
-    try:
-        # Retry connection to gracefully handle transient connection issues
-        conn = retry_pg_connection_fn(engine.connect)
-        yield conn
-    finally:
-        if conn:
-            conn.close()
+    # Retry connection to gracefully handle transient connection issues
+    conn_cm = retry_pg_connection_fn(engine.connect)
+    with conn_cm as conn:
+        with conn.begin():
+            yield conn
 
 
 def pg_statement_timeout(millis: int) -> str:
