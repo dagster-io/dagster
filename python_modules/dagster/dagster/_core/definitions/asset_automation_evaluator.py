@@ -98,7 +98,7 @@ class ConditionEvaluation(NamedTuple):
             .condition
         )
         # backcompat way to calculate the set of skipped partitions for legacy policies
-        if len(self.child_evaluations) == 2:
+        if condition.is_legacy and len(self.child_evaluations) == 2:
             # the first child is the materialize condition, the second child is the negation of
             # the skip condition
             _, nor_skip_evaluation = self.child_evaluations
