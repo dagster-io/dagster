@@ -1350,12 +1350,14 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return ctx.op_execution_context
 
 
-def _copy_docs_from_op_execution_context(obj):
-    setattr(obj, "__doc__", getattr(OpExecutionContext, obj.__name__).__doc__)
-    return obj
 ###############################
 ######## AssetExecutionContext
 ###############################
+
+def _copy_docs_from_op_execution_context(obj):
+    setattr(obj, "__doc__", getattr(OpExecutionContext, obj.__name__).__doc__)
+    return obj
+
 
 ALTERNATE_METHODS = {
     "run_id": "run_properties.run_id",
@@ -1492,7 +1494,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def retry_number(self):
         return self.op_execution_context.retry_number
-
 
     ########## pass-through to op context
 
