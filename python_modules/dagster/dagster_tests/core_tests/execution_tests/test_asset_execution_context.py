@@ -4,6 +4,7 @@ import pytest
 from dagster import AssetExecutionContext, OpExecutionContext, asset, materialize
 from dagster._core.execution.context.compute import _get_deprecation_kwargs
 
+
 def test_doc_strings():
     ignores = [
         "_abc_impl",
