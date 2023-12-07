@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -25,6 +26,9 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
+)
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
 )
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -225,6 +229,7 @@ def build_caching_repository_data_from_list(
     asset_graph = AssetGraph.from_assets(
         [*assets_defs, *source_assets], asset_checks=asset_checks_defs
     )
+    _validate_automation_policy_sensors(sensors.values(), asset_graph)
 
     if unresolved_partitioned_asset_schedules:
         for (
@@ -282,8 +287,6 @@ def build_caching_repository_data_from_list(
         used_env_vars = _env_vars_from_resource_defaults(resource_def)
         for env_var in used_env_vars:
             utilized_env_vars[env_var].add(resource_key)
-
-    ensure_automation_policy_sensors_dont_overlap()
 
     return CachingRepositoryData(
         jobs=jobs,
@@ -418,6 +421,26 @@ def _process_and_validate_target(
                 _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)
             )
         jobs[target.name] = target
+
+
+def _validate_automation_policy_sensors(
+    sensors: Iterable[SensorDefinition], asset_graph: AssetGraph
+) -> None:
+    """Raises an error if two or more automation policy sensors target the same asset."""
+    sensor_names_by_asset_key: Dict[AssetKey, str] = {}
+    for sensor in sensors:
+        if isinstance(sensor, AutomationPolicySensorDefinition):
+            asset_keys = sensor.asset_selection.resolve(asset_graph)
+            for asset_key in asset_keys:
+                if asset_key in sensor_names_by_asset_key:
+                    raise DagsterInvalidDefinitionError(
+                        f"Automation policy sensors '{sensor.name}' and "
+                        f"'{sensor_names_by_asset_key[asset_key]}' have overlapping asset "
+                        f"selections: they both target '{asset_key.to_user_string()}'. Each asset "
+                        "must only be targeted by one automation policy sensor."
+                    )
+                else:
+                    sensor_names_by_asset_key[asset_key] = sensor.name
 
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):

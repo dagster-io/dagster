@@ -1430,7 +1430,7 @@ def test_automation_policy_sensors_do_not_conflict():
     def repo():
         return [
             asset1,
-            asset1,
+            asset2,
             AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
             AutomationPolicySensorDefinition("b", asset_selection=[asset2]),
         ]
@@ -1449,7 +1449,7 @@ def test_automation_policy_sensors_incomplete_cover():
     def repo():
         return [
             asset1,
-            asset1,
+            asset2,
             AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
         ]
 
@@ -1465,7 +1465,7 @@ def test_automation_policy_sensors_conflict():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Automation policy sensors 'a' and 'b' have overlapping asset selections: they both "
+        match="Automation policy sensors '[ab]' and '[ab]' have overlapping asset selections: they both "
         "target 'asset1'. Each asset must only be targeted by one automation policy sensor.",
     ):
 
@@ -1473,7 +1473,7 @@ def test_automation_policy_sensors_conflict():
         def repo():
             return [
                 asset1,
-                asset1,
+                asset2,
                 AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
                 AutomationPolicySensorDefinition("b", asset_selection=[asset1, asset2]),
             ]
