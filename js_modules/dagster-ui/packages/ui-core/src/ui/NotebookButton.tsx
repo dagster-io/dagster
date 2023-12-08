@@ -71,7 +71,7 @@ export const NotebookButton = ({
             src={`${rootServerURI}/notebook?path=${encodeURIComponent(
               path,
             )}&repoLocName=${repoLocation}`}
-            sandbox=""
+            sandbox="allow-scripts"
             style={{border: 0, background: 'white'}}
             seamless={true}
             width="100%"
