@@ -22,11 +22,12 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
-if TYPE_CHECKING:
-    from .asset_automation_evaluator import ConditionEvaluation
 from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
 from .partition import PartitionsSubset
+
+if TYPE_CHECKING:
+    from .asset_automation_evaluator import ConditionEvaluation
 
 
 class AssetDaemonAssetCursor(NamedTuple):
