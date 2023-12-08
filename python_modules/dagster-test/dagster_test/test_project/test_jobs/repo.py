@@ -36,6 +36,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_k8s import execute_k8s_job
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -385,6 +386,23 @@ def slow_graph():
     slow_op()
 
 
+@op
+def execute_k8s_op(context):
+    execute_k8s_job(
+        context,
+        image="busybox",
+        command=["/bin/sh", "-c"],
+        args=["sleep 1200; echo HI"],
+        namespace=context.op_config["namespace"],
+        k8s_job_name=context.op_config["k8s_job_name"],
+    )
+
+
+@graph
+def execute_k8s_graph():
+    execute_k8s_op()
+
+
 @resource
 @contextmanager
 def s3_resource_with_context_manager(context):
@@ -559,6 +577,7 @@ def define_demo_execution_repo():
                 "retry_job_k8s": define_job(retry_graph, "k8s"),
                 "slow_job_celery_k8s": define_job(slow_graph, "celery_k8s"),
                 "slow_job_k8s": define_job(slow_graph, "k8s"),
+                "execute_k8s_job": define_job(execute_k8s_graph),
                 "step_retries_job_docker": define_job(step_retries_graph, "docker"),
                 "volume_mount_job_celery_k8s": define_job(volume_mount_graph, "celery_k8s"),
             },
