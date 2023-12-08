@@ -21,6 +21,7 @@ from dagster_managed_elements.utils import diff_dicts
 
 from .example_stacks import example_airbyte_stack
 
+# foobar
 TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
 
 pytest_plugins = ["dagster_test.fixtures"]
