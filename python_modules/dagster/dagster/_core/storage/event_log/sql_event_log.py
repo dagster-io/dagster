@@ -704,6 +704,9 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("dynamic_partitions"):
                 conn.execute(DynamicPartitionsTable.delete())
 
+            if self.has_table("concurrency_limits"):
+                conn.execute(ConcurrencyLimitsTable.delete())
+
             if self.has_table("concurrency_slots"):
                 conn.execute(ConcurrencySlotsTable.delete())
 
@@ -2163,13 +2166,14 @@ class SqlEventLogStorage(EventLogStorage):
             row = conn.execute(db_select([True]).select_from(table).limit(1)).fetchone()
         return bool(row[0]) if row else False
 
-    def initialize_concurrency_limit_to_default(self, concurrency_key: str):
+    def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
         if not self.has_table(ConcurrencyLimitsTable.name):
-            return None
+            return False
+
+        self._reconcile_concurrency_limits_from_slots()
 
         # consider setting this in the instance config
         default_value = 1
-
         with self.index_connection() as conn:
             try:
                 conn.execute(
@@ -2180,6 +2184,7 @@ class SqlEventLogStorage(EventLogStorage):
                 self._allocate_concurrency_slots(conn, concurrency_key, default_value)
             except db_exc.IntegrityError:
                 pass
+        return True
 
     def _upsert_and_lock_limit_row(self, conn, concurrency_key: str, num: int):
         """Helper function that can be overridden by each implementing sql variant which obtains a
