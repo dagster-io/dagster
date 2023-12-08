@@ -436,20 +436,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
-        unsupported_python_versions=lambda tox_factor: (
-            [
-                AvailablePythonVersion.V3_11,
-            ]
-            if tox_factor == "dbt_13X"
-            else []
-        ),
         pytest_tox_factors=[
-            "dbt_13X_legacy",
             "dbt_14X_legacy",
             "dbt_15X_legacy",
             "dbt_16X_legacy",
             "dbt_17X_legacy",
-            "dbt_13X",
             "dbt_14X",
             "dbt_15X",
             "dbt_16X",

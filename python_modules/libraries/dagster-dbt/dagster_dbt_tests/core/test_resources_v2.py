@@ -32,9 +32,6 @@ from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
 
-pytest.importorskip("dbt.version", minversion="1.4")
-
-
 manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
 manifest = json.loads(manifest_path.read_bytes())
 
