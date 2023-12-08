@@ -660,7 +660,8 @@ partition_scenarios = [
         .evaluate_tick()
         .assert_requested_runs(
             run_request(
-                ["C"], partition_key=day_partition_key(time_partitions_start_datetime, delta=1)
+                ["C"],
+                partition_key=day_partition_key(time_partitions_start_datetime, delta=1),
             )
         )
         # new day's partition is filled in, should still be able to materialize the new partition
@@ -669,7 +670,7 @@ partition_scenarios = [
         .with_runs(
             run_request(
                 ["A"], partition_key=day_partition_key(time_partitions_start_datetime, delta=3)
-            )
+            ),
         )
         .evaluate_tick()
         .assert_requested_runs(

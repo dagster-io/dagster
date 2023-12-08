@@ -8,19 +8,16 @@
     maximum lag minutes.
 """
 import datetime
-from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, AbstractSet, Optional, Tuple
 
 import pendulum
 
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._utils.schedules import cron_string_iterator
 
-from .asset_graph import AssetGraph
-
 if TYPE_CHECKING:
-    from dagster._core.definitions.data_time import CachingDataTimeResolver
-
+    from .asset_automation_condition_context import AssetAutomationEvaluationContext
     from .auto_materialize_rule_evaluation import RuleEvaluationResults, TextRuleEvaluationData
 
 
@@ -112,41 +109,38 @@ def get_execution_period_and_evaluation_data_for_policies(
 
 
 def get_expected_data_time_for_asset_key(
-    asset_graph: AssetGraph,
-    asset_key: AssetKey,
-    will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
-    expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    data_time_resolver: "CachingDataTimeResolver",
-    current_time: datetime.datetime,
-    will_materialize: bool,
+    context: "AssetAutomationEvaluationContext", will_materialize: bool
 ) -> Optional[datetime.datetime]:
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
     """
     from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
+    asset_key = context.asset_key
+    asset_graph = context.asset_graph
+    current_time = context.evaluation_time
+
     # don't bother calculating if no downstream assets have freshness policies
     if not asset_graph.get_downstream_freshness_policies(asset_key=asset_key):
         return None
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
-        return data_time_resolver.get_current_data_time(asset_key, current_time)
+        return context.data_time_resolver.get_current_data_time(asset_key, current_time)
     elif asset_graph.has_non_source_parents(asset_key):
         expected_data_time = None
         for parent_key in asset_graph.get_parents(asset_key):
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
-            if (
-                isinstance(asset_graph, ExternalAssetGraph)
-                and AssetKeyPartitionKey(parent_key) in will_materialize_mapping[parent_key]
+            if isinstance(asset_graph, ExternalAssetGraph) and context.will_update_asset_partition(
+                AssetKeyPartitionKey(parent_key)
             ):
                 parent_repo = asset_graph.get_repository_handle(parent_key)
                 if parent_repo != asset_graph.get_repository_handle(asset_key):
-                    return data_time_resolver.get_current_data_time(asset_key, current_time)
+                    return context.data_time_resolver.get_current_data_time(asset_key, current_time)
             # find the minimum non-None data time of your parents
-            parent_expected_data_time = expected_data_time_mapping.get(
+            parent_expected_data_time = context.expected_data_time_mapping.get(
                 parent_key
-            ) or data_time_resolver.get_current_data_time(parent_key, current_time)
+            ) or context.data_time_resolver.get_current_data_time(parent_key, current_time)
             expected_data_time = min(
                 filter(None, [expected_data_time, parent_expected_data_time]),
                 default=None,
@@ -158,34 +152,27 @@ def get_expected_data_time_for_asset_key(
 
 
 def freshness_evaluation_results_for_asset_key(
-    asset_key: AssetKey,
-    data_time_resolver: "CachingDataTimeResolver",
-    asset_graph: AssetGraph,
-    current_time: datetime.datetime,
-    will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
-    expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+    context: "AssetAutomationEvaluationContext",
 ) -> "RuleEvaluationResults":
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
     Attempts to minimize the total number of asset executions.
     """
-    if not asset_graph.get_downstream_freshness_policies(
+    asset_key = context.asset_key
+    current_time = context.evaluation_time
+
+    if not context.asset_graph.get_downstream_freshness_policies(
         asset_key=asset_key
-    ) or asset_graph.is_partitioned(asset_key):
+    ) or context.asset_graph.is_partitioned(asset_key):
         return []
 
     # figure out the current contents of this asset
-    current_data_time = data_time_resolver.get_current_data_time(asset_key, current_time)
+    current_data_time = context.data_time_resolver.get_current_data_time(asset_key, current_time)
 
     # figure out the data time you would expect if you were to execute this asset on this tick
     expected_data_time = get_expected_data_time_for_asset_key(
-        asset_graph=asset_graph,
-        asset_key=asset_key,
-        will_materialize_mapping=will_materialize_mapping,
-        expected_data_time_mapping=expected_data_time_mapping,
-        data_time_resolver=data_time_resolver,
-        current_time=current_time,
+        context=context,
         will_materialize=True,
     )
 
@@ -195,10 +182,14 @@ def freshness_evaluation_results_for_asset_key(
 
     # calculate the data times you would expect after all currently-executing runs
     # were to successfully complete
-    in_progress_data_time = data_time_resolver.get_in_progress_data_time(asset_key, current_time)
+    in_progress_data_time = context.data_time_resolver.get_in_progress_data_time(
+        asset_key, current_time
+    )
 
     # calculate the data times you would have expected if the most recent run succeeded
-    failed_data_time = data_time_resolver.get_ignored_failure_data_time(asset_key, current_time)
+    failed_data_time = context.data_time_resolver.get_ignored_failure_data_time(
+        asset_key, current_time
+    )
 
     effective_data_time = max(
         filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
@@ -211,8 +202,8 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=asset_graph.freshness_policies_by_key.get(asset_key),
-        policies=asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
+        local_policy=context.asset_graph.freshness_policies_by_key.get(asset_key),
+        policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,
     )

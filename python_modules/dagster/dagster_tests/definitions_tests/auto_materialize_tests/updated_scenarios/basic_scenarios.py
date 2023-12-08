@@ -53,7 +53,8 @@ basic_scenarios = [
                     ParentUpdatedRuleEvaluationData,
                     updated_asset_keys=set(),
                     will_update_asset_keys={"A"},
-                )
+                ),
+                AssetRuleEvaluationSpec(rule=AutoMaterializeRule.materialize_on_missing()),
             ],
         ),
     ),
