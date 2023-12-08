@@ -1520,7 +1520,7 @@ def test_bound_state_with_error_assets():
 
     @asset
     def no_error(context):
-        assert context.alias == "no_error"
+        assert context.asset_key.to_user_string() == "no_error"
 
     no_error(ctx)
 
