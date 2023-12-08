@@ -1,9 +1,8 @@
 import datetime
 import functools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional
+from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Sequence
 
-from dagster._core.definitions.auto_materialize_rule_evaluation import RuleEvaluationResults
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -16,6 +15,8 @@ from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
+
     from .asset_automation_evaluator import AutomationCondition, ConditionEvaluation
     from .asset_daemon_context import AssetDaemonContext
 
@@ -101,7 +102,7 @@ class AssetAutomationEvaluationContext:
         return (
             self.materialized_since_previous_tick_subset
             | self.latest_evaluation.true_subset
-            | (self.latest_evaluation.discard_subset or self.empty_subset())
+            | (self.latest_evaluation.discard_subset(self.root_condition) or self.empty_subset())
         )
 
     @functools.cached_property
@@ -200,7 +201,7 @@ class AssetAutomationEvaluationContext:
             previous_handled_subset
             | self.materialized_requested_or_discarded_since_previous_tick_subset
             | evaluation.true_subset
-            | (evaluation.discard_subset or self.empty_subset())
+            | (evaluation.discard_subset(self.root_condition) or self.empty_subset())
         )
         return AssetDaemonAssetCursor(
             asset_key=self.asset_key,
@@ -299,9 +300,9 @@ class AssetAutomationConditionEvaluationContext:
         return self.asset_context.materialized_requested_or_discarded_since_previous_tick_subset
 
     @property
-    def previous_tick_results(self) -> RuleEvaluationResults:
+    def previous_tick_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetdata"]:
         """Returns the RuleEvaluationResults calculated on the previous tick for this condition."""
-        return self.latest_evaluation.results if self.latest_evaluation else []
+        return self.latest_evaluation.subsets_with_metadata if self.latest_evaluation else []
 
     def empty_subset(self) -> AssetSubset:
         return self.asset_context.empty_subset()
