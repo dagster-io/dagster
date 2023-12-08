@@ -3,6 +3,7 @@ import datetime
 import json
 import zlib
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Mapping,
     NamedTuple,
@@ -14,16 +15,18 @@ import dagster._check as check
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
 )
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
+if TYPE_CHECKING:
+    from .asset_automation_evaluator import ConditionEvaluation
 from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
-from .partition import PartitionsDefinition, PartitionsSubset
+from .partition import PartitionsSubset
 
 
 class AssetDaemonAssetCursor(NamedTuple):
@@ -34,32 +37,8 @@ class AssetDaemonAssetCursor(NamedTuple):
     asset_key: AssetKey
     latest_storage_id: Optional[int]
     latest_evaluation_timestamp: Optional[float]
-    latest_evaluation: Optional[AutoMaterializeAssetEvaluation]
+    latest_evaluation: Optional["ConditionEvaluation"]
     materialized_requested_or_discarded_subset: AssetSubset
-
-    def with_updates(
-        self,
-        asset_graph: AssetGraph,
-        newly_materialized_subset: AssetSubset,
-        requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
-        discarded_asset_partitions: AbstractSet[AssetKeyPartitionKey],
-    ) -> "AssetDaemonAssetCursor":
-        if self.asset_key not in asset_graph.root_asset_keys:
-            return self
-        newly_materialized_requested_or_discarded_asset_partitions = (
-            newly_materialized_subset.asset_partitions
-            | requested_asset_partitions
-            | discarded_asset_partitions
-        )
-        newly_materialized_requested_or_discarded_subset = AssetSubset.from_asset_partitions_set(
-            self.asset_key,
-            asset_graph.get_partitions_def(self.asset_key),
-            newly_materialized_requested_or_discarded_asset_partitions,
-        )
-        return self._replace(
-            materialized_requested_or_discarded_subset=self.materialized_requested_or_discarded_subset
-            | newly_materialized_requested_or_discarded_subset
-        )
 
 
 class AssetDaemonCursor(NamedTuple):
@@ -93,8 +72,11 @@ class AssetDaemonCursor(NamedTuple):
         return asset_key in self.handled_root_asset_keys
 
     def asset_cursor_for_key(
-        self, asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
+        self, asset_key: AssetKey, asset_graph: AssetGraph
     ) -> AssetDaemonAssetCursor:
+        from .asset_automation_evaluator import ConditionEvaluation
+
+        partitions_def = asset_graph.get_partitions_def(asset_key)
         handled_partitions_subset = self.handled_root_partitions_by_asset_key.get(asset_key)
         if handled_partitions_subset is not None:
             handled_subset = AssetSubset(asset_key=asset_key, value=handled_partitions_subset)
@@ -102,11 +84,20 @@ class AssetDaemonCursor(NamedTuple):
             handled_subset = AssetSubset(asset_key=asset_key, value=True)
         else:
             handled_subset = AssetSubset.empty(asset_key, partitions_def)
+        condition = (
+            check.not_none(asset_graph.get_auto_materialize_policy(asset_key))
+            .to_auto_materialize_policy_evaluator()
+            .condition
+        )
         return AssetDaemonAssetCursor(
             asset_key=asset_key,
             latest_storage_id=self.latest_storage_id,
             latest_evaluation_timestamp=self.latest_evaluation_timestamp,
-            latest_evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
+            latest_evaluation=ConditionEvaluation.from_evaluation(
+                condition=condition,
+                evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
+                asset_graph=asset_graph,
+            ),
             materialized_requested_or_discarded_subset=handled_subset,
         )
 

@@ -1,6 +1,4 @@
-import operator
 from enum import Enum
-from functools import reduce
 from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -257,27 +255,25 @@ class AutoMaterializePolicy(
 
     def to_auto_materialize_policy_evaluator(self) -> "AssetAutomationEvaluator":
         """Converts a set of materialize / skip rules into a single binary expression."""
-        from .asset_automation_evaluator import AssetAutomationEvaluator, RuleCondition
+        from .asset_automation_evaluator import (
+            AndAutomationCondition,
+            AssetAutomationEvaluator,
+            NotAutomationCondition,
+            OrAutomationCondition,
+            RuleCondition,
+        )
 
-        materialize_condition = (
-            reduce(
-                operator.or_,
-                [RuleCondition(rule) for rule in self.materialize_rules],
-            )
-            if self.materialize_rules
-            else None
+        materialize_condition = OrAutomationCondition(
+            children=[RuleCondition(rule) for rule in self.materialize_rules]
         )
-        skip_condition = (
-            ~reduce(
-                operator.or_,
-                [RuleCondition(rule) for rule in self.skip_rules],
-            )
-            if self.skip_rules
-            else None
+        skip_condition = OrAutomationCondition(
+            children=[RuleCondition(rule) for rule in self.skip_rules]
         )
+
         # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn)
-        condition = reduce(operator.and_, filter(None, [materialize_condition, skip_condition]))
-        check.invariant(condition is not None, "must have at least one rule")
+        condition = AndAutomationCondition(
+            children=[materialize_condition, NotAutomationCondition([skip_condition])]
+        )
         return AssetAutomationEvaluator(
             condition=condition,
             max_materializations_per_minute=self.max_materializations_per_minute,
