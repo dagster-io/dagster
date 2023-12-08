@@ -27,8 +27,12 @@ export const CodeLocationSource = ({metadata}: {metadata: Metadata[]}) => {
   const isGitlab = url.hostname.includes('gitlab.com');
 
   if (!isGithub && !isGitlab) {
-    // Unknown URL type. Just render the text.
-    return <div>{metadataWithURL.value}</div>;
+    // Unknown URL type. Use a basic link.
+    return (
+      <a href={url.href} target="_blank" rel="noreferrer">
+        {metadataWithURL.value}
+      </a>
+    );
   }
 
   const metadataWithCommit = metadata.find(({key}) => key === 'commit_hash');

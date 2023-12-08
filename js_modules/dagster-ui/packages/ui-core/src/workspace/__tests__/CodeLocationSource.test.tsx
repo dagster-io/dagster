@@ -45,16 +45,19 @@ describe('CodeLocationSource', () => {
     expect(screen.getByText('nowhere')).toBeVisible();
   });
 
-  it('renders plaintext if the value is a URL but not GH/GL', () => {
+  it('renders anchor link if the value is a URL but not GH/GL', () => {
     const url = 'https://google.com';
+    const cleanedUrl = 'https://google.com/';
     const metadata = [{key: 'url', value: url}];
 
     render(<CodeLocationSource metadata={metadata} />);
 
     // No links.
-    expect(screen.queryByRole('link')).toBeNull();
+    const link = screen.getByRole('link', {name: /google/});
+    expect(link).toBeVisible();
+    expect(link.getAttribute('href')).toBe(cleanedUrl);
 
     // Jest text.
-    expect(screen.getByText('https://google.com')).toBeVisible();
+    expect(screen.getByText(url)).toBeVisible();
   });
 });
