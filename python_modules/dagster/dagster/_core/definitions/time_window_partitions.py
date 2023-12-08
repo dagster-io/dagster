@@ -2179,6 +2179,8 @@ class TimeWindowPartitionsSubset(
         # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
         # this partitions definition into a raw TimeWindowPartitionsDefinition to make it
         # serializable. to do this, we just convert it to its external representation and back.
+        # note that we rarely serialize subsets on the user code side of a serialization boundary,
+        # and so this conversion is rarely necessary.
         partitions_def = self.partitions_def
         if type(self.partitions_def) != TimeWindowPartitionsSubset:
             partitions_def = external_time_window_partitions_definition_from_def(
