@@ -1390,12 +1390,12 @@ def test_async_assets_with_shared_context():
 
 def assert_context_unbound(context: RunlessOpExecutionContext):
     # to assert that the context is correctly unbound after op invocation
-    assert context.bound_properties is None
+    assert not context.is_bound
 
 
 def assert_context_bound(context: RunlessOpExecutionContext):
     # to assert that the context is correctly bound during op invocation
-    assert context.bound_properties is not None
+    assert context.is_bound
 
 
 def assert_execution_properties_cleared(context: RunlessOpExecutionContext):
