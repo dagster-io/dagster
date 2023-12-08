@@ -799,6 +799,10 @@ class RunlessAssetExecutionContext(AssetExecutionContext, BaseRunlessContext):
         return self.op_execution_context.bound_properties
 
     @property
+    def is_bound(self) -> bool:
+        return self.op_execution_context.is_bound
+
+    @property
     def execution_properties(self) -> RunlessExecutionProperties:
         return self.op_execution_context.execution_properties
 
