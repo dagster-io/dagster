@@ -12,14 +12,14 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, Tuple
 
 import pendulum
 
-from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
+from dagster._core.definitions.asset_condition import AssetSubsetWithMetdata
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .asset_automation_condition_context import AssetAutomationEvaluationContext
+    from .asset_condition_evaluation_context import RootAssetConditionEvaluationContext
     from .auto_materialize_rule_evaluation import RuleEvaluationResults, TextRuleEvaluationData
 
 
@@ -111,7 +111,7 @@ def get_execution_period_and_evaluation_data_for_policies(
 
 
 def get_expected_data_time_for_asset_key(
-    context: "AssetAutomationEvaluationContext", will_materialize: bool
+    context: "RootAssetConditionEvaluationContext", will_materialize: bool
 ) -> Optional[datetime.datetime]:
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
@@ -154,7 +154,7 @@ def get_expected_data_time_for_asset_key(
 
 
 def freshness_evaluation_results_for_asset_key(
-    context: "AssetAutomationEvaluationContext",
+    context: "RootAssetConditionEvaluationContext",
 ) -> "RuleEvaluationResults":
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
