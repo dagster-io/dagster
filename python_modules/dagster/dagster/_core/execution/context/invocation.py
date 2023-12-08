@@ -409,6 +409,10 @@ class RunlessOpExecutionContext(OpExecutionContext):
         self._bound_properties = None
 
     @property
+    def is_bound(self) -> bool:
+        return self._bound_properties is not None
+
+    @property
     def execution_properties(self) -> RunlessExecutionProperties:
         return self._execution_properties
 
