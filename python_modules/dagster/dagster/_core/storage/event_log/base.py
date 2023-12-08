@@ -402,8 +402,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return False
 
     @abstractmethod
-    def initialize_concurrency_limit(self, concurrency_key: str, num: int) -> None:
-        """Allocate concurrency slots for the given concurrency key."""
+    def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> None:
+        """Initialize a concurrency limit to the instance default value.  Is a no-op for concurrency
+        keys that are already configured with a limit.
+        """
         raise NotImplementedError()
 
     @abstractmethod

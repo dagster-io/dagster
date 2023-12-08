@@ -4354,6 +4354,24 @@ class TestEventLogStorage:
         assert info.pending_step_count == 1
         assert info.assigned_step_count == 0
 
+    def test_default_concurrency(self, storage):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        # initially there are no concurrency limited keys
+        assert storage.get_concurrency_keys() == set()
+
+        # initialize with default concurrency
+        assert storage.initialize_concurrency_limit_to_default("foo")
+
+        # initially there are no concurrency limited keys
+        assert storage.get_concurrency_keys() == set(["foo"])
+        assert storage.get_concurrency_info("foo").slot_count == 1
+
     def test_asset_checks(self, storage):
         if self.can_wipe():
             storage.wipe()

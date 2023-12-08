@@ -2163,18 +2163,21 @@ class SqlEventLogStorage(EventLogStorage):
             row = conn.execute(db_select([True]).select_from(table).limit(1)).fetchone()
         return bool(row[0]) if row else False
 
-    def initialize_concurrency_limit(self, concurrency_key: str, num: int):
+    def initialize_concurrency_limit_to_default(self, concurrency_key: str):
         if not self.has_table(ConcurrencyLimitsTable.name):
             return None
+
+        # consider setting this in the instance config
+        default_value = 1
 
         with self.index_connection() as conn:
             try:
                 conn.execute(
                     ConcurrencyLimitsTable.insert().values(
-                        concurrency_key=concurrency_key, limit=num
+                        concurrency_key=concurrency_key, limit=default_value
                     )
                 )
-                self._allocate_concurrency_slots(conn, concurrency_key, num)
+                self._allocate_concurrency_slots(conn, concurrency_key, default_value)
             except db_exc.IntegrityError:
                 pass
 
