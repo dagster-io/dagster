@@ -103,6 +103,21 @@ DynamicPartitionsTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
+ConcurrencyLimitsTable = db.Table(
+    "concurrency_limits",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("concurrency_key", MySQLCompatabilityTypes.UniqueText, nullable=False, unique=True),
+    db.Column("limit", db.Integer, nullable=False),
+    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
 ConcurrencySlotsTable = db.Table(
     "concurrency_slots",
     SqlEventLogStorageMetadata,

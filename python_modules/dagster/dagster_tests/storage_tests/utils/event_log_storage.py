@@ -4191,6 +4191,38 @@ class TestEventLogStorage:
 
             assert all(f.done() for f in futures)
 
+    def test_zero_concurrency(self, storage):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        # initially there are no concurrency limited keys
+        assert storage.get_concurrency_keys() == set()
+
+        # set concurrency slot to 0
+        storage.set_concurrency_slots("foo", 0)
+
+        assert storage.get_concurrency_keys() == set(["foo"])
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 0
+        assert info.active_slot_count == 0
+        assert info.pending_step_count == 0
+        assert info.assigned_step_count == 0
+
+        # try claiming a slot
+        claim_status = storage.claim_concurrency_slot("foo", run_id, "a")
+        assert claim_status.slot_status == ConcurrencySlotStatus.BLOCKED
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 0
+        assert info.active_slot_count == 0
+        assert info.pending_step_count == 1
+        assert info.assigned_step_count == 0
+
     def test_asset_checks(self, storage):
         if self.can_wipe():
             storage.wipe()
