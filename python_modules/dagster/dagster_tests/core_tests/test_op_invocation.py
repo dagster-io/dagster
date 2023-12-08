@@ -1508,7 +1508,7 @@ def test_context_bound_state_async_generator():
 def test_bound_state_with_error_assets():
     @asset
     def throws_error(context):
-        assert context.alias == "throws_error"
+        assert context.asset_key.to_user_string() == "throws_error"
         raise Failure("something bad happened!")
 
     ctx = build_asset_context()
