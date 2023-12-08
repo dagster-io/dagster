@@ -101,7 +101,7 @@ def _k8s_snake_case_value(val: Any, attr_type: str, attr_name: str) -> Any:
 
 
 def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
-    snake_case_to_camel_case = model_class.attribute_map  # type: ignore
+    snake_case_to_camel_case = model_class.attribute_map
     camel_case_to_snake_case = dict((v, k) for k, v in snake_case_to_camel_case.items())
 
     snake_case_dict = {}
@@ -123,7 +123,7 @@ def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -
 
     final_dict = {}
     for key, val in snake_case_dict.items():
-        attr_type = model_class.openapi_types[key]  # type: ignore
+        attr_type = model_class.openapi_types[key]
         final_dict[key] = _k8s_snake_case_value(val, attr_type, key)
 
     return final_dict
