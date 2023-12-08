@@ -10,7 +10,9 @@ export function getAssetCheckHandleInputs(
     a.assetChecksOrError.__typename === 'AssetChecks'
       ? a.assetChecksOrError.checks
           // For user code prior to 1.5.10 jobNames isn't populated, so don't filter on it
-          .filter((check) => !jobName || !check.jobNames || check.jobNames.includes(jobName))
+          .filter(
+            (check) => !jobName || check.jobNames.length === 0 || check.jobNames.includes(jobName),
+          )
           .map((check) => ({
             name: check.name,
             assetKey: {path: a.assetKey.path},
