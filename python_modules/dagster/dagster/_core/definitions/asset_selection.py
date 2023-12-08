@@ -144,7 +144,7 @@ class AssetSelection(ABC):
               AssetSelection.key_prefixes(["a", "b"], ["a", "c"])
         """
         _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
-        return KeyPrefixesAssetSelection(*_asset_key_prefixes, include_sources=include_sources)
+        return KeyPrefixesAssetSelection(_asset_key_prefixes, include_sources=include_sources)
 
     @public
     @staticmethod
@@ -558,19 +558,20 @@ class KeysAssetSelection(
 
 
 @whitelist_for_serdes
-class KeyPrefixesAssetSelection(AssetSelection):
-    def __init__(self, *key_prefixes: Sequence[str], include_sources: bool):
-        self._key_prefixes = key_prefixes
-        self._include_sources = include_sources
-
+class KeyPrefixesAssetSelection(
+    AssetSelection,
+    NamedTuple(
+        "_KeysAssetSelection", [("key_prefixes", Sequence[AssetKey]), ("include_sources", bool)]
+    ),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
-            if self._include_sources
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
         return {
-            key for key in base_set if any(key.has_prefix(prefix) for prefix in self._key_prefixes)
+            key for key in base_set if any(key.has_prefix(prefix) for prefix in self.key_prefixes)
         }
 
 

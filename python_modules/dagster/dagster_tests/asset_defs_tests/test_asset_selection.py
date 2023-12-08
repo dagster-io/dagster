@@ -20,6 +20,7 @@ from dagster import (
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._serdes.serdes import _WHITELIST_MAP
 from typing_extensions import TypeAlias
 
 earth = SourceAsset(["celestial", "earth"], group_name="planets")
@@ -387,3 +388,6 @@ def test_all_asset_selection_subclasses_serializable():
             asset_selection_subclasses.append(value)
 
     assert len(asset_selection_subclasses) > 5
+
+    for asset_selection_subclass in asset_selection_subclasses:
+        _WHITELIST_MAP.has_tuple_serializer(asset_selection_subclass.__class__.__name__)
