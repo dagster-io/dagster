@@ -2156,7 +2156,7 @@ class TimeWindowPartitionsSubset(
 
     def with_partitions_def(
         self, partitions_def: TimeWindowPartitionsDefinition
-    ) -> "BaseTimeWindowPartitionsSubset":
+    ) -> "TimeWindowPartitionsSubset":
         check.invariant(
             partitions_def.cron_schedule == self.partitions_def.cron_schedule,
             "num_partitions would become inaccurate if the partitions_defs had different cron"
@@ -2170,6 +2170,24 @@ class TimeWindowPartitionsSubset(
 
     def __repr__(self) -> str:
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
+
+    def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
+        from dagster._core.host_representation.external_data import (
+            external_time_window_partitions_definition_from_def,
+        )
+
+        # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
+        # this partitions definition into a raw TimeWindowPartitionsDefinition to make it
+        # serializable. to do this, we just convert it to its external representation and back.
+        # note that we rarely serialize subsets on the user code side of a serialization boundary,
+        # and so this conversion is rarely necessary.
+        partitions_def = self.partitions_def
+        if type(self.partitions_def) != TimeWindowPartitionsSubset:
+            partitions_def = external_time_window_partitions_definition_from_def(
+                partitions_def
+            ).get_partitions_definition()
+            return self.with_partitions_def(partitions_def)
+        return self
 
 
 class PartitionRangeStatus(Enum):

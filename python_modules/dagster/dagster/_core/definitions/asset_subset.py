@@ -17,11 +17,22 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
+from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
 
 
+class AssetSubsetSerializer(NamedTupleSerializer):
+    """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
+
+    def before_pack(self, value: "AssetSubset") -> "AssetSubset":
+        if value.is_partitioned:
+            return value._replace(value=value.subset_value.to_serializable_subset())
+        return value
+
+
+@whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class AssetSubset(NamedTuple):
     """Represents a set of AssetKeyPartitionKeys for a given AssetKey. For partitioned assets, this
     class uses a PartitionsSubset to represent the set of partitions, enabling lazy evaluation of the
