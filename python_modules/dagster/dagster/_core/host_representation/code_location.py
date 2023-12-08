@@ -211,9 +211,10 @@ class CodeLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_completion_time: Optional[float],
+        last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         pass
 
@@ -495,17 +496,19 @@ class InProcessCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_completion_time: Optional[float],
+        last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         result = get_external_sensor_execution(
             self._get_repo_def(repository_handle.repository_name),
             instance.get_ref(),
             name,
-            last_completion_time,
+            last_tick_completion_time,
             last_run_key,
             cursor,
+            last_sensor_start_time,
         )
         if isinstance(result, ExternalSensorExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
@@ -851,9 +854,10 @@ class GrpcServerCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_completion_time: Optional[float],
+        last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 
@@ -862,9 +866,10 @@ class GrpcServerCodeLocation(CodeLocation):
             instance,
             repository_handle,
             name,
-            last_completion_time,
+            last_tick_completion_time,
             last_run_key,
             cursor,
+            last_sensor_start_time,
         )
 
     def get_external_partition_set_execution_param_data(

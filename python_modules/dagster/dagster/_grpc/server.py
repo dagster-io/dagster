@@ -765,9 +765,10 @@ class DagsterApiServer(DagsterApiServicer):
                     self._get_repo_for_origin(args.repository_origin),
                     args.instance_ref,
                     args.sensor_name,
-                    args.last_completion_time,
+                    args.last_tick_completion_time,
                     args.last_run_key,
                     args.cursor,
+                    args.last_sensor_start_time,
                 )
             )
         except Exception:

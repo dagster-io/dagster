@@ -18,7 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated_param, experimental, public
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -33,6 +33,7 @@ from dagster._core.errors import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._utils import normalize_to_repository
+from dagster._utils.warnings import normalize_renamed_param
 
 from .events import AssetKey
 from .run_request import RunRequest, SensorResult, SkipReason
@@ -161,6 +162,11 @@ class MultiAssetSensorContextCursor:
         return json.dumps(self._cursor_component_by_asset_key)
 
 
+@deprecated_param(
+    param="last_completion_time",
+    breaking_version="2.0",
+    additional_warn_text="Use `last_tick_completion_time` instead.",
+)
 @experimental
 class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a
@@ -196,7 +202,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key
             strings to a stringified tuple of (latest_event_partition, latest_event_storage_id,
             trailing_unconsumed_partitioned_event_ids).
-        last_completion_time (float): DEPRECATED The last time that the sensor was consumed (UTC).
+        last_tick_completion_time (Optional[float]): The last time that the sensor was evaluated for
+            a tick (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
@@ -205,6 +212,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
+        last_sensor_start_time (Optional[float]): The last time the sensor was started.
 
     Example:
         .. code-block:: python
@@ -219,15 +227,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
-        last_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
-        repository_name: Optional[str],
-        repository_def: Optional["RepositoryDefinition"],
         monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+        last_tick_completion_time: Optional[float] = None,
+        last_run_key: Optional[str] = None,
+        cursor: Optional[str] = None,
+        repository_name: Optional[str] = None,
+        repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         definitions: Optional["Definitions"] = None,
+        last_sensor_start_time: Optional[float] = None,
+        # deprecated param
+        last_completion_time: Optional[float] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -270,15 +281,23 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
         self._fetched_initial_unconsumed_events = False
 
+        normalized_last_tick_completion_time = normalize_renamed_param(
+            last_tick_completion_time,
+            "last_tick_completion_time",
+            last_completion_time,
+            "last_completion_time",
+        )
+
         super(MultiAssetSensorEvaluationContext, self).__init__(
             instance_ref=instance_ref,
-            last_completion_time=last_completion_time,
+            last_tick_completion_time=normalized_last_tick_completion_time,
             last_run_key=last_run_key,
             cursor=cursor,
             repository_name=repository_name,
             instance=instance,
             repository_def=repository_def,
             resources=resource_defs,
+            last_sensor_start_time=last_sensor_start_time,
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
@@ -953,6 +972,7 @@ def build_multi_asset_sensor_context(
     cursor_from_latest_materializations: bool = False,
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
+    last_sensor_start_time: Optional[float] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -1001,6 +1021,7 @@ def build_multi_asset_sensor_context(
     )
 
     check.bool_param(cursor_from_latest_materializations, "cursor_from_latest_materializations")
+    check.opt_float_param(last_sensor_start_time, "last_sensor_start_time")
 
     if cursor_from_latest_materializations:
         if cursor:
@@ -1038,6 +1059,7 @@ def build_multi_asset_sensor_context(
         monitored_assets=monitored_assets,
         repository_def=repository_def,
         resource_defs=wrap_resources_for_execution(resources),
+        last_sensor_start_time=last_sensor_start_time,
     )
 
 
@@ -1129,7 +1151,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
                 with MultiAssetSensorEvaluationContext(
                     instance_ref=context.instance_ref,
-                    last_completion_time=context.last_completion_time,
+                    last_tick_completion_time=context.last_tick_completion_time,
                     last_run_key=context.last_run_key,
                     cursor=context.cursor,
                     repository_name=context.repository_def.name,

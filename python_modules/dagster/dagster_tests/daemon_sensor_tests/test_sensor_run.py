@@ -169,7 +169,7 @@ def failure_job_2():
 
 @sensor(job_name="the_job")
 def simple_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -221,6 +221,14 @@ def run_cursor_sensor(context):
 
     context.update_cursor(str(cursor))
     return RunRequest(run_key=None, run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def start_skip_sensor(context):
+    # skips the first tick after a start
+    if context.is_first_tick_since_sensor_start:
+        return SkipReason()
+    return RunRequest()
 
 
 @asset
@@ -691,6 +699,7 @@ def the_repo():
         custom_interval_sensor,
         skip_cursor_sensor,
         run_cursor_sensor,
+        start_skip_sensor,
         asset_foo_sensor,
         asset_job_sensor,
         my_run_failure_sensor,
@@ -748,7 +757,7 @@ def the_other_repo():
 
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.RUNNING)
 def always_running_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -756,7 +765,7 @@ def always_running_sensor(context):
 
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.STOPPED)
 def never_running_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -3221,3 +3230,61 @@ def test_stale_request_context(instance, workspace_context, external_repo):
             TickStatus.SUCCESS,
             [run.run_id],
         )
+
+
+def test_start_tick_sensor(executor, instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        start_skip_sensor = external_repo.get_external_sensor("start_skip_sensor")
+        instance.start_sensor(start_skip_sensor)
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        instance.stop_sensor(
+            start_skip_sensor.get_external_origin_id(),
+            start_skip_sensor.selector_id,
+            start_skip_sensor,
+        )
+        instance.start_sensor(start_skip_sensor)
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+
+
+def _get_last_tick(instance, sensor):
+    ticks = instance.get_ticks(sensor.get_external_origin_id(), sensor.selector_id)
+    return ticks[0]

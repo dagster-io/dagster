@@ -88,9 +88,10 @@ def test_external_sensor_deserialize_error(instance):
                         repository_origin=origin,
                         instance_ref=instance.get_ref(),
                         sensor_name="foo",
-                        last_completion_time=None,
+                        last_tick_completion_time=None,
                         last_run_key=None,
                         cursor=None,
+                        last_sensor_start_time=None,
                     )
                 )
             )
