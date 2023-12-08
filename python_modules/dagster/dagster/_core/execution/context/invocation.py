@@ -159,6 +159,12 @@ class DirectExecutionProperties:
         self.typed_event_stream_error_message: Optional[str] = None
 
 
+class RunlessRunProperties(RunProperties):
+    @property
+    def dagster_run(self):
+        raise DagsterInvalidPropertyError(_property_msg("dagster_run", "property"))
+
+
 class DirectOpExecutionContext(OpExecutionContext, BaseRunlessContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
@@ -814,7 +820,7 @@ class RunlessAssetExecutionContext(AssetExecutionContext, BaseRunlessContext):
         self._check_bound(fn_name="for_type", fn_type="method")
         resources = cast(NamedTuple, self.resources)
         return TypeCheckContext(
-            self.run_id,
+            self.run_properties.run_id,
             self.log,
             ScopedResourcesBuilder(resources._asdict()),
             dagster_type,
@@ -827,11 +833,12 @@ class RunlessAssetExecutionContext(AssetExecutionContext, BaseRunlessContext):
     def run_properties(self) -> RunProperties:
         self._check_bound(fn_name="run_properties", fn_type="property")
         if self._run_props is None:
-            self._run_props = RunProperties(
+            self._run_props = RunlessRunProperties(
                 run_id=self.op_execution_context.run_id,
                 run_config=self.op_execution_context.run_config,
-                dagster_run=self.op_execution_context.run,
-                retry_number=self.op_execution_context.retry_number,
+                # pass None for dagster_run, since RunlessRunProperties raises an exception for this attr
+                dagster_run=None,  # type: ignore
+                retry_number=0,
             )
         return self._run_props
 
