@@ -1,18 +1,24 @@
-import {formatElapsedTime, formatElapsedTimeWithMsec} from '../Util';
+import {formatElapsedTimeWithoutMsec, formatElapsedTimeWithMsec} from '../Util';
 
 describe('Elapsed time formatters', () => {
-  describe('formatElapsedTime', () => {
+  describe('formatElapsedTimeWithoutMsec', () => {
+    it('formats times between -1 and 1 seconds', () => {
+      expect(formatElapsedTimeWithoutMsec(0)).toBe('0:00:00');
+      expect(formatElapsedTimeWithoutMsec(1)).toBe('0:00:01');
+      expect(formatElapsedTimeWithoutMsec(500)).toBe('0:00:01');
+      expect(formatElapsedTimeWithoutMsec(-500)).toBe('-0:00:01');
+    });
+
     it('formats times under 10s', () => {
-      expect(formatElapsedTime(500)).toBe('0.500s');
-      expect(formatElapsedTime(5000)).toBe('5.000s');
-      expect(formatElapsedTime(-5250)).toBe('-5.250s');
+      expect(formatElapsedTimeWithoutMsec(5000)).toBe('0:00:05');
+      expect(formatElapsedTimeWithoutMsec(-5250)).toBe('-0:00:05');
     });
 
     it('formats times over 10s', () => {
-      expect(formatElapsedTime(50000)).toBe('0:00:50');
-      expect(formatElapsedTime(500000)).toBe('0:08:20');
-      expect(formatElapsedTime(-500000)).toBe('-0:08:20');
-      expect(formatElapsedTime(363599999)).toBe('100:59:59');
+      expect(formatElapsedTimeWithoutMsec(50000)).toBe('0:00:50');
+      expect(formatElapsedTimeWithoutMsec(500000)).toBe('0:08:20');
+      expect(formatElapsedTimeWithoutMsec(-500000)).toBe('-0:08:20');
+      expect(formatElapsedTimeWithoutMsec(363599999)).toBe('100:59:59');
     });
   });
 
@@ -39,9 +45,11 @@ describe('Elapsed time formatters', () => {
       jest.clearAllMocks();
     });
 
-    it('handles decimal correctly in `formatElapsedTime`', () => {
-      expect(formatElapsedTime(5000)).toBe('5,000s');
-      expect(formatElapsedTime(-5250)).toBe('-5,250s');
+    it('is unchanged in `formatElapsedTimeWithoutMsec`', () => {
+      expect(formatElapsedTimeWithoutMsec(0)).toBe('0:00:00');
+      expect(formatElapsedTimeWithoutMsec(1)).toBe('0:00:01');
+      expect(formatElapsedTimeWithoutMsec(500)).toBe('0:00:01');
+      expect(formatElapsedTimeWithoutMsec(-500)).toBe('-0:00:01');
     });
 
     it('handles decimal correctly in `formatElapsedTimeWithMsec`', () => {
