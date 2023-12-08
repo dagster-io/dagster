@@ -1390,22 +1390,22 @@ def test_async_assets_with_shared_context():
 
 def assert_context_unbound(context: RunlessOpExecutionContext):
     # to assert that the context is correctly unbound after op invocation
-    assert context._bound_properties is None  # noqa: SLF001
+    assert context.bound_properties is None
 
 
 def assert_context_bound(context: RunlessOpExecutionContext):
     # to assert that the context is correctly bound during op invocation
-    assert context._bound_properties is not None  # noqa: SLF001
+    assert context.bound_properties is not None
 
 
 def assert_execution_properties_cleared(context: RunlessOpExecutionContext):
     # to assert that the invocation properties are reset at the beginning of op invocation
-    assert len(context._execution_properties.output_metadata.keys()) == 0  # noqa: SLF001
+    assert len(context.execution_properties.output_metadata.keys()) == 0
 
 
 def assert_execution_properties_exist(context: RunlessOpExecutionContext):
     # to assert that the invocation properties remain accessible after op invocation
-    assert len(context._execution_properties.output_metadata.keys()) > 0  # noqa: SLF001
+    assert len(context.execution_properties.output_metadata.keys()) > 0
 
 
 def test_context_bound_state_non_generator():
