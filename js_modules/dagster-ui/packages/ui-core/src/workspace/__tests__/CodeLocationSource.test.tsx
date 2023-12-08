@@ -47,7 +47,7 @@ describe('CodeLocationSource', () => {
 
   it('renders anchor link if the value is a URL but not GH/GL', () => {
     const url = 'https://google.com';
-    const cleaned_url = 'https://google.com/';
+    const cleanedUrl = 'https://google.com/';
     const metadata = [{key: 'url', value: url}];
 
     render(<CodeLocationSource metadata={metadata} />);
@@ -55,7 +55,7 @@ describe('CodeLocationSource', () => {
     // No links.
     const link = screen.getByRole('link', {name: /google/});
     expect(link).toBeVisible();
-    expect(link.getAttribute('href')).toBe(cleaned_url);
+    expect(link.getAttribute('href')).toBe(cleanedUrl);
 
     // Jest text.
     expect(screen.getByText(url)).toBeVisible();
