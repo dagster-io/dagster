@@ -429,11 +429,14 @@ def _offsetted_datetime(
 ) -> datetime:
     if partitions_def.is_basic_daily and offset != 0:
         result = dt + timedelta(days=offset)
-
-        if result.hour == dt.hour:
-            # Can't short-circuit in cases where a DST transition moved us
-            # to a different hour, fall back to slow logic
-            return result
+        # Handle DST transitions
+        if result.hour == 23:
+            result = result + timedelta(hours=1)
+        elif result.hour == 1:
+            result = result - timedelta(hours=1)
+        elif result.hour != 0:
+            raise Exception(f"Unexpected time after adding day offset {result}")
+        return result
 
     elif partitions_def.is_basic_hourly and offset != 0:
         return dt + timedelta(hours=offset)
