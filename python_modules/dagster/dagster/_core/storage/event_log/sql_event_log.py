@@ -2163,6 +2163,21 @@ class SqlEventLogStorage(EventLogStorage):
             row = conn.execute(db_select([True]).select_from(table).limit(1)).fetchone()
         return bool(row[0]) if row else False
 
+    def initialize_concurrency_limit(self, concurrency_key: str, num: int):
+        if not self.has_table(ConcurrencyLimitsTable.name):
+            return None
+
+        with self.index_connection() as conn:
+            try:
+                conn.execute(
+                    ConcurrencyLimitsTable.insert().values(
+                        concurrency_key=concurrency_key, limit=num
+                    )
+                )
+                self._allocate_concurrency_slots(conn, concurrency_key, num)
+            except db_exc.IntegrityError:
+                pass
+
     def _upsert_and_lock_limit_row(self, conn, concurrency_key: str, num: int):
         """Helper function that can be overridden by each implementing sql variant which obtains a
         lock on the concurrency limits row for the given key and updates it to the given value.
