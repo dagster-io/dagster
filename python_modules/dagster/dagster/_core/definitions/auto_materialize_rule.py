@@ -111,7 +111,8 @@ class AutoMaterializeRule(ABC):
 
         for elt in context.previous_tick_subsets_with_metadata:
             carry_forward_subset = elt.subset - ignore_subset
-            mapping[elt.frozen_metadata] |= carry_forward_subset
+            if carry_forward_subset.size > 0:
+                mapping[elt.frozen_metadata] |= carry_forward_subset
 
         # for now, an asset is in the "true" subset if and only if we have some metadata for it
         true_subset = reduce(operator.or_, mapping.values(), context.empty_subset())

@@ -68,18 +68,34 @@ class ConditionEvaluation(NamedTuple):
         of the system understand.
         """
         if isinstance(condition, RuleCondition):
-            results = [
-                (
-                    AutoMaterializeRuleEvaluation(
-                        rule_snapshot=condition.rule.to_snapshot(),
-                        evaluation_data=AutoMaterializeRuleEvaluationData.from_metadata(
-                            elt.metadata
+            if self.subsets_with_metadata:
+                results = [
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            rule_snapshot=condition.rule.to_snapshot(),
+                            evaluation_data=AutoMaterializeRuleEvaluationData.from_metadata(
+                                elt.metadata
+                            ),
                         ),
-                    ),
-                    elt.subset.asset_partitions,
+                        elt.subset.asset_partitions,
+                    )
+                    for elt in self.subsets_with_metadata
+                ]
+            else:
+                # if not provided specific metadata, just use the true subset
+                asset_partitions = self.true_subset.asset_partitions
+                results = (
+                    [
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=condition.rule.to_snapshot(), evaluation_data=None
+                            ),
+                            asset_partitions,
+                        )
+                    ]
+                    if asset_partitions
+                    else []
                 )
-                for elt in self.subsets_with_metadata
-            ]
         else:
             results = []
         for i, child in enumerate(self.child_evaluations):
@@ -96,8 +112,8 @@ class ConditionEvaluation(NamedTuple):
         return skip_evaluation.true_subset.size
 
     def discard_subset(self, condition: "AutomationCondition") -> Optional[AssetSubset]:
-        discard_condition = condition.discard_condition
-        if not discard_condition or len(self.child_evaluations) != 3:
+        not_discard_condition = condition.not_discard_condition
+        if not not_discard_condition or len(self.child_evaluations) != 3:
             return None
 
         not_discard_evaluation = self.child_evaluations[2]
@@ -185,7 +201,8 @@ class ConditionEvaluation(NamedTuple):
         partitions_def = asset_graph.get_partitions_def(asset_key)
         empty_subset = AssetSubset.empty(asset_key, partitions_def)
 
-        materialize_condition, skip_condition = condition.children[:2]
+        materialize_condition, not_skip_condition = condition.children[:2]
+        skip_condition = not_skip_condition.children[0]
         materialize_rules = [
             materialize_condition.rule
             for materialize_condition in materialize_condition.children
@@ -209,15 +226,39 @@ class ConditionEvaluation(NamedTuple):
                 ],
             ),
             ConditionEvaluation(
-                condition_snapshot=skip_condition.to_snapshot(),
+                condition_snapshot=not_skip_condition.to_snapshot(),
                 true_subset=empty_subset,
                 candidate_subset=empty_subset,
                 child_evaluations=[
-                    ConditionEvaluation.from_evaluation_and_rule(evaluation, asset_graph, rule)
-                    for rule in skip_rules
+                    ConditionEvaluation(
+                        condition_snapshot=skip_condition.to_snapshot(),
+                        true_subset=empty_subset,
+                        candidate_subset=empty_subset,
+                        child_evaluations=[
+                            ConditionEvaluation.from_evaluation_and_rule(
+                                evaluation, asset_graph, rule
+                            )
+                            for rule in skip_rules
+                        ],
+                    )
                 ],
             ),
         ]
+        if condition.not_discard_condition:
+            discard_condition = condition.not_discard_condition.children[0]
+            if isinstance(discard_condition, RuleCondition):
+                children.append(
+                    ConditionEvaluation(
+                        condition_snapshot=condition.not_discard_condition.to_snapshot(),
+                        true_subset=empty_subset,
+                        candidate_subset=empty_subset,
+                        child_evaluations=[
+                            ConditionEvaluation.from_evaluation_and_rule(
+                                evaluation, asset_graph, discard_condition.rule
+                            )
+                        ],
+                    )
+                )
 
         return ConditionEvaluation(
             condition_snapshot=condition.to_snapshot(),
@@ -275,9 +316,10 @@ class AutomationCondition(ABC):
         return list(enumerate(self.children))
 
     @property
-    def discard_condition(self) -> Optional["AutomationCondition"]:
+    def not_discard_condition(self) -> Optional["AutomationCondition"]:
         if not self.is_legacy or not len(self.children) == 3:
             return None
+        return self.children[-1]
 
     def to_snapshot(self) -> AutomationConditionNodeSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""

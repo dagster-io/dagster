@@ -265,10 +265,16 @@ class AutoMaterializePolicy(
         from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
         materialize_condition = OrAutomationCondition(
-            children=[RuleCondition(rule) for rule in self.materialize_rules]
+            children=[
+                RuleCondition(rule)
+                for rule in sorted(self.materialize_rules, key=lambda rule: rule.description)
+            ]
         )
         skip_condition = OrAutomationCondition(
-            children=[RuleCondition(rule) for rule in self.skip_rules]
+            children=[
+                RuleCondition(rule)
+                for rule in sorted(self.skip_rules, key=lambda rule: rule.description)
+            ]
         )
         children = [
             materialize_condition,
