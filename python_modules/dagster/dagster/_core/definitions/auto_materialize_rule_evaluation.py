@@ -227,7 +227,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         return results
 
     def _get_subset_with_decision_type(
-        self, decision_type: AutoMaterializeDecisionType, asset_graph: AssetGraph
+        self, *, decision_type: AutoMaterializeDecisionType, asset_graph: AssetGraph
     ) -> AssetSubset:
         """Returns the set of asset partitions with a given decision type applied to them."""
         subset = AssetSubset.empty(self.asset_key, asset_graph.get_partitions_def(self.asset_key))
@@ -242,26 +242,34 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
             subset |= deserialized_result[1]
         return subset
 
-    def get_requested_or_discarded_subset(self, asset_graph: AssetGraph) -> AssetSubset:
+    def get_discarded_subset(self, asset_graph: AssetGraph) -> AssetSubset:
         """Returns the set of asset partitions which were either requested or discarded on this
         evaluation.
         """
-        to_materialize = self._get_subset_with_decision_type(
-            AutoMaterializeDecisionType.MATERIALIZE,
-            asset_graph,
+        return self._get_subset_with_decision_type(
+            decision_type=AutoMaterializeDecisionType.DISCARD, asset_graph=asset_graph
         )
-        to_skip = self._get_subset_with_decision_type(
-            AutoMaterializeDecisionType.SKIP,
-            asset_graph,
-        )
-        return to_materialize - to_skip
 
     def get_evaluated_subset(self, asset_graph: AssetGraph) -> AssetSubset:
         """Returns the set of asset partitions which were evaluated by any rule on this evaluation."""
         # no asset partition can be evaluated by SKIP or DISCARD rules without having at least one
         # materialize rule evaluation
         return self._get_subset_with_decision_type(
-            AutoMaterializeDecisionType.MATERIALIZE, asset_graph
+            decision_type=AutoMaterializeDecisionType.MATERIALIZE, asset_graph=asset_graph
+        )
+
+    def get_requested_subset(self, asset_graph: AssetGraph) -> AssetSubset:
+        """Returns the set of asset partitions which were requested on this evaluation."""
+        return (
+            self._get_subset_with_decision_type(
+                decision_type=AutoMaterializeDecisionType.MATERIALIZE, asset_graph=asset_graph
+            )
+            - self._get_subset_with_decision_type(
+                decision_type=AutoMaterializeDecisionType.SKIP, asset_graph=asset_graph
+            )
+            - self._get_subset_with_decision_type(
+                decision_type=AutoMaterializeDecisionType.DISCARD, asset_graph=asset_graph
+            )
         )
 
     def equivalent_to_stored_evaluation(

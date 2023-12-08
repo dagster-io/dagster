@@ -74,7 +74,7 @@ basic_scenarios = {
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
         # don't need to run asset4 for reconciliation but asset4 must run when asset3 does
-        expected_run_requests=[run_request(asset_keys=["asset3", "asset4", "asset5", "asset6"])],
+        expected_run_requests=[run_request(asset_keys=["asset3", "asset4", "asset5"])],
     ),
     "multi_asset_in_middle_single_parent_rematerialized_subsettable": AssetReconciliationScenario(
         assets=multi_asset_in_middle_subsettable,
