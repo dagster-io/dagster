@@ -13,7 +13,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonAssetCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
@@ -24,9 +23,8 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 
-from .asset_automation_condition_context import (
-    AssetAutomationConditionEvaluationContext,
-    AssetAutomationEvaluationContext,
+from .asset_condition_evaluation_context import (
+    AssetConditionEvaluationContext,
 )
 from .asset_subset import AssetSubset
 
@@ -36,7 +34,7 @@ if TYPE_CHECKING:
     from .auto_materialize_rule import AutoMaterializeRule
 
 
-class AutomationConditionNodeSnapshot(NamedTuple):
+class AssetConditionSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
     class_name: str
@@ -62,17 +60,17 @@ class AssetSubsetWithMetdata(NamedTuple):
         return frozenset(self.metadata.items())
 
 
-class ConditionEvaluation(NamedTuple):
+class AssetConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
-    condition_snapshot: AutomationConditionNodeSnapshot
+    condition_snapshot: AssetConditionSnapshot
     true_subset: AssetSubset
     candidate_subset: AssetSubset
     subsets_with_metadata: Sequence[AssetSubsetWithMetdata] = []
-    child_evaluations: Sequence["ConditionEvaluation"] = []
+    child_evaluations: Sequence["AssetConditionEvaluation"] = []
 
     def all_results(
-        self, condition: "AutomationCondition"
+        self, condition: "AssetCondition"
     ) -> Sequence[Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]]:
         """This method is a placeholder to allow us to convert this into a shape that other parts
         of the system understand.
@@ -112,7 +110,7 @@ class ConditionEvaluation(NamedTuple):
             results = [*results, *child.all_results(condition.children[i])]
         return results
 
-    def skip_subset_size(self, condition: "AutomationCondition") -> int:
+    def skip_subset_size(self, condition: "AssetCondition") -> int:
         # backcompat way to calculate the set of skipped partitions for legacy policies
         if not condition.is_legacy:
             return 0
@@ -121,7 +119,7 @@ class ConditionEvaluation(NamedTuple):
         skip_evaluation = not_skip_evaluation.child_evaluations[0]
         return skip_evaluation.true_subset.size
 
-    def discard_subset(self, condition: "AutomationCondition") -> Optional[AssetSubset]:
+    def discard_subset(self, condition: "AssetCondition") -> Optional[AssetSubset]:
         not_discard_condition = condition.not_discard_condition
         if not not_discard_condition or len(self.child_evaluations) != 3:
             return None
@@ -130,11 +128,11 @@ class ConditionEvaluation(NamedTuple):
         discard_evaluation = not_discard_evaluation.child_evaluations[0]
         return discard_evaluation.true_subset
 
-    def discard_subset_size(self, condition: "AutomationCondition") -> int:
+    def discard_subset_size(self, condition: "AssetCondition") -> int:
         discard_subset = self.discard_subset(condition)
         return discard_subset.size if discard_subset else 0
 
-    def for_child(self, child_condition: "AutomationCondition") -> Optional["ConditionEvaluation"]:
+    def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
         has an identical hash to the given condition.
         """
@@ -154,11 +152,9 @@ class ConditionEvaluation(NamedTuple):
         """This method is a placeholder to allow us to convert this into a shape that other parts
         of the system understand.
         """
-        condition = (
-            check.not_none(asset_graph.get_auto_materialize_policy(asset_key))
-            .to_auto_materialize_policy_evaluator()
-            .condition
-        )
+        condition = check.not_none(
+            asset_graph.get_auto_materialize_policy(asset_key)
+        ).to_asset_condition()
 
         return AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
             asset_key=asset_key,
@@ -175,14 +171,14 @@ class ConditionEvaluation(NamedTuple):
         evaluation: AutoMaterializeAssetEvaluation,
         asset_graph: AssetGraph,
         rule: "AutoMaterializeRule",
-    ) -> "ConditionEvaluation":
+    ) -> "AssetConditionEvaluation":
         asset_key = evaluation.asset_key
         partitions_def = asset_graph.get_partitions_def(asset_key)
 
         true_subset, subsets_with_metadata = evaluation.get_rule_evaluation_results(
             rule.to_snapshot(), asset_graph
         )
-        return ConditionEvaluation(
+        return AssetConditionEvaluation(
             condition_snapshot=RuleCondition(rule=rule).snapshot,
             true_subset=true_subset,
             candidate_subset=AssetSubset.empty(asset_key, partitions_def)
@@ -193,10 +189,10 @@ class ConditionEvaluation(NamedTuple):
 
     @staticmethod
     def from_evaluation(
-        condition: "AutomationCondition",
+        condition: "AssetCondition",
         evaluation: Optional[AutoMaterializeAssetEvaluation],
         asset_graph: AssetGraph,
-    ) -> Optional["ConditionEvaluation"]:
+    ) -> Optional["AssetConditionEvaluation"]:
         """This method is a placeholder to allow us to convert the serialized objects the system
         uses into a more-convenient internal representation.
         """
@@ -222,26 +218,26 @@ class ConditionEvaluation(NamedTuple):
             and skip_condition.rule.to_snapshot() in (evaluation.rule_snapshots or set())
         ]
         children = [
-            ConditionEvaluation(
+            AssetConditionEvaluation(
                 condition_snapshot=materialize_condition.snapshot,
                 true_subset=empty_subset,
                 candidate_subset=empty_subset,
                 child_evaluations=[
-                    ConditionEvaluation.from_evaluation_and_rule(evaluation, asset_graph, rule)
+                    AssetConditionEvaluation.from_evaluation_and_rule(evaluation, asset_graph, rule)
                     for rule in materialize_rules
                 ],
             ),
-            ConditionEvaluation(
+            AssetConditionEvaluation(
                 condition_snapshot=not_skip_condition.snapshot,
                 true_subset=empty_subset,
                 candidate_subset=empty_subset,
                 child_evaluations=[
-                    ConditionEvaluation(
+                    AssetConditionEvaluation(
                         condition_snapshot=skip_condition.snapshot,
                         true_subset=empty_subset,
                         candidate_subset=empty_subset,
                         child_evaluations=[
-                            ConditionEvaluation.from_evaluation_and_rule(
+                            AssetConditionEvaluation.from_evaluation_and_rule(
                                 evaluation, asset_graph, rule
                             )
                             for rule in skip_rules
@@ -254,19 +250,19 @@ class ConditionEvaluation(NamedTuple):
             discard_condition = condition.not_discard_condition.children[0]
             if isinstance(discard_condition, RuleCondition):
                 children.append(
-                    ConditionEvaluation(
+                    AssetConditionEvaluation(
                         condition_snapshot=condition.not_discard_condition.snapshot,
                         true_subset=empty_subset,
                         candidate_subset=empty_subset,
                         child_evaluations=[
-                            ConditionEvaluation.from_evaluation_and_rule(
+                            AssetConditionEvaluation.from_evaluation_and_rule(
                                 evaluation, asset_graph, discard_condition.rule
                             )
                         ],
                     )
                 )
 
-        return ConditionEvaluation(
+        return AssetConditionEvaluation(
             condition_snapshot=condition.snapshot,
             true_subset=evaluation.get_requested_subset(asset_graph),
             candidate_subset=empty_subset,
@@ -274,30 +270,30 @@ class ConditionEvaluation(NamedTuple):
         )
 
 
-class AutomationCondition(ABC):
+class AssetCondition(ABC):
     """An AutomationCondition represents some state of the world that can influence if an asset
     partition should be materialized or not. AutomationConditions can be combined together to create
     new conditions using the `&` (and), `|` (or), and `~` (not) operators.
     """
 
     @abstractmethod
-    def evaluate(self, context: AssetAutomationConditionEvaluationContext) -> ConditionEvaluation:
+    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
         raise NotImplementedError()
 
-    def __and__(self, other: "AutomationCondition") -> "AutomationCondition":
+    def __and__(self, other: "AssetCondition") -> "AssetCondition":
         # group AndAutomationConditions together
-        if isinstance(self, AndAutomationCondition):
-            return AndAutomationCondition(children=[*self.children, other])
-        return AndAutomationCondition(children=[self, other])
+        if isinstance(self, AndAssetCondition):
+            return AndAssetCondition(children=[*self.children, other])
+        return AndAssetCondition(children=[self, other])
 
-    def __or__(self, other: "AutomationCondition") -> "AutomationCondition":
+    def __or__(self, other: "AssetCondition") -> "AssetCondition":
         # group OrAutomationConditions together
-        if isinstance(self, OrAutomationCondition):
-            return OrAutomationCondition(children=[*self.children, other])
-        return OrAutomationCondition(children=[self, other])
+        if isinstance(self, OrAssetCondition):
+            return OrAssetCondition(children=[*self.children, other])
+        return OrAssetCondition(children=[self, other])
 
-    def __invert__(self) -> "AutomationCondition":
-        return NotAutomationCondition(children=[self])
+    def __invert__(self) -> "AssetCondition":
+        return NotAssetCondition(children=[self])
 
     @property
     def is_legacy(self) -> bool:
@@ -305,32 +301,32 @@ class AutomationCondition(ABC):
         do certain types of backwards-compatible operations on it.
         """
         return (
-            isinstance(self, AndAutomationCondition)
+            isinstance(self, AndAssetCondition)
             and len(self.children) in {2, 3}
-            and isinstance(self.children[0], OrAutomationCondition)
-            and isinstance(self.children[1], NotAutomationCondition)
+            and isinstance(self.children[0], OrAssetCondition)
+            and isinstance(self.children[1], NotAssetCondition)
             # the third child is the discard condition, which is optional
-            and (len(self.children) == 2 or isinstance(self.children[2], NotAutomationCondition))
+            and (len(self.children) == 2 or isinstance(self.children[2], NotAssetCondition))
         )
 
     @property
-    def children(self) -> Sequence["AutomationCondition"]:
+    def children(self) -> Sequence["AssetCondition"]:
         return []
 
     @property
-    def indexed_children(self) -> Sequence[Tuple[int, "AutomationCondition"]]:
+    def indexed_children(self) -> Sequence[Tuple[int, "AssetCondition"]]:
         return list(enumerate(self.children))
 
     @property
-    def not_discard_condition(self) -> Optional["AutomationCondition"]:
+    def not_discard_condition(self) -> Optional["AssetCondition"]:
         if not self.is_legacy or not len(self.children) == 3:
             return None
         return self.children[-1]
 
     @functools.cached_property
-    def snapshot(self) -> AutomationConditionNodeSnapshot:
+    def snapshot(self) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
-        return AutomationConditionNodeSnapshot(
+        return AssetConditionSnapshot(
             class_name=self.__class__.__name__,
             description=str(self),
             child_hashes=[child.snapshot.hash for child in self.children],
@@ -339,19 +335,19 @@ class AutomationCondition(ABC):
 
 class RuleCondition(
     NamedTuple("_RuleCondition", [("rule", "AutoMaterializeRule")]),
-    AutomationCondition,
+    AssetCondition,
 ):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 
-    def evaluate(self, context: AssetAutomationConditionEvaluationContext) -> ConditionEvaluation:
-        context.asset_context.daemon_context._verbose_log_fn(  # noqa
+    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+        context.root_context.daemon_context._verbose_log_fn(  # noqa
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
         true_subset, subsets_with_metadata = self.rule.evaluate_for_asset(context)
-        context.asset_context.daemon_context._verbose_log_fn(  # noqa
+        context.root_context.daemon_context._verbose_log_fn(  # noqa
             f"Rule returned {true_subset.size} partitions"
         )
-        return ConditionEvaluation(
+        return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
@@ -359,21 +355,23 @@ class RuleCondition(
         )
 
 
-class AndAutomationCondition(
-    NamedTuple("_AndAutomationCondition", [("children", Sequence[AutomationCondition])]),
-    AutomationCondition,
+class AndAssetCondition(
+    NamedTuple("_AndAssetCondition", [("children", Sequence[AssetCondition])]),
+    AssetCondition,
 ):
     """This class represents the condition that all of its children evaluate to true."""
 
-    def evaluate(self, context: AssetAutomationConditionEvaluationContext) -> ConditionEvaluation:
-        child_evaluations: List[ConditionEvaluation] = []
+    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+        child_evaluations: List[AssetConditionEvaluation] = []
         true_subset = context.candidate_subset
-        for child in self.children:
-            child_context = context.for_child(condition=child, candidate_subset=true_subset)
+        for index, child in self.indexed_children:
+            child_context = context.for_child(
+                condition=child, candidate_subset=true_subset, child_index=index
+            )
             result = child.evaluate(child_context)
             child_evaluations.append(result)
             true_subset &= result.true_subset
-        return ConditionEvaluation(
+        return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
@@ -381,23 +379,23 @@ class AndAutomationCondition(
         )
 
 
-class OrAutomationCondition(
-    NamedTuple("_OrAutomationCondition", [("children", Sequence[AutomationCondition])]),
-    AutomationCondition,
+class OrAssetCondition(
+    NamedTuple("_OrAssetCondition", [("children", Sequence[AssetCondition])]),
+    AssetCondition,
 ):
     """This class represents the condition that any of its children evaluate to true."""
 
-    def evaluate(self, context: AssetAutomationConditionEvaluationContext) -> ConditionEvaluation:
-        child_evaluations: List[ConditionEvaluation] = []
+    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+        child_evaluations: List[AssetConditionEvaluation] = []
         true_subset = context.empty_subset()
-        for child in self.children:
+        for index, child in self.indexed_children:
             child_context = context.for_child(
-                condition=child, candidate_subset=context.candidate_subset
+                condition=child, candidate_subset=context.candidate_subset, child_index=index
             )
             result = child.evaluate(child_context)
             child_evaluations.append(result)
             true_subset |= result.true_subset
-        return ConditionEvaluation(
+        return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
@@ -405,55 +403,30 @@ class OrAutomationCondition(
         )
 
 
-class NotAutomationCondition(
-    NamedTuple("_NotAutomationCondition", [("children", Sequence[AutomationCondition])]),
-    AutomationCondition,
+class NotAssetCondition(
+    NamedTuple("_NotAssetCondition", [("children", Sequence[AssetCondition])]),
+    AssetCondition,
 ):
     """This class represents the condition that none of its children evaluate to true."""
 
-    def __new__(cls, children: Sequence[AutomationCondition]):
+    def __new__(cls, children: Sequence[AssetCondition]):
         check.invariant(len(children) == 1)
         return super().__new__(cls, children)
 
     @property
-    def child(self) -> AutomationCondition:
+    def child(self) -> AssetCondition:
         return self.children[0]
 
-    def evaluate(self, context: AssetAutomationConditionEvaluationContext) -> ConditionEvaluation:
+    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
         child_context = context.for_child(
-            condition=self.child, candidate_subset=context.candidate_subset
+            condition=self.child, candidate_subset=context.candidate_subset, child_index=0
         )
         result = self.child.evaluate(child_context)
         true_subset = context.candidate_subset - result.true_subset
 
-        return ConditionEvaluation(
+        return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
             child_evaluations=[result],
         )
-
-
-class AssetAutomationEvaluator(NamedTuple):
-    """For now, this is an internal class that is used to help transition from the old format to the
-    new. Upstack, the original AutoMaterializePolicy class will be replaced with this.
-    """
-
-    condition: AutomationCondition
-
-    def evaluate(
-        self, context: AssetAutomationEvaluationContext
-    ) -> Tuple[ConditionEvaluation, AssetDaemonAssetCursor]:
-        """Evaluates the auto materialize policy of a given asset.
-
-        Returns:
-        - A ConditionEvaluation object representing information about this evaluation. If
-        `report_num_skipped` is set to `True`, then this will attempt to calculate the number of
-        skipped partitions in a backwards-compatible way. This can only be done for policies that
-        are in the format `(a | b | ...) & ~(c | d | ...).
-        - A new AssetDaemonAssetCursor that represents the state of the world after this evaluation.
-        """
-        condition_context = context.get_root_condition_context()
-        condition_evaluation = self.condition.evaluate(condition_context)
-
-        return condition_evaluation, context.get_new_asset_cursor(evaluation=condition_evaluation)

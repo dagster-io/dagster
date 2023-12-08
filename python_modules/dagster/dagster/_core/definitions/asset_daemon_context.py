@@ -35,8 +35,8 @@ from dagster._utils.cached_method import cached_method
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_automation_condition_context import AssetAutomationEvaluationContext
-from .asset_automation_evaluator import ConditionEvaluation
+from .asset_condition import AssetConditionEvaluation
+from .asset_condition_evaluation_context import RootAssetConditionEvaluationContext
 from .asset_daemon_cursor import AssetDaemonAssetCursor, AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import AutoMaterializeRule
@@ -220,9 +220,9 @@ class AssetDaemonContext:
     def evaluate_asset(
         self,
         asset_key: AssetKey,
-        evaluation_results_by_key: Mapping[AssetKey, ConditionEvaluation],
+        evaluation_results_by_key: Mapping[AssetKey, AssetConditionEvaluation],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> Tuple[ConditionEvaluation, AssetDaemonAssetCursor, Optional[datetime.datetime]]:
+    ) -> Tuple[AssetConditionEvaluation, AssetDaemonAssetCursor, Optional[datetime.datetime]]:
         """Evaluates the auto materialize policy of a given asset key.
 
         Params:
@@ -236,21 +236,25 @@ class AssetDaemonContext:
 
         """
         # convert the legacy AutoMaterializePolicy to an Evaluator
-        auto_materialize_policy_evaluator = check.not_none(
+        asset_condition = check.not_none(
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
-        ).to_auto_materialize_policy_evaluator()
+        ).to_asset_condition()
 
-        context = AssetAutomationEvaluationContext(
+        context = RootAssetConditionEvaluationContext(
             asset_key=asset_key,
             asset_cursor=self.cursor.asset_cursor_for_key(asset_key, self.asset_graph),
-            root_condition=auto_materialize_policy_evaluator.condition,
+            root_condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
             daemon_context=self,
             evaluation_results_by_key=evaluation_results_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
         )
-        evaluation, asset_cursor = auto_materialize_policy_evaluator.evaluate(context)
+        condition_context = context.get_root_condition_context()
+
+        evaluation = asset_condition.evaluate(condition_context)
+        asset_cursor = context.get_new_asset_cursor(evaluation=evaluation)
+
         expected_data_time = get_expected_data_time_for_asset_key(
             context, will_materialize=evaluation.true_subset.size > 0
         )
@@ -269,7 +273,7 @@ class AssetDaemonContext:
         """
         asset_cursors: List[AssetDaemonAssetCursor] = []
 
-        evaluation_results_by_key: Dict[AssetKey, ConditionEvaluation] = {}
+        evaluation_results_by_key: Dict[AssetKey, AssetConditionEvaluation] = {}
         legacy_evaluation_results_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         to_request: Set[AssetKeyPartitionKey] = set()

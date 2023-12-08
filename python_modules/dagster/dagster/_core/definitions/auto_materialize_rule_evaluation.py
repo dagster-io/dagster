@@ -29,7 +29,7 @@ from .asset_graph import AssetGraph
 from .partition import SerializedPartitionsSubset
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
+    from dagster._core.definitions.asset_condition import AssetSubsetWithMetdata
     from dagster._core.instance import DynamicPartitionsStore
 
 
@@ -272,7 +272,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         self, rule_snapshot: AutoMaterializeRuleSnapshot, asset_graph: AssetGraph
     ) -> RuleEvaluationResults:
         """For a given rule snapshot, returns the calculated evaluations for that rule."""
-        from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
+        from dagster._core.definitions.asset_condition import AssetSubsetWithMetdata
 
         true_subset = AssetSubset.empty(
             self.asset_key, asset_graph.get_partitions_def(self.asset_key)
