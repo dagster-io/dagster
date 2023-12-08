@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractproperty
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -16,6 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -28,6 +29,7 @@ from .asset_graph import AssetGraph
 from .partition import SerializedPartitionsSubset
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
     from dagster._core.instance import DynamicPartitionsStore
 
 
@@ -57,7 +59,45 @@ class AutoMaterializeRuleSnapshot(NamedTuple):
 
 
 class AutoMaterializeRuleEvaluationData(ABC):
-    pass
+    @abstractproperty
+    def metadata(self) -> MetadataMapping:
+        raise NotImplementedError()
+
+    @staticmethod
+    def from_metadata(metadata: MetadataMapping) -> Optional["AutoMaterializeRuleEvaluationData"]:
+        """Temporary workaround to convert the generic metadata mapping into the old format."""
+        if not metadata:
+            return None
+        elif "text" in metadata:
+            text_value = cast(str, metadata["text"].value)
+            return TextRuleEvaluationData(text_value)
+
+        waiting_on_ancestors = frozenset(
+            {
+                cast(AssetKey, v.value)
+                for k, v in metadata.items()
+                if k.startswith("waiting_on_ancestor")
+            }
+        )
+        if waiting_on_ancestors:
+            return WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=waiting_on_ancestors)
+
+        updated_parents = frozenset(
+            {cast(AssetKey, v.value) for k, v in metadata.items() if k.startswith("updated_parent")}
+        )
+        will_update_parents = frozenset(
+            {
+                cast(AssetKey, v.value)
+                for k, v in metadata.items()
+                if k.startswith("will_update_parent")
+            }
+        )
+        if updated_parents or will_update_parents:
+            return ParentUpdatedRuleEvaluationData(
+                updated_asset_keys=updated_parents, will_update_asset_keys=will_update_parents
+            )
+
+        return None
 
 
 @whitelist_for_serdes
@@ -65,7 +105,9 @@ class TextRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple("_TextRuleEvaluationData", [("text", str)]),
 ):
-    pass
+    @property
+    def metadata(self) -> MetadataMapping:
+        return {"text": MetadataValue.text(self.text)}
 
 
 @whitelist_for_serdes
@@ -79,7 +121,18 @@ class ParentUpdatedRuleEvaluationData(
         ],
     ),
 ):
-    pass
+    @property
+    def metadata(self) -> MetadataMapping:
+        return {
+            **{
+                f"updated_parent_{i+1}": MetadataValue.asset(k)
+                for i, k in enumerate(self.updated_asset_keys)
+            },
+            **{
+                f"will_update_parent_{i+1}": MetadataValue.asset(k)
+                for i, k in enumerate(self.will_update_asset_keys)
+            },
+        }
 
 
 @whitelist_for_serdes
@@ -90,12 +143,17 @@ class WaitingOnAssetsRuleEvaluationData(
         [("waiting_on_asset_keys", FrozenSet[AssetKey])],
     ),
 ):
-    pass
+    @property
+    def metadata(self) -> MetadataMapping:
+        return {
+            **{
+                f"waiting_on_ancestor_{i+1}": MetadataValue.asset(k)
+                for i, k in enumerate(self.waiting_on_asset_keys)
+            },
+        }
 
 
-RuleEvaluationResults = Sequence[
-    Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
-]
+RuleEvaluationResults = Tuple[AssetSubset, Sequence["AssetSubsetWithMetdata"]]
 
 
 @whitelist_for_serdes
@@ -214,7 +272,12 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         self, rule_snapshot: AutoMaterializeRuleSnapshot, asset_graph: AssetGraph
     ) -> RuleEvaluationResults:
         """For a given rule snapshot, returns the calculated evaluations for that rule."""
-        results = []
+        from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
+
+        true_subset = AssetSubset.empty(
+            self.asset_key, asset_graph.get_partitions_def(self.asset_key)
+        )
+        subsets_with_metadata = []
         for rule_evaluation, serialized_subset in self.partition_subsets_by_condition:
             # filter for the same rule
             if rule_evaluation.rule_snapshot != rule_snapshot:
@@ -223,8 +286,15 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 rule_evaluation, serialized_subset, asset_graph
             )
             if deserialized_result:
-                results.append((deserialized_result[0], deserialized_result[1].asset_partitions))
-        return results
+                evaluation_data, subset = deserialized_result
+                metadata = evaluation_data.metadata if evaluation_data else {}
+
+                true_subset |= subset
+                subsets_with_metadata.append(
+                    AssetSubsetWithMetdata(subset=subset, metadata=metadata)
+                )
+
+        return true_subset, subsets_with_metadata
 
     def _get_subset_with_decision_type(
         self, *, decision_type: AutoMaterializeDecisionType, asset_graph: AssetGraph

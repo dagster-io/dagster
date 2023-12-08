@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, Tuple
 
 import pendulum
 
+from dagster._core.definitions.asset_automation_evaluator import AssetSubsetWithMetdata
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._utils.schedules import cron_string_iterator
@@ -165,7 +167,7 @@ def freshness_evaluation_results_for_asset_key(
     if not context.asset_graph.get_downstream_freshness_policies(
         asset_key=asset_key
     ) or context.asset_graph.is_partitioned(asset_key):
-        return []
+        return context.empty_subset(), []
 
     # figure out the current contents of this asset
     current_data_time = context.data_time_resolver.get_current_data_time(asset_key, current_time)
@@ -178,7 +180,7 @@ def freshness_evaluation_results_for_asset_key(
 
     # if executing the asset on this tick would not change its data time, then return
     if current_data_time == expected_data_time:
-        return []
+        return context.empty_subset(), []
 
     # calculate the data times you would expect after all currently-executing runs
     # were to successfully complete
@@ -208,7 +210,6 @@ def freshness_evaluation_results_for_asset_key(
         current_time=current_time,
     )
 
-    asset_partition = AssetKeyPartitionKey(asset_key, None)
     if (
         execution_period is not None
         and execution_period.start <= current_time
@@ -217,6 +218,9 @@ def freshness_evaluation_results_for_asset_key(
         and expected_data_time >= execution_period.start
         and evaluation_data is not None
     ):
-        return [(evaluation_data, {asset_partition})]
+        all_subset = AssetSubset.all(asset_key, None)
+        return AssetSubset.all(asset_key, None), [
+            AssetSubsetWithMetdata(all_subset, evaluation_data.metadata)
+        ]
     else:
-        return []
+        return context.empty_subset(), []

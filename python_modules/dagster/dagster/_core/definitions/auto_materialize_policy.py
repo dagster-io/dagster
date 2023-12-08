@@ -262,19 +262,29 @@ class AutoMaterializePolicy(
             OrAutomationCondition,
             RuleCondition,
         )
+        from .auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
 
         materialize_condition = OrAutomationCondition(
-            children=[RuleCondition(rule) for rule in self.materialize_rules]
+            children=[
+                RuleCondition(rule)
+                for rule in sorted(self.materialize_rules, key=lambda rule: rule.description)
+            ]
         )
         skip_condition = OrAutomationCondition(
-            children=[RuleCondition(rule) for rule in self.skip_rules]
+            children=[
+                RuleCondition(rule)
+                for rule in sorted(self.skip_rules, key=lambda rule: rule.description)
+            ]
         )
+        children = [
+            materialize_condition,
+            NotAutomationCondition([skip_condition]),
+        ]
+        if self.max_materializations_per_minute:
+            discard_condition = RuleCondition(
+                DiscardOnMaxMaterializationsExceededRule(self.max_materializations_per_minute)
+            )
+            children.append(NotAutomationCondition([discard_condition]))
 
-        # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn)
-        condition = AndAutomationCondition(
-            children=[materialize_condition, NotAutomationCondition([skip_condition])]
-        )
-        return AssetAutomationEvaluator(
-            condition=condition,
-            max_materializations_per_minute=self.max_materializations_per_minute,
-        )
+        # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d
+        return AssetAutomationEvaluator(condition=AndAutomationCondition(children))
