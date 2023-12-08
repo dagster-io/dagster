@@ -22,8 +22,6 @@ from dbt.version import __version__ as dbt_version
 from packaging import version
 from pytest_mock import MockerFixture
 
-pytest.importorskip("dbt.version", minversion="1.4")
-
 is_dbt_1_4 = version.parse("1.4.0") <= version.parse(dbt_version) < version.parse("1.5.0")
 
 
