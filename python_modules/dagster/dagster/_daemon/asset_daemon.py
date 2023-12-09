@@ -230,23 +230,22 @@ class AssetDaemon(IntervalDaemon):
 
         workspace = workspace_process_context.create_request_context()
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
-        target_asset_keys = {
+        auto_materialize_asset_keys = {
             target_key
             for target_key in asset_graph.materializable_asset_keys
             if asset_graph.get_auto_materialize_policy(target_key) is not None
         }
-        num_target_assets = len(target_asset_keys)
+        num_target_assets = len(auto_materialize_asset_keys)
 
-        auto_observe_assets = [
+        auto_observe_asset_keys = {
             key
             for key in asset_graph.source_asset_keys
             if asset_graph.get_auto_observe_interval_minutes(key) is not None
-        ]
+        }
 
-        num_auto_observe_assets = len(auto_observe_assets)
-        has_auto_observe_assets = any(auto_observe_assets)
+        num_auto_observe_assets = len(auto_observe_asset_keys)
 
-        if not target_asset_keys and not has_auto_observe_assets:
+        if not auto_materialize_asset_keys and not auto_observe_asset_keys:
             self._logger.debug("No assets that require auto-materialize checks")
             yield
             return
@@ -371,14 +370,14 @@ class AssetDaemon(IntervalDaemon):
                 run_requests, new_cursor, evaluations = AssetDaemonContext(
                     evaluation_id=evaluation_id,
                     asset_graph=asset_graph,
-                    target_asset_keys=target_asset_keys,
+                    auto_materialize_asset_keys=auto_materialize_asset_keys,
                     instance=instance,
                     cursor=stored_cursor,
                     materialize_run_tags={
                         **instance.auto_materialize_run_tags,
                     },
                     observe_run_tags={AUTO_OBSERVE_TAG: "true"},
-                    auto_observe=True,
+                    auto_observe_asset_keys=auto_observe_asset_keys,
                     respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
                     logger=self._logger,
                 ).evaluate()

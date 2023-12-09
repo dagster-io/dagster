@@ -321,12 +321,20 @@ class AssetDaemonScenarioState(NamedTuple):
         new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
             evaluation_id=cursor.evaluation_id + 1,
             asset_graph=self.asset_graph,
-            target_asset_keys=None,
+            auto_materialize_asset_keys={
+                key
+                for key, policy in self.asset_graph.auto_materialize_policies_by_key.items()
+                if policy is not None
+            },
             instance=self.instance,
             materialize_run_tags={},
             observe_run_tags={},
             cursor=cursor,
-            auto_observe=True,
+            auto_observe_asset_keys={
+                key
+                for key in self.asset_graph.source_asset_keys
+                if self.asset_graph.get_auto_observe_interval_minutes(key) is not None
+            },
             respect_materialization_data_versions=False,
             logger=self.logger,
         ).evaluate()
