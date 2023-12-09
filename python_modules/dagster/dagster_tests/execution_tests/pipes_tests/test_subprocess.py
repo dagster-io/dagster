@@ -584,6 +584,41 @@ def test_run_in_op():
     assert result.success
 
 
+def test_neglected_in_op():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as pipes:
+            pipes.report_asset_materialization(asset_key="some_key")
+
+    @op
+    def just_run(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            pipes_client.run(command=cmd, context=context)
+            # events not consumed or reported, oh no!
+
+    @job
+    def sample_job():
+        just_run()
+
+    with instance_for_test() as instance:
+        result = sample_job.execute_in_process(
+            resources={"pipes_client": PipesSubprocessClient()},
+            instance=instance,
+        )
+        assert result.success
+        conn = instance.get_records_for_run(result.run_id)
+        pipes_msgs = [
+            record.event_log_entry.user_message
+            for record in conn.records
+            if record.event_log_entry.user_message.startswith("[pipes]")
+        ]
+        assert len(pipes_msgs) == 2
+        assert "successfully opened" in pipes_msgs[0]
+        assert "some reported results were not processed" in pipes_msgs[1]
+
+
 def test_pipes_expected_materialization():
     def script_fn():
         ...
