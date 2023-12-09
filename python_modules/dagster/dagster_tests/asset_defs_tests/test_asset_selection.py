@@ -390,4 +390,5 @@ def test_all_asset_selection_subclasses_serializable():
     assert len(asset_selection_subclasses) > 5
 
     for asset_selection_subclass in asset_selection_subclasses:
-        _WHITELIST_MAP.has_tuple_serializer(asset_selection_subclass.__class__.__name__)
+        if asset_selection_subclass != AssetSelection:
+            assert _WHITELIST_MAP.has_tuple_serializer(asset_selection_subclass.__name__)

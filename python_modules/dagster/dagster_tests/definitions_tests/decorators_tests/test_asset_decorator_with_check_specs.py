@@ -21,7 +21,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_selection import AssetChecksForHandles, AssetSelection
+from dagster._core.definitions.asset_selection import AssetCheckKeysSelection, AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -674,7 +674,7 @@ def test_can_subset_select_only_check() -> None:
 
     result = materialize(
         [foo],
-        selection=AssetChecksForHandles(
+        selection=AssetCheckKeysSelection(
             [AssetCheckKey(asset_key=AssetKey("asset1"), name="check1")]
         ),
     )
