@@ -848,10 +848,6 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             return nux_enabled_by_default
 
-    @property
-    def is_cloud_instance(self) -> bool:
-        return False
-
     # run monitoring
 
     @property
@@ -1332,7 +1328,6 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.events import (
             AssetMaterializationPlannedData,
             DagsterEvent,
-            DagsterEventType,
         )
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
@@ -1370,40 +1365,24 @@ class DagsterInstance(DynamicPartitionsStore):
                     "Creating a run targeting a partition range is not supported for jobs partitioned with function-based dynamic partitions"
                 )
 
-            # For now, yielding materialization planned events for single run backfills
-            # is only supported on cloud
-            if self.is_cloud_instance and check.not_none(output.properties).is_asset_partitioned:
+            if check.not_none(output.properties).is_asset_partitioned:
                 partitions_subset = job_partitions_def.subset_with_partition_keys(
                     job_partitions_def.get_partition_keys_in_range(
                         PartitionKeyRange(partition_range_start, partition_range_end)
                     )
                 ).to_serializable_subset()
 
-        if partitions_subset:
-            event = DagsterEvent(
-                event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                job_name=job_name,
-                message=(f"{job_name} intends to materialize asset {asset_key.to_string()}"),
-                event_specific_data=AssetMaterializationPlannedData(
-                    asset_key, partitions_subset=partitions_subset
-                ),
-                step_key=step.key,
-            )
-            self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
-
-        else:
-            partition = (
-                partition_tag if check.not_none(output.properties).is_asset_partitioned else None
-            )
-
-            event = DagsterEvent(
-                event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                job_name=job_name,
-                message=(f"{job_name} intends to materialize asset {asset_key.to_string()}"),
-                event_specific_data=AssetMaterializationPlannedData(asset_key, partition=partition),
-                step_key=step.key,
-            )
-            self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
+        partition = (
+            partition_tag if check.not_none(output.properties).is_asset_partitioned else None
+        )
+        materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
+            job_name,
+            step.key,
+            AssetMaterializationPlannedData(
+                asset_key, partition=partition, partitions_subset=partitions_subset
+            ),
+        )
+        self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
 
     def _log_asset_planned_events(
         self,
@@ -1991,15 +1970,14 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         from dagster._core.events import DagsterEventType
 
-        if self.is_cloud_instance:
-            if (
-                event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-                and event_records_filter.asset_partitions
-            ):
-                warnings.warn(
-                    "Asset materialization planned events with partitions subsets will not be "
-                    "returned when the event records filter contains the asset_partitions argument"
-                )
+        if (
+            event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+            and event_records_filter.asset_partitions
+        ):
+            warnings.warn(
+                "Asset materialization planned events with partitions subsets will not be "
+                "returned when the event records filter contains the asset_partitions argument"
+            )
 
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 
