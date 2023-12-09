@@ -38,8 +38,8 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
-    external_repository_data_from_def,
     external_partition_set_name_for_job_name,
+    external_repository_data_from_def,
 )
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
