@@ -69,14 +69,19 @@ class BranchingIOManager(ConfigurableIOManager):
             return self.branch_io_manager.load_input(context)
         else:
             # we are dealing with an asset input
-
+            # figure out which partition keys are loaded, if any
             partition_keys = []
             if context.has_asset_partitions:
                 partition_keys = context.asset_partition_keys
 
+            # we'll fetch materializations with key=None if we aren't loading
+            # a partitioned asset, this will return us the latest materialization
+            # of an unpartitioned asset
             if len(partition_keys) == 0:
                 partition_keys = [None]
 
+            # grab the latest materialization for each partition that we
+            # need to load, OR just the latest materialization if not partitioned
             event_log_entries = [
                 latest_materialization_log_entry(
                     instance=context.instance,
@@ -85,6 +90,9 @@ class BranchingIOManager(ConfigurableIOManager):
                 )
                 for partition_key in partition_keys
             ]
+
+            # if all partitions are available in the branch, we can load from the branch
+            # otherwise we need to load from the parent
             if all(
                 event_log_entry is not None
                 and event_log_entry.asset_materialization
