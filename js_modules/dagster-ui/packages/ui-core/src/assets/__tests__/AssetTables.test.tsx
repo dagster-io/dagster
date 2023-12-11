@@ -27,6 +27,19 @@ const MOCKS = [
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 describe('AssetTable', () => {
+  let nativeGBRC: any;
+
+  beforeAll(() => {
+    nativeGBRC = window.Element.prototype.getBoundingClientRect;
+    window.Element.prototype.getBoundingClientRect = jest
+      .fn()
+      .mockReturnValue({height: 400, width: 400});
+  });
+
+  afterAll(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  });
+
   describe('Materialize button', () => {
     it('is enabled when rows are selected', async () => {
       const Test = () => {

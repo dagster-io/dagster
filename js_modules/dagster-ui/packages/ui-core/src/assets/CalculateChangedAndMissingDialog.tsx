@@ -121,10 +121,16 @@ export const CalculateChangedAndMissingDialog = React.memo(
             </RowGrid>
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
               <Inner $totalHeight={totalHeight}>
-                {items.map(({index, key, size, start, measureElement}) => {
+                {items.map(({index, key, size, start}) => {
                   const item = staleOrMissing[index]!;
                   return (
-                    <Row $height={size} $start={start} key={key} ref={measureElement}>
+                    <Row
+                      $height={size}
+                      $start={start}
+                      data-key={key}
+                      key={key}
+                      ref={virtualizer.measureElement}
+                    >
                       <RowGrid border="bottom">
                         <Checkbox
                           id={`checkbox-${key}`}

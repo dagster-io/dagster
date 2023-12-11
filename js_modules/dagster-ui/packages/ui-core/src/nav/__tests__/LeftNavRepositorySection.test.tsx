@@ -26,6 +26,19 @@ describe('Repository options', () => {
   const locationOne = 'ipsum';
   const repoOne = 'lorem';
 
+  let nativeGBRC: any;
+
+  beforeAll(() => {
+    nativeGBRC = window.Element.prototype.getBoundingClientRect;
+    window.Element.prototype.getBoundingClientRect = jest
+      .fn()
+      .mockReturnValue({height: 400, width: 400});
+  });
+
+  afterAll(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  });
+
   afterEach(() => {
     window.localStorage.clear();
   });
