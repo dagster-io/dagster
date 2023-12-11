@@ -1,5 +1,12 @@
 # Changelog
 
+# 1.5.12 / 0.21.12 (libraries)
+
+### Bugfixes
+
+- [dagster-embedded-elt] Fixed an issue where `EnvVar`s used in Sling source and target configuration would not work properly in some circumstances.
+- [dagster-insights] Reworked the Snowflake insights ingestion pipeline to improve performance and increase observability.
+
 # 1.5.11 / 0.21.11 (libraries)
 
 ### New
