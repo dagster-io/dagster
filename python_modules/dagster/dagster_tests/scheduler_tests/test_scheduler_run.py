@@ -672,7 +672,9 @@ def _grpc_server_external_repo(port: int, scheduler_instance: DagsterInstance):
         location_origin: GrpcServerCodeLocationOrigin = GrpcServerCodeLocationOrigin(
             host="localhost", port=port, location_name="test_location"
         )
-        with GrpcServerCodeLocation(origin=location_origin) as location:
+        with GrpcServerCodeLocation(
+            origin=location_origin, instance=scheduler_instance
+        ) as location:
             yield location.get_repository("the_repo")
     finally:
         DagsterGrpcClient(port=port, socket=None).shutdown_server()

@@ -5,6 +5,7 @@ from difflib import SequenceMatcher
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 from dagster import (
     ConfigurableIOManager,
@@ -70,6 +71,12 @@ EXPECTED_KEYS = set(
 
 def path_to_file(path):
     return script_relative_path(os.path.join("./", path))
+
+
+@pytest.fixture
+def instance():
+    with instance_for_test() as instance:
+        return instance
 
 
 def test_dagster_telemetry_enabled(caplog):
@@ -202,7 +209,7 @@ def test_update_repo_stats_dynamic_partitions(caplog):
         cleanup_telemetry_logger()
 
 
-def test_get_stats_from_external_repo_partitions():
+def test_get_stats_from_external_repo_partitions(instance):
     @asset(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
     def asset1():
         ...
@@ -220,12 +227,13 @@ def test_get_stats_from_external_repo_partitions():
             Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_partitioned_assets_in_repo"] == "2"
 
 
-def test_get_stats_from_external_repo_multi_partitions():
+def test_get_stats_from_external_repo_multi_partitions(instance):
     @asset(
         partitions_def=MultiPartitionsDefinition(
             {
@@ -242,13 +250,14 @@ def test_get_stats_from_external_repo_multi_partitions():
             Definitions(assets=[multi_partitioned_asset]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_multi_partitioned_assets_in_repo"] == "1"
     assert stats["num_partitioned_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_source_assets():
+def test_get_stats_from_external_repo_source_assets(instance):
     source_asset1 = SourceAsset("source_asset1")
 
     @asset
@@ -260,12 +269,13 @@ def test_get_stats_from_external_repo_source_assets():
             Definitions(assets=[source_asset1, asset1]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_source_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_observable_source_assets():
+def test_get_stats_from_external_repo_observable_source_assets(instance):
     source_asset1 = SourceAsset("source_asset1")
 
     @observable_source_asset
@@ -281,13 +291,14 @@ def test_get_stats_from_external_repo_observable_source_assets():
             Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_source_assets_in_repo"] == "2"
     assert stats["num_observable_source_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_freshness_policies():
+def test_get_stats_from_external_repo_freshness_policies(instance):
     @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
     def asset1():
         ...
@@ -301,12 +312,13 @@ def test_get_stats_from_external_repo_freshness_policies():
             Definitions(assets=[asset1, asset2]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
 
 
-def test_get_status_from_external_repo_auto_materialize_policy():
+def test_get_status_from_external_repo_auto_materialize_policy(instance):
     @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
     def asset1():
         ...
@@ -324,13 +336,14 @@ def test_get_status_from_external_repo_auto_materialize_policy():
             Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_assets_with_eager_auto_materialize_policies_in_repo"] == "1"
     assert stats["num_assets_with_lazy_auto_materialize_policies_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_code_versions():
+def test_get_stats_from_external_repo_code_versions(instance):
     @asset(code_version="hello")
     def asset1():
         ...
@@ -344,12 +357,13 @@ def test_get_stats_from_external_repo_code_versions():
             Definitions(assets=[asset1, asset2]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_assets_with_code_versions_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_code_checks():
+def test_get_stats_from_external_repo_code_checks(instance):
     @asset
     def my_asset():
         ...
@@ -373,13 +387,14 @@ def test_get_stats_from_external_repo_code_checks():
             ).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_asset_checks"] == "2"
     assert stats["num_assets_with_checks"] == "1"
 
 
-def test_get_stats_from_external_repo_dbt():
+def test_get_stats_from_external_repo_dbt(instance):
     @asset(compute_kind="dbt")
     def asset1():
         ...
@@ -393,12 +408,13 @@ def test_get_stats_from_external_repo_dbt():
             Definitions(assets=[asset1, asset2]).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["num_dbt_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_external_repo_resources():
+def test_get_stats_from_external_repo_resources(instance):
     class MyResource(ConfigurableResource):
         foo: str
 
@@ -424,6 +440,7 @@ def test_get_stats_from_external_repo_resources():
             ).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["dagster_resources"] == [
@@ -432,7 +449,7 @@ def test_get_stats_from_external_repo_resources():
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_io_managers():
+def test_get_stats_from_external_repo_io_managers(instance):
     class MyIOManager(ConfigurableIOManager):
         foo: str
 
@@ -470,6 +487,7 @@ def test_get_stats_from_external_repo_io_managers():
             ).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["dagster_resources"] == [
@@ -478,7 +496,7 @@ def test_get_stats_from_external_repo_io_managers():
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_functional_resources():
+def test_get_stats_from_external_repo_functional_resources(instance):
     @dagster_maintained_resource
     @resource(config_schema={"foo": str})
     def my_resource():
@@ -503,6 +521,7 @@ def test_get_stats_from_external_repo_functional_resources():
             ).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["dagster_resources"] == [
@@ -511,7 +530,7 @@ def test_get_stats_from_external_repo_functional_resources():
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_functional_io_managers():
+def test_get_stats_from_external_repo_functional_io_managers(instance):
     @dagster_maintained_io_manager
     @io_manager(config_schema={"foo": str})
     def my_io_manager():
@@ -536,6 +555,7 @@ def test_get_stats_from_external_repo_functional_io_managers():
             ).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["dagster_resources"] == [
@@ -544,7 +564,7 @@ def test_get_stats_from_external_repo_functional_io_managers():
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_external_repo_pipes_client():
+def test_get_stats_from_external_repo_pipes_client(instance):
     external_repo = ExternalRepository(
         external_repository_data_from_def(
             Definitions(
@@ -554,6 +574,7 @@ def test_get_stats_from_external_repo_pipes_client():
             ).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["dagster_resources"] == [
@@ -562,7 +583,7 @@ def test_get_stats_from_external_repo_pipes_client():
     assert stats["has_custom_resources"] == "False"
 
 
-def test_get_stats_from_external_repo_delayed_resource_configuration():
+def test_get_stats_from_external_repo_delayed_resource_configuration(instance):
     class MyResource(ConfigurableResource):
         foo: str
 
@@ -614,6 +635,7 @@ def test_get_stats_from_external_repo_delayed_resource_configuration():
             ).get_repository_def()
         ),
         repository_handle=MagicMock(spec=RepositoryHandle),
+        instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["dagster_resources"] == [
