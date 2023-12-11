@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import itertools
 import json
 import logging
 import os
@@ -38,6 +39,10 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluation,
+    AssetSubsetWithMetadata,
+)
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
 )
@@ -46,10 +51,9 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-    AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.automation_policy_sensor_definition import (
@@ -163,17 +167,20 @@ class AssetRuleEvaluationSpec(NamedTuple):
             rule_evaluation_data=data_type(**transformed_kwargs),
         )
 
-    def resolve(self) -> Tuple[AutoMaterializeRuleEvaluation, Optional[Sequence[str]]]:
+    def resolve(self, asset_key: AssetKey, asset_graph: AssetGraph) -> AssetSubsetWithMetadata:
         """Returns a tuple of the resolved AutoMaterializeRuleEvaluation for this spec and the
         partitions that it applies to.
         """
-        return (
-            AutoMaterializeRuleEvaluation(
-                rule_snapshot=self.rule.to_snapshot(),
-                evaluation_data=self.rule_evaluation_data,
-            ),
-            sorted(self.partitions) if self.partitions else None,
+        subset = AssetSubset.from_asset_partitions_set(
+            asset_key,
+            asset_graph.get_partitions_def(asset_key),
+            {
+                AssetKeyPartitionKey(asset_key, partition_key)
+                for partition_key in self.partitions or [None]
+            },
         )
+        metadata = self.rule_evaluation_data.metadata if self.rule_evaluation_data else {}
+        return AssetSubsetWithMetadata(subset=subset, metadata=metadata)
 
 
 class AssetSpecWithPartitionsDef(
@@ -204,7 +211,7 @@ class AssetDaemonScenarioState(NamedTuple):
     current_time: datetime.datetime = pendulum.now("UTC")
     run_requests: Sequence[RunRequest] = []
     serialized_cursor: str = AssetDaemonCursor.empty().serialize()
-    evaluations: Sequence[AutoMaterializeAssetEvaluation] = []
+    evaluations: Sequence[AssetConditionEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
     # this is set by the scenario runner
     scenario_instance: Optional[DagsterInstance] = None
@@ -346,7 +353,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
     def _evaluate_tick_fast(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
         cursor = AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph)
 
         new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
@@ -414,7 +421,7 @@ class AssetDaemonScenarioState(NamedTuple):
     ) -> Tuple[
         Sequence[RunRequest],
         AssetDaemonCursor,
-        Sequence[AutoMaterializeAssetEvaluation],
+        Sequence[AssetConditionEvaluation],
     ]:
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
@@ -594,7 +601,7 @@ class AssetDaemonScenarioState(NamedTuple):
         return self
 
     def _assert_evaluation_daemon(
-        self, key: AssetKey, actual_evaluation: AutoMaterializeAssetEvaluation
+        self, key: AssetKey, actual_evaluation: AssetConditionEvaluation
     ) -> None:
         """Additional assertions for daemon mode. Checks that the evaluation for the given asset
         contains the expected run ids.
@@ -610,15 +617,24 @@ class AssetDaemonScenarioState(NamedTuple):
             )
             if key in (run.asset_selection or set())
         }
-        assert new_run_ids_for_asset == actual_evaluation.run_ids
+        evaluation_with_run_ids = next(
+            iter(
+                [
+                    e
+                    for e in check.not_none(
+                        self.instance.schedule_storage
+                    ).get_auto_materialize_evaluations_for_evaluation_id(current_evaluation_id)
+                    if e.asset_key == key
+                ]
+            )
+        )
+        assert new_run_ids_for_asset == evaluation_with_run_ids.run_ids
 
     def assert_evaluation(
         self,
         key: CoercibleToAssetKey,
         expected_evaluation_specs: Sequence[AssetRuleEvaluationSpec],
         num_requested: Optional[int] = None,
-        num_skipped: Optional[int] = None,
-        num_discarded: Optional[int] = None,
     ) -> "AssetDaemonScenarioState":
         """Asserts that AutoMaterializeRuleEvaluations on the AutoMaterializeAssetEvaluation for the
         given asset key match the given expected_evaluation_specs.
@@ -632,7 +648,7 @@ class AssetDaemonScenarioState(NamedTuple):
         if actual_evaluation is None:
             try:
                 assert len(expected_evaluation_specs) == 0
-                assert all(n is None for n in (num_requested, num_skipped, num_discarded))
+                assert num_requested is None
             except:
                 self.logger.error(
                     "\nAll Evaluations: \n\n" + "\n\n".join("\t" + str(e) for e in self.evaluations)
@@ -640,41 +656,48 @@ class AssetDaemonScenarioState(NamedTuple):
                 raise
             return self
         if num_requested is not None:
-            assert actual_evaluation.num_requested == num_requested
-        if num_skipped is not None:
-            assert actual_evaluation.num_skipped == num_skipped
-        if num_discarded is not None:
-            assert actual_evaluation.num_discarded == num_discarded
+            assert actual_evaluation.true_subset.size == num_requested
 
-        # unpack the serialized partition subsets into an easier format
-        actual_rule_evaluations = [
-            (
-                rule_evaluation,
-                sorted(
-                    serialized_subset.deserialize(
-                        check.not_none(self.asset_graph.get_partitions_def(asset_key))
-                    ).get_partition_keys()
-                )
-                if serialized_subset is not None
-                else None,
+        def get_leaf_evaluations(e: AssetConditionEvaluation) -> Sequence[AssetConditionEvaluation]:
+            if len(e.child_evaluations) == 0:
+                return [e]
+            leaf_evals = []
+            for child_eval in e.child_evaluations:
+                leaf_evals.extend(get_leaf_evaluations(child_eval))
+            return leaf_evals
+
+        actual_subsets_with_metadata = list(
+            itertools.chain(
+                *[
+                    leaf_eval.subsets_with_metadata
+                    # backcompat as previously we stored None metadata for any true evaluation
+                    or (
+                        [AssetSubsetWithMetadata(leaf_eval.true_subset, {})]
+                        if leaf_eval.true_subset.size
+                        else []
+                    )
+                    for leaf_eval in get_leaf_evaluations(actual_evaluation)
+                ]
             )
-            for rule_evaluation, serialized_subset in actual_evaluation.partition_subsets_by_condition
+        )
+        expected_subsets_with_metadata = [
+            ees.resolve(asset_key, self.asset_graph) for ees in expected_evaluation_specs
         ]
-        expected_rule_evaluations = [ees.resolve() for ees in expected_evaluation_specs]
 
         try:
-            for (actual_data, actual_partitions), (expected_data, expected_partitions) in zip(
-                sorted(actual_rule_evaluations), sorted(expected_rule_evaluations)
+            for actual_sm, expected_sm in zip(
+                sorted(actual_subsets_with_metadata, key=lambda x: str(x)),
+                sorted(expected_subsets_with_metadata, key=lambda x: str(x)),
             ):
-                assert actual_data.rule_snapshot == expected_data.rule_snapshot
-                assert actual_partitions == expected_partitions
+                assert actual_sm.subset == expected_sm.subset
                 # only check evaluation data if it was set on the expected evaluation spec
-                if expected_data.evaluation_data is not None:
-                    assert actual_data.evaluation_data == expected_data.evaluation_data
+                if expected_sm.metadata:
+                    assert actual_sm.metadata == expected_sm.metadata
 
         except:
             self._log_assertion_error(
-                sorted(expected_rule_evaluations), sorted(actual_rule_evaluations)
+                sorted(expected_subsets_with_metadata, key=lambda x: str(x)),
+                sorted(actual_subsets_with_metadata, key=lambda x: str(x)),
             )
             raise
 

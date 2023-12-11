@@ -195,22 +195,13 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
         super().__init__(
             id=record.id,
             evaluationId=record.evaluation_id,
-            numRequested=record.evaluation.num_requested,
-            numSkipped=record.evaluation.num_skipped,
-            numDiscarded=record.evaluation.num_discarded,
-            rulesWithRuleEvaluations=create_graphene_auto_materialize_rules_with_rule_evaluations(
-                record.evaluation.partition_subsets_by_condition, partitions_def
-            ),
+            numRequested=record.evaluation.true_subset.size,
+            numSkipped=0,
+            numDiscarded=0,
+            rulesWithRuleEvaluations=[],
             timestamp=record.timestamp,
-            runIds=record.evaluation.run_ids,
-            rules=(
-                [
-                    GrapheneAutoMaterializeRule(snapshot)
-                    for snapshot in record.evaluation.rule_snapshots
-                ]
-                if record.evaluation.rule_snapshots is not None
-                else None  # Return None if no rules serialized in evaluation
-            ),
+            runIds=record.run_ids,
+            rules=[],
             assetKey=GrapheneAssetKey(path=record.asset_key.path),
         )
 

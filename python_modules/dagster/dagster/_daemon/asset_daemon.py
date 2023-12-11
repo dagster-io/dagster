@@ -655,7 +655,7 @@ class AssetDaemon(DagsterDaemon):
                         )
                     )
                     evaluations_by_asset_key = {
-                        evaluation_record.asset_key: evaluation_record.evaluation
+                        evaluation_record.asset_key: evaluation_record.evaluation_with_run_ids
                         for evaluation_record in evaluation_records
                     }
                 else:
@@ -684,13 +684,15 @@ class AssetDaemon(DagsterDaemon):
                 check_for_debug_crash(debug_crash_flags, "EVALUATIONS_FINISHED")
 
                 evaluations_by_asset_key = {
-                    evaluation.asset_key: evaluation for evaluation in evaluations
+                    evaluation.asset_key: evaluation.with_run_ids(set())
+                    for evaluation in evaluations
                 }
 
                 # Write the asset evaluations without run IDs first
                 if schedule_storage.supports_auto_materialize_asset_evaluations:
                     schedule_storage.add_auto_materialize_asset_evaluations(
-                        evaluation_id, list(evaluations_by_asset_key.values())
+                        evaluation_id,
+                        list(evaluations_by_asset_key.values()),
                     )
                     check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 

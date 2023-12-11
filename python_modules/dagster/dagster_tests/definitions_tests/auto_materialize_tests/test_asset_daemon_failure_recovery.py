@@ -505,7 +505,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     )
     assert len(evaluations) == 1
     assert evaluations[0].evaluation.asset_key == AssetKey("hourly")
-    assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}
+    assert evaluations[0].run_ids == {run.run_id for run in sorted_runs}
 
 
 @pytest.mark.parametrize(
@@ -612,7 +612,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     )
     assert len(evaluations) == 1
     assert evaluations[0].evaluation.asset_key == AssetKey("hourly")
-    assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}
+    assert evaluations[0].run_ids == {run.run_id for run in sorted_runs}
 
     cursor = _get_pre_sensor_auto_materialize_serialized_cursor(instance)
     assert cursor

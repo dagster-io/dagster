@@ -192,7 +192,6 @@ partition_scenarios = [
                 ),
             ],
             num_requested=1,
-            num_discarded=29,
         ),
     ),
     AssetDaemonScenario(
