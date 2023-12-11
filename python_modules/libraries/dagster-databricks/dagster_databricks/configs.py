@@ -272,6 +272,86 @@ def _define_aws_attributes_conf() -> Field:
     )
 
 
+def _define_azure_attributes_conf() -> Field:
+    return Field(
+        Permissive(
+            fields={
+                "log_analytics_info": _define_log_analytics_info(),
+                "first_on_demand": Field(
+                    Int,
+                    description=(
+                        "The first first_on_demand nodes of the cluster will be placed on on-demand"
+                        " instances. If this value is greater than 0, the cluster driver node will"
+                        " be placed on an on-demand instance. If this value is greater than or"
+                        " equal to the current cluster size, all nodes will be placed on on-demand"
+                        " instances. If this value is less than the current cluster size,"
+                        " first_on_demand nodes will be placed on on-demand instances and the"
+                        " remainder will be placed on availability instances. This value does not"
+                        " affect cluster size and cannot be mutated over the lifetime of a cluster."
+                    ),
+                    is_required=False,
+                ),
+                "availability": Field(
+                    Enum(
+                        "AzureAvailability",
+                        [
+                            EnumValue("SPOT_AZURE"),
+                            EnumValue("ON_DEMAND_AZURE"),
+                            EnumValue("SPOT_WITH_FALLBACK_AZURE"),
+                        ],
+                    ),
+                    description=(
+                        "Availability type used for all subsequent nodes past the first_on_demand"
+                        " ones. Note: If first_on_demand is zero (which only happens on pool"
+                        " clusters), this availability type will be used for the entire cluster."
+                    ),
+                    is_required=False,
+                ),
+                "spot_bid_max_price": Field(
+                    Int,
+                    description=(
+                        "The max bid price to be used for Azure spot instances. The Max price for"
+                        " the bid cannot be higher than the on-demand price of the instance. If"
+                        " not specified, the default value is -1, which specifies that the instance"
+                        " cannot be evicted on the basis of price, and only on the basis of"
+                        " availability. Further, the value should > 0 or -1."
+                    ),
+                    is_required=False,
+                ),
+            }
+        ),
+        description=(
+            "Attributes related to clusters running on Microsoft Azure. "
+            "If not specified at cluster creation, a set of default values is used. "
+            "See azure_attributes at https://docs.databricks.com/api/azure/workspace/clusters."
+        ),
+        is_required=False,
+    )
+
+
+def _define_log_analytics_info() -> Field:
+    return Field(
+        Shape(
+            fields={
+                "log_analytics_workspace_id": Field(
+                    String,
+                    description=(
+                        "Log Analytics agent workspace id."
+                    ),
+                    is_required=True,
+                ),
+                "log_analytics_primary_key": Field(
+                    String,
+                    description=(
+                        "Log Analytics agent primary key."
+                    ),
+                    is_required=True,
+                )
+            }
+        ),
+        description="Defines values necessary to configure and run Azure Log Analytics agent",
+    )
+
 def _define_cluster_log_conf() -> Field:
     return Field(
         Selector({"dbfs": _define_dbfs_storage_info(), "s3": _define_s3_storage_info()}),
@@ -487,6 +567,7 @@ def _define_new_cluster() -> Field:
                 "spark_conf": spark_conf,
                 "nodes": _define_nodes(),
                 "aws_attributes": _define_aws_attributes_conf(),
+                "azure_attributes": _define_azure_attributes_conf(),
                 "ssh_public_keys": ssh_public_keys,
                 "custom_tags": _define_custom_tags(),
                 "cluster_log_conf": _define_cluster_log_conf(),
