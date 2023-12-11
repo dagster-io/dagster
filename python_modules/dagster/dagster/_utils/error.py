@@ -1,12 +1,14 @@
 import traceback
 from types import TracebackType
-from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
 
 
 # mypy does not support recursive types, so "cause" has to be typed `Any`
@@ -84,7 +86,7 @@ ExceptionInfo: TypeAlias = Union[
 
 def serializable_error_info_or_masked(
     exc_info: ExceptionInfo,
-    instance: DagsterInstance,
+    instance: "DagsterInstance",
     hoist_user_code_error: Optional[bool] = True,
 ) -> SerializableErrorInfo:
     return serializable_error_info_from_exc_info(

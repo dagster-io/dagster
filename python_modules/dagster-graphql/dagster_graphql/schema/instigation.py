@@ -24,7 +24,7 @@ from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
 from dagster._seven.compat.pendulum import to_timezone
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_or_masked
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
@@ -375,7 +375,9 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     last_sensor_start_time=None,
                 )
             except Exception:
-                sensor_data = serializable_error_info_from_exc_info(sys.exc_info())
+                sensor_data = serializable_error_info_or_masked(
+                    sys.exc_info(), instance=graphene_info.context.instance
+                )
             return GrapheneTickEvaluation(sensor_data)
         else:
             if not repository.has_external_schedule(self._selector.schedule_name):
@@ -403,7 +405,9 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     scheduled_execution_time=schedule_time,
                 )
             except Exception:
-                schedule_data = serializable_error_info_from_exc_info(sys.exc_info())
+                schedule_data = serializable_error_info_or_masked(
+                    sys.exc_info(), instance=graphene_info.context.instance
+                )
 
             return GrapheneTickEvaluation(schedule_data)
 
