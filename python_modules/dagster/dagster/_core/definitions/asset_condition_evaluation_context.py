@@ -15,7 +15,7 @@ from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_condition import AssetSubsetWithMetdata
+    from dagster._core.definitions.asset_condition import AssetSubsetWithMetadata
 
     from .asset_condition import AssetCondition, AssetConditionEvaluation
     from .asset_daemon_context import AssetDaemonContext
@@ -287,7 +287,7 @@ class AssetConditionEvaluationContext:
         """Returns the set of candidates for this tick which were not candidates on the previous
         tick.
         """
-        if not self.latest_evaluation:
+        if not self.latest_evaluation or not self.latest_evaluation.candidate_subset:
             return self.candidate_subset
         return self.candidate_subset - self.latest_evaluation.candidate_subset
 
@@ -302,7 +302,7 @@ class AssetConditionEvaluationContext:
         return self.root_context.materialized_requested_or_discarded_since_previous_tick_subset
 
     @property
-    def previous_tick_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetdata"]:
+    def previous_tick_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
         """Returns the RuleEvaluationResults calculated on the previous tick for this condition."""
         return self.latest_evaluation.subsets_with_metadata if self.latest_evaluation else []
 

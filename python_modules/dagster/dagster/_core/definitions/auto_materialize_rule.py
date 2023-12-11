@@ -90,7 +90,7 @@ class AutoMaterializeRule(ABC):
             ignore_subset: An AssetSubset which represents information that we should *not* carry
                 forward from the previous tick.
         """
-        from .asset_condition import AssetSubsetWithMetdata
+        from .asset_condition import AssetSubsetWithMetadata
 
         mapping = defaultdict(lambda: context.empty_subset())
         for evaluation_data, asset_partitions in asset_partitions_by_evaluation_data.items():
@@ -119,7 +119,7 @@ class AutoMaterializeRule(ABC):
         return (
             true_subset,
             [
-                AssetSubsetWithMetdata(subset, dict(metadata))
+                AssetSubsetWithMetadata(subset, dict(metadata))
                 for metadata, subset in mapping.items()
             ],
         )

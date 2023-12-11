@@ -56,13 +56,12 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
+from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -127,33 +126,6 @@ class AssetEvaluationSpec(NamedTuple):
             num_requested=1 if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE else 0,
             num_skipped=1 if rule.decision_type == AutoMaterializeDecisionType.SKIP else 0,
             num_discarded=1 if rule.decision_type == AutoMaterializeDecisionType.DISCARD else 0,
-        )
-
-    def to_evaluation(
-        self, asset_graph: AssetGraph, instance: DagsterInstance
-    ) -> AutoMaterializeAssetEvaluation:
-        asset_key = AssetKey.from_coercible(self.asset_key)
-        return AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
-            asset_graph=asset_graph,
-            asset_key=asset_key,
-            asset_partitions_by_rule_evaluation=[
-                (
-                    rule_evaluation,
-                    (
-                        {
-                            AssetKeyPartitionKey(asset_key, partition_key)
-                            for partition_key in partition_keys
-                        }
-                        if partition_keys
-                        else set()
-                    ),
-                )
-                for rule_evaluation, partition_keys in self.rule_evaluations
-            ],
-            num_requested=self.num_requested,
-            num_skipped=self.num_skipped,
-            num_discarded=self.num_discarded,
-            dynamic_partitions_store=instance,
         )
 
 
