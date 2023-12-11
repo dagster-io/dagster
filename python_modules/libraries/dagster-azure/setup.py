@@ -38,7 +38,7 @@ setup(
         "azure-identity<2.0.0,>=1.7.0",
         "azure-storage-blob<13.0.0,>=12.5.0",
         "azure-storage-file-datalake<13.0.0,>=12.5",
-        "dagster==1.5.11",
+        "dagster==1.5.12",
     ],
     entry_points={"console_scripts": ["dagster-azure = dagster_azure.cli.cli:main"]},
     zip_safe=False,
