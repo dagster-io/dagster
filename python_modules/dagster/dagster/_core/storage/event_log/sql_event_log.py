@@ -2174,7 +2174,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         # consider setting this in the instance config
         default_value = 1
-        with self.index_connection() as conn:
+        with self.index_transaction() as conn:
             try:
                 conn.execute(
                     ConcurrencyLimitsTable.insert().values(
