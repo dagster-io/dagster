@@ -6,8 +6,9 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
@@ -706,19 +707,27 @@ def _validate_tick_args(
 
 class AutoMaterializeAssetEvaluationRecord(NamedTuple):
     id: int
-    evaluation: AutoMaterializeAssetEvaluation
+    evaluation_with_run_ids: AssetConditionEvaluationWithRunIds
     evaluation_id: int
     timestamp: float
     asset_key: AssetKey
 
     @classmethod
-    def from_db_row(cls, row):
+    def from_db_row(cls, row) -> "AutoMaterializeAssetEvaluationRecord":
         return cls(
             id=row["id"],
-            evaluation=deserialize_value(
-                row["asset_evaluation_body"], AutoMaterializeAssetEvaluation
+            evaluation_with_run_ids=deserialize_value(
+                row["asset_evaluation_body"], AssetConditionEvaluationWithRunIds
             ),
             evaluation_id=row["evaluation_id"],
             timestamp=datetime_as_float(row["create_timestamp"]),
-            asset_key=AssetKey.from_db_string(row["asset_key"]),
+            asset_key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
         )
+
+    @property
+    def run_ids(self) -> AbstractSet[str]:
+        return self.evaluation_with_run_ids.run_ids
+
+    @property
+    def evaluation(self) -> AssetConditionEvaluation:
+        return self.evaluation_with_run_ids.evaluation

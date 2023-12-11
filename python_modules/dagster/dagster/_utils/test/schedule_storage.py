@@ -5,13 +5,14 @@ import pendulum
 import pytest
 
 from dagster import StaticPartitionsDefinition
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-    AutoMaterializeRuleEvaluation,
+from dagster._core.definitions.asset_condition import (
+    AssetConditionEvaluation,
+    AssetConditionSnapshot,
+    AssetSubsetWithMetadata,
 )
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import SerializedPartitionsSubset
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -704,36 +705,32 @@ class TestScheduleStorage:
         assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
 
-    def test_auto_materialize_asset_evaluations(self, storage):
+    def test_auto_materialize_asset_evaluations(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        condition_snapshot = AssetConditionSnapshot("foo", "bar", [])
 
         for _ in range(2):  # test idempotency
             storage.add_auto_materialize_asset_evaluations(
                 evaluation_id=10,
                 asset_evaluations=[
-                    AutoMaterializeAssetEvaluation(
-                        asset_key=AssetKey("asset_one"),
-                        partition_subsets_by_condition=[],
-                        num_requested=0,
-                        num_skipped=0,
-                        num_discarded=0,
-                    ),
-                    AutoMaterializeAssetEvaluation(
-                        asset_key=AssetKey("asset_two"),
-                        partition_subsets_by_condition=[
-                            (
-                                AutoMaterializeRuleEvaluation(
-                                    rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                    evaluation_data=None,
-                                ),
-                                None,
+                    AssetConditionEvaluation(
+                        condition_snapshot=condition_snapshot,
+                        true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
+                        candidate_subset=None,
+                    ).with_run_ids(set()),
+                    AssetConditionEvaluation(
+                        condition_snapshot=condition_snapshot,
+                        true_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                        candidate_subset=None,
+                        subsets_with_metadata=[
+                            AssetSubsetWithMetadata(
+                                AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                                {"foo": MetadataValue.text("bar")},
                             )
                         ],
-                        num_requested=1,
-                        num_skipped=0,
-                        num_discarded=0,
-                    ),
+                    ).with_run_ids(set()),
                 ],
             )
 
@@ -743,7 +740,7 @@ class TestScheduleStorage:
             assert len(res) == 1
             assert res[0].evaluation.asset_key == AssetKey("asset_one")
             assert res[0].evaluation_id == 10
-            assert res[0].evaluation.num_requested == 0
+            assert res[0].evaluation.true_subset.size == 0
 
             res = storage.get_auto_materialize_asset_evaluations(
                 asset_key=AssetKey("asset_two"), limit=100
@@ -751,29 +748,27 @@ class TestScheduleStorage:
             assert len(res) == 1
             assert res[0].evaluation.asset_key == AssetKey("asset_two")
             assert res[0].evaluation_id == 10
-            assert res[0].evaluation.num_requested == 1
+            assert res[0].evaluation.true_subset.size == 1
 
             res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
 
             assert len(res) == 2
             assert res[0].evaluation.asset_key == AssetKey("asset_one")
             assert res[0].evaluation_id == 10
-            assert res[0].evaluation.num_requested == 0
+            assert res[0].evaluation.true_subset.size == 0
 
             assert res[1].evaluation.asset_key == AssetKey("asset_two")
             assert res[1].evaluation_id == 10
-            assert res[1].evaluation.num_requested == 1
+            assert res[1].evaluation.true_subset.size == 1
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_one"),
-                    partition_subsets_by_condition=[],
-                    num_requested=0,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
+                AssetConditionEvaluation(
+                    condition_snapshot=condition_snapshot,
+                    true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    candidate_subset=None,
+                ).with_run_ids(set()),
             ],
         )
 
@@ -798,21 +793,17 @@ class TestScheduleStorage:
 
         # add a mix of keys - one that already is using the unique index and one that is not
 
-        eval_one = AutoMaterializeAssetEvaluation(
-            asset_key=AssetKey("asset_one"),
-            partition_subsets_by_condition=[],
-            num_requested=1,
-            num_skipped=2,
-            num_discarded=3,
-        )
+        eval_one = AssetConditionEvaluation(
+            condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+            true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+            candidate_subset=None,
+        ).with_run_ids(set())
 
-        eval_asset_three = AutoMaterializeAssetEvaluation(
-            asset_key=AssetKey("asset_three"),
-            partition_subsets_by_condition=[],
-            num_requested=1,
-            num_skipped=2,
-            num_discarded=3,
-        )
+        eval_asset_three = AssetConditionEvaluation(
+            condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+            true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
+            candidate_subset=None,
+        ).with_run_ids(set())
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
@@ -827,7 +818,7 @@ class TestScheduleStorage:
         )
         assert len(res) == 2
         assert res[0].evaluation_id == 11
-        assert res[0].evaluation == eval_one
+        assert res[0].evaluation == eval_one.evaluation
 
         res = storage.get_auto_materialize_asset_evaluations(
             asset_key=AssetKey("asset_three"), limit=100
@@ -835,33 +826,29 @@ class TestScheduleStorage:
 
         assert len(res) == 1
         assert res[0].evaluation_id == 11
-        assert res[0].evaluation == eval_asset_three
+        assert res[0].evaluation == eval_asset_three.evaluation
 
-    def test_auto_materialize_asset_evaluations_with_partitions(self, storage):
+    def test_auto_materialize_asset_evaluations_with_partitions(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
         partitions_def = StaticPartitionsDefinition(["a", "b"])
         subset = partitions_def.empty_subset().with_partition_keys(["a"])
+        asset_subset = AssetSubset(asset_key=AssetKey("asset_two"), value=subset)
+        asset_subset_with_metadata = AssetSubsetWithMetadata(
+            asset_subset,
+            {"foo": MetadataValue.text("bar"), "baz": MetadataValue.asset(AssetKey("asset_one"))},
+        )
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_two"),
-                    partition_subsets_by_condition=[
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-                                evaluation_data=None,
-                            ),
-                            SerializedPartitionsSubset.from_subset(subset, partitions_def, None),
-                        )
-                    ],
-                    num_requested=1,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
+                AssetConditionEvaluation(
+                    condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+                    true_subset=asset_subset,
+                    candidate_subset=None,
+                    subsets_with_metadata=[asset_subset_with_metadata],
+                ).with_run_ids(set()),
             ],
         )
 
@@ -871,38 +858,23 @@ class TestScheduleStorage:
         assert len(res) == 1
         assert res[0].evaluation.asset_key == AssetKey("asset_two")
         assert res[0].evaluation_id == 10
-        assert res[0].evaluation.num_requested == 1
+        assert res[0].evaluation.true_subset.size == 1
 
-        assert res[0].evaluation.partition_subsets_by_condition[0][
-            0
-        ] == AutoMaterializeRuleEvaluation(
-            rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
-            evaluation_data=None,
-        )
-        assert (
-            res[0].evaluation.partition_subsets_by_condition[0][1].can_deserialize(partitions_def)
-        )
-        assert (
-            partitions_def.deserialize_subset(
-                res[0].evaluation.partition_subsets_by_condition[0][1].serialized_subset
-            )
-            == subset
-        )
+        assert res[0].evaluation.subsets_with_metadata[0] == asset_subset_with_metadata
 
-    def test_purge_asset_evaluations(self, storage):
+    def test_purge_asset_evaluations(self, storage) -> None:
         if not self.can_purge():
             pytest.skip("Storage cannot purge")
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[
-                AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_one"),
-                    partition_subsets_by_condition=[],
-                    num_requested=0,
-                    num_skipped=0,
-                    num_discarded=0,
-                ),
+                AssetConditionEvaluation(
+                    condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+                    true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    candidate_subset=None,
+                    subsets_with_metadata=[],
+                ).with_run_ids(set()),
             ],
         )
 

@@ -40,7 +40,6 @@ from .asset_condition_evaluation_context import RootAssetConditionEvaluationCont
 from .asset_daemon_cursor import AssetDaemonAssetCursor, AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import AutoMaterializeRule
-from .auto_materialize_rule_evaluation import AutoMaterializeAssetEvaluation
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import PartitionsDefinition, ScheduleType
@@ -260,10 +259,10 @@ class AssetDaemonContext:
         )
         return evaluation, asset_cursor, expected_data_time
 
-    def get_auto_materialize_asset_evaluations(
+    def get_asset_condition_evaluations(
         self,
     ) -> Tuple[
-        Sequence[AutoMaterializeAssetEvaluation],
+        Sequence[AssetConditionEvaluation],
         Sequence[AssetDaemonAssetCursor],
         AbstractSet[AssetKeyPartitionKey],
     ]:
@@ -274,7 +273,6 @@ class AssetDaemonContext:
         asset_cursors: List[AssetDaemonAssetCursor] = []
 
         evaluation_results_by_key: Dict[AssetKey, AssetConditionEvaluation] = {}
-        legacy_evaluation_results_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         to_request: Set[AssetKeyPartitionKey] = set()
 
@@ -302,20 +300,8 @@ class AssetDaemonContext:
                 asset_key, evaluation_results_by_key, expected_data_time_mapping
             )
 
-            # convert the new-format evaluation to the legacy format
-            legacy_evaluation = evaluation.to_evaluation(
-                asset_key, self.asset_graph, self.instance_queryer
-            )
-
-            log_fn = (
-                self._logger.info
-                if (
-                    legacy_evaluation.num_requested
-                    or legacy_evaluation.num_skipped
-                    or legacy_evaluation.num_discarded
-                )
-                else self._logger.debug
-            )
+            num_requested = evaluation.true_subset.size
+            log_fn = self._logger.info if num_requested > 0 else self._logger.debug
 
             to_request_asset_partitions = evaluation.true_subset.asset_partitions
             to_request_str = ",".join(
@@ -324,19 +310,17 @@ class AssetDaemonContext:
             to_request |= to_request_asset_partitions
 
             log_fn(
-                f"Asset {asset_key.to_user_string()} evaluation result: {legacy_evaluation.num_requested}"
-                f" requested ({to_request_str}), {legacy_evaluation.num_skipped}"
-                f" skipped, {legacy_evaluation.num_discarded} discarded ({format(time.time()-start_time, '.3f')} seconds)"
+                f"Asset {asset_key.to_user_string()} evaluation result: {num_requested}"
+                f" requested ({to_request_str}) ({format(time.time()-start_time, '.3f')} seconds)"
             )
 
             evaluation_results_by_key[asset_key] = evaluation
-            legacy_evaluation_results_by_key[asset_key] = legacy_evaluation
             expected_data_time_mapping[asset_key] = expected_data_time
             asset_cursors.append(asset_cursor_for_asset)
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
             # materialize all of them
-            if legacy_evaluation.num_requested > 0:
+            if num_requested > 0:
                 for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
                     expected_data_time_mapping[neighbor_key] = expected_data_time
                     visited_multi_asset_keys.add(neighbor_key)
@@ -345,11 +329,11 @@ class AssetDaemonContext:
                         for ap in evaluation.true_subset.asset_partitions
                     }
 
-        return (list(legacy_evaluation_results_by_key.values()), asset_cursors, to_request)
+        return (list(evaluation_results_by_key.values()), asset_cursors, to_request)
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
@@ -363,7 +347,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations, asset_cursors, to_request = self.get_auto_materialize_asset_evaluations()
+        evaluations, asset_cursors, to_request = self.get_asset_condition_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -394,8 +378,7 @@ class AssetDaemonContext:
                 evaluation
                 for evaluation in evaluations
                 if not evaluation.equivalent_to_stored_evaluation(
-                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key),
-                    self.asset_graph,
+                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key)
                 )
             ],
         )

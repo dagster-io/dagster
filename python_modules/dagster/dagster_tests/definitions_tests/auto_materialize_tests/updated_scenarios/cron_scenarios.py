@@ -131,7 +131,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("A"))
         .with_current_time_advanced(seconds=30)
@@ -149,7 +148,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("B"))
         .with_current_time_advanced(seconds=30)
@@ -211,7 +209,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("A", hour_partition_key(state.current_time, delta=1)))
         .with_current_time_advanced(seconds=30)
@@ -232,7 +229,6 @@ cron_scenarios = [
                 ),
             ],
             num_requested=0,
-            num_skipped=1,
         )
         .with_runs(run_request("B", hour_partition_key(state.current_time, delta=1)))
         .with_current_time_advanced(seconds=30)

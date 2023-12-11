@@ -13,15 +13,9 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-    AutoMaterializeDecisionType,
-    AutoMaterializeRuleEvaluation,
-    AutoMaterializeRuleEvaluationData,
-)
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
@@ -29,11 +23,10 @@ from .asset_condition_evaluation_context import (
 from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
-    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-
     from .auto_materialize_rule import AutoMaterializeRule
 
 
+@whitelist_for_serdes
 class AssetConditionSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
@@ -49,7 +42,8 @@ class AssetConditionSnapshot(NamedTuple):
         ).hexdigest()
 
 
-class AssetSubsetWithMetdata(NamedTuple):
+@whitelist_for_serdes
+class AssetSubsetWithMetadata(NamedTuple):
     """An asset subset with metadata that corresponds to it."""
 
     subset: AssetSubset
@@ -60,64 +54,30 @@ class AssetSubsetWithMetdata(NamedTuple):
         return frozenset(self.metadata.items())
 
 
+@whitelist_for_serdes
 class AssetConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AssetConditionSnapshot
     true_subset: AssetSubset
-    candidate_subset: AssetSubset
-    subsets_with_metadata: Sequence[AssetSubsetWithMetdata] = []
+    candidate_subset: Optional[AssetSubset]
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = []
     child_evaluations: Sequence["AssetConditionEvaluation"] = []
 
-    def all_results(
-        self, condition: "AssetCondition"
-    ) -> Sequence[Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]]:
-        """This method is a placeholder to allow us to convert this into a shape that other parts
-        of the system understand.
-        """
-        if isinstance(condition, RuleCondition):
-            if self.subsets_with_metadata:
-                results = [
-                    (
-                        AutoMaterializeRuleEvaluation(
-                            rule_snapshot=condition.rule.to_snapshot(),
-                            evaluation_data=AutoMaterializeRuleEvaluationData.from_metadata(
-                                elt.metadata
-                            ),
-                        ),
-                        elt.subset.asset_partitions,
-                    )
-                    for elt in self.subsets_with_metadata
-                ]
-            else:
-                # if not provided specific metadata, just use the true subset
-                asset_partitions = self.true_subset.asset_partitions
-                results = (
-                    [
-                        (
-                            AutoMaterializeRuleEvaluation(
-                                rule_snapshot=condition.rule.to_snapshot(), evaluation_data=None
-                            ),
-                            asset_partitions,
-                        )
-                    ]
-                    if asset_partitions
-                    else []
-                )
-        else:
-            results = []
-        for i, child in enumerate(self.child_evaluations):
-            results = [*results, *child.all_results(condition.children[i])]
-        return results
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.true_subset.asset_key
 
-    def skip_subset_size(self, condition: "AssetCondition") -> int:
-        # backcompat way to calculate the set of skipped partitions for legacy policies
-        if not condition.is_legacy:
-            return 0
-
-        not_skip_evaluation = self.child_evaluations[1]
-        skip_evaluation = not_skip_evaluation.child_evaluations[0]
-        return skip_evaluation.true_subset.size
+    def equivalent_to_stored_evaluation(self, other: Optional["AssetConditionEvaluation"]) -> bool:
+        """Returns if all fields other than `run_ids` are equal."""
+        return (
+            other is not None
+            and self.condition_snapshot == other.condition_snapshot
+            and self.true_subset == other.true_subset
+            and self.candidate_subset == other.candidate_subset
+            and self.subsets_with_metadata == other.subsets_with_metadata
+            and self.child_evaluations == other.child_evaluations
+        )
 
     def discard_subset(self, condition: "AssetCondition") -> Optional[AssetSubset]:
         not_discard_condition = condition.not_discard_condition
@@ -127,10 +87,6 @@ class AssetConditionEvaluation(NamedTuple):
         not_discard_evaluation = self.child_evaluations[2]
         discard_evaluation = not_discard_evaluation.child_evaluations[0]
         return discard_evaluation.true_subset
-
-    def discard_subset_size(self, condition: "AssetCondition") -> int:
-        discard_subset = self.discard_subset(condition)
-        return discard_subset.size if discard_subset else 0
 
     def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -143,131 +99,26 @@ class AssetConditionEvaluation(NamedTuple):
 
         return None
 
-    def to_evaluation(
-        self,
-        asset_key: AssetKey,
-        asset_graph: AssetGraph,
-        instance_queryer: "CachingInstanceQueryer",
-    ) -> AutoMaterializeAssetEvaluation:
-        """This method is a placeholder to allow us to convert this into a shape that other parts
-        of the system understand.
-        """
-        condition = check.not_none(
-            asset_graph.get_auto_materialize_policy(asset_key)
-        ).to_asset_condition()
+    def with_run_ids(self, run_ids: AbstractSet[str]) -> "AssetConditionEvaluationWithRunIds":
+        return AssetConditionEvaluationWithRunIds(evaluation=self, run_ids=frozenset(run_ids))
 
-        return AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
-            asset_key=asset_key,
-            asset_graph=asset_graph,
-            asset_partitions_by_rule_evaluation=self.all_results(condition),
-            num_requested=self.true_subset.size,
-            num_skipped=self.skip_subset_size(condition),
-            num_discarded=self.discard_subset_size(condition),
-            dynamic_partitions_store=instance_queryer,
-        )
 
-    @staticmethod
-    def from_evaluation_and_rule(
-        evaluation: AutoMaterializeAssetEvaluation,
-        asset_graph: AssetGraph,
-        rule: "AutoMaterializeRule",
-    ) -> "AssetConditionEvaluation":
-        asset_key = evaluation.asset_key
-        partitions_def = asset_graph.get_partitions_def(asset_key)
+@whitelist_for_serdes
+class AssetConditionEvaluationWithRunIds(NamedTuple):
+    """A union of an AssetConditionEvaluation and the set of run IDs that have been launched in
+    response to it.
+    """
 
-        true_subset, subsets_with_metadata = evaluation.get_rule_evaluation_results(
-            rule.to_snapshot(), asset_graph
-        )
-        return AssetConditionEvaluation(
-            condition_snapshot=RuleCondition(rule=rule).snapshot,
-            true_subset=true_subset,
-            candidate_subset=AssetSubset.empty(asset_key, partitions_def)
-            if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-            else evaluation.get_evaluated_subset(asset_graph),
-            subsets_with_metadata=subsets_with_metadata,
-        )
+    evaluation: AssetConditionEvaluation
+    run_ids: FrozenSet[str]
 
-    @staticmethod
-    def from_evaluation(
-        condition: "AssetCondition",
-        evaluation: Optional[AutoMaterializeAssetEvaluation],
-        asset_graph: AssetGraph,
-    ) -> Optional["AssetConditionEvaluation"]:
-        """This method is a placeholder to allow us to convert the serialized objects the system
-        uses into a more-convenient internal representation.
-        """
-        if not condition.is_legacy or not evaluation:
-            return None
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.evaluation.asset_key
 
-        asset_key = evaluation.asset_key
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        empty_subset = AssetSubset.empty(asset_key, partitions_def)
-
-        materialize_condition, not_skip_condition = condition.children[:2]
-        skip_condition = not_skip_condition.children[0]
-        materialize_rules = [
-            materialize_condition.rule
-            for materialize_condition in materialize_condition.children
-            if isinstance(materialize_condition, RuleCondition)
-            and materialize_condition.rule.to_snapshot() in (evaluation.rule_snapshots or set())
-        ]
-        skip_rules = [
-            skip_condition.rule
-            for skip_condition in skip_condition.children
-            if isinstance(skip_condition, RuleCondition)
-            and skip_condition.rule.to_snapshot() in (evaluation.rule_snapshots or set())
-        ]
-        children = [
-            AssetConditionEvaluation(
-                condition_snapshot=materialize_condition.snapshot,
-                true_subset=empty_subset,
-                candidate_subset=empty_subset,
-                child_evaluations=[
-                    AssetConditionEvaluation.from_evaluation_and_rule(evaluation, asset_graph, rule)
-                    for rule in materialize_rules
-                ],
-            ),
-            AssetConditionEvaluation(
-                condition_snapshot=not_skip_condition.snapshot,
-                true_subset=empty_subset,
-                candidate_subset=empty_subset,
-                child_evaluations=[
-                    AssetConditionEvaluation(
-                        condition_snapshot=skip_condition.snapshot,
-                        true_subset=empty_subset,
-                        candidate_subset=empty_subset,
-                        child_evaluations=[
-                            AssetConditionEvaluation.from_evaluation_and_rule(
-                                evaluation, asset_graph, rule
-                            )
-                            for rule in skip_rules
-                        ],
-                    )
-                ],
-            ),
-        ]
-        if condition.not_discard_condition:
-            discard_condition = condition.not_discard_condition.children[0]
-            if isinstance(discard_condition, RuleCondition):
-                children.append(
-                    AssetConditionEvaluation(
-                        condition_snapshot=condition.not_discard_condition.snapshot,
-                        true_subset=empty_subset,
-                        candidate_subset=empty_subset,
-                        child_evaluations=[
-                            AssetConditionEvaluation.from_evaluation_and_rule(
-                                evaluation, asset_graph, discard_condition.rule
-                            )
-                        ],
-                    )
-                )
-
-        return AssetConditionEvaluation(
-            condition_snapshot=condition.snapshot,
-            true_subset=evaluation.get_requested_subset(asset_graph),
-            candidate_subset=empty_subset,
-            child_evaluations=children,
-        )
+    @property
+    def num_requested(self) -> int:
+        return self.evaluation.true_subset.size
 
 
 class AssetCondition(ABC):

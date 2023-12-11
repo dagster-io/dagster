@@ -13,9 +13,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
-)
+from dagster._core.definitions.asset_condition import AssetConditionEvaluationWithRunIds
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
@@ -780,7 +778,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
     ) -> None:
         return self._storage.schedule_storage.add_auto_materialize_asset_evaluations(
             evaluation_id, asset_evaluations
