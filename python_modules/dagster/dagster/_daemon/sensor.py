@@ -3,7 +3,7 @@ import sys
 import threading
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
-from contextlib import ExitStack
+from contextlib import AbstractContextManager, ExitStack
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -31,7 +31,7 @@ from dagster._core.definitions.run_request import (
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation.code_location import CodeLocation
@@ -78,7 +78,7 @@ class SkippedSensorRun(NamedTuple):
     existing_run: DagsterRun
 
 
-class SensorLaunchContext:
+class SensorLaunchContext(AbstractContextManager):
     def __init__(
         self,
         external_sensor: ExternalSensor,
@@ -114,6 +114,14 @@ class SensorLaunchContext:
     def tick_id(self) -> str:
         return str(self._tick.tick_id)
 
+    @property
+    def log_key(self) -> Sequence[str]:
+        return [
+            self._external_sensor.handle.repository_handle.repository_name,
+            self._external_sensor.name,
+            self.tick_id,
+        ]
+
     def update_state(self, status: TickStatus, **kwargs: object):
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
         cursor = cast(Optional[str], kwargs.get("cursor"))
@@ -144,7 +152,7 @@ class SensorLaunchContext:
     def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
 
-    def add_log_info(self, log_key: Sequence[str]) -> None:
+    def add_log_key(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
 
     def add_dynamic_partitions_request_result(
@@ -526,6 +534,8 @@ def _process_tick_generator(
             external_sensor, tick, instance, logger, tick_retention_settings, sensor_state_lock
         ) as tick_context:
             check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+            tick_context.add_log_key(tick_context.log_key)
+
             yield from _evaluate_sensor(
                 workspace_process_context,
                 tick_context,
@@ -637,7 +647,7 @@ def _submit_run_request(
 def _get_code_location_for_sensor(
     workspace_process_context: IWorkspaceProcessContext,
     external_sensor: ExternalSensor,
-):
+) -> CodeLocation:
     sensor_origin = external_sensor.get_external_origin()
     return workspace_process_context.create_request_context().get_code_location(
         sensor_origin.external_repository_origin.code_location_origin.location_name
@@ -665,15 +675,19 @@ def _evaluate_sensor(
         instigator_data.last_tick_timestamp if instigator_data else None,
         instigator_data.last_run_key if instigator_data else None,
         instigator_data.cursor if instigator_data else None,
+        context.log_key,
         instigator_data.last_sensor_start_timestamp if instigator_data else None,
     )
 
     yield
 
+    # Kept for backwards compatibility with sensor log keys that were previously created in the
+    # sensor evaluation, rather than upfront.
+    #
+    # Note that to get sensor logs for failed sensor evaluations, we force users to update their
+    # Dagster version.
     if sensor_runtime_data.log_key:
-        context.add_log_info(sensor_runtime_data.log_key)
-
-    assert isinstance(sensor_runtime_data, SensorExecutionData)
+        context.add_log_key(sensor_runtime_data.log_key)
 
     for asset_event in sensor_runtime_data.asset_events:
         instance.report_runless_asset_event(asset_event)

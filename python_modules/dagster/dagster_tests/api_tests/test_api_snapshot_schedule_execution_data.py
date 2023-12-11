@@ -27,6 +27,7 @@ def test_external_schedule_execution_data_api_grpc():
                 repository_handle,
                 "foo_schedule",
                 None,
+                None,
             )
             assert isinstance(execution_data, ScheduleExecutionData)
             assert len(execution_data.run_requests) == 1
@@ -45,7 +46,7 @@ def test_external_schedule_client_timeout(instance, env_var_default_val: Optiona
             match="User code server request timed out due to taking longer than 1 seconds to complete.",
         ):
             sync_get_external_schedule_execution_data_ephemeral_grpc(
-                instance, repository_handle, "schedule_times_out", None, timeout=1
+                instance, repository_handle, "schedule_times_out", None, None, timeout=1
             )
 
 
@@ -70,6 +71,7 @@ def test_external_schedule_execution_data_api_grpc_fallback_to_streaming():
                             repository_handle,
                             "foo_schedule",
                             None,
+                            None,
                         )
                         assert isinstance(execution_data, ScheduleExecutionData)
                         assert len(execution_data.run_requests) == 1
@@ -85,6 +87,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
                 instance,
                 repository_handle,
                 "foo_schedule_never_execute",
+                None,
                 None,
             )
             assert isinstance(execution_data, ScheduleExecutionData)
@@ -120,6 +123,7 @@ def test_include_execution_time_grpc():
                 repository_handle,
                 "foo_schedule_echo_time",
                 execution_time,
+                None,
             )
 
             assert isinstance(execution_data, ScheduleExecutionData)
@@ -138,6 +142,7 @@ def test_run_request_partition_key_schedule_grpc():
                 repository_handle,
                 "partitioned_run_request_schedule",
                 execution_time,
+                None,
             )
 
             assert isinstance(execution_data, ScheduleExecutionData)

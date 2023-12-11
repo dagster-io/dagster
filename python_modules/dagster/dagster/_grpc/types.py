@@ -543,6 +543,7 @@ class ExternalScheduleExecutionArgs(
             ("schedule_name", str),
             ("scheduled_execution_timestamp", Optional[float]),
             ("scheduled_execution_timezone", Optional[str]),
+            ("log_key", Optional[Sequence[str]]),
             ("timeout", Optional[int]),
         ],
     )
@@ -554,6 +555,7 @@ class ExternalScheduleExecutionArgs(
         schedule_name: str,
         scheduled_execution_timestamp: Optional[float] = None,
         scheduled_execution_timezone: Optional[str] = None,
+        log_key: Optional[Sequence[str]] = None,
         timeout: Optional[int] = None,
     ):
         return super(ExternalScheduleExecutionArgs, cls).__new__(
@@ -570,6 +572,7 @@ class ExternalScheduleExecutionArgs(
                 scheduled_execution_timezone,
                 "scheduled_execution_timezone",
             ),
+            log_key=check.opt_list_param(log_key, "log_key", of_type=str),
             timeout=check.opt_int_param(timeout, "timeout"),
         )
 
@@ -585,6 +588,7 @@ class SensorExecutionArgs(
             ("last_tick_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
             ("cursor", Optional[str]),
+            ("log_key", Optional[Sequence[str]]),
             ("timeout", Optional[int]),
             ("last_sensor_start_time", Optional[float]),
             # deprecated
@@ -600,6 +604,7 @@ class SensorExecutionArgs(
         last_tick_completion_time: Optional[float] = None,
         last_run_key: Optional[str] = None,
         cursor: Optional[str] = None,
+        log_key: Optional[Sequence[str]] = None,
         timeout: Optional[int] = None,
         last_sensor_start_time: Optional[float] = None,
         # deprecated param
@@ -622,6 +627,7 @@ class SensorExecutionArgs(
             last_tick_completion_time=normalized_last_tick_completion_time,
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
             cursor=check.opt_str_param(cursor, "cursor"),
+            log_key=check.opt_list_param(log_key, "log_key", of_type=str),
             timeout=timeout,
             last_sensor_start_time=check.opt_float_param(
                 last_sensor_start_time, "last_sensor_start_time"
