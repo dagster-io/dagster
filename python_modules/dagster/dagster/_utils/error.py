@@ -5,6 +5,7 @@ from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -79,6 +80,17 @@ ExceptionInfo: TypeAlias = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
     Tuple[None, None, None],
 ]
+
+
+def serializable_error_info_or_masked(
+    exc_info: ExceptionInfo,
+    instance: DagsterInstance,
+    hoist_user_code_error: Optional[bool] = True,
+) -> SerializableErrorInfo:
+    return serializable_error_info_from_exc_info(
+        exc_info=exc_info,
+        hoist_user_code_error=hoist_user_code_error,
+    )
 
 
 def serializable_error_info_from_exc_info(

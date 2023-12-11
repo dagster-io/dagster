@@ -34,7 +34,9 @@ from dagster._core.selector import parse_step_selection
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    serializable_error_info_or_masked,
+)
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 
@@ -775,15 +777,21 @@ def job_execution_iterator(
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
-        job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
+        job_exception_info = serializable_error_info_or_masked(
+            sys.exc_info(), instance=job_context.instance
+        )
         if job_context.raise_on_error:
             raise
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        job_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
+        job_canceled_info = serializable_error_info_or_masked(
+            sys.exc_info(), instance=job_context.instance
+        )
         if job_context.raise_on_error:
             raise
     except BaseException:
-        job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
+        job_exception_info = serializable_error_info_or_masked(
+            sys.exc_info(), instance=job_context.instance
+        )
         if job_context.raise_on_error:
             raise  # finally block will run before this is re-raised
     finally:
