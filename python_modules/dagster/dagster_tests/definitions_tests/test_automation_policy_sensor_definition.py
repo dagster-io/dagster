@@ -1,0 +1,30 @@
+import pytest
+from dagster import AssetSelection, DefaultSensorStatus, build_sensor_context
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
+
+
+def test_constructor():
+    selection = AssetSelection.keys("asset1", "asset2")
+    tags = {"apple": "banana", "orange": "kiwi"}
+    automation_sensor = AutomationPolicySensorDefinition(
+        "foo",
+        asset_selection=selection,
+        run_tags=tags,
+        description="fdsjkl",
+        default_status=DefaultSensorStatus.RUNNING,
+        minimum_interval_seconds=50,
+    )
+    assert automation_sensor.name == "foo"
+    assert automation_sensor.run_tags == tags
+    assert automation_sensor.asset_selection == selection
+    assert automation_sensor.description == "fdsjkl"
+    assert automation_sensor.default_status == DefaultSensorStatus.RUNNING
+    assert automation_sensor.minimum_interval_seconds == 50
+
+    with pytest.raises(
+        NotImplementedError,
+        match="Automation policy sensors cannot be evaluated like regular user-space sensors.",
+    ):
+        automation_sensor(build_sensor_context())
