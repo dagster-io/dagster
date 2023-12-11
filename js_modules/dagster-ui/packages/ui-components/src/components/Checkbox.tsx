@@ -104,8 +104,6 @@ const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) =>
           ? disabled
             ? colorAccentBlueHover()
             : fillColor
-          : disabled
-          ? colorAccentGray()
           : colorAccentGray()
       }
       style={{
