@@ -21,6 +21,10 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
       key: DagsterTheme.Dark,
       label: 'Dark (experimental)',
     },
+    {
+      key: DagsterTheme.System,
+      label: 'System setting',
+    },
   ];
 
   const activeItem = items.find(({key}) => key === theme);

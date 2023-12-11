@@ -14,6 +14,7 @@ import {
   colorTextDisabled,
   colorPopoverBackground,
   colorShadowDefault,
+  colorTooltipBackground,
 } from '../theme/color';
 
 import {FontFamily} from './styles';
@@ -77,9 +78,18 @@ export const GlobalPopoverStyle = createGlobalStyle`
     fill: ${colorPopoverBackground()};
   }
 
+  .dagster-popover.bp4-dark .bp4-popover2-arrow-fill {
+    fill: ${colorTooltipBackground()};
+  }
+
+  .dagster-popover.bp4-dark .bp4-popover2-arrow-border {
+    fill: ${colorShadowDefault()};
+    fill-opacity: 0.7;
+  }
+
   .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
   .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
-    background-color: ${colorPopoverBackground()};
+    background-color: ${colorTooltipBackground()};
   }
 `;
 
