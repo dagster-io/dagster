@@ -39,7 +39,10 @@ from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_or_masked,
+)
 
 from .load_target import WorkspaceLoadTarget
 from .permissions import (
@@ -615,7 +618,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
 
         except Exception:
-            error = serializable_error_info_from_exc_info(sys.exc_info())
+            error = serializable_error_info_or_masked(sys.exc_info(), instance=self.instance)
             warnings.warn(f"Error loading repository location {location_name}:{error.to_string()}")
 
         return CodeLocationEntry(

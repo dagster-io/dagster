@@ -25,7 +25,9 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._loggers import default_system_loggers
 from dagster._utils import ensure_single_item
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    serializable_error_info_or_masked,
+)
 
 from .api import ExecuteRunWithPlanIterable, job_execution_iterator
 from .context.logger import InitLoggerContext
@@ -137,7 +139,7 @@ def host_mode_execution_context_event_generator(
                 if dagster_error.is_user_code_error
                 else sys.exc_info()
             )
-            error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
+            error_info = serializable_error_info_or_masked(user_facing_exc_info, instance=instance)
 
             event = DagsterEvent.job_failure(
                 job_context_or_name=pipeline_run.job_name,

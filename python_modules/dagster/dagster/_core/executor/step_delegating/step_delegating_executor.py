@@ -17,7 +17,9 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    serializable_error_info_or_masked,
+)
 
 from ..base import Executor
 
@@ -165,12 +167,15 @@ class StepDelegatingExecutor(Executor):
                         except Exception:
                             # For now we assume that an exception indicates that the step should be resumed.
                             # This should probably be a separate should_resume_step method on the step handler.
+                            context = step_handler_context.get_step_context(step.key)
                             DagsterEvent.engine_event(
-                                step_handler_context.get_step_context(step.key),
+                                context,
                                 f"Including {step.key} in the new run since it raised an error"
                                 " when checking whether it was running",
                                 EngineEventData(
-                                    error=serializable_error_info_from_exc_info(sys.exc_info())
+                                    error=serializable_error_info_or_masked(
+                                        sys.exc_info(), instance=context.instance
+                                    )
                                 ),
                             )
                             should_retry_step = True
@@ -290,13 +295,14 @@ class StepDelegatingExecutor(Executor):
                                         ),
                                     )
                             except Exception:
-                                serializable_error = serializable_error_info_from_exc_info(
-                                    sys.exc_info()
+                                context = plan_context.for_step(step)
+                                serializable_error = serializable_error_info_or_masked(
+                                    sys.exc_info(), instance=context.instance
                                 )
                                 # Log a step failure event if there was an error during the health
                                 # check
                                 DagsterEvent.step_failure_event(
-                                    step_context=plan_context.for_step(step),
+                                    step_context=context,
                                     step_failure_data=StepFailureData(
                                         error=serializable_error,
                                         user_failure_data=None,

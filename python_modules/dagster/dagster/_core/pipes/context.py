@@ -43,7 +43,7 @@ from dagster._core.execution.context.invocation import BoundOpExecutionContext
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
-    serializable_error_info_from_exc_info,
+    serializable_error_info_or_masked,
 )
 
 if TYPE_CHECKING:
@@ -233,7 +233,7 @@ class PipesMessageHandler:
             self._context.get_step_execution_context(),
             f"[pipes] framework exception occurred in {origin}",
             EngineEventData(
-                error=serializable_error_info_from_exc_info(exc_info),
+                error=serializable_error_info_or_masked(exc_info, self._context.instance),
             ),
         )
 

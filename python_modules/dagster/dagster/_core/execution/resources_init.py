@@ -42,7 +42,9 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.system_config.objects import ResourceConfig
 from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    serializable_error_info_or_masked,
+)
 from dagster._utils.timing import format_duration, time_execution_scope
 
 from .context.init import InitResourceContext
@@ -213,7 +215,9 @@ def _core_resource_initialization_event_generator(
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
-                serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
+                serializable_error_info_or_masked(
+                    dagster_user_error.original_exc_info, instance=instance
+                ),
             )
         raise dagster_user_error
 
@@ -282,7 +286,9 @@ def resource_initialization_event_generator(
                     cast(ExecutionPlan, execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,
-                    serializable_error_info_from_exc_info(error.original_exc_info),
+                    serializable_error_info_or_masked(
+                        error.original_exc_info, instance=check.not_none(instance)
+                    ),
                 )
 
 

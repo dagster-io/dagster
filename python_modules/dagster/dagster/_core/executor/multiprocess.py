@@ -30,7 +30,10 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._utils import get_run_crash_explanation, start_termination_thread
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_or_masked,
+)
 from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
 
 from .child_process_executor import (
@@ -253,8 +256,10 @@ class MultiprocessExecutor(Executor):
                             active_execution.handle_event(event_or_none)
 
                     except ChildProcessCrashException as crash:
-                        serializable_error = serializable_error_info_from_exc_info(sys.exc_info())
                         step_context = plan_context.for_step(active_execution.get_step_by_key(key))
+                        serializable_error = serializable_error_info_or_masked(
+                            sys.exc_info(), instance=step_context.instance
+                        )
                         yield DagsterEvent.engine_event(
                             step_context,
                             get_run_crash_explanation(

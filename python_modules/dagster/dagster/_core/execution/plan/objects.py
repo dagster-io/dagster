@@ -8,7 +8,10 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_or_masked,
+)
 from dagster._utils.types import ExcInfo
 
 if TYPE_CHECKING:
@@ -130,7 +133,7 @@ def step_failure_event_from_exc_info(
     return DagsterEvent.step_failure_event(
         step_context=step_context,
         step_failure_data=StepFailureData(
-            error=serializable_error_info_from_exc_info(exc_info),
+            error=serializable_error_info_or_masked(exc_info, instance=step_context.instance),
             user_failure_data=user_failure_data,
             error_source=error_source,
         ),

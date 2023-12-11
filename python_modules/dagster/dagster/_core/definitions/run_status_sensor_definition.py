@@ -42,7 +42,9 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    serializable_error_info_or_masked,
+)
 
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
@@ -822,8 +824,9 @@ class RunStatusSensorDefinition(SensorDefinition):
                             return
                 except RunStatusSensorExecutionError as run_status_sensor_execution_error:
                     # When the user code errors, we report error to the sensor tick not the original run.
-                    serializable_error = serializable_error_info_from_exc_info(
-                        run_status_sensor_execution_error.original_exc_info
+                    serializable_error = serializable_error_info_or_masked(
+                        run_status_sensor_execution_error.original_exc_info,
+                        instance=context.instance,
                     )
 
                 context.update_cursor(

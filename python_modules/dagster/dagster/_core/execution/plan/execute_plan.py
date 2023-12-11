@@ -26,7 +26,10 @@ from dagster._core.execution.plan.objects import (
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_or_masked,
+)
 
 
 def inner_plan_execution_iterator(
@@ -149,7 +152,9 @@ def _handle_compute_log_setup_error(
     yield DagsterEvent.engine_event(
         plan_context=context,
         message="Exception while setting up compute log capture",
-        event_specific_data=EngineEventData(error=serializable_error_info_from_exc_info(exc_info)),
+        event_specific_data=EngineEventData(
+            error=serializable_error_info_or_masked(exc_info, instance=context.instance)
+        ),
     )
 
 
@@ -159,7 +164,9 @@ def _handle_compute_log_teardown_error(
     yield DagsterEvent.engine_event(
         plan_context=context,
         message="Exception while cleaning up compute log capture",
-        event_specific_data=EngineEventData(error=serializable_error_info_from_exc_info(exc_info)),
+        event_specific_data=EngineEventData(
+            error=serializable_error_info_or_masked(exc_info, instance=context.instance)
+        ),
     )
 
 
@@ -288,7 +295,9 @@ def dagster_event_sequence_for_step(
 
     # case (1) in top comment
     except RetryRequested as retry_request:
-        retry_err_info = serializable_error_info_from_exc_info(sys.exc_info())
+        retry_err_info = serializable_error_info_or_masked(
+            sys.exc_info(), instance=step_context.instance
+        )
 
         if step_context.retry_mode.disabled:
             fail_err = SerializableErrorInfo(
