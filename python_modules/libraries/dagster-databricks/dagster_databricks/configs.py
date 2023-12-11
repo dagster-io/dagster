@@ -349,6 +349,7 @@ def _define_log_analytics_info() -> Field:
                 )
             }
         ),
+        is_required=False,
         description="Defines values necessary to configure and run Azure Log Analytics agent",
     )
 
