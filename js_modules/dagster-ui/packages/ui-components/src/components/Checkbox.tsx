@@ -9,15 +9,11 @@ import {
   colorAccentReversed,
   colorBackgroundDefault,
   colorBackgroundGray,
-  colorBorderDefault,
   colorTextDefault,
   colorTextDisabled,
   colorTextLighter,
   colorFocusRing,
   colorAccentBlueHover,
-  colorBackgroundLight,
-  colorAccentGrayHover,
-  colorTextLight,
 } from '../theme/color';
 
 type Format = 'check' | 'star' | 'switch';
