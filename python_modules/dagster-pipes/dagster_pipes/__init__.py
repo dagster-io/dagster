@@ -54,7 +54,14 @@ PipesParams = Mapping[str, Any]
 
 # ##### MESSAGE
 
-Method = Literal["opened", "closed", "log", "report_asset_materialization", "report_asset_check"]
+Method = Literal[
+    "opened",
+    "closed",
+    "log",
+    "report_asset_materialization",
+    "report_asset_check",
+    "report_custom_message",
+]
 
 
 def _make_message(method: Method, params: Optional[Mapping[str, Any]]) -> "PipesMessage":
@@ -1296,6 +1303,9 @@ class PipesContext:
                 "severity": severity,
             },
         )
+
+    def report_custom_message(self, payload: Any):
+        self._write_message("report_custom_message", {"payload": payload})
 
     @property
     def log(self) -> logging.Logger:
