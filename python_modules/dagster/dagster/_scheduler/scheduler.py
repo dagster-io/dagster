@@ -717,8 +717,8 @@ def _schedule_runs_at_time(
     )
     yield None
 
-    if schedule_execution_data.captured_log_key:
-        tick_context.add_log_key(schedule_execution_data.captured_log_key)
+    if schedule_execution_data.log_key:
+        tick_context.add_log_key(schedule_execution_data.log_key)
 
     if not schedule_execution_data.run_requests:
         if schedule_execution_data.skip_message:
