@@ -74,6 +74,7 @@ def test_adhoc_partition_load():
                     }
                 },
             )
+            assert res.success
 
     finally:
         os.environ.clear()
