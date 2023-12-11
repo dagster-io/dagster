@@ -14,6 +14,10 @@ import {
   colorTextDisabled,
   colorTextLighter,
   colorFocusRing,
+  colorAccentBlueHover,
+  colorBackgroundLight,
+  colorAccentGrayHover,
+  colorTextLight,
 } from '../theme/color';
 
 type Format = 'check' | 'star' | 'switch';
@@ -98,10 +102,10 @@ const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) =>
       fill={
         checked && !indeterminate
           ? disabled
-            ? colorBorderDefault()
+            ? colorAccentBlueHover()
             : fillColor
           : disabled
-          ? colorBorderDefault()
+          ? colorAccentGray()
           : colorAccentGray()
       }
       style={{
@@ -113,7 +117,7 @@ const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) =>
     {!disabled && <rect x="0" y="0" width="36" height="22" rx="11" fill="url(#innerShadow)" />}
     <rect
       id="handle"
-      style={{transition: 'x 100ms linear'}}
+      style={{transition: 'x 100ms linear', opacity: disabled ? 0.6 : 1}}
       x={indeterminate ? '8' : checked ? '15' : '1'}
       y="1"
       width="20"
