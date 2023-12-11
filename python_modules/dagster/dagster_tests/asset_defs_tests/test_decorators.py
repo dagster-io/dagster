@@ -1159,6 +1159,66 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
+def test_graph_asset_w_ins():
+    @asset
+    def upstream():
+        return 1
+
+    @op
+    def plus_1(x):
+        return x + 1
+
+    @graph_asset(ins={"one": AssetIn("upstream")})
+    def foo(one):
+        return plus_1(one)
+
+    result = materialize_to_memory([upstream, foo])
+    assert result.success
+    assert result.output_for_node("foo") == 2
+
+    @graph_multi_asset(outs={"first_asset": AssetOut()}, ins={"one": AssetIn("upstream")})
+    def bar(one):
+        x = plus_1(one)
+        return {"first_asset": x}
+
+    result = materialize_to_memory([upstream, bar])
+    assert result.success
+    assert result.output_for_node("bar", "first_asset") == 2
+
+    @asset
+    def another_upstream():
+        return 2
+
+    def concat_op_factory(**kwargs):
+        ins = {i: In() for i in kwargs}
+
+        @op(ins=ins)
+        def concat_op(**kwargs):
+            return list(kwargs.values())
+
+        return concat_op
+
+    @graph_asset(ins={"one": AssetIn("upstream"), "two": AssetIn("another_upstream")})
+    def foo_kwargs(**kwargs):
+        return concat_op_factory(**kwargs)(**kwargs)
+
+    result = materialize_to_memory([upstream, another_upstream, foo_kwargs])
+    assert result.success
+    assert result.output_for_node("foo_kwargs") == [1, 2]
+
+    @graph_multi_asset(
+        outs={"first_asset": AssetOut()},
+        ins={"one": AssetIn("upstream"), "two": AssetIn("another_upstream")},
+    )
+    def bar_kwargs(**kwargs):
+        x = concat_op_factory(**kwargs)(**kwargs)
+        return {"first_asset": x}
+
+    result = materialize_to_memory([upstream, another_upstream, bar_kwargs])
+    assert result.success
+    assert result.output_for_node("bar_kwargs", "first_asset") == [1, 2]
+
+
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_with_bare_resource():
     class BareResourceObject:

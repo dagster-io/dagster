@@ -1289,6 +1289,7 @@ def graph_multi_asset(
             name=name or fn.__name__,
             out=combined_outs_by_output_name,
             config=config,
+            # ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
         )(fn)
 
         # source metadata from the AssetOuts (if any)
