@@ -1,9 +1,6 @@
 import {
   Caption,
   Tooltip,
-  colorAccentCyan,
-  colorAccentCyanHover,
-  colorAccentGray,
   colorAccentGrayHover,
   colorAccentGreen,
   colorAccentGreenHover,
