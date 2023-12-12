@@ -85,12 +85,15 @@ class AssetBasedInMemoryIOManager(IOManager):
         self.values = {}
 
     def handle_output(self, context: OutputContext, obj: Any):
-        key = self._key_from_context(context)
-        self.values[key] = obj
+        keys = self._keys_from_context(context)
+        for key in keys:
+            self.values[key] = obj
 
     def load_input(self, context: InputContext) -> Any:
-        key = self._key_from_context(context)
-        return self.values[key]
+        keys = self._keys_from_context(context)
+        return (
+            {key[-1]: self.values[key] for key in keys} if len(keys) > 1 else self.values[keys[0]]
+        )
 
     def has_value(
         self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
@@ -100,10 +103,12 @@ class AssetBasedInMemoryIOManager(IOManager):
     def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
         return self.values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
-    def _key_from_context(self, context: Union[InputContext, OutputContext]):
-        return self._get_key(
-            context.asset_key, context.partition_key if context.has_partition_key else None
-        )
+    def _keys_from_context(self, context: Union[InputContext, OutputContext]):
+        if not context.has_asset_key:
+            return [None]
+
+        partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
+        return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]
 
     def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
         return tuple([*asset_key.path] + [partition_key] if partition_key is not None else [])
@@ -128,12 +133,15 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
         LOG.append(f"teardown_after_execution {self.name}")
 
     def handle_output(self, context: OutputContext, obj: Any):
-        key = self._key_from_context(context)
-        self._values[key] = obj
+        keys = self._keys_from_context(context)
+        for key in keys:
+            self._values[key] = obj
 
     def load_input(self, context: InputContext) -> Any:
-        key = self._key_from_context(context)
-        return self._values[key]
+        keys = self._keys_from_context(context)
+        return (
+            {key[-1]: self._values[key] for key in keys} if len(keys) > 1 else self._values[keys[0]]
+        )
 
     def has_value(
         self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
@@ -143,10 +151,12 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
     def get_value(self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None) -> Any:
         return self._values.get(self._get_key(AssetKey.from_coercible(asset_key), partition_key))
 
-    def _key_from_context(self, context: Union[InputContext, OutputContext]):
-        return self._get_key(
-            context.asset_key, context.partition_key if context.has_partition_key else None
-        )
+    def _keys_from_context(self, context: Union[InputContext, OutputContext]):
+        if not context.has_asset_key:
+            return [None]
+
+        partition_keys = context.asset_partition_keys if context.has_asset_partitions else [None]
+        return [self._get_key(context.asset_key, partition_key) for partition_key in partition_keys]
 
     def _get_key(self, asset_key: AssetKey, partition_key: Optional[str]) -> tuple:
         return tuple([*asset_key.path] + [partition_key] if partition_key is not None else [])
