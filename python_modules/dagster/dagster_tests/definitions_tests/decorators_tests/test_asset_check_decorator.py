@@ -26,7 +26,11 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 
 
 def execute_assets_and_checks(
-    assets=None, asset_checks=None, raise_on_error: bool = True, resources=None, instance=None
+    assets=None,
+    asset_checks=None,
+    raise_on_error: bool = True,
+    resources=None,
+    instance=None,
 ) -> ExecuteInProcessResult:
     defs = Definitions(assets=assets, asset_checks=asset_checks, resources=resources)
     job_def = defs.get_implicit_global_asset_job_def()
@@ -564,8 +568,9 @@ def test_multiple_managed_inputs():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            "When defining check 'check1', multiple target assets provided as parameters:"
-            " ['asset1', 'asset2']. Only one is allowed."
+            "When defining check 'check1', multiple assets provided as parameters:"
+            " ['asset1', 'asset2']. These should either match the target asset or be specified "
+            "in 'secondary_ins'."
         ),
     ):
 
