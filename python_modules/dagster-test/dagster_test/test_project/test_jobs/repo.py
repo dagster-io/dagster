@@ -387,7 +387,7 @@ def slow_graph():
 
 
 @op
-def execute_k8s_op(context):
+def slow_execute_k8s_op(context):
     execute_k8s_job(
         context,
         image="busybox",
@@ -399,8 +399,8 @@ def execute_k8s_op(context):
 
 
 @graph
-def execute_k8s_graph():
-    execute_k8s_op()
+def slow_execute_k8s_op_graph():
+    slow_execute_k8s_op()
 
 
 @resource
@@ -577,7 +577,7 @@ def define_demo_execution_repo():
                 "retry_job_k8s": define_job(retry_graph, "k8s"),
                 "slow_job_celery_k8s": define_job(slow_graph, "celery_k8s"),
                 "slow_job_k8s": define_job(slow_graph, "k8s"),
-                "execute_k8s_job": define_job(execute_k8s_graph),
+                "slow_execute_k8s_op_job": define_job(slow_execute_k8s_op_graph),
                 "step_retries_job_docker": define_job(step_retries_graph, "docker"),
                 "volume_mount_job_celery_k8s": define_job(volume_mount_graph, "celery_k8s"),
             },

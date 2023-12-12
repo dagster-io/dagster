@@ -42,9 +42,7 @@ def _wait_k8s_job_to_start(
     return False
 
 
-def _wait_job_termination_availability(
-    webserver_url_for_k8s_run_launcher: str, run_id: str
-) -> None:
+def _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher: str, run_id: str) -> None:
     """Check if Dagster job could be terminated."""
     timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
@@ -194,7 +192,7 @@ def test_k8s_run_launcher_terminate(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    _wait_job_termination_availability(webserver_url_for_k8s_run_launcher, run_id)
+    _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher, run_id)
     terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id=run_id)
 
     timeout = datetime.timedelta(0, 30)
@@ -239,7 +237,7 @@ def test_k8s_run_launcher_secret_from_deployment(
 
 @pytest.mark.integration
 def test_execute_k8s_job_terminate(namespace, cluster_provider, webserver_url_for_k8s_run_launcher):
-    job_name = "execute_k8s_job"
+    job_name = "slow_execute_k8s_op_job"
     k8s_job_name = "execute-k8s-job"
     run_config = {
         "ops": {
@@ -257,7 +255,7 @@ def test_execute_k8s_job_terminate(namespace, cluster_provider, webserver_url_fo
         webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
     )
 
-    _wait_job_termination_availability(webserver_url_for_k8s_run_launcher, run_id)
+    _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher, run_id)
 
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     api_client = DagsterKubernetesClient.production_client()
