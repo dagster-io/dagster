@@ -2,6 +2,7 @@ import datetime
 import os
 import time
 
+import kubernetes
 import pytest
 from dagster import (
     DagsterEventType,
@@ -23,6 +24,33 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
+
+from .utils import _wait_k8s_job_to_delete
+
+
+def _wait_k8s_job_to_start(
+    api_client: DagsterKubernetesClient, job_name: str, namespace: str
+) -> bool:
+    """Wait until Kubernetes job exists."""
+    for _ in range(5):
+        try:
+            api_client.batch_api.read_namespaced_job_status(job_name, namespace)
+            return True
+        except kubernetes.client.rest.ApiException:
+            time.sleep(5)
+
+    return False
+
+
+def _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher: str, run_id: str) -> None:
+    """Check if Dagster job could be terminated."""
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for can_terminate"
+        if can_terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id):
+            break
+        time.sleep(5)
 
 
 @pytest.mark.integration
@@ -164,16 +192,10 @@ def test_k8s_run_launcher_terminate(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    timeout = datetime.timedelta(0, 30)
-    start_time = datetime.datetime.now()
-    while True:
-        assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for can_terminate"
-        if can_terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id):
-            break
-        time.sleep(5)
-
+    _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher, run_id)
     terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id=run_id)
 
+    timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
     dagster_run = None
     while True:
@@ -211,3 +233,39 @@ def test_k8s_run_launcher_secret_from_deployment(
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
+
+
+@pytest.mark.integration
+def test_execute_k8s_job_terminate(namespace, cluster_provider, webserver_url_for_k8s_run_launcher):
+    job_name = "slow_execute_k8s_op_job"
+    k8s_job_name = "execute-k8s-job"
+    run_config = {
+        "ops": {
+            "execute_k8s_op": {
+                "config": {
+                    "namespace": namespace,
+                    "kubeconfig_file": cluster_provider.kubeconfig_file,
+                    "k8s_job_name": k8s_job_name,
+                }
+            }
+        }
+    }
+
+    run_id = launch_run_over_graphql(
+        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+    )
+
+    _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher, run_id)
+
+    kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
+    api_client = DagsterKubernetesClient.production_client()
+    # make sure that K8s job is already created
+    _wait_k8s_job_to_start(api_client, k8s_job_name, namespace)
+
+    terminate_run_over_graphql(webserver_url_for_k8s_run_launcher, run_id=run_id)
+
+    # make sure that K8s job is deleted before assertion because it might not happen instantly
+    _wait_k8s_job_to_delete(api_client, k8s_job_name, namespace)
+
+    with pytest.raises(kubernetes.client.rest.ApiException, match=r"Reason: Not Found"):
+        api_client.batch_api.read_namespaced_job_status(k8s_job_name, namespace)
