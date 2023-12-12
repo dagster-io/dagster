@@ -6,7 +6,6 @@ import {
   ProductTourPosition,
 } from '@dagster-io/ui-components';
 import {DAGSTER_THEME_KEY} from '@dagster-io/ui-components/src/theme/theme';
-import Image from 'next/image';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -14,7 +13,6 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {UserSettingsDialog} from './UserSettingsDialog';
 import {getVisibleFeatureFlagRows} from './getVisibleFeatureFlagRows';
-import uiThemes from './ui-themes.jpg';
 
 const SettingsButton = styled.button`
   background: transparent;
@@ -70,17 +68,6 @@ export const UserSettingsButton = () => {
           <span>You can now select a dark or light mode UI theme from your user settings.</span>
         }
         position={ProductTourPosition.BOTTOM_RIGHT}
-        object={
-          <div style={{borderRadius: 6, overflow: 'hidden'}}>
-            <Image
-              src={uiThemes}
-              alt="UI Themes"
-              width={230}
-              height={130}
-              style={{display: 'block'}}
-            />
-          </div>
-        }
         actions={{
           dismiss: () => {
             setShouldHideUIThemeNux('1');
