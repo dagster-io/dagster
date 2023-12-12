@@ -47,4 +47,5 @@ const AssetNodeWrapper = styled.div`
   cursor: pointer;
   width: 260px;
   flex-shrink: 0;
+  position: relative;
 `;

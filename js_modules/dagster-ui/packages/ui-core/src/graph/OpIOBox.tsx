@@ -100,6 +100,9 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   background: ${(p) => (p.$highlighted ? colorBackgroundDefault() : colorBackgroundDefault())};
   font-size: 12px;
 
+  &:first-child {
+    border-top-left-radius: 8px;
+  }
   &:last-child {
     border-bottom-left-radius: 8px;
   }
