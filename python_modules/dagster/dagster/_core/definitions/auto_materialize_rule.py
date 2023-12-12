@@ -72,15 +72,8 @@ class RuleEvaluationContext:
     candidate_subset: AssetSubset
     daemon_context: "AssetDaemonContext"
 
-    def with_candidate_subset(
-        self, candidate_subset: AbstractSet[AssetKeyPartitionKey]
-    ) -> "RuleEvaluationContext":
-        return dataclasses.replace(
-            self,
-            candidate_subset=AssetSubset.from_asset_partitions_set(
-                self.asset_key, self.partitions_def, candidate_subset
-            ),
-        )
+    def with_candidate_subset(self, candidate_subset: AssetSubset) -> "RuleEvaluationContext":
+        return dataclasses.replace(self, candidate_subset=candidate_subset)
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -399,7 +392,7 @@ class AutoMaterializeRule(ABC):
     @public
     @staticmethod
     def materialize_on_parent_updated(
-        updated_parent_filter: Optional["AutoMaterializeAssetPartitionsFilter"] = None
+        updated_parent_filter: Optional["AutoMaterializeAssetPartitionsFilter"] = None,
     ) -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.

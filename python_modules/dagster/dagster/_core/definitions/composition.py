@@ -189,7 +189,7 @@ def enter_composition(name: str, source: str) -> None:
 
 
 def exit_composition(
-    output: Optional[Mapping[str, OutputMapping]] = None
+    output: Optional[Mapping[str, OutputMapping]] = None,
 ) -> "CompleteCompositionContext":
     return _composition_stack.pop().complete(output)
 

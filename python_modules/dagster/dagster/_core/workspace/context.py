@@ -211,7 +211,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def shutdown_code_location(self, name: str):
         self.process_context.shutdown_code_location(name)
 
-    def reload_workspace(self) -> Self:
+    def reload_workspace(self) -> "BaseWorkspaceRequestContext":
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
@@ -605,10 +605,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     heartbeat=True,
                     watch_server=False,
                     grpc_server_registry=self._grpc_server_registry,
+                    instance=self._instance,
                 )
             else:
                 location = (
-                    origin.reload_location(self.instance) if reload else origin.create_location()
+                    origin.reload_location(self.instance)
+                    if reload
+                    else origin.create_location(self.instance)
                 )
 
         except Exception:

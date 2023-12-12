@@ -227,7 +227,7 @@ def repository(
 
 @overload
 def repository(
-    definitions_fn: Callable[..., Sequence[PendingRepositoryListDefinition]]
+    definitions_fn: Callable[..., Sequence[PendingRepositoryListDefinition]],
 ) -> PendingRepositoryDefinition:
     ...
 

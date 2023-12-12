@@ -13,7 +13,6 @@ from typer.testing import CliRunner
 if TYPE_CHECKING:
     from dagster import Definitions
 
-pytest.importorskip("dbt.version", minversion="1.4")
 
 test_dagster_metadata_dbt_project_path = (
     Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_metadata").resolve()

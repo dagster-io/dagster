@@ -2416,7 +2416,7 @@ __metadata:
     "@storybook/addon-mdx-gfm": ^7.4.5
     "@storybook/nextjs": ^7.4.5
     "@storybook/react": ^7.4.5
-    "@tanstack/react-virtual": 3.0.0-beta.18
+    "@tanstack/react-virtual": ^3.0.1
     "@testing-library/dom": ^9.3.0
     "@testing-library/jest-dom": ^6.1.5
     "@testing-library/react": ^14.0.0
@@ -6408,21 +6408,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tanstack/react-virtual@npm:3.0.0-beta.18":
-  version: 3.0.0-beta.18
-  resolution: "@tanstack/react-virtual@npm:3.0.0-beta.18"
+"@tanstack/react-virtual@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "@tanstack/react-virtual@npm:3.0.1"
   dependencies:
-    "@tanstack/virtual-core": 3.0.0-beta.18
+    "@tanstack/virtual-core": 3.0.0
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0
-  checksum: e6d948b54179069776051434f021297d717d8cc911d8a9f71a6deac6ea9cb5f6438964049a5552265f0d97d2be584be4a68f95e60bcd859eb8c7ed07d277a155
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: 11534a23100de14a7e0a95da667381181e60a24e29a71246aeed174f8d5f6e176216de6639e6e1f403722ae30d8b92b21ed75ea131529b1417fb81f433468ef0
   languageName: node
   linkType: hard
 
-"@tanstack/virtual-core@npm:3.0.0-beta.18":
-  version: 3.0.0-beta.18
-  resolution: "@tanstack/virtual-core@npm:3.0.0-beta.18"
-  checksum: fbf73de3c9cc296a14b262258e6c8da4826c744fc7ce98669b1c2692341313ffa4e34a13d20c3980f23b340720d7c771136b7f2673aa91d14558ddc086b92d1c
+"@tanstack/virtual-core@npm:3.0.0":
+  version: 3.0.0
+  resolution: "@tanstack/virtual-core@npm:3.0.0"
+  checksum: 7283d50fc7b7a56608c37a8e94a93b85890ff7e39c6281633a19c4d6f6f4fbf25f8418f1eec302a008a8746a0d1d0cd00630137b55e6cf019818d68af8ed16b6
   languageName: node
   linkType: hard
 

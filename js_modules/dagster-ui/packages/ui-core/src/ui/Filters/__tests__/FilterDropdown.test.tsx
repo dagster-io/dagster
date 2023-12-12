@@ -37,6 +37,19 @@ beforeEach(() => {
   ] as any;
 });
 
+let nativeGBRC: any;
+
+beforeAll(() => {
+  nativeGBRC = window.Element.prototype.getBoundingClientRect;
+  window.Element.prototype.getBoundingClientRect = jest
+    .fn()
+    .mockReturnValue({height: 400, width: 400});
+});
+
+afterAll(() => {
+  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+});
+
 describe('FilterDropdown', () => {
   test('displays filter categories initially', () => {
     render(

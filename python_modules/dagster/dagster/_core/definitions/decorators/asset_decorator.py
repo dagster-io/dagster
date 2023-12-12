@@ -1101,7 +1101,7 @@ def graph_asset(
                 return store_files(fetch_files_from_slack())
     """
     if compose_fn is None:
-        return lambda fn: graph_asset(  # type: ignore  # (decorator pattern)
+        return lambda fn: graph_asset(
             fn,
             name=name,
             description=description,
@@ -1410,7 +1410,7 @@ def _make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[
 
 
 def _assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]]
+    check_specs: Optional[Sequence[AssetCheckSpec]],
 ) -> Mapping[str, AssetCheckSpec]:
     checks_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
     if check_specs and len(checks_by_output_name) != len(check_specs):

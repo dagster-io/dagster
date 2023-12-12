@@ -89,6 +89,8 @@ class SensorInstigatorData(
             # the last time a tick was initiated, used to prevent issuing multiple threads from
             # evaluating ticks within the minimum interval
             ("last_tick_start_timestamp", Optional[float]),
+            # the last time the sensor was started
+            ("last_sensor_start_timestamp", Optional[float]),
         ],
     )
 ):
@@ -99,6 +101,7 @@ class SensorInstigatorData(
         min_interval: Optional[int] = None,
         cursor: Optional[str] = None,
         last_tick_start_timestamp: Optional[float] = None,
+        last_sensor_start_timestamp: Optional[float] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -107,6 +110,18 @@ class SensorInstigatorData(
             check.opt_int_param(min_interval, "min_interval"),
             check.opt_str_param(cursor, "cursor"),
             check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
+            check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
+        )
+
+    def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
+        check.float_param(start_timestamp, "start_timestamp")
+        return SensorInstigatorData(
+            self.last_tick_timestamp,
+            self.last_run_key,
+            self.min_interval,
+            self.cursor,
+            self.last_tick_start_timestamp,
+            start_timestamp,
         )
 
 

@@ -1,4 +1,4 @@
-import {CoreColors} from '@dagster-io/ui-components';
+import {CoreColors, colorShadowDefault} from '@dagster-io/ui-components';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
@@ -209,5 +209,5 @@ const ShortcutAnnotation = styled.div`
   background: ${CoreColors.Gray800};
   border: 1px solid ${CoreColors.Gray300};
   border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px ${colorShadowDefault()};
 `;

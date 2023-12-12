@@ -822,10 +822,11 @@ def test_sensor_timeout(entrypoint):
                         repository_origin=repo_origin,
                         instance_ref=instance.get_ref(),
                         sensor_name="slow_sensor",
-                        last_completion_time=None,
+                        last_tick_completion_time=None,
                         last_run_key=None,
                         cursor=None,
                         timeout=2,
+                        last_sensor_start_time=None,
                     ),
                 )
 
@@ -837,9 +838,10 @@ def test_sensor_timeout(entrypoint):
                     repository_origin=repo_origin,
                     instance_ref=instance.get_ref(),
                     sensor_name="slow_sensor",
-                    last_completion_time=None,
+                    last_tick_completion_time=None,
                     last_run_key=None,
                     cursor=None,
+                    last_sensor_start_time=None,
                 ),
             )
     finally:

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 def asset_checks_iter(
-    context: WorkspaceRequestContext
+    context: WorkspaceRequestContext,
 ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
     for location, repository in repository_iter(context):
         for external_check in repository.external_repository_data.external_asset_checks or []:
@@ -59,7 +59,7 @@ def get_asset_check_execution_statuses_by_id(
         planned_execution_runs_by_run_id = {}
 
     def _status_for_execution(
-        execution: AssetCheckExecutionRecord
+        execution: AssetCheckExecutionRecord,
     ) -> AssetCheckExecutionResolvedStatus:
         record_status = execution.status
 

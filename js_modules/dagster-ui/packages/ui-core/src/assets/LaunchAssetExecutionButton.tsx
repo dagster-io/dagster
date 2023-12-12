@@ -538,7 +538,8 @@ async function stateForLaunchingAssets(
         assetChecksAvailable: assets.flatMap((a) =>
           a.assetChecksOrError.__typename === 'AssetChecks'
             ? a.assetChecksOrError.checks
-                .filter((check) => check.jobNames.includes(jobName))
+                // For user code prior to 1.5.10 jobNames isn't populated, so don't filter on it
+                .filter((check) => check.jobNames.length === 0 || check.jobNames.includes(jobName))
                 .map((check) => ({...check, assetKey: a.assetKey}))
             : [],
         ),

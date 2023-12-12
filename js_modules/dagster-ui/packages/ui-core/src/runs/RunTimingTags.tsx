@@ -1,7 +1,7 @@
 import {Box, Popover, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {formatElapsedTime} from '../app/Util';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 import {RunTimingDetails} from './RunTimingDetails';
@@ -48,7 +48,9 @@ export const RunTimingTags = ({loading, run}: {loading: boolean; run: RunTimingF
           <Tag icon="timer">
             <span style={{fontVariantNumeric: 'tabular-nums'}}>
               {run?.startTime
-                ? formatElapsedTime((run?.endTime * 1000 || Date.now()) - run?.startTime * 1000)
+                ? formatElapsedTimeWithoutMsec(
+                    (run?.endTime * 1000 || Date.now()) - run?.startTime * 1000,
+                  )
                 : '–'}
             </span>
           </Tag>

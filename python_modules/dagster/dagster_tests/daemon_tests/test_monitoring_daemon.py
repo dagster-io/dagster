@@ -54,7 +54,7 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return TestRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     def launch_run(self, context):
         self.launch_run_calls += 1

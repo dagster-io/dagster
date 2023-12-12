@@ -33,7 +33,7 @@ from dagster_aws.pipes import (
     PipesS3ContextInjector,
     PipesS3MessageReader,
 )
-from moto.server import ThreadedMotoServer
+from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
 
 from .fake_lambda import LOG_TAIL_LIMIT, FakeLambdaClient, LambdaFunctions
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence
 
 from dagster_pipes import (
     DagsterPipesError,
@@ -109,6 +109,9 @@ class PipesClientCompletedInvocation:
         Returns: AssetCheckResult
         """
         return _check_result_from_pipes_results(self.get_results())
+
+    def get_custom_messages(self) -> Sequence[Any]:
+        return self._session.get_custom_messages()
 
 
 @experimental

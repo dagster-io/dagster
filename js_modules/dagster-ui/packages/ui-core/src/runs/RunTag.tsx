@@ -21,6 +21,7 @@ export enum DagsterTag {
   RootRunId = 'dagster/root_run_id',
   ScheduleName = 'dagster/schedule_name',
   SensorName = 'dagster/sensor_name',
+  TickId = 'dagster/tick',
   AssetPartitionRangeStart = 'dagster/asset_partition_range_start',
   AssetPartitionRangeEnd = 'dagster/asset_partition_range_end',
   AssetEventDataVersion = 'dagster/data_version',

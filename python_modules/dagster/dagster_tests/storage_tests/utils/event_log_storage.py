@@ -3181,6 +3181,11 @@ class TestEventLogStorage:
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"}
             ]
 
+        # after the runs are deleted, the event tags should not persist
+        storage.delete_events(run_id)
+        asset_event_tags = storage.get_event_tags_for_asset(key)
+        assert asset_event_tags == []
+
     def test_add_asset_event_tags(self, storage, instance):
         if not storage.supports_add_asset_event_tags():
             pytest.skip("storage does not support adding asset event tags")

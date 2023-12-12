@@ -493,7 +493,7 @@ def make_subset_from_partition_keys(
 
 
 def get_asset_graph(
-    assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]]
+    assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
 ) -> ExternalAssetGraph:
     assets_defs_by_key = {
         assets_def.key: assets_def

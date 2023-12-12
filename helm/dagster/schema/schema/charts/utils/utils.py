@@ -54,7 +54,7 @@ def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1
 
 
 def create_json_schema_conditionals(
-    enum_type_to_config_name_mapping: Dict[Enum, str]
+    enum_type_to_config_name_mapping: Dict[Enum, str],
 ) -> List[dict]:
     return [
         {

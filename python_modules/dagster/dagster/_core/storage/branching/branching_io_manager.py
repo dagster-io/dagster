@@ -69,18 +69,38 @@ class BranchingIOManager(ConfigurableIOManager):
             return self.branch_io_manager.load_input(context)
         else:
             # we are dealing with an asset input
-            event_log_entry = latest_materialization_log_entry(
-                instance=context.instance,
-                asset_key=context.asset_key,
-                partition_key=context.partition_key if context.has_partition_key else None,
-            )
-            if (
-                event_log_entry
+            # figure out which partition keys are loaded, if any
+            partition_keys = []
+            if context.has_asset_partitions:
+                partition_keys = context.asset_partition_keys
+
+            # we'll fetch materializations with key=None if we aren't loading
+            # a partitioned asset, this will return us the latest materialization
+            # of an unpartitioned asset
+            if len(partition_keys) == 0:
+                partition_keys = [None]
+
+            # grab the latest materialization for each partition that we
+            # need to load, OR just the latest materialization if not partitioned
+            event_log_entries = [
+                latest_materialization_log_entry(
+                    instance=context.instance,
+                    asset_key=context.asset_key,
+                    partition_key=partition_key,
+                )
+                for partition_key in partition_keys
+            ]
+
+            # if all partitions are available in the branch, we can load from the branch
+            # otherwise we need to load from the parent
+            if all(
+                event_log_entry is not None
                 and event_log_entry.asset_materialization
                 and get_text_metadata_value(
                     event_log_entry.asset_materialization, self.branch_metadata_key
                 )
                 == self.branch_name
+                for event_log_entry in event_log_entries
             ):
                 context.log.info(
                     f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'

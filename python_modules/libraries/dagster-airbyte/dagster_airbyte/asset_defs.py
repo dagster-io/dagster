@@ -496,7 +496,7 @@ class AirbyteConnectionMetadata(
 
 
 def _get_schema_by_table_name(
-    stream_table_metadata: Mapping[str, AirbyteTableMetadata]
+    stream_table_metadata: Mapping[str, AirbyteTableMetadata],
 ) -> Mapping[str, TableSchema]:
     schema_by_base_table_name = [(k, v.schema) for k, v in stream_table_metadata.items()]
     schema_by_normalization_table_name = list(

@@ -75,6 +75,7 @@ export const LegacyPalette = {
   [ColorName.TooltipText]: LegacyColors.White,
   [ColorName.PopoverBackground]: LegacyColors.White,
   [ColorName.PopoverBackgroundHover]: LegacyColors.Gray100,
+  [ColorName.ShadowDefault]: LegacyColors.Shadow,
 
   // HEADER
   [ColorName.NavBackground]: LegacyColors.Dark,

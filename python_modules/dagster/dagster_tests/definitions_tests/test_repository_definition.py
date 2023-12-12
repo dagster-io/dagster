@@ -30,6 +30,9 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -1412,3 +1415,65 @@ def test_base_jobs():
         asset2.key,
     }
     assert repo.get_implicit_job_def_for_assets([asset2.key, asset3.key]) is None
+
+
+def test_automation_policy_sensors_do_not_conflict():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def repo():
+        return [
+            asset1,
+            asset2,
+            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+            AutomationPolicySensorDefinition("b", asset_selection=[asset2]),
+        ]
+
+
+def test_automation_policy_sensors_incomplete_cover():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def repo():
+        return [
+            asset1,
+            asset2,
+            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+        ]
+
+
+def test_automation_policy_sensors_conflict():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Automation policy sensors '[ab]' and '[ab]' have overlapping asset selections: they both "
+        "target 'asset1'. Each asset must only be targeted by one automation policy sensor.",
+    ):
+
+        @repository
+        def repo():
+            return [
+                asset1,
+                asset2,
+                AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+                AutomationPolicySensorDefinition("b", asset_selection=[asset1, asset2]),
+            ]
