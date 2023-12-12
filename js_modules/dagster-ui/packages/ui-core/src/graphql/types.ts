@@ -3986,6 +3986,7 @@ export type SensorSelector = {
 
 export enum SensorType {
   ASSET = 'ASSET',
+  AUTOMATION_POLICY = 'AUTOMATION_POLICY',
   FRESHNESS_POLICY = 'FRESHNESS_POLICY',
   MULTI_ASSET = 'MULTI_ASSET',
   RUN_STATUS = 'RUN_STATUS',
