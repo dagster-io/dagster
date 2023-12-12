@@ -36,7 +36,6 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
-from dagster_k8s import execute_k8s_job
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -388,6 +387,8 @@ def slow_graph():
 
 @op
 def slow_execute_k8s_op(context):
+    from dagster_k8s import execute_k8s_job
+
     execute_k8s_job(
         context,
         image="busybox",
