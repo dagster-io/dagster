@@ -75,7 +75,7 @@ def test_valid_nothing_dependencies():
 
 
 def test_nothing_output_something_input():
-    @op(out=Out(Nothing))
+    @op
     def do_nothing():
         pass
 
@@ -336,7 +336,7 @@ def test_nothing_infer():
 
 def test_none_output_non_none_input():
     @op
-    def op1() -> None:
+    def op1():
         pass
 
     @op
@@ -352,7 +352,7 @@ def test_none_output_non_none_input():
 
 def test_asset_none_output_non_none_input():
     @asset
-    def asset1() -> None:
+    def asset1():
         pass
 
     @asset

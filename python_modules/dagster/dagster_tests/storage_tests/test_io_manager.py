@@ -987,12 +987,19 @@ def test_nothing_output_something_input():
         def __init__(self):
             self.handle_output_calls = 0
             self.handle_input_calls = 0
+            self.outs = {}
 
         def load_input(self, context):
             self.handle_input_calls += 1
+            if tuple(context.get_identifier()) in self.outs.keys():
+                return self.outs[tuple(context.get_identifier())]
+
+            else:
+                raise Exception("No corresponding output")
 
         def handle_output(self, context, obj):
             self.handle_output_calls += 1
+            self.outs[tuple(context.get_identifier())] = obj
 
     my_io_manager = MyIOManager()
 
@@ -1008,12 +1015,13 @@ def test_nothing_output_something_input():
     def job1():
         op2(op1())
 
-    job1.execute_in_process()
+    with pytest.raises(Exception, match="No corresponding output"):
+        job1.execute_in_process()
 
-    assert my_io_manager.handle_output_calls == 1  # Nothing return type for op1 skips I/O manager
-    assert (
-        my_io_manager.handle_input_calls == 0
-    )  # Nothing return type for op1 means we skip I/O manager and directly provide a None
+        assert (
+            my_io_manager.handle_output_calls == 0
+        )  # Nothing return type for op1 skips I/O manager
+        assert my_io_manager.handle_input_calls == 1
 
 
 def test_instance_set_on_input_context():

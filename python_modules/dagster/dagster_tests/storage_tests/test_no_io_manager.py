@@ -85,20 +85,23 @@ def test_downstream_managed_deps():
 
 
 def test_downstream_managed_deps_with_type_annotation():
+    # Tests that the return type None annotation does not use the I/O manager, but you can still
+    # use an I/O manager to load it as a downstream input if the I/O manager is set up to handle that
+    # case, i.e. a third party writes data to the place the I/O manager expects it to exist
     @asset
     def returns_none() -> None:
         return None
 
     @asset
     def downstream(returns_none) -> None:
-        assert returns_none is None
+        assert returns_none == 1
 
     io_mgr = TestIOManager(return_value=1)
 
     materialize([returns_none, downstream], resources={"io_manager": io_mgr})
 
     assert not io_mgr.handled_output
-    assert not io_mgr.loaded_input
+    assert io_mgr.loaded_input
 
 
 def test_ops_no_type_annotation():
@@ -123,13 +126,16 @@ def test_ops_no_type_annotation():
 
 
 def test_ops_with_type_annotation():
+    # Tests that the return type None annotation does not use the I/O manager, but you can still
+    # use an I/O manager to load it as a downstream input if the I/O manager is set up to handle that
+    # case, i.e. a third party writes data to the place the I/O manager expects it to exist
     @op
     def returns_none() -> None:
         return None
 
     @op
     def asserts_none(x) -> None:
-        assert x is None
+        assert x == 1
 
     @job
     def return_none_job():
@@ -140,4 +146,4 @@ def test_ops_with_type_annotation():
     result = return_none_job.execute_in_process(resources={"io_manager": io_mgr})
     assert result.success
     assert not io_mgr.handled_output
-    assert not io_mgr.loaded_input
+    assert io_mgr.loaded_input
