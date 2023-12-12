@@ -93,9 +93,8 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def _init_db(self) -> None:
         with self.connect() as conn:
-            with conn.begin():
-                ScheduleStorageSqlMetadata.create_all(conn)
-                stamp_alembic_rev(pg_alembic_config(__file__), conn)
+            ScheduleStorageSqlMetadata.create_all(conn)
+            stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
         # mark all the data migrations as applied
         self.migrate()

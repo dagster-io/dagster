@@ -101,10 +101,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def _init_db(self) -> None:
         with self.connect() as conn:
-            with conn.begin():
-                RunStorageSqlMetadata.create_all(conn)
-                # This revision may be shared by any other dagster storage classes using the same DB
-                stamp_alembic_rev(pg_alembic_config(__file__), conn)
+            RunStorageSqlMetadata.create_all(conn)
+            # This revision may be shared by any other dagster storage classes using the same DB
+            stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagster-webserver, hold 1 open connection and set statement_timeout
