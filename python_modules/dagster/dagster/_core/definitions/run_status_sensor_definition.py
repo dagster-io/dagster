@@ -42,6 +42,7 @@ from dagster._serdes import (
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .graph_definition import GraphDefinition
@@ -85,14 +86,24 @@ RunFailureSensorEvaluationFn: TypeAlias = Union[
 class RunStatusSensorCursor(
     NamedTuple(
         "_RunStatusSensorCursor",
-        [("record_id", int), ("update_timestamp", Optional[str])],
+        [
+            ("record_id", int),
+            # deprecated arg, used as a record cursor for the run-sharded sqlite implementation to
+            # filter records based on the update timestamp of the run.  When populated, the record
+            # id is ignored (since it maybe run-scoped).
+            ("update_timestamp", Optional[str]),
+            # debug arg, used to quickly inspect the last processed timestamp from the run status
+            # sensor's serialized state
+            ("record_timestamp", Optional[str]),
+        ],
     )
 ):
-    def __new__(cls, record_id, update_timestamp=None):
+    def __new__(cls, record_id, update_timestamp=None, record_timestamp=None):
         return super(RunStatusSensorCursor, cls).__new__(
             cls,
             record_id=check.int_param(record_id, "record_id"),
             update_timestamp=check.opt_str_param(update_timestamp, "update_timestamp"),
+            record_timestamp=check.opt_str_param(record_timestamp, "record_timestamp"),
         )
 
     @staticmethod
@@ -654,7 +665,15 @@ class RunStatusSensorDefinition(SensorDefinition):
                     if len(most_recent_event_records) == 1
                     else -1
                 )
-                new_cursor = RunStatusSensorCursor(record_id=most_recent_event_id)
+                record_timestamp = (
+                    utc_datetime_from_timestamp(most_recent_event_records[0].timestamp).isoformat()
+                    if len(most_recent_event_records) == 1
+                    else None
+                )
+
+                new_cursor = RunStatusSensorCursor(
+                    record_id=most_recent_event_id, record_timestamp=record_timestamp
+                )
                 context.update_cursor(new_cursor.to_json())
                 yield SkipReason(f"Initiating {name}. Set cursor to {new_cursor}")
                 return
@@ -698,6 +717,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             for event_record in event_records:
                 event_log_entry = event_record.event_log_entry
                 storage_id = event_record.storage_id
+                record_timestamp = utc_datetime_from_timestamp(event_record.timestamp).isoformat()
 
                 # get run info
                 run_records = context.instance.get_run_records(
@@ -706,7 +726,11 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 # skip if we couldn't find the right run
                 if len(run_records) != 1:
-                    context.update_cursor(RunStatusSensorCursor(record_id=storage_id).to_json())
+                    context.update_cursor(
+                        RunStatusSensorCursor(
+                            record_id=storage_id, record_timestamp=record_timestamp
+                        ).to_json()
+                    )
                     continue
 
                 dagster_run = run_records[0].dagster_run
@@ -757,7 +781,11 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 if not job_match:
                     # the run in question doesn't match any of the criteria for we advance the cursor and move on
-                    context.update_cursor(RunStatusSensorCursor(record_id=storage_id).to_json())
+                    context.update_cursor(
+                        RunStatusSensorCursor(
+                            record_id=storage_id, record_timestamp=record_timestamp
+                        ).to_json()
+                    )
                     continue
 
                 serializable_error = None
@@ -791,7 +819,9 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                         if sensor_return is not None:
                             context.update_cursor(
-                                RunStatusSensorCursor(record_id=storage_id).to_json()
+                                RunStatusSensorCursor(
+                                    record_id=storage_id, record_timestamp=record_timestamp
+                                ).to_json()
                             )
 
                             if isinstance(sensor_return, SensorResult):
@@ -816,7 +846,11 @@ class RunStatusSensorDefinition(SensorDefinition):
                         run_status_sensor_execution_error.original_exc_info
                     )
 
-                context.update_cursor(RunStatusSensorCursor(record_id=storage_id).to_json())
+                context.update_cursor(
+                    RunStatusSensorCursor(
+                        record_id=storage_id, record_timestamp=record_timestamp
+                    ).to_json()
+                )
 
                 # Yield DagsterRunReaction to indicate the execution success/failure.
                 # The sensor machinery would
