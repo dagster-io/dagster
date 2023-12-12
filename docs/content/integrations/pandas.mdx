@@ -37,6 +37,8 @@ The `dagster_pandas` library provides the ability to perform data validation, em
 To create a custom `dagster_pandas` type, use `create_dagster_pandas_dataframe_type` and provide a list of `PandasColumn` objects which specify column-level schema and constraints. For example, we can construct a custom dataframe type to represent a set of e-bike trips in the following way:
 
 ```python file=/legacy/dagster_pandas_guide/core_trip.py startafter=start_core_trip_marker_0 endbefore=end_core_trip_marker_0
+from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
+
 TripDataFrame = create_dagster_pandas_dataframe_type(
     name="TripDataFrame",
     columns=[
