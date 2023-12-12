@@ -241,7 +241,7 @@ def test_execute_k8s_job_terminate(namespace, cluster_provider, webserver_url_fo
     k8s_job_name = "execute-k8s-job"
     run_config = {
         "ops": {
-            "execute_k8s_op": {
+            "slow_execute_k8s_op": {
                 "config": {
                     "namespace": namespace,
                     "kubeconfig_file": cluster_provider.kubeconfig_file,
