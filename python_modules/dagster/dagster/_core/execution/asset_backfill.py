@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -1035,19 +1036,18 @@ def get_canceling_asset_backfill_iteration_data(
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
     materialized and failed subsets.
     """
-    updated_materialized_subset_data = None
-    for updated_materialized_subset_data in get_asset_backfill_iteration_materialized_partitions(
+    updated_materialized_subset = None
+    for updated_materialized_subset in get_asset_backfill_iteration_materialized_partitions(
         backfill_id, asset_backfill_data, asset_graph, instance_queryer
     ):
         yield None
 
-    if not isinstance(updated_materialized_subset_data, MaterializedSubsetData):
+    if not isinstance(updated_materialized_subset, AssetGraphSubset):
         check.failed(
             "Expected get_asset_backfill_iteration_materialized_partitions to return an"
-            " MaterializedSubsetData object"
+            " AssetGraphSubset object"
         )
 
-    updated_materialized_subset = updated_materialized_subset_data.materialized_subset
     failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
         backfill_id,
         asset_backfill_data,
@@ -1154,28 +1154,18 @@ def _get_implicit_job_name_for_assets(
     return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
 
 
-class MaterializedSubsetData(NamedTuple):
-    """A tuple containing the partitions materialized by the backfill, and the storage ID
-    of the latest included materialization event.
-    """
-
-    materialized_subset: AssetGraphSubset
-    latest_storage_id: Optional[int]
-
-
 def get_asset_backfill_iteration_materialized_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
     asset_graph: ExternalAssetGraph,
     instance_queryer: CachingInstanceQueryer,
-) -> Iterable[Optional[MaterializedSubsetData]]:
+) -> Iterable[Optional[AssetGraphSubset]]:
     """Returns the partitions that have been materialized by the backfill.
 
     This function is a generator so we can return control to the daemon and let it heartbeat
     during expensive operations.
     """
     recently_materialized_asset_partitions = AssetGraphSubset()
-    latest_storage_id = asset_backfill_data.latest_storage_id
     for asset_key in asset_backfill_data.target_subset.asset_keys:
         records = instance_queryer.instance.get_event_records(
             EventRecordsFilter(
@@ -1198,10 +1188,6 @@ def get_asset_backfill_iteration_materialized_partitions(
             },
             asset_graph,
         )
-        if records_in_backfill:
-            latest_storage_id = max(
-                latest_storage_id or 0, *[record.storage_id for record in records_in_backfill]
-            )
 
         yield None
 
@@ -1209,7 +1195,7 @@ def get_asset_backfill_iteration_materialized_partitions(
         asset_backfill_data.materialized_subset | recently_materialized_asset_partitions
     )
 
-    yield MaterializedSubsetData(updated_materialized_subset, latest_storage_id)
+    yield updated_materialized_subset
 
 
 def _get_failed_and_downstream_asset_partitions(
@@ -1263,28 +1249,24 @@ def execute_asset_backfill_iteration_inner(
         failed_and_downstream_subset = AssetGraphSubset()
         next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
     else:
-        updated_materialized_subset_data = None
-        for (
-            updated_materialized_subset_data
-        ) in get_asset_backfill_iteration_materialized_partitions(
+        next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
+        cursor_delay_time = int(os.getenv("ASSET_BACKFILL_CURSOR_DELAY_TIME", "0"))
+        # Events are not guaranteed to be written to the event log in monotonic increasing order,
+        # so we wait to ensure all events up until next_latest_storage_id have been written.
+        time.sleep(cursor_delay_time)
+
+        updated_materialized_subset = None
+        for updated_materialized_subset in get_asset_backfill_iteration_materialized_partitions(
             backfill_id, asset_backfill_data, asset_graph, instance_queryer
         ):
             yield None
 
-        if not isinstance(updated_materialized_subset_data, MaterializedSubsetData):
+        if not isinstance(updated_materialized_subset, AssetGraphSubset):
             check.failed(
                 "Expected get_asset_backfill_iteration_materialized_partitions to return an"
-                " MaterializedSubsetData object"
+                " AssetGraphSubset"
             )
-        updated_materialized_subset = updated_materialized_subset_data.materialized_subset
-        next_latest_storage_id = updated_materialized_subset_data.latest_storage_id
 
-        # The following block fetches asset partitions whose parents have been materialized since
-        # the last backfill iteration. This block must be executed after the materialized subset
-        # is updated. Otherwise, a race condition occurs where parent_materialized_asset_partitions
-        # is fetched, a materialization occurs, and then materialized_subset is updated. This
-        # results in the partition existing in the materialized subset, but its downstreams
-        # not being requested.
         parent_materialized_asset_partitions = set().union(
             *(
                 instance_queryer.asset_partitions_with_newly_updated_parents(
