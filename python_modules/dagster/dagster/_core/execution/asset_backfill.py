@@ -1250,7 +1250,7 @@ def execute_asset_backfill_iteration_inner(
         next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
     else:
         next_latest_storage_id = instance_queryer.instance.event_log_storage.get_maximum_record_id()
-        cursor_delay_time = int(os.getenv("ASSET_BACKFILL_CURSOR_DELAY_TIME", "0"))
+        cursor_delay_time = int(os.getenv("ASSET_BACKFILL_CURSOR_DELAY_TIME", "3"))
         # Events are not guaranteed to be written to the event log in monotonic increasing order,
         # so we wait to ensure all events up until next_latest_storage_id have been written.
         time.sleep(cursor_delay_time)
