@@ -1159,7 +1159,7 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
-def test_graph_asset_w_ins():
+def test_graph_asset_w_ins_and_param_args():
     @asset
     def upstream():
         return 1
@@ -1184,6 +1184,12 @@ def test_graph_asset_w_ins():
     result = materialize_to_memory([upstream, bar])
     assert result.success
     assert result.output_for_node("bar", "first_asset") == 2
+
+
+def test_graph_asset_w_ins_and_kwargs():
+    @asset
+    def upstream():
+        return 1
 
     @asset
     def another_upstream():
