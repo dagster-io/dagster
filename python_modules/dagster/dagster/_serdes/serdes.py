@@ -368,7 +368,9 @@ def _whitelist_for_serdes(
     return __whitelist_for_serdes
 
 
-def is_serdes_decorated_namedtuple(val: Any, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> bool:
+def is_whitelisted_for_serdes_namedtuple(
+    val: Any, whitelist_map: WhitelistMap = _WHITELIST_MAP
+) -> bool:
     """Check if object is a NamedTuple that has been decorated with `@whitelist_for_serdes`."""
     if isinstance(val, tuple) and hasattr(val, "_fields"):
         klass_name = val.__class__.__name__
