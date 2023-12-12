@@ -61,7 +61,7 @@ from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
@@ -521,20 +521,21 @@ def execute_asset_backfill_iteration_consume_generator(
     instance: DagsterInstance,
 ) -> AssetBackfillIterationResult:
     traced_counter.set(Counter())
-    for result in execute_asset_backfill_iteration_inner(
-        backfill_id=backfill_id,
-        asset_backfill_data=asset_backfill_data,
-        instance_queryer=CachingInstanceQueryer(
-            instance, asset_graph, asset_backfill_data.backfill_start_time
-        ),
-        asset_graph=asset_graph,
-        run_tags={},
-        backfill_start_time=asset_backfill_data.backfill_start_time,
-    ):
-        if isinstance(result, AssetBackfillIterationResult):
-            counts = traced_counter.get().counts()
-            assert counts.get("DagsterInstance.get_dynamic_partitions", 0) <= 1
-            return result
+    with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
+        for result in execute_asset_backfill_iteration_inner(
+            backfill_id=backfill_id,
+            asset_backfill_data=asset_backfill_data,
+            instance_queryer=CachingInstanceQueryer(
+                instance, asset_graph, asset_backfill_data.backfill_start_time
+            ),
+            asset_graph=asset_graph,
+            run_tags={},
+            backfill_start_time=asset_backfill_data.backfill_start_time,
+        ):
+            if isinstance(result, AssetBackfillIterationResult):
+                counts = traced_counter.get().counts()
+                assert counts.get("DagsterInstance.get_dynamic_partitions", 0) <= 1
+                return result
 
     assert False
 
