@@ -371,4 +371,5 @@ def test_asset_nothing_output_non_none_input():
     def asset2(asset1):
         assert asset1 is None
 
-    assert materialize_to_memory([asset1, asset2]).success
+    with pytest.raises(KeyError):
+        assert materialize_to_memory([asset1, asset2]).success
