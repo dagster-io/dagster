@@ -820,13 +820,6 @@ def _load_input_with_input_manager(
 ) -> Iterator[object]:
     from dagster._core.execution.context.system import StepExecutionContext
 
-    # if (
-    #     context.upstream_output
-    #     and context.upstream_output.has_dagster_type
-    #     and context.upstream_output.dagster_type.is_nothing
-    # ):
-    #     yield None
-    # else:
     step_context = cast(StepExecutionContext, context.step_context)
     with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
