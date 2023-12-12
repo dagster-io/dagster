@@ -94,12 +94,14 @@ class AssetBackfillScenario(NamedTuple):
     # when backfilling "some" partitions, the subset of partitions of root assets in the backfill
     # to target:
     target_root_partition_keys: Optional[Sequence[str]]
+    last_storage_id_cursor_offset: Optional[int]
 
 
 def scenario(
     assets: Union[Mapping[str, Sequence[AssetsDefinition]], Sequence[AssetsDefinition]],
     evaluation_time: Optional[datetime.datetime] = None,
     target_root_partition_keys: Optional[Sequence[str]] = None,
+    last_storage_id_cursor_offset: Optional[int] = None,
 ) -> AssetBackfillScenario:
     if isinstance(assets, list):
         assets_by_repo_name = {"repo": assets}
@@ -110,11 +112,15 @@ def scenario(
         assets_by_repo_name=cast(Mapping[str, Sequence[AssetsDefinition]], assets_by_repo_name),
         evaluation_time=evaluation_time if evaluation_time else pendulum.now("UTC"),
         target_root_partition_keys=target_root_partition_keys,
+        last_storage_id_cursor_offset=last_storage_id_cursor_offset,
     )
 
 
 scenarios = {
     "one_asset_one_partition": scenario(one_asset_one_partition),
+    "one_asset_one_partition_cursor_offset": scenario(
+        one_asset_one_partition, last_storage_id_cursor_offset=100
+    ),
     "one_asset_two_partitions": scenario(one_asset_two_partitions),
     "two_assets_in_sequence_one_partition": scenario(two_assets_in_sequence_one_partition),
     "two_assets_in_sequence_one_partition_cross_repo": scenario(
@@ -123,7 +129,17 @@ scenarios = {
             "repo2": [two_assets_in_sequence_one_partition[1]],
         },
     ),
+    "two_assets_in_sequence_one_partition_cross_repo_cursor_offset": scenario(
+        {
+            "repo1": [two_assets_in_sequence_one_partition[0]],
+            "repo2": [two_assets_in_sequence_one_partition[1]],
+        },
+        last_storage_id_cursor_offset=100,
+    ),
     "two_assets_in_sequence_two_partitions": scenario(two_assets_in_sequence_two_partitions),
+    "two_assets_in_sequence_two_partitions_cursor_offset": scenario(
+        two_assets_in_sequence_two_partitions, last_storage_id_cursor_offset=100
+    ),
     "two_assets_in_sequence_fan_in_partitions": scenario(two_assets_in_sequence_fan_in_partitions),
     "two_assets_in_sequence_fan_out_partitions": scenario(
         two_assets_in_sequence_fan_out_partitions
@@ -262,7 +278,11 @@ def _single_backfill_iteration_create_but_do_not_submit_runs(
 @pytest.mark.parametrize("failures", ["no_failures", "root_failures", "random_half_failures"])
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, some_or_all: str):
-    with instance_for_test() as instance:
+    with instance_for_test() as instance, environ(
+        {"ASSET_BACKFILL_CURSOR_OFFSET": str(scenario.last_storage_id_cursor_offset)}
+        if scenario.last_storage_id_cursor_offset
+        else {}
+    ):
         instance.add_dynamic_partitions("foo", ["a", "b"])
 
         with pendulum.test(scenario.evaluation_time):
