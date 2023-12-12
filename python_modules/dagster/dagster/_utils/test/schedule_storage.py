@@ -709,7 +709,7 @@ class TestScheduleStorage:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
-        condition_snapshot = AssetConditionSnapshot("foo", "bar", [])
+        condition_snapshot = AssetConditionSnapshot("foo", "bar", "")
 
         for _ in range(2):  # test idempotency
             storage.add_auto_materialize_asset_evaluations(
@@ -794,13 +794,13 @@ class TestScheduleStorage:
         # add a mix of keys - one that already is using the unique index and one that is not
 
         eval_one = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
             true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
             candidate_subset=None,
         ).with_run_ids(set())
 
         eval_asset_three = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
             true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
             candidate_subset=None,
         ).with_run_ids(set())
@@ -844,7 +844,7 @@ class TestScheduleStorage:
             evaluation_id=10,
             asset_evaluations=[
                 AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
                     true_subset=asset_subset,
                     candidate_subset=None,
                     subsets_with_metadata=[asset_subset_with_metadata],
@@ -870,7 +870,7 @@ class TestScheduleStorage:
             evaluation_id=11,
             asset_evaluations=[
                 AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", []),
+                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     candidate_subset=None,
                     subsets_with_metadata=[],

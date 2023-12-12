@@ -1,7 +1,8 @@
+import dataclasses
 import datetime
 import functools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Sequence
 
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -21,15 +22,28 @@ if TYPE_CHECKING:
     from .asset_daemon_context import AssetDaemonContext
 
 
+def root_property(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
+    """Ensures that a given property is always accessed via the root context, ensuring that any
+    cached properties are accessed correctly.
+    """
+
+    def wrapped(self: Any) -> Any:
+        return fn(self.root_context)
+
+    return wrapped
+
+
 @dataclass(frozen=True)
-class RootAssetConditionEvaluationContext:
+class AssetConditionEvaluationContext:
     """Context object containing methods and properties used for evaluating the entire state of an
     asset's automation rules.
     """
 
     asset_key: AssetKey
+    condition: "AssetCondition"
     asset_cursor: Optional[AssetDaemonAssetCursor]
-    root_condition: "AssetCondition"
+    previous_evaluation: Optional["AssetConditionEvaluation"]
+    candidate_subset: AssetSubset
 
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
@@ -37,6 +51,55 @@ class RootAssetConditionEvaluationContext:
 
     evaluation_results_by_key: Mapping[AssetKey, "AssetConditionEvaluation"]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
+
+    root_ref: Optional["AssetConditionEvaluationContext"] = None
+
+    @staticmethod
+    def create(
+        asset_key: AssetKey,
+        condition: "AssetCondition",
+        asset_cursor: Optional[AssetDaemonAssetCursor],
+        instance_queryer: CachingInstanceQueryer,
+        data_time_resolver: CachingDataTimeResolver,
+        daemon_context: "AssetDaemonContext",
+        evaluation_results_by_key: Mapping[AssetKey, "AssetConditionEvaluation"],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+    ) -> "AssetConditionEvaluationContext":
+        return AssetConditionEvaluationContext(
+            asset_key=asset_key,
+            condition=condition,
+            asset_cursor=asset_cursor,
+            previous_evaluation=asset_cursor.previous_evaluation if asset_cursor else None,
+            candidate_subset=AssetSubset.all(
+                asset_key,
+                instance_queryer.asset_graph.get_partitions_def(asset_key),
+                instance_queryer,
+                instance_queryer.evaluation_time,
+            ),
+            data_time_resolver=data_time_resolver,
+            instance_queryer=instance_queryer,
+            daemon_context=daemon_context,
+            evaluation_results_by_key=evaluation_results_by_key,
+            expected_data_time_mapping=expected_data_time_mapping,
+        )
+
+    def for_child(
+        self, condition: "AssetCondition", candidate_subset: AssetSubset
+    ) -> "AssetConditionEvaluationContext":
+        return dataclasses.replace(
+            self,
+            condition=condition,
+            candidate_subset=candidate_subset,
+            previous_evaluation=self.previous_evaluation.for_child(condition)
+            if self.previous_evaluation
+            else None,
+            root_ref=self.root_context,
+        )
+
+    @property
+    def root_context(self) -> "AssetConditionEvaluationContext":
+        """A reference to the context of the root condition for this evaluation."""
+        return self.root_ref or self
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -51,13 +114,20 @@ class RootAssetConditionEvaluationContext:
         """Returns the time at which this rule is being evaluated."""
         return self.instance_queryer.evaluation_time
 
-    @functools.cached_property
-    def latest_evaluation(self) -> Optional["AssetConditionEvaluation"]:
+    @property
+    def previous_max_storage_id(self) -> Optional[int]:
         if not self.asset_cursor:
             return None
-        return self.asset_cursor.latest_evaluation
+        return self.asset_cursor.previous_max_storage_id
+
+    @property
+    def previous_evaluation_timestamp(self) -> Optional[float]:
+        if not self.asset_cursor:
+            return None
+        return self.asset_cursor.previous_evaluation_timestamp
 
     @functools.cached_property
+    @root_property
     def parent_will_update_subset(self) -> AssetSubset:
         """Returns the set of asset partitions whose parents will be updated on this tick, and which
         can be materialized in the same run as this asset.
@@ -73,14 +143,16 @@ class RootAssetConditionEvaluationContext:
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
 
-    @property
+    @functools.cached_property
+    @root_property
     def previous_tick_requested_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were requested on the previous tick."""
-        if not self.latest_evaluation:
+        if not self.previous_evaluation:
             return self.empty_subset()
-        return self.latest_evaluation.true_subset
+        return self.previous_evaluation.true_subset
 
     @functools.cached_property
+    @root_property
     def materialized_since_previous_tick_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
         return AssetSubset.from_asset_partitions_set(
@@ -89,23 +161,27 @@ class RootAssetConditionEvaluationContext:
             self.instance_queryer.get_asset_partitions_updated_after_cursor(
                 self.asset_key,
                 asset_partitions=None,
-                after_cursor=self.asset_cursor.latest_storage_id if self.asset_cursor else None,
+                after_cursor=self.asset_cursor.previous_max_storage_id
+                if self.asset_cursor
+                else None,
                 respect_materialization_data_versions=False,
             ),
         )
 
     @functools.cached_property
+    @root_property
     def materialized_requested_or_discarded_since_previous_tick_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
-        if not self.latest_evaluation:
+        if not self.previous_evaluation:
             return self.materialized_since_previous_tick_subset
         return (
             self.materialized_since_previous_tick_subset
-            | self.latest_evaluation.true_subset
-            | (self.latest_evaluation.discard_subset(self.root_condition) or self.empty_subset())
+            | self.previous_evaluation.true_subset
+            | (self.previous_evaluation.discard_subset(self.condition) or self.empty_subset())
         )
 
     @functools.cached_property
+    @root_property
     def never_materialized_requested_or_discarded_root_subset(self) -> AssetSubset:
         if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
             return self.empty_subset()
@@ -121,6 +197,52 @@ class RootAssetConditionEvaluationContext:
             current_time=self.evaluation_time,
         )
         return unhandled_subset - self.materialized_since_previous_tick_subset
+
+    @property
+    @root_property
+    def parent_has_updated_subset(self) -> AssetSubset:
+        """Returns the set of asset partitions whose parents have updated since the last time this
+        condition was evaluated.
+        """
+        return AssetSubset.from_asset_partitions_set(
+            self.asset_key,
+            self.partitions_def,
+            self.root_context.instance_queryer.asset_partitions_with_newly_updated_parents(
+                latest_storage_id=self.previous_max_storage_id,
+                child_asset_key=self.root_context.asset_key,
+                map_old_time_partitions=False,
+            ),
+        )
+
+    @property
+    def candidate_parent_has_or_will_update_subset(self) -> AssetSubset:
+        """Returns the set of candidates for this tick which have parents that have updated since
+        the previous tick, or will update on this tick.
+        """
+        return self.candidate_subset & (
+            self.parent_has_updated_subset | self.root_context.parent_will_update_subset
+        )
+
+    @property
+    def candidates_not_evaluated_on_previous_tick_subset(self) -> AssetSubset:
+        """Returns the set of candidates for this tick which were not candidates on the previous
+        tick.
+        """
+        if not self.previous_evaluation or not self.previous_evaluation.candidate_subset:
+            return self.candidate_subset
+        return self.candidate_subset - self.previous_evaluation.candidate_subset
+
+    @property
+    def previous_tick_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
+        """Returns the RuleEvaluationResults calculated on the previous tick for this condition."""
+        return self.previous_evaluation.subsets_with_metadata if self.previous_evaluation else []
+
+    @property
+    def previous_tick_true_subset(self) -> AssetSubset:
+        """Returns the set of asset partitions that were true for this condition on the previous tick."""
+        if not self.previous_evaluation:
+            return self.empty_subset()
+        return self.previous_evaluation.true_subset
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
@@ -175,19 +297,6 @@ class RootAssetConditionEvaluationContext:
     def empty_subset(self) -> AssetSubset:
         return AssetSubset.empty(self.asset_key, self.partitions_def)
 
-    def get_root_condition_context(self) -> "AssetConditionEvaluationContext":
-        return AssetConditionEvaluationContext(
-            root_context=self,
-            condition=self.root_condition,
-            candidate_subset=AssetSubset.all(
-                asset_key=self.asset_key,
-                partitions_def=self.partitions_def,
-                dynamic_partitions_store=self.instance_queryer,
-                current_time=self.instance_queryer.evaluation_time,
-            ),
-            latest_evaluation=self.latest_evaluation,
-        )
-
     def get_new_asset_cursor(
         self, evaluation: "AssetConditionEvaluation"
     ) -> AssetDaemonAssetCursor:
@@ -203,120 +312,12 @@ class RootAssetConditionEvaluationContext:
             previous_handled_subset
             | self.materialized_requested_or_discarded_since_previous_tick_subset
             | evaluation.true_subset
-            | (evaluation.discard_subset(self.root_condition) or self.empty_subset())
+            | (evaluation.discard_subset(self.condition) or self.empty_subset())
         )
         return AssetDaemonAssetCursor(
             asset_key=self.asset_key,
-            latest_storage_id=self.daemon_context.get_new_latest_storage_id(),
-            latest_evaluation=evaluation,
-            latest_evaluation_timestamp=self.evaluation_time.timestamp(),
+            previous_max_storage_id=self.daemon_context.get_new_latest_storage_id(),
+            previous_evaluation=evaluation,
+            previous_evaluation_timestamp=self.evaluation_time.timestamp(),
             materialized_requested_or_discarded_subset=new_handled_subset,
-        )
-
-
-@dataclass(frozen=True)
-class AssetConditionEvaluationContext:
-    """Context object containing methods and properties used for evaluating a particular AssetCondition."""
-
-    root_context: RootAssetConditionEvaluationContext
-    condition: "AssetCondition"
-    candidate_subset: AssetSubset
-    latest_evaluation: Optional["AssetConditionEvaluation"]
-
-    @property
-    def asset_key(self) -> AssetKey:
-        return self.root_context.asset_key
-
-    @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
-        return self.root_context.partitions_def
-
-    @property
-    def asset_cursor(self) -> Optional[AssetDaemonAssetCursor]:
-        return self.root_context.asset_cursor
-
-    @property
-    def asset_graph(self) -> AssetGraph:
-        return self.root_context.asset_graph
-
-    @property
-    def instance_queryer(self) -> CachingInstanceQueryer:
-        return self.root_context.instance_queryer
-
-    @property
-    def max_storage_id(self) -> Optional[int]:
-        return self.asset_cursor.latest_storage_id if self.asset_cursor else None
-
-    @property
-    def latest_evaluation_timestamp(self) -> Optional[float]:
-        return self.asset_cursor.latest_evaluation_timestamp if self.asset_cursor else None
-
-    @property
-    def previous_tick_true_subset(self) -> AssetSubset:
-        """Returns the set of asset partitions that were true on the previous tick."""
-        if not self.latest_evaluation:
-            return self.empty_subset()
-        return self.latest_evaluation.true_subset
-
-    @property
-    def parent_has_updated_subset(self) -> AssetSubset:
-        """Returns the set of asset partitions whose parents have updated since the last time this
-        condition was evaluated.
-        """
-        return AssetSubset.from_asset_partitions_set(
-            self.asset_key,
-            self.partitions_def,
-            self.root_context.instance_queryer.asset_partitions_with_newly_updated_parents(
-                latest_storage_id=self.max_storage_id,
-                child_asset_key=self.root_context.asset_key,
-                map_old_time_partitions=False,
-            ),
-        )
-
-    @property
-    def candidate_parent_has_or_will_update_subset(self) -> AssetSubset:
-        """Returns the set of candidates for this tick which have parents that have updated since
-        the previous tick, or will update on this tick.
-        """
-        return self.candidate_subset & (
-            self.parent_has_updated_subset | self.root_context.parent_will_update_subset
-        )
-
-    @property
-    def candidates_not_evaluated_on_previous_tick_subset(self) -> AssetSubset:
-        """Returns the set of candidates for this tick which were not candidates on the previous
-        tick.
-        """
-        if not self.latest_evaluation or not self.latest_evaluation.candidate_subset:
-            return self.candidate_subset
-        return self.candidate_subset - self.latest_evaluation.candidate_subset
-
-    @property
-    def materialized_since_previous_tick_subset(self) -> AssetSubset:
-        """Returns the set of asset partitions that were materialized since the previous tick."""
-        return self.root_context.materialized_since_previous_tick_subset
-
-    @property
-    def materialized_requested_or_discarded_since_previous_tick_subset(self) -> AssetSubset:
-        """Returns the set of asset partitions that were materialized since the previous tick."""
-        return self.root_context.materialized_requested_or_discarded_since_previous_tick_subset
-
-    @property
-    def previous_tick_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
-        """Returns the RuleEvaluationResults calculated on the previous tick for this condition."""
-        return self.latest_evaluation.subsets_with_metadata if self.latest_evaluation else []
-
-    def empty_subset(self) -> AssetSubset:
-        return self.root_context.empty_subset()
-
-    def for_child(
-        self, condition: "AssetCondition", candidate_subset: AssetSubset, child_index: int
-    ) -> "AssetConditionEvaluationContext":
-        return AssetConditionEvaluationContext(
-            root_context=self.root_context,
-            condition=condition,
-            candidate_subset=candidate_subset,
-            latest_evaluation=self.latest_evaluation.for_child(condition)
-            if self.latest_evaluation
-            else None,
         )

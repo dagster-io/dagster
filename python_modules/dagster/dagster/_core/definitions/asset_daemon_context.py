@@ -36,7 +36,9 @@ from dagster._utils.cached_method import cached_method
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
 from .asset_condition import AssetConditionEvaluation
-from .asset_condition_evaluation_context import RootAssetConditionEvaluationContext
+from .asset_condition_evaluation_context import (
+    AssetConditionEvaluationContext,
+)
 from .asset_daemon_cursor import AssetDaemonAssetCursor, AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import AutoMaterializeRule
@@ -239,19 +241,18 @@ class AssetDaemonContext:
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         ).to_asset_condition()
 
-        context = RootAssetConditionEvaluationContext(
+        context = AssetConditionEvaluationContext.create(
             asset_key=asset_key,
             asset_cursor=self.cursor.asset_cursor_for_key(asset_key, self.asset_graph),
-            root_condition=asset_condition,
+            condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
             daemon_context=self,
             evaluation_results_by_key=evaluation_results_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
         )
-        condition_context = context.get_root_condition_context()
 
-        evaluation = asset_condition.evaluate(condition_context)
+        evaluation = asset_condition.evaluate(context)
         asset_cursor = context.get_new_asset_cursor(evaluation=evaluation)
 
         expected_data_time = get_expected_data_time_for_asset_key(
