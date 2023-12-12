@@ -2327,6 +2327,7 @@ type Instance {
   supportsConcurrencyLimits: Boolean!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
+  useAutomationPolicySensors: Boolean!
 }
 
 type RunQueueConfig {

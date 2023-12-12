@@ -1508,6 +1508,7 @@ export type Instance = {
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
   supportsConcurrencyLimits: Scalars['Boolean'];
+  useAutomationPolicySensors: Scalars['Boolean'];
 };
 
 export type InstanceConcurrencyLimitArgs = {
@@ -7354,6 +7355,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('supportsConcurrencyLimits')
         ? overrides.supportsConcurrencyLimits!
         : false,
+    useAutomationPolicySensors:
+      overrides && overrides.hasOwnProperty('useAutomationPolicySensors')
+        ? overrides.useAutomationPolicySensors!
+        : true,
   };
 };
 
