@@ -9,7 +9,7 @@ from typing_extensions import get_args, get_origin
 import dagster._check as check
 
 try:
-    from types import UnionType
+    from types import UnionType # pyright: ignore
 except ImportError:
     UnionType = typing.Union
 
