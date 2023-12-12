@@ -31,6 +31,7 @@ import DockerEnvVarsConfiguration from './includes/dagster-cloud/agents/DockerEn
 import K8sEnvVarsConfiguration from './includes/dagster-cloud/agents/K8sEnvVarsConfiguration.mdx';
 import DagsterDevTabs from './includes/dagster/DagsterDevTabs.mdx';
 import DagsterVersion from './includes/dagster/DagsterVersion.mdx';
+import LoggingInDagsterUI from './includes/dagster/concepts/LoggingInDagsterUI.mdx';
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
 
 export const SearchIndexContext = React.createContext(null);
@@ -851,6 +852,7 @@ export default {
   ReferenceTableItem,
   DagsterVersion,
   DagsterDevTabs,
+  LoggingInDagsterUI,
   AddGitlabVariable,
   AddGitubRepositorySecret,
   GenerateAgentToken,
