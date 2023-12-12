@@ -62,7 +62,12 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   );
 
   const [theme, setTheme] = useStateWithStorage(DAGSTER_THEME_KEY, (value: any) => {
-    if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
+    if (
+      value === DagsterTheme.Light ||
+      value === DagsterTheme.Dark ||
+      value === DagsterTheme.System ||
+      value === DagsterTheme.Legacy
+    ) {
       return value;
     }
     return DagsterTheme.Legacy;

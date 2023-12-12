@@ -8,6 +8,7 @@ export enum DagsterTheme {
   Legacy = 'Legacy',
   Light = 'Light',
   Dark = 'Dark',
+  System = 'System',
 }
 
 export const DAGSTER_THEME_KEY = 'dagster-theme';
@@ -28,15 +29,22 @@ export const getTheme = memoize(() => {
   }
 
   // Allow setting the theme as an override.
-  if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
+  if (
+    value === DagsterTheme.Light ||
+    value === DagsterTheme.Dark ||
+    value === DagsterTheme.Legacy
+  ) {
     return value;
   }
 
-  // todo dish: Uncomment this to allow OS settings to work automatically.
-  // if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  //   return DagsterTheme.Dark;
-  // }
+  if (value === DagsterTheme.System) {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return DagsterTheme.Dark;
+    }
+    return DagsterTheme.Light;
+  }
 
+  // If no value set, use Legacy. todo dish: Remove this in favor of defaulting to "System"
   return DagsterTheme.Legacy;
 });
 
