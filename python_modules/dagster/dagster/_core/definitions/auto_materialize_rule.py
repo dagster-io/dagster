@@ -308,10 +308,10 @@ class MaterializeOnCronRule(
         self, context: AssetConditionEvaluationContext
     ) -> Sequence[datetime.datetime]:
         """Returns the cron ticks which have been missed since the previous cursor was generated."""
-        if not context.latest_evaluation_timestamp:
+        if not context.previous_evaluation_timestamp:
             previous_dt = next(
                 reverse_cron_string_iterator(
-                    end_timestamp=context.root_context.evaluation_time.timestamp(),
+                    end_timestamp=context.evaluation_time.timestamp(),
                     cron_string=self.cron_schedule,
                     execution_timezone=self.timezone,
                 )
@@ -319,11 +319,11 @@ class MaterializeOnCronRule(
             return [previous_dt]
         missed_ticks = []
         for dt in cron_string_iterator(
-            start_timestamp=context.latest_evaluation_timestamp,
+            start_timestamp=context.previous_evaluation_timestamp,
             cron_string=self.cron_schedule,
             execution_timezone=self.timezone,
         ):
-            if dt > context.root_context.evaluation_time:
+            if dt > context.evaluation_time:
                 break
             missed_ticks.append(dt)
         return missed_ticks
@@ -345,7 +345,7 @@ class MaterializeOnCronRule(
             return {
                 AssetKeyPartitionKey(context.asset_key, partition_key)
                 for partition_key in partitions_def.get_partition_keys(
-                    current_time=context.root_context.evaluation_time,
+                    current_time=context.evaluation_time,
                     dynamic_partitions_store=context.instance_queryer,
                 )
             }
@@ -436,7 +436,7 @@ class AutoMaterializeAssetPartitionsFilter(
 
         asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for asset_partition in asset_partitions:
-            if context.root_context.will_update_asset_partition(asset_partition):
+            if context.will_update_asset_partition(asset_partition):
                 will_update_asset_partitions.add(asset_partition)
             else:
                 record = context.instance_queryer.get_latest_materialization_or_observation_record(
@@ -471,7 +471,7 @@ class AutoMaterializeAssetPartitionsFilter(
             self.latest_run_required_tags.items()
             <= {
                 AUTO_MATERIALIZE_TAG: "true",
-                **context.root_context.daemon_context.auto_materialize_run_tags,
+                **context.daemon_context.auto_materialize_run_tags,
             }.items()
         ):
             return will_update_asset_partitions | updated_partitions_with_required_tags
@@ -530,7 +530,7 @@ class MaterializeOnParentUpdatedRule(
                 parent_asset_partitions,
                 # do a precise check for updated parents, factoring in data versions, as long as
                 # we're within reasonable limits on the number of partitions to check
-                respect_materialization_data_versions=context.root_context.daemon_context.respect_materialization_data_versions
+                respect_materialization_data_versions=context.daemon_context.respect_materialization_data_versions
                 and len(parent_asset_partitions) + subset_to_evaluate.size < 100,
                 # ignore self-dependencies when checking for updated parents, to avoid historical
                 # rematerializations from causing a chain of materializations to be kicked off
@@ -540,7 +540,7 @@ class MaterializeOnParentUpdatedRule(
                 asset_partitions_by_updated_parents[parent].add(asset_partition)
 
             for parent in parent_asset_partitions:
-                if context.root_context.will_update_asset_partition(parent):
+                if context.will_update_asset_partition(parent):
                     asset_partitions_by_will_update_parents[parent].add(asset_partition)
 
         updated_and_will_update_parents = (
@@ -612,7 +612,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         with updated parents.
         """
         missing_asset_partitions = set(
-            context.root_context.never_materialized_requested_or_discarded_root_subset.asset_partitions
+            context.never_materialized_requested_or_discarded_root_subset.asset_partitions
         )
         # in addition to missing root asset partitions, check any asset partitions with updated
         # parents to see if they're missing
@@ -653,9 +653,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         for candidate in subset_to_evaluate.asset_partitions:
             outdated_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
-            for (
-                parent
-            ) in context.root_context.get_parents_that_will_not_be_materialized_on_current_tick(
+            for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
             ):
                 if context.instance_queryer.have_ignorable_partition_mapping_for_outdated(
@@ -700,15 +698,13 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         )
         for candidate in subset_to_evaluate.asset_partitions:
             missing_parent_asset_keys = set()
-            for (
-                parent
-            ) in context.root_context.get_parents_that_will_not_be_materialized_on_current_tick(
+            for parent in context.get_parents_that_will_not_be_materialized_on_current_tick(
                 asset_partition=candidate
             ):
                 # ignore non-observable sources, which will never have a materialization or observation
-                if context.root_context.asset_graph.is_source(
+                if context.asset_graph.is_source(
                     parent.asset_key
-                ) and not context.root_context.asset_graph.is_observable(parent.asset_key):
+                ) and not context.asset_graph.is_observable(parent.asset_key):
                     continue
                 if not context.instance_queryer.asset_partition_has_materialization_or_observation(
                     parent
@@ -779,10 +775,10 @@ class SkipOnNotAllParentsUpdatedRule(
                 context.instance_queryer.get_parent_asset_partitions_updated_after_child(
                     candidate,
                     parent_partitions,
-                    context.root_context.daemon_context.respect_materialization_data_versions,
+                    context.daemon_context.respect_materialization_data_versions,
                     ignored_parent_keys=set(),
                 )
-                | context.root_context.parent_will_update_subset.asset_partitions
+                | context.parent_will_update_subset.asset_partitions
             )
 
             if self.require_update_for_all_parent_partitions:
@@ -871,7 +867,7 @@ class SkipOnBackfillInProgressRule(
     def evaluate_for_asset(self, context: AssetConditionEvaluationContext) -> RuleEvaluationResults:
         backfilling_subset = (
             context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-        ).get_asset_subset(context.asset_key, context.root_context.asset_graph)
+        ).get_asset_subset(context.asset_key, context.asset_graph)
 
         if backfilling_subset.size == 0:
             return context.empty_subset(), []
