@@ -29,7 +29,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return SqlitePollingEventLogStorage(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def watch(
         self, run_id: str, cursor: Union[str, int], callback: Callable[[EventLogEntry], None]

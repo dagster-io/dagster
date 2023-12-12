@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import {Box, Colors, Tag} from '@dagster-io/ui-components';
+import {Box, Tag, colorTextRed} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -335,7 +335,7 @@ const FailureContent = ({
   }
 
   if (error) {
-    errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
+    errorMessage = <span style={{color: colorTextRed()}}>{`${error.message}`}</span>;
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
@@ -343,7 +343,7 @@ const FailureContent = ({
       error.stack.length &&
       !(errorSource === ErrorSource.USER_CODE_ERROR && error.errorChain.length)
     ) {
-      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
+      errorStack = <span style={{color: colorTextRed()}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
     if (error.errorChain.length) {
@@ -352,9 +352,11 @@ const FailureContent = ({
           {chainLink.isExplicitLink
             ? `The above exception was caused by the following exception:\n`
             : `The above exception occurred during handling of the following exception:\n`}
-          <span style={{color: Colors.Red500}}>{`${chainLink.error.message}`}</span>
+          <span style={{color: colorTextRed()}}>{`${chainLink.error.message}`}</span>
           {chainLink.error.stack.length ? (
-            <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${chainLink.error.stack}`}</span>
+            <span
+              style={{color: colorTextRed()}}
+            >{`\nStack Trace:\n${chainLink.error.stack}`}</span>
           ) : null}
         </React.Fragment>
       ));
@@ -403,8 +405,8 @@ const StepUpForRetryContent = ({
   if (error) {
     // If no cause, this was a `raise RetryRequest` inside the op. Show the trace for the main error.
     if (!error.errorChain.length) {
-      errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
-      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
+      errorMessage = <span style={{color: colorTextRed()}}>{`${error.message}`}</span>;
+      errorStack = <span style={{color: colorTextRed()}}>{`\nStack Trace:\n${error.stack}`}</span>;
     } else {
       // If there is a cause, this was a different exception. Show that instead.
       errorCause = (
@@ -414,9 +416,9 @@ const StepUpForRetryContent = ({
               {index === 0
                 ? `The retry request was caused by the following exception:\n`
                 : `The above exception was caused by the following exception:\n`}
-              <span style={{color: Colors.Red500}}>{`${chainLink.error.message}`}</span>
+              <span style={{color: colorTextRed()}}>{`${chainLink.error.message}`}</span>
               <span
-                style={{color: Colors.Red500}}
+                style={{color: colorTextRed()}}
               >{`\nStack Trace:\n${chainLink.error.stack}`}</span>
             </React.Fragment>
           ))}
@@ -464,7 +466,7 @@ const AssetCheckEvaluationContent = ({
       eventIntent={success ? Intent.SUCCESS : Intent.DANGER}
     >
       <div>
-        <div style={{color: success ? 'inherit' : Colors.Red500}}>
+        <div style={{color: success ? 'inherit' : colorTextRed()}}>
           Check <MetadataEntryLink to={checkLink}>{checkName}</MetadataEntryLink>
           {` ${success ? 'succeeded' : 'failed'} for materialization of `}
           <MetadataEntryLink to={matLink}>{displayNameForAssetKey(assetKey)}</MetadataEntryLink>.

@@ -27,8 +27,9 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -55,6 +56,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, normalize_to_repository
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import (
     get_function_params,
@@ -92,12 +94,18 @@ class SensorType(Enum):
     ASSET = "ASSET"
     MULTI_ASSET = "MULTI_ASSET"
     FRESHNESS_POLICY = "FRESHNESS_POLICY"
+    AUTOMATION_POLICY = "AUTOMATION_POLICY"
     UNKNOWN = "UNKNOWN"
 
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
+@deprecated_param(
+    param="last_completion_time",
+    breaking_version="2.0",
+    additional_warn_text="Use `last_tick_completion_time` instead.",
+)
 class SensorEvaluationContext:
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
@@ -109,7 +117,7 @@ class SensorEvaluationContext:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest
-        last_completion_time (float): DEPRECATED The last time that the sensor was evaluated (UTC).
+        last_tick_completion_time (float): The last time that the sensor was evaluated (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
@@ -123,6 +131,7 @@ class SensorEvaluationContext:
             definitions. You can provide either this or `repository_def`.
         resources (Optional[Dict[str, Any]]): A dict of resource keys to resource
             definitions to be made available during sensor execution.
+        last_sensor_start_time (float): The last time that the sensor was started (UTC).
 
     Example:
         .. code-block:: python
@@ -138,25 +147,34 @@ class SensorEvaluationContext:
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
-        last_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
-        repository_name: Optional[str],
+        last_tick_completion_time: Optional[float] = None,
+        last_run_key: Optional[str] = None,
+        cursor: Optional[str] = None,
+        repository_name: Optional[str] = None,
         repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
         definitions: Optional["Definitions"] = None,
+        last_sensor_start_time: Optional[float] = None,
+        # deprecated param
+        last_completion_time: Optional[float] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
-        self._last_completion_time = check.opt_float_param(
-            last_completion_time, "last_completion_time"
+        self._last_tick_completion_time = normalize_renamed_param(
+            last_tick_completion_time,
+            "last_tick_completion_time",
+            last_completion_time,
+            "last_completion_time",
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
+        self._last_sensor_start_time = check.opt_float_param(
+            last_sensor_start_time, "last_sensor_start_time"
+        )
         self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._repository_def = normalize_to_repository(
@@ -215,7 +233,7 @@ class SensorEvaluationContext:
 
         return SensorEvaluationContext(
             instance_ref=self._instance_ref,
-            last_completion_time=self._last_completion_time,
+            last_tick_completion_time=self._last_tick_completion_time,
             last_run_key=self._last_run_key,
             cursor=self._cursor,
             repository_name=self._repository_name,
@@ -226,6 +244,7 @@ class SensorEvaluationContext:
                 **(self._resource_defs or {}),
                 **wrap_resources_for_execution(resources_dict),
             },
+            last_sensor_start_time=self._last_sensor_start_time,
         )
 
     @public
@@ -304,9 +323,35 @@ class SensorEvaluationContext:
 
     @public
     @property
-    def last_completion_time(self) -> Optional[float]:
+    def last_tick_completion_time(self) -> Optional[float]:
         """Optional[float]: Timestamp representing the last time this sensor completed an evaluation."""
-        return self._last_completion_time
+        return self._last_tick_completion_time
+
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use last_tick_completion_time instead."
+    )
+    @property
+    def last_completion_time(self) -> Optional[float]:
+        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation. Legacy alias of last_tick_completion_time, renamed for clarity."""
+        return self._last_tick_completion_time
+
+    @public
+    @property
+    def last_sensor_start_time(self) -> Optional[float]:
+        """Optional[float]: Timestamp representing the last time this sensor was started. Can be
+        used in concert with last_tick_completion_time to determine if this is the first tick since the
+        sensor was started.
+        """
+        return self._last_sensor_start_time
+
+    @public
+    @property
+    def is_first_tick_since_sensor_start(self) -> bool:
+        """Flag representing if this is the first tick since the sensor was started."""
+        return not self._last_tick_completion_time or (
+            self._last_sensor_start_time is not None
+            and self._last_sensor_start_time > self._last_tick_completion_time
+        )
 
     @public
     @property
@@ -488,8 +533,9 @@ class SensorDefinition(IHasInternalInit):
         jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
-        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
-            the sensor condition is met. This can be provided instead of specifying a job.
+        asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
+            (Experimental) an asset selection to launch a run for if the sensor condition is met.
+            This can be provided instead of specifying a job.
     """
 
     def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
@@ -532,7 +578,7 @@ class SensorDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        asset_selection: Optional[AssetSelection] = None,
+        asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
     ):
         from dagster._config.pythonic_config import validate_resource_annotated_function
@@ -598,8 +644,8 @@ class SensorDefinition(IHasInternalInit):
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
-        self._asset_selection = check.opt_inst_param(
-            asset_selection, "asset_selection", AssetSelection
+        self._asset_selection = (
+            AssetSelection.from_coercible(asset_selection) if asset_selection else None
         )
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
@@ -625,7 +671,7 @@ class SensorDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         jobs: Optional[Sequence[ExecutableDefinition]],
         default_status: DefaultSensorStatus,
-        asset_selection: Optional[AssetSelection],
+        asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[Set[str]],
     ) -> "SensorDefinition":
         return SensorDefinition(
@@ -810,7 +856,7 @@ class SensorDefinition(IHasInternalInit):
             skip_message,
             updated_cursor,
             dagster_run_reactions,
-            captured_log_key=context.log_key if context.has_captured_logs() else None,
+            log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events,
         )
@@ -936,7 +982,10 @@ class SensorDefinition(IHasInternalInit):
 
 
 @whitelist_for_serdes(
-    storage_field_names={"dagster_run_reactions": "pipeline_run_reactions"},
+    storage_field_names={
+        "dagster_run_reactions": "pipeline_run_reactions",
+        "log_key": "captured_log_key",
+    },
 )
 class SensorExecutionData(
     NamedTuple(
@@ -946,7 +995,7 @@ class SensorExecutionData(
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
             ("dagster_run_reactions", Optional[Sequence[DagsterRunReaction]]),
-            ("captured_log_key", Optional[Sequence[str]]),
+            ("log_key", Optional[Sequence[str]]),
             (
                 "dynamic_partitions_requests",
                 Optional[
@@ -968,7 +1017,7 @@ class SensorExecutionData(
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
         dagster_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
-        captured_log_key: Optional[Sequence[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = None,
@@ -980,7 +1029,7 @@ class SensorExecutionData(
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
         check.opt_sequence_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
-        check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.opt_list_param(log_key, "log_key", str)
         check.opt_sequence_param(
             dynamic_partitions_requests,
             "dynamic_partitions_requests",
@@ -1000,7 +1049,7 @@ class SensorExecutionData(
             skip_message=skip_message,
             cursor=cursor,
             dagster_run_reactions=dagster_run_reactions,
-            captured_log_key=captured_log_key,
+            log_key=log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events or [],
         )
@@ -1062,6 +1111,7 @@ def build_sensor_context(
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
     instance_ref: Optional["InstanceRef"] = None,
+    last_sensor_start_time: Optional[float] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -1082,6 +1132,7 @@ def build_sensor_context(
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
+        last_sensor_start_time (Optional[float]): The last time the sensor was started.
 
     Examples:
         .. code-block:: python
@@ -1105,7 +1156,7 @@ def build_sensor_context(
 
     return SensorEvaluationContext(
         instance_ref=instance_ref,
-        last_completion_time=None,
+        last_tick_completion_time=None,
         last_run_key=None,
         cursor=cursor,
         repository_name=repository_name,
@@ -1113,6 +1164,7 @@ def build_sensor_context(
         repository_def=repository_def,
         sensor_name=sensor_name,
         resources=wrap_resources_for_execution(resources),
+        last_sensor_start_time=last_sensor_start_time,
     )
 
 

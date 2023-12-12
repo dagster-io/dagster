@@ -1,5 +1,6 @@
 import operator
 from functools import reduce
+from inspect import isclass
 from typing import AbstractSet, Iterable, Tuple, Union
 
 import pytest
@@ -19,6 +20,7 @@ from dagster import (
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._serdes.serdes import _WHITELIST_MAP
 from typing_extensions import TypeAlias
 
 earth = SourceAsset(["celestial", "earth"], group_name="planets")
@@ -374,3 +376,19 @@ def test_from_coercible_tuple():
         AssetKey("foo"),
         AssetKey("bar"),
     }
+
+
+def test_all_asset_selection_subclasses_serializable():
+    from dagster._core.definitions import asset_selection as asset_selection_module
+
+    asset_selection_subclasses = []
+    for attr in dir(asset_selection_module):
+        value = getattr(asset_selection_module, attr)
+        if isclass(value) and issubclass(value, AssetSelection):
+            asset_selection_subclasses.append(value)
+
+    assert len(asset_selection_subclasses) > 5
+
+    for asset_selection_subclass in asset_selection_subclasses:
+        if asset_selection_subclass != AssetSelection:
+            assert _WHITELIST_MAP.has_tuple_serializer(asset_selection_subclass.__name__)

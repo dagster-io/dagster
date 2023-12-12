@@ -1,13 +1,18 @@
 import styled from 'styled-components';
 
+import {colorFocusRing, colorShadowDefault} from '../theme/color';
+
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 import {FontFamily} from './styles';
 
 interface StyledButtonProps {
   $fillColor: string;
+  $fillColorHover?: string;
   $strokeColor: string;
+  $strokeColorHover?: string;
   $textColor: string;
+  $iconColor: string;
 }
 
 export const StyledButton = styled.button<StyledButtonProps>`
@@ -33,21 +38,25 @@ export const StyledButton = styled.button<StyledButtonProps>`
 
   box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
 
-  :hover {
-    box-shadow: ${({$strokeColor}) =>
-      `${$strokeColor} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
+  :hover:not(:disabled) {
+    background-color: ${({$fillColor, $fillColorHover}) =>
+      $fillColorHover || $fillColor || 'transparent'};
+    box-shadow: ${({$strokeColor, $strokeColorHover}) =>
+      `${
+        $strokeColorHover || $strokeColor
+      } inset 0px 0px 0px 1px, ${colorShadowDefault()} 0px 2px 12px 0px;`};
     color: ${({$textColor}) => $textColor};
     text-decoration: none;
   }
 
   :focus {
-    box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    box-shadow: ${colorFocusRing()} 0 0 0 2px;
     outline: none;
   }
 
   :focus:not(:focus-visible) {
     box-shadow: ${({$strokeColor}) =>
-      `${$strokeColor} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
+      `${$strokeColor} inset 0px 0px 0px 1px, ${colorShadowDefault()} 0px 2px 12px 0px;`};
   }
 
   :active:not(:disabled) {
@@ -69,8 +78,8 @@ export const StyledButton = styled.button<StyledButtonProps>`
   }
 
   ${IconWrapper} {
-    color: ${({$textColor}) => $textColor};
-    background-color: ${({$textColor}) => $textColor};
+    color: ${({$iconColor}) => $iconColor};
+    background-color: ${({$iconColor}) => $iconColor};
     align-self: center;
     display: block;
   }

@@ -420,14 +420,16 @@ def build_schedule_context(
     )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"log_key": "captured_log_key"},
+)
 class ScheduleExecutionData(
     NamedTuple(
         "_ScheduleExecutionData",
         [
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_message", Optional[str]),
-            ("captured_log_key", Optional[Sequence[str]]),
+            ("log_key", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -435,11 +437,11 @@ class ScheduleExecutionData(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_message: Optional[str] = None,
-        captured_log_key: Optional[Sequence[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
-        check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.opt_list_param(log_key, "log_key", str)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -447,7 +449,7 @@ class ScheduleExecutionData(
             cls,
             run_requests=run_requests,
             skip_message=skip_message,
-            captured_log_key=captured_log_key,
+            log_key=log_key,
         )
 
 
@@ -914,7 +916,7 @@ class ScheduleDefinition(IHasInternalInit):
         return ScheduleExecutionData(
             run_requests=resolved_run_requests,
             skip_message=skip_message,
-            captured_log_key=context.log_key if context.has_captured_logs() else None,
+            log_key=context.log_key if context.has_captured_logs() else None,
         )
 
     def has_loadable_target(self):

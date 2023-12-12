@@ -6,6 +6,10 @@
     "isDefaultOpen": true,
     "children": [
       {
+        "title": "What's Dagster?",
+        "path": "/getting-started/what-why-dagster"
+      },
+      {
         "title": "Hello, Dagster!",
         "path": "/getting-started/hello-dagster"
       },
@@ -953,6 +957,10 @@
                 "path": "/guides/dagster-pipes/subprocess/reference"
               }
             ]
+          },
+          {
+            "title": "Dagster Pipes + AWS Lambda",
+            "path": "/guides/dagster-pipes/aws-lambda"
           },
           {
             "title": "Dagster Pipes + Databricks",

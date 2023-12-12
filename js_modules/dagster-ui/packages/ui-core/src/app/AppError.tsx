@@ -1,7 +1,7 @@
 import {ServerError} from '@apollo/client';
 import {ErrorResponse, onError} from '@apollo/client/link/error';
 import {Observable} from '@apollo/client/utilities';
-import {FontFamily, Toaster} from '@dagster-io/ui-components';
+import {FontFamily, Toaster, colorBackgroundRed} from '@dagster-io/ui-components';
 import {GraphQLError} from 'graphql';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
@@ -133,7 +133,7 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
       <div
         className="errorInfo"
         style={{
-          backgroundColor: 'rgba(206, 17, 38, 0.05)',
+          backgroundColor: colorBackgroundRed(),
           border: '1px solid #d17257',
           borderRadius: 3,
           maxWidth: '90vw',

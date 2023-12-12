@@ -203,7 +203,7 @@ def materialize_to_memory(
 
 
 def _get_required_io_manager_keys(
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
 ) -> Set[str]:
     io_manager_keys = set()
     for asset in assets:

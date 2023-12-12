@@ -104,7 +104,7 @@ class CodeLocationOrigin(ABC):
         pass
 
     @abstractmethod
-    def create_location(self) -> "CodeLocation":
+    def create_location(self, instance: "DagsterInstance") -> "CodeLocation":
         pass
 
     @abstractmethod
@@ -129,7 +129,7 @@ class RegisteredCodeLocationOrigin(
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
 
-    def create_location(self) -> NoReturn:
+    def create_location(self, instance: "DagsterInstance") -> NoReturn:
         raise DagsterInvariantViolationError(
             "A RegisteredCodeLocationOrigin does not have enough information to create its "
             "code location on its own."
@@ -194,12 +194,12 @@ class InProcessCodeLocationOrigin(
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
 
-    def create_location(self) -> "InProcessCodeLocation":
+    def create_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
         from dagster._core.host_representation.code_location import (
             InProcessCodeLocation,
         )
 
-        return InProcessCodeLocation(self)
+        return InProcessCodeLocation(self, instance=instance)
 
     def reload_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
         raise NotImplementedError
@@ -244,7 +244,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_location(self) -> NoReturn:
+    def create_location(self, instance: "DagsterInstance") -> NoReturn:
         raise DagsterInvariantViolationError(
             "A ManagedGrpcPythonEnvCodeLocationOrigin needs a GrpcServerRegistry"
             " in order to create a code location."
@@ -287,6 +287,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
                 heartbeat=True,
                 watch_server=False,
                 grpc_server_registry=grpc_server_registry,
+                instance=instance,
             ) as location:
                 yield location
 
@@ -358,14 +359,14 @@ class GrpcServerCodeLocationOrigin(
             else:
                 raise
 
-        return GrpcServerCodeLocation(self)
+        return GrpcServerCodeLocation(self, instance=instance)
 
-    def create_location(self) -> "GrpcServerCodeLocation":
+    def create_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
         from dagster._core.host_representation.code_location import (
             GrpcServerCodeLocation,
         )
 
-        return GrpcServerCodeLocation(self)
+        return GrpcServerCodeLocation(self, instance=instance)
 
     def create_client(self) -> "DagsterGrpcClient":
         from dagster._grpc.client import DagsterGrpcClient

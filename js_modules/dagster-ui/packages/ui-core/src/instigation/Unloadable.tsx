@@ -3,11 +3,11 @@ import {
   Alert,
   Box,
   Checkbox,
-  Colors,
   Group,
   Table,
   Subheading,
   Tooltip,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -199,7 +199,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
         {latestTick ? (
           <TickStatusTag tick={latestTick} />
         ) : (
-          <span style={{color: Colors.Gray300}}>None</span>
+          <span style={{color: colorTextLight()}}>None</span>
         )}
       </td>
       <td>

@@ -82,30 +82,21 @@ const formatMsecMantissa = (msec: number) =>
     .slice(-4);
 
 /**
- * Opinionated elapsed time formatting:
- *
- * - Times between -10 and 10 seconds are shown as `X.XXXs`
- * - Otherwise times are rendered in a `X:XX:XX` format, without milliseconds
+ * Format the time without milliseconds, rounding to :01 for non-zero value within (-1, 1)
  */
-export const formatElapsedTime = (msec: number) => {
-  const {hours, minutes, seconds, milliseconds} = timeByParts(msec);
+export const formatElapsedTimeWithoutMsec = (msec: number) => {
+  const {hours, minutes, seconds} = timeByParts(msec);
   const negative = msec < 0;
-
-  if (msec < 10000 && msec > -10000) {
-    const formattedMsec = formatMsecMantissa(milliseconds);
-    return `${negative ? '-' : ''}${seconds}${formattedMsec}s`;
-  }
-
-  return `${negative ? '-' : ''}${hours}:${twoDigit(minutes)}:${twoDigit(seconds)}`;
+  const roundedSeconds = msec !== 0 && msec < 1000 && msec > -1000 ? 1 : seconds;
+  return `${negative ? '-' : ''}${hours}:${twoDigit(minutes)}:${twoDigit(roundedSeconds)}`;
 };
 
 export const formatElapsedTimeWithMsec = (msec: number) => {
   const {hours, minutes, seconds, milliseconds} = timeByParts(msec);
   const negative = msec < 0;
-  const positiveValue = `${hours}:${twoDigit(minutes)}:${twoDigit(seconds)}${formatMsecMantissa(
-    milliseconds,
-  )}`;
-  return `${negative ? '-' : ''}${positiveValue}`;
+  return `${negative ? '-' : ''}${hours}:${twoDigit(minutes)}:${twoDigit(
+    seconds,
+  )}${formatMsecMantissa(milliseconds)}`;
 };
 
 export function breakOnUnderscores(str: string) {

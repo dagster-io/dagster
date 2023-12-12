@@ -32,7 +32,7 @@ def other_repo():
     return [noop_job]
 
 
-def _can_connect(origin, endpoint):
+def _can_connect(origin, endpoint, instance):
     try:
         with GrpcServerCodeLocation(
             origin=origin,
@@ -41,6 +41,7 @@ def _can_connect(origin, endpoint):
             socket=endpoint.socket,
             host=endpoint.host,
             watch_server=False,
+            instance=instance,
         ):
             return True
     except Exception:
@@ -80,6 +81,7 @@ def test_error_repo_in_registry(instance):
                 socket=endpoint.socket,
                 host=endpoint.host,
                 watch_server=False,
+                instance=instance,
             ):
                 pass
 
@@ -92,6 +94,7 @@ def test_error_repo_in_registry(instance):
                 socket=endpoint.socket,
                 host=endpoint.host,
                 watch_server=False,
+                instance=instance,
             ):
                 pass
 
@@ -117,8 +120,8 @@ def test_server_registry(instance):
 
         assert endpoint_two == endpoint_one
 
-        assert _can_connect(origin, endpoint_one)
-        assert _can_connect(origin, endpoint_two)
+        assert _can_connect(origin, endpoint_one, instance)
+        assert _can_connect(origin, endpoint_two, instance)
 
         start_time = time.time()
         while True:
@@ -133,13 +136,13 @@ def test_server_registry(instance):
 
             time.sleep(1)
 
-        assert _can_connect(origin, endpoint_three)
+        assert _can_connect(origin, endpoint_three, instance)
 
         start_time = time.time()
         while True:
             # Server at endpoint_one should eventually die due to heartbeat failure
 
-            if not _can_connect(origin, endpoint_one):
+            if not _can_connect(origin, endpoint_one, instance):
                 break
 
             if time.time() - start_time > 30:
@@ -152,11 +155,11 @@ def test_server_registry(instance):
             endpoint_four = registry.get_grpc_endpoint(origin)
 
             if endpoint_four.server_id != endpoint_three.server_id:
-                assert _can_connect(origin, endpoint_four)
+                assert _can_connect(origin, endpoint_four, instance)
                 break
 
-    assert not _can_connect(origin, endpoint_three)
-    assert not _can_connect(origin, endpoint_four)
+    assert not _can_connect(origin, endpoint_three, instance)
+    assert not _can_connect(origin, endpoint_four, instance)
 
 
 def _registry_thread(origin, registry, endpoint, event):
@@ -199,9 +202,9 @@ def test_registry_multithreading(instance):
         for event in success_events:
             assert event.is_set()
 
-        assert _can_connect(origin, endpoint)
+        assert _can_connect(origin, endpoint, instance)
 
-    assert not _can_connect(origin, endpoint)
+    assert not _can_connect(origin, endpoint, instance)
 
 
 class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
@@ -254,8 +257,8 @@ def test_custom_loadable_target_origin(instance):
         assert endpoint_two.server_id != endpoint_one.server_id
 
     registry.wait_for_processes()
-    assert not _can_connect(origin, endpoint_one)
-    assert not _can_connect(origin, endpoint_two)
+    assert not _can_connect(origin, endpoint_one, instance)
+    assert not _can_connect(origin, endpoint_two, instance)
 
 
 def test_failure_on_open_server_process(instance):

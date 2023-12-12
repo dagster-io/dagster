@@ -31,7 +31,7 @@ export const Default = () => {
 export const Intent = () => {
   return (
     <Group direction="column" spacing={8}>
-      <Button icon={<Icon name="star" />}>No intent set</Button>
+      <Button icon={<Icon name="star" />}>Intent not defined</Button>
       <Button icon={<Icon name="star" />} intent="primary">
         Primary
       </Button>
@@ -55,7 +55,7 @@ export const Outlined = () => {
   return (
     <Group direction="column" spacing={8}>
       <Button outlined icon={<Icon name="star" />}>
-        No intent set
+        Intent not defined
       </Button>
       <Button outlined icon={<Icon name="star" />} intent="primary">
         Primary
@@ -175,13 +175,19 @@ export const Joined = () => {
 export function LoadingStates() {
   return (
     <Box flex={{direction: 'row', gap: 12}}>
-      <Button loading={true} icon={<Icon name="wysiwyg" />}>
+      <Button loading icon={<Icon name="wysiwyg" />}>
         Test
       </Button>
-      <Button loading={true} icon={<Icon name="close" />} rightIcon={<Icon name="cached" />}>
+      <Button loading icon={<Icon name="close" />} rightIcon={<Icon name="cached" />}>
         Test
       </Button>
-      <Button loading={true} rightIcon={<Icon name="wysiwyg" />}>
+      <Button loading rightIcon={<Icon name="wysiwyg" />}>
+        Test
+      </Button>
+      <Button loading intent="primary">
+        Test
+      </Button>
+      <Button loading intent="danger">
         Test
       </Button>
     </Box>

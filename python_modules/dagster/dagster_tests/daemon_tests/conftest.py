@@ -118,7 +118,7 @@ def partitions_def_changes_workspace_1_load_target(attribute=None):
 
 @pytest.fixture(name="partitions_defs_changes_location_1_workspace_context", scope="module")
 def partitions_defs_changes_location_1_fixture(
-    instance_module_scoped
+    instance_module_scoped,
 ) -> Iterator[WorkspaceProcessContext]:
     with create_test_daemon_workspace_context(
         workspace_load_target=partitions_def_changes_workspace_1_load_target(),
@@ -143,7 +143,7 @@ def partitions_def_changes_workspace_2_load_target(attribute=None):
 
 @pytest.fixture(name="partitions_defs_changes_location_2_workspace_context", scope="module")
 def partitions_defs_changes_location_2_fixture(
-    instance_module_scoped
+    instance_module_scoped,
 ) -> Iterator[WorkspaceProcessContext]:
     with create_test_daemon_workspace_context(
         workspace_load_target=partitions_def_changes_workspace_2_load_target(),

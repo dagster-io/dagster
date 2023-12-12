@@ -1,5 +1,15 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily} from '@dagster-io/ui-components';
+import {
+  Icon,
+  FontFamily,
+  colorAccentBlue,
+  colorBackgroundBlue,
+  colorBackgroundDefault,
+  colorBackgroundLight,
+  colorAccentYellow,
+  colorBackgroundLighter,
+  colorKeylineDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -137,18 +147,18 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {minified ? 'C' : 'Config'}
           </div>
         )}
-
-        {definition.inputDefinitions.map((item, idx) => (
-          <OpIOBox
-            {...this.props}
-            {...metadataForIO(item, invocation)}
-            key={idx}
-            item={item}
-            layoutInfo={layout.inputs[item.name]}
-            colorKey="input"
-          />
-        ))}
-
+        <div>
+          {definition.inputDefinitions.map((item, idx) => (
+            <OpIOBox
+              {...this.props}
+              {...metadataForIO(item, invocation)}
+              key={idx}
+              item={item}
+              layoutInfo={layout.inputs[item.name]}
+              colorKey="input"
+            />
+          ))}
+        </div>
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
             {!minified && <Icon name="op" size={16} />}
@@ -174,17 +184,18 @@ export class OpNode extends React.Component<IOpNodeProps> {
             }}
           />
         )}
-
-        {definition.outputDefinitions.map((item, idx) => (
-          <OpIOBox
-            {...this.props}
-            {...metadataForIO(item, invocation)}
-            key={idx}
-            item={item}
-            layoutInfo={layout.outputs[item.name]}
-            colorKey="output"
-          />
-        ))}
+        <div>
+          {definition.outputDefinitions.map((item, idx) => (
+            <OpIOBox
+              {...this.props}
+              {...metadataForIO(item, invocation)}
+              key={idx}
+              item={item}
+              layoutInfo={layout.outputs[item.name]}
+              colorKey="output"
+            />
+          ))}
+        </div>
       </NodeContainer>
     );
   }
@@ -319,8 +330,8 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
 `;
 
 const NodeHighlightColors = {
-  Border: Colors.Blue500,
-  Background: Colors.Blue50,
+  Border: colorAccentBlue(),
+  Background: colorBackgroundBlue(),
 };
 
 const NodeContainer = styled.div<{
@@ -343,23 +354,23 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${Colors.Blue500}55`
-        : '2px solid #dcd5ca'};
+        ? `2px solid ${colorAccentBlue()}55`
+        : `2px solid ${colorKeylineDefault()}`};
 
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 8px;
-    background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};
+    background: ${(p) => (p.$minified ? colorBackgroundLight() : colorBackgroundDefault())};
   }
   .composite-marker {
     outline: ${(p) => (p.$minified ? '3px' : '2px')} solid
-      ${(p) => (p.$selected ? 'transparent' : Colors.Yellow200)};
+      ${(p) => (p.$selected ? 'transparent' : colorAccentYellow())};
     outline-offset: ${(p) => (p.$minified ? '5px' : '3px')};
     border-radius: 3px;
   }
   .dynamic-marker {
     transform: translate(-5px, -5px);
-    border: ${(p) => (p.$minified ? '3px' : '2px')} solid #dcd5ca;
-    border-radius: 3px;
+    border: ${(p) => (p.$minified ? '3px' : '2px')} solid ${colorKeylineDefault()};
+    border-radius: 8px;
   }
   .config-marker {
     position: absolute;
@@ -392,7 +403,7 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
+    background: ${colorBackgroundLighter()};
     font-size: 12px;
     display: flex;
     gap: 4px;
@@ -405,10 +416,12 @@ const NodeContainer = styled.div<{
     height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: #f5f3ef;
-    border-top: 1px solid #e6e1d8;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    background: ${colorBackgroundLighter()};
+    border-top: ${colorKeylineDefault()} 1px solid;
+
+    /* 6px because it's inside a bordered box with a 2px line at our standard 8px radius */
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
     font-size: 12px;
   }
 `;

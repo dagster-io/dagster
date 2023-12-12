@@ -54,7 +54,14 @@ PipesParams = Mapping[str, Any]
 
 # ##### MESSAGE
 
-Method = Literal["opened", "closed", "log", "report_asset_materialization", "report_asset_check"]
+Method = Literal[
+    "opened",
+    "closed",
+    "log",
+    "report_asset_materialization",
+    "report_asset_check",
+    "report_custom_message",
+]
 
 
 def _make_message(method: Method, params: Optional[Mapping[str, Any]]) -> "PipesMessage":
@@ -354,11 +361,6 @@ def _normalize_param_metadata(
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
-
-
-def _param_from_env_var(env_var: str) -> Any:
-    raw_value = os.environ.get(env_var)
-    return decode_env_var(raw_value) if raw_value is not None else None
 
 
 def encode_env_var(value: Any) -> str:
@@ -677,6 +679,7 @@ class PipesDefaultMessageWriter(PipesMessageWriter):
 
     FILE_PATH_KEY = "path"
     STDIO_KEY = "stdio"
+    BUFFERED_STDIO_KEY = "buffered_stdio"
     STDERR = "stderr"
     STDOUT = "stdout"
 
@@ -685,17 +688,34 @@ class PipesDefaultMessageWriter(PipesMessageWriter):
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
             yield PipesFileMessageWriterChannel(path)
+
         elif self.STDIO_KEY in params:
             stream = _assert_env_param_type(params, self.STDIO_KEY, str, self.__class__)
-            if stream == self.STDERR:
-                yield PipesStreamMessageWriterChannel(sys.stderr)
-            elif stream == self.STDOUT:
-                yield PipesStreamMessageWriterChannel(sys.stdout)
-            else:
+            if stream not in (self.STDERR, self.STDOUT):
                 raise DagsterPipesError(
                     f'Invalid value for key "std", expected "{self.STDERR}" or "{self.STDOUT}" but'
                     f" received {stream}"
                 )
+
+            target = sys.stderr if stream == self.STDERR else sys.stdout
+
+            yield PipesStreamMessageWriterChannel(target)
+
+        elif self.BUFFERED_STDIO_KEY in params:
+            stream = _assert_env_param_type(params, self.BUFFERED_STDIO_KEY, str, self.__class__)
+            if stream not in (self.STDERR, self.STDOUT):
+                raise DagsterPipesError(
+                    f'Invalid value for key "std", expected "{self.STDERR}" or "{self.STDOUT}" but'
+                    f" received {stream}"
+                )
+
+            target = sys.stderr if stream == self.STDERR else sys.stdout
+            channel = PipesBufferedStreamMessageWriterChannel(target)
+            try:
+                yield channel
+            finally:
+                channel.flush()
+
         else:
             raise DagsterPipesError(
                 f'Invalid params for {self.__class__.__name__}, expected key "path" or "std",'
@@ -724,22 +744,52 @@ class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
         self._stream.writelines((json.dumps(message), "\n"))
 
 
+class PipesBufferedStreamMessageWriterChannel(PipesMessageWriterChannel):
+    """Message writer channel that buffers messages and then writes them all out to a
+    `TextIO` stream on close.
+    """
+
+    def __init__(self, stream: TextIO):
+        self._buffer = []
+        self._stream = stream
+
+    def write_message(self, message: PipesMessage) -> None:
+        self._buffer.append(message)
+
+    def flush(self):
+        for message in self._buffer:
+            self._stream.writelines((json.dumps(message), "\n"))
+        self._buffer = []
+
+
 DAGSTER_PIPES_CONTEXT_ENV_VAR = "DAGSTER_PIPES_CONTEXT"
 DAGSTER_PIPES_MESSAGES_ENV_VAR = "DAGSTER_PIPES_MESSAGES"
 
 
-class PipesEnvVarParamsLoader(PipesParamsLoader):
-    """Params loader that extracts params from environment variables."""
+class PipesMappingParamsLoader(PipesParamsLoader):
+    """Params loader that extracts params from a Mapping provided at init time."""
+
+    def __init__(self, mapping: Mapping[str, str]):
+        self._mapping = mapping
 
     def is_dagster_pipes_process(self) -> bool:
         # use the presence of DAGSTER_PIPES_CONTEXT to discern if we are in a pipes process
-        return DAGSTER_PIPES_CONTEXT_ENV_VAR in os.environ
+        return DAGSTER_PIPES_CONTEXT_ENV_VAR in self._mapping
 
     def load_context_params(self) -> PipesParams:
-        return _param_from_env_var(DAGSTER_PIPES_CONTEXT_ENV_VAR)
+        raw_value = self._mapping[DAGSTER_PIPES_CONTEXT_ENV_VAR]
+        return decode_env_var(raw_value)
 
     def load_messages_params(self) -> PipesParams:
-        return _param_from_env_var(DAGSTER_PIPES_MESSAGES_ENV_VAR)
+        raw_value = self._mapping[DAGSTER_PIPES_MESSAGES_ENV_VAR]
+        return decode_env_var(raw_value)
+
+
+class PipesEnvVarParamsLoader(PipesMappingParamsLoader):
+    """Params loader that extracts params from environment variables."""
+
+    def __init__(self):
+        super().__init__(mapping=os.environ)
 
 
 # ########################
@@ -1253,6 +1303,9 @@ class PipesContext:
                 "severity": severity,
             },
         )
+
+    def report_custom_message(self, payload: Any):
+        self._write_message("report_custom_message", {"payload": payload})
 
     @property
     def log(self) -> logging.Logger:

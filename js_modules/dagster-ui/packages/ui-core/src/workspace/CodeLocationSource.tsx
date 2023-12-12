@@ -1,4 +1,4 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon, colorLinkDefault, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 interface Metadata {
@@ -27,8 +27,12 @@ export const CodeLocationSource = ({metadata}: {metadata: Metadata[]}) => {
   const isGitlab = url.hostname.includes('gitlab.com');
 
   if (!isGithub && !isGitlab) {
-    // Unknown URL type. Just render the text.
-    return <div>{metadataWithURL.value}</div>;
+    // Unknown URL type. Use a basic link.
+    return (
+      <a href={url.href} target="_blank" rel="noreferrer">
+        {metadataWithURL.value}
+      </a>
+    );
   }
 
   const metadataWithCommit = metadata.find(({key}) => key === 'commit_hash');
@@ -44,12 +48,12 @@ export const CodeLocationSource = ({metadata}: {metadata: Metadata[]}) => {
   return (
     <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name={isGithub ? 'github' : 'gitlab'} color={Colors.Link} />
+        <Icon name={isGithub ? 'github' : 'gitlab'} color={colorLinkDefault()} />
         <a href={metadataWithURL.value} target="_blank" rel="noreferrer">
           {extractProjectName(url.pathname)}
         </a>
       </Box>
-      <div style={{fontSize: 12, color: Colors.Gray700}}>{commitHash()}</div>
+      <div style={{fontSize: 12, color: colorTextLight()}}>{commitHash()}</div>
     </Box>
   );
 };

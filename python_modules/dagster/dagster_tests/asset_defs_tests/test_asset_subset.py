@@ -14,6 +14,14 @@ from dagster import (
 )
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    PartitionKeysTimeWindowPartitionsSubset,
+    TimeWindow,
+    TimeWindowPartitionsSubset,
+)
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 partitions_defs = [
     None,
@@ -84,3 +92,46 @@ def test_operations(
     actual_asset_partitions = operation(subset_a, subset_b).asset_partitions
     expected_asset_partitions = operation(subset_a.asset_partitions, subset_b.asset_partitions)
     assert actual_asset_partitions == expected_asset_partitions
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        True,
+        False,
+        TimeWindowPartitionsSubset(
+            DailyPartitionsDefinition("2020-01-01"),
+            num_partitions=2,
+            included_time_windows=[
+                TimeWindow(
+                    start=create_pendulum_time(2020, 1, 1), end=create_pendulum_time(2020, 1, 2)
+                ),
+                TimeWindow(
+                    start=create_pendulum_time(2020, 1, 4), end=create_pendulum_time(2020, 1, 5)
+                ),
+            ],
+        ),
+        PartitionKeysTimeWindowPartitionsSubset(
+            partitions_def=DailyPartitionsDefinition("2020-01-01"),
+            included_partition_keys={
+                "2020-01-01",
+                "2020-01-04",
+                "2022-01-02",
+                "2022-01-03",
+                "2022-01-04",
+            },
+        ),
+        DefaultPartitionsSubset(subset={"a", "b", "c", "d", "e"}),
+        AllPartitionsSubset(
+            partitions_def=DailyPartitionsDefinition("2020-01-01"),
+            dynamic_partitions_store=None,  # type: ignore
+            current_time=datetime.datetime(2020, 1, 20),
+        ),
+    ],
+)
+def test_serialization(value) -> None:
+    asset_subset = AssetSubset(AssetKey("foo"), value=value)
+    round_trip_asset_subset = deserialize_value(serialize_value(asset_subset), AssetSubset)
+
+    assert asset_subset.asset_key == round_trip_asset_subset.asset_key
+    assert asset_subset.asset_partitions == round_trip_asset_subset.asset_partitions

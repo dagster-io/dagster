@@ -1,9 +1,16 @@
-import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Spinner,
+  Tooltip,
+  colorBackgroundLight,
+  colorBackgroundLightHover,
+  colorKeylineDefault,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {formatElapsedTime} from '../app/Util';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
@@ -190,7 +197,7 @@ const StepItem = ({
         />
       )}
       <StepLabel>{name}</StepLabel>
-      {step?.start && <Elapsed>{formatElapsedTime(end - step.start)}</Elapsed>}
+      {step?.start && <Elapsed>{formatElapsedTimeWithoutMsec(end - step.start)}</Elapsed>}
     </StepItemContainer>
   );
 };
@@ -208,12 +215,12 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   padding: 0 14px 0 6px;
   gap: 6px;
   align-items: center;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${colorKeylineDefault()};
   font-size: 12px;
-  ${({selected}) => selected && `background: ${Colors.Gray100};`}
+  ${({selected}) => selected && `background: ${colorBackgroundLight()};`}
 
   &:hover {
-    background: ${Colors.Gray100};
+    background: ${colorBackgroundLightHover()};
   }
 `;
 
@@ -227,7 +234,7 @@ export const StepStatusDot = styled.div`
 `;
 
 const Elapsed = styled.div`
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
   font-variant-numeric: tabular-nums;
 `;
 
@@ -235,5 +242,5 @@ const EmptyNotice = styled.div`
   min-height: 32px;
   font-size: 12px;
   padding: 8px 24px;
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
 `;

@@ -8,6 +8,8 @@ from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
+from .utils import _wait_k8s_job_to_delete
+
 
 def _get_pods_logs(cluster_provider, job_name, namespace, container_name=None):
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
@@ -164,48 +166,71 @@ def test_k8s_job_op_with_timeout_success(namespace, cluster_provider):
 
 @pytest.mark.default
 def test_k8s_job_op_with_timeout_fail(namespace, cluster_provider):
-    timeout_op = k8s_job_op.configured(
-        {
-            "image": "busybox",
-            "command": ["/bin/sh", "-c"],
-            "args": ["sleep 15 && echo HI"],
-            "namespace": namespace,
-            "load_incluster_config": False,
-            "kubeconfig_file": cluster_provider.kubeconfig_file,
-            "timeout": 5,
-        },
-        name="timeout_op",
-    )
+    custom_k8s_job_name = str(uuid.uuid4())
+
+    @op
+    def timeout_op(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=["sleep 15 && echo HI"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+            timeout=5,
+            k8s_job_name=custom_k8s_job_name,
+        )
 
     @job
     def timeout_job():
         timeout_op()
 
-    with pytest.raises(DagsterK8sError, match=r"Timed out while waiting for pod to become ready"):
+    with pytest.raises(DagsterK8sError, match=r"Timed out"):
         timeout_job.execute_in_process()
+
+    kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
+    api_client = DagsterKubernetesClient.production_client()
+
+    # make sure that K8s job is deleted before assertion because it might not happen instantly
+    _wait_k8s_job_to_delete(api_client, custom_k8s_job_name, namespace)
+
+    with pytest.raises(kubernetes.client.rest.ApiException, match=r"Reason: Not Found"):
+        api_client.batch_api.read_namespaced_job_status(custom_k8s_job_name, namespace)
 
 
 @pytest.mark.default
 def test_k8s_job_op_with_failure(namespace, cluster_provider):
-    failure_op = k8s_job_op.configured(
-        {
-            "image": "busybox",
-            "command": ["/bin/sh", "-c"],
-            "args": ["sleep 10 && exit 1"],
-            "namespace": namespace,
-            "load_incluster_config": False,
-            "kubeconfig_file": cluster_provider.kubeconfig_file,
-            "timeout": 5,
-        },
-        name="failure_op",
-    )
+    custom_k8s_job_name = str(uuid.uuid4())
+
+    @op
+    def failure_op(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=["exit 1"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+            k8s_job_name=custom_k8s_job_name,
+        )
 
     @job
     def failure_job():
         failure_op()
 
-    with pytest.raises(DagsterK8sError):
+    with pytest.raises(DagsterK8sError, match=r"Pod did not exit successfully"):
         failure_job.execute_in_process()
+
+    kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
+    api_client = DagsterKubernetesClient.production_client()
+
+    # make sure that K8s job is deleted before assertion because it might not happen instantly
+    _wait_k8s_job_to_delete(api_client, custom_k8s_job_name, namespace)
+
+    with pytest.raises(kubernetes.client.rest.ApiException, match=r"Reason: Not Found"):
+        api_client.batch_api.read_namespaced_job_status(custom_k8s_job_name, namespace)
 
 
 @pytest.mark.default

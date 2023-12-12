@@ -24,7 +24,7 @@ from dagster._core.execution.backfill import (
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
-from dagster._core.test_utils import create_run_for_test
+from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.utils import make_new_backfill_id
 from dagster._seven import get_system_temp_directory
 from dagster._utils import safe_tempfile_path
@@ -210,17 +210,18 @@ def _execute_asset_backfill_iteration_no_side_effects(
     backfill = graphql_context.instance.get_backfill(backfill_id)
     asset_backfill_data = backfill.asset_backfill_data
     result = None
-    for result in execute_asset_backfill_iteration_inner(
-        backfill_id=backfill_id,
-        asset_backfill_data=asset_backfill_data,
-        instance_queryer=CachingInstanceQueryer(
-            graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_time
-        ),
-        asset_graph=asset_graph,
-        run_tags=backfill.tags,
-        backfill_start_time=asset_backfill_data.backfill_start_time,
-    ):
-        pass
+    with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
+        for result in execute_asset_backfill_iteration_inner(
+            backfill_id=backfill_id,
+            asset_backfill_data=asset_backfill_data,
+            instance_queryer=CachingInstanceQueryer(
+                graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_time
+            ),
+            asset_graph=asset_graph,
+            run_tags=backfill.tags,
+            backfill_start_time=asset_backfill_data.backfill_start_time,
+        ):
+            pass
 
     if not isinstance(result, AssetBackfillIterationResult):
         check.failed(

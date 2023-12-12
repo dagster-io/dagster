@@ -21,7 +21,7 @@ SHARED_CONTAINER_CONTEXT_SCHEMA = Permissive(
 
 # Process fields shared by container contexts in all environments (docker / k8s / ecs etc.)
 def process_shared_container_context_config(
-    container_context_config: Optional[Mapping[str, Any]]
+    container_context_config: Optional[Mapping[str, Any]],
 ) -> Mapping[str, Any]:
     shared_container_context = process_config(
         SHARED_CONTAINER_CONTEXT_SCHEMA, container_context_config or {}

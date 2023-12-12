@@ -1,5 +1,12 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {ButtonLink, Colors, Group, Caption} from '@dagster-io/ui-components';
+import {
+  ButtonLink,
+  Group,
+  Caption,
+  colorTextLight,
+  colorTextDefault,
+  colorTextRed,
+} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -86,7 +93,7 @@ export const SchedulePartitionStatus = React.memo((props: Props) => {
 
   const loadable = () => {
     if (loading) {
-      return <Caption style={{color: Colors.Gray400}}>Loading…</Caption>;
+      return <Caption style={{color: colorTextLight()}}>Loading…</Caption>;
     }
 
     if (!data) {
@@ -107,7 +114,7 @@ export const SchedulePartitionStatus = React.memo((props: Props) => {
       );
     }
 
-    return <Caption style={{color: Colors.Red700}}>Partition set not found!</Caption>;
+    return <Caption style={{color: colorTextRed()}}>Partition set not found!</Caption>;
   };
 
   return (
@@ -128,7 +135,7 @@ const RetrievedSchedulePartitionStatus = ({
   const {partitionSet} = schedule;
 
   if (!partitionSet || partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses') {
-    return <span style={{color: Colors.Gray300}}>None</span>;
+    return <span style={{color: colorTextLight()}}>None</span>;
   }
 
   const partitions = partitionSet.partitionStatusesOrError.results;
@@ -155,7 +162,7 @@ const RetrievedSchedulePartitionStatus = ({
                 {status === 'Failed' || status === 'Missing' ? (
                   <Link
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
-                    style={{color: Colors.Gray900}}
+                    style={{color: colorTextDefault()}}
                   >
                     {(partitionsByType as any)[status].length}
                   </Link>

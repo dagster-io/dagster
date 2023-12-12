@@ -18,7 +18,7 @@ import * as React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {formatElapsedTime} from '../app/Util';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {
@@ -34,17 +34,15 @@ import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
 
-type Props = {
-  timestamp: number | undefined;
-  instigationSelector: InstigationSelector;
+interface DialogProps extends InnerProps {
   onClose: () => void;
   isOpen: boolean;
-};
+}
 
-export const TickDetailsDialog = ({timestamp, isOpen, instigationSelector, onClose}: Props) => {
+export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}: DialogProps) => {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} style={{width: '90vw'}}>
-      <TickDetailsDialogImpl timestamp={timestamp} instigationSelector={instigationSelector} />
+      <TickDetailsDialogImpl tickId={tickId} instigationSelector={instigationSelector} />
       <DialogFooter>
         <Button onClick={onClose}>Close</Button>
       </DialogFooter>
@@ -52,13 +50,15 @@ export const TickDetailsDialog = ({timestamp, isOpen, instigationSelector, onClo
   );
 };
 
-const TickDetailsDialogImpl = ({
-  timestamp,
-  instigationSelector,
-}: Omit<Props, 'isOpen' | 'onClose'>) => {
+interface InnerProps {
+  tickId: number | undefined;
+  instigationSelector: InstigationSelector;
+}
+
+const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
-    variables: {instigationSelector, timestamp: timestamp || 0},
-    skip: !timestamp,
+    variables: {instigationSelector, tickId: tickId || 0},
+    skip: !tickId,
   });
 
   const tick =
@@ -194,8 +194,8 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
           <Subtitle2>Duration</Subtitle2>
           <div>
             {tick?.endTimestamp
-              ? formatElapsedTime(tick.endTimestamp * 1000 - tick.timestamp * 1000)
-              : '–'}
+              ? formatElapsedTimeWithoutMsec(tick.endTimestamp * 1000 - tick.timestamp * 1000)
+              : '\u2013'}
           </div>
         </Box>
       </div>
@@ -208,7 +208,7 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
     <Table>
       <thead>
         <tr>
-          <th>Partition Definition</th>
+          <th>Partition definition</th>
           <th>Partition</th>
         </tr>
       </thead>
@@ -232,11 +232,11 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
 }
 
 const JOB_SELECTED_TICK_QUERY = gql`
-  query SelectedTickQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
+  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: Int!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id
-        tick(timestamp: $timestamp) {
+        tick(tickId: $tickId) {
           id
           ...HistoryTick
         }

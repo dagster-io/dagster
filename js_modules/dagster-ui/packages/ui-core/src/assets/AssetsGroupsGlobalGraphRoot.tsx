@@ -4,7 +4,6 @@ import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetGraphExplorerFilters} from '../asset-graph/AssetGraphExplorerFilters';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
@@ -30,9 +29,18 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   const {visibleRepos} = React.useContext(WorkspaceContext);
   const history = useHistory();
 
-  const [filters, setFilters] = useQueryPersistedState<{groups: AssetGroupSelector[]}>({
-    encode: ({groups}) => ({groups: groups.length ? JSON.stringify(groups) : undefined}),
-    decode: (qs) => ({groups: qs.groups ? JSON.parse(qs.groups) : []}),
+  const [filters, setFilters] = useQueryPersistedState<{
+    groups: AssetGroupSelector[];
+    computeKindTags: string[];
+  }>({
+    encode: ({groups, computeKindTags}) => ({
+      groups: groups.length ? JSON.stringify(groups) : undefined,
+      computeKindTags: computeKindTags.length ? JSON.stringify(computeKindTags) : undefined,
+    }),
+    decode: (qs) => ({
+      groups: qs.groups ? JSON.parse(qs.groups) : [],
+      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
+    }),
   });
 
   useDocumentTitle(`Global Asset Lineage`);
@@ -80,16 +88,6 @@ export const AssetsGroupsGlobalGraphRoot = () => {
     return options;
   }, [filters.groups, visibleRepos]);
 
-  const assetGroups: AssetGroupSelector[] = React.useMemo(() => {
-    return visibleRepos.flatMap((repo) =>
-      repo.repository.assetGroups.map((g) => ({
-        groupName: g.groupName,
-        repositoryLocationName: repo.repositoryLocation.name,
-        repositoryName: repo.repository.name,
-      })),
-    );
-  }, [visibleRepos]);
-
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
@@ -98,16 +96,8 @@ export const AssetsGroupsGlobalGraphRoot = () => {
       />
       <AssetGraphExplorer
         fetchOptions={fetchOptions}
-        fetchOptionFilters={
-          <AssetGraphExplorerFilters
-            assetGroups={assetGroups}
-            visibleAssetGroups={React.useMemo(() => filters.groups || [], [filters.groups])}
-            setGroupFilters={React.useCallback(
-              (groups) => setFilters({...filters, groups}),
-              [filters, setFilters],
-            )}
-          />
-        }
+        filters={filters}
+        setFilters={setFilters}
         options={{preferAssetRendering: true, explodeComposites: true}}
         explorerPath={globalAssetGraphPathFromString(path)}
         onChangeExplorerPath={onChangeExplorerPath}

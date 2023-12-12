@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -44,6 +43,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import (
     deprecation_warning,
     normalize_renamed_param,
@@ -107,18 +107,10 @@ def _load_manifest_for_project(
 
 def _can_stream_events(dbt_resource: Union[DbtCliClient, DbtCliResource]) -> bool:
     """Check if the installed dbt version supports streaming events."""
-    import dbt.version
-    from packaging import version
-
-    if version.parse(dbt.version.__version__) >= version.parse("1.4.0"):
-        # The json log format is required for streaming events. DbtCliResource always uses this format, but
-        # DbtCliClient has an option to disable it.
-        if isinstance(dbt_resource, DbtCliResource):
-            return True
-        else:
-            return dbt_resource._json_log_format  # noqa: SLF001
+    if isinstance(dbt_resource, DbtCliResource):
+        return True
     else:
-        return False
+        return dbt_resource._json_log_format  # noqa: SLF001
 
 
 def _batch_event_iterator(
@@ -430,7 +422,7 @@ def _dbt_nodes_to_assets(
     if not op_name:
         op_name = f"run_dbt_{project_id}"
         if select != "fqn:*" or exclude:
-            op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
+            op_name += "_" + non_secure_md5_hash_str(select.encode() + exclude.encode())[-5:]
 
     check_outs_by_output_name: Mapping[str, Out] = {}
     if check_specs_by_output_name:

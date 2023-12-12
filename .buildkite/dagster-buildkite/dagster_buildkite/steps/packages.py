@@ -436,20 +436,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
-        unsupported_python_versions=lambda tox_factor: (
-            [
-                AvailablePythonVersion.V3_11,
-            ]
-            if tox_factor == "dbt_13X"
-            else []
-        ),
         pytest_tox_factors=[
-            "dbt_13X_legacy",
             "dbt_14X_legacy",
             "dbt_15X_legacy",
             "dbt_16X_legacy",
             "dbt_17X_legacy",
-            "dbt_13X",
             "dbt_14X",
             "dbt_15X",
             "dbt_16X",
@@ -615,6 +606,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-mysql",
         pytest_extra_cmds=mysql_extra_cmds,
+        pytest_tox_factors=[
+            "storage_tests",
+            "storage_tests_sqlalchemy_1_3",
+        ],
         unsupported_python_versions=[
             # mysql-connector-python not supported on 3.11
             AvailablePythonVersion.V3_11,
@@ -632,7 +627,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             AvailablePythonVersion.V3_11,
         ],
     ),
-    PackageSpec("python_modules/libraries/dagster-postgres", pytest_extra_cmds=postgres_extra_cmds),
+    PackageSpec(
+        "python_modules/libraries/dagster-postgres",
+        pytest_extra_cmds=postgres_extra_cmds,
+        pytest_tox_factors=[
+            "storage_tests",
+            "storage_tests_sqlalchemy_1_3",
+        ],
+    ),
     PackageSpec(
         "python_modules/libraries/dagster-twilio",
         env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],

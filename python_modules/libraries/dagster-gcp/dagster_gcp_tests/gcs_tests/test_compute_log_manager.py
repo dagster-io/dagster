@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from typing import cast
 from unittest import mock
 
 import pendulum
@@ -14,7 +15,7 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ
+from dagster._core.test_utils import environ, instance_for_test
 from dagster_gcp.gcs import GCSComputeLogManager
 from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 from google.cloud import storage
@@ -229,6 +230,46 @@ compute_logs:
         instance = DagsterInstance.from_config(tempdir)
 
     assert isinstance(instance.compute_log_manager, GCSComputeLogManager)
+
+
+@pytest.mark.integration
+def test_external_compute_log_manager(gcs_bucket):
+    gcs_prefix = "foobar"
+
+    @job
+    def simple():
+        @op
+        def easy(context):
+            context.log.info("easy")
+            print(HELLO_WORLD)  # noqa: T201
+            return "easy"
+
+        easy()
+
+    with instance_for_test(
+        {
+            "compute_logs": {
+                "module": "dagster_gcp.gcs.compute_log_manager",
+                "class": "GCSComputeLogManager",
+                "config": {
+                    "bucket": gcs_bucket,
+                    "local_dir": "/tmp/cool",
+                    "prefix": gcs_prefix,
+                    "show_url_only": True,
+                },
+            }
+        }
+    ) as instance:
+        assert isinstance(instance.compute_log_manager, GCSComputeLogManager)
+        assert cast(GCSComputeLogManager, instance.compute_log_manager)._show_url_only  # noqa
+        result = simple.execute_in_process(instance=instance)
+        captured_log_entries = instance.all_logs(
+            result.run_id, of_type=DagsterEventType.LOGS_CAPTURED
+        )
+        assert len(captured_log_entries) == 1
+        entry = captured_log_entries[0]
+        assert entry.dagster_event.logs_captured_data.external_stdout_url
+        assert entry.dagster_event.logs_captured_data.external_stderr_url
 
 
 @pytest.mark.integration

@@ -87,11 +87,14 @@ class ExternalRepository:
         self,
         external_repository_data: ExternalRepositoryData,
         repository_handle: RepositoryHandle,
+        instance: DagsterInstance,
         ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalJobData]] = None,
     ):
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
+
+        self._instance = instance
 
         if external_repository_data.external_job_datas is not None:
             self._job_map: Dict[str, Union[ExternalJobData, ExternalJobRef]] = {

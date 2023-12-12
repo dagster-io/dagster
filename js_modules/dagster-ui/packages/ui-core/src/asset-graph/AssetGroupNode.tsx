@@ -1,4 +1,11 @@
-import {Box, Colors, FontFamily, Icon, Mono} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Icon,
+  Mono,
+  colorLineageGroupBackground,
+  colorTextLight,
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -33,12 +40,12 @@ export const AssetGroupNode = ({group, scale}: Props) => {
           >
             <Icon
               name="asset_group"
-              color={Colors.Gray400}
+              color={colorTextLight()}
               size={scale > MINIMAL_SCALE ? 20 : 48}
             />
             <Box flex={{direction: 'column'}}>
               <Link
-                style={{color: Colors.Gray400}}
+                style={{color: colorTextLight()}}
                 onClick={(e) => e.stopPropagation()}
                 to={workspacePath(
                   repositoryName,
@@ -67,7 +74,9 @@ export const AssetGroupNode = ({group, scale}: Props) => {
           top: 75,
           position: 'absolute',
           background:
-            scale < GROUPS_ONLY_SCALE ? `rgba(234, 234, 234, 1)` : `rgba(217, 217, 217, 0.25)`,
+            scale < GROUPS_ONLY_SCALE
+              ? colorLineageGroupBackground()
+              : colorLineageGroupBackground(),
         }}
       />
 
@@ -103,5 +112,5 @@ const GroupRepoName = styled.div`
   font-size: 0.8em;
   line-height: 0.6em;
   white-space: nowrap;
-  color: ${Colors.Gray400};
+  color: ${colorTextLight()};
 `;

@@ -1,10 +1,10 @@
 import {
   Box,
-  Colors,
   NonIdealState,
   Caption,
   Subheading,
   ExternalAnchorButton,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
@@ -74,7 +74,7 @@ export const AssetMaterializationGraphs = (props: {
         props.asSidebarSection ? (
           <Box
             margin={{horizontal: 24, vertical: 12}}
-            style={{color: Colors.Gray500, fontSize: '0.8rem'}}
+            style={{color: colorTextLight(), fontSize: '0.8rem'}}
           >
             No numeric metadata entries available to be graphed.
           </Box>
@@ -95,7 +95,7 @@ export const AssetMaterializationGraphs = (props: {
         )
       ) : (
         props.xAxis === 'partition' && (
-          <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray400}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{color: colorTextLight()}}>
             When graphing values by partition, the highest data point for each materialized event
             label is displayed.
           </Box>

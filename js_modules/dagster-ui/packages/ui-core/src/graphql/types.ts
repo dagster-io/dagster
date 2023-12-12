@@ -1550,7 +1550,7 @@ export type InstigationState = {
   runsCount: Scalars['Int'];
   selectorId: Scalars['String'];
   status: InstigationStatus;
-  tick: Maybe<InstigationTick>;
+  tick: InstigationTick;
   ticks: Array<InstigationTick>;
   typeSpecificData: Maybe<InstigationTypeSpecificData>;
 };
@@ -1560,8 +1560,7 @@ export type InstigationStateRunsArgs = {
 };
 
 export type InstigationStateTickArgs = {
-  tickId?: InputMaybe<Scalars['Int']>;
-  timestamp?: InputMaybe<Scalars['Float']>;
+  tickId: Scalars['Int'];
 };
 
 export type InstigationStateTicksArgs = {
@@ -3987,6 +3986,7 @@ export type SensorSelector = {
 
 export enum SensorType {
   ASSET = 'ASSET',
+  AUTOMATION_POLICY = 'AUTOMATION_POLICY',
   FRESHNESS_POLICY = 'FRESHNESS_POLICY',
   MULTI_ASSET = 'MULTI_ASSET',
   RUN_STATUS = 'RUN_STATUS',

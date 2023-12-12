@@ -1,13 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  Colors,
   Group,
   Icon,
   NonIdealState,
   Spinner,
   Body,
   Tooltip,
+  colorTextLighter,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -61,11 +62,11 @@ export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
   }
   return (
     <Group direction="column" spacing={16}>
-      <Box padding={12} border={{side: 'bottom', color: Colors.Gray200}}>
+      <Box padding={12} border={{side: 'bottom', color: colorTextLighter()}}>
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">
-            <Icon name="info" color={Colors.Gray500} />
+            <Icon name="info" color={colorTextLight()} />
           </Tooltip>
         </Body>
 
@@ -75,7 +76,7 @@ export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
         <Body>
           Requested Runs
           <Tooltip content="Runs launched by the run requests in this tick.">
-            <Icon name="info" color={Colors.Gray500} />
+            <Icon name="info" color={colorTextLight()} />
           </Tooltip>
         </Body>
         <NonIdealState

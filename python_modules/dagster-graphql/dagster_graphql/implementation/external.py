@@ -143,7 +143,7 @@ def fetch_repository(
     )
 
 
-def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> "GrapheneWorkspace":
+def fetch_workspace(workspace_request_context: BaseWorkspaceRequestContext) -> "GrapheneWorkspace":
     from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(

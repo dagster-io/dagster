@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@dagster-io/ui-components';
+import {colorAccentBlue, colorBackgroundBlue} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -42,10 +42,10 @@ const TypeLink = styled(Link)`
 `;
 
 const TypeName = styled.code`
-  background: ${Colors.Blue50};
+  background: ${colorBackgroundBlue()};
   border: none;
   padding: 1px 4px;
-  border-bottom: 1px solid ${Colors.Blue500};
+  border-bottom: 1px solid ${colorAccentBlue()};
   border-radius: 0.25em;
   font-size: 14px;
   font-weight: 500;

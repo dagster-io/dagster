@@ -8,6 +8,7 @@ from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional
 
 from dagster import ConfigurableResource, PermissiveConfig, get_dagster_logger
 from dagster._annotations import experimental
+from dagster._config.field_utils import EnvVar
 from dagster._utils.env import environ
 from pydantic import ConfigDict, Extra, Field
 from sling import Sling
@@ -247,8 +248,8 @@ class SlingResource(ConfigurableResource, _SlingSyncBase):
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
-        sling_source = dict(self.source_connection)
-        sling_target = dict(self.target_connection)
+        sling_source = _process_env_vars(dict(self.source_connection))
+        sling_target = _process_env_vars(dict(self.target_connection))
 
         if self.source_connection.connection_string:
             sling_source["url"] = self.source_connection.connection_string
@@ -345,6 +346,16 @@ class SlingConnectionResource(ConfigurableResource):
     )
 
 
+def _process_env_vars(config: Dict[str, Any]) -> Dict[str, Any]:
+    out = {}
+    for key, value in config.items():
+        if isinstance(value, dict) and len(value) == 1 and next(iter(value.keys())) == "env":
+            out[key] = EnvVar(next(iter(value.values()))).get_value()
+        else:
+            out[key] = value
+    return out
+
+
 class SlingStreamReplicator(_SlingSyncBase):
     """A utility class for running a Sling sync from outside of a Dagster resource to enable parity between the SlingResource and SlingStreamSync.
 
@@ -381,6 +392,9 @@ class SlingStreamReplicator(_SlingSyncBase):
 
         sling_source = self.source_connection.dict()
         sling_target = self.target_connection.dict()
+
+        sling_source = _process_env_vars(sling_source)
+        sling_target = _process_env_vars(sling_target)
 
         if self.source_connection.connection_string:
             sling_source["url"] = self.source_connection.connection_string

@@ -48,7 +48,7 @@ load_from:
 
             with ExitStack() as stack:
                 code_locations = {
-                    name: stack.enter_context(origin.create_location())
+                    name: stack.enter_context(origin.create_location(instance))
                     for name, origin in origins.items()
                 }
                 assert len(code_locations) == 2
@@ -141,7 +141,7 @@ load_from:
         # Actually connecting to the server will fail since it's expecting SSL
         # and we didn't set up the server with SSL
         try:
-            with origin.create_location():
+            with origin.create_location(instance):
                 assert False
         except DagsterUserCodeUnreachableError:
             pass
@@ -176,7 +176,7 @@ load_from:
 
             with ExitStack() as stack:
                 code_locations = {
-                    name: stack.enter_context(origin.create_location())
+                    name: stack.enter_context(origin.create_location(instance))
                     for name, origin in origins.items()
                 }
                 assert len(code_locations) == 2

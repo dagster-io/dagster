@@ -224,7 +224,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return DagsterDaemonScheduler(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def debug_info(self) -> str:
         return ""

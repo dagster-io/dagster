@@ -624,3 +624,73 @@ def test_pipes_expected_materialization():
             [missing_results],
             resources={"pipes_client": PipesSubprocessClient()},
         )
+
+
+def test_user_messages():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as pipes:
+            pipes.report_custom_message({"some": "junk"})
+            pipes.report_custom_message("cool message")
+            pipes.report_custom_message(2)
+
+    @asset
+    def extra_msg(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            response = pipes_client.run(command=cmd, context=context)
+            messages = response.get_custom_messages()
+            assert len(messages) == 3
+            assert messages[0]["some"] == "junk"
+            assert messages[1] == "cool message"
+            assert messages[2] == 2
+            return response.get_materialize_result()
+
+    result = materialize(
+        [extra_msg],
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
+    assert result.success
+
+
+def test_bad_user_message():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        class Cursed:
+            ...
+
+        with open_dagster_pipes() as pipes:
+            pipes.report_custom_message(Cursed())
+
+    @asset
+    def bad_msg(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            response = pipes_client.run(command=cmd, context=context)
+            return response.get_materialize_result()
+
+    with instance_for_test() as instance:
+        result = materialize(
+            [bad_msg],
+            instance=instance,
+            resources={"pipes_client": PipesSubprocessClient()},
+            raise_on_error=False,
+        )
+        assert not result.success
+        conn = instance.get_records_for_run(result.run_id)
+        pipes_events = [
+            record.event_log_entry
+            for record in conn.records
+            if record.event_log_entry.user_message.startswith("[pipes]")
+        ]
+        assert len(pipes_events) == 2
+        assert "successfully opened" in pipes_events[0].user_message
+        assert "external process pipes closed with exception" in pipes_events[1].user_message
+        assert pipes_events[1].dagster_event
+        assert pipes_events[1].dagster_event.engine_event_data.error
+        assert (
+            "Object of type Cursed is not JSON serializable"
+            in pipes_events[1].dagster_event.engine_event_data.error.message
+        )

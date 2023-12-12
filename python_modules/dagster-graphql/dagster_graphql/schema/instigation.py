@@ -370,8 +370,9 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
                     cursor=self._cursor,
-                    last_completion_time=None,
+                    last_tick_completion_time=None,
                     last_run_key=None,
+                    last_sensor_start_time=None,
                 )
             except Exception:
                 sensor_data = serializable_error_info_from_exc_info(sys.exc_info())
@@ -536,9 +537,8 @@ class GrapheneInstigationState(graphene.ObjectType):
     )
     runsCount = graphene.NonNull(graphene.Int)
     tick = graphene.Field(
-        GrapheneInstigationTick,
-        timestamp=graphene.Float(),
-        tickId=graphene.Int(),
+        graphene.NonNull(GrapheneInstigationTick),
+        tickId=graphene.NonNull(graphene.Int),
     )
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
@@ -666,25 +666,12 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_tick(
         self,
         graphene_info: ResolveInfo,
-        timestamp: Optional[float] = None,
-        tickId: Optional[int] = None,
-    ):
-        if tickId:
-            schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
-            tick = schedule_storage.get_tick(tickId)
+        tickId: int,
+    ) -> GrapheneInstigationTick:
+        schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
+        tick = schedule_storage.get_tick(tickId)
 
-            return GrapheneInstigationTick(tick)
-
-        timestamp = check.float_param(timestamp, "timestamp")
-
-        matches = graphene_info.context.instance.get_ticks(
-            self._instigator_state.instigator_origin_id,
-            self._instigator_state.selector_id,
-            before=timestamp + 1,
-            after=timestamp - 1,
-            limit=1,
-        )
-        return GrapheneInstigationTick(matches[0]) if matches else None
+        return GrapheneInstigationTick(tick)
 
     def resolve_ticks(
         self,

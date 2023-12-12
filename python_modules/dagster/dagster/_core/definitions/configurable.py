@@ -325,7 +325,7 @@ def configured(
     if safe_is_subclass(configurable, ConfigurableResourceFactory):
         configurable_inner = cast(
             ResourceDefinition,
-            (  # type: ignore
+            (
                 cast(Type[ConfigurableResourceFactory], configurable)
                 .configure_at_launch()
                 .get_resource_definition()

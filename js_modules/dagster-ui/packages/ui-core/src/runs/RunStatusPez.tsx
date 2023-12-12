@@ -1,4 +1,11 @@
-import {Box, Colors, FontFamily, Mono, Popover} from '@dagster-io/ui-components';
+import {
+  Box,
+  FontFamily,
+  Mono,
+  Popover,
+  colorKeylineDefault,
+  colorTextDefault,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -104,11 +111,11 @@ const OverlayContainer = styled.div`
 
 const OverlayTitle = styled.div`
   padding: 8px;
-  box-shadow: inset 0 -1px ${Colors.KeylineGray};
+  box-shadow: inset 0 -1px ${colorKeylineDefault()};
   font-family: ${FontFamily.default};
   font-size: 14px;
   font-weight: 500;
-  color: ${Colors.Dark};
+  color: ${colorTextDefault()};
   max-width: 100%;
   text-overflow: ellipsis;
   overflow: hidden;

@@ -50,7 +50,13 @@ So, why use resources?
 
 ## Defining a resource
 
-Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Attributes on the class are used to define the resource's [configuration schema](/concepts/configuration/config-schema). The configuration system has a few advantages over plain Python parameter passing; configured values are displayed in the UI and can be set dynamically using environment variables. Binding resource config values can also be delayed so that they can be specified at run launch time.
+Typically, resources are defined by subclassing <PyObject object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/concepts/configuration/config-schema), which are used to specify things like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
+
+The configuration system has a few advantages over plain Python parameter passing. Configured values can be:
+
+1. Replaced at run launch time in the Launchpad in Dagster UI, the GraphQL API, or the Python API
+2. Displayed in the Dagster UI
+3. Set dynamically using environment variables, resolved at runtime
 
 ### With Software-defined Assets
 
@@ -234,17 +240,19 @@ In some situations, you may want to define a resource that depends on other reso
 In this case, you can list that nested resource as an attribute of the resource class:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_nesting endbefore=end_new_resources_nesting dedent=4
-from dagster import Definitions, ConfigurableResource
+from dagster import Definitions, ConfigurableResource, ResourceDependency
 
 class CredentialsResource(ConfigurableResource):
     username: str
     password: str
 
 class FileStoreBucket(ConfigurableResource):
-    credentials: CredentialsResource
+    credentials: ResourceDependency[CredentialsResource]
     region: str
 
     def write(self, data: str):
+        # We can access the credentials resource via `self.credentials`,
+        # which will be an initialized instance of `CredentialsResource`
         get_filestore_client(
             username=self.credentials.username,
             password=self.credentials.password,
@@ -285,18 +293,24 @@ defs = Definitions(
 
 ---
 
-## Managing state in resources
+## Resource lifecycle
 
-Once a resource reaches a certain complexity, you may want to manage the state of the resource over its lifetime. This is useful for resources that require special initialization or cleanup. `ConfigurableResource` is a data class meant to encapsulate config, but can also be used to set up basic state.
+Once a resource reaches a certain complexity, you may want to manage the state of the resource over its lifetime. This is useful for resources that require special initialization or cleanup. `ConfigurableResource` is a data class meant to encapsulate config, but also provides lifecycle hooks to manage the state of the resource.
 
 You can mark any private state attributes using Pydantic's [`PrivateAttr`](https://docs.pydantic.dev/latest/usage/models/#private-model-attributes). These attributes, which must start with an underscore, won't be included in the resource's config.
 
-The `setup_for_execution` and `teardown_after_execution` methods can be overridden to initialize or teardown a resource before each run execution, and are free to modify any private state attributes.
+### Lifecycle hooks
+
+When a resource is initialized during a Dagster run, the `setup_for_execution` method is called. This method is passed an <PyObject object="InitResourceContext" /> object, which contains the resource's config and other run information. The resource can use this context to initialize any state it needs for the duration of the run.
+
+Once a resource is no longer needed, the `teardown_after_execution` method is called. This method is passed the same context object as `setup_for_execution`. This method can be useful for cleaning up any state that was initialized in `setup_for_execution`.
+
+`setup_for_execution` and `teardown_after_execution` are each called once per run, per process. When using the in-process executor, this means that they will be called once per run. When using the multiprocess executor, each process's instance of the resource will be initialized and torn down.
 
 In the following example, we set up an API token for a client resource based on the username and password provided in the config. The API token can then be used to query an API in the asset body.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_with_state_example endbefore=end_with_state_example dedent=4
-from dagster import ConfigurableResource, asset
+from dagster import ConfigurableResource, InitResourceContext, asset
 import requests
 
 from pydantic import PrivateAttr
@@ -307,7 +321,7 @@ class MyClientResource(ConfigurableResource):
 
     _api_token: str = PrivateAttr()
 
-    def setup_for_execution(self, context) -> None:
+    def setup_for_execution(self, context: InitResourceContext) -> None:
         # Fetch and set up an API token based on the username and password
         self._api_token = requests.get(
             "https://my-api.com/token", auth=(self.username, self.password)
@@ -324,12 +338,10 @@ def my_asset(client: MyClientResource):
     return client.get_all_users()
 ```
 
-`setup_for_execution` and `teardown_after_execution` are each called once per run, per process. When using the in-process executor, this means that they will be called once per run. When using the multiprocess executor, each process's instance of the resource will be initialized and torn down.
-
 For more complex use cases, you can override the `yield_for_execution`. By default, this context manager calls `setup_for_execution`, yields the resource, and then calls `teardown_after_execution`, but you can override it to provide any custom behavior. This is useful for resources that require a context to be open for the duration of a run, such as database connections or file handles.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_with_complex_state_example endbefore=end_with_complex_state_example dedent=4
-from dagster import ConfigurableResource, asset
+from dagster import ConfigurableResource, asset, InitResourceContext
 from contextlib import contextmanager
 from pydantic import PrivateAttr
 
@@ -350,7 +362,7 @@ class MyClientResource(ConfigurableResource):
     _db_connection: DBConnection = PrivateAttr()
 
     @contextmanager
-    def yield_for_execution(self, context):
+    def yield_for_execution(self, context: InitResourceContext):
         # keep connection open for the duration of the execution
         with get_database_connection(self.username, self.password) as conn:
             # set up the connection attribute so it can be used in the execution

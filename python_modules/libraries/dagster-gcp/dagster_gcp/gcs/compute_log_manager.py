@@ -1,7 +1,8 @@
 import datetime
 import json
 import os
-from typing import Any, Mapping, Optional, Sequence
+from contextlib import contextmanager
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import dagster._seven as seven
 from dagster import (
@@ -10,6 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_type import Noneable
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
@@ -53,6 +55,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             and other credentials information. If this is set, ``GOOGLE_APPLICATION_CREDENTIALS`` will be ignored.
             Can be used when the private key cannot be used as a file.
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files to GCS. By default, will only upload when the capture is complete.
+        show_url_only: (Optional[bool]): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when instantiated from config.
     """
@@ -65,6 +68,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         prefix="dagster",
         json_credentials_envvar=None,
         upload_interval=None,
+        show_url_only=False,
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
         self._prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
@@ -90,6 +94,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         self._local_manager = LocalComputeLogManager(local_dir)
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
+        self._show_url_only = show_url_only
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
@@ -104,13 +109,14 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "json_credentials_envvar": Field(StringSource, is_required=False),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
+            "show_url_only": Field(bool, is_required=False, default_value=False),
         }
 
     @classmethod
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return GCSComputeLogManager(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     @property
     def local_manager(self) -> LocalComputeLogManager:
@@ -133,6 +139,23 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             filename = f"{filename}.partial"
         paths = [self._prefix, "storage", *namespace, filename]
         return "/".join(paths)
+
+    @contextmanager
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        with super().capture_logs(log_key) as local_context:
+            if not self._show_url_only:
+                yield local_context
+            else:
+                out_key = self._gcs_key(log_key, ComputeIOType.STDOUT)
+                err_key = self._gcs_key(log_key, ComputeIOType.STDERR)
+                gcs_base = (
+                    f"https://console.cloud.google.com/storage/browser/_details/{self._bucket_name}"
+                )
+                yield CapturedLogContext(
+                    local_context.log_key,
+                    external_stdout_url=f"{gcs_base}/{out_key}",
+                    external_stderr_url=f"{gcs_base}/{err_key}",
+                )
 
     def delete_logs(
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None

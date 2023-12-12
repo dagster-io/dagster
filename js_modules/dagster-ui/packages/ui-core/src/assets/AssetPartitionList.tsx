@@ -1,4 +1,10 @@
-import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
+import {
+  Box,
+  MiddleTruncate,
+  colorBackgroundLight,
+  colorBorderDefault,
+  colorTextDefault,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -34,7 +40,7 @@ export const AssetPartitionList = ({
   React.useEffect(() => {
     if (focusedDimensionKey) {
       rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
-        smoothScroll: false,
+        behavior: 'auto',
         align: 'auto',
       });
     }
@@ -132,9 +138,9 @@ export const AssetPartitionStatusDot = ({status}: {status: AssetPartitionStatus[
 );
 
 const PartitionTooltipStyle = JSON.stringify({
-  background: Colors.Gray100,
-  border: `1px solid ${Colors.Gray200}`,
-  color: Colors.Dark,
+  background: colorBackgroundLight(),
+  border: `1px solid ${colorBorderDefault()}`,
+  color: colorTextDefault(),
   fontSize: '14px',
   top: 0,
   left: 0,

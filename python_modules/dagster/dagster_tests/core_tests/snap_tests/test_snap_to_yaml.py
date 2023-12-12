@@ -2,16 +2,24 @@ import os
 import sys
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from dagster import Config, Field, job, op
+import pytest
+from dagster import Config, DagsterInstance, Field, job, op
 from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
+from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.external import ExternalJob
+
+
+@pytest.fixture
+def instance():
+    with instance_for_test() as the_instance:
+        yield the_instance
 
 
 def test_basic_default():
@@ -32,11 +40,13 @@ def test_with_spaces():
     assert yaml_str == "a: with spaces\n"
 
 
-def external_repository_for_function(fn):
-    return external_repository_for_module(fn.__module__, fn.__name__)
+def _external_repository_for_function(instance: DagsterInstance, fn):
+    return _external_repository_for_module(instance, fn.__module__, fn.__name__)
 
 
-def external_repository_for_module(module_name, attribute=None, repository_name="__repository__"):
+def _external_repository_for_module(
+    instance: DagsterInstance, module_name, attribute=None, repository_name="__repository__"
+):
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         module_name=module_name,
@@ -46,7 +56,7 @@ def external_repository_for_module(module_name, attribute=None, repository_name=
 
     location = InProcessCodeLocationOrigin(
         loadable_target_origin=loadable_target_origin, location_name=module_name
-    ).create_location()
+    ).create_location(instance)
 
     return location.get_repository(repository_name)
 
@@ -63,8 +73,10 @@ def trivial_job_defs():
     return Definitions(jobs=[a_job])
 
 
-def test_print_root() -> None:
-    external_repository = external_repository_for_function(trivial_job_defs)
+def test_print_root(
+    instance,
+) -> None:
+    external_repository = _external_repository_for_function(instance, trivial_job_defs)
     external_a_job: ExternalJob = external_repository.get_full_external_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key
@@ -92,8 +104,10 @@ def job_def_with_config():
     return Definitions(jobs=[a_job])
 
 
-def test_print_root_op_config() -> None:
-    external_repository = external_repository_for_function(job_def_with_config)
+def test_print_root_op_config(
+    instance,
+) -> None:
+    external_repository = _external_repository_for_function(instance, job_def_with_config)
     external_a_job: ExternalJob = external_repository.get_full_external_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key
@@ -127,8 +141,8 @@ def job_def_with_complex_config():
     return Definitions(jobs=[a_job])
 
 
-def test_print_root_complex_op_config() -> None:
-    external_repository = external_repository_for_function(job_def_with_complex_config)
+def test_print_root_complex_op_config(instance) -> None:
+    external_repository = _external_repository_for_function(instance, job_def_with_complex_config)
     external_a_job: ExternalJob = external_repository.get_full_external_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key

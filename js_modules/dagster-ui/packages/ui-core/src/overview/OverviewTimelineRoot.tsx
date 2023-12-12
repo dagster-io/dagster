@@ -32,6 +32,7 @@ type Props = {
   Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
   TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
+
 export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');

@@ -55,7 +55,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return DefaultRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     @staticmethod
     def launch_run_from_grpc_client(

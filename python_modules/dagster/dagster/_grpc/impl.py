@@ -333,9 +333,10 @@ def get_external_sensor_execution(
     repo_def: RepositoryDefinition,
     instance_ref: Optional[InstanceRef],
     sensor_name: str,
-    last_completion_timestamp: Optional[float],
+    last_tick_completion_timestamp: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
+    last_sensor_start_timestamp: Optional[float],
 ):
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
@@ -353,13 +354,14 @@ def get_external_sensor_execution(
 
         with SensorEvaluationContext(
             instance_ref,
-            last_completion_time=last_completion_timestamp,
+            last_tick_completion_time=last_tick_completion_timestamp,
             last_run_key=last_run_key,
             cursor=cursor,
             repository_name=repo_def.name,
             repository_def=repo_def,
             sensor_name=sensor_name,
             resources=resources_to_build,
+            last_sensor_start_time=last_sensor_start_timestamp,
         ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,

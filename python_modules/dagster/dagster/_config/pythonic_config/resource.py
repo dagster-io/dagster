@@ -43,6 +43,7 @@ from .attach_other_object_to_context import (
 from .pydantic_compat_layer import (
     model_fields,
 )
+from .type_check_utils import is_optional
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -74,7 +75,7 @@ from .conversion_utils import (
 )
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 
-Self = TypeVar("Self", bound="ConfigurableResourceFactory")
+T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int
 
 
@@ -434,7 +435,7 @@ class ConfigurableResourceFactory(
         return self._nested_resources
 
     @classmethod
-    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
+    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
         """Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
         """
@@ -807,7 +808,7 @@ class PartialResource(
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001 # type: ignore
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
 
@@ -895,6 +896,13 @@ def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> boo
 
     if metadata and metadata[0] == "resource_dependency":
         return True
+
+    if is_optional(annotation):
+        args = get_args(annotation)
+        annotation_inner = next((arg for arg in args if arg is not None), None)
+        if not annotation_inner:
+            return False
+        return _is_annotated_as_resource_type(annotation_inner, [])
 
     is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
         annotation, "__metadata__", None

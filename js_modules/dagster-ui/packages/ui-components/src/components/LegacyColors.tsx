@@ -1,4 +1,4 @@
-export const Colors = {
+export const LegacyColors = {
   Dark: 'rgba(23, 22, 21, 1)',
   Gray900: 'rgba(35, 31, 27, 1)',
   Gray800: 'rgba(58, 54, 49, 1)',
@@ -12,6 +12,7 @@ export const Colors = {
   Gray50: 'rgba(250, 249, 247, 1)',
   KeylineGray: 'rgba(233, 232, 232, 1)',
   WashGray: 'rgba(0, 0, 0, .35)',
+  Shadow: 'rgba(0, 0, 0, .20)',
   Gray10: 'rgba(35, 31, 27, 0.03)',
   White: 'rgba(255, 255, 255, 1)',
   LightPurple: 'rgba(222, 221, 255, 1)',

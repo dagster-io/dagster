@@ -5,9 +5,10 @@ import {
   ButtonLink,
   Caption,
   CaptionMono,
-  Colors,
   Icon,
   Popover,
+  colorBackgroundYellow,
+  colorTextYellow,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
@@ -55,7 +56,7 @@ export const StaleReasonsLabel = ({
   }
 
   return (
-    <Body color={Colors.Yellow700}>
+    <Body color={colorTextYellow()}>
       <Popover
         position="top"
         content={<StaleCausesPopoverSummary causes={liveData.staleCauses} />}
@@ -94,13 +95,13 @@ export const StaleReasonsTags = ({
           className="chunk-popover-target"
         >
           <BaseTag
-            fillColor={Colors.Yellow50}
-            textColor={Colors.Yellow700}
+            fillColor={colorBackgroundYellow()}
+            textColor={colorTextYellow()}
             interactive={!!onClick}
-            icon={<Icon name="changes_present" color={Colors.Yellow700} />}
+            icon={<Icon name="changes_present" color={colorTextYellow()} />}
             label={
               onClick ? (
-                <ButtonLink underline="never" onClick={onClick} color={Colors.Yellow700}>
+                <ButtonLink underline="never" onClick={onClick} color={colorTextYellow()}>
                   {label}
                 </ButtonLink>
               ) : (

@@ -39,7 +39,7 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return NoOpComputeLogManager(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def enabled(self, _dagster_run, _step_key):
         return False

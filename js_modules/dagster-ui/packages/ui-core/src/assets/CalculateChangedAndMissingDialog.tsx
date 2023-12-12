@@ -7,9 +7,11 @@ import {
   Button,
   Box,
   Icon,
-  Colors,
   Checkbox,
   MiddleTruncate,
+  colorLinkDefault,
+  colorTextLight,
+  colorAccentGreen,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
@@ -113,16 +115,22 @@ export const CalculateChangedAndMissingDialog = React.memo(
                   });
                 }}
               />
-              <label htmlFor="check-all" style={{color: Colors.Gray500, cursor: 'pointer'}}>
+              <label htmlFor="check-all" style={{color: colorTextLight(), cursor: 'pointer'}}>
                 Asset Name
               </label>
             </RowGrid>
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
               <Inner $totalHeight={totalHeight}>
-                {items.map(({index, key, size, start, measureElement}) => {
+                {items.map(({index, key, size, start}) => {
                   const item = staleOrMissing[index]!;
                   return (
-                    <Row $height={size} $start={start} key={key} ref={measureElement}>
+                    <Row
+                      $height={size}
+                      $start={start}
+                      data-key={key}
+                      key={key}
+                      ref={virtualizer.measureElement}
+                    >
                       <RowGrid border="bottom">
                         <Checkbox
                           id={`checkbox-${key}`}
@@ -149,7 +157,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
                             <MiddleTruncate text={displayNameForAssetKey(item)} />
                           </Box>
                           <Link to={assetDetailsPathForKey(item)} target="_blank">
-                            <Icon name="open_in_new" color={Colors.Link} />
+                            <Icon name="open_in_new" color={colorLinkDefault()} />
                           </Link>
                         </Box>
                       </RowGrid>
@@ -163,7 +171,7 @@ export const CalculateChangedAndMissingDialog = React.memo(
       }
       return (
         <Box flex={{alignItems: 'center', gap: 8}}>
-          <Icon name="check_circle" color={Colors.Green500} />
+          <Icon name="check_circle" color={colorAccentGreen()} />
           <div>All assets are up to date</div>
         </Box>
       );

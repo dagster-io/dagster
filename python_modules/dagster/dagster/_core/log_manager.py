@@ -1,5 +1,6 @@
 import datetime
 import logging
+import threading
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from typing_extensions import Protocol
@@ -215,7 +216,11 @@ class DagsterLogHandler(logging.Handler):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
         self._handlers = handlers
-        self._should_capture = True
+        # Setting up a local thread context here to allow the DagsterLogHandler
+        # to be used in multi threading environments where the handler is called by
+        # different threads with different log messages in parallel.
+        self._local_thread_context = threading.local()
+        self._local_thread_context.should_capture = True
         super().__init__()
 
     @property
@@ -270,7 +275,13 @@ class DagsterLogHandler(logging.Handler):
         multiple times, as the DagsterLogHandler will be invoked at each level of the hierarchy as
         the message is propagated. This filter prevents this from happening.
         """
-        return self._should_capture and not isinstance(
+        if not hasattr(self._local_thread_context, "should_capture"):
+            # Since only the "main" thread gets an initialized
+            # "_local_thread_context.should_capture" variable through the __init__()
+            # we need to set a default value for all other threads here.
+            self._local_thread_context.should_capture = True
+
+        return self._local_thread_context.should_capture and not isinstance(
             getattr(record, DAGSTER_META_KEY, None), dict
         )
 
@@ -280,7 +291,7 @@ class DagsterLogHandler(logging.Handler):
             # to prevent the potential for infinite loops in which a handler produces log messages
             # which are then captured and then handled by that same handler (etc.), do not capture
             # any log messages while one is currently being emitted
-            self._should_capture = False
+            self._local_thread_context.should_capture = False
             dagster_record = self._convert_record(record)
             # built-in handlers
             for handler in self._handlers:
@@ -295,7 +306,7 @@ class DagsterLogHandler(logging.Handler):
                     extra=self._extract_extra(record),
                 )
         finally:
-            self._should_capture = True
+            self._local_thread_context.should_capture = True
 
 
 class DagsterLogManager(logging.Logger):

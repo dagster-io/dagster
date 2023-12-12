@@ -28,6 +28,7 @@ from typing import (
     cast,
 )
 
+import pendulum
 import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
@@ -1581,11 +1582,6 @@ class DagsterInstance(DynamicPartitionsStore):
         run_config = run_config if run_config is not None else parent_run.run_config
 
         if strategy == ReexecutionStrategy.FROM_FAILURE:
-            if parent_run.status != DagsterRunStatus.FAILURE:
-                raise DagsterInvariantViolationError(
-                    "Cannot reexecute from failure a run that is not failed",
-                )
-
             (
                 step_keys_to_execute,
                 known_state,
@@ -1726,8 +1722,9 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+        ascending: bool = False,
     ) -> Sequence[DagsterRun]:
-        return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
+        return self._run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
 
     @traced
     def get_run_ids(
@@ -2629,11 +2626,19 @@ class DagsterInstance(DynamicPartitionsStore):
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
-                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
+                    SensorInstigatorData(
+                        min_interval=external_sensor.min_interval_seconds,
+                        last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    ),
                 )
             )
         else:
-            return self.update_instigator_state(stored_state.with_status(InstigatorStatus.RUNNING))
+            data = cast(SensorInstigatorData, stored_state.instigator_data)
+            return self.update_instigator_state(
+                stored_state.with_status(InstigatorStatus.RUNNING).with_data(
+                    data.with_sensor_start_timestamp(pendulum.now("UTC").timestamp())
+                )
+            )
 
     def stop_sensor(
         self,
