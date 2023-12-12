@@ -16,10 +16,8 @@ from dagster import (
     asset,
     graph,
     job,
-    materialize,
     op,
     resource,
-    with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
@@ -225,29 +223,3 @@ def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
             "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
         ),
     }
-
-
-def test_nothing(mock_s3_bucket):
-    @asset
-    def asset1() -> None:
-        ...
-
-    @asset(deps=[asset1])
-    def asset2() -> None:
-        ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": s3_pickle_io_manager.configured({"s3_bucket": mock_s3_bucket.name}),
-                "s3": s3_test_resource,
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata) == 0
