@@ -23,6 +23,7 @@ from dagster import (
     io_manager,
     job,
     logger,
+    observable_source_asset,
     op,
     repository,
     resource,
@@ -1445,12 +1446,17 @@ def test_automation_policy_sensors_incomplete_cover():
     def asset2():
         ...
 
+    @observable_source_asset
+    def auto_observe_asset():
+        pass
+
     @repository
     def repo():
         return [
             asset1,
             asset2,
-            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+            auto_observe_asset,
+            AutomationPolicySensorDefinition("a", asset_selection=[asset1, auto_observe_asset]),
         ]
 
 

@@ -430,7 +430,9 @@ def _validate_automation_policy_sensors(
     sensor_names_by_asset_key: Dict[AssetKey, str] = {}
     for sensor in sensors:
         if isinstance(sensor, AutomationPolicySensorDefinition):
-            asset_keys = sensor.asset_selection.resolve(asset_graph)
+            asset_keys = sensor.asset_selection.resolve(
+                asset_graph, allow_regular_and_source_assets=True
+            )
             for asset_key in asset_keys:
                 if asset_key in sensor_names_by_asset_key:
                     raise DagsterInvalidDefinitionError(

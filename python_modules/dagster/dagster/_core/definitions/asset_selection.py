@@ -294,7 +294,9 @@ class AssetSelection(ABC):
         return SubtractAssetSelection(self, other)
 
     def resolve(
-        self, all_assets: Union[Iterable[Union[AssetsDefinition, SourceAsset]], AssetGraph]
+        self,
+        all_assets: Union[Iterable[Union[AssetsDefinition, SourceAsset]], AssetGraph],
+        allow_regular_and_source_assets: bool = False,
     ) -> AbstractSet[AssetKey]:
         if isinstance(all_assets, AssetGraph):
             asset_graph = all_assets
@@ -303,13 +305,14 @@ class AssetSelection(ABC):
             asset_graph = AssetGraph.from_assets(all_assets)
 
         resolved = self.resolve_inner(asset_graph)
-        resolved_source_assets = asset_graph.source_asset_keys & resolved
-        resolved_regular_assets = resolved - asset_graph.source_asset_keys
-        check.invariant(
-            not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
-            "Asset selection specified both regular assets and source assets. This is not"
-            " currently supported. Selections must be all regular assets or all source assets.",
-        )
+        if not allow_regular_and_source_assets:
+            resolved_source_assets = asset_graph.source_asset_keys & resolved
+            resolved_regular_assets = resolved - asset_graph.source_asset_keys
+            check.invariant(
+                not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
+                "Asset selection specified both regular assets and source assets. This is not"
+                " currently supported. Selections must be all regular assets or all source assets.",
+            )
         return resolved
 
     @abstractmethod
