@@ -93,8 +93,8 @@ class AssetDaemonContext:
         cursor: AssetDaemonCursor,
         materialize_run_tags: Optional[Mapping[str, str]],
         observe_run_tags: Optional[Mapping[str, str]],
-        auto_observe: bool,
-        target_asset_keys: Optional[AbstractSet[AssetKey]],
+        auto_observe_asset_keys: Optional[AbstractSet[AssetKey]],
+        auto_materialize_asset_keys: Optional[AbstractSet[AssetKey]],
         respect_materialization_data_versions: bool,
         logger: logging.Logger,
         evaluation_time: Optional[datetime.datetime] = None,
@@ -107,14 +107,10 @@ class AssetDaemonContext:
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
-        self._target_asset_keys = target_asset_keys or {
-            key
-            for key, policy in self.asset_graph.auto_materialize_policies_by_key.items()
-            if policy is not None
-        }
+        self._auto_materialize_asset_keys = auto_materialize_asset_keys or set()
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags
-        self._auto_observe = auto_observe
+        self._auto_observe_asset_keys = auto_observe_asset_keys or set()
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
 
@@ -146,21 +142,23 @@ class AssetDaemonContext:
         return self.cursor.latest_storage_id
 
     @property
-    def target_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._target_asset_keys
+    def auto_materialize_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._auto_materialize_asset_keys
 
     @property
-    def target_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
+    def auto_materialize_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
         return {
             parent
-            for asset_key in self.target_asset_keys
+            for asset_key in self.auto_materialize_asset_keys
             for parent in self.asset_graph.get_parents(asset_key)
-        } | self.target_asset_keys
+        } | self.auto_materialize_asset_keys
 
     @property
     def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
         return [
-            key for key in self.target_asset_keys_and_parents if not self.asset_graph.is_source(key)
+            key
+            for key in self.auto_materialize_asset_keys_and_parents
+            if not self.asset_graph.is_source(key)
         ]
 
     @property
@@ -184,10 +182,10 @@ class AssetDaemonContext:
         self._verbose_log_fn("Done prefetching asset records.")
         self._verbose_log_fn(
             f"Calculated a new latest_storage_id value of {self.get_new_latest_storage_id()}.\n"
-            f"Precalculating updated parents for {len(self.target_asset_keys)} assets using previous "
+            f"Precalculating updated parents for {len(self.auto_materialize_asset_keys)} assets using previous "
             f"latest_storage_id of {self.latest_storage_id}."
         )
-        for asset_key in self.target_asset_keys:
+        for asset_key in self.auto_materialize_asset_keys:
             self.instance_queryer.asset_partitions_with_newly_updated_parents(
                 latest_storage_id=self.latest_storage_id, child_asset_key=asset_key
             )
@@ -200,7 +198,7 @@ class AssetDaemonContext:
         avoids certain classes of race conditions.
         """
         new_latest_storage_id = self.latest_storage_id
-        for asset_key in self.target_asset_keys_and_parents:
+        for asset_key in self.auto_materialize_asset_keys_and_parents:
             # ignore non-observable sources
             if self.asset_graph.is_source(asset_key) and not self.asset_graph.is_observable(
                 asset_key
@@ -294,18 +292,18 @@ class AssetDaemonContext:
         visited_multi_asset_keys = set()
 
         num_checked_assets = 0
-        num_target_asset_keys = len(self.target_asset_keys)
+        num_auto_materialize_asset_keys = len(self.auto_materialize_asset_keys)
 
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
-            if asset_key not in self.target_asset_keys:
+            if asset_key not in self.auto_materialize_asset_keys:
                 continue
 
             num_checked_assets = num_checked_assets + 1
             start_time = time.time()
             self._verbose_log_fn(
                 "Evaluating asset"
-                f" {asset_key.to_user_string()} ({num_checked_assets}/{num_target_asset_keys})"
+                f" {asset_key.to_user_string()} ({num_checked_assets}/{num_auto_materialize_asset_keys})"
             )
 
             if asset_key in visited_multi_asset_keys:
@@ -388,8 +386,9 @@ class AssetDaemonContext:
                 last_observe_request_timestamp_by_asset_key=self.cursor.last_observe_request_timestamp_by_asset_key,
                 current_timestamp=observe_request_timestamp,
                 run_tags=self._observe_run_tags,
+                auto_observe_asset_keys=self._auto_observe_asset_keys,
             )
-            if self._auto_observe
+            if self._auto_observe_asset_keys
             else []
         )
 
@@ -644,9 +643,10 @@ def get_auto_observe_run_requests(
     current_timestamp: float,
     asset_graph: AssetGraph,
     run_tags: Optional[Mapping[str, str]],
+    auto_observe_asset_keys: AbstractSet[AssetKey],
 ) -> Sequence[RunRequest]:
     assets_to_auto_observe: Set[AssetKey] = set()
-    for asset_key in asset_graph.source_asset_keys:
+    for asset_key in auto_observe_asset_keys:
         last_observe_request_timestamp = last_observe_request_timestamp_by_asset_key.get(asset_key)
         auto_observe_interval_minutes = asset_graph.get_auto_observe_interval_minutes(asset_key)
 
