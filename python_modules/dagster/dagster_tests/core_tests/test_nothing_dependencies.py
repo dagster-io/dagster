@@ -74,7 +74,7 @@ def test_valid_nothing_dependencies():
     assert result.success
 
 
-def test_nothing_output_something_input():
+def test_output_input_type_mismatch():
     @op
     def do_nothing():
         pass

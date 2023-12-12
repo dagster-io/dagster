@@ -124,7 +124,7 @@ def _process_user_event(
         # If a MaterializeResult was returned from an asset with no type annotation, the type will be
         # interpreted as Any and the I/O manager will be invoked. Raise a warning to alert the user.
         if not assets_def.op.output_dict[output_name].dagster_type.is_nothing:
-            step_context.log.warn(
+            step_context.log.warning(
                 f"MaterializeResult for asset {asset_key} returned from an asset with an inferred"
                 " return type of Any. This will cause the I/O manager to run. To ensure that the"
                 " I/O manager does not run, annotate your asset with the return type MaterializeResult."
