@@ -373,13 +373,11 @@ def test_materialize_result_output_typing():
     )
 
 
-def test_materialize_result_no_output_typing_warning():
+def test_materialize_result_no_output_typing_calls_io():
     """Returning MaterializeResult from a vanilla asset or a multi asset that does not use
     AssetSpecs AND with no return type annotation results in an Any typing type for the
     Output. In this case we emit a warning, then call the I/O manager.
     """
-    # warnings.resetwarnings()
-    # warnings.filterwarnings("error")
 
     class TestingIOManager(IOManager):
         def __init__(self):
@@ -392,11 +390,16 @@ def test_materialize_result_no_output_typing_warning():
         def load_input(self, context):
             self.load_input_calls += 1
 
+        def reset(self):
+            self.handle_output_calls = 0
+            self.handle_inputs_calls = 0
+
+    io_mgr = TestingIOManager()
+
     @asset
     def asset_without_type_annotation():
         return MaterializeResult(metadata={"foo": "bar"})
 
-    io_mgr = TestingIOManager()
     _exec_asset(asset_without_type_annotation, resources={"io_manager": io_mgr})
     assert io_mgr.handle_output_calls == 1
 
@@ -404,11 +407,11 @@ def test_materialize_result_no_output_typing_warning():
     def multi_asset_with_outs():
         return MaterializeResult(asset_key="one"), MaterializeResult(asset_key="two")
 
-    io_mgr = TestingIOManager()
+    io_mgr.reset()
     _exec_asset(multi_asset_with_outs, resources={"io_manager": io_mgr})
     assert io_mgr.handle_output_calls == 2
 
-    io_mgr = TestingIOManager()
+    io_mgr.reset()
 
     @asset(
         check_specs=[
@@ -436,7 +439,7 @@ def test_materialize_result_no_output_typing_warning():
     )
     assert io_mgr.handle_output_calls == 1
 
-    io_mgr = TestingIOManager()
+    io_mgr.reset()
 
     @asset
     def generator_asset() -> Generator[MaterializeResult, None, None]:
