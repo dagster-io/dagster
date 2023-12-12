@@ -856,7 +856,7 @@ class SensorDefinition(IHasInternalInit):
             skip_message,
             updated_cursor,
             dagster_run_reactions,
-            captured_log_key=context.log_key if context.has_captured_logs() else None,
+            log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events,
         )
@@ -982,7 +982,10 @@ class SensorDefinition(IHasInternalInit):
 
 
 @whitelist_for_serdes(
-    storage_field_names={"dagster_run_reactions": "pipeline_run_reactions"},
+    storage_field_names={
+        "dagster_run_reactions": "pipeline_run_reactions",
+        "log_key": "captured_log_key",
+    },
 )
 class SensorExecutionData(
     NamedTuple(
@@ -992,7 +995,7 @@ class SensorExecutionData(
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
             ("dagster_run_reactions", Optional[Sequence[DagsterRunReaction]]),
-            ("captured_log_key", Optional[Sequence[str]]),
+            ("log_key", Optional[Sequence[str]]),
             (
                 "dynamic_partitions_requests",
                 Optional[
@@ -1014,7 +1017,7 @@ class SensorExecutionData(
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
         dagster_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
-        captured_log_key: Optional[Sequence[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = None,
@@ -1026,7 +1029,7 @@ class SensorExecutionData(
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
         check.opt_sequence_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
-        check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.opt_list_param(log_key, "log_key", str)
         check.opt_sequence_param(
             dynamic_partitions_requests,
             "dynamic_partitions_requests",
@@ -1046,7 +1049,7 @@ class SensorExecutionData(
             skip_message=skip_message,
             cursor=cursor,
             dagster_run_reactions=dagster_run_reactions,
-            captured_log_key=captured_log_key,
+            log_key=log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events or [],
         )

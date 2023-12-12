@@ -670,8 +670,8 @@ def _evaluate_sensor(
 
     yield
 
-    if sensor_runtime_data.captured_log_key:
-        context.add_log_info(sensor_runtime_data.captured_log_key)
+    if sensor_runtime_data.log_key:
+        context.add_log_info(sensor_runtime_data.log_key)
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
 
