@@ -33,9 +33,9 @@ class AssetDaemonAssetCursor(NamedTuple):
     """
 
     asset_key: AssetKey
-    latest_storage_id: Optional[int]
-    latest_evaluation_timestamp: Optional[float]
-    latest_evaluation: Optional["AssetConditionEvaluation"]
+    previous_max_storage_id: Optional[int]
+    previous_evaluation_timestamp: Optional[float]
+    previous_evaluation: Optional["AssetConditionEvaluation"]
     materialized_requested_or_discarded_subset: AssetSubset
 
 
@@ -82,9 +82,9 @@ class AssetDaemonCursor(NamedTuple):
             handled_subset = AssetSubset.empty(asset_key, partitions_def)
         return AssetDaemonAssetCursor(
             asset_key=asset_key,
-            latest_storage_id=self.latest_storage_id,
-            latest_evaluation_timestamp=self.latest_evaluation_timestamp,
-            latest_evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
+            previous_max_storage_id=self.latest_storage_id,
+            previous_evaluation_timestamp=self.latest_evaluation_timestamp,
+            previous_evaluation=self.latest_evaluation_by_asset_key.get(asset_key),
             materialized_requested_or_discarded_subset=handled_subset,
         )
 
