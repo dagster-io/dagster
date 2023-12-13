@@ -1,4 +1,5 @@
 import os
+import sys
 import traceback
 import uuid
 from types import TracebackType
@@ -92,6 +93,27 @@ def _should_mask_user_code_error() -> bool:
     return os.getenv("DAGSTER_MASK_USER_CODE_ERRORS") == "1"
 
 
+def _get_masked_traceback_exception() -> traceback.TracebackException:
+    """Raises a DagsterMaskedUserCodeError and returns the traceback exception for it.
+    Used to replace the traceback of a user code error with a generic message that they
+    can search for in their own logs.
+    """
+    error_id = str(uuid.uuid4())
+    try:
+        raise DagsterMaskedUserCodeError(
+            f"Error occurred during user code execution, error ID {error_id}\n"
+            "Search in logs for this error ID for more details"
+        )
+    except DagsterMaskedUserCodeError:
+        # Get the stack trace from the masking exception we just raised, instead of
+        # the underlying user code exception
+        exc_type, e, tb = sys.exc_info()
+        tb_exc = traceback.TracebackException(
+            check.not_none(exc_type), check.not_none(e), check.not_none(tb)
+        )
+        return tb_exc
+
+
 def serializable_error_info_from_exc_info(
     exc_info: ExceptionInfo,
     # Whether to forward serialized errors thrown from subprocesses
@@ -105,26 +127,13 @@ def serializable_error_info_from_exc_info(
     exc_type = check.not_none(exc_type, additional_message=additional_message)
     e = check.not_none(e, additional_message=additional_message)
     tb = check.not_none(tb, additional_message=additional_message)
-    import sys
 
     from dagster._core.errors import DagsterUserCodeExecutionError, DagsterUserCodeProcessError
 
     if isinstance(e, DagsterUserCodeExecutionError) and _should_mask_user_code_error():
-        error_id = str(uuid.uuid4())
-        try:
-            raise DagsterMaskedUserCodeError(
-                f"Error occurred during user code execution, error ID {error_id}\n"
-                "Search in logs for this error ID for more details"
-            )
-        except DagsterMaskedUserCodeError as e:
-            # Get the stack trace from the masking exception we just raised, instead of
-            # the underlying user code exception
-            exc_type, e, tb = sys.exc_info()
-            tb_exc = traceback.TracebackException(
-                check.not_none(exc_type), check.not_none(e), check.not_none(tb)
-            )
-            print(_serializable_error_info_from_tb(tb_exc).to_string(), file=sys.stderr)  # noqa: T201
-            return _serializable_error_info_from_tb(tb_exc, no_cause=True)
+        masked_tb_exc = _get_masked_traceback_exception()
+        print(_serializable_error_info_from_tb(masked_tb_exc).to_string(), file=sys.stderr)  # noqa: T201
+        return _serializable_error_info_from_tb(masked_tb_exc, no_cause=True)
 
     if (
         hoist_user_code_error
