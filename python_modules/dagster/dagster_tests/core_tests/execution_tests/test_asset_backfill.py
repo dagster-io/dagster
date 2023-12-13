@@ -293,7 +293,6 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
             backfill_data = AssetBackfillData.empty(
                 target_subset,
                 scenario.evaluation_time,
-                asset_graph,
                 dynamic_partitions_store=instance,
             )
 
@@ -431,7 +430,6 @@ def make_backfill_data(
     return AssetBackfillData.empty(
         target_subset,
         current_time or pendulum.now("UTC"),
-        asset_graph,
         dynamic_partitions_store=instance,
     )
 

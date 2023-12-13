@@ -404,7 +404,6 @@ class AssetBackfillData(NamedTuple):
         cls,
         target_subset: AssetGraphSubset,
         backfill_start_time: datetime,
-        asset_graph: AssetGraph,
         dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "AssetBackfillData":
         return cls(
@@ -498,7 +497,7 @@ class AssetBackfillData(NamedTuple):
             partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
             non_partitioned_asset_keys=non_partitioned_asset_keys,
         )
-        return cls.empty(target_subset, backfill_start_time, asset_graph, dynamic_partitions_store)
+        return cls.empty(target_subset, backfill_start_time, dynamic_partitions_store)
 
     @classmethod
     def from_asset_partitions(
@@ -562,7 +561,7 @@ class AssetBackfillData(NamedTuple):
         else:
             check.failed("Either partition_names must not be None or all_partitions must be True")
 
-        return cls.empty(target_subset, backfill_start_time, asset_graph, dynamic_partitions_store)
+        return cls.empty(target_subset, backfill_start_time, dynamic_partitions_store)
 
     def serialize(
         self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: AssetGraph
