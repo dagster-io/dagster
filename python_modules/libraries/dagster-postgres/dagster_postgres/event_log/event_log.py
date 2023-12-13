@@ -108,8 +108,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            SqlEventLogStorageMetadata.create_all(conn)
-            stamp_alembic_rev(pg_alembic_config(__file__), conn)
+            with conn.begin():
+                SqlEventLogStorageMetadata.create_all(conn)
+                stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
