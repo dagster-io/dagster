@@ -190,6 +190,7 @@ class AssetDaemonScenarioState(NamedTuple):
     serialized_cursor: str = AssetDaemonCursor.empty().serialize()
     evaluations: Sequence[AssetConditionEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
+    tick_index: int = 1
     # this is set by the scenario runner
     scenario_instance: Optional[DagsterInstance] = None
     is_daemon: bool = False
@@ -402,6 +403,9 @@ class AssetDaemonScenarioState(NamedTuple):
         return new_run_requests, new_cursor, new_evaluations
 
     def evaluate_tick(self) -> "AssetDaemonScenarioState":
+        self.logger.critical("********************************")
+        self.logger.critical(f"EVALUATING TICK {self.tick_index}")
+        self.logger.critical("********************************")
         with pendulum.test(self.current_time):
             if self.is_daemon:
                 new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_daemon()
@@ -412,6 +416,7 @@ class AssetDaemonScenarioState(NamedTuple):
             run_requests=new_run_requests,
             serialized_cursor=new_cursor.serialize(),
             evaluations=new_evaluations,
+            tick_index=self.tick_index + 1,
         )
 
     def _log_assertion_error(self, expected: Sequence[Any], actual: Sequence[Any]) -> None:
