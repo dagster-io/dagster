@@ -7,6 +7,7 @@ from contextlib import AbstractContextManager, ExitStack
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -241,12 +242,14 @@ class SensorLaunchContext(AbstractContextManager):
 
 
 VERBOSE_LOGS_INTERVAL = 60
+METADATA_RETRIEVAL_INTERVAL = 30
 
 
 def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     shutdown_event: threading.Event,
+    process_metadata_fn: Callable[..., None],
     until: Optional[float] = None,
 ) -> TDaemonGenerator:
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -277,6 +280,8 @@ def execute_sensor_iteration_loop(
                 )
 
         last_verbose_time = None
+        last_metadata_retrieval_time = None
+        metadata = {}
         while True:
             start_time = pendulum.now("UTC").timestamp()
             if until and start_time >= until:
@@ -286,6 +291,10 @@ def execute_sensor_iteration_loop(
             # occasionally enable verbose logging (doing it always would be too much)
             verbose_logs_iteration = (
                 last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
+            )
+            metadata_retrieval_iteration = (
+                last_metadata_retrieval_time is None
+                or start_time - last_metadata_retrieval_time > METADATA_RETRIEVAL_INTERVAL
             )
             yield from execute_sensor_iteration(
                 workspace_process_context,
@@ -304,6 +313,14 @@ def execute_sensor_iteration_loop(
 
             if verbose_logs_iteration:
                 last_verbose_time = end_time
+
+            if metadata_retrieval_iteration:
+                process_metadata_fn(
+                    workspace_process_context=workspace_process_context,
+                    metadata=metadata,
+                    sensor_tick_futures=sensor_tick_futures,
+                    settings=settings,
+                )
 
             loop_duration = end_time - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)

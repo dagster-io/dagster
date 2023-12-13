@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager
 from threading import Event
-from typing import TYPE_CHECKING, Generator, Generic, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, Generator, Generic, Optional, TypeVar, Union
 
 import pendulum
 from typing_extensions import TypeAlias
@@ -65,6 +65,10 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
         )  # (SerializableErrorInfo, timestamp) tuples
 
         self._first_error_logged = False
+
+    @property
+    def process_metadata_fn(self) -> Callable[..., None]:
+        return lambda **kwargs: None
 
     @classmethod
     @abstractmethod
@@ -273,6 +277,7 @@ class SensorDaemon(DagsterDaemon):
             workspace_process_context,
             self._logger,
             shutdown_event,
+            self.process_metadata_fn,
         )
 
 
