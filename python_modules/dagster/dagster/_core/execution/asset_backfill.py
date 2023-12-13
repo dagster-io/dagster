@@ -61,6 +61,7 @@ from dagster._core.host_representation import (
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
+    IN_PROGRESS_RUN_STATUSES,
     DagsterRunStatus,
     RunsFilter,
 )
@@ -177,7 +178,7 @@ class AssetBackfillData(NamedTuple):
             == self.target_subset.num_partitions_and_non_partitioned_assets
         )
 
-    def have_all_requested_runs_finished(self) -> bool:
+    def all_requested_partitions_marked_as_materialized_or_failed(self) -> bool:
         for partition in self.requested_subset.iterate_asset_partitions():
             if (
                 partition not in self.materialized_subset
@@ -1013,10 +1014,26 @@ def execute_asset_backfill_iteration(
         # failure, or cancellation). Since the AssetBackfillData object stores materialization states
         # per asset partition, the daemon continues to update the backfill data until all runs have
         # finished in order to display the final partition statuses in the UI.
-        if updated_asset_backfill_data.have_all_requested_runs_finished():
+        all_partitions_marked_completed = (
+            updated_asset_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
+        )
+        if all_partitions_marked_completed:
             updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
 
         instance.update_backfill(updated_backfill)
+
+        if len(runs_to_cancel_in_iteration) == 0 and not all_partitions_marked_completed:
+            in_progress_run_ids = instance.get_run_ids(
+                RunsFilter(
+                    tags={BACKFILL_ID_TAG: backfill.backfill_id}, statuses=IN_PROGRESS_RUN_STATUSES
+                )
+            )
+            if len(in_progress_run_ids) == 0:
+                check.failed(
+                    "All runs have completed, but not all requested partitions have been marked as materialized or failed. "
+                    "This is likely a system error. Please report this issue to the Dagster team."
+                )
+
         logger.info(
             f"Asset backfill {backfill.backfill_id} completed cancellation iteration with status {updated_backfill.status}."
         )
