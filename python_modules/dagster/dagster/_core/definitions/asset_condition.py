@@ -13,6 +13,9 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetConditionCursorExtras,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -72,7 +75,7 @@ class AssetConditionEvaluation(NamedTuple):
             and self.child_evaluations == other.child_evaluations
         )
 
-    def discard_subset(self, condition: "AssetCondition") -> Optional[AssetSubset]:
+    def discarded_subset(self, condition: "AssetCondition") -> Optional[AssetSubset]:
         not_discard_condition = condition.not_discard_condition
         if not not_discard_condition or len(self.child_evaluations) != 3:
             return None
@@ -80,6 +83,12 @@ class AssetConditionEvaluation(NamedTuple):
         not_discard_evaluation = self.child_evaluations[2]
         discard_evaluation = not_discard_evaluation.child_evaluations[0]
         return discard_evaluation.true_subset
+
+    def get_requested_or_discarded_subset(self, condition: "AssetCondition") -> AssetSubset:
+        discarded_subset = self.discarded_subset(condition)
+        if discarded_subset is None:
+            return self.true_subset
+        return self.true_subset | discarded_subset
 
     def for_child(self, child_condition: "AssetCondition") -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -129,7 +138,9 @@ class AssetCondition(ABC):
         return hashlib.md5("".join(parts).encode()).hexdigest()
 
     @abstractmethod
-    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+    def evaluate(
+        self, context: AssetConditionEvaluationContext
+    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
         raise NotImplementedError()
 
     def __and__(self, other: "AssetCondition") -> "AssetCondition":
@@ -192,7 +203,9 @@ class RuleCondition(
         parts = [self.rule.__class__.__name__, self.rule.description]
         return hashlib.md5("".join(parts).encode()).hexdigest()
 
-    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+    def evaluate(
+        self, context: AssetConditionEvaluationContext
+    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
         context.root_context.daemon_context._verbose_log_fn(  # noqa
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
@@ -205,7 +218,7 @@ class RuleCondition(
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
             subsets_with_metadata=subsets_with_metadata,
-        )
+        ), [AssetConditionCursorExtras(condition_snapshot=self.snapshot, extras={})]
 
 
 class AndAssetCondition(
@@ -214,20 +227,24 @@ class AndAssetCondition(
 ):
     """This class represents the condition that all of its children evaluate to true."""
 
-    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+    def evaluate(
+        self, context: AssetConditionEvaluationContext
+    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
         child_evaluations: List[AssetConditionEvaluation] = []
+        child_extras: List[AssetConditionCursorExtras] = []
         true_subset = context.candidate_subset
         for child in self.children:
             child_context = context.for_child(condition=child, candidate_subset=true_subset)
-            result = child.evaluate(child_context)
-            child_evaluations.append(result)
-            true_subset &= result.true_subset
+            child_evaluation, child_extra = child.evaluate(child_context)
+            child_evaluations.append(child_evaluation)
+            child_extras.extend(child_extra)
+            true_subset &= child_evaluation.true_subset
         return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
             child_evaluations=child_evaluations,
-        )
+        ), child_extras
 
 
 class OrAssetCondition(
@@ -236,22 +253,26 @@ class OrAssetCondition(
 ):
     """This class represents the condition that any of its children evaluate to true."""
 
-    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+    def evaluate(
+        self, context: AssetConditionEvaluationContext
+    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
         child_evaluations: List[AssetConditionEvaluation] = []
+        child_extras: List[AssetConditionCursorExtras] = []
         true_subset = context.empty_subset()
         for child in self.children:
             child_context = context.for_child(
                 condition=child, candidate_subset=context.candidate_subset
             )
-            result = child.evaluate(child_context)
-            child_evaluations.append(result)
-            true_subset |= result.true_subset
+            child_evaluation, child_extra = child.evaluate(child_context)
+            child_evaluations.append(child_evaluation)
+            child_extras.extend(child_extra)
+            true_subset |= child_evaluation.true_subset
         return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
             child_evaluations=child_evaluations,
-        )
+        ), child_extras
 
 
 class NotAssetCondition(
@@ -268,16 +289,18 @@ class NotAssetCondition(
     def child(self) -> AssetCondition:
         return self.children[0]
 
-    def evaluate(self, context: AssetConditionEvaluationContext) -> AssetConditionEvaluation:
+    def evaluate(
+        self, context: AssetConditionEvaluationContext
+    ) -> Tuple[AssetConditionEvaluation, Sequence[AssetConditionCursorExtras]]:
         child_context = context.for_child(
             condition=self.child, candidate_subset=context.candidate_subset
         )
-        result = self.child.evaluate(child_context)
-        true_subset = context.candidate_subset - result.true_subset
+        child_evaluation, child_extras = self.child.evaluate(child_context)
+        true_subset = context.candidate_subset - child_evaluation.true_subset
 
         return AssetConditionEvaluation(
             condition_snapshot=self.snapshot,
             true_subset=true_subset,
             candidate_subset=context.candidate_subset,
-            child_evaluations=[result],
-        )
+            child_evaluations=[child_evaluation],
+        ), child_extras
