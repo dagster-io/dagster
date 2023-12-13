@@ -11,9 +11,8 @@ import {
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
 } from '../instance/types/InstanceConcurrency.types';
-import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {AnchorButton} from '../ui/AnchorButton';
-import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
+import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {RunConfigDialog} from './RunConfigDialog';
@@ -59,27 +58,26 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
     }
   };
 
-  const jobPath = workspacePathFromRunDetails({
-    id: run.id,
+  const jobLink = workspacePipelineLinkForRun({
     repositoryName: run.repositoryOrigin?.repositoryName,
     repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
-    pipelineName: run.pipelineName,
+    run,
     isJob,
   });
 
   return (
     <div>
       <Group direction="row" spacing={8}>
-        {run.hasReExecutePermission ? (
-          <AnchorButton icon={<Icon name="edit" />} to={jobPath}>
-            Open in Launchpad
-          </AnchorButton>
-        ) : (
-          <Tooltip content={NO_LAUNCH_PERMISSION_MESSAGE} useDisabledButtonTooltipFix>
+        {jobLink.disabledReason ? (
+          <Tooltip content={jobLink.disabledReason} useDisabledButtonTooltipFix>
             <Button icon={<Icon name="edit" />} disabled>
-              Open in Launchpad
+              {jobLink.label}
             </Button>
           </Tooltip>
+        ) : (
+          <AnchorButton icon={<Icon name="edit" />} to={jobLink.to}>
+            {jobLink.label}
+          </AnchorButton>
         )}
         <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
           View tags and config
