@@ -91,17 +91,14 @@ export const AssetPartitionList = ({
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
                 border="bottom"
               >
-                <div
-                  style={{
-                    gap: 4,
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(0, 1fr) auto',
-                    alignItems: 'center',
-                  }}
-                  data-tooltip={dimensionKey}
-                  data-tooltip-style={PartitionTooltipStyle}
-                >
-                  <MiddleTruncate text={dimensionKey} />
+                <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+                  <div
+                    style={{flex: 1, minWidth: 0}}
+                    data-tooltip={dimensionKey}
+                    data-tooltip-style={PartitionTooltipStyle}
+                  >
+                    <MiddleTruncate text={dimensionKey} />
+                  </div>
                   {/* Note: we could just state.map, but we want these in a particular order*/}
                   {state.includes(AssetPartitionStatus.MISSING) && (
                     <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />
@@ -115,7 +112,7 @@ export const AssetPartitionList = ({
                   {state.includes(AssetPartitionStatus.MATERIALIZED) && (
                     <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />
                   )}
-                </div>
+                </Box>
               </Box>
             </AssetListRow>
           );
