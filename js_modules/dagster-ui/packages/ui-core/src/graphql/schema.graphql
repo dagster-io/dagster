@@ -3158,6 +3158,11 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
+  assetConditionEvaluationsOrError(
+    assetKey: AssetKeyInput!
+    limit: Int!
+    cursor: String
+  ): AssetConditionEvaluationRecordsOrError
   autoMaterializeEvaluationsForEvaluationId(
     evaluationId: Int!
   ): AutoMaterializeAssetEvaluationRecordsOrError
@@ -3384,6 +3389,76 @@ type WaitingOnKeysRuleEvaluationData {
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
+}
+
+union AssetConditionEvaluationRecordsOrError =
+    AssetConditionEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+
+type AssetConditionEvaluationRecords {
+  records: [AssetConditionEvaluationRecord!]!
+}
+
+type AssetConditionEvaluationRecord {
+  id: ID!
+  evaluationId: Int!
+  runIds: [String!]!
+  timestamp: Float!
+  assetKey: AssetKey!
+  numRequested: Int!
+  evaluation: AssetConditionEvaluation!
+}
+
+union AssetConditionEvaluation =
+    UnpartitionedAssetConditionEvaluation
+  | PartitionedAssetConditionEvaluation
+  | SpecificPartitionAssetConditionEvaluation
+
+type UnpartitionedAssetConditionEvaluation {
+  description: String!
+  startTimestamp: Float!
+  endTimestamp: Float!
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childEvaluations: [UnpartitionedAssetConditionEvaluation!]
+}
+
+enum AssetConditionEvaluationStatus {
+  TRUE
+  FALSE
+  SKIPPED
+}
+
+type PartitionedAssetConditionEvaluation {
+  description: String!
+  startTimestamp: Float!
+  endTimestamp: Float!
+  trueSubset: AssetSubset!
+  falseSubset: AssetSubset!
+  candidateSubset: AssetSubset
+  numTrue: Int!
+  numFalse: Int!
+  numSkipped: Int!
+  childEvaluations: [PartitionedAssetConditionEvaluation!]
+}
+
+type AssetSubset {
+  assetKey: AssetKey!
+  subsetValue: AssetSubsetValue!
+}
+
+type AssetSubsetValue {
+  boolValue: Boolean
+  partitionKeys: [String!]
+  partitionKeyRanges: [PartitionKeyRange!]
+  isPartitioned: Boolean!
+}
+
+type SpecificPartitionAssetConditionEvaluation {
+  description: String!
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childEvaluations: [UnpartitionedAssetConditionEvaluation!]
 }
 
 type Mutation {

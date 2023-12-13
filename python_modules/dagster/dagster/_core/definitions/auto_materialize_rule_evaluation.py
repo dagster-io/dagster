@@ -310,6 +310,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 rule_snapshot,
             )
             for rule_snapshot in rule_snapshots
+            or set(partition_subsets_by_condition_by_rule_snapshot.keys())
             if rule_snapshot.decision_type == decision_type
         ]
 
@@ -355,18 +356,26 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             evaluation.condition_snapshot.unique_id,
         ]
         unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+
+        # for partitioned assets, it is expensive to calculate the inverse of the true subset, so
+        # we instead just make it an empty subset, relying on the fact that the top-level condition
+        # evaluation will have an accurate true_subset value
+        if evaluation.true_subset.is_partitioned:
+            true_subset = self._get_empty_subset(asset_key, is_partitioned)
+            candidate_subset = self._get_empty_subset(asset_key, is_partitioned)
+        else:
+            true_subset = evaluation.true_subset._replace(
+                value=not evaluation.true_subset.bool_value
+            )
+            candidate_subset = AssetSubset.all(asset_key, None)
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
                 class_name=NotAssetCondition.__name__, description="Not", unique_id=unique_id
             ),
             # for partitioned assets, we don't bother calculating the true subset, as we can't
             # properly deserialize the inner results
-            true_subset=evaluation.true_subset
-            if evaluation.true_subset.is_partitioned
-            else evaluation.true_subset._replace(value=not evaluation.true_subset.bool_value),
-            candidate_subset=HistoricalAllPartitionsSubset()
-            if is_partitioned
-            else AssetSubset.all(asset_key, None),
+            true_subset=true_subset,
+            candidate_subset=candidate_subset,
             subsets_with_metadata=[],
             child_evaluations=[evaluation],
             start_timestamp=None,
