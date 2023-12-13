@@ -506,6 +506,16 @@ class DagsterCodeLocationNotFoundError(DagsterError):
     pass
 
 
+class DagsterMaskedUserCodeError(DagsterError):
+    """Error used to mask user code errors to prevent leaking sensitive information. Contains an error ID that can be
+    used to look up the original error in the user code error log.
+    """
+
+
+class DagsterUserCodeLoadError(DagsterUserCodeExecutionError):
+    """Errors raised in a user process during the loading of user code."""
+
+
 class DagsterCodeLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo

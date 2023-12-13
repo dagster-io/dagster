@@ -110,10 +110,12 @@ class StepFailureData(
         if self.error_source == ErrorSource.USER_CODE_ERROR:
             user_code_error = self.error.cause
             check.invariant(
-                user_code_error,
+                self.error.cls_name == "DagsterMaskedUserCodeError" or user_code_error,
                 "User code error is missing cause. User code errors are expected to have a"
                 " causes, which are the errors thrown from user code.",
             )
+            if not user_code_error:
+                return self.error.message.strip() + ":\n\n" + self.error.to_string()
             return self.error.message.strip() + ":\n\n" + user_code_error.to_string()
         else:
             return self.error.to_string()
