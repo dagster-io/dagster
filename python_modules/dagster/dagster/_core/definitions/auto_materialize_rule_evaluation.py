@@ -311,6 +311,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 rule_snapshot,
             )
             for rule_snapshot in rule_snapshots
+            or set(partition_subsets_by_condition_by_rule_snapshot.keys())
             if rule_snapshot.decision_type == decision_type
         ]
 
