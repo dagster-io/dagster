@@ -911,7 +911,10 @@ class ExternalSensor:
                     self.get_external_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.AUTOMATICALLY_RUNNING,
-                    SensorInstigatorData(min_interval=self.min_interval_seconds),
+                    SensorInstigatorData(
+                        min_interval=self.min_interval_seconds,
+                        sensor_type=self.sensor_type,
+                    ),
                 )
             )
         else:
@@ -925,7 +928,10 @@ class ExternalSensor:
                 self.get_external_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.STOPPED,
-                SensorInstigatorData(min_interval=self.min_interval_seconds),
+                SensorInstigatorData(
+                    min_interval=self.min_interval_seconds,
+                    sensor_type=self.sensor_type,
+                ),
             )
 
     @property

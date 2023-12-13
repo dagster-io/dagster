@@ -2633,6 +2633,7 @@ class DagsterInstance(DynamicPartitionsStore):
                     SensorInstigatorData(
                         min_interval=external_sensor.min_interval_seconds,
                         last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                        sensor_type=external_sensor.sensor_type,
                     ),
                 )
             )
@@ -2674,7 +2675,10 @@ class DagsterInstance(DynamicPartitionsStore):
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.STOPPED,
-                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
+                    SensorInstigatorData(
+                        min_interval=external_sensor.min_interval_seconds,
+                        sensor_type=external_sensor.sensor_type,
+                    ),
                 )
             )
         else:
