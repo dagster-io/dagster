@@ -94,7 +94,6 @@ export type AssetAssetMaterializationsArgs = {
   limit?: InputMaybe<Scalars['Int']>;
   partitionInLast?: InputMaybe<Scalars['Int']>;
   partitions?: InputMaybe<Array<Scalars['String']>>;
-  tags?: InputMaybe<Array<InputTag>>;
 };
 
 export type AssetAssetObservationsArgs = {
