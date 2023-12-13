@@ -310,7 +310,6 @@ const Warning = ({children}) => {
   return <Admonition style="warning">{children}</Admonition>;
 };
 
-
 //////////////////////
 //  CODE REF LINK   //
 //////////////////////
@@ -797,14 +796,14 @@ const Button = ({
     <a
       href={link}
       className={cx(
-        'py-2 px-4 rounded-full transition hover:no-underline cursor-pointer',
+        'text-sm lg:text-base select-none text-center py-2 px-4 rounded-xl transition hover:no-underline cursor-pointer',
         style === 'primary' && 'bg-gable-green text-white hover:bg-gable-green-darker',
         style === 'secondary' &&
           'border text-gable-green hover:text-gable-green-darker hover:border-gable-green',
         style === 'blurple' && 'bg-blurple text-white hover:bg-blurple-darker',
       )}
     >
-      {children}
+      <div className="h-full flex flex-1 flex-col justify-evenly align-center">{children}</div>
     </a>
   );
 };
