@@ -726,6 +726,19 @@ def test_get_partition_keys_in_range(partitions_def, range_start, range_end, par
     )
 
 
+def test_invalid_get_partition_keys_in_range():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05")
+    with pytest.raises(CheckError, match="before the partitions definition start time"):
+        partitions_def.get_partition_keys_in_range(PartitionKeyRange("2019-12-12", "2020-01-01"))
+
+    with pytest.raises(CheckError, match="after the partitions definition end time"):
+        partitions_def.get_partition_keys_in_range(PartitionKeyRange("2020-01-01", "2020-01-06"))
+
+    assert partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange("2020-01-01", "2020-01-04")
+    ) == ["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04"]
+
+
 def test_twice_daily_partitions():
     partitions_def = TimeWindowPartitionsDefinition(
         start=pendulum.parse("2021-05-05"),
