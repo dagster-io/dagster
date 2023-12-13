@@ -302,15 +302,7 @@ class AssetSelection(ABC):
             check.iterable_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
             asset_graph = AssetGraph.from_assets(all_assets)
 
-        resolved = self.resolve_inner(asset_graph)
-        resolved_source_assets = asset_graph.source_asset_keys & resolved
-        resolved_regular_assets = resolved - asset_graph.source_asset_keys
-        check.invariant(
-            not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
-            "Asset selection specified both regular assets and source assets. This is not"
-            " currently supported. Selections must be all regular assets or all source assets.",
-        )
-        return resolved
+        return self.resolve_inner(asset_graph)
 
     @abstractmethod
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
