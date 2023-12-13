@@ -4,7 +4,7 @@ import string
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Any
+from typing import Any, Optional, Sequence
 from unittest import mock
 
 import pendulum
@@ -922,11 +922,12 @@ def evaluate_sensors(workspace_context, executor, submit_executor=None, timeout=
 def validate_tick(
     tick,
     external_sensor,
-    expected_datetime,
-    expected_status,
+    expected_datetime=None,
+    expected_status=None,
     expected_run_ids=None,
     expected_error=None,
-):
+    expected_backfill_ids: Optional[Sequence[str]] = None,
+) -> None:
     tick_data = tick.tick_data
     assert tick_data.instigator_origin_id == external_sensor.get_external_origin_id()
     assert tick_data.instigator_name == external_sensor.name
@@ -938,6 +939,8 @@ def validate_tick(
         assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
         assert expected_error in str(tick_data.error)
+    if expected_backfill_ids:
+        assert set(tick_data.backfill_ids) == set(expected_backfill_ids)
 
 
 def validate_run_started(run, expected_success=True):

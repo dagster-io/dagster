@@ -103,7 +103,7 @@ def instance_with_multiple_code_locations(
 ) -> Iterator[Dict[str, CodeLocationInfoForSensorTest]]:
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
-            workspace_load_target or create_workspace_load_target(None), instance=instance
+            workspace_load_target or create_workspace_load_target(attribute=None), instance=instance
         ) as workspace_context:
             location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
