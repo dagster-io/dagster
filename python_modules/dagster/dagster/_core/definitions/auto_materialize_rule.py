@@ -109,7 +109,7 @@ class AutoMaterializeRule(ABC):
         # we've explicitly said to ignore it
         ignore_subset = has_metadata_subset | ignore_subset
 
-        for elt in context.previous_tick_subsets_with_metadata:
+        for elt in context.previous_subsets_with_metadata or []:
             carry_forward_subset = elt.subset - ignore_subset
             if carry_forward_subset.size > 0:
                 mapping[elt.frozen_metadata] |= carry_forward_subset
@@ -396,7 +396,7 @@ class MaterializeOnCronRule(
         asset_subset_to_request = AssetSubset.from_asset_partitions_set(
             context.asset_key, context.partitions_def, new_asset_partitions_to_request
         ) | (
-            context.previous_tick_true_subset
+            context.previous_true_subset
             - context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
@@ -626,7 +626,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             context.asset_key, context.partitions_def, missing_asset_partitions
         )
         missing_subset = newly_missing_subset | (
-            context.previous_tick_true_subset
+            context.previous_true_subset
             - context.materialized_requested_or_discarded_since_previous_tick_subset
         )
         return missing_subset, []
