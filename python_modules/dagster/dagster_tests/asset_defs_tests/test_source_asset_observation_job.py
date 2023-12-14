@@ -1,7 +1,6 @@
 from typing import Optional
 
 import pytest
-from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -103,7 +102,7 @@ def test_mixed_source_asset_observation_job():
         return 1
 
     with pytest.raises(
-        CheckError, match=r"Asset selection specified both regular assets and source assets"
+        DagsterInvalidDefinitionError, match=r"specified both regular assets and source assets"
     ):
         Definitions(
             assets=[foo, bar],
