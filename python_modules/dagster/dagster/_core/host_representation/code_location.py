@@ -203,6 +203,7 @@ class CodeLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: datetime.datetime,
+        log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         pass
 
@@ -215,6 +216,7 @@ class CodeLocation(AbstractContextManager):
         last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
         last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         pass
@@ -475,11 +477,13 @@ class InProcessCodeLocation(CodeLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: datetime.datetime,  # actually a pendulum datetime
+        log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
+        check.opt_list_param(log_key, "log_key", of_type=str)
 
         result = get_external_schedule_execution(
             self._get_repo_def(repository_handle.repository_name),
@@ -487,6 +491,7 @@ class InProcessCodeLocation(CodeLocation):
             schedule_name=schedule_name,
             scheduled_execution_timestamp=scheduled_execution_time.timestamp(),
             scheduled_execution_timezone=scheduled_execution_time.timezone.name,  # type: ignore
+            log_key=log_key,
         )
         if isinstance(result, ExternalScheduleExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
@@ -501,6 +506,7 @@ class InProcessCodeLocation(CodeLocation):
         last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
         last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         result = get_external_sensor_execution(
@@ -510,6 +516,7 @@ class InProcessCodeLocation(CodeLocation):
             last_tick_completion_time,
             last_run_key,
             cursor,
+            log_key,
             last_sensor_start_time,
         )
         if isinstance(result, ExternalSensorExecutionErrorData):
@@ -840,11 +847,13 @@ class GrpcServerCodeLocation(CodeLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: Optional[datetime.datetime],
+        log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
+        check.opt_list_param(log_key, "log_key", of_type=str)
 
         return sync_get_external_schedule_execution_data_grpc(
             self.client,
@@ -852,6 +861,7 @@ class GrpcServerCodeLocation(CodeLocation):
             repository_handle,
             schedule_name,
             scheduled_execution_time,
+            log_key,
         )
 
     def get_external_sensor_execution_data(
@@ -862,6 +872,7 @@ class GrpcServerCodeLocation(CodeLocation):
         last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
         last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
@@ -874,6 +885,7 @@ class GrpcServerCodeLocation(CodeLocation):
             last_tick_completion_time,
             last_run_key,
             cursor,
+            log_key,
             last_sensor_start_time,
         )
 

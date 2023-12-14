@@ -182,6 +182,7 @@ class ScheduleEvaluationContext:
         self,
         instance_ref: Optional[InstanceRef],
         scheduled_execution_time: Optional[datetime],
+        log_key: Optional[Sequence[str]] = None,
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
@@ -196,15 +197,18 @@ class ScheduleEvaluationContext:
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
-        self._log_key = (
-            [
+
+        self._log_key = log_key
+
+        # Kept for backwards compatibility if the schedule log key is not passed into the
+        # schedule evaluation.
+        if not self._log_key and repository_name and schedule_name and scheduled_execution_time:
+            self._log_key = [
                 repository_name,
                 schedule_name,
                 scheduled_execution_time.strftime("%Y%m%d_%H%M%S"),
             ]
-            if repository_name and schedule_name and scheduled_execution_time
-            else None
-        )
+
         self._logger = None
         self._repository_name = repository_name
         self._schedule_name = schedule_name
@@ -354,7 +358,7 @@ class ScheduleEvaluationContext:
         return self._logger and self._logger.has_captured_logs()
 
     @property
-    def log_key(self) -> Optional[List[str]]:
+    def log_key(self) -> Optional[Sequence[str]]:
         return self._log_key
 
     @property

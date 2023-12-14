@@ -76,7 +76,7 @@ class InstigationLogger(logging.Logger):
 
     def __init__(
         self,
-        log_key: Optional[List[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
         instance: Optional[DagsterInstance] = None,
         repository_name: Optional[str] = None,
         name: Optional[str] = None,

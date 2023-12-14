@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.sensor_definition import SensorExecutionData
@@ -21,6 +21,7 @@ def sync_get_external_sensor_execution_data_ephemeral_grpc(
     last_tick_completion_time: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
+    log_key: Optional[Sequence[str]],
     last_sensor_start_time: Optional[float] = None,
     timeout: Optional[int] = DEFAULT_GRPC_TIMEOUT,
 ) -> SensorExecutionData:
@@ -38,6 +39,7 @@ def sync_get_external_sensor_execution_data_ephemeral_grpc(
             last_tick_completion_time,
             last_run_key,
             cursor,
+            log_key,
             timeout=timeout,
             last_sensor_start_time=last_sensor_start_time,
         )
@@ -51,6 +53,7 @@ def sync_get_external_sensor_execution_data_grpc(
     last_tick_completion_time: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
+    log_key: Optional[Sequence[str]],
     last_sensor_start_time: Optional[float] = None,
     timeout: Optional[int] = None,
 ) -> SensorExecutionData:
@@ -72,6 +75,7 @@ def sync_get_external_sensor_execution_data_grpc(
                 last_tick_completion_time=last_tick_completion_time,
                 last_run_key=last_run_key,
                 cursor=cursor,
+                log_key=log_key,
                 timeout=timeout,
                 last_sensor_start_time=last_sensor_start_time,
             ),

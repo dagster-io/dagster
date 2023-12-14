@@ -43,7 +43,12 @@ from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, 
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    RunRequest,
+    SensorEvaluationContext,
+    SkipReason,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
 from dagster._core.host_representation.external import ExternalRepository
@@ -58,6 +63,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorStatus,
     TickStatus,
 )
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
@@ -558,6 +564,13 @@ def logging_sensor(context):
     return SkipReason()
 
 
+@sensor(job=the_job)
+def logging_fail_tick_sensor(context: "SensorEvaluationContext"):
+    context.log.info("hello hello")
+
+    raise Exception("womp womp")
+
+
 @run_status_sensor(
     monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
@@ -734,6 +747,7 @@ def the_repo():
         targets_asset_selection_sensor,
         multi_asset_sensor_targets_asset_selection,
         logging_sensor,
+        logging_fail_tick_sensor,
         logging_status_sensor,
         add_delete_dynamic_partitions_and_yield_run_requests_sensor,
         add_dynamic_partitions_sensor,
@@ -2858,11 +2872,64 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     )
     assert len(ticks) == 1
     tick = ticks[0]
-    assert tick.log_key
+    assert tick.log_key == [
+        external_sensor.handle.repository_name,
+        external_sensor.name,
+        str(tick.tick_id),
+    ]
+    assert tick.status == TickStatus.SKIPPED
     records = get_instigation_log_records(instance, tick.log_key)
     assert len(records) == 2
     assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
     assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
+    instance.compute_log_manager.delete_logs(log_key=tick.log_key)
+
+
+def test_sensor_logging_on_tick_failure(
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+) -> None:
+    external_sensor = external_repo.get_external_sensor("logging_fail_tick_sensor")
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+
+    assert instance.get_runs_count() == 0
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+
+    assert len(ticks) == 1
+
+    tick = ticks[0]
+
+    assert tick.status == TickStatus.FAILURE
+    assert tick.log_key
+    assert tick.log_key == [
+        external_sensor.handle.repository_name,
+        external_sensor.name,
+        str(tick.tick_id),
+    ]
+
+    records = get_instigation_log_records(instance, tick.log_key)
+
+    assert len(records) == 1
+    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
+
+    assert isinstance(instance.compute_log_manager, CapturedLogManager)
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 

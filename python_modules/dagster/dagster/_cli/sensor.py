@@ -283,6 +283,7 @@ def execute_preview_command(
                         since,
                         last_run_key,
                         cursor,
+                        log_key=None,
                         last_sensor_start_time=None,
                     )
                 except Exception:

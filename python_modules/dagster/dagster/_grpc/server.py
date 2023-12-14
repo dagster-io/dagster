@@ -744,6 +744,7 @@ class DagsterApiServer(DagsterApiServicer):
                     args.schedule_name,
                     args.scheduled_execution_timestamp,
                     args.scheduled_execution_timezone,
+                    args.log_key,
                 )
             )
         except Exception:
@@ -768,6 +769,7 @@ class DagsterApiServer(DagsterApiServicer):
                     args.last_tick_completion_time,
                     args.last_run_key,
                     args.cursor,
+                    args.log_key,
                     args.last_sensor_start_time,
                 )
             )

@@ -3,7 +3,17 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Generator, Iterator, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Generator,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import pendulum
 
@@ -60,6 +70,10 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 
 from .types import ExecuteExternalJobArgs
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.schedule_definition import ScheduleExecutionData
+    from dagster._core.definitions.sensor_definition import SensorExecutionData
 
 
 class RunInSubprocessComplete:
@@ -286,7 +300,8 @@ def get_external_schedule_execution(
     schedule_name: str,
     scheduled_execution_timestamp: Optional[float],
     scheduled_execution_timezone: Optional[str],
-):
+    log_key: Optional[Sequence[str]],
+) -> Union["ScheduleExecutionData", ExternalScheduleExecutionErrorData]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
     try:
@@ -311,6 +326,7 @@ def get_external_schedule_execution(
         with ScheduleEvaluationContext(
             instance_ref,
             scheduled_execution_time,
+            log_key,
             repo_def.name,
             schedule_name,
             resources=resources_to_build,
@@ -336,8 +352,9 @@ def get_external_sensor_execution(
     last_tick_completion_timestamp: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
+    log_key: Optional[Sequence[str]],
     last_sensor_start_timestamp: Optional[float],
-):
+) -> Union["SensorExecutionData", ExternalSensorExecutionErrorData]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
     try:
@@ -357,6 +374,7 @@ def get_external_sensor_execution(
             last_tick_completion_time=last_tick_completion_timestamp,
             last_run_key=last_run_key,
             cursor=cursor,
+            log_key=log_key,
             repository_name=repo_def.name,
             repository_def=repo_def,
             sensor_name=sensor_name,

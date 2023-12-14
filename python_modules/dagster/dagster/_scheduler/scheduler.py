@@ -4,10 +4,11 @@ import sys
 import threading
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
-from contextlib import ExitStack
-from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, cast
+from contextlib import AbstractContextManager, ExitStack
+from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
 
 import pendulum
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
@@ -56,7 +57,7 @@ if TYPE_CHECKING:
 LAST_RECORDED_ITERATION_INTERVAL_SECONDS = 3600
 
 
-class _ScheduleLaunchContext:
+class _ScheduleLaunchContext(AbstractContextManager):
     def __init__(
         self,
         external_schedule: ExternalSchedule,
@@ -81,6 +82,14 @@ class _ScheduleLaunchContext:
     def tick_id(self) -> str:
         return str(self._tick.tick_id)
 
+    @property
+    def log_key(self) -> Sequence[str]:
+        return [
+            self._external_schedule.handle.repository_name,
+            self._external_schedule.name,
+            self.tick_id,
+        ]
+
     def update_state(self, status, error=None, **kwargs):
         skip_reason = kwargs.get("skip_reason")
         if "skip_reason" in kwargs:
@@ -94,13 +103,13 @@ class _ScheduleLaunchContext:
     def add_run_info(self, run_id=None, run_key=None):
         self._tick = self._tick.with_run_info(run_id, run_key)
 
-    def add_log_key(self, log_key):
+    def add_log_key(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
 
     def _write(self):
         self._instance.update_tick(self._tick)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -547,6 +556,7 @@ def launch_scheduled_runs_for_schedule_iterator(
         ) as tick_context:
             try:
                 check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")
+                tick_context.add_log_key(tick_context.log_key)
 
                 yield from _schedule_runs_at_time(
                     workspace_process_context,
@@ -688,7 +698,7 @@ def _submit_run_request(
 def _get_code_location_for_schedule(
     workspace_process_context: IWorkspaceProcessContext,
     external_schedule: ExternalSchedule,
-):
+) -> CodeLocation:
     schedule_origin = external_schedule.get_external_origin()
     return workspace_process_context.create_request_context().get_code_location(
         schedule_origin.external_repository_origin.code_location_origin.location_name
@@ -714,9 +724,15 @@ def _schedule_runs_at_time(
         repository_handle=repository_handle,
         schedule_name=external_schedule.name,
         scheduled_execution_time=schedule_time,
+        log_key=tick_context.log_key,
     )
     yield None
 
+    # Kept for backwards compatibility with schedule log keys that were previously created in the
+    # schedule evaluation, rather than upfront.
+    #
+    # Note that to get schedule logs for failed schedule evaluations, we force users to update their
+    # Dagster version.
     if schedule_execution_data.log_key:
         tick_context.add_log_key(schedule_execution_data.log_key)
 
