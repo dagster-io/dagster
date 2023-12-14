@@ -4378,3 +4378,34 @@ class TestEventLogStorage:
                 ),
             )
         )
+
+    def test_transaction(self, test_run_id, storage):
+        assert len(storage.get_logs_for_run(test_run_id)) == 0
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ENGINE_EVENT.value,
+                    "nonce",
+                    event_specific_data=EngineEventData.in_process(999),
+                ),
+            )
+        )
+        assert len(storage.get_logs_for_run(test_run_id)) == 1
+
+        # now try to delete
+        with pytest.raises(Exception):
+            with storage.index_transaction() as conn:
+                conn.execute(SqlEventLogStorageTable.delete())
+                # Invalid insert, which should rollback the entire transaction
+                raise Exception()
+
+        assert len(storage.get_logs_for_run(test_run_id)) == 1
+
+        if self.can_wipe():
+            storage.wipe()
+            assert len(storage.get_logs_for_run(test_run_id)) == 0
