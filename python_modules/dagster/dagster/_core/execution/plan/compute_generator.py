@@ -265,6 +265,7 @@ def validate_and_coerce_op_result_to_iterator(
             f" {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to"
             " return no results."
         )
+
     # `requires_typed_event_stream` is a mode where we require users to return/yield exactly the
     # results that will be registered in the instance, without additional fancy inference (like
     # wrapping `None` in an `Output`). We therefore skip any return-specific validation for this

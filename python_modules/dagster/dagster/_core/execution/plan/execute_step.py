@@ -725,6 +725,7 @@ def _store_output(
             output=output,
             output_def=output_def,
             manager_metadata={},
+            has_value=False,
         )
     # otherwise invoke the I/O manager
     else:
@@ -809,6 +810,7 @@ def _store_output(
             output=output,
             output_def=output_def,
             manager_metadata=manager_metadata,
+            has_value=True,
         )
 
         yield DagsterEvent.handled_output(
@@ -820,7 +822,7 @@ def _store_output(
 
 
 def _log_asset_materialization_events_for_asset(
-    step_context, output_context, output, output_def, manager_metadata
+    step_context, output_context, output, output_def, manager_metadata, has_value
 ):
     asset_key, partitions = _materializing_asset_key_and_partitions_for_output(output_context)
     if asset_key:
@@ -843,7 +845,9 @@ def _log_asset_materialization_events_for_asset(
 
         yield from (
             (
-                DagsterEvent.asset_materialization(step_context, materialization)
+                DagsterEvent.asset_materialization(
+                    step_context, materialization, has_value=has_value
+                )
                 for materialization in _get_output_asset_materializations(
                     asset_key,
                     partitions,

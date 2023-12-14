@@ -818,9 +818,33 @@ class FromMultipleSourcesLoadSingleSource(
 def _load_input_with_input_manager(
     input_manager: "InputManager", context: "InputContext"
 ) -> Iterator[object]:
+    from dagster._core.events import StepMaterializationData
     from dagster._core.execution.context.system import StepExecutionContext
 
     step_context = cast(StepExecutionContext, context.step_context)
+
+    if context.has_asset_key:
+        # check that the asset has been materialized
+        instance = (
+            context.instance
+        )  # if use instance here need to test what happens when you make a context for unit testing
+        latest_input_materialization = instance.get_latest_materialization_event(
+            asset_key=context.asset_key
+        )
+
+        if (
+            latest_input_materialization is not None
+            and latest_input_materialization.asset_materialization is not None
+        ):
+            event = latest_input_materialization.get_dagster_event()
+            if (
+                isinstance(event.event_specific_data, StepMaterializationData)
+                and not event.event_specific_data.has_value
+            ):
+                # I/O manager was not used to store the output of the asset, which means the output was None
+                yield None
+                return
+
     with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
         msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',

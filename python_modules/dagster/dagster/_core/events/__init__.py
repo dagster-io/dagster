@@ -956,13 +956,12 @@ class DagsterEvent(
 
     @staticmethod
     def asset_materialization(
-        step_context: IStepContext,
-        materialization: AssetMaterialization,
+        step_context: IStepContext, materialization: AssetMaterialization, has_value: bool = True
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
             step_context=step_context,
-            event_specific_data=StepMaterializationData(materialization),
+            event_specific_data=StepMaterializationData(materialization, has_value=has_value),
             message=(
                 materialization.description
                 if materialization.description
@@ -1488,6 +1487,7 @@ class StepMaterializationData(
         [
             ("materialization", AssetMaterialization),
             ("asset_lineage", Sequence[AssetLineageInfo]),
+            ("has_value", bool),
         ],
     )
 ):
@@ -1495,6 +1495,7 @@ class StepMaterializationData(
         cls,
         materialization: AssetMaterialization,
         asset_lineage: Optional[Sequence[AssetLineageInfo]] = None,
+        has_value: bool = True,
     ):
         return super(StepMaterializationData, cls).__new__(
             cls,
@@ -1504,6 +1505,7 @@ class StepMaterializationData(
             asset_lineage=check.opt_sequence_param(
                 asset_lineage, "asset_lineage", of_type=AssetLineageInfo
             ),
+            has_value=has_value,
         )
 
 
