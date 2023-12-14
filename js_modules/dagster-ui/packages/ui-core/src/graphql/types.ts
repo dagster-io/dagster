@@ -338,6 +338,7 @@ export type AssetNode = {
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
+  automationPolicySensor: Maybe<Sensor>;
   backfillPolicy: Maybe<BackfillPolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
@@ -5177,6 +5178,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AutoMaterializePolicy')
         ? ({} as AutoMaterializePolicy)
         : buildAutoMaterializePolicy({}, relationshipsToOmit),
+    automationPolicySensor:
+      overrides && overrides.hasOwnProperty('automationPolicySensor')
+        ? overrides.automationPolicySensor!
+        : relationshipsToOmit.has('Sensor')
+        ? ({} as Sensor)
+        : buildSensor({}, relationshipsToOmit),
     backfillPolicy:
       overrides && overrides.hasOwnProperty('backfillPolicy')
         ? overrides.backfillPolicy!

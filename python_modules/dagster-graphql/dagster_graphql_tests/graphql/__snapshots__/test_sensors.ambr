@@ -182,6 +182,61 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
+      'name': 'my_automation_policy_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_0',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_1',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_2',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_3',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_4',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_5',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_6',
+          'solidSelection': None,
+        }),
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB_7',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
       'name': 'never_no_config_sensor',
       'sensorState': dict({
         'runs': list([
