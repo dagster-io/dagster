@@ -49,6 +49,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
               InstigationTickStatus.STARTED,
               InstigationTickStatus.SUCCESS,
               InstigationTickStatus.FAILURE,
+              InstigationTickStatus.SKIPPED,
             ],
       );
     }, []),

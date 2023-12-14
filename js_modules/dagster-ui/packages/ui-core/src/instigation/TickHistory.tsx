@@ -69,7 +69,7 @@ const DEFAULT_SHOWN_STATUS_STATE = {
   [InstigationTickStatus.SUCCESS]: true,
   [InstigationTickStatus.FAILURE]: true,
   [InstigationTickStatus.STARTED]: true,
-  [InstigationTickStatus.SKIPPED]: false,
+  [InstigationTickStatus.SKIPPED]: true,
 };
 const STATUS_TEXT_MAP = {
   [InstigationTickStatus.SUCCESS]: 'Requested',
