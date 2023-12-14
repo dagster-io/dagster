@@ -44,13 +44,24 @@ class PingReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     ECHO_FIELD_NUMBER: builtins.int
+    SERIALIZED_SERVER_HEALTH_METADATA_FIELD_NUMBER: builtins.int
     echo: builtins.str
+    serialized_server_health_metadata: builtins.str
     def __init__(
         self,
         *,
         echo: builtins.str = ...,
+        serialized_server_health_metadata: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["echo", b"echo"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "echo",
+            b"echo",
+            "serialized_server_health_metadata",
+            b"serialized_server_health_metadata",
+        ],
+    ) -> None: ...
 
 global___PingReply = PingReply
 
@@ -181,9 +192,7 @@ global___ExternalPartitionNamesRequest = ExternalPartitionNamesRequest
 class ExternalPartitionNamesReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    SERIALIZED_EXTERNAL_PARTITION_NAMES_OR_EXTERNAL_PARTITION_EXECUTION_ERROR_FIELD_NUMBER: (
-        builtins.int
-    )
+    SERIALIZED_EXTERNAL_PARTITION_NAMES_OR_EXTERNAL_PARTITION_EXECUTION_ERROR_FIELD_NUMBER: builtins.int
     serialized_external_partition_names_or_external_partition_execution_error: builtins.str
     def __init__(
         self,
@@ -256,9 +265,7 @@ global___ExternalPartitionConfigRequest = ExternalPartitionConfigRequest
 class ExternalPartitionConfigReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    SERIALIZED_EXTERNAL_PARTITION_CONFIG_OR_EXTERNAL_PARTITION_EXECUTION_ERROR_FIELD_NUMBER: (
-        builtins.int
-    )
+    SERIALIZED_EXTERNAL_PARTITION_CONFIG_OR_EXTERNAL_PARTITION_EXECUTION_ERROR_FIELD_NUMBER: builtins.int
     serialized_external_partition_config_or_external_partition_execution_error: builtins.str
     def __init__(
         self,
@@ -299,9 +306,7 @@ global___ExternalPartitionTagsRequest = ExternalPartitionTagsRequest
 class ExternalPartitionTagsReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    SERIALIZED_EXTERNAL_PARTITION_TAGS_OR_EXTERNAL_PARTITION_EXECUTION_ERROR_FIELD_NUMBER: (
-        builtins.int
-    )
+    SERIALIZED_EXTERNAL_PARTITION_TAGS_OR_EXTERNAL_PARTITION_EXECUTION_ERROR_FIELD_NUMBER: builtins.int
     serialized_external_partition_tags_or_external_partition_execution_error: builtins.str
     def __init__(
         self,
