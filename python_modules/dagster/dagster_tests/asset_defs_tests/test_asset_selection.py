@@ -391,4 +391,4 @@ def test_all_asset_selection_subclasses_serializable():
 
     for asset_selection_subclass in asset_selection_subclasses:
         if asset_selection_subclass != AssetSelection:
-            assert _WHITELIST_MAP.has_tuple_serializer(asset_selection_subclass.__name__)
+            assert _WHITELIST_MAP.has_object_serializer(asset_selection_subclass.__name__)
