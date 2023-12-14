@@ -1,5 +1,40 @@
 # Changelog
 
+# 1.5.13 / 0.21.13 (libraries)
+
+### New
+
+- The `SensorEvaluationContext` object has two new properties: `last_sensor_start_time` and `is_first_tick_since_sensor_start`. This enables sensor evaluation functions to vary behavior on the first tick vs subsequent ticks after the sensor has started.
+- The `asset_selection` argument to `@sensor` and `SensorDefinition` now accepts sequence of `AssetsDefinitions`, a sequences of strings, or a sequence of `AssetKey`s, in addition to `AssetSelection`s.
+- [dagster-dbt] Support for `dbt-core==1.3.*` has been removed.
+- [ui] In code locations view, link to git repo when it’s a valid URL.
+- [ui] To improve consistency and legibility, when displaying elapsed time, most places in the app will now no longer show milliseconds.
+- [ui] Runs that were launched by schedules or sensors now show information about the relevant schedule or sensor in the header, with a link to view other runs associated with the same tick.
+- [dagster-gcp] Added a `show_url_only` parameter to `GCSComputeLogManager` that allows you to configure the compute log manager so that it displays a link to the GCS console rather than loading the logs from GCS, which can be useful if giving Dagster access to GCS credentials is undesirable.
+
+### Bugfixes
+
+- Fixed behavior of loading partitioned parent assets when using the `BranchingIOManager`
+- [ui] Fixed an unwanted scrollbar that sometimes appears on the code location list.
+
+### Community Contributions
+
+- Fixed a bug where dagster would error on FIPS-enabled systems by explicitly marking callsites of `hashlib.md5` as not used for security purposes (Thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!)
+- [dagster-k8s] Changed `execute_k8s_job` to be aware of run-termination and op failure by deleting the executing k8s job (Thanks [@Taadas](https://github.com/Taadas)!).
+- [dagstermill] Fixed dagstermill integration with the Dagster web UI to allow locally-scoped static resources (required to show certain frontend-components like `plotly` graphs) when viewing dagstermill notebooks (Thanks [@aebrahim](https://github.com/aebrahim)!).
+- [dagster-dbt] Fixed type annotation typo in the `DbtCliResource` API docs (Thanks [@akan72](https://github.com/akan72)!)
+
+### Experimental
+
+- [pipes] Methods have been added to facilitate passing non-Dagster data back from the external process (`report_custom_message` ) to the orchestration process (`get_custom_messages`).
+- [ui] Added a “System settings” option for UI theming, which will use your OS preference to set light or dark mode.
+
+### Documentation
+
+- [graphql] - Removed experimental marker that was missed when the GraphQL client was fully released
+- [assets] - Add an example for using retries with assets to the SDA concept page
+- [general] - Fixed some typos and formatting issues
+
 # 1.5.12 / 0.21.12 (libraries)
 
 ### Bugfixes
