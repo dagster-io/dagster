@@ -924,6 +924,10 @@ class DagsterInstance(DynamicPartitionsStore):
     def auto_materialize_max_tick_retries(self) -> int:
         return self.get_settings("auto_materialize").get("max_tick_retries", 3)
 
+    @property
+    def auto_materialize_use_automation_policy_sensors(self) -> int:
+        return self.get_settings("auto_materialize").get("use_automation_policy_sensors", False)
+
     # python logs
 
     @property
