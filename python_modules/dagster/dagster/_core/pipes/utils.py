@@ -168,10 +168,10 @@ class PipesFileMessageReader(PipesMessageReader):
             yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
         finally:
             is_session_closed.set()
-            if os.path.exists(self._path):
-                os.remove(self._path)
             if thread:
                 thread.join()
+            if os.path.exists(self._path):
+                os.remove(self._path)
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
         try:
