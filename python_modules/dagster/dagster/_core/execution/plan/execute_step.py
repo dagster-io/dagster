@@ -123,11 +123,11 @@ def _process_user_event(
 
         # If a MaterializeResult was returned from an asset with no type annotation, the type will be
         # interpreted as Any and the I/O manager will be invoked. Raise a warning to alert the user.
-        if not assets_def.op.output_dict[output_name].dagster_type.is_nothing:
+        type_annotation = assets_def.op.output_dict[output_name].dagster_type
+        if not type_annotation.is_nothing:
             step_context.log.warning(
-                f"MaterializeResult for asset {asset_key} returned from an asset with an inferred"
-                " return type of Any. This will cause the I/O manager to run. To ensure that the"
-                " I/O manager does not run, annotate your asset with the return type MaterializeResult."
+                f"The MaterializeResult returned from {asset_key} will be stored by the I/O manager."
+                f" To bypass the I/O manager, add return type annotation '-> MaterializeResult' to {asset_key}."
             )
 
         yield Output(
@@ -717,7 +717,7 @@ def _store_output(
     if (
         step_output.properties.asset_check_key
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
-        or output_context.dagster_type.is_nothing
+        or (output_context.has_asset_key and output_context.dagster_type.is_nothing)
     ):
         yield from _log_asset_materialization_events_for_asset(
             step_context=step_context,
