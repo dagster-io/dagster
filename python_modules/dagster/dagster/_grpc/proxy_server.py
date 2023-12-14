@@ -201,8 +201,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         return self._query("ListRepositories", request, context)
 
     def Ping(self, request, context):
-        echo = request.echo
-        return api_pb2.PingReply(echo=echo)
+        return self._query("Ping", request, context)
 
     def GetServerId(self, request, context):
         return self._fixed_server_id or self._query("GetServerId", request, context)

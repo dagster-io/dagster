@@ -587,6 +587,14 @@ def _execute_step_command_body(
     help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
     envvar="DAGSTER_INSTANCE_REF",
 )
+@click.option(
+    "--enable-metrics",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
+    envvar="DAGSTER_ENABLE_SERVER_METRICS",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -603,6 +611,7 @@ def grpc_command(
     location_name=None,
     instance_ref=None,
     inject_env_vars_from_instance=False,
+    enable_metrics=False,
     **kwargs,
 ):
     check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
@@ -677,6 +686,7 @@ def grpc_command(
         inject_env_vars_from_instance=inject_env_vars_from_instance,
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         location_name=location_name,
+        enable_metrics=enable_metrics,
     )
 
     server = DagsterGrpcServer(
@@ -687,6 +697,7 @@ def grpc_command(
         host=host,
         max_workers=max_workers,
         logger=logger,
+        enable_metrics=enable_metrics,
     )
 
     code_desc = " "

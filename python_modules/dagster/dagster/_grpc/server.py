@@ -9,13 +9,16 @@ import threading
 import time
 import uuid
 import warnings
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
+from functools import update_wrapper
 from threading import Event as ThreadingEventType
 from time import sleep
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -113,9 +116,48 @@ CLEANUP_TICK = 0.5
 
 STREAMING_CHUNK_SIZE = 4000000
 
+_UTILIZATION_METRICS = defaultdict(dict)
+_METRICS_LOCK = threading.Lock()
+METRICS_RETRIEVAL_FUNCTIONS = set()
+
+
+def _record_max_workers(max_workers: Optional[int]) -> None:
+    with _METRICS_LOCK:
+        _UTILIZATION_METRICS["general_info"]["max_workers"] = (
+            max_workers if max_workers is not None else -1
+        )
+
 
 class CouldNotBindGrpcServerToAddress(Exception):
     pass
+
+
+def retrieve_metrics(arg_from_request: str):
+    class _MetricsRetriever:
+        def __call__(self, fn: Callable) -> Callable:
+            api_call = fn.__name__
+            METRICS_RETRIEVAL_FUNCTIONS.add(api_call)
+
+            def wrapper(self: "DagsterApiServer", request: Any, context: grpc.ServicerContext):
+                if not self._enable_metrics:
+                    # If metrics retrieval is disabled, short circuit to just calling the underlying function.
+                    return fn(self, request, context)
+                with _METRICS_LOCK:
+                    if "current_count" not in _UTILIZATION_METRICS[api_call]:
+                        _UTILIZATION_METRICS[api_call]["current_count"] = 0
+                    _UTILIZATION_METRICS[api_call]["current_count"] += 1
+
+                res = fn(self, request, context)
+
+                with _METRICS_LOCK:
+                    _UTILIZATION_METRICS[arg_from_request]["current_count"] -= 1
+
+                return res
+
+            update_wrapper(wrapper, fn)
+            return wrapper
+
+    return _MetricsRetriever()
 
 
 class LoadedRepositories:
@@ -229,6 +271,7 @@ class DagsterApiServer(DagsterApiServicer):
         inject_env_vars_from_instance: Optional[bool] = False,
         instance_ref: Optional[InstanceRef] = None,
         location_name: Optional[str] = None,
+        enable_metrics: bool = False,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -280,6 +323,8 @@ class DagsterApiServer(DagsterApiServicer):
         #    chart or the deploy_docker example)
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._exit_stack = ExitStack()
+
+        self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
 
         try:
             if inject_env_vars_from_instance:
@@ -409,7 +454,9 @@ class DagsterApiServer(DagsterApiServicer):
 
     def Ping(self, request, _context: grpc.ServicerContext) -> api_pb2.PingReply:
         echo = request.echo
-        return api_pb2.PingReply(echo=echo)
+        return api_pb2.PingReply(
+            echo=echo, serialized_server_health_metadata=json.dumps(_UTILIZATION_METRICS)
+        )
 
     def StreamingPing(
         self, request: api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
@@ -655,6 +702,7 @@ class DagsterApiServer(DagsterApiServicer):
         self, request: api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> api_pb2.ExternalRepositoryReply:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
+
         return api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialized_external_repository_data,
         )
@@ -780,6 +828,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
+    @retrieve_metrics(arg_from_request="serialized_external_sensor_execution_args")
     def SyncExternalSensorExecution(
         self, request: api_pb2.ExternalSensorExecutionRequest, _context: grpc.ServicerContext
     ) -> api_pb2.ExternalSensorExecutionReply:
@@ -787,9 +836,11 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_sensor_result=self._external_sensor_execution(request)
         )
 
+    @retrieve_metrics(arg_from_request="serialized_external_sensor_execution_args")
     def ExternalSensorExecution(
         self, request: api_pb2.ExternalSensorExecutionRequest, _context: grpc.ServicerContext
     ) -> Iterable[api_pb2.StreamingChunkEvent]:
+        self._logger.info("ExternalSensorExecution")
         yield from self._split_serialized_data_into_chunk_events(
             self._external_sensor_execution(request)
         )
@@ -1030,6 +1081,7 @@ class DagsterGrpcServer:
         port: Optional[int] = None,
         socket: Optional[str] = None,
         max_workers: Optional[int] = None,
+        enable_metrics: bool = False,
     ):
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
@@ -1046,6 +1098,10 @@ class DagsterGrpcServer:
 
         self._logger = logger
 
+        self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
+
+        if self._enable_metrics:
+            _record_max_workers(max_workers)
         self.server = grpc.server(
             ThreadPoolExecutor(
                 max_workers=max_workers,

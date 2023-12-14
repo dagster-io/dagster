@@ -41,6 +41,7 @@ message PingRequest {
 
 message PingReply {
   string echo = 1;
+  string serialized_server_health_metadata = 2;
 }
 
 message StreamingPingRequest {

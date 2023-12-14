@@ -219,3 +219,18 @@ def test_detect_server_restart():
         _cleanup_process(server_process)
 
     assert server_id_one != server_id_two
+
+
+def test_ping_metrics_retrieval():
+    with instance_for_test() as instance:
+        port = find_free_port()
+        server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+        assert server_process is not None
+
+        try:
+            assert DagsterGrpcClient(port=port).ping("foobar") == {
+                "echo": "foobar",
+                "serialized_server_health_metadata": "{}",
+            }
+        finally:
+            _cleanup_process(server_process)
