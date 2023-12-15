@@ -41,7 +41,11 @@ interface DialogProps extends InnerProps {
 
 export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}: DialogProps) => {
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} style={{width: '90vw'}}>
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
+    >
       <TickDetailsDialogImpl tickId={tickId} instigationSelector={instigationSelector} />
       <DialogFooter>
         <Button onClick={onClose}>Close</Button>
