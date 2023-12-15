@@ -38,7 +38,7 @@ export const AssetPartitionList = ({
   const items = rowVirtualizer.getVirtualItems();
 
   React.useEffect(() => {
-    if (focusedDimensionKey) {
+    if (focusedDimensionKey && partitions.indexOf(focusedDimensionKey) !== -1) {
       rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
         behavior: 'auto',
         align: 'auto',
