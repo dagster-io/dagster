@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  ButtonLink,
   Checkbox,
   Dialog,
   DialogBody,
@@ -20,6 +19,7 @@ import {HourCycleSelect} from './time/HourCycleSelect';
 import {ThemeSelect} from './time/ThemeSelect';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
+import {Icon} from '@dagster-io/ui-components';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
 type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlagType};
@@ -87,7 +87,9 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
 
   const trigger = React.useCallback(
     (timezone: string) => (
-      <ButtonLink>{timezone === 'Automatic' ? automaticLabel() : timezone}</ButtonLink>
+      <Button rightIcon={<Icon name="arrow_drop_down"/>}>
+        {timezone === 'Automatic' ? automaticLabel() : timezone}
+      </Button>
     ),
     [],
   );
@@ -123,7 +125,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
               {
                 key: 'Timezone',
                 value: (
-                  <Box margin={{bottom: 4}}>
+                  <Box>
                     <TimezoneSelect trigger={trigger} />
                   </Box>
                 ),
@@ -131,7 +133,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
               {
                 key: 'Hour format',
                 value: (
-                  <Box margin={{bottom: 4}}>
+                  <Box>
                     <HourCycleSelect />
                   </Box>
                 ),
@@ -152,7 +154,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
                   </div>
                 ),
                 value: (
-                  <Box margin={{bottom: 4}}>
+                  <Box>
                     <ThemeSelect theme={theme} onChange={setTheme} />
                   </Box>
                 ),

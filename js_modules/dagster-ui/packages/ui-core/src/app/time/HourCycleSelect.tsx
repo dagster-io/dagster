@@ -1,4 +1,4 @@
-import {MenuItem, Menu, Select, ButtonLink} from '@dagster-io/ui-components';
+import {MenuItem, Menu, Select, ButtonLink, Button, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {HourCycle} from './HourCycle';
@@ -99,9 +99,9 @@ export const HourCycleSelect = () => {
       }}
       onItemSelect={(item) => setHourCycle(item.key as HourCycle)}
     >
-      <ButtonLink>
+      <Button rightIcon={<Icon name="arrow_drop_down"/>}>
         {hourCycle === 'Automatic' || !hourCycle ? labels.automatic : labels[hourCycle]}
-      </ButtonLink>
+      </Button>
     </Select>
   );
 };
