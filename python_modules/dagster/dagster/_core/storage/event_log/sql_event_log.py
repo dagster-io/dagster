@@ -2172,16 +2172,22 @@ class SqlEventLogStorage(EventLogStorage):
 
         self._reconcile_concurrency_limits_from_slots()
 
-        # consider setting this in the instance config
-        default_value = 1
+        if not self.has_instance:
+            return False
+
+        default_limit = self._instance.global_op_concurrency_default_limit
+
+        if default_limit is None:
+            return False
+
         with self.index_transaction() as conn:
             try:
                 conn.execute(
                     ConcurrencyLimitsTable.insert().values(
-                        concurrency_key=concurrency_key, limit=default_value
+                        concurrency_key=concurrency_key, limit=default_limit
                     )
                 )
-                self._allocate_concurrency_slots(conn, concurrency_key, default_value)
+                self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
             except db_exc.IntegrityError:
                 pass
         return True

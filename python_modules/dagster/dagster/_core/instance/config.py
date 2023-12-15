@@ -116,6 +116,20 @@ def dagster_instance_config(
                 dagster_config_dict["storage"],
             )
 
+    # validate default op concurrency limits
+    if "concurrency" in dagster_config_dict:
+        default_concurrency_limit = dagster_config_dict["concurrency"].get(
+            "default_op_concurrency_limit"
+        )
+        if default_concurrency_limit is not None:
+            if default_concurrency_limit < 0 or default_concurrency_limit > 1000:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
+                    "Expected value between 0-1000.",
+                    [],
+                    None,
+                )
+
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
@@ -377,6 +391,15 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                     ),
                 ),
                 "use_automation_policy_sensors": Field(BoolSource, is_required=False),
+            }
+        ),
+        "concurrency": Field(
+            {
+                "default_op_concurrency_limit": Field(
+                    int,
+                    is_required=False,
+                    description="The default maximum number of concurrent operations for an unconfigured concurrency key",
+                ),
             }
         ),
     }
