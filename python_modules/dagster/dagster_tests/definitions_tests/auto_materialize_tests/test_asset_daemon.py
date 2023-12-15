@@ -9,6 +9,7 @@ from dagster import (
     AutoMaterializeRule,
     DagsterInstance,
     instance_for_test,
+    serialize_value,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -279,9 +280,9 @@ def test_automation_policy_sensor_ticks():
 
         instance.daemon_cursor_storage.set_cursor_values(
             {
-                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: AssetDaemonCursor.empty()
-                ._replace(evaluation_id=pre_sensor_evaluation_id)
-                .serialize()
+                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
+                    AssetDaemonCursor.empty()._replace(evaluation_id=pre_sensor_evaluation_id)
+                )
             }
         )
 

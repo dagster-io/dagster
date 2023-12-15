@@ -126,6 +126,7 @@ class AssetSubset(NamedTuple):
         current_time: Optional[datetime.datetime] = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> "AssetSubset":
+        """Returns the AssetSubset containing all asset partitions which are not in this AssetSubset."""
         if partitions_def is None:
             return self._replace(value=not self.bool_value)
         else:

@@ -50,7 +50,9 @@ from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
     get_implicit_auto_materialize_policy,
 )
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -79,7 +81,11 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._daemon.asset_daemon import (
+    AssetDaemon,
+    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor,
+)
+from dagster._serdes.serdes import serialize_value
 from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
@@ -340,7 +346,9 @@ class AssetReconciliationScenario(
                     )
 
                 # make sure we can deserialize it using the new asset graph
-                cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
+                cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+                    serialize_value(cursor), repo.asset_graph
+                )
 
             else:
                 cursor = AssetDaemonCursor.empty()

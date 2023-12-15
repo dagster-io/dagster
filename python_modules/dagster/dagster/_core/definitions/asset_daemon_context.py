@@ -31,7 +31,6 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._utils.cached_method import cached_method
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
@@ -135,10 +134,6 @@ class AssetDaemonContext:
         return self.instance_queryer.asset_graph
 
     @property
-    def latest_storage_id(self) -> Optional[int]:
-        return self.cursor.latest_storage_id
-
-    @property
     def auto_materialize_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._auto_materialize_asset_keys
 
@@ -177,46 +172,6 @@ class AssetDaemonContext:
         )
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self._verbose_log_fn("Done prefetching asset records.")
-        self._verbose_log_fn(
-            f"Calculated a new latest_storage_id value of {self.get_new_latest_storage_id()}.\n"
-            f"Precalculating updated parents for {len(self.auto_materialize_asset_keys)} assets using previous "
-            f"latest_storage_id of {self.latest_storage_id}."
-        )
-        for asset_key in self.auto_materialize_asset_keys:
-            self.instance_queryer.asset_partitions_with_newly_updated_parents(
-                latest_storage_id=self.latest_storage_id, child_asset_key=asset_key
-            )
-        self._verbose_log_fn("Done precalculating updated parents.")
-
-    @cached_method
-    def get_new_latest_storage_id(self) -> Optional[int]:
-        """Get the latest storage id across all cached asset records. We use this method as it uses
-        identical data to what is used to calculate assets with updated parents, and therefore
-        avoids certain classes of race conditions.
-        """
-        new_latest_storage_id = self.latest_storage_id
-        for asset_key in self.auto_materialize_asset_keys_and_parents:
-            # ignore non-observable sources
-            if self.asset_graph.is_source(asset_key) and not self.asset_graph.is_observable(
-                asset_key
-            ):
-                continue
-            # ignore cases where we know for sure there's no new event
-            if not self.instance_queryer.asset_partition_has_materialization_or_observation(
-                AssetKeyPartitionKey(asset_key), after_cursor=self.latest_storage_id
-            ):
-                continue
-            # get the latest overall storage id for this asset key
-            asset_latest_storage_id = (
-                self.instance_queryer.get_latest_materialization_or_observation_storage_id(
-                    AssetKeyPartitionKey(asset_key)
-                )
-            )
-            new_latest_storage_id = max(
-                filter(None, [new_latest_storage_id, asset_latest_storage_id]), default=None
-            )
-
-        return new_latest_storage_id
 
     def evaluate_asset(
         self,
@@ -241,11 +196,11 @@ class AssetDaemonContext:
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         ).to_asset_condition()
 
-        asset_cursor = self.cursor.asset_cursor_for_key(asset_key, self.asset_graph)
+        asset_cursor = self.cursor.get_asset_cursor(asset_key)
 
         context = AssetConditionEvaluationContext.create(
             asset_key=asset_key,
-            cursor=self.cursor.asset_cursor_for_key(asset_key, self.asset_graph),
+            cursor=asset_cursor,
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
@@ -254,9 +209,15 @@ class AssetDaemonContext:
             expected_data_time_mapping=expected_data_time_mapping,
         )
 
-        evaluation, condition_cursor = asset_condition.evaluate(context)
+        evaluation, extras = asset_condition.evaluate(context)
 
-        new_asset_cursor = asset_cursor.with_updates(context, evaluation)
+        new_asset_cursor = AssetConditionCursor(
+            asset_key=asset_key,
+            previous_max_storage_id=context.new_max_storage_id,
+            previous_evaluation_timestamp=context.evaluation_time.timestamp(),
+            previous_evaluation=evaluation,
+            extras=extras,
+        )
 
         expected_data_time = get_expected_data_time_for_asset_key(
             context, will_materialize=evaluation.true_subset.size > 0
@@ -365,24 +326,21 @@ class AssetDaemonContext:
         return (
             run_requests,
             self.cursor.with_updates(
-                latest_storage_id=self.get_new_latest_storage_id(),
                 evaluation_id=self._evaluation_id,
+                asset_cursors=asset_cursors,
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests
                     for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
                 ],
-                observe_request_timestamp=observe_request_timestamp,
-                evaluations=evaluations,
-                evaluation_time=self.instance_queryer.evaluation_time,
-                asset_cursors=asset_cursors,
+                evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
             ),
             # only record evaluations where something changed
             [
                 evaluation
                 for evaluation in evaluations
                 if not evaluation.equivalent_to_stored_evaluation(
-                    self.cursor.latest_evaluation_by_asset_key.get(evaluation.asset_key)
+                    self.cursor.get_previous_evaluation(evaluation.asset_key)
                 )
             ],
         )

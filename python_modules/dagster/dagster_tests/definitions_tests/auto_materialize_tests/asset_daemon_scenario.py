@@ -48,7 +48,6 @@ from dagster._core.definitions.asset_daemon_context import (
 )
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
-    LegacyAssetDaemonCursorWrapper,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -84,8 +83,11 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
     _get_pre_sensor_auto_materialize_serialized_cursor,
+    asset_daemon_cursor_from_instigator_serialized_cursor,
+    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor,
     get_current_evaluation_id,
 )
+from dagster._serdes.serdes import serialize_value
 
 from .base_scenario import FAIL_TAG, run_request
 
@@ -210,7 +212,7 @@ class AssetDaemonScenarioState(NamedTuple):
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
     current_time: datetime.datetime = pendulum.now("UTC")
     run_requests: Sequence[RunRequest] = []
-    serialized_cursor: str = AssetDaemonCursor.empty().serialize()
+    serialized_cursor: str = serialize_value(AssetDaemonCursor.empty(0))
     evaluations: Sequence[AssetConditionEvaluation] = []
     logger: logging.Logger = logging.getLogger("dagster.amp")
     tick_index: int = 1
@@ -285,6 +287,9 @@ class AssetDaemonScenarioState(NamedTuple):
     ):
         return self._replace(automation_policy_sensors=sensors)
 
+    def with_serialized_cursor(self, serialized_cursor: str) -> "AssetDaemonScenarioState":
+        return self._replace(serialized_cursor=serialized_cursor)
+
     def with_all_eager(
         self, max_materializations_per_minute: int = 1
     ) -> "AssetDaemonScenarioState":
@@ -355,7 +360,9 @@ class AssetDaemonScenarioState(NamedTuple):
     def _evaluate_tick_fast(
         self,
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
-        cursor = AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph)
+        cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+            self.serialized_cursor, self.asset_graph
+        )
 
         new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
             evaluation_id=cursor.evaluation_id + 1,
@@ -458,29 +465,17 @@ class AssetDaemonScenarioState(NamedTuple):
                         sensor.get_external_origin_id(), sensor.selector_id
                     )
                 )
-                compressed_cursor = (
+                new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
                     cast(
                         SensorInstigatorData,
                         check.not_none(auto_materialize_instigator_state).instigator_data,
-                    ).cursor
-                    or AssetDaemonCursor.empty().serialize()
-                )
-                new_cursor = (
-                    LegacyAssetDaemonCursorWrapper.from_compressed(
-                        compressed_cursor
-                    ).get_asset_daemon_cursor(self.asset_graph)
-                    if compressed_cursor
-                    else AssetDaemonCursor.empty()
+                    ).cursor,
+                    self.asset_graph,
                 )
             else:
                 raw_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(self.instance)
-                new_cursor = (
-                    AssetDaemonCursor.from_serialized(
-                        raw_cursor,
-                        self.asset_graph,
-                    )
-                    if raw_cursor
-                    else AssetDaemonCursor.empty()
+                new_cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+                    raw_cursor, self.asset_graph
                 )
             new_run_requests = [
                 run_request(
@@ -501,9 +496,9 @@ class AssetDaemonScenarioState(NamedTuple):
             ]
         return new_run_requests, new_cursor, new_evaluations
 
-    def evaluate_tick(self) -> "AssetDaemonScenarioState":
+    def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":
         self.logger.critical("********************************")
-        self.logger.critical(f"EVALUATING TICK {self.tick_index}")
+        self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
         self.logger.critical("********************************")
         with pendulum.test(self.current_time):
             if self.is_daemon:
@@ -517,7 +512,7 @@ class AssetDaemonScenarioState(NamedTuple):
 
         return self._replace(
             run_requests=new_run_requests,
-            serialized_cursor=new_cursor.serialize(),
+            serialized_cursor=serialize_value(new_cursor),
             evaluations=new_evaluations,
             tick_index=self.tick_index + 1,
         )
@@ -691,10 +686,16 @@ class AssetDaemonScenarioState(NamedTuple):
 
         try:
             for actual_sm, expected_sm in zip(
-                sorted(actual_subsets_with_metadata, key=lambda x: str(x)),
-                sorted(expected_subsets_with_metadata, key=lambda x: str(x)),
+                sorted(
+                    actual_subsets_with_metadata,
+                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                ),
+                sorted(
+                    expected_subsets_with_metadata,
+                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                ),
             ):
-                assert actual_sm.subset == expected_sm.subset
+                assert actual_sm.subset.asset_partitions == expected_sm.subset.asset_partitions
                 # only check evaluation data if it was set on the expected evaluation spec
                 if expected_sm.metadata:
                     assert actual_sm.metadata == expected_sm.metadata

@@ -1,9 +1,13 @@
 import datetime
 import json
 
-from dagster import AssetKey, StaticPartitionsDefinition, asset
+from dagster import StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._daemon.asset_daemon import (
+    asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor,
+)
+from dagster._serdes.serdes import serialize_value
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
@@ -14,43 +18,41 @@ def my_asset(_):
 
 
 def test_asset_reconciliation_cursor_evaluation_id_backcompat() -> None:
+    # we no longer attempt to deserialize asset information from this super-old cursor format
+    # instead, the next tick after a transition will just start from a clean slate (preserving
+    # the evaluation id)
     backcompat_serialized = (
         """[20, ["a"], {"my_asset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]"""
     )
 
-    assert AssetDaemonCursor.get_evaluation_id_from_serialized(backcompat_serialized) is None
+    assert asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+        backcompat_serialized, None
+    ) == AssetDaemonCursor.empty(20)
 
     asset_graph = AssetGraph.from_assets([my_asset])
-    c = AssetDaemonCursor.from_serialized(backcompat_serialized, asset_graph)
-
-    assert c == AssetDaemonCursor(
-        20,
-        {AssetKey("a")},
-        {AssetKey("my_asset"): partitions.empty_subset().with_partition_keys(["a"])},
-        0,
-        {},
-        {},
-        0,
+    c = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+        backcompat_serialized, asset_graph
     )
 
-    c2 = c.with_updates(
-        21,
-        1,
-        [],
-        0,
-        [],
-        datetime.datetime.now(),
-        [],
-    )
+    assert c == AssetDaemonCursor.empty(20)
 
-    serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)
+    c2 = c.with_updates(21, datetime.datetime.now().timestamp(), [], [])
+
+    serdes_c2 = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+        serialize_value(c2), asset_graph
+    )
     assert serdes_c2 == c2
-    assert serdes_c2.evaluation_id == 1
+    assert serdes_c2.evaluation_id == 21
 
-    assert AssetDaemonCursor.get_evaluation_id_from_serialized(c2.serialize()) == 1
+    assert (
+        asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+            serialize_value(c2), None
+        ).evaluation_id
+        == 21
+    )
 
 
-def test_asset_reconciliation_cursor_auto_observe_backcompat():
+def test_asset_reconciliation_cursor_auto_observe_backcompat() -> None:
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
@@ -76,9 +78,7 @@ def test_asset_reconciliation_cursor_auto_observe_backcompat():
         )
     )
 
-    cursor = AssetDaemonCursor.from_serialized(
-        serialized, asset_graph=AssetGraph.from_assets([asset1, asset2])
+    cursor = asset_daemon_cursor_from_pre_sensor_auto_materialize_serialized_cursor(
+        serialized, AssetGraph.from_assets([asset1, asset2])
     )
-    assert cursor.latest_storage_id == 25
-    assert cursor.handled_root_asset_keys == handled_root_asset_keys
-    assert cursor.handled_root_partitions_by_asset_key == handled_root_partitions_by_asset_key
+    assert cursor.evaluation_id == 25

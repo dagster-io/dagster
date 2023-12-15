@@ -1,10 +1,7 @@
-import base64
-import datetime
+import functools
 import json
-import zlib
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Mapping,
     NamedTuple,
     Optional,
@@ -13,57 +10,43 @@ from typing import (
     TypeVar,
 )
 
-import dagster._check as check
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    BackcompatAutoMaterializeAssetEvaluationSerializer,
 )
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._serdes.serdes import (
+    _WHITELIST_MAP,
     PackableValue,
+    WhitelistMap,
     deserialize_value,
-    serialize_value,
     whitelist_for_serdes,
 )
 
 from .asset_graph import AssetGraph
-from .asset_subset import AssetSubset
-from .partition import PartitionsDefinition, PartitionsSubset
 
 if TYPE_CHECKING:
     from .asset_condition import AssetCondition, AssetConditionEvaluation, AssetConditionSnapshot
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
-
-ExtrasDict = Mapping[str, PackableValue]
 
 T = TypeVar("T")
 
 
-def _get_placeholder_missing_condition() -> "AssetCondition":
-    """Temporary hard-coding of the hash of the "materialize on missing" condition. This will
-    no longer be necessary once we start serializing the AssetDaemonCursor.
-    """
-    from .asset_condition import RuleCondition
-    from .auto_materialize_rule import MaterializeOnMissingRule
-
-    return RuleCondition(MaterializeOnMissingRule())
-
-
-_PLACEHOLDER_HANDLED_SUBSET_KEY = "handled_subset"
-
-
+@whitelist_for_serdes
 class AssetConditionCursorExtras(NamedTuple):
-    """Class to represent additional unstructured information that may be tracked by a particular
-    asset condition.
+    """Represents additional state that may be optionally saved by an AssetCondition between
+    evaluations.
     """
 
     condition_snapshot: "AssetConditionSnapshot"
-    extras: ExtrasDict
+    extras: Mapping[str, PackableValue]
 
 
+@whitelist_for_serdes
 class AssetConditionCursor(NamedTuple):
-    """Convenience class to represent the state of an individual asset being handled by the daemon.
-    In the future, this will be serialized as part of the cursor.
+    """Represents the evaluated state of an AssetConditionCursor at a certain point in time. This
+    information can be used to make future evaluations more efficient.
     """
 
     asset_key: AssetKey
@@ -104,284 +87,194 @@ class AssetConditionCursor(NamedTuple):
             return AssetSubset.empty(self.asset_key, partitions_def)
         return self.previous_evaluation.get_requested_or_discarded_subset(condition)
 
-    @property
-    def handled_subset(self) -> Optional[AssetSubset]:
-        return self.get_extras_value(
-            condition=_get_placeholder_missing_condition(),
-            key=_PLACEHOLDER_HANDLED_SUBSET_KEY,
-            as_type=AssetSubset,
-        )
 
-    def with_updates(
-        self, context: "AssetConditionEvaluationContext", evaluation: "AssetConditionEvaluation"
-    ) -> "AssetConditionCursor":
-        newly_materialized_requested_or_discarded_subset = (
-            context.materialized_since_previous_tick_subset
-            | evaluation.get_requested_or_discarded_subset(context.condition)
-        )
-
-        handled_subset = (
-            self.handled_subset or context.empty_subset()
-        ) | newly_materialized_requested_or_discarded_subset
-
-        # for now, hard-code the materialized_requested_or_discarded_subset location
-        return self._replace(
-            previous_evaluation=evaluation,
-            extras=[
-                AssetConditionCursorExtras(
-                    condition_snapshot=_get_placeholder_missing_condition().snapshot,
-                    extras={_PLACEHOLDER_HANDLED_SUBSET_KEY: handled_subset},
-                )
-            ],
-        )
-
-
+@whitelist_for_serdes
 class AssetDaemonCursor(NamedTuple):
-    """State that's saved between reconciliation evaluations.
+    """State that's stored between daemon evaluations.
 
     Attributes:
-        latest_storage_id:
-            The latest observed storage ID across all assets. Useful for finding out what has
-            happened since the last tick.
-        handled_root_asset_keys:
-            Every entry is a non-partitioned asset with no parents that has been requested by this
-            sensor, discarded by this sensor, or has been materialized (even if not by this sensor).
-        handled_root_partitions_by_asset_key:
-            Every key is a partitioned root asset. Every value is the set of that asset's partitions
-            that have been requested by this sensor, discarded by this sensor,
-            or have been materialized (even if not by this sensor).
-        last_observe_request_timestamp_by_asset_key:
-            Every key is an observable source asset that has been auto-observed. The value is the
-            timestamp of the tick that requested the observation.
+        evaluation_id (int): The ID of the evaluation that produced this cursor.
+        asset_cursors (Sequence[AssetConditionCursor]): The state of each asset that the daemon
+            is responsible for handling.
     """
 
-    latest_storage_id: Optional[int]
-    handled_root_asset_keys: AbstractSet[AssetKey]
-    handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
     evaluation_id: int
+    asset_cursors: Sequence[AssetConditionCursor]
+
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
-    latest_evaluation_by_asset_key: Mapping[AssetKey, "AssetConditionEvaluation"]
-    latest_evaluation_timestamp: Optional[float]
 
-    def was_previously_handled(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.handled_root_asset_keys
-
-    def asset_cursor_for_key(
-        self, asset_key: AssetKey, asset_graph: AssetGraph
-    ) -> AssetConditionCursor:
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        handled_partitions_subset = self.handled_root_partitions_by_asset_key.get(asset_key)
-        if handled_partitions_subset is not None:
-            handled_subset = AssetSubset(asset_key=asset_key, value=handled_partitions_subset)
-        elif asset_key in self.handled_root_asset_keys:
-            handled_subset = AssetSubset(asset_key=asset_key, value=True)
-        else:
-            handled_subset = AssetSubset.empty(asset_key, partitions_def)
-
-        previous_evaluation = self.latest_evaluation_by_asset_key.get(asset_key)
-        return AssetConditionCursor(
-            asset_key=asset_key,
-            previous_evaluation=previous_evaluation,
-            previous_max_storage_id=self.latest_storage_id,
-            previous_evaluation_timestamp=self.latest_evaluation_timestamp,
-            extras=[
-                AssetConditionCursorExtras(
-                    condition_snapshot=_get_placeholder_missing_condition().snapshot,
-                    extras={"handled_subset": handled_subset},
-                )
-            ],
+    @staticmethod
+    def empty(evaluation_id: int = 0) -> "AssetDaemonCursor":
+        return AssetDaemonCursor(
+            evaluation_id=evaluation_id,
+            asset_cursors=[],
+            last_observe_request_timestamp_by_asset_key={},
         )
+
+    @property
+    @functools.lru_cache(maxsize=1)
+    def asset_cursors_by_key(self) -> Mapping[AssetKey, AssetConditionCursor]:
+        """Efficient lookup of asset cursors by asset key."""
+        return {cursor.asset_key: cursor for cursor in self.asset_cursors}
+
+    def get_asset_cursor(self, asset_key: AssetKey) -> AssetConditionCursor:
+        """Returns the AssetConditionCursor associated with the given asset key. If no stored
+        cursor exists, returns an empty cursor.
+        """
+        return self.asset_cursors_by_key.get(asset_key) or AssetConditionCursor.empty(asset_key)
+
+    def get_previous_evaluation(self, asset_key: AssetKey) -> Optional["AssetConditionEvaluation"]:
+        """Returns the previous AssetConditionEvaluation for a given asset key, if it exists."""
+        cursor = self.get_asset_cursor(asset_key)
+        return cursor.previous_evaluation if cursor else None
 
     def with_updates(
         self,
-        latest_storage_id: Optional[int],
         evaluation_id: int,
+        evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
-        observe_request_timestamp: float,
-        evaluations: Sequence["AssetConditionEvaluation"],
-        evaluation_time: datetime.datetime,
         asset_cursors: Sequence[AssetConditionCursor],
     ) -> "AssetDaemonCursor":
-        """Returns a cursor that represents this cursor plus the updates that have happened within the
-        tick.
-        """
-        result_last_observe_request_timestamp_by_asset_key = {
-            **self.last_observe_request_timestamp_by_asset_key
-        }
-        for asset_key in newly_observe_requested_asset_keys:
-            result_last_observe_request_timestamp_by_asset_key[
-                asset_key
-            ] = observe_request_timestamp
-
-        if latest_storage_id and self.latest_storage_id:
-            check.invariant(
-                latest_storage_id >= self.latest_storage_id,
-                "Latest storage ID should be >= previous latest storage ID",
-            )
-
-        latest_evaluation_by_asset_key = {
-            evaluation.asset_key: evaluation for evaluation in evaluations
-        }
-
-        return AssetDaemonCursor(
-            latest_storage_id=latest_storage_id or self.latest_storage_id,
-            handled_root_asset_keys={
-                cursor.asset_key
-                for cursor in asset_cursors
-                if cursor.handled_subset is not None
-                and not cursor.handled_subset.is_partitioned
-                and cursor.handled_subset.bool_value
-            },
-            handled_root_partitions_by_asset_key={
-                cursor.asset_key: cursor.handled_subset.subset_value
-                for cursor in asset_cursors
-                if cursor.handled_subset is not None and cursor.handled_subset.is_partitioned
-            },
+        return self._replace(
             evaluation_id=evaluation_id,
-            last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
-            latest_evaluation_by_asset_key=latest_evaluation_by_asset_key,
-            latest_evaluation_timestamp=evaluation_time.timestamp(),
-        )
-
-    @classmethod
-    def empty(cls) -> "AssetDaemonCursor":
-        return AssetDaemonCursor(
-            latest_storage_id=None,
-            handled_root_partitions_by_asset_key={},
-            handled_root_asset_keys=set(),
-            evaluation_id=0,
-            last_observe_request_timestamp_by_asset_key={},
-            latest_evaluation_by_asset_key={},
-            latest_evaluation_timestamp=None,
-        )
-
-    @classmethod
-    def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetDaemonCursor":
-        from .asset_condition import AssetConditionEvaluationWithRunIds
-
-        data = json.loads(cursor)
-
-        if isinstance(data, list):  # backcompat
-            check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
-            (
-                latest_storage_id,
-                serialized_handled_root_asset_keys,
-                serialized_handled_root_partitions_by_asset_key,
-            ) = data[:3]
-
-            evaluation_id = data[3] if len(data) == 4 else 0
-            serialized_last_observe_request_timestamp_by_asset_key = {}
-            serialized_latest_evaluation_by_asset_key = {}
-            latest_evaluation_timestamp = 0
-        else:
-            latest_storage_id = data["latest_storage_id"]
-            serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
-            serialized_handled_root_partitions_by_asset_key = data[
-                "handled_root_partitions_by_asset_key"
-            ]
-            evaluation_id = data["evaluation_id"]
-            serialized_last_observe_request_timestamp_by_asset_key = data.get(
-                "last_observe_request_timestamp_by_asset_key", {}
-            )
-            serialized_latest_evaluation_by_asset_key = data.get(
-                "latest_evaluation_by_asset_key", {}
-            )
-            latest_evaluation_timestamp = data.get("latest_evaluation_timestamp", 0)
-
-        handled_root_partitions_by_asset_key = {}
-        for (
-            key_str,
-            serialized_subset,
-        ) in serialized_handled_root_partitions_by_asset_key.items():
-            key = AssetKey.from_user_string(key_str)
-            if key not in asset_graph.materializable_asset_keys:
-                continue
-
-            partitions_def = asset_graph.get_partitions_def(key)
-            if partitions_def is None:
-                continue
-
-            try:
-                # in the case that the partitions def has changed, we may not be able to deserialize
-                # the corresponding subset. in this case, we just use an empty subset
-                subset = partitions_def.deserialize_subset(serialized_subset)
-                # this covers the case in which the start date has changed for a time-partitioned
-                # asset. in reality, we should be using the can_deserialize method but because we
-                # are not storing the serializable unique id, we can't do that.
-                if (
-                    isinstance(subset, TimeWindowPartitionsSubset)
-                    and isinstance(partitions_def, TimeWindowPartitionsDefinition)
-                    and any(
-                        time_window.start < partitions_def.start
-                        for time_window in subset.included_time_windows
-                    )
-                ):
-                    subset = partitions_def.empty_subset()
-            except:
-                subset = partitions_def.empty_subset()
-            handled_root_partitions_by_asset_key[key] = subset
-
-        latest_evaluation_by_asset_key = {}
-        for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
-            key = AssetKey.from_user_string(key_str)
-            deserialized_evaluation = deserialize_value(serialized_evaluation)
-            if isinstance(deserialized_evaluation, AssetConditionEvaluationWithRunIds):
-                evaluation = deserialized_evaluation.evaluation
-            else:
-                evaluation = deserialized_evaluation
-            latest_evaluation_by_asset_key[key] = evaluation
-
-        return cls(
-            latest_storage_id=latest_storage_id,
-            handled_root_asset_keys={
-                AssetKey.from_user_string(key_str) for key_str in serialized_handled_root_asset_keys
-            },
-            handled_root_partitions_by_asset_key=handled_root_partitions_by_asset_key,
-            evaluation_id=evaluation_id,
+            asset_cursors=asset_cursors,
             last_observe_request_timestamp_by_asset_key={
-                AssetKey.from_user_string(key_str): timestamp
-                for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
+                **self.last_observe_request_timestamp_by_asset_key,
+                **{
+                    asset_key: evaluation_timestamp
+                    for asset_key in newly_observe_requested_asset_keys
+                },
             },
-            latest_evaluation_by_asset_key=latest_evaluation_by_asset_key,
-            latest_evaluation_timestamp=latest_evaluation_timestamp,
         )
 
-    @classmethod
-    def get_evaluation_id_from_serialized(cls, cursor: str) -> Optional[int]:
-        data = json.loads(cursor)
-        if isinstance(data, list):  # backcompat
-            check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
-            return data[3] if len(data) == 4 else None
-        else:
-            return data["evaluation_id"]
+    def __hash__(self) -> int:
+        return hash(id(self))
 
-    def serialize(self) -> str:
-        serializable_handled_root_partitions_by_asset_key = {
-            key.to_user_string(): subset.serialize()
-            for key, subset in self.handled_root_partitions_by_asset_key.items()
-        }
-        serialized = json.dumps(
-            {
-                "latest_storage_id": self.latest_storage_id,
-                "handled_root_asset_keys": [
-                    key.to_user_string() for key in self.handled_root_asset_keys
-                ],
-                "handled_root_partitions_by_asset_key": (
-                    serializable_handled_root_partitions_by_asset_key
+
+# BACKCOMPAT
+
+
+def get_backcompat_asset_condition_cursor(
+    asset_key: AssetKey,
+    latest_storage_id: Optional[int],
+    latest_timestamp: Optional[float],
+    latest_evaluation: Optional["AssetConditionEvaluation"],
+    handled_root_subset: Optional[AssetSubset],
+) -> AssetConditionCursor:
+    """Generates an AssetDaemonCursor from information available on the old cursor format."""
+    from dagster._core.definitions.asset_condition import RuleCondition
+    from dagster._core.definitions.auto_materialize_rule import MaterializeOnMissingRule
+
+    return AssetConditionCursor(
+        asset_key=asset_key,
+        previous_evaluation=latest_evaluation,
+        previous_evaluation_timestamp=latest_timestamp,
+        previous_max_storage_id=latest_storage_id,
+        extras=[
+            # the only information we need to preserve from the previous cursor is the handled
+            # subset
+            AssetConditionCursorExtras(
+                condition_snapshot=RuleCondition(MaterializeOnMissingRule()).snapshot,
+                extras={MaterializeOnMissingRule.HANDLED_SUBSET_KEY: handled_root_subset},
+            )
+        ],
+    )
+
+
+def backcompat_deserialize_asset_daemon_cursor_str(
+    cursor_str: str, asset_graph: Optional[AssetGraph], default_evaluation_id: int
+) -> AssetDaemonCursor:
+    """This serves as a backcompat layer for deserializing the old cursor format. Some information
+    is impossible to fully recover, this will recover enough to continue operating as normal.
+    """
+    from .asset_condition import AssetConditionEvaluationWithRunIds
+
+    data = json.loads(cursor_str)
+
+    if isinstance(data, list):
+        evaluation_id = data[0] if isinstance(data[0], int) else default_evaluation_id
+        return AssetDaemonCursor.empty(evaluation_id)
+    elif not isinstance(data, dict):
+        return AssetDaemonCursor.empty(default_evaluation_id)
+
+    serialized_last_observe_request_timestamp_by_asset_key = data.get(
+        "last_observe_request_timestamp_by_asset_key", {}
+    )
+    last_observe_request_timestamp_by_asset_key = {
+        AssetKey.from_user_string(key_str): timestamp
+        for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
+    }
+
+    partition_subsets_by_asset_key = {}
+    for key_str, serialized_str in data.get("handled_root_partitions_by_asset_key", {}).items():
+        asset_key = AssetKey.from_user_string(key_str)
+        partitions_def = asset_graph.get_partitions_def(asset_key) if asset_graph else None
+        if not partitions_def:
+            continue
+        try:
+            partition_subsets_by_asset_key[asset_key] = partitions_def.deserialize_subset(
+                serialized_str
+            )
+        except:
+            continue
+
+    handled_root_asset_graph_subset = AssetGraphSubset(
+        non_partitioned_asset_keys={
+            AssetKey.from_user_string(key_str)
+            for key_str in data.get("handled_root_asset_keys", set())
+        },
+        partitions_subsets_by_asset_key=partition_subsets_by_asset_key,
+    )
+
+    serialized_latest_evaluation_by_asset_key = data.get("latest_evaluation_by_asset_key", {})
+    latest_evaluation_by_asset_key = {}
+    for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
+        key = AssetKey.from_user_string(key_str)
+
+        class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
+            @property
+            def partitions_def(self) -> Optional[PartitionsDefinition]:
+                return asset_graph.get_partitions_def(key) if asset_graph else None
+
+        # create a new WhitelistMap that can deserialize SerializedPartitionSubset objects stored
+        # on the old cursor format
+        whitelist_map = WhitelistMap(
+            object_serializers=_WHITELIST_MAP.object_serializers,
+            object_deserializers={
+                **_WHITELIST_MAP.object_deserializers,
+                "AutoMaterializeAssetEvaluation": BackcompatDeserializer(
+                    klass=AssetConditionEvaluationWithRunIds
                 ),
-                "evaluation_id": self.evaluation_id,
-                "last_observe_request_timestamp_by_asset_key": {
-                    key.to_user_string(): timestamp
-                    for key, timestamp in self.last_observe_request_timestamp_by_asset_key.items()
-                },
-                "latest_evaluation_by_asset_key": {
-                    key.to_user_string(): serialize_value(evaluation)
-                    for key, evaluation in self.latest_evaluation_by_asset_key.items()
-                },
-                "latest_evaluation_timestamp": self.latest_evaluation_timestamp,
-            }
+            },
+            enum_serializers=_WHITELIST_MAP.enum_serializers,
         )
-        return serialized
+
+        # these string cursors will contain AutoMaterializeAssetEvaluation objects, which get
+        # deserialized into AssetConditionEvaluationWithRunIds, not AssetConditionEvaluation
+        evaluation = deserialize_value(
+            serialized_evaluation, AssetConditionEvaluationWithRunIds, whitelist_map=whitelist_map
+        ).evaluation
+        latest_evaluation_by_asset_key[key] = evaluation
+
+    asset_cursors = []
+    for asset_key, latest_evaluation in latest_evaluation_by_asset_key.items():
+        asset_cursors.append(
+            get_backcompat_asset_condition_cursor(
+                asset_key,
+                data.get("latest_storage_id"),
+                data.get("latest_timestamp"),
+                latest_evaluation,
+                handled_root_asset_graph_subset.get_asset_subset(asset_key, asset_graph)
+                if asset_graph
+                else None,
+            )
+        )
+
+    return AssetDaemonCursor(
+        evaluation_id=default_evaluation_id,
+        asset_cursors=asset_cursors,
+        last_observe_request_timestamp_by_asset_key=last_observe_request_timestamp_by_asset_key,
+    )
 
 
 @whitelist_for_serdes
@@ -390,24 +283,7 @@ class LegacyAssetDaemonCursorWrapper(NamedTuple):
 
     serialized_cursor: str
 
-    def get_asset_daemon_cursor(self, asset_graph: AssetGraph) -> AssetDaemonCursor:
-        return AssetDaemonCursor.from_serialized(self.serialized_cursor, asset_graph)
-
-    @staticmethod
-    def from_compressed(compressed: str) -> "LegacyAssetDaemonCursorWrapper":
-        """This method takes a b64 encoded, zlib compressed string and returns the original
-        BackcompatAssetDaemonEvaluationInfo object.
-        """
-        decoded_bytes = base64.b64decode(compressed)
-        decompressed_bytes = zlib.decompress(decoded_bytes)
-        decoded_str = decompressed_bytes.decode("utf-8")
-        return deserialize_value(decoded_str, LegacyAssetDaemonCursorWrapper)
-
-    def to_compressed(self) -> str:
-        """This method compresses the serialized cursor and returns a b64 encoded string to be
-        stored as a string value.
-        """
-        serialized_bytes = serialize_value(self).encode("utf-8")
-        compressed_bytes = zlib.compress(serialized_bytes)
-        encoded_str = base64.b64encode(compressed_bytes)
-        return encoded_str.decode("utf-8")
+    def get_asset_daemon_cursor(self, asset_graph: Optional[AssetGraph]) -> AssetDaemonCursor:
+        return backcompat_deserialize_asset_daemon_cursor_str(
+            self.serialized_cursor, asset_graph, 0
+        )
