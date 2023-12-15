@@ -650,6 +650,52 @@ def test_to_string_basic():
     )
 
 
+def test_to_string_binary_operators():
+    foo_bar = AssetSelection.keys(AssetKey(["foo", "bar"]))
+    baz = AssetSelection.keys("baz")
+    bork = AssetSelection.keys("bork")
+    assert str(foo_bar | baz) == "foo/bar or baz"
+    assert str(foo_bar & baz) == "foo/bar and baz"
+    assert str(foo_bar - baz) == "foo/bar - baz"
+
+    assert str(foo_bar | baz | bork) == "foo/bar or baz or bork"
+    assert str(foo_bar & baz & bork) == "foo/bar and baz and bork"
+
+    assert str((foo_bar | baz) | bork) == "foo/bar or baz or bork"
+    assert str(foo_bar | (baz | bork)) == "foo/bar or baz or bork"
+    assert str((foo_bar & baz) & bork) == "foo/bar and baz and bork"
+    assert str(foo_bar & (baz & bork)) == "foo/bar and baz and bork"
+
+    assert str(foo_bar | (baz & bork)) == "foo/bar or (baz and bork)"
+    assert str(foo_bar & (baz | bork)) == "foo/bar and (baz or bork)"
+
+    assert str(foo_bar - baz - bork) == "(foo/bar - baz) - bork"
+    assert str((foo_bar - baz) - bork) == "(foo/bar - baz) - bork"
+    assert str(foo_bar - (baz - bork)) == "foo/bar - (baz - bork)"
+
+    assert (
+        str(AssetSelection.keys("foo/bar", "baz") & AssetSelection.keys("bork"))
+        == "(foo/bar or baz) and bork"
+    )
+    assert (
+        str(AssetSelection.keys("bork") & AssetSelection.keys("foo/bar", "baz"))
+        == "bork and (foo/bar or baz)"
+    )
+    assert (
+        str(AssetSelection.keys("foo/bar", "baz") | AssetSelection.keys("bork"))
+        == "(foo/bar or baz) or bork"
+    )
+    assert (
+        str(AssetSelection.keys("bork") | AssetSelection.keys("foo/bar", "baz"))
+        == "bork or (foo/bar or baz)"
+    )
+
+    assert (
+        str(AssetSelection.groups("foo", "bar") & AssetSelection.groups("baz", "bork"))
+        == "group:(foo or bar) and group:(baz or bork)"
+    )
+
+
 def test_empty_namedtuple_truthy():
     # namedtuples with no fields are still truthy
     assert bool(AllAssetCheckSelection.all())

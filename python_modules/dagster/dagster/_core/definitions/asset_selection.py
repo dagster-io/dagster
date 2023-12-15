@@ -414,6 +414,15 @@ class AssetSelection(ABC, BaseModel, frozen=True):
             func = getattr(BaseModel, "copy")
         return func(self, update=kwargs)
 
+    def needs_parentheses_when_operand(self) -> bool:
+        """When generating a string representation of an asset selection and this asset selection
+        is an operand in a larger expression, whether it needs to be surrounded by parentheses.
+        """
+        return False
+
+    def operand__str__(self) -> str:
+        return f"({self})" if self.needs_parentheses_when_operand() else str(self)
+
 
 @whitelist_for_serdes
 class AllSelection(AssetSelection, frozen=True):
@@ -510,6 +519,12 @@ class AndAssetSelection(
             ]
         )
 
+    def needs_parentheses_when_operand(self) -> bool:
+        return True
+
+    def __str__(self) -> str:
+        return " and ".join(operand.operand__str__() for operand in self.operands)
+
 
 @whitelist_for_serdes
 class OrAssetSelection(
@@ -537,6 +552,12 @@ class OrAssetSelection(
             ]
         )
 
+    def needs_parentheses_when_operand(self) -> bool:
+        return True
+
+    def __str__(self) -> str:
+        return " or ".join(operand.operand__str__() for operand in self.operands)
+
 
 @whitelist_for_serdes
 class SubtractAssetSelection(
@@ -560,6 +581,12 @@ class SubtractAssetSelection(
             left=self.left.to_serializable_asset_selection(asset_graph),
             right=self.right.to_serializable_asset_selection(asset_graph),
         )
+
+    def needs_parentheses_when_operand(self) -> bool:
+        return True
+
+    def __str__(self) -> str:
+        return f"{self.left.operand__str__()} - {self.right.operand__str__()}"
 
 
 @whitelist_for_serdes
@@ -691,6 +718,9 @@ class KeysAssetSelection(AssetSelection, frozen=True):
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self
 
+    def needs_parentheses_when_operand(self) -> bool:
+        return len(self.selected_keys) > 1
+
     def __str__(self) -> str:
         return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
 
@@ -767,6 +797,19 @@ class UpstreamAssetSelection(
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self.replace(child=self.child.to_serializable_asset_selection(asset_graph))
+
+    def __str__(self) -> str:
+        if self.depth is None:
+            base = f"*({self.child})"
+        elif self.depth == 0:
+            base = str(self.child)
+        else:
+            base = f"{'+' * self.depth}({self.child})"
+
+        if self.include_self:
+            return base
+        else:
+            return f"{base} - ({self.child})"
 
 
 @whitelist_for_serdes
