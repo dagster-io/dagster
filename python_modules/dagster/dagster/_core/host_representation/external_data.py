@@ -96,6 +96,7 @@ from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import is_whitelisted_for_serdes_namedtuple
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -552,6 +553,13 @@ class ExternalSensorData(
                     ),
                 )
             }
+
+        if asset_selection:
+            check.opt_inst_param(asset_selection, "asset_selection", AssetSelection)
+            check.invariant(
+                is_whitelisted_for_serdes_namedtuple(asset_selection),
+                "asset_selection must be serializable",
+            )
 
         return super(ExternalSensorData, cls).__new__(
             cls,
@@ -2036,6 +2044,14 @@ def external_sensor_data_from_def(
             )
             for base_asset_job_name in repository_def.get_implicit_asset_job_names()
         }
+
+        if is_whitelisted_for_serdes_namedtuple(sensor_def.asset_selection):
+            asset_selection = sensor_def.asset_selection
+        else:
+            asset_selection = AssetSelection.keys(
+                *sensor_def.asset_selection.resolve(repository_def.asset_graph)
+            )
+
     else:
         target_dict = {
             target.job_name: ExternalTargetData(
@@ -2057,7 +2073,7 @@ def external_sensor_data_from_def(
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),
         default_status=sensor_def.default_status,
         sensor_type=sensor_def.sensor_type,
-        asset_selection=sensor_def.asset_selection,
+        asset_selection=asset_selection,
     )
 
 
