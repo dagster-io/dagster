@@ -55,9 +55,9 @@ import teams from './optag-images/msteams.svg';
 import noteable from './optag-images/noteable.svg';
 import notion from './optag-images/notion.svg';
 import numpy from './optag-images/numpy.svg';
+import omni from './optag-images/omni.svg';
 import openai from './optag-images/openai.svg';
 import optuna from './optag-images/optuna.svg';
-import omni from './optag-images/omni.svg';
 import pandas from './optag-images/pandas.svg';
 import parquet from './optag-images/parquet.svg';
 import plotly from './optag-images/plotly.svg';
@@ -590,7 +590,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
         const text = known?.content || tag.label;
-        // NULL color means we inherit the color from the svg. 
+        // NULL color means we inherit the color from the svg.
         // This is useful when the icon requires mulltiple colors. like Airflow.
         const color = known?.color || null;
         const reversed = known && 'reversed' in known ? known.reversed : false;
