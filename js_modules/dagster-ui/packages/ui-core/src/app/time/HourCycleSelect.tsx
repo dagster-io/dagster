@@ -99,7 +99,10 @@ export const HourCycleSelect = () => {
       }}
       onItemSelect={(item) => setHourCycle(item.key as HourCycle)}
     >
-      <Button rightIcon={<Icon name="arrow_drop_down" />}>
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
         {hourCycle === 'Automatic' || !hourCycle ? labels.automatic : labels[hourCycle]}
       </Button>
     </Select>

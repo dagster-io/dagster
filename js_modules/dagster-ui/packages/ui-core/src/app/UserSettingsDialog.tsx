@@ -87,7 +87,10 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
 
   const trigger = React.useCallback(
     (timezone: string) => (
-      <Button rightIcon={<Icon name="arrow_drop_down" />}>
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
         {timezone === 'Automatic' ? automaticLabel() : timezone}
       </Button>
     ),
@@ -120,57 +123,59 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
           <Box padding={{bottom: 8}}>
             <Subheading>Preferences</Subheading>
           </Box>
-          <MetadataTable
-            rows={[
-              {
-                key: 'Timezone',
-                value: (
-                  <Box>
-                    <TimezoneSelect trigger={trigger} />
-                  </Box>
-                ),
-              },
-              {
-                key: 'Hour format',
-                value: (
-                  <Box>
-                    <HourCycleSelect />
-                  </Box>
-                ),
-              },
-              {
-                key: 'Theme',
-                label: (
-                  <div>
-                    Theme (
-                    <a
-                      href="https://github.com/dagster-io/dagster/discussions/18439"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Learn more
-                    </a>
-                    )
-                  </div>
-                ),
-                value: (
-                  <Box>
-                    <ThemeSelect theme={theme} onChange={setTheme} />
-                  </Box>
-                ),
-              },
-              {
-                key: 'Enable keyboard shortcuts',
-                value: (
-                  <Checkbox
-                    checked={shortcutsEnabled}
-                    format="switch"
-                    onChange={toggleKeyboardShortcuts}
-                  />
-                ),
-              },
-            ]}
-          />
+          <Box
+            padding={{bottom: 4, right: 16}}
+            flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          >
+            <Box style={{width: '100%'}}>Timezone</Box>
+            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
+              <TimezoneSelect trigger={trigger} />
+            </Box>
+          </Box>
+
+          <Box
+            padding={{bottom: 4, right: 16}}
+            flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          >
+            <Box style={{width: '100%'}}>Hour format</Box>
+            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
+              <HourCycleSelect />
+            </Box>
+          </Box>
+
+          <Box
+            padding={{bottom: 4, right: 16}}
+            flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          >
+            <Box style={{width: '100%'}}>
+              <span>Theme (</span>
+              <a
+                href="https://github.com/dagster-io/dagster/discussions/18439"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Learn more
+              </a>
+              )
+            </Box>
+            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
+              <ThemeSelect theme={theme} onChange={setTheme} />
+            </Box>
+          </Box>
+
+          <Box
+            padding={{vertical: 8, right: 16}}
+            flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          >
+            <Box style={{width: '100%'}}>Enable keyboard shortcuts</Box>
+            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
+              <Checkbox
+                checked={shortcutsEnabled}
+                format="switch"
+                onChange={toggleKeyboardShortcuts}
+              />
+            </Box>
+          </Box>
         </Box>
         <Box padding={{top: 16}} border="top">
           <Box padding={{bottom: 8}}>

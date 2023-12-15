@@ -55,7 +55,12 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
       }}
       onItemSelect={(item) => onChange(item.key)}
     >
-      <Button rightIcon={<Icon name="arrow_drop_down" />}>{activeItem?.label}</Button>
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
+        {activeItem?.label}
+      </Button>
     </Select>
   );
 };
