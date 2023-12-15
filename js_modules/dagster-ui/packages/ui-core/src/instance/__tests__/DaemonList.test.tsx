@@ -18,6 +18,10 @@ jest.mock('../../app/Permissions', () => ({
   },
 }));
 
+jest.mock('../../assets/AutomationPolicySensorFlag', () => ({
+  useAutomationPolicySensorFlag: jest.fn().mockReturnValue('has-global-amp'),
+}));
+
 const mockDaemons = [
   buildDaemonStatus({
     id: '1',
@@ -91,7 +95,13 @@ describe('DaemonList', () => {
     };
 
     render(
-      <MockedProvider mocks={[autoMaterializePausedMock(false), setAutoMaterializePausedMock]}>
+      <MockedProvider
+        mocks={[
+          autoMaterializePausedMock(false),
+          setAutoMaterializePausedMock,
+          autoMaterializePausedMock(true),
+        ]}
+      >
         <CustomConfirmationProvider>
           <DaemonList daemonStatuses={mockDaemons} />
         </CustomConfirmationProvider>
@@ -123,7 +133,13 @@ describe('DaemonList', () => {
     };
 
     render(
-      <MockedProvider mocks={[autoMaterializePausedMock(true), setAutoMaterializePausedMock]}>
+      <MockedProvider
+        mocks={[
+          autoMaterializePausedMock(true),
+          setAutoMaterializePausedMock,
+          autoMaterializePausedMock(false),
+        ]}
+      >
         <CustomConfirmationProvider>
           <DaemonList daemonStatuses={mockDaemons} />
         </CustomConfirmationProvider>
