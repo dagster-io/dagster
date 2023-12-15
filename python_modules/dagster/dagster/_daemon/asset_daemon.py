@@ -97,7 +97,7 @@ def get_current_evaluation_id(
             else None
         )
 
-    return AssetDaemonCursor.get_evaluation_id_from_serialized(raw_cursor) if raw_cursor else None
+    return AssetDaemonCursor.from_serialized(raw_cursor, None).evaluation_id if raw_cursor else None
 
 
 class AutoMaterializeLaunchContext:
@@ -272,11 +272,7 @@ class AssetDaemon(IntervalDaemon):
         )
 
         raw_cursor = _get_raw_cursor(instance)
-        stored_cursor = (
-            AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
-            if raw_cursor
-            else AssetDaemonCursor.empty()
-        )
+        stored_cursor = AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
 
         tick_retention_settings = instance.get_tick_retention_settings(
             InstigatorType.AUTO_MATERIALIZE

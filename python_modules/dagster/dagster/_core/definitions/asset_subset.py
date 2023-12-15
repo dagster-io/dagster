@@ -17,6 +17,10 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -120,12 +124,47 @@ class AssetSubset(NamedTuple):
                 ),
             )
 
+    def valid_subset(self, partitions_def: Optional[PartitionsDefinition]) -> "AssetSubset":
+        """Returns the asset subset representing only the asset partitions which are valid for the
+        current partitions def. Because AssetSubsets may be serialized at a point in time when the
+        set of valid partitions is different from the current set of valid partitions, this check
+        is sometimes necessary.
+        """
+        if self.is_partitioned:
+            if partitions_def is None:
+                return AssetSubset.empty(self.asset_key, partitions_def)
+            # handle the case where a TimeWindowPartitionsDefinition has changed between
+            # serialization time and now
+            elif isinstance(self.value, TimeWindowPartitionsSubset):
+                if (
+                    not isinstance(partitions_def, TimeWindowPartitionsDefinition)
+                    or partitions_def.cron_schedule != self.value.partitions_def.cron_schedule
+                    or any(
+                        time_window.start < partitions_def.start
+                        for time_window in self.value.included_time_windows
+                    )
+                ):
+                    return AssetSubset.empty(self.asset_key, partitions_def)
+                else:
+                    return self
+            # TODO: handle more cases here
+            else:
+                return self
+        else:
+            return (
+                self
+                if partitions_def is None
+                # was previous partitioned, is now unpartitioned
+                else AssetSubset.empty(self.asset_key, partitions_def)
+            )
+
     def inverse(
         self,
         partitions_def: Optional[PartitionsDefinition],
         current_time: Optional[datetime.datetime] = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> "AssetSubset":
+        """Returns the AssetSubset containing all asset partitions which are not in this AssetSubset."""
         if partitions_def is None:
             return self._replace(value=not self.bool_value)
         else:

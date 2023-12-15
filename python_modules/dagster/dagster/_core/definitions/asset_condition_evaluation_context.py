@@ -151,7 +151,18 @@ class AssetConditionEvaluationContext:
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
 
-    @property
+    @functools.cached_property
+    @root_property
+    def new_max_storage_id(self) -> Optional[int]:
+        """Returns the new max storage ID for this asset, if any."""
+        # TODO: This is not a good way of doing this, as it opens us up to potential race conditions,
+        # but in the interest of keeping this PR simple, I'm leaving this logic as is. In the next
+        # PR, I'll update the code to return a "maximum observed record id" from inside the
+        # `get_asset_partitions_updated_after_cursor` call.
+        return self.instance_queryer.instance.event_log_storage.get_maximum_record_id()
+
+    @functools.cached_property
+    @root_property
     def materialized_since_previous_tick_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
         return AssetSubset.from_asset_partitions_set(
@@ -160,44 +171,28 @@ class AssetConditionEvaluationContext:
             self.instance_queryer.get_asset_partitions_updated_after_cursor(
                 self.asset_key,
                 asset_partitions=None,
-                after_cursor=self.cursor.previous_max_storage_id if self.cursor else None,
+                after_cursor=self.cursor.previous_max_storage_id,
                 respect_materialization_data_versions=False,
             ),
         )
 
     @property
-    def previous_tick_requested_or_discarded_subset(self) -> AssetSubset:
-        if not self.cursor.previous_evaluation:
+    @root_property
+    def previous_tick_requested_subset(self) -> AssetSubset:
+        """The set of asset partitions that were requested (or discarded) on the previous tick."""
+        previous_evaluation = self.cursor.previous_evaluation
+        if previous_evaluation is None:
             return self.empty_subset()
-        return self.cursor.previous_evaluation.get_requested_or_discarded_subset(
-            self.root_context.condition
-        )
+
+        return previous_evaluation.get_requested_or_discarded_subset(self.condition)
 
     @property
     def materialized_requested_or_discarded_since_previous_tick_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
-        return (
-            self.materialized_since_previous_tick_subset
-            | self.previous_tick_requested_or_discarded_subset
-        )
+        return self.materialized_since_previous_tick_subset | self.previous_tick_requested_subset
 
-    @property
-    def never_materialized_requested_or_discarded_root_subset(self) -> AssetSubset:
-        if self.asset_key not in self.asset_graph.root_materializable_or_observable_asset_keys:
-            return self.empty_subset()
-
-        handled_subset = (
-            self.cursor.get_extras_value(self.condition, "handled_subset", AssetSubset)
-            or self.empty_subset()
-        )
-        unhandled_subset = handled_subset.inverse(
-            self.partitions_def,
-            dynamic_partitions_store=self.instance_queryer,
-            current_time=self.evaluation_time,
-        )
-        return unhandled_subset - self.materialized_since_previous_tick_subset
-
-    @property
+    @functools.cached_property
+    @root_property
     def parent_has_updated_subset(self) -> AssetSubset:
         """Returns the set of asset partitions whose parents have updated since the last time this
         condition was evaluated.
@@ -206,7 +201,7 @@ class AssetConditionEvaluationContext:
             self.asset_key,
             self.partitions_def,
             self.root_context.instance_queryer.asset_partitions_with_newly_updated_parents(
-                latest_storage_id=self.previous_max_storage_id,
+                latest_storage_id=self.cursor.previous_max_storage_id,
                 child_asset_key=self.root_context.asset_key,
                 map_old_time_partitions=False,
             ),
