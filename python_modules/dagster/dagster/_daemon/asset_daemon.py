@@ -2,7 +2,7 @@ import logging
 import sys
 from collections import defaultdict
 from types import TracebackType
-from typing import Dict, Optional, Sequence, Tuple, Type
+from typing import Dict, Optional, Sequence, Tuple, Type, cast
 
 import pendulum
 
@@ -19,13 +19,15 @@ from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterUserCodeUnreachableError,
 )
-from dagster._core.host_representation.external import (
+from dagster._core.host_representation import (
     ExternalExecutionPlan,
     ExternalJob,
+    ExternalSensor,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorTick,
+    SensorInstigatorData,
     TickData,
     TickStatus,
 )
@@ -80,8 +82,21 @@ def _get_raw_cursor(instance: DagsterInstance) -> Optional[str]:
     return instance.daemon_cursor_storage.get_cursor_values({CURSOR_KEY}).get(CURSOR_KEY)
 
 
-def get_current_evaluation_id(instance: DagsterInstance) -> Optional[int]:
-    raw_cursor = _get_raw_cursor(instance)
+def get_current_evaluation_id(
+    instance: DagsterInstance, sensor: Optional[ExternalSensor]
+) -> Optional[int]:
+    if not sensor:
+        raw_cursor = _get_raw_cursor(instance)
+    else:
+        instigator_state = check.not_none(instance.schedule_storage).get_instigator_state(
+            sensor.get_external_origin_id(), sensor.selector_id
+        )
+        raw_cursor = (
+            cast(SensorInstigatorData, instigator_state.instigator_data).cursor
+            if instigator_state
+            else None
+        )
+
     return AssetDaemonCursor.get_evaluation_id_from_serialized(raw_cursor) if raw_cursor else None
 
 

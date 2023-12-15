@@ -86,6 +86,9 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.automation_policy_sensor_definition import (
+    AutomationPolicySensorDefinition,
+)
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
@@ -1208,6 +1211,11 @@ def define_sensors():
     def the_failure_sensor():
         pass
 
+    automation_policy_sensor = AutomationPolicySensorDefinition(
+        "my_automation_policy_sensor",
+        asset_selection=AssetSelection.keys("fresh_diamond_bottom"),
+    )
+
     return [
         always_no_config_sensor,
         always_error_sensor,
@@ -1224,6 +1232,7 @@ def define_sensors():
         many_asset_sensor,
         fresh_sensor,
         the_failure_sensor,
+        automation_policy_sensor,
     ]
 
 
