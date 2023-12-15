@@ -52,7 +52,7 @@ from dagster._serdes import (
     NamedTupleSerializer,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import UnpackContext, is_whitelisted_for_serdes_namedtuple
+from dagster._serdes.serdes import UnpackContext, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -1532,7 +1532,7 @@ class AssetMaterializationPlannedData(
         if partitions_subset:
             check.opt_inst_param(partitions_subset, "partitions_subset", PartitionsSubset)
             check.invariant(
-                is_whitelisted_for_serdes_namedtuple(partitions_subset),
+                is_whitelisted_for_serdes_object(partitions_subset),
                 "partitions_subset must be serializable",
             )
 
