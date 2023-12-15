@@ -717,7 +717,7 @@ def _store_output(
     if (
         step_output.properties.asset_check_key
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
-        or (output_context.has_asset_key and output_context.dagster_type.is_nothing)
+        or output_context.dagster_type.is_nothing
     ):
         yield from _log_asset_materialization_events_for_asset(
             step_context=step_context,
