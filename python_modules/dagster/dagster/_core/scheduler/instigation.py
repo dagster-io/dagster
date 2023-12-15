@@ -410,10 +410,6 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     @property
     def requested_asset_materialization_count(self) -> int:
-        check.invariant(
-            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
-            "Only auto-materialize ticks set requested_asset_materialization_count",
-        )
         if self.tick_data.status != TickStatus.SUCCESS:
             return 0
 
@@ -425,11 +421,6 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     @property
     def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
-        check.invariant(
-            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
-            "Only auto-materialize ticks set requested_asset_keys",
-        )
-
         if self.tick_data.status != TickStatus.SUCCESS:
             return {}
 
@@ -446,11 +437,6 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     @property
     def requested_asset_keys(self) -> AbstractSet[AssetKey]:
-        check.invariant(
-            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
-            "Only auto-materialize ticks set requested_asset_keys",
-        )
-
         if self.tick_data.status != TickStatus.SUCCESS:
             return set()
 
