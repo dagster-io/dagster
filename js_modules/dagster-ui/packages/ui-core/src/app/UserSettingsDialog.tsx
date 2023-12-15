@@ -7,6 +7,7 @@ import {
   DialogFooter,
   MetadataTable,
   Subheading,
+  Icon,
 } from '@dagster-io/ui-components';
 import {DAGSTER_THEME_KEY, DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
 import * as React from 'react';
@@ -19,7 +20,6 @@ import {HourCycleSelect} from './time/HourCycleSelect';
 import {ThemeSelect} from './time/ThemeSelect';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
-import {Icon} from '@dagster-io/ui-components';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
 type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlagType};
@@ -87,7 +87,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
 
   const trigger = React.useCallback(
     (timezone: string) => (
-      <Button rightIcon={<Icon name="arrow_drop_down"/>}>
+      <Button rightIcon={<Icon name="arrow_drop_down" />}>
         {timezone === 'Automatic' ? automaticLabel() : timezone}
       </Button>
     ),

@@ -1,4 +1,4 @@
-import {MenuDivider, MenuItem, Menu, Select, Button} from '@dagster-io/ui-components';
+import {MenuDivider, MenuItem, Menu, Select} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {TimeContext} from './TimeContext';
