@@ -87,7 +87,10 @@ basic_scenarios = {
     ),
     "multi_asset_one_parent_unreconciled": AssetReconciliationScenario(
         assets=multi_asset_after_fork,
-        unevaluated_runs=[run(["asset1", "asset2"], failed_asset_keys=["asset3"])],
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3"]),
+            run(["asset1", "asset2"], failed_asset_keys=["asset3"]),
+        ],
         expected_run_requests=[],
     ),
     ################################################################################################
@@ -95,7 +98,7 @@ basic_scenarios = {
     ################################################################################################
     "partial_run": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
-        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"])],
+        unevaluated_runs=[run(["asset1", "asset2"]), run(["asset1"], failed_asset_keys=["asset2"])],
         expected_run_requests=[],
     ),
     "partial_run_with_another_attempt": AssetReconciliationScenario(
