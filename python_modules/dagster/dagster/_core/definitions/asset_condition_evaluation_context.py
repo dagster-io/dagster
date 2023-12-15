@@ -2,7 +2,7 @@ import dataclasses
 import datetime
 import functools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Sequence, Tuple
 
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -153,16 +153,6 @@ class AssetConditionEvaluationContext:
 
     @functools.cached_property
     @root_property
-    def new_max_storage_id(self) -> Optional[int]:
-        """Returns the new max storage ID for this asset, if any."""
-        # TODO: This is not a good way of doing this, as it opens us up to potential race conditions,
-        # but in the interest of keeping this PR simple, I'm leaving this logic as is. In the next
-        # PR, I'll update the code to return a "maximum observed record id" from inside the
-        # `get_asset_partitions_updated_after_cursor` call.
-        return self.instance_queryer.instance.event_log_storage.get_maximum_record_id()
-
-    @functools.cached_property
-    @root_property
     def materialized_since_previous_tick_subset(self) -> AssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
         return AssetSubset.from_asset_partitions_set(
@@ -193,19 +183,35 @@ class AssetConditionEvaluationContext:
 
     @functools.cached_property
     @root_property
-    def parent_has_updated_subset(self) -> AssetSubset:
+    def _parent_has_updated_subset_and_new_latest_storage_id(
+        self,
+    ) -> Tuple[AssetSubset, Optional[int]]:
         """Returns the set of asset partitions whose parents have updated since the last time this
         condition was evaluated.
         """
-        return AssetSubset.from_asset_partitions_set(
-            self.asset_key,
-            self.partitions_def,
-            self.root_context.instance_queryer.asset_partitions_with_newly_updated_parents(
-                latest_storage_id=self.cursor.previous_max_storage_id,
-                child_asset_key=self.root_context.asset_key,
-                map_old_time_partitions=False,
-            ),
+        (
+            asset_partitions,
+            cursor,
+        ) = self.root_context.instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
+            latest_storage_id=self.cursor.previous_max_storage_id,
+            child_asset_key=self.root_context.asset_key,
+            map_old_time_partitions=False,
         )
+        return AssetSubset.from_asset_partitions_set(
+            self.asset_key, self.partitions_def, asset_partitions
+        ), cursor
+
+    @property
+    @root_property
+    def parent_has_updated_subset(self) -> AssetSubset:
+        subset, _ = self._parent_has_updated_subset_and_new_latest_storage_id
+        return subset
+
+    @property
+    @root_property
+    def new_max_storage_id(self) -> AssetSubset:
+        _, storage_id = self._parent_has_updated_subset_and_new_latest_storage_id
+        return storage_id
 
     @property
     def candidate_parent_has_or_will_update_subset(self) -> AssetSubset:
