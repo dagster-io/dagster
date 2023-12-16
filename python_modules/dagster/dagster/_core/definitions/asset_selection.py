@@ -440,7 +440,7 @@ class AndAssetSelection(
 @whitelist_for_serdes
 class SubtractAssetSelection(
     AssetSelection,
-    NamedTuple("_AndAssetSelection", [("left", AssetSelection), ("right", AssetSelection)]),
+    NamedTuple("_SubtractAssetSelection", [("left", AssetSelection), ("right", AssetSelection)]),
 ):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return self.left.resolve_inner(asset_graph) - self.right.resolve_inner(asset_graph)
