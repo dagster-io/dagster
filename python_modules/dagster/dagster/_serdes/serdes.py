@@ -829,10 +829,13 @@ def _pack_value(
     if isinstance(val, Enum):
         klass_name = val.__class__.__name__
         if not whitelist_map.has_enum_entry(klass_name):
+            if isinstance(val, str): # serialize StrEnums in their string value
+                return val.value
             raise SerializationError(
                 "Can only serialize whitelisted Enums, received"
                 f" {klass_name}.\nDescent path: {descent_path}",
             )
+        
         enum_serializer = whitelist_map.get_enum_entry(klass_name)
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
     if (

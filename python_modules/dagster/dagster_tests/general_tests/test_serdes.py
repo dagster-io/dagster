@@ -2,9 +2,9 @@ import dataclasses
 import re
 import string
 from collections import namedtuple
-from enum import Enum
+from enum import Enum, auto
 from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
-
+from strenum import LowercaseStrEnum
 import pydantic
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
@@ -180,6 +180,19 @@ def test_serdes_enum_backcompat():
     assert deserialized == Corge.FOO_FOO
 
 
+
+def test_str_enum_serialization_deserialisation():
+    """
+    Checks that (de)serializing an StrEnum from the strenum lib does not produces any error and returns the string value of the enum
+    """
+    class MyStrEnum(LowercaseStrEnum):
+        ONE_STR_ENUM = auto()
+    
+    enum_val = MyStrEnum.ONE_STR_ENUM 
+    serialized_value = serialize_value(val=enum_val) 
+    assert serialized_value == f'"{enum_val.value}"'
+    assert deserialize_value(serialized_value) == enum_val.value
+    
 def test_backward_compat_serdes():
     test_map = WhitelistMap.create()
 
