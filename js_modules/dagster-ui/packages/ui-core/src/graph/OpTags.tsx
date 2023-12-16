@@ -454,7 +454,7 @@ export const KNOWN_TAGS = {
   xgboost: {
     color: '#1A9EDB',
     icon: xgboost,
-    content: 'xgboost',
+    content: 'XGBoost',
   },
   jax: {
     color: null,
@@ -495,7 +495,7 @@ export const KNOWN_TAGS = {
   cube: {
     color: null,
     icon: cube,
-    content: 'cube',
+    content: 'Cube',
   },
   metabase: {
     color: '#509EE3',
@@ -516,7 +516,7 @@ export const KNOWN_TAGS = {
   hackernewsapi: {
     color: '#FB651E',
     icon: hackernewsapi,
-    content: 'Hackernews API',
+    content: 'Hacker News API',
   },
   tecton: {
     color: '#D30602',
