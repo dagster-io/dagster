@@ -129,6 +129,7 @@ setup(
             "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
             "morefs[asynclocal]; python_version>='3.8'",
+            "strenum",
         ],
         "mypy": [
             "mypy==0.991",
