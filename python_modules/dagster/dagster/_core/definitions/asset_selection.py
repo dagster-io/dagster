@@ -373,11 +373,17 @@ class AssetSelection(ABC):
                 f" {type(selection)}."
             )
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return AssetSelection.keys(*self.resolve(asset_graph))
+
 
 @whitelist_for_serdes
 class AllSelection(AssetSelection, NamedTuple("_AllSelection", [])):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return asset_graph.materializable_asset_keys
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
 
 
 @whitelist_for_serdes
@@ -387,6 +393,9 @@ class AllAssetCheckSelection(AssetSelection, NamedTuple("_AllAssetChecksSelectio
 
     def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
         return asset_graph.asset_check_keys
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
 
 
 @whitelist_for_serdes
@@ -403,6 +412,9 @@ class AssetChecksForAssetKeysSelection(
             for handle in asset_graph.asset_check_keys
             if handle.asset_key in self.selected_asset_keys
         }
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
 
 
 @whitelist_for_serdes
@@ -422,6 +434,9 @@ class AssetCheckKeysSelection(
             if handle in self.selected_asset_check_keys
         }
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
+
 
 @whitelist_for_serdes
 class AndAssetSelection(
@@ -434,6 +449,12 @@ class AndAssetSelection(
     def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
         return self.left.resolve_checks_inner(asset_graph) & self.right.resolve_checks_inner(
             asset_graph
+        )
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(
+            left=self.left.to_serializable_asset_selection(asset_graph),
+            right=self.right.to_serializable_asset_selection(asset_graph),
         )
 
 
@@ -450,6 +471,12 @@ class SubtractAssetSelection(
             asset_graph
         )
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(
+            left=self.left.to_serializable_asset_selection(asset_graph),
+            right=self.right.to_serializable_asset_selection(asset_graph),
+        )
+
 
 @whitelist_for_serdes
 class SinksAssetSelection(
@@ -459,6 +486,9 @@ class SinksAssetSelection(
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
 
 
 @whitelist_for_serdes
@@ -473,6 +503,9 @@ class RequiredNeighborsAssetSelection(
             output.update(asset_graph.get_required_multi_asset_keys(asset_key))
         return output
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+
 
 @whitelist_for_serdes
 class RootsAssetSelection(
@@ -482,6 +515,9 @@ class RootsAssetSelection(
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph)
         return fetch_sources(asset_graph.asset_dep_graph, selection)
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
 
 
 @whitelist_for_serdes
@@ -515,6 +551,9 @@ class DownstreamAssetSelection(
             selection if not self.include_self else set(),
         )
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+
 
 @whitelist_for_serdes
 class GroupsAssetSelection(
@@ -539,6 +578,9 @@ class GroupsAssetSelection(
             if group in self.selected_groups and asset_key in base_set
         }
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
+
 
 @whitelist_for_serdes
 class KeysAssetSelection(
@@ -555,6 +597,9 @@ class KeysAssetSelection(
                 "are correctly added to the `Definitions`."
             )
         return specified_keys
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
 
 
 @whitelist_for_serdes
@@ -577,6 +622,9 @@ class KeyPrefixesAssetSelection(
             if any(key.has_prefix(prefix) for prefix in self.selected_key_prefixes)
         }
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self
+
 
 @whitelist_for_serdes
 class OrAssetSelection(
@@ -589,6 +637,12 @@ class OrAssetSelection(
     def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
         return self.left.resolve_checks_inner(asset_graph) | self.right.resolve_checks_inner(
             asset_graph
+        )
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(
+            left=self.left.to_serializable_asset_selection(asset_graph),
+            right=self.right.to_serializable_asset_selection(asset_graph),
         )
 
 
@@ -636,6 +690,9 @@ class UpstreamAssetSelection(
         all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
         return {key for key in all_upstream if key not in asset_graph.source_asset_keys}
 
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
+
 
 @whitelist_for_serdes
 class ParentSourcesAssetSelection(
@@ -648,3 +705,6 @@ class ParentSourcesAssetSelection(
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph)
         return {key for key in all_upstream if key in asset_graph.source_asset_keys}
+
+    def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
+        return self._replace(child=self.child.to_serializable_asset_selection(asset_graph))
