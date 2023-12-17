@@ -1,15 +1,9 @@
 from typing import Any
 
-from dagster import (
-    AssetKey,
-    Definitions,
-    OpExecutionContext,
-    job,
-    load_assets_from_modules,
-    op,
-)
 from dagster_duckdb import build_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+
+from dagster import AssetKey, Definitions, OpExecutionContext, job, load_assets_from_modules, op
 
 from . import assets
 from .release_sensor import release_sensor

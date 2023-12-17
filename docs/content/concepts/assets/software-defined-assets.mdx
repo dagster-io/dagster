@@ -593,7 +593,9 @@ def test_uses_context():
 
 ---
 
-## Loading asset values outside of Dagster runs
+## Loading asset values dynamically
+
+### Outside of a Dagster run
 
 It's sometimes useful to load an asset as a Python object outside of a Dagster run, such as performing exploratory analysis on data inside a Jupyter notebook.
 
@@ -609,6 +611,24 @@ To load the values of multiple assets, use <PyObject object="Definitions" method
 with defs.get_asset_value_loader() as loader:
     asset1_value = loader.load_asset_value(AssetKey("asset1"))
     asset2_value = loader.load_asset_value(AssetKey("asset2"))
+```
+
+### Inside of an op
+
+It is valuable to be able to load the contents of an asset inside of a job, such as while loading a dataset for validation or testing of a pre-trained ML model.
+
+For this, we can still use <PyObject object="Definitions" method="load_asset_value" />:
+
+```python file=/concepts/assets/load_asset_values.py startafter=partitioned_asset_dynamically_start_marker endbefore=partitioned_asset_dynamically_end_marker dedent=4
+@op
+def dynamic_partition_loader(context, asset_key, partition_key):
+    with defs.get_asset_value_loader(instance=context.instance) as loader:
+        partition_value = loader.load_asset_value(
+            AssetKey(asset_key),
+            partition_key=partition_key,
+        )
+
+        return partition_value
 ```
 
 ---
