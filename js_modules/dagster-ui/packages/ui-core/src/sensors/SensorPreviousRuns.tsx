@@ -6,6 +6,7 @@ import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {SensorFragment} from './types/SensorFragment.types';
@@ -18,6 +19,7 @@ const RUNS_LIMIT = 20;
 
 export const SensorPreviousRuns = ({
   sensor,
+  repoAddress,
   highlightedIds,
   tabs,
 }: {
@@ -33,8 +35,10 @@ export const SensorPreviousRuns = ({
     query: PREVIOUS_RUNS_FOR_SENSOR_QUERY,
     variables: {
       filter: {
-        pipelineName: sensor.targets?.length === 1 ? sensor.targets[0]!.pipelineName : undefined,
-        tags: [{key: DagsterTag.SensorName, value: sensor.name}],
+        tags: [
+          {key: DagsterTag.SensorName, value: sensor.name},
+          {key: DagsterTag.RepositoryLabelTag, value: repoAddressAsTag(repoAddress)},
+        ],
       },
     },
     nextCursorForResult: (data) => {
