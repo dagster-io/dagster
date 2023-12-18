@@ -32,8 +32,7 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
   return (
     <Select<(typeof items)[0]>
       popoverProps={{
-        position: 'bottom-left',
-        modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
+        position: 'bottom-right',
       }}
       filterable={false}
       activeItem={activeItem}

@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  MetadataTable,
   Subheading,
   Icon,
 } from '@dagster-io/ui-components';
@@ -123,31 +122,18 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
           <Box padding={{bottom: 8}}>
             <Subheading>Preferences</Subheading>
           </Box>
-          <Box
-            padding={{bottom: 4, right: 16}}
-            flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          >
-            <Box style={{width: '100%'}}>Timezone</Box>
-            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
-              <TimezoneSelect trigger={trigger} />
-            </Box>
+          <Box padding={{bottom: 4}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>Timezone</div>
+            <TimezoneSelect trigger={trigger} />
           </Box>
 
-          <Box
-            padding={{bottom: 4, right: 16}}
-            flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          >
-            <Box style={{width: '100%'}}>Hour format</Box>
-            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
-              <HourCycleSelect />
-            </Box>
+          <Box padding={{bottom: 4}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>Hour format</div>
+            <HourCycleSelect />
           </Box>
 
-          <Box
-            padding={{bottom: 4, right: 16}}
-            flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          >
-            <Box style={{width: '100%'}}>
+          <Box padding={{bottom: 4}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>
               <span>Theme (</span>
               <a
                 href="https://github.com/dagster-io/dagster/discussions/18439"
@@ -157,43 +143,41 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
                 Learn more
               </a>
               )
-            </Box>
-            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
-              <ThemeSelect theme={theme} onChange={setTheme} />
-            </Box>
+            </div>
+            <ThemeSelect theme={theme} onChange={setTheme} />
           </Box>
 
           <Box
-            padding={{vertical: 8, right: 16}}
+            padding={{vertical: 8}}
             flex={{justifyContent: 'space-between', alignItems: 'center'}}
           >
-            <Box style={{width: '100%'}}>Enable keyboard shortcuts</Box>
-            <Box style={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
-              <Checkbox
-                checked={shortcutsEnabled}
-                format="switch"
-                onChange={toggleKeyboardShortcuts}
-              />
-            </Box>
+            <div>Enable keyboard shortcuts</div>
+            <Checkbox
+              checked={shortcutsEnabled}
+              format="switch"
+              onChange={toggleKeyboardShortcuts}
+            />
           </Box>
         </Box>
         <Box padding={{top: 16}} border="top">
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
-          <MetadataTable
-            rows={visibleFlags.map(({key, label, flagType}) => ({
-              key,
-              label,
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(flagType)}
-                  onChange={() => toggleFlag(flagType)}
-                />
-              ),
-            }))}
-          />
+
+          {visibleFlags.map(({key, label, flagType}) => (
+            <Box
+              padding={{vertical: 8}}
+              flex={{justifyContent: 'space-between', alignItems: 'center'}}
+              key={key}
+            >
+              <div>{label || key}</div>
+              <Checkbox
+                format="switch"
+                checked={flags.includes(flagType)}
+                onChange={() => toggleFlag(flagType)}
+              />
+            </Box>
+          ))}
         </Box>
       </DialogBody>
       <DialogFooter topBorder>
