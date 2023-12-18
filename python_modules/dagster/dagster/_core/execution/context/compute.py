@@ -1498,23 +1498,6 @@ class AssetExecutionContext(OpExecutionContext):
 
     ########## pass-through to op context
 
-    #### op-related
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def run_tags(self) -> Mapping[str, str]:
-        return self.op_execution_context.run_tags
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def has_tag(self, key: str) -> bool:
-        return self.op_execution_context.has_tag(key)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def get_tag(self, key: str) -> Optional[str]:
-        return self.op_execution_context.get_tag(key)
-
     #### op related
 
     @property
@@ -1571,12 +1554,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def job_name(self) -> str:
         return self.op_execution_context.job_name
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def job_def(self) -> JobDefinition:
-        return self.op_execution_context.job_def
 
     #### asset related
 
@@ -1810,18 +1787,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def resources(self) -> Any:
         return self.op_execution_context.resources
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def log(self) -> DagsterLogManager:
-        return self.op_execution_context.log
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def pdb(self) -> ForkedPdb:
-        return self.op_execution_context.pdb
 
     @property
     @_copy_docs_from_op_execution_context
