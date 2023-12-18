@@ -26,7 +26,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterExecutionHandleOutputError
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
@@ -125,9 +125,8 @@ class DbIOManager(IOManager):
         # Nones cannot be stored by DB I/O managers. If the output type is set to None/Nothing,
         # the handle_output will not be called
         if obj is None:
-            raise DagsterExecutionHandleOutputError(
-                "Unexpected 'None' output value. If a 'None' value is intentional, set the"
-                " output type to None.",
+            raise DagsterInvariantViolationError(
+                "Unexpected 'None' output value. If a 'None' value is intentional, set the output type to None.",
             )
 
         table_slice = self._get_table_slice(context, context)
