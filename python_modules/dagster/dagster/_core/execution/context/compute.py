@@ -1370,29 +1370,11 @@ class AssetExecutionContext(OpExecutionContext):
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
 
-    @property
-    @_copy_docs_from_op_execution_context
-    def run(self) -> DagsterRun:
-        return self.op_execution_context.run
+    #### op-related
 
     @property
     @_copy_docs_from_op_execution_context
-    def dagster_run(self) -> DagsterRun:
-        return self.op_execution_context.dagster_run
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def run_id(self) -> str:
-        return self.op_execution_context.run_id
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def run_config(self) -> Mapping[str, object]:
-        return self.op_execution_context.run_config
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def retry_number(self) -> int:
+    def retry_number(self):
         return self.op_execution_context.retry_number
 
     @public
@@ -1404,51 +1386,8 @@ class AssetExecutionContext(OpExecutionContext):
     @public
     @property
     @_copy_docs_from_op_execution_context
-    def instance(self) -> DagsterInstance:
-        return self.op_execution_context.instance
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def pdb(self) -> ForkedPdb:
-        return self.op_execution_context.pdb
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def file_manager(self):
-        raise DagsterInvalidPropertyError(
-            "You have attempted to access the file manager which has been moved to resources in"
-            " 0.10.0. Please access it via `context.resources.file_manager` instead."
-        )
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def resources(self) -> Any:
-        return self.op_execution_context.resources
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def step_launcher(self) -> Optional[StepLauncher]:
-        return self.op_execution_context.step_launcher
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def job_def(self) -> JobDefinition:
-        return self.op_execution_context.job_def
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
     def job_name(self) -> str:
         return self.op_execution_context.job_name
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def log(self) -> DagsterLogManager:
-        return self.op_execution_context.log
 
     @property
     @_copy_docs_from_op_execution_context
@@ -1470,6 +1409,31 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def op_def(self) -> OpDefinition:
         return self.op_execution_context.op_def
+
+    #### execution related
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def instance(self) -> DagsterInstance:
+        return self.op_execution_context.instance
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def resources(self) -> Any:
+        return self.op_execution_context.resources
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def step_launcher(self) -> Optional[StepLauncher]:
+        return self.op_execution_context.step_launcher
+
+    @_copy_docs_from_op_execution_context
+    def get_step_execution_context(self) -> StepExecutionContext:
+        return self.op_execution_context.get_step_execution_context()
+
+    #### partition_related
 
     @public
     @property
@@ -1508,20 +1472,7 @@ class AssetExecutionContext(OpExecutionContext):
     def partition_time_window(self) -> TimeWindow:
         return self.op_execution_context.partition_time_window
 
-    @public
-    @_copy_docs_from_op_execution_context
-    def has_tag(self, key: str) -> bool:
-        return self.op_execution_context.has_tag(key)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def get_tag(self, key: str) -> Optional[str]:
-        return self.op_execution_context.get_tag(key)
-
-    @property
-    @_copy_docs_from_op_execution_context
-    def run_tags(self) -> Mapping[str, str]:
-        return self.op_execution_context.run_tags
+    #### Event log related
 
     @_copy_docs_from_op_execution_context
     def has_events(self) -> bool:
@@ -1555,10 +1506,6 @@ class AssetExecutionContext(OpExecutionContext):
         return self.op_execution_context.get_output_metadata(
             output_name=output_name, mapping_key=mapping_key
         )
-
-    @_copy_docs_from_op_execution_context
-    def get_step_execution_context(self) -> StepExecutionContext:
-        return self.op_execution_context.get_step_execution_context()
 
     @_copy_docs_from_op_execution_context
     def describe_op(self) -> str:
