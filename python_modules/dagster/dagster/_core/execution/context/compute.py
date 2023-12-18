@@ -11,7 +11,6 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -21,7 +20,6 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import (
-    PublicAttr,
     deprecated,
     experimental,
     public,
@@ -1361,11 +1359,15 @@ def _copy_docs_from_op_execution_context(obj):
 
 
 ALTERNATE_METHODS = {
-    "run_id": "run_properties.run_id",
-    "run": "run_properties.dagster_run",
-    "dagster_run": "run_properties.dagster_run",
-    "run_config": "run_properties.run_config",
-    "retry_number": "run_properties.retry_number",
+    "run_id": "run.run_id",
+    "dagster_run": "run",
+    "run_config": "run.run_config",
+    "run_tags": "run.tags",
+}
+
+ALTERNATE_EXPRESSIONS = {
+    "has_tag": "key in context.run.tags",
+    "get_tag": "context.run.tags.get(key)",
 }
 
 
@@ -1378,22 +1380,13 @@ def _get_deprecation_kwargs(attr: str):
             f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
             f" context.{ALTERNATE_METHODS[attr]} instead."
         )
+    elif attr in ALTERNATE_EXPRESSIONS:
+        deprecation_kwargs["additional_warn_text"] = (
+            f"You have called the deprecated method {attr} on AssetExecutionContext. Use"
+            f" {ALTERNATE_EXPRESSIONS[attr]} instead."
+        )
 
     return deprecation_kwargs
-
-
-class RunProperties(NamedTuple):
-    """Relevant information about a run while it is executing. Contains:
-    * The run ID
-    * The DagsterRun object, which contains further information about the run
-    * The run config
-    * The retry number - how many times this step has been retried.
-    """
-
-    run_id: PublicAttr[str]
-    dagster_run: PublicAttr[DagsterRun]
-    run_config: PublicAttr[Mapping[str, object]]
-    retry_number: PublicAttr[int]
 
 
 class AssetExecutionContext(OpExecutionContext):
@@ -1402,13 +1395,6 @@ class AssetExecutionContext(OpExecutionContext):
             op_execution_context, "op_execution_context", OpExecutionContext
         )
         self._step_execution_context = self._op_execution_context._step_execution_context  # noqa: SLF001
-
-        self._run_props = RunProperties(
-            run_id=self._op_execution_context.run_id,
-            run_config=self._op_execution_context.run_config,
-            dagster_run=self._op_execution_context.run,
-            retry_number=self._op_execution_context.retry_number,
-        )
 
     @staticmethod
     def get() -> "AssetExecutionContext":
@@ -1421,19 +1407,58 @@ class AssetExecutionContext(OpExecutionContext):
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
 
-    #### Run related
+    ####### Top-level properties/methods on AssetExecutionContext
+
+    @public
+    @property
+    def log(self) -> DagsterLogManager:
+        """The log manager available in the execution context. Logs will be viewable in the Dagster UI.
+        Returns: DagsterLogManager.
+
+        Example:
+            .. code-block:: python
+
+                @asset
+                def logger(context):
+                    context.log.info("Info level message")
+        """
+        return self.op_execution_context.log
+
+    @public
+    @property
+    def pdb(self) -> ForkedPdb:
+        """Gives access to pdb debugging from within the asset. Materializing the asset via the
+        Dagster UI or CLI will enter the pdb debugging context in the process used to launch the UI or
+        run the CLI.
+
+        Returns: dagster.utils.forked_pdb.ForkedPdb
+
+        Example:
+            .. code-block:: python
+
+                @asset
+                def debug(context):
+                    context.pdb.set_trace()
+        """
+        return self.op_execution_context.pdb
 
     @property
-    def run_properties(self) -> RunProperties:
-        return self._run_props
+    def run(self) -> DagsterRun:
+        """The DagsterRun object corresponding to the execution. Information like run_id,
+        run configuration, and the assets selected for materialization can be found on the DagsterRun.
+        """
+        return self.op_execution_context.run
+
+    @public
+    @property
+    def job_def(self) -> JobDefinition:
+        """The definition for the currently executing job. Information like the job name, and job tags
+        can be found on the JobDefinition.
+        Returns: JobDefinition.
+        """
+        return self.op_execution_context.job_def
 
     ######## Deprecated methods
-
-    @deprecated(**_get_deprecation_kwargs("run"))
-    @property
-    @_copy_docs_from_op_execution_context
-    def run(self) -> DagsterRun:
-        return self.op_execution_context.run
 
     @deprecated(**_get_deprecation_kwargs("dagster_run"))
     @property
@@ -1453,7 +1478,28 @@ class AssetExecutionContext(OpExecutionContext):
     def run_config(self) -> Mapping[str, object]:
         return self.op_execution_context.run_config
 
-    @deprecated(**_get_deprecation_kwargs("retry_number"))
+    @deprecated(**_get_deprecation_kwargs("run_tags"))
+    @property
+    @_copy_docs_from_op_execution_context
+    def run_tags(self) -> Mapping[str, str]:
+        return self.op_execution_context.run_tags
+
+    @deprecated(**_get_deprecation_kwargs("has_tag"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def has_tag(self, key: str) -> bool:
+        return self.op_execution_context.has_tag(key)
+
+    @deprecated(**_get_deprecation_kwargs("get_tag"))
+    @public
+    @_copy_docs_from_op_execution_context
+    def get_tag(self, key: str) -> Optional[str]:
+        return self.op_execution_context.get_tag(key)
+
+    ########## pass-through to op context
+
+    #### op-related
+
     @property
     @_copy_docs_from_op_execution_context
     def run_tags(self) -> Mapping[str, str]:
@@ -1475,8 +1521,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def retry_number(self):
         return self.op_execution_context.retry_number
-
-    ########## pass-through to op context
 
     @public
     @property
