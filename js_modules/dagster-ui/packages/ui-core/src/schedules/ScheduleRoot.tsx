@@ -12,6 +12,7 @@ import {TicksTable} from '../instigation/TickHistory';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -100,6 +101,7 @@ export const ScheduleRoot = (props: Props) => {
 };
 
 const SchedulePreviousRuns = ({
+  repoAddress,
   schedule,
   highlightedIds,
   tabs,
@@ -115,8 +117,10 @@ const SchedulePreviousRuns = ({
       variables: {
         limit: 20,
         filter: {
-          pipelineName: schedule.pipelineName,
-          tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+          tags: [
+            {key: DagsterTag.ScheduleName, value: schedule.name},
+            {key: DagsterTag.RepositoryLabelTag, value: repoAddressAsTag(repoAddress)},
+          ],
         },
       },
       notifyOnNetworkStatusChange: true,
