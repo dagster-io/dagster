@@ -76,7 +76,7 @@ setup(
     install_requires=[
         # cli
         "click>=5.0",
-        "coloredlogs>=6.1, <=14.0",
+        "coloredlogs>=6.1,<=14.0",
         "Jinja2",
         "PyYAML>=5.1",
         # core (not explicitly expressed atm)
@@ -87,26 +87,26 @@ setup(
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
         "pendulum>=0.7.0,<3",
-        "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
+        "protobuf>=3.20.0,<5",  # min protobuf version to be compatible with both protobuf 3 and 4
         "python-dateutil",
         "python-dotenv",
         "pytz",
         "requests",
         "setuptools",
         "tabulate",
-        "tomli",
-        "tqdm",
-        "typing_extensions>=4.4.0",
-        "sqlalchemy>=1.0",
+        "tomli<3",
+        "tqdm<5",
+        "typing_extensions>=4.4.0,<5",
+        "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
         "watchdog>=0.8.3",
-        'psutil >= 1.0; platform_system=="Windows"',
+        'psutil>=1.0; platform_system=="Windows"',
         # https://github.com/mhammond/pywin32/issues/1439
-        'pywin32 != 226; platform_system=="Windows"',
+        'pywin32!=226; platform_system=="Windows"',
         "docstring-parser",
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic >1.10.0,!= 1.10.7",
+        "pydantic>1.10.0,!= 1.10.7,<3",
         f"dagster-pipes{pin}",
     ],
     extras_require={
