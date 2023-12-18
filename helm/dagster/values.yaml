@@ -1208,6 +1208,18 @@ dagsterDaemon:
   readinessProbe: {}
   startupProbe: {}
 
+  # initContainer checking the postgres connection
+  checkDBReady:
+    # Example:
+#    resources:
+#      limits:
+#        cpu: 100m
+#        memory: 128Mi
+#      requests:
+#        cpu: 100m
+#        memory: 128Mi
+    resources: {}
+
 ####################################################################################################
 # busybox: Configuration for the busybox image used to check connections
 ####################################################################################################
