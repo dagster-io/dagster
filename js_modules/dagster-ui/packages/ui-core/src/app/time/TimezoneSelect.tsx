@@ -141,8 +141,7 @@ export const TimezoneSelect = ({trigger}: Props) => {
   return (
     <Select<(typeof allTimezoneItems)[0]>
       popoverProps={{
-        position: 'bottom-left',
-        modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
+        position: 'bottom-right',
       }}
       activeItem={allTimezoneItems.find((tz) => tz.key === timezone)}
       inputProps={{style: {width: '300px'}}}
