@@ -224,7 +224,7 @@ def test_retain_freshness_policy():
     )
 
 
-def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
+def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy() -> None:
     fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
     fpb = FreshnessPolicy(
         maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
@@ -262,9 +262,9 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
     assert replaced.freshness_policies_by_key[AssetKey("bb")] == fpb
     assert replaced.freshness_policies_by_key.get(AssetKey("cc")) is None
 
-    assert replaced.auto_materialize_policies_by_key[AssetKey("aa")] == ampa
-    assert replaced.auto_materialize_policies_by_key[AssetKey("bb")] == ampb
-    assert replaced.auto_materialize_policies_by_key.get(AssetKey("cc")) is None
+    assert replaced.asset_conditions_by_key[AssetKey("aa")] == ampa.to_asset_condition()
+    assert replaced.asset_conditions_by_key[AssetKey("bb")] == ampb.to_asset_condition()
+    assert replaced.asset_conditions_by_key.get(AssetKey("cc")) is None
 
 
 def test_retain_metadata_graph():

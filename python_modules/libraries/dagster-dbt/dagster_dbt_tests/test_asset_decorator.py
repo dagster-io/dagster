@@ -530,8 +530,8 @@ def test_with_auto_materialize_policy_replacements() -> None:
     def my_dbt_assets():
         ...
 
-    for auto_materialize_policy in my_dbt_assets.auto_materialize_policies_by_key.values():
-        assert auto_materialize_policy == expected_auto_materialize_policy
+    for asset_condition in my_dbt_assets.asset_conditions_by_key.values():
+        assert asset_condition == expected_auto_materialize_policy.to_asset_condition()
 
 
 def test_dbt_meta_auto_materialize_policy() -> None:
@@ -539,11 +539,11 @@ def test_dbt_meta_auto_materialize_policy() -> None:
     def my_dbt_assets():
         ...
 
-    auto_materialize_policies = my_dbt_assets.auto_materialize_policies_by_key.values()
-    assert auto_materialize_policies
+    asset_conditions = my_dbt_assets.asset_conditions_by_key.values()
+    assert asset_conditions
 
-    for auto_materialize_policy in auto_materialize_policies:
-        assert auto_materialize_policy == AutoMaterializePolicy.eager()
+    for asset_condition in asset_conditions:
+        assert asset_condition == AutoMaterializePolicy.eager().to_asset_condition()
 
 
 def test_dbt_meta_freshness_policy() -> None:

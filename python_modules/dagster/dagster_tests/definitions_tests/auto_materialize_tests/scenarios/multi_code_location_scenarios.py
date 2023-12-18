@@ -29,8 +29,9 @@ def with_auto_materialize_policy(
     ret = []
     for assets_def in assets_defs:
         new_assets_def = copy.copy(assets_def)
-        new_assets_def._auto_materialize_policies_by_key = {  # noqa: SLF001
-            asset_key: auto_materialize_policy for asset_key in new_assets_def.keys
+        new_assets_def._asset_conditions_by_key = {  # noqa: SLF001
+            asset_key: auto_materialize_policy.to_asset_condition()
+            for asset_key in new_assets_def.keys
         }
         ret.append(new_assets_def)
     return ret

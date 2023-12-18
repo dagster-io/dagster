@@ -252,7 +252,7 @@ def build_asset_with_blocking_check(
         resource_defs=asset_def.resource_defs,
         metadata=asset_def.metadata_by_key.get(asset_def.key),
         freshness_policy=asset_def.freshness_policies_by_key.get(asset_def.key),
-        auto_materialize_policy=asset_def.auto_materialize_policies_by_key.get(asset_def.key),
+        asset_condition=asset_def.asset_conditions_by_key.get(asset_def.key),
         backfill_policy=asset_def.backfill_policy,
         config=None,  # gets config from asset_def.op
     )

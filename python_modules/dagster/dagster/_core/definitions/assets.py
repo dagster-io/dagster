@@ -19,6 +19,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_condition import AssetCondition
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -88,7 +89,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _can_subset: bool
     _metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping]
     _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
-    _auto_materialize_policies_by_key: Mapping[AssetKey, AutoMaterializePolicy]
+    _asset_conditions_by_key: Mapping[AssetKey, AssetCondition]
     _backfill_policy: Optional[BackfillPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
@@ -111,6 +112,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
+        asset_conditions_by_key: Optional[Mapping[AssetKey, AssetCondition]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
@@ -277,11 +279,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=FreshnessPolicy,
         )
 
-        self._auto_materialize_policies_by_key = check.opt_mapping_param(
-            auto_materialize_policies_by_key,
-            "auto_materialize_policies_by_key",
+        asset_conditions_by_key = (
+            {key: amp.to_asset_condition() for key, amp in auto_materialize_policies_by_key.items()}
+            if auto_materialize_policies_by_key
+            else asset_conditions_by_key
+        )
+        self._asset_conditions_by_key = check.opt_mapping_param(
+            asset_conditions_by_key,
+            "asset_conditions_by_key",
             key_type=AssetKey,
-            value_type=AutoMaterializePolicy,
+            value_type=AssetCondition,
         )
 
         self._backfill_policy = check.opt_inst_param(
@@ -331,7 +338,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         group_names_by_key: Optional[Mapping[AssetKey, str]],
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]],
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]],
-        auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]],
+        asset_conditions_by_key: Optional[Mapping[AssetKey, AssetCondition]],
         backfill_policy: Optional[BackfillPolicy],
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
@@ -351,7 +358,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             group_names_by_key=group_names_by_key,
             metadata_by_key=metadata_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            asset_conditions_by_key=asset_conditions_by_key,
             backfill_policy=backfill_policy,
             descriptions_by_key=descriptions_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
@@ -391,6 +398,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        asset_conditions_by_output_name: Optional[Mapping[str, Optional[AssetCondition]]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
@@ -462,7 +470,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
-            auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
+            asset_conditions_by_output_name={
+                name: amp.to_asset_condition()
+                for name, amp in auto_materialize_policies_by_output_name.items()
+                if amp is not None
+            }
+            if auto_materialize_policies_by_output_name is not None
+            else asset_conditions_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
             check_specs=check_specs,
@@ -487,6 +501,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        asset_conditions_by_output_name: Optional[Mapping[str, Optional[AssetCondition]]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
@@ -551,7 +566,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
-            auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
+            asset_conditions_by_output_name={
+                name: amp.to_asset_condition()
+                for name, amp in auto_materialize_policies_by_output_name.items()
+                if amp is not None
+            }
+            if auto_materialize_policies_by_output_name is not None
+            else asset_conditions_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
         )
@@ -572,9 +593,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
-        auto_materialize_policies_by_output_name: Optional[
-            Mapping[str, Optional[AutoMaterializePolicy]]
-        ] = None,
+        asset_conditions_by_output_name: Optional[Mapping[str, Optional[AssetCondition]]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
@@ -689,13 +708,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 if freshness_policies_by_output_name
                 else None
             ),
-            auto_materialize_policies_by_key=(
+            asset_conditions_by_key=(
                 {
-                    keys_by_output_name_with_prefix[output_name]: auto_materialize_policy
-                    for output_name, auto_materialize_policy in auto_materialize_policies_by_output_name.items()
-                    if auto_materialize_policy is not None
+                    keys_by_output_name_with_prefix[output_name]: asset_condition
+                    for output_name, asset_condition in asset_conditions_by_output_name.items()
+                    if asset_condition is not None
                 }
-                if auto_materialize_policies_by_output_name
+                if asset_conditions_by_output_name
                 else None
             ),
             backfill_policy=check.opt_inst_param(
@@ -855,8 +874,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._freshness_policies_by_key
 
     @property
-    def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
-        return self._auto_materialize_policies_by_key
+    def asset_conditions_by_key(self) -> Mapping[AssetKey, AssetCondition]:
+        return self._asset_conditions_by_key
 
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
@@ -978,6 +997,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
+        asset_condition: Optional[Union[AssetCondition, Mapping[AssetKey, AssetCondition]]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         is_subset: bool = False,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
@@ -1051,31 +1071,43 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     output_asset_key_replacements.get(key, key)
                 ] = replaced_freshness_policy
 
+        # convert legacy auto_materialize_policy argument to asset_condition
         if auto_materialize_policy:
-            auto_materialize_policy_conflicts = (
-                self.auto_materialize_policies_by_key.keys()
+            asset_condition = (
+                auto_materialize_policy.to_asset_condition()
                 if isinstance(auto_materialize_policy, AutoMaterializePolicy)
-                else (auto_materialize_policy.keys() & self.auto_materialize_policies_by_key.keys())
+                else {
+                    key: amp.to_asset_condition()
+                    for key, amp in auto_materialize_policy.items()
+                    if amp is not None
+                }
             )
-            if auto_materialize_policy_conflicts:
+
+        if asset_condition:
+            asset_condition_conflicts = (
+                self.asset_conditions_by_key.keys()
+                if isinstance(asset_condition, AssetCondition)
+                else (asset_condition.keys() & self.asset_conditions_by_key.keys())
+            )
+            if asset_condition_conflicts:
                 raise DagsterInvalidDefinitionError(
-                    "AutoMaterializePolicy already exists on assets"
-                    f" {', '.join(key.to_string() for key in auto_materialize_policy_conflicts)}"
+                    "AssetCondition already exists on assets"
+                    f" {', '.join(key.to_string() for key in asset_condition_conflicts)}"
                 )
 
         replaced_auto_materialize_policies_by_key = {}
         for key in self.keys:
-            if isinstance(auto_materialize_policy, AutoMaterializePolicy):
-                replaced_auto_materialize_policy = auto_materialize_policy
-            elif auto_materialize_policy:
-                replaced_auto_materialize_policy = auto_materialize_policy.get(key)
+            if isinstance(asset_condition, AssetCondition):
+                replaced_asset_condition = asset_condition
+            elif asset_condition:
+                replaced_asset_condition = asset_condition.get(key)
             else:
-                replaced_auto_materialize_policy = self.auto_materialize_policies_by_key.get(key)
+                replaced_asset_condition = self.asset_conditions_by_key.get(key)
 
-            if replaced_auto_materialize_policy:
+            if replaced_asset_condition:
                 replaced_auto_materialize_policies_by_key[
                     output_asset_key_replacements.get(key, key)
-                ] = replaced_auto_materialize_policy
+                ] = asset_condition
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
@@ -1373,7 +1405,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             group_names_by_key=self._group_names_by_key,
             metadata_by_key=self._metadata_by_key,
             freshness_policies_by_key=self._freshness_policies_by_key,
-            auto_materialize_policies_by_key=self._auto_materialize_policies_by_key,
+            asset_conditions_by_key=self._asset_conditions_by_key,
             backfill_policy=self._backfill_policy,
             descriptions_by_key=self._descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,

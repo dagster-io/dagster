@@ -209,8 +209,8 @@ class ExternalRepository:
 
             default_sensor_asset_keys = set()
 
-            for asset_key, policy in asset_graph.auto_materialize_policies_by_key.items():
-                if not policy:
+            for asset_key, asset_condition in asset_graph.asset_condtitions_by_key.items():
+                if not asset_condition:
                     continue
 
                 if asset_key not in covered_asset_keys:

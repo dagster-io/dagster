@@ -22,7 +22,7 @@ from typing import (
 import toposort
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.asset_condition import AssetCondition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import (
@@ -79,7 +79,7 @@ class AssetGraph:
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
-        auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
+        asset_conditions_by_key: Mapping[AssetKey, Optional[AssetCondition]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
@@ -94,7 +94,7 @@ class AssetGraph:
         self._partition_mappings_by_key = partition_mappings_by_key
         self._group_names_by_key = group_names_by_key
         self._freshness_policies_by_key = freshness_policies_by_key
-        self._auto_materialize_policies_by_key = auto_materialize_policies_by_key
+        self._asset_conditions_by_key = asset_conditions_by_key
         self._backfill_policies_by_key = backfill_policies_by_key
         self._code_versions_by_key = code_versions_by_key
         self._is_observable_by_key = is_observable_by_key
@@ -141,10 +141,8 @@ class AssetGraph:
         return self._freshness_policies_by_key
 
     @property
-    def auto_materialize_policies_by_key(
-        self,
-    ) -> Mapping[AssetKey, Optional[AutoMaterializePolicy]]:
-        return self._auto_materialize_policies_by_key
+    def asset_condtitions_by_key(self) -> Mapping[AssetKey, Optional[AssetCondition]]:
+        return self._asset_conditions_by_key
 
     @property
     def backfill_policies_by_key(self) -> Mapping[AssetKey, Optional[BackfillPolicy]]:
@@ -166,7 +164,7 @@ class AssetGraph:
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
-        auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
+        asset_conditions_by_key: Dict[AssetKey, Optional[AssetCondition]] = {}
         backfill_policies_by_key: Dict[AssetKey, Optional[BackfillPolicy]] = {}
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
@@ -192,7 +190,7 @@ class AssetGraph:
                 partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
-                auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
+                asset_conditions_by_key.update(asset.asset_conditions_by_key)
                 backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
                 code_versions_by_key.update(asset.code_versions_by_key)
 
@@ -209,7 +207,7 @@ class AssetGraph:
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            asset_conditions_by_key=asset_conditions_by_key,
             backfill_policies_by_key=backfill_policies_by_key,
             assets=assets_defs,
             asset_checks=asset_checks or [],
@@ -531,8 +529,8 @@ class AssetGraph:
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
         ]
 
-    def get_auto_materialize_policy(self, asset_key: AssetKey) -> Optional[AutoMaterializePolicy]:
-        return self.auto_materialize_policies_by_key.get(asset_key)
+    def get_asset_condition(self, asset_key: AssetKey) -> Optional[AssetCondition]:
+        return self.asset_condtitions_by_key.get(asset_key)
 
     def get_backfill_policy(self, asset_key: AssetKey) -> Optional[BackfillPolicy]:
         return self.backfill_policies_by_key.get(asset_key)
@@ -707,7 +705,7 @@ class InternalAssetGraph(AssetGraph):
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
-        auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
+        asset_conditions_by_key: Mapping[AssetKey, Optional[AssetCondition]],
         backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
@@ -726,7 +724,7 @@ class InternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            asset_conditions_by_key=asset_conditions_by_key,
             backfill_policies_by_key=backfill_policies_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,

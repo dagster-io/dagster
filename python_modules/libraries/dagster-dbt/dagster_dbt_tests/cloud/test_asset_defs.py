@@ -529,8 +529,8 @@ def test_custom_auto_materialize_policy(dbt_cloud, dbt_cloud_service):
         dbt_assets_definition_cacheable_data
     )
 
-    assert dbt_cloud_assets[0].auto_materialize_policies_by_key == {
-        key: AutoMaterializePolicy.eager() for key in dbt_cloud_assets[0].keys
+    assert dbt_cloud_assets[0].asset_conditions_by_key == {
+        key: AutoMaterializePolicy.eager().to_asset_condition() for key in dbt_cloud_assets[0].keys
     }
 
 
