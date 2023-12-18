@@ -1370,7 +1370,44 @@ class AssetExecutionContext(OpExecutionContext):
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
 
-    #### op-related
+    #### Run related
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def run(self) -> DagsterRun:
+        return self.op_execution_context.run
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def dagster_run(self) -> DagsterRun:
+        return self.op_execution_context.dagster_run
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def run_id(self) -> str:
+        return self.op_execution_context.run_id
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def run_config(self) -> Mapping[str, object]:
+        return self.op_execution_context.run_config
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def run_tags(self) -> Mapping[str, str]:
+        return self.op_execution_context.run_tags
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def has_tag(self, key: str) -> bool:
+        return self.op_execution_context.has_tag(key)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def get_tag(self, key: str) -> Optional[str]:
+        return self.op_execution_context.get_tag(key)
+
+    #### op related
 
     @property
     @_copy_docs_from_op_execution_context
@@ -1382,12 +1419,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def op_config(self) -> Any:
         return self.op_execution_context.op_config
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def job_name(self) -> str:
-        return self.op_execution_context.job_name
 
     @property
     @_copy_docs_from_op_execution_context
@@ -1410,6 +1441,76 @@ class AssetExecutionContext(OpExecutionContext):
     def op_def(self) -> OpDefinition:
         return self.op_execution_context.op_def
 
+    @_copy_docs_from_op_execution_context
+    def describe_op(self) -> str:
+        return self.op_execution_context.describe_op()
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def get_mapping_key(self) -> Optional[str]:
+        return self.op_execution_context.get_mapping_key()
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_output_names(self) -> AbstractSet[str]:
+        return self.op_execution_context.selected_output_names
+
+    #### job related
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def job_name(self) -> str:
+        return self.op_execution_context.job_name
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def job_def(self) -> JobDefinition:
+        return self.op_execution_context.job_def
+
+    #### asset related
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_key(self) -> AssetKey:
+        return self.op_execution_context.asset_key
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_assets_def(self) -> bool:
+        return self.op_execution_context.has_assets_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def assets_def(self) -> AssetsDefinition:
+        return self.op_execution_context.assets_def
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        return self.op_execution_context.asset_key_for_output(output_name=output_name)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def output_for_asset_key(self, asset_key: AssetKey) -> str:
+        return self.op_execution_context.output_for_asset_key(asset_key=asset_key)
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def asset_key_for_input(self, input_name: str) -> AssetKey:
+        return self.op_execution_context.asset_key_for_input(input_name=input_name)
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self.op_execution_context.selected_asset_keys
+
     #### execution related
 
     @public
@@ -1417,12 +1518,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def instance(self) -> DagsterInstance:
         return self.op_execution_context.instance
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def resources(self) -> Any:
-        return self.op_execution_context.resources
 
     @property
     @_copy_docs_from_op_execution_context
@@ -1471,113 +1566,6 @@ class AssetExecutionContext(OpExecutionContext):
     @_copy_docs_from_op_execution_context
     def partition_time_window(self) -> TimeWindow:
         return self.op_execution_context.partition_time_window
-
-    #### Event log related
-
-    @_copy_docs_from_op_execution_context
-    def has_events(self) -> bool:
-        return self.op_execution_context.has_events()
-
-    @_copy_docs_from_op_execution_context
-    def consume_events(self) -> Iterator[DagsterEvent]:
-        yield from self.op_execution_context.consume_events()
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def log_event(self, event: UserEvent) -> None:
-        return self.op_execution_context.log_event(event)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def add_output_metadata(
-        self,
-        metadata: Mapping[str, Any],
-        output_name: Optional[str] = None,
-        mapping_key: Optional[str] = None,
-    ) -> None:
-        return self.op_execution_context.add_output_metadata(
-            metadata=metadata, output_name=output_name, mapping_key=mapping_key
-        )
-
-    @_copy_docs_from_op_execution_context
-    def get_output_metadata(
-        self, output_name: str, mapping_key: Optional[str] = None
-    ) -> Optional[Mapping[str, Any]]:
-        return self.op_execution_context.get_output_metadata(
-            output_name=output_name, mapping_key=mapping_key
-        )
-
-    @_copy_docs_from_op_execution_context
-    def describe_op(self) -> str:
-        return self.op_execution_context.describe_op()
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def get_mapping_key(self) -> Optional[str]:
-        return self.op_execution_context.get_mapping_key()
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def asset_key(self) -> AssetKey:
-        return self.op_execution_context.asset_key
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def has_assets_def(self) -> bool:
-        return self.op_execution_context.has_assets_def
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def assets_def(self) -> AssetsDefinition:
-        return self.op_execution_context.assets_def
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self.op_execution_context.selected_asset_keys
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def has_asset_checks_def(self) -> bool:
-        return self.op_execution_context.has_asset_checks_def
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def asset_checks_def(self) -> AssetChecksDefinition:
-        return self.op_execution_context.asset_checks_def
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        return self.op_execution_context.selected_asset_check_keys
-
-    @public
-    @property
-    @_copy_docs_from_op_execution_context
-    def selected_output_names(self) -> AbstractSet[str]:
-        return self.op_execution_context.selected_output_names
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
-        return self.op_execution_context.asset_key_for_output(output_name=output_name)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def output_for_asset_key(self, asset_key: AssetKey) -> str:
-        return self.op_execution_context.output_for_asset_key(asset_key=asset_key)
-
-    @public
-    @_copy_docs_from_op_execution_context
-    def asset_key_for_input(self, input_name: str) -> AssetKey:
-        return self.op_execution_context.asset_key_for_input(input_name=input_name)
 
     @public
     @_copy_docs_from_op_execution_context
@@ -1631,6 +1619,70 @@ class AssetExecutionContext(OpExecutionContext):
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
         return self.op_execution_context.asset_partitions_time_window_for_input(input_name)
 
+    #### Event log related
+
+    @_copy_docs_from_op_execution_context
+    def has_events(self) -> bool:
+        return self.op_execution_context.has_events()
+
+    @_copy_docs_from_op_execution_context
+    def consume_events(self) -> Iterator[DagsterEvent]:
+        yield from self.op_execution_context.consume_events()
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def log_event(self, event: UserEvent) -> None:
+        return self.op_execution_context.log_event(event)
+
+    #### metadata related
+
+    @public
+    @_copy_docs_from_op_execution_context
+    def add_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+        return self.op_execution_context.add_output_metadata(
+            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+        )
+
+    @_copy_docs_from_op_execution_context
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        return self.op_execution_context.get_output_metadata(
+            output_name=output_name, mapping_key=mapping_key
+        )
+
+    #### asset check related
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def has_asset_checks_def(self) -> bool:
+        return self.op_execution_context.has_asset_checks_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_checks_def(self) -> AssetChecksDefinition:
+        return self.op_execution_context.asset_checks_def
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        return self.op_execution_context.selected_asset_check_keys
+
+    @property
+    @_copy_docs_from_op_execution_context
+    def asset_check_spec(self) -> AssetCheckSpec:
+        return self.op_execution_context.asset_check_spec
+
+    #### data lineage related
+
     @public
     @experimental
     @_copy_docs_from_op_execution_context
@@ -1643,10 +1695,25 @@ class AssetExecutionContext(OpExecutionContext):
             asset_key=asset_key, data_version=data_version
         )
 
+    # misc
+
+    @public
     @property
     @_copy_docs_from_op_execution_context
-    def asset_check_spec(self) -> AssetCheckSpec:
-        return self.op_execution_context.asset_check_spec
+    def resources(self) -> Any:
+        return self.op_execution_context.resources
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def log(self) -> DagsterLogManager:
+        return self.op_execution_context.log
+
+    @public
+    @property
+    @_copy_docs_from_op_execution_context
+    def pdb(self) -> ForkedPdb:
+        return self.op_execution_context.pdb
 
     @property
     @_copy_docs_from_op_execution_context
