@@ -12,6 +12,11 @@ def test_doc_strings():
         "_output_metadata",
         "_pdb",
         "_step_execution_context",
+        # methods that have re-written docs strings
+        "pdb",
+        "run",
+        "job_def",
+        "log",
     ]
 
     for attr_name in dir(OpExecutionContext):
@@ -37,6 +42,13 @@ def test_deprecation_warnings():
 
     # This list maintains all methods on OpExecutionContext that are not deprecated on AssetExecutionContext
     asset_context_not_deprecated = [
+        # will not be deprecated
+        "job_def",
+        "log",
+        "pdb",
+        "run",
+        "get",
+        # methods/properties that may be deprecated in future PRs
         "add_output_metadata",
         "asset_check_spec",
         "asset_checks_def",
@@ -55,24 +67,18 @@ def test_deprecation_warnings():
         "asset_partitions_time_window_for_input",
         "asset_partitions_time_window_for_output",
         "assets_def",
-        "dagster_run",
         "get_output_metadata",
-        "get_tag",
         "has_asset_checks_def",
         "has_partition_key",
-        "has_tag",
         "instance",
         "job_name",
-        "log",
         "op_handle",
         "output_for_asset_key",
         "partition_key",
         "partition_key_range",
         "partition_time_window",
-        "pdb",
         "requires_typed_event_stream",
         "resources",
-        "run_tags",
         "selected_asset_check_keys",
         "selected_asset_keys",
         "selected_output_names",
@@ -80,11 +86,9 @@ def test_deprecation_warnings():
         "set_requires_typed_event_stream",
         "typed_event_stream_error_message",
         "describe_op",
-        "file_manager",
         "has_assets_def",
         "get_mapping_key",
         "get_step_execution_context",
-        "job_def",
         "node_handle",
         "op",
         "op_config",
@@ -97,7 +101,7 @@ def test_deprecation_warnings():
         "get_asset_provenance",
         "is_subset",
         "partition_keys",
-        "get",
+        "retry_number",
     ]
 
     other_ignores = [
@@ -127,14 +131,18 @@ def test_deprecation_warnings():
         asset_context_attr = getattr(AssetExecutionContext, attr)
 
         if attr not in asset_context_not_deprecated:
-            if not hasattr(asset_context_attr.fget, "_deprecated"):
+            if isinstance(asset_context_attr, property):
+                asset_context_fn = asset_context_attr.fget
+            else:
+                asset_context_fn = asset_context_attr
+            if not hasattr(asset_context_fn, "_deprecated"):
                 raise Exception(
                     f"Property {attr} on OpExecutionContext is implemented but not deprecated on"
                     " AssetExecutionContext. If this in intended, update asset_context_not_deprecated."
                     f" Otherwise, add a deprecation warning to {attr}."
                 )
 
-            deprecation_info = asset_context_attr.fget._deprecated  # noqa: SLF001
+            deprecation_info = asset_context_fn._deprecated  # noqa: SLF001
             expected_deprecation_args = _get_deprecation_kwargs(attr)
             assert_deprecation_messages_as_expected(deprecation_info, expected_deprecation_args)
 
