@@ -335,6 +335,7 @@ class ConfigurableResourceFactory(
         )
 
     """
+
     # Declare as private so it's excluded from dict representations
     _state__internal__: ConfigurableResourceFactoryState = PrivateAttr()
 
