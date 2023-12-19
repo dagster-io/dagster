@@ -602,8 +602,6 @@ class MaterializeOnParentUpdatedRule(
 
 @whitelist_for_serdes
 class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])):
-    HANDLED_SUBSET_KEY: str = "handled_subset"
-
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
@@ -616,9 +614,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """Returns the AssetSubset which has been handled (materialized, requested, or discarded).
         Accounts for cases in which the partitions definition may have changed between ticks.
         """
-        previous_handled_subset = context.cursor.get_extras_value(
-            context.condition, self.HANDLED_SUBSET_KEY, AssetSubset
-        )
+        previous_handled_subset = context.cursor.get_extras_value(context.condition, AssetSubset)
         if previous_handled_subset:
             # partitioned -> unpartitioned or vice versa
             if previous_handled_subset.is_partitioned != (context.partitions_def is not None):
@@ -654,7 +650,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             if handled_subset.size > 0
             else context.candidate_subset
         )
-        return (unhandled_candidates, [], {self.HANDLED_SUBSET_KEY: handled_subset})
+        return (unhandled_candidates, [], handled_subset)
 
 
 @whitelist_for_serdes
