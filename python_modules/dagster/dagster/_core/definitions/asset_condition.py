@@ -357,16 +357,12 @@ class RuleCondition(
         context.root_context.daemon_context._verbose_log_fn(  # noqa
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
-        true_subset, subsets_with_metadata, extra_value = self.rule.evaluate_for_asset(context)
+        evaluation_result = self.rule.evaluate_for_asset(context)
         context.root_context.daemon_context._verbose_log_fn(  # noqa
-            f"Rule returned {true_subset.size} partitions" f"{true_subset}"
+            f"Rule returned {evaluation_result.true_subset.size} partitions:"
+            f"{evaluation_result.true_subset}"
         )
-        return AssetConditionEvaluationResult.create(
-            context=context,
-            true_subset=true_subset,
-            subsets_with_metadata=subsets_with_metadata,
-            extra_value=extra_value,
-        )
+        return evaluation_result
 
 
 class AndAssetCondition(
