@@ -8,7 +8,7 @@
     maximum lag minutes.
 """
 import datetime
-from typing import TYPE_CHECKING, AbstractSet, Optional, Tuple
+from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
 import pendulum
 
@@ -18,8 +18,9 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
+    from .asset_condition import AssetSubsetWithMetadata
     from .asset_condition_evaluation_context import AssetConditionEvaluationContext
-    from .auto_materialize_rule_evaluation import RuleEvaluationResults, TextRuleEvaluationData
+    from .auto_materialize_rule_evaluation import TextRuleEvaluationData
 
 
 def get_execution_period_for_policy(
@@ -154,7 +155,7 @@ def get_expected_data_time_for_asset_key(
 
 def freshness_evaluation_results_for_asset_key(
     context: "AssetConditionEvaluationContext",
-) -> "RuleEvaluationResults":
+) -> Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
@@ -168,7 +169,7 @@ def freshness_evaluation_results_for_asset_key(
     if not context.asset_graph.get_downstream_freshness_policies(
         asset_key=asset_key
     ) or context.asset_graph.is_partitioned(asset_key):
-        return context.empty_subset(), [], {}
+        return context.empty_subset(), []
 
     # figure out the current contents of this asset
     current_data_time = context.data_time_resolver.get_current_data_time(asset_key, current_time)
@@ -181,7 +182,7 @@ def freshness_evaluation_results_for_asset_key(
 
     # if executing the asset on this tick would not change its data time, then return
     if current_data_time == expected_data_time:
-        return context.empty_subset(), [], {}
+        return context.empty_subset(), []
 
     # calculate the data times you would expect after all currently-executing runs
     # were to successfully complete
@@ -223,7 +224,6 @@ def freshness_evaluation_results_for_asset_key(
         return (
             AssetSubset.all(asset_key, None),
             [AssetSubsetWithMetadata(all_subset, evaluation_data.metadata)],
-            {},
         )
     else:
-        return context.empty_subset(), [], {}
+        return context.empty_subset(), []
