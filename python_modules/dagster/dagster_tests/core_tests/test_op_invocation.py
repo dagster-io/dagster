@@ -45,7 +45,7 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import (
-    RunlessOpExecutionContext,
+    DirectOpExecutionContext,
     build_asset_context,
 )
 from dagster._utils.test import wrap_op_in_graph_and_execute
@@ -1388,22 +1388,22 @@ def test_async_assets_with_shared_context():
         asyncio.run(main())
 
 
-def assert_context_unbound(context: RunlessOpExecutionContext):
+def assert_context_unbound(context: DirectOpExecutionContext):
     # to assert that the context is correctly unbound after op invocation
     assert not context.is_bound
 
 
-def assert_context_bound(context: RunlessOpExecutionContext):
+def assert_context_bound(context: DirectOpExecutionContext):
     # to assert that the context is correctly bound during op invocation
     assert context.is_bound
 
 
-def assert_execution_properties_cleared(context: RunlessOpExecutionContext):
+def assert_execution_properties_cleared(context: DirectOpExecutionContext):
     # to assert that the invocation properties are reset at the beginning of op invocation
     assert len(context.execution_properties.output_metadata.keys()) == 0
 
 
-def assert_execution_properties_exist(context: RunlessOpExecutionContext):
+def assert_execution_properties_exist(context: DirectOpExecutionContext):
     # to assert that the invocation properties remain accessible after op invocation
     assert len(context.execution_properties.output_metadata.keys()) > 0
 

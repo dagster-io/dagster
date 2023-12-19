@@ -39,7 +39,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.events import EngineEventData
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.execution.context.invocation import RunlessOpExecutionContext
+from dagster._core.execution.context.invocation import DirectOpExecutionContext
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
@@ -406,8 +406,8 @@ def build_external_execution_context_data(
             _convert_time_window(partition_time_window) if partition_time_window else None
         ),
         run_id=context.run_id,
-        job_name=None if isinstance(context, RunlessOpExecutionContext) else context.job_name,
-        retry_number=0 if isinstance(context, RunlessOpExecutionContext) else context.retry_number,
+        job_name=None if isinstance(context, DirectOpExecutionContext) else context.job_name,
+        retry_number=0 if isinstance(context, DirectOpExecutionContext) else context.retry_number,
         extras=extras or {},
     )
 
