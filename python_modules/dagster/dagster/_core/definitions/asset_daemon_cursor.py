@@ -61,7 +61,7 @@ class AssetConditionCursor(NamedTuple):
     previous_max_storage_id: Optional[int]
     previous_evaluation_timestamp: Optional[float]
 
-    extras: Sequence[AssetConditionCursorExtras]
+    extra_values_by_unique_id: Mapping[str, PackableValue]
 
     @staticmethod
     def empty(asset_key: AssetKey) -> "AssetConditionCursor":
@@ -70,21 +70,16 @@ class AssetConditionCursor(NamedTuple):
             previous_evaluation=None,
             previous_max_storage_id=None,
             previous_evaluation_timestamp=None,
-            extras=[],
+            extra_values_by_unique_id={},
         )
 
-    def get_extras_value(
-        self, condition: "AssetCondition", key: str, as_type: Type[T]
-    ) -> Optional[T]:
-        """Returns a value from the extras dict for the given condition, if it exists and is of the
-        expected type. Otherwise, returns None.
+    def get_extras_value(self, condition: "AssetCondition", as_type: Type[T]) -> Optional[T]:
+        """Returns the value from the extras dict for the given condition, if it exists and is of
+        the expected type. Otherwise, returns None.
         """
-        for condition_extras in self.extras:
-            if condition_extras.condition_snapshot == condition.snapshot:
-                extras_value = condition_extras.extras.get(key)
-                if isinstance(extras_value, as_type):
-                    return extras_value
-                return None
+        extras_value = self.extra_values_by_unique_id.get(condition.unique_id)
+        if isinstance(extras_value, as_type):
+            return extras_value
         return None
 
     def get_previous_requested_or_discarded_subset(
@@ -227,18 +222,12 @@ def get_backcompat_asset_condition_cursor(
         previous_evaluation=latest_evaluation,
         previous_evaluation_timestamp=latest_timestamp,
         previous_max_storage_id=latest_storage_id,
-        extras=[
-            # the only information we need to preserve from the previous cursor is the handled
-            # subset
-            AssetConditionCursorExtras(
-                condition_snapshot=RuleCondition(MaterializeOnMissingRule()).snapshot,
-                extras={MaterializeOnMissingRule.HANDLED_SUBSET_KEY: handled_root_subset},
-            )
-        ]
-        # only include this information if it's non-empty (otherwise we can just rebuild it from
-        # the set of materialized partitions later on)
+        # the only information we need to preserve from the previous cursor is the handled subset
+        extra_values_by_unique_id={
+            RuleCondition(MaterializeOnMissingRule()).unique_id: handled_root_subset,
+        }
         if handled_root_subset and handled_root_subset.size > 0
-        else [],
+        else {},
     )
 
 

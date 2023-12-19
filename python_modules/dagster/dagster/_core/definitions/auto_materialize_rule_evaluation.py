@@ -9,7 +9,6 @@ from typing import (
     AbstractSet,
     Dict,
     FrozenSet,
-    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -129,9 +128,7 @@ class WaitingOnAssetsRuleEvaluationData(
         }
 
 
-RuleEvaluationResults = Tuple[
-    AssetSubset, Sequence["AssetSubsetWithMetadata"], Mapping[str, PackableValue]
-]
+RuleEvaluationResults = Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"], PackableValue]
 
 
 @whitelist_for_serdes

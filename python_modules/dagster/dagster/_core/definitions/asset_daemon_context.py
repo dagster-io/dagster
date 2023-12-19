@@ -209,20 +209,20 @@ class AssetDaemonContext:
             expected_data_time_mapping=expected_data_time_mapping,
         )
 
-        evaluation, extras = asset_condition.evaluate(context)
+        evaluation_result = asset_condition.evaluate(context)
 
         new_asset_cursor = AssetConditionCursor(
             asset_key=asset_key,
             previous_max_storage_id=context.new_max_storage_id,
             previous_evaluation_timestamp=context.evaluation_time.timestamp(),
-            previous_evaluation=evaluation,
-            extras=extras,
+            previous_evaluation=evaluation_result.evaluation,
+            extra_values_by_unique_id=evaluation_result.extra_values_by_unique_id,
         )
 
         expected_data_time = get_expected_data_time_for_asset_key(
-            context, will_materialize=evaluation.true_subset.size > 0
+            context, will_materialize=evaluation_result.true_subset.size > 0
         )
-        return evaluation, new_asset_cursor, expected_data_time
+        return evaluation_result.evaluation, new_asset_cursor, expected_data_time
 
     def get_asset_condition_evaluations(
         self,
