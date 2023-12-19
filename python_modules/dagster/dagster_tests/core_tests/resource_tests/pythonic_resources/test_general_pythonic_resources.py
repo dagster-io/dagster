@@ -770,6 +770,15 @@ def test_extending_resource_nesting() -> None:
     assert executed["yes"]
 
 
+def test_resource_equality() -> None:
+    class BaseResource(ConfigurableResource):
+        a_str: str
+        an_int: int
+
+    common_kwargs = dict(a_str="foo", an_int=100)
+    assert BaseResource(**common_kwargs) == BaseResource(**common_kwargs)
+
+
 def test_execute_in_process() -> None:
     out_txt = []
 

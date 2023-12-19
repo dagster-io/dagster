@@ -55,7 +55,7 @@ except ImportError:
 
 from abc import ABC, abstractmethod
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
@@ -335,6 +335,8 @@ class ConfigurableResourceFactory(
         )
 
     """
+    # Declare as private so it's excluded from dict representations
+    _state__internal__: ConfigurableResourceFactoryState = PrivateAttr()
 
     def __init__(self, **data: Any):
         resource_pointers, data_without_resources = separate_resource_params(self.__class__, data)
