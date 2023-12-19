@@ -9,6 +9,7 @@ import threading
 import time
 import uuid
 import warnings
+import pendulum
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
@@ -105,6 +106,7 @@ from .utils import (
     max_rx_bytes,
     max_send_bytes,
 )
+from dagster._utils.container import retrieve_containerized_cpu_time, retrieve_containerized_memory_limit, retrieve_containerized_memory_usage, retrieve_containerized_num_allocated_cores
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent
@@ -126,6 +128,27 @@ def _record_max_workers(max_workers: Optional[int]) -> None:
         _UTILIZATION_METRICS["general_info"]["max_workers"] = (
             max_workers if max_workers is not None else -1
         )
+
+def _record_cpu_utilization(logger: logging.Logger) -> None:
+    with _METRICS_LOCK:
+        last_cpu_measurement_time = _UTILIZATION_METRICS["general_info"].get("last_cpu_measurement_time")
+        last_cpu_measurement = _UTILIZATION_METRICS["general_info"].get("last_cpu_measurement")
+        cur_time = pendulum.now("UTC").timestamp()
+        cur_cpu_time_measurement = retrieve_containerized_cpu_time(logger)
+        num_cores = retrieve_containerized_num_allocated_cores(logger)
+        _UTILIZATION_METRICS["general_info"]["num_cores"] = num_cores
+        if last_cpu_measurement_time is not None and last_cpu_measurement is not None and num_cores is not None:
+            cpu_utilization = (cur_cpu_time_measurement - last_cpu_measurement) / (cur_time - last_cpu_measurement_time) / num_cores
+            _UTILIZATION_METRICS["general_info"]["cpu_utilization"] = cpu_utilization
+            _UTILIZATION_METRICS["general_info"]["last_cpu_measurement_time"] = cur_time
+            _UTILIZATION_METRICS["general_info"]["last_cpu_measurement"] = cur_cpu_time_measurement
+
+def _record_memory_utilization(logger: logging.Logger) -> None:
+    with _METRICS_LOCK:
+        cur_memory_usage = retrieve_containerized_memory_usage(logger)
+        cur_memory_limit = retrieve_containerized_memory_limit(logger)
+        _UTILIZATION_METRICS["general_info"]["memory_usage"] = cur_memory_usage
+        _UTILIZATION_METRICS["general_info"]["memory_limit"] = cur_memory_limit
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -454,6 +477,9 @@ class DagsterApiServer(DagsterApiServicer):
 
     def Ping(self, request, _context: grpc.ServicerContext) -> api_pb2.PingReply:
         echo = request.echo
+        if self._enable_metrics:
+            _record_cpu_utilization(self._logger)
+            _record_memory_utilization(self._logger)
         return api_pb2.PingReply(
             echo=echo, serialized_server_health_metadata=json.dumps(_UTILIZATION_METRICS)
         )
