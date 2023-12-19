@@ -185,6 +185,42 @@ def test_upath_io_manager_with_non_any_type_annotation(tmp_path: Path):
     assert manager.load_input(context) == data
 
 
+def test_upath_io_manager_with_none_return(tmp_path: Path):
+    class MyIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            # this function should not get called because we skip storing None
+            assert False
+
+        def load_from_path(self, context: InputContext, path: UPath) -> List:
+            # this function should not get called because we skip loading None
+            assert False
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def my_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return MyIOManager(base_path=cast(UPath, base_path))
+
+    manager = my_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
+
+    context = build_output_context(
+        name="abc",
+        step_key="123",
+        dagster_type=DagsterType(type_check_fn=lambda _, value: True, name="any", typing_type=Any),
+    )
+    manager.handle_output(context, None)
+
+    context = build_input_context(
+        name="abc",
+        upstream_output=context,
+        dagster_type=DagsterType(type_check_fn=lambda _, value: True, name="any", typing_type=Any),
+    )
+
+    manager.load_input(context)
+
+
 def test_upath_io_manager_multiple_time_partitions(
     daily: DailyPartitionsDefinition,
     hourly: HourlyPartitionsDefinition,
