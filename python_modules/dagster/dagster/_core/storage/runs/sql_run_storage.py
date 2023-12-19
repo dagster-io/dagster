@@ -269,6 +269,9 @@ class SqlRunStorage(RunStorage):
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
 
+        if filters.tags:
+            query = self._apply_tags_table_filters(query, filters.tags)
+
         return query
 
     def _runs_query(
@@ -291,44 +294,41 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        if filters.tags:
-            table = self._apply_tags_table_joins(RunsTable, filters.tags)
-        else:
-            table = RunsTable
-
+        table = RunsTable
         base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
             table
         )
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
-    def _apply_tags_table_joins(
-        self,
-        table: db.Table,
-        tags: Mapping[str, Union[str, Sequence[str]]],
-    ) -> db.Table:
-        multi_join = len(tags) > 1
-        i = 0
-        for key, value in tags.items():
-            i += 1
-            tags_table = (
-                db_subquery(db_select([RunTagsTable]), f"run_tags_subquery_{i}")
-                if multi_join
-                else RunTagsTable
-            )
-            table = table.join(
-                tags_table,
-                db.and_(
-                    RunsTable.c.run_id == tags_table.c.run_id,
-                    tags_table.c.key == key,
-                    (
-                        tags_table.c.value == value
-                        if isinstance(value, str)
-                        else tags_table.c.value.in_(value)
-                    ),
-                ),
-            )
-        return table
+    def _apply_tags_table_filters(self, query: SqlAlchemyQuery, tags: Mapping[str, Union[str, Sequence[str]]]) -> SqlAlchemyQuery:
+        """Efficient query pattern for filtering by multiple tags.
+        """
+        expected_count = len(tags)
+        if expected_count == 1:
+            key, value = next(iter(tags.items()))
+            # since run tags should be much larger than runs, select where exists
+            # should be more efficient than joining
+            subquery = db_select([1])
+            filter_ = RunsTable.c.run_id == RunTagsTable.c.run_id
+            filter_ &= RunTagsTable.c.key == key
+            filter_ &= RunTagsTable.c.value == value if isinstance(value, str) else RunTagsTable.c.value.in_(value)
+            subquery = subquery.where(filter_).exists()
+            query = query.where(subquery)
+        elif expected_count > 1:
+            # efficient query for filtering by multiple tags. first find all run_ids that match
+            # all tags, then select from runs table where run_id in that set
+            subquery = db_select(RunTagsTable.c.run_id).select_from(RunTagsTable)
+            expressions = []
+            for key, value in tags.items():
+                expression = RunTagsTable.c.key == key
+                expression &= RunTagsTable.c.value == value
+                expressions.append(expression)
+            subquery = subquery.where(db.or_(*expressions))
+            subquery = subquery.group_by(RunTagsTable.c.run_id)
+            subquery = subquery.having(db.func.count(db.distinct(RunTagsTable.c.key)) == expected_count)
+            query = query.where(RunsTable.c.run_id.in_(subquery))
+        return query
 
     def get_runs(
         self,
