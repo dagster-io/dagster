@@ -538,6 +538,6 @@ def _type_check_output(
             dagster_type=dagster_type,
         )
 
-    context.execution_properties.observe_output(
+    context.observe_output(
         output_def.name, output.mapping_key if isinstance(output, DynamicOutput) else None
     )
