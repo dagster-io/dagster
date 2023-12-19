@@ -74,6 +74,10 @@ class AutoMaterializeRuleEvaluationData(ABC):
     def metadata(self) -> MetadataMapping:
         raise NotImplementedError()
 
+    @property
+    def frozen_metadata(self) -> FrozenSet[Tuple[str, MetadataValue]]:
+        return frozenset(self.metadata.items())
+
 
 @whitelist_for_serdes
 class TextRuleEvaluationData(
