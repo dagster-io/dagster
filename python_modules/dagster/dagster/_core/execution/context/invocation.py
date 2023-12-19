@@ -81,6 +81,11 @@ class BoundProperties(
         ],
     )
 ):
+    """Maintains properties that are only available once the context has been bound to a particular
+    asset or op execution. By splitting these out into a separate object, it is easier to ensure that
+    all properties bound to an execution are cleared once the execution is complete.
+    """
+
     def __new__(
         cls,
         op_def: OpDefinition,
@@ -92,7 +97,6 @@ class BoundProperties(
         op_config: Any,
         step_description: str,
     ):
-        """Maintains the properties of the context that are provided at bind time."""
         return super(BoundProperties, cls).__new__(
             cls,
             op_def=check.inst_param(op_def, "op_def", OpDefinition),
@@ -107,9 +111,9 @@ class BoundProperties(
 
 
 class DirectExecutionProperties:
-    """Maintains information about the invocation that is updated during execution time. This information
-    needs to be available to the user once invocation is complete, so that they can assert on events and
-    outputs. It needs to be cleared before the context is used for another invocation.
+    """Maintains information about the execution that can only be updated during execution (when
+    the context is bound), but can be read after execution is complete. It needs to be cleared before
+    the context is used for another execution.
 
     This is not implemented as a NamedTuple because the various attributes will be mutated during
     execution.
