@@ -61,6 +61,7 @@ def code_server_cli():
     required=False,
     default=None,
     help="Maximum number of (threaded) workers to use in the code server",
+    envvar="DAGSTER_CODE_SERVER_MAX_WORKERS",
 )
 @python_origin_target_argument
 @click.option(
