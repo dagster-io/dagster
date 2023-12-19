@@ -5,7 +5,12 @@ import {LeftNav, LEFT_NAV_WIDTH} from '../nav/LeftNav';
 
 import {LayoutContext} from './LayoutProvider';
 
-export const App = (props: {children: React.ReactNode}) => {
+interface Props {
+  banner?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+export const App = ({banner, children}: Props) => {
   const {nav} = React.useContext(LayoutContext);
 
   const onClickMain = React.useCallback(() => {
@@ -18,7 +23,8 @@ export const App = (props: {children: React.ReactNode}) => {
     <Container>
       <LeftNav />
       <Main $smallScreen={nav.isSmallScreen} $navOpen={nav.isOpen} onClick={onClickMain}>
-        {props.children}
+        <div>{banner}</div>
+        <ChildContainer>{children}</ChildContainer>
       </Main>
     </Container>
   );
@@ -27,6 +33,8 @@ export const App = (props: {children: React.ReactNode}) => {
 const Main = styled.div<{$smallScreen: boolean; $navOpen: boolean}>`
   height: 100%;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
 
   ${({$navOpen, $smallScreen}) => {
     if ($smallScreen || !$navOpen) {
@@ -46,4 +54,9 @@ const Main = styled.div<{$smallScreen: boolean; $navOpen: boolean}>`
 const Container = styled.div`
   display: flex;
   height: calc(100% - 64px);
+`;
+
+const ChildContainer = styled.div`
+  height: 100%;
+  overflow: hidden;
 `;
