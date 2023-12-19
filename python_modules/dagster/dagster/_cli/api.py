@@ -656,6 +656,23 @@ def grpc_command(
             package_name=kwargs["package_name"],
         )
 
+    code_desc = " "
+    if loadable_target_origin:
+        if loadable_target_origin.python_file:
+            code_desc = f" for file {loadable_target_origin.python_file} "
+        elif loadable_target_origin.package_name:
+            code_desc = f" for package {loadable_target_origin.package_name} "
+        elif loadable_target_origin.module_name:
+            code_desc = f" for module {loadable_target_origin.module_name} "
+
+    server_desc = (
+        f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
+        if port
+        else f"Dagster code server{code_desc}in process {os.getpid()}"
+    )
+
+    logger.info("Starting %s", server_desc)
+
     server_termination_event = threading.Event()
     api_servicer = DagsterApiServer(
         server_termination_event=server_termination_event,
@@ -687,21 +704,6 @@ def grpc_command(
         host=host,
         max_workers=max_workers,
         logger=logger,
-    )
-
-    code_desc = " "
-    if loadable_target_origin:
-        if loadable_target_origin.python_file:
-            code_desc = f" for file {loadable_target_origin.python_file} "
-        elif loadable_target_origin.package_name:
-            code_desc = f" for package {loadable_target_origin.package_name} "
-        elif loadable_target_origin.module_name:
-            code_desc = f" for module {loadable_target_origin.module_name} "
-
-    server_desc = (
-        f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
-        if port
-        else f"Dagster code server{code_desc}in process {os.getpid()}"
     )
 
     logger.info("Started %s", server_desc)
