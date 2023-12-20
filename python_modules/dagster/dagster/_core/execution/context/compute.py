@@ -198,17 +198,6 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         return self._pdb
 
-    @property
-    def file_manager(self):
-        """Deprecated access to the file manager.
-
-        :meta private:
-        """
-        raise DagsterInvalidPropertyError(
-            "You have attempted to access the file manager which has been moved to resources in"
-            " 0.10.0. Please access it via `context.resources.file_manager` instead."
-        )
-
     @public
     @property
     def resources(self) -> Any:

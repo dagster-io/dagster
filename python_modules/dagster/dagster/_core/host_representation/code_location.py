@@ -37,6 +37,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
+    external_repository_data_from_def,
 )
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
@@ -202,6 +203,7 @@ class CodeLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: datetime.datetime,
+        log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         pass
 
@@ -211,9 +213,11 @@ class CodeLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_completion_time: Optional[float],
+        last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
+        last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         pass
 
@@ -289,11 +293,11 @@ class CodeLocation(AbstractContextManager):
 
 
 class InProcessCodeLocation(CodeLocation):
-    def __init__(self, origin: InProcessCodeLocationOrigin):
+    def __init__(self, origin: InProcessCodeLocationOrigin, instance: DagsterInstance):
         from dagster._grpc.server import LoadedRepositories
-        from dagster._utils.hosted_user_process import external_repo_from_def
 
         self._origin = check.inst_param(origin, "origin", InProcessCodeLocationOrigin)
+        self._instance = instance
 
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
@@ -306,9 +310,10 @@ class InProcessCodeLocation(CodeLocation):
 
         self._repositories: Dict[str, ExternalRepository] = {}
         for repo_name, repo_def in self._loaded_repositories.definitions_by_name.items():
-            self._repositories[repo_name] = external_repo_from_def(
-                repo_def,
+            self._repositories[repo_name] = ExternalRepository(
+                external_repository_data_from_def(repo_def),
                 RepositoryHandle(repository_name=repo_name, code_location=self),
+                instance=instance,
             )
 
     @property
@@ -472,11 +477,13 @@ class InProcessCodeLocation(CodeLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: datetime.datetime,  # actually a pendulum datetime
+        log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
+        check.opt_list_param(log_key, "log_key", of_type=str)
 
         result = get_external_schedule_execution(
             self._get_repo_def(repository_handle.repository_name),
@@ -484,6 +491,7 @@ class InProcessCodeLocation(CodeLocation):
             schedule_name=schedule_name,
             scheduled_execution_timestamp=scheduled_execution_time.timestamp(),
             scheduled_execution_timezone=scheduled_execution_time.timezone.name,  # type: ignore
+            log_key=log_key,
         )
         if isinstance(result, ExternalScheduleExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
@@ -495,17 +503,21 @@ class InProcessCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_completion_time: Optional[float],
+        last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
+        last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         result = get_external_sensor_execution(
             self._get_repo_def(repository_handle.repository_name),
             instance.get_ref(),
             name,
-            last_completion_time,
+            last_tick_completion_time,
             last_run_key,
             cursor,
+            log_key,
+            last_sensor_start_time,
         )
         if isinstance(result, ExternalSensorExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
@@ -542,6 +554,7 @@ class GrpcServerCodeLocation(CodeLocation):
     def __init__(
         self,
         origin: CodeLocationOrigin,
+        instance: DagsterInstance,
         host: Optional[str] = None,
         port: Optional[int] = None,
         socket: Optional[str] = None,
@@ -554,6 +567,7 @@ class GrpcServerCodeLocation(CodeLocation):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
         self._origin = check.inst_param(origin, "origin", CodeLocationOrigin)
+        self._instance = instance
 
         self.grpc_server_registry = check.opt_inst_param(
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
@@ -639,6 +653,7 @@ class GrpcServerCodeLocation(CodeLocation):
                         repository_name=repo_name,
                         code_location=self,
                     ),
+                    instance,
                 )
                 for repo_name, repo_data in self._external_repositories_data.items()
             }
@@ -832,11 +847,13 @@ class GrpcServerCodeLocation(CodeLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: Optional[datetime.datetime],
+        log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
+        check.opt_list_param(log_key, "log_key", of_type=str)
 
         return sync_get_external_schedule_execution_data_grpc(
             self.client,
@@ -844,6 +861,7 @@ class GrpcServerCodeLocation(CodeLocation):
             repository_handle,
             schedule_name,
             scheduled_execution_time,
+            log_key,
         )
 
     def get_external_sensor_execution_data(
@@ -851,9 +869,11 @@ class GrpcServerCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         name: str,
-        last_completion_time: Optional[float],
+        last_tick_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
+        last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 
@@ -862,9 +882,11 @@ class GrpcServerCodeLocation(CodeLocation):
             instance,
             repository_handle,
             name,
-            last_completion_time,
+            last_tick_completion_time,
             last_run_key,
             cursor,
+            log_key,
+            last_sensor_start_time,
         )
 
     def get_external_partition_set_execution_param_data(

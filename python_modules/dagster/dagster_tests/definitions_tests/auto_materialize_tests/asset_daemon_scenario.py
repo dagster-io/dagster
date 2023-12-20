@@ -314,19 +314,27 @@ class AssetDaemonScenarioState(NamedTuple):
         return self
 
     def _evaluate_tick_fast(
-        self
+        self,
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation]]:
         cursor = AssetDaemonCursor.from_serialized(self.serialized_cursor, self.asset_graph)
 
         new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
             evaluation_id=cursor.evaluation_id + 1,
             asset_graph=self.asset_graph,
-            target_asset_keys=None,
+            auto_materialize_asset_keys={
+                key
+                for key, policy in self.asset_graph.auto_materialize_policies_by_key.items()
+                if policy is not None
+            },
             instance=self.instance,
             materialize_run_tags={},
             observe_run_tags={},
             cursor=cursor,
-            auto_observe=True,
+            auto_observe_asset_keys={
+                key
+                for key in self.asset_graph.source_asset_keys
+                if self.asset_graph.get_auto_observe_interval_minutes(key) is not None
+            },
             respect_materialization_data_versions=False,
             logger=self.logger,
         ).evaluate()
@@ -468,7 +476,7 @@ class AssetDaemonScenarioState(NamedTuple):
         """Additional assertions for daemon mode. Checks that the evaluation for the given asset
         contains the expected run ids.
         """
-        current_evaluation_id = check.not_none(get_current_evaluation_id(self.instance))
+        current_evaluation_id = check.not_none(get_current_evaluation_id(self.instance, None))
         new_run_ids_for_asset = {
             run.run_id
             for run in self.instance.get_runs(

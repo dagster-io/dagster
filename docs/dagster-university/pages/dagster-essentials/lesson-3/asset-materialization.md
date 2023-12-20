@@ -33,7 +33,7 @@ def taxi_trips_file():
 
    Using the `month_to_fetch` variable, the URL to retrieve the file from becomes: `https://.../trip-data/yellow_tripdata_2023-03.parquet`
 
-4. Next, the path of the file will be stored at is constructed. The value of `TAXI_TRIPS_TEMPLATE_FILE_PATH`, stored in your project’s `assets/constants.py` file, is retrieved: `data/raw/taxi_trips_{}.parquet`
+4. Next, the path where the file will be stored is constructed. The value of `TAXI_TRIPS_TEMPLATE_FILE_PATH`, stored in your project’s `assets/constants.py` file, is retrieved: `data/raw/taxi_trips_{}.parquet`
 
 5. The parquet file is created and saved at `data/raw/taxi_trips_2023-03.parquet`
 

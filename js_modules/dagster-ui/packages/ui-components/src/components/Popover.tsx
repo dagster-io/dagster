@@ -13,6 +13,8 @@ import {
   colorTextDefault,
   colorTextDisabled,
   colorPopoverBackground,
+  colorShadowDefault,
+  colorTooltipBackground,
 } from '../theme/color';
 
 import {FontFamily} from './styles';
@@ -20,7 +22,7 @@ import {FontFamily} from './styles';
 export const GlobalPopoverStyle = createGlobalStyle`
   .dagster-popover.bp4-popover2,
   .dagster-popover.bp4-popover {
-    box-shadow: rgba(0, 0, 0, 0.18) 0px 2px 12px;
+    box-shadow: ${colorShadowDefault()} 0px 2px 12px;
   }
 
   .dagster-popover .bp4-popover2-content,
@@ -76,9 +78,18 @@ export const GlobalPopoverStyle = createGlobalStyle`
     fill: ${colorPopoverBackground()};
   }
 
+  .dagster-popover.bp4-dark .bp4-popover2-arrow-fill {
+    fill: ${colorTooltipBackground()};
+  }
+
+  .dagster-popover.bp4-dark .bp4-popover2-arrow-border {
+    fill: ${colorShadowDefault()};
+    fill-opacity: 0.7;
+  }
+
   .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
   .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
-    background-color: ${colorPopoverBackground()};
+    background-color: ${colorTooltipBackground()};
   }
 `;
 

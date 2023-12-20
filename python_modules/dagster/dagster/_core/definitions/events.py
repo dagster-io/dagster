@@ -177,7 +177,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     @staticmethod
     def from_coercible_or_definition(
-        arg: Union["CoercibleToAssetKey", "AssetsDefinition", "SourceAsset"]
+        arg: Union["CoercibleToAssetKey", "AssetsDefinition", "SourceAsset"],
     ) -> "AssetKey":
         from dagster._core.definitions.assets import AssetsDefinition
         from dagster._core.definitions.source_asset import SourceAsset

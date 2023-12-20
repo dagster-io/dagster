@@ -352,7 +352,7 @@ class DbtCliInvocation:
 
     @public
     def stream(
-        self
+        self,
     ) -> Iterator[
         Union[
             Output,
@@ -510,7 +510,7 @@ class DbtCliResource(ConfigurableResource):
         target (Optional[str]): The target from your dbt `profiles.yml` to use for execution. See
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
-        dbt_executable (str]): The path to the dbt executable. By default, this is `dbt`.
+        dbt_executable (str): The path to the dbt executable. By default, this is `dbt`.
 
     Examples:
         Creating a dbt resource with only a reference to ``project_dir``:
@@ -1027,7 +1027,7 @@ def get_subset_selection_for_context(
 
 
 def get_dbt_resource_props_by_output_name(
-    manifest: Mapping[str, Any]
+    manifest: Mapping[str, Any],
 ) -> Mapping[str, Mapping[str, Any]]:
     node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
 
@@ -1039,7 +1039,7 @@ def get_dbt_resource_props_by_output_name(
 
 
 def get_dbt_resource_props_by_test_name(
-    manifest: Mapping[str, Any]
+    manifest: Mapping[str, Any],
 ) -> Mapping[str, Mapping[str, Any]]:
     return {
         dbt_resource_props["name"]: dbt_resource_props

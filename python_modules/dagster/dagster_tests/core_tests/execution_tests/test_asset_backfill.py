@@ -61,7 +61,7 @@ from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
@@ -94,12 +94,14 @@ class AssetBackfillScenario(NamedTuple):
     # when backfilling "some" partitions, the subset of partitions of root assets in the backfill
     # to target:
     target_root_partition_keys: Optional[Sequence[str]]
+    last_storage_id_cursor_offset: Optional[int]
 
 
 def scenario(
     assets: Union[Mapping[str, Sequence[AssetsDefinition]], Sequence[AssetsDefinition]],
     evaluation_time: Optional[datetime.datetime] = None,
     target_root_partition_keys: Optional[Sequence[str]] = None,
+    last_storage_id_cursor_offset: Optional[int] = None,
 ) -> AssetBackfillScenario:
     if isinstance(assets, list):
         assets_by_repo_name = {"repo": assets}
@@ -110,11 +112,15 @@ def scenario(
         assets_by_repo_name=cast(Mapping[str, Sequence[AssetsDefinition]], assets_by_repo_name),
         evaluation_time=evaluation_time if evaluation_time else pendulum.now("UTC"),
         target_root_partition_keys=target_root_partition_keys,
+        last_storage_id_cursor_offset=last_storage_id_cursor_offset,
     )
 
 
 scenarios = {
     "one_asset_one_partition": scenario(one_asset_one_partition),
+    "one_asset_one_partition_cursor_offset": scenario(
+        one_asset_one_partition, last_storage_id_cursor_offset=100
+    ),
     "one_asset_two_partitions": scenario(one_asset_two_partitions),
     "two_assets_in_sequence_one_partition": scenario(two_assets_in_sequence_one_partition),
     "two_assets_in_sequence_one_partition_cross_repo": scenario(
@@ -123,7 +129,17 @@ scenarios = {
             "repo2": [two_assets_in_sequence_one_partition[1]],
         },
     ),
+    "two_assets_in_sequence_one_partition_cross_repo_cursor_offset": scenario(
+        {
+            "repo1": [two_assets_in_sequence_one_partition[0]],
+            "repo2": [two_assets_in_sequence_one_partition[1]],
+        },
+        last_storage_id_cursor_offset=100,
+    ),
     "two_assets_in_sequence_two_partitions": scenario(two_assets_in_sequence_two_partitions),
+    "two_assets_in_sequence_two_partitions_cursor_offset": scenario(
+        two_assets_in_sequence_two_partitions, last_storage_id_cursor_offset=100
+    ),
     "two_assets_in_sequence_fan_in_partitions": scenario(two_assets_in_sequence_fan_in_partitions),
     "two_assets_in_sequence_fan_out_partitions": scenario(
         two_assets_in_sequence_fan_out_partitions
@@ -262,7 +278,11 @@ def _single_backfill_iteration_create_but_do_not_submit_runs(
 @pytest.mark.parametrize("failures", ["no_failures", "root_failures", "random_half_failures"])
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, some_or_all: str):
-    with instance_for_test() as instance:
+    with instance_for_test() as instance, environ(
+        {"ASSET_BACKFILL_CURSOR_OFFSET": str(scenario.last_storage_id_cursor_offset)}
+        if scenario.last_storage_id_cursor_offset
+        else {}
+    ):
         instance.add_dynamic_partitions("foo", ["a", "b"])
 
         with pendulum.test(scenario.evaluation_time):
@@ -293,7 +313,6 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
             backfill_data = AssetBackfillData.empty(
                 target_subset,
                 scenario.evaluation_time,
-                asset_graph,
                 dynamic_partitions_store=instance,
             )
 
@@ -431,7 +450,6 @@ def make_backfill_data(
     return AssetBackfillData.empty(
         target_subset,
         current_time or pendulum.now("UTC"),
-        asset_graph,
         dynamic_partitions_store=instance,
     )
 
@@ -493,7 +511,7 @@ def make_subset_from_partition_keys(
 
 
 def get_asset_graph(
-    assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]]
+    assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
 ) -> ExternalAssetGraph:
     assets_defs_by_key = {
         assets_def.key: assets_def
@@ -521,20 +539,21 @@ def execute_asset_backfill_iteration_consume_generator(
     instance: DagsterInstance,
 ) -> AssetBackfillIterationResult:
     traced_counter.set(Counter())
-    for result in execute_asset_backfill_iteration_inner(
-        backfill_id=backfill_id,
-        asset_backfill_data=asset_backfill_data,
-        instance_queryer=CachingInstanceQueryer(
-            instance, asset_graph, asset_backfill_data.backfill_start_time
-        ),
-        asset_graph=asset_graph,
-        run_tags={},
-        backfill_start_time=asset_backfill_data.backfill_start_time,
-    ):
-        if isinstance(result, AssetBackfillIterationResult):
-            counts = traced_counter.get().counts()
-            assert counts.get("DagsterInstance.get_dynamic_partitions", 0) <= 1
-            return result
+    with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
+        for result in execute_asset_backfill_iteration_inner(
+            backfill_id=backfill_id,
+            asset_backfill_data=asset_backfill_data,
+            instance_queryer=CachingInstanceQueryer(
+                instance, asset_graph, asset_backfill_data.backfill_start_time
+            ),
+            asset_graph=asset_graph,
+            run_tags={},
+            backfill_start_time=asset_backfill_data.backfill_start_time,
+        ):
+            if isinstance(result, AssetBackfillIterationResult):
+                counts = traced_counter.get().counts()
+                assert counts.get("DagsterInstance.get_dynamic_partitions", 0) <= 1
+                return result
 
     assert False
 

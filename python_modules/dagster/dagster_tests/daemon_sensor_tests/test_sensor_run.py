@@ -43,7 +43,12 @@ from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, 
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    RunRequest,
+    SensorEvaluationContext,
+    SkipReason,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
 from dagster._core.host_representation.external import ExternalRepository
@@ -58,6 +63,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorStatus,
     TickStatus,
 )
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
@@ -169,7 +175,7 @@ def failure_job_2():
 
 @sensor(job_name="the_job")
 def simple_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -221,6 +227,14 @@ def run_cursor_sensor(context):
 
     context.update_cursor(str(cursor))
     return RunRequest(run_key=None, run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def start_skip_sensor(context):
+    # skips the first tick after a start
+    if context.is_first_tick_since_sensor_start:
+        return SkipReason()
+    return RunRequest()
 
 
 @asset
@@ -550,6 +564,13 @@ def logging_sensor(context):
     return SkipReason()
 
 
+@sensor(job=the_job)
+def logging_fail_tick_sensor(context: "SensorEvaluationContext"):
+    context.log.info("hello hello")
+
+    raise Exception("womp womp")
+
+
 @run_status_sensor(
     monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
@@ -691,6 +712,7 @@ def the_repo():
         custom_interval_sensor,
         skip_cursor_sensor,
         run_cursor_sensor,
+        start_skip_sensor,
         asset_foo_sensor,
         asset_job_sensor,
         my_run_failure_sensor,
@@ -725,6 +747,7 @@ def the_repo():
         targets_asset_selection_sensor,
         multi_asset_sensor_targets_asset_selection,
         logging_sensor,
+        logging_fail_tick_sensor,
         logging_status_sensor,
         add_delete_dynamic_partitions_and_yield_run_requests_sensor,
         add_dynamic_partitions_sensor,
@@ -748,7 +771,7 @@ def the_other_repo():
 
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.RUNNING)
 def always_running_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -756,7 +779,7 @@ def always_running_sensor(context):
 
 @sensor(job_name="the_job", default_status=DefaultSensorStatus.STOPPED)
 def never_running_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
+    if not context.last_tick_completion_time or not int(context.last_tick_completion_time) % 2:
         return SkipReason()
 
     return RunRequest(run_key=None, run_config={}, tags={})
@@ -2849,11 +2872,64 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     )
     assert len(ticks) == 1
     tick = ticks[0]
-    assert tick.log_key
+    assert tick.log_key == [
+        external_sensor.handle.repository_name,
+        external_sensor.name,
+        str(tick.tick_id),
+    ]
+    assert tick.status == TickStatus.SKIPPED
     records = get_instigation_log_records(instance, tick.log_key)
     assert len(records) == 2
     assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
     assert records[1][DAGSTER_META_KEY]["orig_message"].endswith("hello hello")
+    instance.compute_log_manager.delete_logs(log_key=tick.log_key)
+
+
+def test_sensor_logging_on_tick_failure(
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+) -> None:
+    external_sensor = external_repo.get_external_sensor("logging_fail_tick_sensor")
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+
+    assert instance.get_runs_count() == 0
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+
+    assert len(ticks) == 1
+
+    tick = ticks[0]
+
+    assert tick.status == TickStatus.FAILURE
+    assert tick.log_key
+    assert tick.log_key == [
+        external_sensor.handle.repository_name,
+        external_sensor.name,
+        str(tick.tick_id),
+    ]
+
+    records = get_instigation_log_records(instance, tick.log_key)
+
+    assert len(records) == 1
+    assert records[0][DAGSTER_META_KEY]["orig_message"] == "hello hello"
+
+    assert isinstance(instance.compute_log_manager, CapturedLogManager)
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 
@@ -3221,3 +3297,61 @@ def test_stale_request_context(instance, workspace_context, external_repo):
             TickStatus.SUCCESS,
             [run.run_id],
         )
+
+
+def test_start_tick_sensor(executor, instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        start_skip_sensor = external_repo.get_external_sensor("start_skip_sensor")
+        instance.start_sensor(start_skip_sensor)
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        instance.stop_sensor(
+            start_skip_sensor.get_external_origin_id(),
+            start_skip_sensor.selector_id,
+            start_skip_sensor,
+        )
+        instance.start_sensor(start_skip_sensor)
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        validate_tick(
+            _get_last_tick(instance, start_skip_sensor),
+            start_skip_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+
+
+def _get_last_tick(instance, sensor):
+    ticks = instance.get_ticks(sensor.get_external_origin_id(), sensor.selector_id)
+    return ticks[0]

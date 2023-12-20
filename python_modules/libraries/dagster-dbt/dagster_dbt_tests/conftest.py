@@ -1,11 +1,9 @@
 import os
 import subprocess
 
-import dbt.version
 import pytest
 from dagster._utils import file_relative_path, pushd
 from dagster_dbt import DbtCliClientResource, DbtCliResource, dbt_cli_resource
-from packaging import version
 
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"
@@ -54,13 +52,7 @@ def dbt_python_config_dir():
     params=[
         pytest.param("legacy", marks=pytest.mark.legacy),
         pytest.param("DbtCliClientResource", marks=pytest.mark.legacy),
-        pytest.param(
-            "DbtCliResource",
-            marks=pytest.mark.skipif(
-                version.parse(dbt.version.__version__) < version.parse("1.4.0"),
-                reason="DbtCliResource only supports dbt 1.4+",
-            ),
-        ),
+        pytest.param("DbtCliResource"),
     ],
 )
 def dbt_cli_resource_factory(request):

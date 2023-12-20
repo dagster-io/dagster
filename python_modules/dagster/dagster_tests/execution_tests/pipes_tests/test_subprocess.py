@@ -3,7 +3,9 @@ import re
 import shutil
 import subprocess
 import textwrap
+import time
 from contextlib import contextmanager
+from multiprocessing import Process
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Iterator
 
@@ -37,6 +39,7 @@ from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
+from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.pipes.subprocess import (
     PipesSubprocessClient,
@@ -48,6 +51,7 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._utils import process_is_alive
 from dagster._utils.env import environ
 from dagster_pipes import DagsterPipesError
 
@@ -624,3 +628,136 @@ def test_pipes_expected_materialization():
             [missing_results],
             resources={"pipes_client": PipesSubprocessClient()},
         )
+
+
+def test_user_messages():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as pipes:
+            pipes.report_custom_message({"some": "junk"})
+            pipes.report_custom_message("cool message")
+            pipes.report_custom_message(2)
+
+    @asset
+    def extra_msg(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            response = pipes_client.run(command=cmd, context=context)
+            messages = response.get_custom_messages()
+            assert len(messages) == 3
+            assert messages[0]["some"] == "junk"
+            assert messages[1] == "cool message"
+            assert messages[2] == 2
+            return response.get_materialize_result()
+
+    result = materialize(
+        [extra_msg],
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
+    assert result.success
+
+
+def test_bad_user_message():
+    def script_fn():
+        from dagster_pipes import open_dagster_pipes
+
+        class Cursed:
+            ...
+
+        with open_dagster_pipes() as pipes:
+            pipes.report_custom_message(Cursed())
+
+    @asset
+    def bad_msg(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        with temp_script(script_fn) as script_path:
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            response = pipes_client.run(command=cmd, context=context)
+            return response.get_materialize_result()
+
+    with instance_for_test() as instance:
+        result = materialize(
+            [bad_msg],
+            instance=instance,
+            resources={"pipes_client": PipesSubprocessClient()},
+            raise_on_error=False,
+        )
+        assert not result.success
+        conn = instance.get_records_for_run(result.run_id)
+        pipes_events = [
+            record.event_log_entry
+            for record in conn.records
+            if record.event_log_entry.user_message.startswith("[pipes]")
+        ]
+        assert len(pipes_events) == 2
+        assert "successfully opened" in pipes_events[0].user_message
+        assert "external process pipes closed with exception" in pipes_events[1].user_message
+        assert pipes_events[1].dagster_event
+        assert pipes_events[1].dagster_event.engine_event_data.error
+        assert (
+            "Object of type Cursed is not JSON serializable"
+            in pipes_events[1].dagster_event.engine_event_data.error.message
+        )
+
+
+def _execute_job(spin_timeout, subproc_log_path):
+    def script_fn():
+        import os
+        import time
+
+        from dagster_pipes import open_dagster_pipes
+
+        with open_dagster_pipes() as pipes:
+            timeout = pipes.get_extra("timeout")
+            log_path = pipes.get_extra("log_path")
+            with open(log_path, "w") as f:
+                f.write(f"{os.getpid()}")
+                f.flush()
+                start = time.time()
+                while time.time() - start < timeout:
+                    ...
+
+    with temp_script(script_fn) as script_path:
+
+        @op
+        def stalling_pipes_op(
+            context: OpExecutionContext,
+        ):
+            cmd = [_PYTHON_EXECUTABLE, script_path]
+            PipesSubprocessClient().run(
+                command=cmd,
+                context=context,
+                extras={
+                    "timeout": spin_timeout,
+                    "log_path": subproc_log_path,
+                },
+            )
+
+        @job
+        def pipes_job():
+            stalling_pipes_op()
+
+        return pipes_job.execute_in_process(
+            instance=DagsterInstance.get(),
+            raise_on_error=False,
+        )
+
+
+def test_cancellation():
+    spin_timeout = 600
+    with instance_for_test(), NamedTemporaryFile() as subproc_log_path:
+        p = Process(target=_execute_job, args=(spin_timeout, subproc_log_path.name))
+        p.start()
+        pid = None
+        while p.is_alive():
+            data = subproc_log_path.read().decode("utf-8")
+            if data:
+                pid = int(data)
+                time.sleep(0.1)
+                p.terminate()
+                break
+
+        p.join(timeout=1)
+        assert not p.is_alive()
+        assert pid
+        assert not process_is_alive(pid)

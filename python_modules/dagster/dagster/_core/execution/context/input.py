@@ -559,7 +559,8 @@ def build_input_context(
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
-        asset_partition_key_range (Optional[str]): The range of asset partition keys to load.
+        asset_partition_key_range (Optional[PartitionKeyRange]): The range of asset partition keys
+            to load.
         asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset
             being loaded.
 

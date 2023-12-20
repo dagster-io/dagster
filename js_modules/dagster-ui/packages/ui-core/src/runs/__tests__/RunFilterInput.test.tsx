@@ -49,6 +49,19 @@ const backfillRunTagsValuesMock = buildRunTagValuesQueryMockedResponse(DagsterTa
   'value2',
 ]);
 
+let nativeGBRC: any;
+
+beforeAll(() => {
+  nativeGBRC = window.Element.prototype.getBoundingClientRect;
+  window.Element.prototype.getBoundingClientRect = jest
+    .fn()
+    .mockReturnValue({height: 400, width: 400});
+});
+
+afterAll(() => {
+  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+});
+
 describe('useTagDataFilterValues', () => {
   it('should return the correct filter values based on the tag data', async () => {
     // Render the hook and pass the mockTagData as an argument

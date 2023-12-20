@@ -15,6 +15,7 @@ from dagster import (
     op,
 )
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
 from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient
@@ -345,68 +346,76 @@ def execute_k8s_job(
 
     timeout = timeout or 0
 
-    api_client.wait_for_job(
-        job_name=job_name,
-        namespace=namespace,
-        wait_timeout=timeout,
-        start_time=start_time,
-    )
-
-    restart_policy = user_defined_k8s_config.pod_spec_config.get("restart_policy", "Never")
-
-    if restart_policy == "Never":
-        container_name = container_config.get("name", "dagster")
-
-        pods = api_client.wait_for_job_to_have_pods(
-            job_name,
-            namespace,
+    try:
+        api_client.wait_for_job(
+            job_name=job_name,
+            namespace=namespace,
             wait_timeout=timeout,
             start_time=start_time,
         )
 
-        pod_names = [p.metadata.name for p in pods]
+        restart_policy = user_defined_k8s_config.pod_spec_config.get("restart_policy", "Never")
 
-        if not pod_names:
-            raise Exception("No pod names in job after it started")
+        if restart_policy == "Never":
+            container_name = container_config.get("name", "dagster")
 
-        pod_to_watch = pod_names[0]
-        watch = kubernetes.watch.Watch()  # consider moving in to api_client
+            pods = api_client.wait_for_job_to_have_pods(
+                job_name,
+                namespace,
+                wait_timeout=timeout,
+                start_time=start_time,
+            )
 
-        api_client.wait_for_pod(
-            pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time
-        )
+            pod_names = [p.metadata.name for p in pods]
 
-        log_stream = watch.stream(
-            api_client.core_api.read_namespaced_pod_log,
-            name=pod_to_watch,
+            if not pod_names:
+                raise Exception("No pod names in job after it started")
+
+            pod_to_watch = pod_names[0]
+            watch = kubernetes.watch.Watch()  # consider moving in to api_client
+
+            api_client.wait_for_pod(
+                pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time
+            )
+
+            log_stream = watch.stream(
+                api_client.core_api.read_namespaced_pod_log,
+                name=pod_to_watch,
+                namespace=namespace,
+                container=container_name,
+            )
+
+            while True:
+                if timeout and time.time() - start_time > timeout:
+                    watch.stop()
+                    raise Exception("Timed out waiting for pod to finish")
+
+                try:
+                    log_entry = next(log_stream)
+                    print(log_entry)  # noqa: T201
+                except StopIteration:
+                    break
+        else:
+            context.log.info("Pod logs are disabled, because restart_policy is not Never")
+
+        if job_spec_config and job_spec_config.get("parallelism"):
+            num_pods_to_wait_for = job_spec_config["parallelism"]
+        else:
+            num_pods_to_wait_for = DEFAULT_JOB_POD_COUNT
+
+        api_client.wait_for_running_job_to_succeed(
+            job_name=job_name,
             namespace=namespace,
-            container=container_name,
+            wait_timeout=timeout,
+            start_time=start_time,
+            num_pods_to_wait_for=num_pods_to_wait_for,
         )
-
-        while True:
-            if timeout and time.time() - start_time > timeout:
-                watch.stop()
-                raise Exception("Timed out waiting for pod to finish")
-
-            try:
-                log_entry = next(log_stream)
-                print(log_entry)  # noqa: T201
-            except StopIteration:
-                break
-    else:
-        context.log.info("Pod logs are disabled, because restart_policy is not Never")
-
-    if job_spec_config and job_spec_config.get("parallelism"):
-        num_pods_to_wait_for = job_spec_config["parallelism"]
-    else:
-        num_pods_to_wait_for = DEFAULT_JOB_POD_COUNT
-    api_client.wait_for_running_job_to_succeed(
-        job_name=job_name,
-        namespace=namespace,
-        wait_timeout=timeout,
-        start_time=start_time,
-        num_pods_to_wait_for=num_pods_to_wait_for,
-    )
+    except (DagsterExecutionInterruptedError, Exception) as e:
+        context.log.info(
+            f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception"
+        )
+        api_client.delete_job(job_name=job_name, namespace=namespace)
+        raise e
 
 
 @op(ins={"start_after": In(Nothing)}, config_schema=K8S_JOB_OP_CONFIG)

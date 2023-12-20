@@ -30,6 +30,6 @@ def taxi_zones_file():
         "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
     )
 
-    with open("data/raw/taxi_zones.csv", "wb") as output_file:
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
         output_file.write(raw_taxi_zones.content)
 ```

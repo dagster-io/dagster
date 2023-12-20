@@ -75,6 +75,7 @@ export const LegacyPalette = {
   [ColorName.TooltipText]: LegacyColors.White,
   [ColorName.PopoverBackground]: LegacyColors.White,
   [ColorName.PopoverBackgroundHover]: LegacyColors.Gray100,
+  [ColorName.ShadowDefault]: LegacyColors.Shadow,
 
   // HEADER
   [ColorName.NavBackground]: LegacyColors.Dark,
@@ -95,8 +96,8 @@ export const LegacyPalette = {
   [ColorName.LineageGroupBackground]: LegacyColors.Gray10,
   [ColorName.LineageNodeBackground]: LegacyColors.Blue50,
   [ColorName.LineageNodeBackgroundHover]: LegacyColors.Blue50,
-  [ColorName.LineageNodeBorder]: LegacyColors.Olive500,
-  [ColorName.LineageNodeBorderHover]: LegacyColors.Olive500,
+  [ColorName.LineageNodeBorder]: LegacyColors.Blue200,
+  [ColorName.LineageNodeBorderHover]: LegacyColors.Blue500,
   [ColorName.LineageNodeBorderSelected]: LegacyColors.Blue500,
 
   // Dataviz

@@ -10,6 +10,7 @@ import {
   colorBackgroundRed,
   colorBackgroundYellow,
   colorBorderDefault,
+  colorFocusRing,
   colorTextDefault,
   colorTextGreen,
   colorTextRed,
@@ -484,7 +485,7 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
     color: ${colorTextDefault()};
     box-shadow:
       ${colorBorderDefault()} inset 0px 0px 0px 1px,
-      rgba(58, 151, 212, 0.6) 0 0 0 3px;
+      ${colorFocusRing()} 0 0 0 3px;
   }
 
   && .bp4-tag-input-values:first-child .bp4-input-ghost:first-child {

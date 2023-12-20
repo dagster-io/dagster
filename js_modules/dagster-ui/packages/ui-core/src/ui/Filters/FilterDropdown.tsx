@@ -208,7 +208,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   const rowVirtualizer = useVirtualizer({
     count: allResultsJsx.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (_: number) => 32,
+    estimateSize: () => 32,
     overscan: 10,
   });
 
@@ -259,9 +259,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               }}
             >
               <Inner $totalHeight={totalHeight}>
-                {items.map(({index, end, start}) => {
+                {items.map(({index, size, start}) => {
                   return (
-                    <Row $height={end - start} $start={start} key={index}>
+                    <Row $height={size} $start={start} key={index}>
                       {allResultsJsx[index]}
                     </Row>
                   );

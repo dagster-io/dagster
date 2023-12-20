@@ -742,7 +742,22 @@ class TimeWindowPartitionsDefinition(
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
         start_time = self.start_time_for_partition_key(partition_key_range.start)
+        check.invariant(
+            start_time.timestamp() >= self.start.timestamp(),
+            (
+                f"Partition key range start {partition_key_range.start} is before "
+                f"the partitions definition start time {self.start}"
+            ),
+        )
         end_time = self.end_time_for_partition_key(partition_key_range.end)
+        if self.end:
+            check.invariant(
+                end_time.timestamp() <= self.end.timestamp(),
+                (
+                    f"Partition key range end {partition_key_range.end} is after the "
+                    f"partitions definition end time {self.end}"
+                ),
+            )
 
         return self.get_partition_keys_in_time_window(TimeWindow(start_time, end_time))
 
@@ -1142,7 +1157,7 @@ def daily_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[DailyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -1278,7 +1293,7 @@ def hourly_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[HourlyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -1422,7 +1437,7 @@ def monthly_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[MonthlyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -1571,7 +1586,7 @@ def weekly_partitioned_config(
     """
 
     def inner(
-        fn: Callable[[datetime, datetime], Mapping[str, Any]]
+        fn: Callable[[datetime, datetime], Mapping[str, Any]],
     ) -> PartitionedConfig[WeeklyPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
@@ -1879,6 +1894,25 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             and self.included_time_windows == other.included_time_windows
         )
 
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self is other:
+            return self
+        return self.with_partition_keys(other.get_partition_keys())
+
+    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self is other:
+            return self.empty_subset(self.partitions_def)
+        return self.empty_subset(self.partitions_def).with_partition_keys(
+            set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
+        )
+
+    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self is other:
+            return self
+        return self.empty_subset(self.partitions_def).with_partition_keys(
+            set(self.get_partition_keys()) & set(other.get_partition_keys())
+        )
+
 
 class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
     """A PartitionsSubset for a TimeWindowPartitionsDefinition, which internally represents the
@@ -2156,7 +2190,7 @@ class TimeWindowPartitionsSubset(
 
     def with_partitions_def(
         self, partitions_def: TimeWindowPartitionsDefinition
-    ) -> "BaseTimeWindowPartitionsSubset":
+    ) -> "TimeWindowPartitionsSubset":
         check.invariant(
             partitions_def.cron_schedule == self.partitions_def.cron_schedule,
             "num_partitions would become inaccurate if the partitions_defs had different cron"
@@ -2170,6 +2204,24 @@ class TimeWindowPartitionsSubset(
 
     def __repr__(self) -> str:
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
+
+    def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
+        from dagster._core.host_representation.external_data import (
+            external_time_window_partitions_definition_from_def,
+        )
+
+        # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
+        # this partitions definition into a raw TimeWindowPartitionsDefinition to make it
+        # serializable. to do this, we just convert it to its external representation and back.
+        # note that we rarely serialize subsets on the user code side of a serialization boundary,
+        # and so this conversion is rarely necessary.
+        partitions_def = self.partitions_def
+        if type(self.partitions_def) != TimeWindowPartitionsSubset:
+            partitions_def = external_time_window_partitions_definition_from_def(
+                partitions_def
+            ).get_partitions_definition()
+            return self.with_partitions_def(partitions_def)
+        return self
 
 
 class PartitionRangeStatus(Enum):
@@ -2281,7 +2333,7 @@ def _flatten(
 
 
 def fetch_flattened_time_window_ranges(
-    subsets: Mapping[PartitionRangeStatus, BaseTimeWindowPartitionsSubset]
+    subsets: Mapping[PartitionRangeStatus, BaseTimeWindowPartitionsSubset],
 ) -> Sequence[PartitionTimeWindowStatus]:
     """Given potentially overlapping subsets, return a flattened list of timewindows where the highest priority status wins
     on overlaps.

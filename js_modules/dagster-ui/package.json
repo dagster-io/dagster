@@ -17,7 +17,6 @@
       "packages/*"
     ]
   },
-  "packageManager": "yarn@3.6.4",
   "dependencies": {
     "graphql.macro": "^1.4.2",
     "patch-package": "^8.0.0",
@@ -26,5 +25,9 @@
   "devDependencies": {
     "@types/dagre": "^0",
     "file-loader": "^6.2.0"
+  },
+  "packageManager": "yarn@4.0.2",
+  "engines": {
+    "node": "20.x"
   }
 }

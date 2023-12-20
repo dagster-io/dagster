@@ -39,6 +39,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions import (
+    AssetSelection,
     JobDefinition,
     PartitionsDefinition,
     RepositoryDefinition,
@@ -521,6 +522,7 @@ class ExternalSensorData(
             ("metadata", Optional[ExternalSensorMetadata]),
             ("default_status", Optional[DefaultSensorStatus]),
             ("sensor_type", Optional[SensorType]),
+            ("asset_selection", Optional[AssetSelection]),
         ],
     )
 ):
@@ -536,6 +538,7 @@ class ExternalSensorData(
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
+        asset_selection: Optional[AssetSelection] = None,
     ):
         if job_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -570,6 +573,7 @@ class ExternalSensorData(
                 else None
             ),
             sensor_type=sensor_type,
+            asset_selection=asset_selection,
         )
 
 
@@ -2053,6 +2057,7 @@ def external_sensor_data_from_def(
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),
         default_status=sensor_def.default_status,
         sensor_type=sensor_def.sensor_type,
+        asset_selection=sensor_def.asset_selection,
     )
 
 

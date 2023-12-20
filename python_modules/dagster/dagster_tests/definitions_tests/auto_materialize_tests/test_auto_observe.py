@@ -24,6 +24,7 @@ def test_single_observable_source_asset_no_auto_observe():
                 current_timestamp=1000,
                 last_observe_request_timestamp_by_asset_key={},
                 run_tags={},
+                auto_observe_asset_keys=asset_graph.source_asset_keys,
             )
         )
         == 0
@@ -36,6 +37,7 @@ def test_single_observable_source_asset_no_auto_observe():
                 current_timestamp=1000,
                 last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): 1},
                 run_tags={},
+                auto_observe_asset_keys=asset_graph.source_asset_keys,
             )
         )
         == 0
@@ -60,6 +62,7 @@ def test_single_observable_source_asset_no_prior_observe_requests(
         current_timestamp=1000,
         last_observe_request_timestamp_by_asset_key={},
         run_tags={},
+        auto_observe_asset_keys=single_auto_observe_source_asset_graph.source_asset_keys,
     )
     assert len(run_requests) == 1
     run_request = run_requests[0]
@@ -76,6 +79,7 @@ def test_single_observable_source_asset_prior_observe_requests(
         current_timestamp=last_timestamp + 30 * 60 + 5,
         last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): last_timestamp},
         run_tags={},
+        auto_observe_asset_keys=single_auto_observe_source_asset_graph.source_asset_keys,
     )
     assert len(run_requests) == 1
     run_request = run_requests[0]
@@ -92,6 +96,7 @@ def test_single_observable_source_asset_prior_recent_observe_requests(
         current_timestamp=last_timestamp + 30 * 60 - 5,
         last_observe_request_timestamp_by_asset_key={AssetKey("asset1"): last_timestamp},
         run_tags={},
+        auto_observe_asset_keys=single_auto_observe_source_asset_graph.source_asset_keys,
     )
     assert len(run_requests) == 0
 
@@ -106,9 +111,9 @@ def test_reconcile():
 
     run_requests, cursor, _ = AssetDaemonContext(
         evaluation_id=1,
-        auto_observe=True,
+        auto_observe_asset_keys={AssetKey(["asset1"])},
         asset_graph=asset_graph,
-        target_asset_keys=set(),
+        auto_materialize_asset_keys=set(),
         instance=instance,
         cursor=AssetDaemonCursor.empty(),
         materialize_run_tags=None,

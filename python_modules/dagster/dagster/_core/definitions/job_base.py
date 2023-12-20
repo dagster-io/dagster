@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Iterable, Optional
 
-from typing_extensions import Self
-
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 
@@ -67,7 +65,7 @@ class InMemoryJob(IJob):
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
-    ) -> Self:
+    ) -> "InMemoryJob":
         op_selection = set(op_selection) if op_selection else None
         return InMemoryJob(
             self._job_def.get_subset(

@@ -1,4 +1,4 @@
-import {ButtonLink, Menu, MenuItem, Select} from '@dagster-io/ui-components';
+import {Icon, Menu, MenuItem, Select, Button} from '@dagster-io/ui-components';
 import {DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
 import * as React from 'react';
 
@@ -21,6 +21,10 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
       key: DagsterTheme.Dark,
       label: 'Dark (experimental)',
     },
+    {
+      key: DagsterTheme.System,
+      label: 'System setting',
+    },
   ];
 
   const activeItem = items.find(({key}) => key === theme);
@@ -28,8 +32,7 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
   return (
     <Select<(typeof items)[0]>
       popoverProps={{
-        position: 'bottom-left',
-        modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
+        position: 'bottom-right',
       }}
       filterable={false}
       activeItem={activeItem}
@@ -51,7 +54,12 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
       }}
       onItemSelect={(item) => onChange(item.key)}
     >
-      <ButtonLink>{activeItem?.label}</ButtonLink>
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
+        {activeItem?.label}
+      </Button>
     </Select>
   );
 };

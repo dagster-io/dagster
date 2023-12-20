@@ -20,7 +20,7 @@ from .utils import get_bar_repo_handle
 def test_external_sensor_grpc(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         result = sync_get_external_sensor_execution_data_ephemeral_grpc(
-            instance, repository_handle, "sensor_foo", None, None, None
+            instance, repository_handle, "sensor_foo", None, None, None, None
         )
         assert isinstance(result, SensorExecutionData)
         assert len(result.run_requests) == 2
@@ -44,7 +44,14 @@ def test_external_sensor_grpc_fallback_to_streaming(instance):
                     mock_method.side_effect = my_exception
 
                     result = sync_get_external_sensor_execution_data_grpc(
-                        api_client, instance, repository_handle, "sensor_foo", None, None, None
+                        api_client,
+                        instance,
+                        repository_handle,
+                        "sensor_foo",
+                        None,
+                        None,
+                        None,
+                        None,
                     )
                     assert isinstance(result, SensorExecutionData)
                     assert len(result.run_requests) == 2
@@ -57,7 +64,7 @@ def test_external_sensor_error(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         with pytest.raises(DagsterUserCodeProcessError, match="womp womp"):
             sync_get_external_sensor_execution_data_ephemeral_grpc(
-                instance, repository_handle, "sensor_error", None, None, None
+                instance, repository_handle, "sensor_error", None, None, None, None
             )
 
 
@@ -72,7 +79,14 @@ def test_external_sensor_client_timeout(instance, timeout: int, env_var_default_
             match=f"The sensor tick timed out due to taking longer than {timeout} seconds to execute the sensor function.",
         ):
             sync_get_external_sensor_execution_data_ephemeral_grpc(
-                instance, repository_handle, "sensor_times_out", None, None, None, timeout=timeout
+                instance,
+                repository_handle,
+                "sensor_times_out",
+                None,
+                None,
+                None,
+                None,
+                timeout=timeout,
             )
 
 
@@ -88,9 +102,10 @@ def test_external_sensor_deserialize_error(instance):
                         repository_origin=origin,
                         instance_ref=instance.get_ref(),
                         sensor_name="foo",
-                        last_completion_time=None,
+                        last_tick_completion_time=None,
                         last_run_key=None,
                         cursor=None,
+                        last_sensor_start_time=None,
                     )
                 )
             )
@@ -101,5 +116,5 @@ def test_external_sensor_raises_dagster_error(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         with pytest.raises(DagsterUserCodeProcessError, match="Dagster error"):
             sync_get_external_sensor_execution_data_ephemeral_grpc(
-                instance, repository_handle, "sensor_raises_dagster_error", None, None, None
+                instance, repository_handle, "sensor_raises_dagster_error", None, None, None, None
             )

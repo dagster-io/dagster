@@ -33,6 +33,8 @@ type Props = {
   nodes: GraphNode[];
 } & OptionalFilters;
 
+const emptyArray: any[] = [];
+
 export function useAssetGraphExplorerFilters({
   nodes,
   assetGroups,
@@ -157,7 +159,7 @@ export function useAssetGraphExplorerFilters({
       </Box>
     ),
     getStringValue: (value) => value,
-    initialState: computeKindTags ?? [],
+    initialState: computeKindTags ?? emptyArray,
     onStateChanged: (values) => {
       setComputeKindTags?.(Array.from(values));
     },

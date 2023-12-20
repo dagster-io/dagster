@@ -27,9 +27,6 @@ from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam
 
-pytest.importorskip("dbt.version", minversion="1.4")
-
-
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest = json.loads(manifest_path.read_bytes())
 

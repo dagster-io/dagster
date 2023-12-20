@@ -1,5 +1,5 @@
 import pytest
-from dagster import SensorDefinition, graph
+from dagster import AssetKey, SensorDefinition, asset, graph
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
@@ -38,3 +38,31 @@ def test_direct_sensor_definition_instantiation():
         match="Must provide evaluation_fn to SensorDefinition.",
     ):
         SensorDefinition()
+
+
+def test_coerce_to_asset_selection():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @asset
+    def asset3():
+        ...
+
+    assets = [asset1, asset2, asset3]
+
+    def evaluation_fn(context):
+        raise NotImplementedError()
+
+    assert SensorDefinition(
+        "a", asset_selection=["asset1", "asset2"], evaluation_fn=evaluation_fn
+    ).asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}
+
+    sensor_def = SensorDefinition(
+        "a", asset_selection=[asset1, asset2], evaluation_fn=evaluation_fn
+    )
+    assert sensor_def.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}

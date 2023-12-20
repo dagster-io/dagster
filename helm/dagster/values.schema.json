@@ -1382,6 +1382,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "showUrlOnly": {
+                    "title": "Showurlonly",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

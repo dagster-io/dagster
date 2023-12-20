@@ -40,7 +40,7 @@ export const AssetPartitionList = ({
   React.useEffect(() => {
     if (focusedDimensionKey) {
       rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
-        smoothScroll: false,
+        behavior: 'auto',
         align: 'auto',
       });
     }

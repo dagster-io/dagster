@@ -1,6 +1,9 @@
 import dagster._check as check
 import graphene
 from dagster._core.definitions.selector import SensorSelector
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+)
 from dagster._core.host_representation import ExternalSensor, ExternalTargetData
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.workspace.permissions import Permissions
@@ -56,16 +59,7 @@ class GrapheneSensorMetadata(graphene.ObjectType):
         name = "SensorMetadata"
 
 
-class GrapheneSensorType(graphene.Enum):
-    STANDARD = "STANDARD"
-    RUN_STATUS = "RUN_STATUS"
-    ASSET = "ASSET"
-    MULTI_ASSET = "MULTI_ASSET"
-    FRESHNESS_POLICY = "FRESHNESS_POLICY"
-    UNKNOWN = "UNKNOWN"
-
-    class Meta:
-        name = "SensorType"
+GrapheneSensorType = graphene.Enum.from_enum(SensorType)
 
 
 class GrapheneSensor(graphene.ObjectType):

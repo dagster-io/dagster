@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 from contextlib import ExitStack
 from typing import IO, Any, List, Mapping, Optional, Sequence
 
@@ -19,21 +20,30 @@ class DispatchingLogHandler(logging.Handler):
     """
 
     def __init__(self, downstream_loggers: List[logging.Logger]):
-        self._should_capture = True
+        # Setting up a local thread context here to allow the DispatchingLogHandler
+        # to be used in multi threading environments where the handler is called by
+        # different threads with different log messages in parallel.
+        self._local_thread_context = threading.local()
+        self._local_thread_context.should_capture = True
         self._downstream_loggers = [*downstream_loggers]
         super().__init__()
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return self._should_capture
+        if not hasattr(self._local_thread_context, "should_capture"):
+            # Since only the "main" thread gets an initialized
+            # "_local_thread_context.should_capture" variable through the __init__()
+            # we need to set a default value for all other threads here.
+            self._local_thread_context.should_capture = True
+        return self._local_thread_context.should_capture
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add metadata, and have handlers handle it."""
         try:
-            self._should_capture = False
+            self._local_thread_context.should_capture = False
             for logger in self._downstream_loggers:
                 logger.handle(record)
         finally:
-            self._should_capture = True
+            self._local_thread_context.should_capture = True
 
 
 class CapturedLogHandler(logging.Handler):
@@ -66,7 +76,7 @@ class InstigationLogger(logging.Logger):
 
     def __init__(
         self,
-        log_key: Optional[List[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
         instance: Optional[DagsterInstance] = None,
         repository_name: Optional[str] = None,
         name: Optional[str] = None,

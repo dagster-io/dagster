@@ -147,18 +147,18 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {minified ? 'C' : 'Config'}
           </div>
         )}
-
-        {definition.inputDefinitions.map((item, idx) => (
-          <OpIOBox
-            {...this.props}
-            {...metadataForIO(item, invocation)}
-            key={idx}
-            item={item}
-            layoutInfo={layout.inputs[item.name]}
-            colorKey="input"
-          />
-        ))}
-
+        <div>
+          {definition.inputDefinitions.map((item, idx) => (
+            <OpIOBox
+              {...this.props}
+              {...metadataForIO(item, invocation)}
+              key={idx}
+              item={item}
+              layoutInfo={layout.inputs[item.name]}
+              colorKey="input"
+            />
+          ))}
+        </div>
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
             {!minified && <Icon name="op" size={16} />}
@@ -184,17 +184,18 @@ export class OpNode extends React.Component<IOpNodeProps> {
             }}
           />
         )}
-
-        {definition.outputDefinitions.map((item, idx) => (
-          <OpIOBox
-            {...this.props}
-            {...metadataForIO(item, invocation)}
-            key={idx}
-            item={item}
-            layoutInfo={layout.outputs[item.name]}
-            colorKey="output"
-          />
-        ))}
+        <div>
+          {definition.outputDefinitions.map((item, idx) => (
+            <OpIOBox
+              {...this.props}
+              {...metadataForIO(item, invocation)}
+              key={idx}
+              item={item}
+              layoutInfo={layout.outputs[item.name]}
+              colorKey="output"
+            />
+          ))}
+        </div>
       </NodeContainer>
     );
   }
@@ -369,7 +370,7 @@ const NodeContainer = styled.div<{
   .dynamic-marker {
     transform: translate(-5px, -5px);
     border: ${(p) => (p.$minified ? '3px' : '2px')} solid ${colorKeylineDefault()};
-    border-radius: 3px;
+    border-radius: 8px;
   }
   .config-marker {
     position: absolute;
@@ -417,8 +418,10 @@ const NodeContainer = styled.div<{
     text-overflow: ellipsis;
     background: ${colorBackgroundLighter()};
     border-top: ${colorKeylineDefault()} 1px solid;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+
+    /* 6px because it's inside a bordered box with a 2px line at our standard 8px radius */
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
     font-size: 12px;
   }
 `;

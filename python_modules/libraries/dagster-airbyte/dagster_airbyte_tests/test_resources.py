@@ -26,7 +26,7 @@ def airbyte_instance_constructor_fixture(request) -> Callable[[Dict[str, Any]], 
 
 @responses.activate
 def test_trigger_connection(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -46,7 +46,7 @@ def test_trigger_connection(
 
 
 def test_trigger_connection_fail(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor({"host": "some_host", "port": "8000"})
     with pytest.raises(
@@ -131,7 +131,7 @@ def test_sync_and_poll(
 
 @responses.activate
 def test_start_sync_bad_out_fail(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -152,7 +152,7 @@ def test_start_sync_bad_out_fail(
 
 @responses.activate
 def test_get_connection_details_bad_out_fail(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {

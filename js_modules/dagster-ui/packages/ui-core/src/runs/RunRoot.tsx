@@ -6,6 +6,7 @@ import {useParams} from 'react-router-dom';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
+import {InstigationSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -21,6 +22,7 @@ import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
 import {assetKeysForRun} from './RunUtils';
+import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 
 export const RunRoot = () => {
@@ -57,6 +59,36 @@ export const RunRoot = () => {
       trace.onRunLoaded();
     }
   }, [loading, trace]);
+
+  const tickDetails = React.useMemo(() => {
+    if (repoAddress) {
+      const tags = run?.tags || [];
+      const tickTag = tags.find((tag) => tag.key === DagsterTag.TickId);
+
+      if (tickTag) {
+        const scheduleOrSensor = tags.find(
+          (tag) => tag.key === DagsterTag.ScheduleName || tag.key === DagsterTag.SensorName,
+        );
+        if (scheduleOrSensor) {
+          const instigationSelector: InstigationSelector = {
+            name: scheduleOrSensor.value,
+            repositoryName: repoAddress.name,
+            repositoryLocationName: repoAddress.location,
+          };
+          return {
+            tickId: tickTag.value,
+            instigationType: scheduleOrSensor.key as
+              | DagsterTag.ScheduleName
+              | DagsterTag.SensorName,
+            instigationSelector,
+          };
+        }
+      }
+    }
+
+    return null;
+  }, [run, repoAddress]);
+
 
   return (
     <div
@@ -97,6 +129,13 @@ export const RunRoot = () => {
                       isJob={isJob}
                     />
                   </Tag>
+                ) : null}
+                {tickDetails ? (
+                  <TickTagForRun
+                    instigationSelector={tickDetails.instigationSelector}
+                    instigationType={tickDetails.instigationType}
+                    tickId={tickDetails.tickId}
+                  />
                 ) : null}
                 <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <AssetKeyTagCollection

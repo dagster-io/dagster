@@ -705,6 +705,8 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
     prefix = "prefix"
     json_credentials_envvar = "ENV_VAR"
     upload_interval = 30
+    show_url_only = True
+
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.GCS,
@@ -715,6 +717,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
                     prefix=prefix,
                     jsonCredentialsEnvvar=json_credentials_envvar,
                     uploadInterval=upload_interval,
+                    showUrlOnly=show_url_only,
                 )
             ),
         )
@@ -732,6 +735,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
         "prefix": prefix,
         "json_credentials_envvar": json_credentials_envvar,
         "upload_interval": upload_interval,
+        "show_url_only": True,
     }
 
     # Test all config fields in configurable class

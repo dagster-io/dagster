@@ -2,6 +2,7 @@ import logging
 import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
+from contextlib import contextmanager
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -9,6 +10,7 @@ from typing import (
     ContextManager,
     Dict,
     Iterable,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -158,6 +160,16 @@ class SqlEventLogStorage(EventLogStorage):
     @abstractmethod
     def index_connection(self) -> ContextManager[Connection]:
         """Context manager yielding a connection to access cross-run indexed tables."""
+
+    @contextmanager
+    def index_transaction(self) -> Iterator[Connection]:
+        """Context manager yielding a connection to the index shard that has begun a transaction."""
+        with self.index_connection() as conn:
+            if conn.in_transaction():
+                yield conn
+            else:
+                with conn.begin():
+                    yield conn
 
     @abstractmethod
     def upgrade(self) -> None:
@@ -732,9 +744,29 @@ class SqlEventLogStorage(EventLogStorage):
 
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
+        records = conn.execute(
+            db_select([SqlEventLogStorageTable.c.id]).where(
+                db.and_(
+                    SqlEventLogStorageTable.c.run_id == run_id,
+                    db.or_(
+                        SqlEventLogStorageTable.c.dagster_event_type
+                        == DagsterEventType.ASSET_MATERIALIZATION.value,
+                        SqlEventLogStorageTable.c.dagster_event_type
+                        == DagsterEventType.ASSET_OBSERVATION.value,
+                    ),
+                )
+            )
+        ).fetchall()
+        asset_event_ids = [record[0] for record in records]
         conn.execute(
             SqlEventLogStorageTable.delete().where(SqlEventLogStorageTable.c.run_id == run_id)
         )
+        if asset_event_ids:
+            conn.execute(
+                AssetEventTagsTable.delete().where(
+                    AssetEventTagsTable.c.event_id.in_(asset_event_ids)
+                )
+            )
 
     @property
     def is_persistent(self) -> bool:

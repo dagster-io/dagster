@@ -216,13 +216,13 @@ class AssetReconciliationScenario(
             for a in assets
         ):
             asset_graph = AssetGraph.from_assets(assets)
-            target_asset_keys = (
+            auto_materialize_asset_keys = (
                 asset_selection.resolve(asset_graph)
                 if asset_selection
                 else asset_graph.materializable_asset_keys
             )
             assets_with_implicit_policies = with_implicit_auto_materialize_policies(
-                assets, asset_graph, target_asset_keys
+                assets, asset_graph, auto_materialize_asset_keys
             )
 
         return super(AssetReconciliationScenario, cls).__new__(
@@ -416,7 +416,7 @@ class AssetReconciliationScenario(
                     ), workspace.get_code_location_error("test_location")
                     asset_graph = ExternalAssetGraph.from_workspace(workspace)
 
-            target_asset_keys = (
+            auto_materialize_asset_keys = (
                 self.asset_selection.resolve(asset_graph)
                 if self.asset_selection
                 else asset_graph.materializable_asset_keys
@@ -425,12 +425,16 @@ class AssetReconciliationScenario(
             run_requests, cursor, evaluations = AssetDaemonContext(
                 evaluation_id=cursor.evaluation_id + 1,
                 asset_graph=asset_graph,
-                target_asset_keys=target_asset_keys,
+                auto_materialize_asset_keys=auto_materialize_asset_keys,
                 instance=instance,
                 materialize_run_tags={},
                 observe_run_tags={},
                 cursor=cursor,
-                auto_observe=True,
+                auto_observe_asset_keys={
+                    key
+                    for key in asset_graph.source_asset_keys
+                    if asset_graph.get_auto_observe_interval_minutes(key) is not None
+                },
                 respect_materialization_data_versions=respect_materialization_data_versions,
                 logger=logging.getLogger("dagster.amp"),
             ).evaluate()

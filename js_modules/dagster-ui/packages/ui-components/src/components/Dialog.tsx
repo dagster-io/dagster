@@ -3,7 +3,12 @@ import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 
-import {colorAccentPrimary, colorBackgroundDefault, colorDialogBackground} from '../theme/color';
+import {
+  colorAccentPrimary,
+  colorBackgroundDefault,
+  colorDialogBackground,
+  colorShadowDefault,
+} from '../theme/color';
 
 import {Box} from './Box';
 import {ErrorBoundary} from './ErrorBoundary';
@@ -111,7 +116,7 @@ export const GlobalDialogStyle = createGlobalStyle`
   .dagster-portal .bp4-dialog {
     background-color: ${colorBackgroundDefault()};
     border-radius: 4px;
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
+    box-shadow: ${colorShadowDefault()} 0px 2px 12px;
     grid-row: 2;
     grid-column: 2;
     margin: 0 auto;

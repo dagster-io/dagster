@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -19,6 +19,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
     repository_handle: RepositoryHandle,
     schedule_name: str,
     scheduled_execution_time: Any,
+    log_key: Optional[Sequence[str]],
     timeout: Optional[int] = None,
 ) -> ScheduleExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
@@ -33,6 +34,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
             repository_handle,
             schedule_name,
             scheduled_execution_time,
+            log_key,
             timeout,
         )
 
@@ -43,6 +45,7 @@ def sync_get_external_schedule_execution_data_grpc(
     repository_handle: RepositoryHandle,
     schedule_name: str,
     scheduled_execution_time: Any,
+    log_key: Optional[Sequence[str]],
     timeout: Optional[int] = None,
 ) -> ScheduleExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -62,6 +65,7 @@ def sync_get_external_schedule_execution_data_grpc(
                 scheduled_execution_timezone=(
                     scheduled_execution_time.timezone.name if scheduled_execution_time else None
                 ),
+                log_key=log_key,
                 timeout=timeout,
             )
         ),

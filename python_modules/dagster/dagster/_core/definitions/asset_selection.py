@@ -2,7 +2,7 @@ import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
+from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -16,6 +16,7 @@ from dagster._core.selector.subset_selector import (
     fetch_sources,
     parse_clause,
 )
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_check_spec import AssetCheckKey
 from .asset_graph import AssetGraph, InternalAssetGraph
@@ -94,7 +95,7 @@ class AssetSelection(ABC):
     @staticmethod
     def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
         """Returns a selection that includes all of the provided assets and asset checks that target them."""
-        return KeysAssetSelection(*(key for assets_def in assets_defs for key in assets_def.keys))
+        return KeysAssetSelection([key for assets_def in assets_defs for key in assets_def.keys])
 
     @public
     @staticmethod
@@ -119,7 +120,7 @@ class AssetSelection(ABC):
             AssetKey.from_user_string(key) if isinstance(key, str) else AssetKey.from_coercible(key)
             for key in asset_keys
         ]
-        return KeysAssetSelection(*_asset_keys)
+        return KeysAssetSelection(_asset_keys)
 
     @public
     @staticmethod
@@ -143,7 +144,7 @@ class AssetSelection(ABC):
               AssetSelection.key_prefixes(["a", "b"], ["a", "c"])
         """
         _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
-        return KeyPrefixesAssetSelection(*_asset_key_prefixes, include_sources=include_sources)
+        return KeyPrefixesAssetSelection(_asset_key_prefixes, include_sources=include_sources)
 
     @public
     @staticmethod
@@ -156,21 +157,21 @@ class AssetSelection(ABC):
                 selection.
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
-        return GroupsAssetSelection(*group_strs, include_sources=include_sources)
+        return GroupsAssetSelection(group_strs, include_sources=include_sources)
 
     @public
     @staticmethod
-    def checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeys":
+    def checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeysSelection":
         """Returns a selection with the asset checks that target the provided assets."""
-        return AssetChecksForAssetKeys(
+        return AssetChecksForAssetKeysSelection(
             [key for assets_def in assets_defs for key in assets_def.keys]
         )
 
     @public
     @staticmethod
-    def checks(*asset_checks: AssetChecksDefinition) -> "AssetChecksForHandles":
+    def checks(*asset_checks: AssetChecksDefinition) -> "AssetCheckKeysSelection":
         """Returns a selection that includes all of the provided asset checks."""
-        return AssetChecksForHandles(
+        return AssetCheckKeysSelection(
             [
                 AssetCheckKey(asset_key=AssetKey.from_coercible(spec.asset_key), name=spec.name)
                 for checks_def in asset_checks
@@ -221,14 +222,14 @@ class AssetSelection(ABC):
         return UpstreamAssetSelection(self, depth=depth, include_self=include_self)
 
     @public
-    def sinks(self) -> "SinkAssetSelection":
+    def sinks(self) -> "SinksAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the sink
         assets within the original asset selection. Includes the asset checks targeting the returned assets.
 
         A sink asset is an asset that has no downstream dependencies within the asset selection.
         The sink asset can have downstream dependencies outside of the asset selection.
         """
-        return SinkAssetSelection(self)
+        return SinksAssetSelection(self)
 
     @public
     def required_multi_asset_neighbors(self) -> "RequiredNeighborsAssetSelection":
@@ -239,7 +240,7 @@ class AssetSelection(ABC):
         return RequiredNeighborsAssetSelection(self)
 
     @public
-    def roots(self) -> "RootAssetSelection":
+    def roots(self) -> "RootsAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
         assets within the original asset selection. Includes the asset checks targeting the returned assets.
 
@@ -250,11 +251,11 @@ class AssetSelection(ABC):
         keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
         use the `upstream_source_assets` method.
         """
-        return RootAssetSelection(self)
+        return RootsAssetSelection(self)
 
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
-    def sources(self) -> "RootAssetSelection":
+    def sources(self) -> "RootsAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
         assets within the original asset selection. Includes the asset checks targeting the returned assets.
 
@@ -268,11 +269,12 @@ class AssetSelection(ABC):
         return self.roots()
 
     @public
-    def upstream_source_assets(self) -> "SourceAssetSelection":
+    def upstream_source_assets(self) -> "ParentSourcesAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the source
-        assets upstream of assets in the original selection. Includes the asset checks targeting the returned assets.
+        assets that are parents of assets in the original selection. Includes the asset checks
+        targeting the returned assets.
         """
-        return SourceAssetSelection(self)
+        return ParentSourcesAssetSelection(self)
 
     @public
     def without_checks(self) -> "AssetSelection":
@@ -287,9 +289,9 @@ class AssetSelection(ABC):
         check.inst_param(other, "other", AssetSelection)
         return AndAssetSelection(self, other)
 
-    def __sub__(self, other: "AssetSelection") -> "SubAssetSelection":
+    def __sub__(self, other: "AssetSelection") -> "SubtractAssetSelection":
         check.inst_param(other, "other", AssetSelection)
-        return SubAssetSelection(self, other)
+        return SubtractAssetSelection(self, other)
 
     def resolve(
         self, all_assets: Union[Iterable[Union[AssetsDefinition, SourceAsset]], AssetGraph]
@@ -300,15 +302,7 @@ class AssetSelection(ABC):
             check.iterable_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
             asset_graph = AssetGraph.from_assets(all_assets)
 
-        resolved = self.resolve_inner(asset_graph)
-        resolved_source_assets = asset_graph.source_asset_keys & resolved
-        resolved_regular_assets = resolved - asset_graph.source_asset_keys
-        check.invariant(
-            not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
-            "Asset selection specified both regular assets and source assets. This is not"
-            " currently supported. Selections must be all regular assets or all source assets.",
-        )
-        return resolved
+        return self.resolve_inner(asset_graph)
 
     @abstractmethod
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -380,12 +374,14 @@ class AssetSelection(ABC):
             )
 
 
-class AllSelection(AssetSelection):
+@whitelist_for_serdes
+class AllSelection(AssetSelection, NamedTuple("_AllSelection", [])):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return asset_graph.materializable_asset_keys
 
 
-class AllAssetCheckSelection(AssetSelection):
+@whitelist_for_serdes
+class AllAssetCheckSelection(AssetSelection, NamedTuple("_AllAssetChecksSelection", [])):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
@@ -393,102 +389,115 @@ class AllAssetCheckSelection(AssetSelection):
         return asset_graph.asset_check_keys
 
 
-class AssetChecksForAssetKeys(AssetSelection):
-    def __init__(self, keys: Sequence[AssetKey]):
-        self._keys = keys
-
-    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        return set()
-
-    def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
-        return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in self._keys}
-
-
-class AssetChecksForHandles(AssetSelection):
-    def __init__(self, asset_check_keys: Sequence[AssetCheckKey]):
-        self._asset_check_keys = asset_check_keys
-
+@whitelist_for_serdes
+class AssetChecksForAssetKeysSelection(
+    NamedTuple("_AssetChecksForAssetKeysSelection", [("selected_asset_keys", Sequence[AssetKey])]),
+    AssetSelection,
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return set()
 
     def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
         return {
-            handle for handle in asset_graph.asset_check_keys if handle in self._asset_check_keys
+            handle
+            for handle in asset_graph.asset_check_keys
+            if handle.asset_key in self.selected_asset_keys
         }
 
 
-class AndAssetSelection(AssetSelection):
-    def __init__(self, left: AssetSelection, right: AssetSelection):
-        self._left = left
-        self._right = right
-
+@whitelist_for_serdes
+class AssetCheckKeysSelection(
+    NamedTuple(
+        "_AssetCheckKeysSelection", [("selected_asset_check_keys", Sequence[AssetCheckKey])]
+    ),
+    AssetSelection,
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        return self._left.resolve_inner(asset_graph) & self._right.resolve_inner(asset_graph)
+        return set()
 
     def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
-        return self._left.resolve_checks_inner(asset_graph) & self._right.resolve_checks_inner(
+        return {
+            handle
+            for handle in asset_graph.asset_check_keys
+            if handle in self.selected_asset_check_keys
+        }
+
+
+@whitelist_for_serdes
+class AndAssetSelection(
+    AssetSelection,
+    NamedTuple("_AndAssetSelection", [("left", AssetSelection), ("right", AssetSelection)]),
+):
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        return self.left.resolve_inner(asset_graph) & self.right.resolve_inner(asset_graph)
+
+    def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
+        return self.left.resolve_checks_inner(asset_graph) & self.right.resolve_checks_inner(
             asset_graph
         )
 
 
-class SubAssetSelection(AssetSelection):
-    def __init__(self, left: AssetSelection, right: AssetSelection):
-        self._left = left
-        self._right = right
-
+@whitelist_for_serdes
+class SubtractAssetSelection(
+    AssetSelection,
+    NamedTuple("_AndAssetSelection", [("left", AssetSelection), ("right", AssetSelection)]),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        return self._left.resolve_inner(asset_graph) - self._right.resolve_inner(asset_graph)
+        return self.left.resolve_inner(asset_graph) - self.right.resolve_inner(asset_graph)
 
     def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
-        return self._left.resolve_checks_inner(asset_graph) - self._right.resolve_checks_inner(
+        return self.left.resolve_checks_inner(asset_graph) - self.right.resolve_checks_inner(
             asset_graph
         )
 
 
-class SinkAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection):
-        self._child = child
-
+@whitelist_for_serdes
+class SinksAssetSelection(
+    AssetSelection,
+    NamedTuple("_SinksAssetSelection", [("child", AssetSelection)]),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        selection = self._child.resolve_inner(asset_graph)
+        selection = self.child.resolve_inner(asset_graph)
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
 
 
-class RequiredNeighborsAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection):
-        self._child = child
-
+@whitelist_for_serdes
+class RequiredNeighborsAssetSelection(
+    AssetSelection,
+    NamedTuple("_RequiredNeighborsAssetSelection", [("child", AssetSelection)]),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        selection = self._child.resolve_inner(asset_graph)
+        selection = self.child.resolve_inner(asset_graph)
         output = set(selection)
         for asset_key in selection:
             output.update(asset_graph.get_required_multi_asset_keys(asset_key))
         return output
 
 
-class RootAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection):
-        self._child = child
-
+@whitelist_for_serdes
+class RootsAssetSelection(
+    AssetSelection,
+    NamedTuple("_RootsAssetSelection", [("child", AssetSelection)]),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        selection = self._child.resolve_inner(asset_graph)
+        selection = self.child.resolve_inner(asset_graph)
         return fetch_sources(asset_graph.asset_dep_graph, selection)
 
 
-class DownstreamAssetSelection(AssetSelection):
-    def __init__(
-        self,
-        child: AssetSelection,
-        *,
-        depth: Optional[int] = None,
-        include_self: Optional[bool] = True,
-    ):
-        self._child = child
-        self.depth = depth
-        self.include_self = include_self
-
+@whitelist_for_serdes
+class DownstreamAssetSelection(
+    AssetSelection,
+    NamedTuple(
+        "_DownstreamAssetSelection",
+        [
+            ("child", AssetSelection),
+            ("depth", Optional[int]),
+            ("include_self", bool),
+        ],
+    ),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        selection = self._child.resolve_inner(asset_graph)
+        selection = self.child.resolve_inner(asset_graph)
         return operator.sub(
             reduce(
                 operator.or_,
@@ -507,30 +516,37 @@ class DownstreamAssetSelection(AssetSelection):
         )
 
 
-class GroupsAssetSelection(AssetSelection):
-    def __init__(self, *groups: str, include_sources: bool):
-        self._groups = groups
-        self._include_sources = include_sources
-
+@whitelist_for_serdes
+class GroupsAssetSelection(
+    NamedTuple(
+        "_GroupsAssetSelection",
+        [
+            ("selected_groups", Sequence[str]),
+            ("include_sources", bool),
+        ],
+    ),
+    AssetSelection,
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
-            if self._include_sources
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
         return {
             asset_key
             for asset_key, group in asset_graph.group_names_by_key.items()
-            if group in self._groups and asset_key in base_set
+            if group in self.selected_groups and asset_key in base_set
         }
 
 
-class KeysAssetSelection(AssetSelection):
-    def __init__(self, *keys: AssetKey):
-        self._keys = keys
-
+@whitelist_for_serdes
+class KeysAssetSelection(
+    NamedTuple("_KeysAssetSelection", [("selected_keys", Sequence[AssetKey])]),
+    AssetSelection,
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        specified_keys = set(self._keys)
+        specified_keys = set(self.selected_keys)
         invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
         if invalid_keys:
             raise DagsterInvalidSubsetError(
@@ -541,32 +557,37 @@ class KeysAssetSelection(AssetSelection):
         return specified_keys
 
 
-class KeyPrefixesAssetSelection(AssetSelection):
-    def __init__(self, *key_prefixes: Sequence[str], include_sources: bool):
-        self._key_prefixes = key_prefixes
-        self._include_sources = include_sources
-
+@whitelist_for_serdes
+class KeyPrefixesAssetSelection(
+    NamedTuple(
+        "_KeysAssetSelection",
+        [("selected_key_prefixes", Sequence[Sequence[str]]), ("include_sources", bool)],
+    ),
+    AssetSelection,
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.all_asset_keys
-            if self._include_sources
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
         return {
-            key for key in base_set if any(key.has_prefix(prefix) for prefix in self._key_prefixes)
+            key
+            for key in base_set
+            if any(key.has_prefix(prefix) for prefix in self.selected_key_prefixes)
         }
 
 
-class OrAssetSelection(AssetSelection):
-    def __init__(self, left: AssetSelection, right: AssetSelection):
-        self._left = left
-        self._right = right
-
+@whitelist_for_serdes
+class OrAssetSelection(
+    AssetSelection,
+    NamedTuple("_OrAssetSelection", [("left", AssetSelection), ("right", AssetSelection)]),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        return self._left.resolve_inner(asset_graph) | self._right.resolve_inner(asset_graph)
+        return self.left.resolve_inner(asset_graph) | self.right.resolve_inner(asset_graph)
 
     def resolve_checks_inner(self, asset_graph: InternalAssetGraph) -> AbstractSet[AssetCheckKey]:
-        return self._left.resolve_checks_inner(asset_graph) | self._right.resolve_checks_inner(
+        return self.left.resolve_checks_inner(asset_graph) | self.right.resolve_checks_inner(
             asset_graph
         )
 
@@ -596,32 +617,33 @@ def _fetch_all_upstream(
     )
 
 
-class UpstreamAssetSelection(AssetSelection):
-    def __init__(
-        self,
-        child: AssetSelection,
-        *,
-        depth: Optional[int] = None,
-        include_self: bool = True,
-    ):
-        self._child = child
-        self.depth = depth
-        self.include_self = include_self
-
+@whitelist_for_serdes
+class UpstreamAssetSelection(
+    AssetSelection,
+    NamedTuple(
+        "_UpstreamAssetSelection",
+        [
+            ("child", AssetSelection),
+            ("depth", Optional[int]),
+            ("include_self", bool),
+        ],
+    ),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        selection = self._child.resolve_inner(asset_graph)
+        selection = self.child.resolve_inner(asset_graph)
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
         return {key for key in all_upstream if key not in asset_graph.source_asset_keys}
 
 
-class SourceAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection):
-        self._child = child
-
+@whitelist_for_serdes
+class ParentSourcesAssetSelection(
+    AssetSelection,
+    NamedTuple("_ParentSourcesAssetSelection", [("child", AssetSelection)]),
+):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        selection = self._child.resolve_inner(asset_graph)
+        selection = self.child.resolve_inner(asset_graph)
         if len(selection) == 0:
             return selection
         all_upstream = _fetch_all_upstream(selection, asset_graph)

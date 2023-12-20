@@ -370,8 +370,10 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
                     cursor=self._cursor,
-                    last_completion_time=None,
+                    last_tick_completion_time=None,
                     last_run_key=None,
+                    last_sensor_start_time=None,
+                    log_key=None,
                 )
             except Exception:
                 sensor_data = serializable_error_info_from_exc_info(sys.exc_info())
@@ -400,6 +402,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     repository_handle=repository.handle,
                     schedule_name=external_schedule.name,
                     scheduled_execution_time=schedule_time,
+                    log_key=None,
                 )
             except Exception:
                 schedule_data = serializable_error_info_from_exc_info(sys.exc_info())

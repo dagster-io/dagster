@@ -35,6 +35,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._check import CheckError
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.asset_check_evaluation import (
@@ -47,8 +48,13 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.definitions.partition import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
+    PartitionKeysTimeWindowPartitionsSubset,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.event_api import EventLogCursor, EventRecordsResult
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
@@ -66,6 +72,9 @@ from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
+from dagster._core.host_representation.external_data import (
+    external_partitions_definition_from_def,
+)
 from dagster._core.host_representation.origin import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
@@ -2560,6 +2569,114 @@ class TestEventLogStorage:
                     {},
                 )
 
+    def test_store_asset_materialization_planned_event_with_invalid_partitions_subset(
+        self, storage, instance
+    ) -> None:
+        a = AssetKey(["a"])
+        run_id_1 = make_new_run_id()
+
+        partitions_def = DailyPartitionsDefinition("2023-01-01")
+        partitions_subset = (
+            external_partitions_definition_from_def(partitions_def)
+            .get_partitions_definition()
+            .subset_with_partition_keys(
+                partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange("2023-01-05", "2023-01-10")
+                )
+            )
+        )
+        assert isinstance(partitions_subset, PartitionKeysTimeWindowPartitionsSubset)
+
+        with create_and_delete_test_runs(instance, [run_id_1]):
+            with pytest.raises(
+                CheckError,
+                match="partitions_subset must be serializable",
+            ):
+                storage.store_event(
+                    EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id_1,
+                        timestamp=time.time(),
+                        dagster_event=DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            "nonce",
+                            event_specific_data=AssetMaterializationPlannedData(
+                                a, partitions_subset=partitions_subset
+                            ),
+                        ),
+                    )
+                )
+
+            with pytest.raises(
+                DagsterInvariantViolationError,
+                match="Cannot provide both partition and partitions_subset",
+            ):
+                storage.store_event(
+                    EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id_1,
+                        timestamp=time.time(),
+                        dagster_event=DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            "nonce",
+                            event_specific_data=AssetMaterializationPlannedData(
+                                a, partitions_subset=partitions_subset, partition="foo"
+                            ),
+                        ),
+                    )
+                )
+
+    def test_store_asset_materialization_planned_event_with_partitions_subset(
+        self, storage, instance
+    ) -> None:
+        a = AssetKey(["a"])
+        run_id_1 = make_new_run_id()
+
+        partitions_def = DailyPartitionsDefinition("2023-01-01")
+        partitions_subset = (
+            external_partitions_definition_from_def(partitions_def)
+            .get_partitions_definition()
+            .subset_with_partition_keys(
+                partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange("2023-01-05", "2023-01-10")
+                )
+            )
+            .to_serializable_subset()
+        )
+
+        with create_and_delete_test_runs(instance, [run_id_1]):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(
+                            a, partitions_subset=partitions_subset
+                        ),
+                    ),
+                )
+            )
+
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=a,
+                )
+            )
+            assert len(records) == 1
+            record = records[0]
+            assert record.partition_key is None
+            assert record.event_log_entry.dagster_event.partitions_subset == partitions_subset
+
     def test_get_latest_asset_partition_materialization_attempts_without_materializations_event_ids(
         self, storage, instance
     ):
@@ -3180,6 +3297,11 @@ class TestEventLogStorage:
             assert asset_event_tags == [
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"}
             ]
+
+        # after the runs are deleted, the event tags should not persist
+        storage.delete_events(run_id)
+        asset_event_tags = storage.get_event_tags_for_asset(key)
+        assert asset_event_tags == []
 
     def test_add_asset_event_tags(self, storage, instance):
         if not storage.supports_add_asset_event_tags():
@@ -4256,3 +4378,34 @@ class TestEventLogStorage:
                 ),
             )
         )
+
+    def test_transaction(self, test_run_id, storage):
+        assert len(storage.get_logs_for_run(test_run_id)) == 0
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ENGINE_EVENT.value,
+                    "nonce",
+                    event_specific_data=EngineEventData.in_process(999),
+                ),
+            )
+        )
+        assert len(storage.get_logs_for_run(test_run_id)) == 1
+
+        # now try to delete
+        with pytest.raises(Exception):
+            with storage.index_transaction() as conn:
+                conn.execute(SqlEventLogStorageTable.delete())
+                # Invalid insert, which should rollback the entire transaction
+                raise Exception()
+
+        assert len(storage.get_logs_for_run(test_run_id)) == 1
+
+        if self.can_wipe():
+            storage.wipe()
+            assert len(storage.get_logs_for_run(test_run_id)) == 0

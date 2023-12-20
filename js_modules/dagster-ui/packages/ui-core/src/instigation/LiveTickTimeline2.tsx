@@ -1,17 +1,17 @@
 import {
   Caption,
   Tooltip,
-  colorAccentCyan,
-  colorAccentCyanHover,
-  colorAccentGray,
   colorAccentGrayHover,
   colorAccentGreen,
   colorAccentGreenHover,
+  colorAccentLavender,
+  colorAccentLavenderHover,
   colorAccentPrimary,
   colorAccentRed,
   colorAccentRedHover,
   colorAccentReversed,
   colorBackgroundDefault,
+  colorBackgroundDisabled,
   colorKeylineDefault,
   colorTextLight,
   ifPlural,
@@ -36,14 +36,14 @@ dayjs.extend(relativeTime);
 const COLOR_MAP = {
   [InstigationTickStatus.SUCCESS]: colorAccentGreen(),
   [InstigationTickStatus.FAILURE]: colorAccentRed(),
-  [InstigationTickStatus.STARTED]: colorAccentCyan(),
-  [InstigationTickStatus.SKIPPED]: colorAccentGray(),
+  [InstigationTickStatus.STARTED]: colorAccentLavender(),
+  [InstigationTickStatus.SKIPPED]: colorBackgroundDisabled(),
 };
 
 const HoverColorMap = {
   [InstigationTickStatus.SUCCESS]: colorAccentGreenHover(),
   [InstigationTickStatus.FAILURE]: colorAccentRedHover(),
-  [InstigationTickStatus.STARTED]: colorAccentCyanHover(),
+  [InstigationTickStatus.STARTED]: colorAccentLavenderHover(),
   [InstigationTickStatus.SKIPPED]: colorAccentGrayHover(),
 };
 

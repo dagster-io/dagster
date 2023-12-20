@@ -14,11 +14,14 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import CodeLocation, ExternalRepository
-from dagster._core.host_representation.external import ExternalJob
+from dagster._core.host_representation.external import ExternalJob, ExternalSensor
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalDynamicPartitionsDefinitionData,
@@ -46,6 +49,7 @@ from dagster_graphql.schema.partition_sets import (
     GraphenePartitionDefinition,
     GraphenePartitionDefinitionType,
 )
+from dagster_graphql.schema.sensors import GrapheneSensor
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
     GrapheneResourceRequirement,
@@ -301,6 +305,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         pipeline=graphene.Argument(GraphenePipelineSelector),
     )
     currentAutoMaterializeEvaluationId = graphene.Int()
+    automationPolicySensor = graphene.Field(GrapheneSensor)
 
     class Meta:
         name = "AssetNode"
@@ -850,10 +855,50 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
         return None
 
-    def resolve_currentAutoMaterializeEvaluationId(self, graphene_info):
-        from dagster._daemon.asset_daemon import get_current_evaluation_id
+    def _get_automation_policy_external_sensor(self) -> Optional[ExternalSensor]:
+        asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
+        asset_key = self._external_asset_node.asset_key
+        matching_sensors = [
+            sensor
+            for sensor in self._external_repository.get_external_sensors()
+            if sensor.sensor_type == SensorType.AUTOMATION_POLICY
+            and asset_key in check.not_none(sensor.asset_selection).resolve(asset_graph)
+        ]
+        check.invariant(
+            len(matching_sensors) <= 1,
+            f"More than one automation policy sensor targeting asset key {asset_key}",
+        )
+        if not matching_sensors:
+            return None
 
-        return get_current_evaluation_id(graphene_info.context.instance)
+        return matching_sensors[0]
+
+    def resolve_automationPolicySensor(self, graphene_info) -> Optional[GrapheneSensor]:
+        external_sensor = self._get_automation_policy_external_sensor()
+        if not external_sensor:
+            return None
+
+        sensor_state = graphene_info.context.instance.get_instigator_state(
+            external_sensor.get_external_origin_id(),
+            external_sensor.selector_id,
+        )
+
+        return GrapheneSensor(external_sensor, sensor_state)
+
+    def resolve_currentAutoMaterializeEvaluationId(self, graphene_info):
+        from dagster._daemon.asset_daemon import (
+            get_current_evaluation_id,
+        )
+
+        instance = graphene_info.context.instance
+        if instance.auto_materialize_use_automation_policy_sensors:
+            external_sensor = self._get_automation_policy_external_sensor()
+            if not external_sensor:
+                return None
+
+            return get_current_evaluation_id(graphene_info.context.instance, external_sensor)
+        else:
+            return get_current_evaluation_id(graphene_info.context.instance, None)
 
     def resolve_backfillPolicy(
         self, _graphene_info: ResolveInfo

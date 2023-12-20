@@ -73,6 +73,7 @@ export const DarkPalette = {
   [ColorName.TooltipText]: CoreColors.White,
   [ColorName.PopoverBackground]: CoreColors.Gray900,
   [ColorName.PopoverBackgroundHover]: CoreColors.Gray850,
+  [ColorName.ShadowDefault]: TranslucentColors.Gray90,
 
   // Nav
   [ColorName.NavBackground]: CoreColors.Gray990,

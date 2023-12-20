@@ -71,6 +71,7 @@ class PipesMessageHandler:
         self._message_reader = message_reader
         # Queue is thread-safe
         self._result_queue: Queue[PipesExecutionResult] = Queue()
+        self._extra_msg_queue: Queue[Any] = Queue()
         # Only read by the main thread after all messages are handled, so no need for a lock
         self._received_opened_msg = False
         self._received_closed_msg = False
@@ -83,6 +84,9 @@ class PipesMessageHandler:
 
     def get_reported_results(self) -> Sequence[PipesExecutionResult]:
         return tuple(self._result_queue.queue)
+
+    def get_custom_messages(self) -> Sequence[Any]:
+        return tuple(self._extra_msg_queue.queue)
 
     @property
     def received_opened_message(self) -> bool:
@@ -149,6 +153,8 @@ class PipesMessageHandler:
             self._handle_report_asset_check(**message["params"])  # type: ignore
         elif method == "log":
             self._handle_log(**message["params"])  # type: ignore
+        elif method == "report_custom_message":
+            self._handle_extra_message(**message["params"])  # type: ignore
         else:
             raise DagsterPipesExecutionError(f"Unknown message method: {message['method']}")
 
@@ -215,6 +221,9 @@ class PipesMessageHandler:
     def _handle_log(self, message: str, level: str = "info") -> None:
         check.str_param(message, "message")
         self._context.log.log(level, message)
+
+    def _handle_extra_message(self, payload: Any):
+        self._extra_msg_queue.put(payload)
 
     def report_pipes_framework_exception(self, origin: str, exc_info: ExceptionInfo):
         # use an engine event to provide structured exception, this gives us an event with
@@ -339,6 +348,9 @@ class PipesSession:
             PipesExecutionResult: Result reported by external process.
         """
         return self.message_handler.get_reported_results()
+
+    def get_custom_messages(self) -> Sequence[Any]:
+        return self.message_handler.get_custom_messages()
 
 
 def build_external_execution_context_data(

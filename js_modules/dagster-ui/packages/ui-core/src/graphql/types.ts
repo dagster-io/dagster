@@ -338,6 +338,7 @@ export type AssetNode = {
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
+  automationPolicySensor: Maybe<Sensor>;
   backfillPolicy: Maybe<BackfillPolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
@@ -1508,6 +1509,7 @@ export type Instance = {
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
   supportsConcurrencyLimits: Scalars['Boolean'];
+  useAutomationPolicySensors: Scalars['Boolean'];
 };
 
 export type InstanceConcurrencyLimitArgs = {
@@ -3986,6 +3988,7 @@ export type SensorSelector = {
 
 export enum SensorType {
   ASSET = 'ASSET',
+  AUTOMATION_POLICY = 'AUTOMATION_POLICY',
   FRESHNESS_POLICY = 'FRESHNESS_POLICY',
   MULTI_ASSET = 'MULTI_ASSET',
   RUN_STATUS = 'RUN_STATUS',
@@ -5176,6 +5179,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AutoMaterializePolicy')
         ? ({} as AutoMaterializePolicy)
         : buildAutoMaterializePolicy({}, relationshipsToOmit),
+    automationPolicySensor:
+      overrides && overrides.hasOwnProperty('automationPolicySensor')
+        ? overrides.automationPolicySensor!
+        : relationshipsToOmit.has('Sensor')
+        ? ({} as Sensor)
+        : buildSensor({}, relationshipsToOmit),
     backfillPolicy:
       overrides && overrides.hasOwnProperty('backfillPolicy')
         ? overrides.backfillPolicy!
@@ -7354,6 +7363,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('supportsConcurrencyLimits')
         ? overrides.supportsConcurrencyLimits!
         : false,
+    useAutomationPolicySensors:
+      overrides && overrides.hasOwnProperty('useAutomationPolicySensors')
+        ? overrides.useAutomationPolicySensors!
+        : true,
   };
 };
 

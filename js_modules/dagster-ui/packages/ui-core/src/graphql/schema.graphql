@@ -691,6 +691,7 @@ type AssetNode {
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: Int
+  automationPolicySensor: Sensor
 }
 
 type MaterializationUpstreamDataVersion {
@@ -2327,6 +2328,7 @@ type Instance {
   supportsConcurrencyLimits: Boolean!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
+  useAutomationPolicySensors: Boolean!
 }
 
 type RunQueueConfig {
@@ -2884,6 +2886,7 @@ enum SensorType {
   ASSET
   MULTI_ASSET
   FRESHNESS_POLICY
+  AUTOMATION_POLICY
   UNKNOWN
 }
 

@@ -3,7 +3,7 @@ import {Placement} from '@blueprintjs/popover2';
 import React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
-import {CoreColors} from '../palettes/Colors';
+import {colorShadowDefault, colorTooltipBackground, colorTooltipText} from '../theme/color';
 
 import {Box} from './Box';
 import {Button} from './Button';
@@ -35,6 +35,7 @@ type Props = {
   };
   position: ProductTourPosition;
   width?: CSSProperties['width'];
+  modifiers?: React.ComponentProps<typeof Popover>['modifiers'];
 } & ObjectType;
 
 export const ProductTour = ({
@@ -46,6 +47,7 @@ export const ProductTour = ({
   img,
   video,
   object,
+  modifiers = {},
   width = '260px',
 }: Props) => {
   const media = React.useMemo(() => {
@@ -69,11 +71,13 @@ export const ProductTour = ({
 
   return (
     <Popover
+      popoverClassName="bp4-dark"
       isOpen={true}
       placement={position as Placement}
       modifiers={{
         arrow: {enabled: true},
         preventOverflow: {enabled: true},
+        ...modifiers,
       }}
       minimal={false}
       content={
@@ -98,17 +102,17 @@ export const ProductTour = ({
 
 const ProductTourContainer = styled(Box)`
   pointer-events: all;
-  background: ${CoreColors.Gray900};
+  background: ${colorTooltipBackground()};
   border-radius: 4px;
   padding: 16px;
-  box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0px 2px 12px ${colorShadowDefault()};
 
   &,
   button {
     &,
     &:hover,
     &:focus {
-      color: ${CoreColors.White};
+      color: ${colorTooltipText()};
     }
   }
 `;

@@ -1,5 +1,105 @@
 # Changelog
 
+# 1.5.13 / 0.21.13 (libraries)
+
+### New
+
+- The `SensorEvaluationContext` object has two new properties: `last_sensor_start_time` and `is_first_tick_since_sensor_start`. This enables sensor evaluation functions to vary behavior on the first tick vs subsequent ticks after the sensor has started.
+- The `asset_selection` argument to `@sensor` and `SensorDefinition` now accepts sequence of `AssetsDefinitions`, a sequences of strings, or a sequence of `AssetKey`s, in addition to `AssetSelection`s.
+- [dagster-dbt] Support for `dbt-core==1.3.*` has been removed.
+- [ui] In code locations view, link to git repo when it’s a valid URL.
+- [ui] To improve consistency and legibility, when displaying elapsed time, most places in the app will now no longer show milliseconds.
+- [ui] Runs that were launched by schedules or sensors now show information about the relevant schedule or sensor in the header, with a link to view other runs associated with the same tick.
+- [dagster-gcp] Added a `show_url_only` parameter to `GCSComputeLogManager` that allows you to configure the compute log manager so that it displays a link to the GCS console rather than loading the logs from GCS, which can be useful if giving Dagster access to GCS credentials is undesirable.
+
+### Bugfixes
+
+- Fixed behavior of loading partitioned parent assets when using the `BranchingIOManager`
+- [ui] Fixed an unwanted scrollbar that sometimes appears on the code location list.
+
+### Community Contributions
+
+- Fixed a bug where dagster would error on FIPS-enabled systems by explicitly marking callsites of `hashlib.md5` as not used for security purposes (Thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!)
+- [dagster-k8s] Changed `execute_k8s_job` to be aware of run-termination and op failure by deleting the executing k8s job (Thanks [@Taadas](https://github.com/Taadas)!).
+- [dagstermill] Fixed dagstermill integration with the Dagster web UI to allow locally-scoped static resources (required to show certain frontend-components like `plotly` graphs) when viewing dagstermill notebooks (Thanks [@aebrahim](https://github.com/aebrahim)!).
+- [dagster-dbt] Fixed type annotation typo in the `DbtCliResource` API docs (Thanks [@akan72](https://github.com/akan72)!)
+
+### Experimental
+
+- [pipes] Methods have been added to facilitate passing non-Dagster data back from the external process (`report_custom_message` ) to the orchestration process (`get_custom_messages`).
+- [ui] Added a “System settings” option for UI theming, which will use your OS preference to set light or dark mode.
+
+### Documentation
+
+- [graphql] - Removed experimental marker that was missed when the GraphQL client was fully released
+- [assets] - Add an example for using retries with assets to the SDA concept page
+- [general] - Fixed some typos and formatting issues
+
+# 1.5.12 / 0.21.12 (libraries)
+
+### Bugfixes
+
+- [dagster-embedded-elt] Fixed an issue where `EnvVar`s used in Sling source and target configuration would not work properly in some circumstances.
+- [dagster-insights] Reworked the Snowflake insights ingestion pipeline to improve performance and increase observability.
+
+# 1.5.11 / 0.21.11 (libraries)
+
+### New
+
+- [ui] Asset graph now displays active filters.
+- [ui] Asset graph can now be filtered by compute kind.
+- [ui] When backfilling failed and missing partitions of assets, a “Preview” button allows you to see which ranges will be materialized.
+- [dagster-dbt] When running `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev` in a new scaffolded project from `dagster-dbt project scaffold`, dbt logs from creating dbt artifacts to loading the project are now silenced.
+- [dagster-airbyte] Added a new `connection_meta_to_group_fn` argument which allows configuring loaded asset groups based on the connection’s metadata dict.
+- [dagster-k8s] Debug information about failed run workers in errors surfaced by run monitoring now includes logs from sidecar containers, not just the main dagster container.
+
+### Bugfixes
+
+- The `QueuedRunCoordinatorDaemon` has been refactored to paginate over runs when applying priority sort and tag concurrency limits. Previously, it loaded all runs into memory causing large memory spikes when many runs were enqueued.
+- Callable objects can once again be used to back sensor definitions.
+- `UPathIOManager` has been updated to use the correct path delimiter when interacting with cloud storages from a Windows process.
+- In the default multiprocess executor, the `STEP_WORKER_STARTED` event now fires before importing code in line with the other executors.
+- During execution, skipping a step now takes precedence over “abandoning” it due to upstream failure. This is expected to substantially improve the “retry from failure” workflow when conditional branching is in use.
+- Fixed an issue where default config values set to `EnvVar` did not work properly.
+- Fixed an issue where resources which implemented `IAttachDifferentObjectToOpContext` would pass the incorrect object to schedules and sensors.
+- Fixed a bug that caused auto-materialize failures when using the `materialize_on_cron` rule with dynamically partitioned assets.
+- Fixed an issue where sensor ticks would sporadically fail with a StopIteration exception.
+- [ui] For a job launchpad with a large number of tabs, the “Remove all” option was pushed offscreen. This has been fixed.
+- [ui] The asset backfill page now correctly shows backfills that target only unpartitioned assets.
+- [ui] Launching an asset job that was defined `without_checks` no longer fails by attempting to include the checks.
+- [dagster-databricks] fix bug that caused crash when polling a submitted job that is still in the Databricks queue (due to concurrency limit).
+
+### Community Contributions
+
+- Patched issue where the local compute log path exposed file content outside of the compute log base directory - thanks **[r1b](https://github.com/r1b)!**
+- [dagster-databricks] Added ability to authenticate using an Azure service principal and fix minor bugs involving authenticating with a service principal while `DATABRICKS_HOST` is set. Thanks [@zyd14](https://github.com/zyd14)!
+
+### Experimental
+
+- [ui] Dark mode is now available via the User Settings dialog, currently in an experimental state. By default, the app will use a “legacy” theme, closely matching our current colors. A new light mode theme is also available.
+- [ui] Asset graph group nodes can be collapsed/expanded by right clicking on the collapsed group node or the header of the expanded group node.
+- [ui] Asset graph group nodes can be all collapsed or all expanded by right clicking anywhere on the graph and selecting the appropriate action.
+- [ui] The tree view was removed from the asset graph.
+- [pipes] `PipesLambdaClient`, an AWS Lambda pipes client has been added to `dagster_aws`.
+- Fixed a performance regression introduced in the 1.5.10 release where auto-materializing multi-assets became slower.
+
+### Documentation
+
+- [getting-started] Added an [overview to the Getting Started section](https://docs.dagster.io/getting-started/overview) that explains the whats and whys of Dagster.
+- [pipes] Added [a guide](https://docs.dagster.io/guides/dagster-pipes/aws-lambda) for using the new `PipesLambdaClient` with Dagster Pipes.
+- [getting-started] Simplified the **Getting Started** category. The following pages have been moved:
+  - [Understanding Dagster project files](https://docs.dagster.io/guides/understanding-dagster-project-files) is now in **Guides**
+  - [Telemetry](https://docs.dagster.io/about/telemetry) is now in **About**
+- [guides] Fixed a broken link in the [Airflow-to-Dagster concept mapping guide](https://docs.dagster.io/integrations/airflow).
+- [deployment] Cleaned up and updated the [Executing with Celery OSS deployment guide](https://docs.dagster.io/deployment/guides/celery).
+- [general] Added two guides that were previously missing to the side navigation:
+  - [Utilizing SCIM provisioning](https://docs.dagster.io/dagster-cloud/account/authentication/utilizing-scim-provisioning) (**Deployment > Cloud > Authentication & users > SCIM provisioning**)
+  - [Pandera](https://docs.dagster.io/integrations/pandera) (**Integrations > Pandera**)
+
+### Dagster Cloud
+
+- When a Dagster Cloud agent starts up, it will now wait to display as Running on the Agents tab in the Dagster Cloud UI until it has launched all the code servers that it needs in order to serve requests.
+
 # 1.5.10 / 0.21.10 (libraries)
 
 ### New

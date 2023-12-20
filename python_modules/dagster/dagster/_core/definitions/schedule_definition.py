@@ -182,6 +182,7 @@ class ScheduleEvaluationContext:
         self,
         instance_ref: Optional[InstanceRef],
         scheduled_execution_time: Optional[datetime],
+        log_key: Optional[Sequence[str]] = None,
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
@@ -196,15 +197,18 @@ class ScheduleEvaluationContext:
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
-        self._log_key = (
-            [
+
+        self._log_key = log_key
+
+        # Kept for backwards compatibility if the schedule log key is not passed into the
+        # schedule evaluation.
+        if not self._log_key and repository_name and schedule_name and scheduled_execution_time:
+            self._log_key = [
                 repository_name,
                 schedule_name,
                 scheduled_execution_time.strftime("%Y%m%d_%H%M%S"),
             ]
-            if repository_name and schedule_name and scheduled_execution_time
-            else None
-        )
+
         self._logger = None
         self._repository_name = repository_name
         self._schedule_name = schedule_name
@@ -354,7 +358,7 @@ class ScheduleEvaluationContext:
         return self._logger and self._logger.has_captured_logs()
 
     @property
-    def log_key(self) -> Optional[List[str]]:
+    def log_key(self) -> Optional[Sequence[str]]:
         return self._log_key
 
     @property
@@ -420,14 +424,16 @@ def build_schedule_context(
     )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"log_key": "captured_log_key"},
+)
 class ScheduleExecutionData(
     NamedTuple(
         "_ScheduleExecutionData",
         [
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_message", Optional[str]),
-            ("captured_log_key", Optional[Sequence[str]]),
+            ("log_key", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -435,11 +441,11 @@ class ScheduleExecutionData(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_message: Optional[str] = None,
-        captured_log_key: Optional[Sequence[str]] = None,
+        log_key: Optional[Sequence[str]] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
-        check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.opt_list_param(log_key, "log_key", str)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -447,7 +453,7 @@ class ScheduleExecutionData(
             cls,
             run_requests=run_requests,
             skip_message=skip_message,
-            captured_log_key=captured_log_key,
+            log_key=log_key,
         )
 
 
@@ -914,7 +920,7 @@ class ScheduleDefinition(IHasInternalInit):
         return ScheduleExecutionData(
             run_requests=resolved_run_requests,
             skip_message=skip_message,
-            captured_log_key=context.log_key if context.has_captured_logs() else None,
+            log_key=context.log_key if context.has_captured_logs() else None,
         )
 
     def has_loadable_target(self):

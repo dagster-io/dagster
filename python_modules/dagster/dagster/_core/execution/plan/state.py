@@ -15,14 +15,18 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.errors import DagsterExecutionPlanSnapshotNotFoundError, DagsterRunNotFoundError
+from dagster._core.errors import (
+    DagsterExecutionPlanSnapshotNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterRunNotFoundError,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.handle import StepHandle, UnresolvedStepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ResolvedFromDynamicStepHandle
 from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -36,7 +40,7 @@ class StepOutputVersionData(NamedTuple):
 
     @staticmethod
     def get_version_list_from_dict(
-        step_output_versions: Mapping[StepOutputHandle, str]
+        step_output_versions: Mapping[StepOutputHandle, str],
     ) -> Sequence["StepOutputVersionData"]:
         return [
             StepOutputVersionData(step_output_handle=step_output_handle, version=version)
@@ -155,6 +159,11 @@ class KnownExecutionState(
         instance: DagsterInstance,
         parent_run: DagsterRun,
     ) -> Tuple[Sequence[str], "KnownExecutionState"]:
+        if parent_run.status not in (DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED):
+            raise DagsterInvariantViolationError(
+                "Cannot reexecute from failure a run that is not failed or canceled",
+            )
+
         steps_to_retry, known_state = _derive_state_from_logs(instance, parent_run)
         return steps_to_retry, known_state.update_for_step_selection(steps_to_retry)
 
