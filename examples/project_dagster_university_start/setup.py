@@ -4,7 +4,7 @@ setup(
     name="dagster_university",
     packages=find_packages(exclude=["dagster_university_tests"]),
     install_requires=[
-        "dagster==1.4.*",
+        "dagster==1.5.*",
         "dagster-cloud",
         "dagster-duckdb",
         "geopandas",
