@@ -71,6 +71,7 @@ export type SearchSecondaryQuery = {
           __typename: 'Asset';
           id: string;
           key: {__typename: 'AssetKey'; path: Array<string>};
+          definition: {__typename: 'AssetNode'; id: string} | null;
         }>;
       }
     | {__typename: 'PythonError'};
