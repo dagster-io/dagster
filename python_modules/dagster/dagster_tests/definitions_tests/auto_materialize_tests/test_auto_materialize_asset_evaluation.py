@@ -1,11 +1,12 @@
-from dagster import MetadataValue
+from dagster import DailyPartitionsDefinition, MetadataValue
 from dagster._core.definitions.asset_condition import (
-    AssetConditionEvaluationWithRunIds,
     AssetSubsetWithMetadata,
 )
 from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+)
 from dagster._core.definitions.events import AssetKey
-from dagster._serdes.serdes import deserialize_value
 
 
 def test_backcompat_unpartitioned_skipped() -> None:
@@ -31,8 +32,10 @@ def test_backcompat_unpartitioned_skipped() -> None:
         '"AutoMaterializeDecisionType.MATERIALIZE"}, "description": "not materialized since last '
         'cron schedule tick of \'0 * * * *\' (timezone: UTC)"}], "run_ids": {"__set__": []}}'
     )
-    deserialized_with_run_ids = deserialize_value(
-        serialized_asset_evaluation, AssetConditionEvaluationWithRunIds
+    deserialized_with_run_ids = (
+        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            serialized_asset_evaluation, None
+        )
     )
     deserialized = deserialized_with_run_ids.evaluation
 
@@ -73,8 +76,10 @@ def test_backcompat_unpartitioned_requested() -> None:
         '"AutoMaterializeDecisionType.MATERIALIZE"}, "description": "not materialized since last '
         'cron schedule tick of \'0 * * * *\' (timezone: UTC)"}], "run_ids": {"__set__": []}}'
     )
-    deserialized_with_run_ids = deserialize_value(
-        serialized_asset_evaluation, AssetConditionEvaluationWithRunIds
+    deserialized_with_run_ids = (
+        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            serialized_asset_evaluation, None
+        )
     )
     deserialized = deserialized_with_run_ids.evaluation
     assert len(deserialized.true_subset.asset_partitions) == 1
@@ -148,19 +153,26 @@ def test_backcompat_partitioned_asset() -> None:
         '"AutoMaterializeDecisionType.MATERIALIZE"}, "description": "upstream data has changed '
         'since latest materialization"}], "run_ids": {"__set__": []}}'
     )
-    deserialized_with_run_ids = deserialize_value(
-        serialized_asset_evaluation, AssetConditionEvaluationWithRunIds
+    deserialized_with_run_ids = (
+        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
+            serialized_asset_evaluation, DailyPartitionsDefinition("2013-01-05")
+        )
     )
     deserialized = deserialized_with_run_ids.evaluation
 
-    # all subsets should have zero size
-    assert deserialized.true_subset.size == 0
+    assert deserialized.true_subset.size == 1
     assert len(deserialized.child_evaluations) == 2
-    (materialize_evaluation, not_skip_evaluation) = deserialized.child_evaluations
-    assert materialize_evaluation.true_subset.size == 0
-    assert not_skip_evaluation.true_subset.size == 0
+    (
+        materialize_evaluation,
+        not_skip_evaluation,
+    ) = deserialized.child_evaluations
+    assert materialize_evaluation.true_subset.size == 3
+    assert not_skip_evaluation.true_subset.size == 1
 
     skip_evaluation = not_skip_evaluation.child_evaluations[0]
-    assert skip_evaluation.true_subset.size == 0
+    assert skip_evaluation.true_subset.size == 1
     assert len(skip_evaluation.child_evaluations) == 4
     assert skip_evaluation.child_evaluations[0].true_subset.size == 0
+    assert skip_evaluation.child_evaluations[1].true_subset.size == 0
+    assert skip_evaluation.child_evaluations[2].true_subset.size == 1
+    assert skip_evaluation.child_evaluations[3].true_subset.size == 0

@@ -33,6 +33,7 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsSubset,
     get_time_partitions_def,
 )
 from dagster._core.storage.dagster_run import RunsFilter
@@ -611,20 +612,40 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def description(self) -> str:
         return "materialization is missing"
 
-    def evaluate_for_asset(self, context: AssetConditionEvaluationContext) -> RuleEvaluationResults:
-        """Evaluates the set of asset partitions for this asset which are missing and were not
-        previously discarded.
+    def get_handled_subset(self, context: AssetConditionEvaluationContext) -> AssetSubset:
+        """Returns the AssetSubset which has been handled (materialized, requested, or discarded).
+        Accounts for cases in which the partitions definition may have changed between ticks.
         """
-        handled_subset = (
+        previous_handled_subset = context.cursor.get_extras_value(
+            context.condition, self.HANDLED_SUBSET_KEY, AssetSubset
+        )
+        if previous_handled_subset:
+            # partitioned -> unpartitioned or vice versa
+            if previous_handled_subset.is_partitioned != (context.partitions_def is not None):
+                previous_handled_subset = None
+            # time partitions def changed
+            elif (
+                previous_handled_subset.is_partitioned
+                and isinstance(previous_handled_subset.subset_value, TimeWindowPartitionsSubset)
+                and previous_handled_subset.subset_value.partitions_def != context.partitions_def
+            ):
+                previous_handled_subset = None
+        return (
             (
-                context.cursor.get_extras_value(
-                    context.condition, self.HANDLED_SUBSET_KEY, AssetSubset
+                previous_handled_subset
+                or context.instance_queryer.get_materialized_asset_subset(
+                    asset_key=context.asset_key
                 )
-                or context.empty_subset()
             )
             | context.previous_tick_requested_subset
             | context.materialized_since_previous_tick_subset
         )
+
+    def evaluate_for_asset(self, context: AssetConditionEvaluationContext) -> RuleEvaluationResults:
+        """Evaluates the set of asset partitions for this asset which are missing and were not
+        previously discarded.
+        """
+        handled_subset = self.get_handled_subset(context)
         unhandled_candidates = (
             context.candidate_subset
             & handled_subset.inverse(
