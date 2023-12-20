@@ -24,3 +24,5 @@ export const useRunRootTrace = () => {
     };
   }, [trace]);
 };
+
+export type RunRootTrace = ReturnType<typeof useRunRootTrace>;

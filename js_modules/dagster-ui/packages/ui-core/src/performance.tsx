@@ -1,13 +1,13 @@
 import React from 'react';
 
-type Trace = {
+type TraceData = {
   name: string;
   startTime: number;
   endTime: number | null;
 };
 
 class PointToPointInstrumentation {
-  private traces: {[traceId: string]: Trace} = {};
+  private traces: {[traceId: string]: TraceData} = {};
 
   startTrace(traceId: string, name: string): void {
     if (!traceId) {
@@ -62,3 +62,5 @@ export function useStartTrace(name: string) {
     [traceId],
   );
 }
+
+export type Trace = ReturnType<typeof useStartTrace>;
