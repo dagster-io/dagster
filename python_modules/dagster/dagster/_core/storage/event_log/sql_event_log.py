@@ -2,6 +2,7 @@ import logging
 import os
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
+from contextlib import contextmanager
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -9,6 +10,7 @@ from typing import (
     ContextManager,
     Dict,
     Iterable,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -158,6 +160,16 @@ class SqlEventLogStorage(EventLogStorage):
     @abstractmethod
     def index_connection(self) -> ContextManager[Connection]:
         """Context manager yielding a connection to access cross-run indexed tables."""
+
+    @contextmanager
+    def index_transaction(self) -> Iterator[Connection]:
+        """Context manager yielding a connection to the index shard that has begun a transaction."""
+        with self.index_connection() as conn:
+            if conn.in_transaction():
+                yield conn
+            else:
+                with conn.begin():
+                    yield conn
 
     @abstractmethod
     def upgrade(self) -> None:
