@@ -192,15 +192,16 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
         record: AutoMaterializeAssetEvaluationRecord,
         partitions_def: Optional[PartitionsDefinition],
     ):
+        evaluation_with_run_ids = record.get_evaluation_with_run_ids(partitions_def=partitions_def)
         super().__init__(
             id=record.id,
             evaluationId=record.evaluation_id,
-            numRequested=record.evaluation.true_subset.size,
+            numRequested=evaluation_with_run_ids.evaluation.true_subset.size,
             numSkipped=0,
             numDiscarded=0,
             rulesWithRuleEvaluations=[],
             timestamp=record.timestamp,
-            runIds=record.run_ids,
+            runIds=evaluation_with_run_ids.run_ids,
             rules=[],
             assetKey=GrapheneAssetKey(path=record.asset_key.path),
         )

@@ -227,11 +227,17 @@ class AssetConditionEvaluationContext:
         """Returns the set of candidates for this tick which were not candidates on the previous
         tick.
         """
+        from .asset_condition import HistoricalAllPartitionsSubsetSentinel
+
         if not self.previous_condition_evaluation:
             return self.candidate_subset
-        # when the candidate_subset is None, this indicates that the entire asset was evaluated
-        # for this condition on the previous tick
-        elif self.previous_condition_evaluation.candidate_subset is None:
+        # when the candidate_subset is HistoricalAllPartitionsSubsetSentinel, this indicates that the
+        # entire asset was evaluated for this condition on the previous tick, and so no candidates
+        # were *not* evaluated on the previous tick
+        elif isinstance(
+            self.previous_condition_evaluation.candidate_subset,
+            HistoricalAllPartitionsSubsetSentinel,
+        ):
             return self.empty_subset()
         return self.candidate_subset - self.previous_condition_evaluation.candidate_subset
 
