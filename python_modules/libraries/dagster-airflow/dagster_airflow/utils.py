@@ -1,12 +1,9 @@
 import logging
 import os
-import sys
-from contextlib import contextmanager
-from typing import Generator, List, Mapping, Optional
+from typing import List, Mapping, Optional
 
 from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
-from airflow.settings import LOG_FORMAT
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from packaging import version
 
@@ -52,21 +49,6 @@ def normalized_name(dag_name, task_name=None) -> str:
         base_name += "__"
         base_name += "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in task_name)
     return base_name
-
-
-@contextmanager
-def replace_airflow_logger_handlers() -> Generator[None, None, None]:
-    prev_airflow_handlers = logging.getLogger("airflow.task").handlers
-    try:
-        # Redirect airflow handlers to stdout / compute logs
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter(LOG_FORMAT))
-        root = logging.getLogger("airflow.task")
-        root.handlers = [handler]
-        yield
-    finally:
-        # Restore previous log handlers
-        logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
 
 def serialize_connections(connections: List[Connection] = []) -> List[Mapping[str, Optional[str]]]:

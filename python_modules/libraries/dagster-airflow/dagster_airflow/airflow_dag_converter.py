@@ -20,7 +20,6 @@ from dagster._core.definitions.node_definition import NodeDefinition
 from dagster_airflow.utils import (
     is_airflow_2_loaded_in_environment,
     normalized_name,
-    replace_airflow_logger_handlers,
 )
 
 if TYPE_CHECKING:
@@ -115,10 +114,9 @@ def make_dagster_op_from_airflow_task(
             importlib.reload(airflow)
         context.log.info(f"Running Airflow task: {task.task_id}")
 
-        with replace_airflow_logger_handlers():
-            dagrun = context.resources.airflow_db.get_dagrun(dag=dag)
-            ti = dagrun.get_task_instance(task_id=task.task_id)
-            ti.task = dag.get_task(task_id=task.task_id)
-            ti.run(ignore_ti_state=True)
+        dagrun = context.resources.airflow_db.get_dagrun(dag=dag)
+        ti = dagrun.get_task_instance(task_id=task.task_id)
+        ti.task = dag.get_task(task_id=task.task_id)
+        ti.run(ignore_ti_state=True)
 
     return _op
