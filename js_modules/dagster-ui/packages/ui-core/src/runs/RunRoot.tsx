@@ -17,7 +17,7 @@ import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollecti
 import {Run} from './Run';
 import {RunConfigDialog} from './RunConfigDialog';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
-import {useRunRootTrace} from './RunRootTrace';
+import {RunRootTrace, useRunRootTrace} from './RunRootTrace';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
@@ -88,7 +88,6 @@ export const RunRoot = () => {
 
     return null;
   }, [run, repoAddress]);
-
 
   return (
     <div
@@ -168,11 +167,7 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById = (props: {
-  data: RunRootQuery | undefined;
-  runId: string;
-  trace: ReturnType<typeof useRunRootTrace>;
-}) => {
+const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: RunRootTrace}) => {
   const {data, runId, trace} = props;
 
   if (!data || !data.pipelineRunOrError) {

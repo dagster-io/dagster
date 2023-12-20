@@ -31,7 +31,7 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {useRunRootTrace} from './RunRootTrace';
+import {RunRootTrace} from './RunRootTrace';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {
   useComputeLogFileKeyForSelection,
@@ -42,7 +42,7 @@ import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
-  trace: ReturnType<typeof useRunRootTrace>;
+  trace: RunRootTrace;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -126,7 +126,7 @@ export const Run = (props: RunProps) => {
   );
 };
 
-const OnLogsLoaded = ({trace}: {trace: ReturnType<typeof useRunRootTrace>}) => {
+const OnLogsLoaded = ({trace}: {trace: RunRootTrace}) => {
   React.useLayoutEffect(() => {
     trace.onLogsLoaded();
   }, [trace]);

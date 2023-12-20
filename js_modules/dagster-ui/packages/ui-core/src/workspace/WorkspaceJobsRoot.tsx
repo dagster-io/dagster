@@ -8,6 +8,7 @@ import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useStartTrace} from '../performance';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -17,6 +18,7 @@ import {RepoAddress} from './types';
 import {WorkspaceJobsQuery, WorkspaceJobsQueryVariables} from './types/WorkspaceJobsRoot.types';
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  const trace = useStartTrace('WorkspaceJobsRoot');
   useTrackPageView();
 
   const repoName = repoAddressAsHumanString(repoAddress);
@@ -37,6 +39,13 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     },
   );
   const {data, loading} = queryResultOverview;
+
+  React.useLayoutEffect(() => {
+    if (!loading) {
+      trace.endTrace();
+    }
+  }, [loading, trace]);
+
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
