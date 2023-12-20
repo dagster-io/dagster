@@ -31,6 +31,7 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
+import {useRunRootTrace} from './RunRootTrace';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {
   useComputeLogFileKeyForSelection,
@@ -41,6 +42,7 @@ import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
+  trace: ReturnType<typeof useRunRootTrace>;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -59,7 +61,7 @@ const runStatusFavicon = (status: RunStatus) => {
 };
 
 export const Run = (props: RunProps) => {
-  const {run, runId} = props;
+  const {run, runId, trace} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
@@ -100,25 +102,35 @@ export const Run = (props: RunProps) => {
     <RunContext.Provider value={run}>
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
-          <RunMetadataProvider logs={logs}>
-            {(metadata) => (
-              <RunWithData
-                run={run}
-                runId={runId}
-                logs={logs}
-                logsFilter={logsFilter}
-                metadata={metadata}
-                selectionQuery={selectionQuery}
-                onSetLogsFilter={setLogsFilter}
-                onSetSelectionQuery={onSetSelectionQuery}
-                onShowStateDetails={onShowStateDetails}
-              />
-            )}
-          </RunMetadataProvider>
+          <>
+            <OnLogsLoaded trace={trace} />
+            <RunMetadataProvider logs={logs}>
+              {(metadata) => (
+                <RunWithData
+                  run={run}
+                  runId={runId}
+                  logs={logs}
+                  logsFilter={logsFilter}
+                  metadata={metadata}
+                  selectionQuery={selectionQuery}
+                  onSetLogsFilter={setLogsFilter}
+                  onSetSelectionQuery={onSetSelectionQuery}
+                  onShowStateDetails={onShowStateDetails}
+                />
+              )}
+            </RunMetadataProvider>
+          </>
         )}
       </LogsProvider>
     </RunContext.Provider>
   );
+};
+
+const OnLogsLoaded = ({trace}: {trace: ReturnType<typeof useRunRootTrace>}) => {
+  React.useLayoutEffect(() => {
+    trace.onLogsLoaded();
+  }, [trace]);
+  return null;
 };
 
 interface RunWithDataProps {
