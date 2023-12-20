@@ -1,7 +1,7 @@
 from typing import Mapping, Optional, Sequence, Type
 
 import pandas as pd
-import pandas.core.dtypes.common as pd_core_dtypes_common
+import pandas._lib as pd_lib
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvariantViolationError
@@ -32,7 +32,7 @@ def _convert_timestamp_to_string(
     snowflake.
     """
     column_name = str(s.name)
-    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
+    if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
         if column_types:
             if "VARCHAR" not in column_types[column_name]:
                 raise DagsterInvariantViolationError(
@@ -68,7 +68,7 @@ def _add_missing_timezone(
     s: pd.Series, column_types: Optional[Mapping[str, str]], table_name: str
 ) -> pd.Series:
     column_name = str(s.name)
-    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
+    if pd_lib.is_np_dtype(s.dtype, "mM"):  # type: ignore  # (bad stubs)
         if column_types:
             if "VARCHAR" in column_types[column_name]:
                 raise DagsterInvariantViolationError(
