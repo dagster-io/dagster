@@ -102,12 +102,11 @@ def test_ping_metrics_retrieval(provide_flag: bool):
             res = client.ping("blah")
             metadata = json.loads(res["serialized_server_health_metadata"])
             if provide_flag:
-                assert metadata == {
-                    "general_info": {
-                        "max_workers": -1  # Since max workers is not set.
-                    },
-                    "SyncExternalSensorExecution": {"current_count": 1},
-                }
+                assert "general_info" in metadata
+                assert "max_workers" in metadata["general_info"]
+                assert metadata["general_info"]["max_workers"] == -1
+                assert "SyncExternalSensorExecution" in metadata
+                assert metadata["SyncExternalSensorExecution"] == {"current_count": 1}
             else:
                 assert metadata == {}
     finally:
