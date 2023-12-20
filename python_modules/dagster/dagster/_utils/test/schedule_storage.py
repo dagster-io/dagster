@@ -718,12 +718,12 @@ class TestScheduleStorage:
                     AssetConditionEvaluation(
                         condition_snapshot=condition_snapshot,
                         true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
-                        candidate_subset=None,
+                        candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
                     ).with_run_ids(set()),
                     AssetConditionEvaluation(
                         condition_snapshot=condition_snapshot,
                         true_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
-                        candidate_subset=None,
+                        candidate_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
                         subsets_with_metadata=[
                             AssetSubsetWithMetadata(
                                 AssetSubset(asset_key=AssetKey("asset_two"), value=True),
@@ -767,7 +767,7 @@ class TestScheduleStorage:
                 AssetConditionEvaluation(
                     condition_snapshot=condition_snapshot,
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
-                    candidate_subset=None,
+                    candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                 ).with_run_ids(set()),
             ],
         )
@@ -796,13 +796,13 @@ class TestScheduleStorage:
         eval_one = AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
             true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
-            candidate_subset=None,
+            candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
         ).with_run_ids(set())
 
         eval_asset_three = AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
             true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
-            candidate_subset=None,
+            candidate_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
         ).with_run_ids(set())
 
         storage.add_auto_materialize_asset_evaluations(
@@ -846,7 +846,7 @@ class TestScheduleStorage:
                 AssetConditionEvaluation(
                     condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
                     true_subset=asset_subset,
-                    candidate_subset=None,
+                    candidate_subset=asset_subset,
                     subsets_with_metadata=[asset_subset_with_metadata],
                 ).with_run_ids(set()),
             ],
@@ -872,7 +872,7 @@ class TestScheduleStorage:
                 AssetConditionEvaluation(
                     condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
-                    candidate_subset=None,
+                    candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     subsets_with_metadata=[],
                 ).with_run_ids(set()),
             ],

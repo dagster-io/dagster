@@ -510,25 +510,23 @@ partition_scenarios = [
         )
         .evaluate_tick("FOO")
         .assert_requested_runs()
-        .with_not_started_runs(),
-        # TEMPORARILY DISABLED: this test will be re-enabled upstack. It is currently broken because
-        # we do not handle the case where partitions defs change in the MaterializeOnMissingRule
+        .with_not_started_runs()
         # now the start date is updated, request the new first partition key
-        # .with_current_time_advanced(days=5)
-        # .with_asset_properties(
-        #    partitions_def=hourly_partitions_def._replace(
-        #        start=time_partitions_start_datetime + datetime.timedelta(days=5)
-        #    )
-        # )
-        # .evaluate_tick("BAR")
-        # .assert_requested_runs(
-        #    run_request(
-        #        ["A"],
-        #        partition_key=hour_partition_key(
-        #            time_partitions_start_datetime + datetime.timedelta(days=5), delta=1
-        #        ),
-        #    )
-        # ),
+        .with_current_time_advanced(days=5)
+        .with_asset_properties(
+            partitions_def=hourly_partitions_def._replace(
+                start=time_partitions_start_datetime + datetime.timedelta(days=5)
+            )
+        )
+        .evaluate_tick("BAR")
+        .assert_requested_runs(
+            run_request(
+                ["A"],
+                partition_key=hour_partition_key(
+                    time_partitions_start_datetime + datetime.timedelta(days=5), delta=1
+                ),
+            )
+        ),
     ),
     AssetDaemonScenario(
         id="one_asset_self_dependency_multi_partitions_def",

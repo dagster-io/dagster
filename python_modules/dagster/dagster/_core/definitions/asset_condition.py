@@ -4,12 +4,15 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     FrozenSet,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    Union,
 )
 
 import dagster._check as check
@@ -18,7 +21,16 @@ from dagster._core.definitions.asset_daemon_cursor import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._serdes.serdes import (
+    FieldSerializer,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+    unpack_value,
+    whitelist_for_serdes,
+)
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
@@ -26,7 +38,16 @@ from .asset_condition_evaluation_context import (
 from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph import AssetGraph
+
     from .auto_materialize_rule import AutoMaterializeRule
+
+
+@whitelist_for_serdes
+class HistoricalAllPartitionsSubset(NamedTuple):
+    """Serializable indicator that this value was an AllPartitionsSubset at serialization time, but
+    the partitions may have changed since that time.
+    """
 
 
 @whitelist_for_serdes
@@ -50,13 +71,54 @@ class AssetSubsetWithMetadata(NamedTuple):
         return frozenset(self.metadata.items())
 
 
-@whitelist_for_serdes
+def get_serializable_candidate_subset(
+    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubset],
+) -> Union[AssetSubset, HistoricalAllPartitionsSubset]:
+    """Do not serialize the candidate subset directly if it is an AllPartitionsSubset."""
+    if isinstance(candidate_subset, AssetSubset) and isinstance(
+        candidate_subset.value, AllPartitionsSubset
+    ):
+        return HistoricalAllPartitionsSubset()
+    return candidate_subset
+
+
+class CandidateSubsetSerializer(FieldSerializer):
+    def pack(
+        self,
+        candidate_subset: AssetSubset,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Optional[Mapping[str, Any]]:
+        # On all ticks, the root condition starts with an AllPartitionsSubset as the candidate
+        # subset. This would be wasteful to calculate and serialize in its entirety, so we instead
+        # store this as `None` and reconstruct it as needed.
+        # This does mean that if new partitions are added between serialization time and read time,
+        # the candidate subset will contain those new partitions.
+        return pack_value(
+            get_serializable_candidate_subset(candidate_subset), whitelist_map, descent_path
+        )
+
+    def unpack(
+        self,
+        serialized_candidate_subset: Optional[Mapping[str, Any]],
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ) -> Union[AssetSubset, HistoricalAllPartitionsSubset]:
+        return unpack_value(
+            serialized_candidate_subset,
+            (AssetSubset, HistoricalAllPartitionsSubset),
+            whitelist_map,
+            context,
+        )
+
+
+@whitelist_for_serdes(field_serializers={"candidate_subset": CandidateSubsetSerializer})
 class AssetConditionEvaluation(NamedTuple):
     """Internal representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AssetConditionSnapshot
     true_subset: AssetSubset
-    candidate_subset: Optional[AssetSubset]
+    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubset]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = []
     child_evaluations: Sequence["AssetConditionEvaluation"] = []
 
@@ -64,15 +126,36 @@ class AssetConditionEvaluation(NamedTuple):
     def asset_key(self) -> AssetKey:
         return self.true_subset.asset_key
 
+    def get_candidate_subset(
+        self, asset_graph: "AssetGraph", instance_queryer: CachingInstanceQueryer
+    ) -> AssetSubset:
+        """We do not store the candidate subset in the serialized representation if it is an
+        AllPartitionsSubset, so we need to create a new AllPartitionsSubset here.
+        """
+        if isinstance(self.candidate_subset, HistoricalAllPartitionsSubset):
+            return AssetSubset.all(
+                self.asset_key,
+                asset_graph.get_partitions_def(self.asset_key),
+                instance_queryer,
+                instance_queryer.evaluation_time,
+            )
+        return self.candidate_subset
+
     def equivalent_to_stored_evaluation(self, other: Optional["AssetConditionEvaluation"]) -> bool:
         """Returns if all fields other than `run_ids` are equal."""
         return (
             other is not None
             and self.condition_snapshot == other.condition_snapshot
             and self.true_subset == other.true_subset
-            and self.candidate_subset == other.candidate_subset
+            # the candidate subset gets modified during serialization
+            and get_serializable_candidate_subset(self.candidate_subset)
+            == get_serializable_candidate_subset(other.candidate_subset)
             and self.subsets_with_metadata == other.subsets_with_metadata
-            and self.child_evaluations == other.child_evaluations
+            and len(self.child_evaluations) == len(other.child_evaluations)
+            and all(
+                self_child.equivalent_to_stored_evaluation(other_child)
+                for self_child, other_child in zip(self.child_evaluations, other.child_evaluations)
+            )
         )
 
     def discarded_subset(self, condition: "AssetCondition") -> Optional[AssetSubset]:
