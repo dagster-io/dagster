@@ -102,7 +102,12 @@ export const AssetSidebarNode = ({
                   style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
                 />
               </UnstyledButton>
+            ) : level === 1 && isAssetNode ? (
+              // Special case for when asset nodes are at the root (level = 1) due to their being only a single group.
+              // In this case we don't need the spacer div to align nodes because  none of the nodes will be collapsible/un-collapsible.
+              <div />
             ) : (
+              // Spacer div to align nodes with collapse/un-collapse arrows with nodes that don't have collapse/un-collapse arrows
               <div style={{width: 18}} />
             )}
             <GrayOnHoverBox

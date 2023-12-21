@@ -101,7 +101,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const {folderNodes: renderedNodes, codeLocationNodes} = React.useMemo(() => {
+    const renderedNodes = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -118,6 +118,8 @@ export const AssetGraphExplorerSidebar = React.memo(
           >;
         }
       > = {};
+
+      let groupsCount = 0;
       Object.entries(graphData.nodes).forEach(([id, node]) => {
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
@@ -127,6 +129,9 @@ export const AssetGraphExplorerSidebar = React.memo(
           locationName: codeLocation,
           groups: {},
         };
+        if (!codeLocationNodes[codeLocation]!.groups[groupName]!) {
+          groupsCount += 1;
+        }
         codeLocationNodes[codeLocation]!.groups[groupName] = codeLocationNodes[codeLocation]!
           .groups[groupName] || {
           groupName,
@@ -136,11 +141,11 @@ export const AssetGraphExplorerSidebar = React.memo(
       });
       Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
         folderNodes.push({locationName, id: locationName, level: 1});
-        if (openNodes.has(locationName)) {
+        if (openNodes.has(locationName) || groupsCount === 1) {
           Object.entries(locationNode.groups).forEach(([groupName, groupNode]) => {
             const groupId = locationName + ':' + groupName;
             folderNodes.push({groupName, id: groupId, level: 2});
-            if (openNodes.has(groupId)) {
+            if (openNodes.has(groupId) || groupsCount === 1) {
               groupNode.assets
                 .sort((a, b) => COLLATOR.compare(a, b))
                 .forEach((assetKey) => {
@@ -155,7 +160,16 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       });
 
-      return {folderNodes, codeLocationNodes};
+      if (groupsCount === 1) {
+        return folderNodes
+          .filter((node) => node.level === 3)
+          .map((node) => ({
+            ...node,
+            level: 1,
+          }));
+      }
+
+      return folderNodes;
     }, [graphData.nodes, openNodes]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
@@ -171,24 +185,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     React.useLayoutEffect(() => {
-      if (renderedNodes.length === 1) {
-        // If there's a single code location and a single group in it then just open them
-        setOpenNodes((prevOpenNodes) => {
-          const nextOpenNodes = new Set(prevOpenNodes);
-          const locations = Object.keys(codeLocationNodes);
-          if (locations.length === 1) {
-            const location = codeLocationNodes[locations[0]!]!;
-            nextOpenNodes.add(location.locationName);
-            const groups = Object.keys(location.groups);
-            if (groups.length === 1) {
-              nextOpenNodes.add(
-                location.locationName + ':' + location.groups[groups[0]!]!.groupName,
-              );
-            }
-          }
-          return nextOpenNodes;
-        });
-      }
       if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
           const nextOpenNodes = new Set(prevOpenNodes);
