@@ -1,5 +1,7 @@
 from typing import Any, Mapping, Sequence
 
+from mock import MagicMock
+
 from dagster import (
     AssetCheckResult,
     AssetChecksDefinition,
@@ -19,23 +21,19 @@ def items():
     ...
 
 
-def make_checks(
-    check_blobs: Sequence[Mapping[str, str]],
-) -> Sequence[AssetChecksDefinition]:
-    checks = []
-    for check_blob in check_blobs:
+def make_check(
+    check_blob: Mapping[str, str],
+) -> AssetChecksDefinition:
+    @asset_check(
+        name=check_blob["name"],
+        asset=check_blob["asset"],
+        required_resource_keys={"db_connection"},
+    )
+    def _check(context):
+        rows = context.resources.db_connection.execute(check_blob["sql"])
+        return AssetCheckResult(passed=len(rows) == 0, metadata={"num_rows": len(rows)})
 
-        @asset_check(name=check_blob["name"], asset=check_blob["asset"])
-        def _check(context):
-            db_connection = ...
-            rows = db_connection.execute(check_blob["sql"])
-            return AssetCheckResult(
-                passed=len(rows) == 0, metadata={"num_rows": len(rows)}
-            )
-
-        checks.append(_check)
-
-    return checks
+    return _check
 
 
 check_blobs = [
@@ -51,4 +49,8 @@ check_blobs = [
     },
 ]
 
-defs = Definitions(assets=[orders, items], asset_checks=make_checks(check_blobs))
+defs = Definitions(
+    assets=[orders, items],
+    asset_checks=[make_check(check_blob) for check_blob in check_blobs],
+    resources={"db_connection": MagicMock()},
+)
