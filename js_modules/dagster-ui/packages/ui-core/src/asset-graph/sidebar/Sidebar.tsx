@@ -2,6 +2,7 @@ import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
+import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
@@ -101,7 +102,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const renderedNodes = React.useMemo(() => {
+    const {folderNodes: renderedNodes, groupsCount} = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -161,16 +162,30 @@ export const AssetGraphExplorerSidebar = React.memo(
       });
 
       if (groupsCount === 1) {
-        return folderNodes
-          .filter((node) => node.level === 3)
-          .map((node) => ({
-            ...node,
-            level: 1,
-          }));
+        return {
+          folderNodes: folderNodes
+            .filter((node) => node.level === 3)
+            .map((node) => ({
+              ...node,
+              level: 1,
+            })),
+          groupsCount,
+        };
       }
 
-      return folderNodes;
+      return {folderNodes, groupsCount};
     }, [graphData.nodes, openNodes]);
+
+    const {nav} = React.useContext(LayoutContext);
+
+    React.useEffect(() => {
+      if (groupsCount === 1) {
+        // Close the left sidebar if there's only 1 group and this is the first render
+        nav.close();
+      }
+      // Exclude groupsCount so that we don't close the left nav due to filtering changing
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [nav.close]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 
