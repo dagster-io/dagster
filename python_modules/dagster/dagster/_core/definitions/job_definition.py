@@ -327,14 +327,18 @@ class JobDefinition(IHasInternalInit):
     def executor_def(self) -> ExecutorDefinition:
         """Returns the default :py:class:`ExecutorDefinition` for the job.
 
-        If the user has not specified an executor definition, then this will default to the :py:func:`multi_or_in_process_executor`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        If the user has not specified an executor definition, then this will default to the
+        :py:func:`multi_or_in_process_executor`. If a default is specified on the
+        :py:class:`Definitions` object the job was provided to, then that will be used instead.
         """
         return self._executor_def or DEFAULT_EXECUTOR_DEF
 
     @public
     @property
     def has_specified_executor(self) -> bool:
-        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
+        """Returns True if this job has explicitly specified an executor, and False if the executor
+        was inherited through defaults or the :py:class:`Definitions` object the job was provided to.
+        """
         return self._executor_def is not None
 
     @public
@@ -342,7 +346,8 @@ class JobDefinition(IHasInternalInit):
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         """Returns the set of ResourceDefinition objects specified on the job.
 
-        This may not be the complete set of resources required by the job, since those can also be provided on the :py:class:`Definitions` object the job may be provided to.
+        This may not be the complete set of resources required by the job, since those can also be
+        provided on the :py:class:`Definitions` object the job may be provided to.
         """
         return self._resource_defs
 
@@ -369,7 +374,10 @@ class JobDefinition(IHasInternalInit):
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         """Returns the set of LoggerDefinition objects specified on the job.
 
-        If the user has not specified a mapping of :py:class:`LoggerDefinition` objects, then this will default to the :py:func:`colored_console_logger` under the key `console`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        If the user has not specified a mapping of :py:class:`LoggerDefinition` objects, then this
+        will default to the :py:func:`colored_console_logger` under the key `console`. If a default
+        is specified on the :py:class:`Definitions` object the job was provided to, then that will
+        be used instead.
         """
         from dagster._loggers import default_loggers
 
@@ -378,7 +386,9 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def has_specified_loggers(self) -> bool:
-        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
+        """Returns true if the job explicitly set loggers, and False if loggers were inherited
+        through defaults or the :py:class:`Definitions` object the job was provided to.
+        """
         return self._loggers is not None
 
     @property
@@ -617,7 +627,9 @@ class JobDefinition(IHasInternalInit):
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
-                A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+                A dictionary that maps python objects to the top-level inputs of the job. Input
+                values provided here will override input values that have been provided to the job
+                directly.
             resources (Optional[Mapping[str, Any]]):
                 The resources needed if any are required. Can provide resource instances directly,
                 or resource definitions.
