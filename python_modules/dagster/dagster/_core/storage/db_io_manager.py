@@ -96,7 +96,7 @@ class DbIOManager(IOManager):
         schema: Optional[str] = None,
         io_manager_name: Optional[str] = None,
         default_load_type: Optional[Type] = None,
-        connect_kwargs: Callable[[Union[OutputContext, InputContext]], Dict[str, Any]]
+        connect_kwargs: Optional[Callable[[Union[OutputContext, InputContext]], Dict[str, Any]]] = None
     ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
         self._io_manager_name = io_manager_name or self.__class__.__name__
