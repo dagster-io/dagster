@@ -1,5 +1,4 @@
 import {Box} from '@dagster-io/ui-components';
-import {VirtualizerOptions, elementScroll} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
 
