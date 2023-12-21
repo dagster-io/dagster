@@ -77,7 +77,11 @@ export const AssetSidebarNode = ({
     <>
       <Box ref={elementRef} onClick={selectThisNode} padding={{left: 8}}>
         <BoxWrapper level={level}>
-          <Box padding={{right: 12}} flex={{direction: 'row', alignItems: 'center'}}>
+          <Box
+            padding={{right: 12}}
+            flex={{direction: 'row', alignItems: 'center'}}
+            style={{height: '32px'}}
+          >
             {showArrow ? (
               <UnstyledButton
                 $showFocusOutline
