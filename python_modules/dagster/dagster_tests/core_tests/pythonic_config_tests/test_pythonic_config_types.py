@@ -1002,6 +1002,11 @@ def test_tuple_nested() -> None:
     with pytest.raises(ValidationError):
         a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, 2]}}}})
 
+    with pytest.raises(ValidationError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, [2, "foo", "bar"]]}}}}
+        )
+
 
 def test_optional_tuple() -> None:
     class AnOpConfig(Config):
