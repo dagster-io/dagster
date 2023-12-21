@@ -21,9 +21,7 @@ def items():
     ...
 
 
-def make_check(
-    check_blob: Mapping[str, str],
-) -> AssetChecksDefinition:
+def make_check(check_blob: Mapping[str, str]) -> AssetChecksDefinition:
     @asset_check(
         name=check_blob["name"],
         asset=check_blob["asset"],
