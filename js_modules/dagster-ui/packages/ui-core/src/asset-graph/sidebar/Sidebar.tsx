@@ -4,6 +4,7 @@ import React from 'react';
 
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
+import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
@@ -80,7 +81,16 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
     };
-    const [openNodes, setOpenNodes] = React.useState<Set<string>>(new Set());
+    const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
+      localStorageKey: 'asset-graph-open-nodes',
+      encode: (val) => {
+        return {'open-nodes': Array.from(val)};
+      },
+      decode: (qs) => {
+        return new Set(qs['open-nodes']);
+      },
+      isEmptyState: (val) => val.size === 0,
+    });
     const [selectedNode, setSelectedNode] = React.useState<
       null | {id: string; path: string} | {id: string}
     >(null);
