@@ -1,4 +1,5 @@
 import {Box} from '@dagster-io/ui-components';
+import {VirtualizerOptions, elementScroll} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -75,7 +76,7 @@ export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   position: absolute;
   right: 0;
   top: 0;
-  overflow: hidden;
+  overflow: visible;
 `;
 
 type DynamicRowContainerProps = {$start: number};

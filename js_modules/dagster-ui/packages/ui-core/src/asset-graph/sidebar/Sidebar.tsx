@@ -245,7 +245,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (indexOfLastSelectedNode !== -1) {
         rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
           align: 'center',
-          behavior: 'auto',
+          behavior: 'smooth',
         });
       }
       // Only scroll if the rootNodes changes or the selected node changes
@@ -253,12 +253,6 @@ export const AssetGraphExplorerSidebar = React.memo(
       // if we toggle a node above the selected node
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedNode, rootNodes, rowVirtualizer]);
-
-    React.useLayoutEffect(() => {
-      // Fix a weird issue where the sidebar doesn't measure the full height.
-      const id = setInterval(rowVirtualizer.measure, 1000);
-      return () => clearInterval(id);
-    }, [rowVirtualizer.measure]);
 
     return (
       <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
@@ -323,47 +317,38 @@ export const AssetGraphExplorerSidebar = React.memo(
                 const isGroupNode = 'groupName' in node;
                 const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                 return (
-                  <Row
-                    $height={size}
-                    $start={start}
-                    key={key}
-                    data-key={key}
-                    style={{overflow: 'visible'}}
-                    ref={rowVirtualizer.measureElement}
-                  >
-                    {row ? (
-                      <AssetSidebarNode
-                        isOpen={openNodes.has(nodePathKey(node))}
-                        fullAssetGraphData={fullAssetGraphData}
-                        node={row}
-                        level={node.level}
-                        isLastSelected={lastSelectedNode?.id === node.id}
-                        isSelected={
-                          selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
-                        }
-                        toggleOpen={() => {
-                          setOpenNodes((nodes) => {
-                            const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodePathKey(node));
-                            if (isOpen) {
-                              openNodes.delete(nodePathKey(node));
-                            } else {
-                              openNodes.add(nodePathKey(node));
-                            }
-                            return openNodes;
-                          });
-                        }}
-                        selectNode={(e, id) => {
-                          selectNode(e, id);
-                        }}
-                        selectThisNode={(e) => {
-                          setSelectedNode(node);
-                          selectNode(e, node.id);
-                        }}
-                        explorerPath={explorerPath}
-                        onChangeExplorerPath={onChangeExplorerPath}
-                      />
-                    ) : null}
+                  <Row $height={size} $start={start} key={key} data-key={key}>
+                    <AssetSidebarNode
+                      isOpen={openNodes.has(nodePathKey(node))}
+                      fullAssetGraphData={fullAssetGraphData}
+                      node={row!}
+                      level={node.level}
+                      isLastSelected={lastSelectedNode?.id === node.id}
+                      isSelected={
+                        selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
+                      }
+                      toggleOpen={() => {
+                        setOpenNodes((nodes) => {
+                          const openNodes = new Set(nodes);
+                          const isOpen = openNodes.has(nodePathKey(node));
+                          if (isOpen) {
+                            openNodes.delete(nodePathKey(node));
+                          } else {
+                            openNodes.add(nodePathKey(node));
+                          }
+                          return openNodes;
+                        });
+                      }}
+                      selectNode={(e, id) => {
+                        selectNode(e, id);
+                      }}
+                      selectThisNode={(e) => {
+                        setSelectedNode(node);
+                        selectNode(e, node.id);
+                      }}
+                      explorerPath={explorerPath}
+                      onChangeExplorerPath={onChangeExplorerPath}
+                    />
                   </Row>
                 );
               })}
