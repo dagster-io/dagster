@@ -9,6 +9,7 @@ import {
   Heading,
   PageHeader,
   Table,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import React, {useLayoutEffect} from 'react';
 import {Redirect} from 'react-router-dom';
@@ -27,9 +28,9 @@ import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag'
 import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
-import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
+import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
 import {
   AssetDaemonTicksQuery,
   AssetDaemonTicksQueryVariables,
@@ -203,8 +204,12 @@ const GlobalAutomaterializationRoot = () => {
         <Subtitle2>Evaluation timeline</Subtitle2>
       </Box>
       {!data ? (
-        <Box padding={{vertical: 48}}>
-          <Spinner purpose="page" />
+        <Box
+          padding={{vertical: 48}}
+          flex={{direction: 'row', justifyContent: 'center', gap: 12, alignItems: 'center'}}
+        >
+          <Spinner purpose="body-text" />
+          <div style={{color: colorTextLight()}}>Loading evaluations…</div>
         </Box>
       ) : (
         <>
@@ -218,7 +223,6 @@ const GlobalAutomaterializationRoot = () => {
             timeAfter={THREE_MINUTES}
           />
           <AutomaterializationTickDetailDialog
-            key={selectedTick?.id}
             tick={selectedTick}
             isOpen={!!selectedTick}
             close={() => {
@@ -226,7 +230,7 @@ const GlobalAutomaterializationRoot = () => {
             }}
           />
           {tableView === 'evaluations' ? (
-            <AutomaterializationEvaluationHistoryTable
+            <InstanceAutomaterializationEvaluationHistoryTable
               setSelectedTick={setSelectedTick}
               setTableView={setTableView}
               setParentStatuses={setStatuses}

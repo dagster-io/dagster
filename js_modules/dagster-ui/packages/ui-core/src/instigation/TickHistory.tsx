@@ -349,7 +349,7 @@ export const TickHistoryTimeline = ({
   const {ticks = []} = data.instigationStateOrError;
 
   const onTickClick = (tick?: InstigationTick) => {
-    setSelectedTickId(tick ? Number(tick.id) : undefined);
+    setSelectedTickId(tick ? Number(tick.tickId) : undefined);
   };
 
   const onTickHover = (tick?: InstigationTick) => {
