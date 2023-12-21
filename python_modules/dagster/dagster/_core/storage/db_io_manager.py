@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import (
     Any,
+    Callable,
     Dict,
     Generic,
     List,
@@ -81,7 +82,7 @@ class DbClient:
 
     @staticmethod
     @contextmanager
-    def connect(context: Union[OutputContext, InputContext], table_slice: TableSlice):
+    def connect(context: Union[OutputContext, InputContext], table_slice: TableSlice, **kwargs):
         ...
 
 
@@ -95,6 +96,7 @@ class DbIOManager(IOManager):
         schema: Optional[str] = None,
         io_manager_name: Optional[str] = None,
         default_load_type: Optional[Type] = None,
+        connect_kwargs: Callable[[Union[OutputContext, InputContext]], Dict[str, Any]]
     ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
         self._io_manager_name = io_manager_name or self.__class__.__name__
@@ -119,6 +121,7 @@ class DbIOManager(IOManager):
             self._default_load_type = type_handlers[0].supported_types[0]
         else:
             self._default_load_type = default_load_type
+        self._connect_kwargs = connect_kwargs or (lambda _: {})
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
         table_slice = self._get_table_slice(context, context)
@@ -127,7 +130,7 @@ class DbIOManager(IOManager):
             obj_type = type(obj)
             self._check_supported_type(obj_type)
 
-            with self._db_client.connect(context, table_slice) as conn:
+            with self._db_client.connect(context, table_slice, **self._connect_kwargs(context)) as conn:
                 self._db_client.ensure_schema_exists(context, table_slice, conn)
                 self._db_client.delete_table_slice(context, table_slice, conn)
 
@@ -160,7 +163,7 @@ class DbIOManager(IOManager):
 
         table_slice = self._get_table_slice(context, cast(OutputContext, context.upstream_output))
 
-        with self._db_client.connect(context, table_slice) as conn:
+        with self._db_client.connect(context, table_slice, **self._connect_kwargs(context)) as conn:
             return self._handlers_by_type[load_type].load_input(context, table_slice, conn)
 
     def _get_table_slice(
