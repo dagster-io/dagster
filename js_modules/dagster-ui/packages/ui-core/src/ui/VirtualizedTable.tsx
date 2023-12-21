@@ -75,7 +75,7 @@ export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   position: absolute;
   right: 0;
   top: 0;
-  overflow: visible;
+  overflow: hidden;
 `;
 
 type DynamicRowContainerProps = {$start: number};
