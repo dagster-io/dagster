@@ -289,6 +289,9 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         )
 
 
+# FORWARDCOMPAT GRAVEYARD
+
+
 class ForwardsCompatAssetConditionEvaluationSerializer(NamedTupleSerializer):
     def unpack(
         self,
@@ -304,6 +307,11 @@ class ForwardsCompatAssetConditionEvaluationSerializer(NamedTupleSerializer):
             num_skipped=0,
             num_discarded=0,
         )
+
+
+@whitelist_for_serdes
+class AssetConditionSnapshot(NamedTuple):
+    ...
 
 
 @whitelist_for_serdes(serializer=ForwardsCompatAssetConditionEvaluationSerializer)
