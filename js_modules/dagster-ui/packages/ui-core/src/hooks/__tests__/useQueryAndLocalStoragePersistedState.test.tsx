@@ -31,7 +31,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
     localStorageMock.clear();
   });
 
-  test('persists state to localStorage', async () => {
+  test('persists state to localStorage and loads initial state from local storage', async () => {
     let querySearch: string | undefined;
 
     const localStorageKey = 'asset-graph-open-nodes';
@@ -93,5 +93,53 @@ describe('useQueryAndLocalStoragePersistedState', () => {
     await waitFor(() => {
       expect(querySearch).toEqual('?open-nodes%5B%5D=test&open-nodes%5B%5D=test2');
     });
+  });
+
+  test('uses queryString as source of truth if query string is present and localStorage data is also present', async () => {
+    let querySearch: string | undefined;
+
+    const localStorageKey = 'asset-graph-open-nodes';
+
+    localStorageMock.setItem(localStorageKey, JSON.stringify({'open-nodes': ['test']}));
+
+    const hookResult = renderHook(
+      () =>
+        useQueryAndLocalStoragePersistedState<Set<string>>({
+          localStorageKey: 'asset-graph-open-nodes',
+          encode: (val) => {
+            return {'open-nodes': Array.from(val)};
+          },
+          decode: (qs) => {
+            return new Set(qs['open-nodes']);
+          },
+          isEmptyState: (val) => val.size === 0,
+        }),
+      {
+        wrapper: ({children}: {children?: React.ReactNode}) => {
+          return (
+            <MemoryRouter
+              initialEntries={[
+                '/foo/hello?open-nodes%5B%5D=basic_assets_repository%40toys%3Abasic_assets',
+              ]}
+            >
+              {children}
+              <Route
+                path="*"
+                render={({location}) => (querySearch = location.search) && <span />}
+              />
+            </MemoryRouter>
+          );
+        },
+      },
+    );
+
+    const [state] = hookResult.result.current;
+
+    // Assert that the state was retrieved from local storage
+    expect(localStorageMock.getItem(localStorageKey)).toEqual(
+      JSON.stringify({'open-nodes': ['test']}),
+    );
+
+    expect(state).toEqual(new Set(['basic_assets_repository@toys:basic_assets']));
   });
 });
