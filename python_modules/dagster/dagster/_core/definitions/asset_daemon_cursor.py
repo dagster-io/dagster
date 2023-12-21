@@ -177,7 +177,10 @@ class AssetDaemonCursor(NamedTuple):
 
     @classmethod
     def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetDaemonCursor":
-        data = json.loads(cursor)
+        try:
+            data = json.loads(cursor)
+        except json.JSONDecodeError:
+            return AssetDaemonCursor.empty()
 
         if isinstance(data, list):  # backcompat
             check.invariant(len(data) in [3, 4], "Invalid serialized cursor")

@@ -289,6 +289,28 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         )
 
 
+class ForwardsCompatAssetConditionEvaluationSerializer(NamedTupleSerializer):
+    def unpack(
+        self,
+        unpacked_dict: Dict[str, UnpackedValue],
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ) -> AutoMaterializeAssetEvaluation:
+        # convert any serialized AssetConditionEvaluations into an emtpy AutoMaterializeAssetEvaluation
+        return AutoMaterializeAssetEvaluation(
+            asset_key=AssetKey("unknown"),
+            partition_subsets_by_condition=[],
+            num_requested=0,
+            num_skipped=0,
+            num_discarded=0,
+        )
+
+
+@whitelist_for_serdes(serializer=ForwardsCompatAssetConditionEvaluationSerializer)
+class AssetConditionEvaluation(NamedTuple):
+    ...
+
+
 # BACKCOMPAT GRAVEYARD
 
 
