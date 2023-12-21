@@ -26,6 +26,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
+    DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     InstigatorType,
     RunRequest,
@@ -693,111 +694,18 @@ def _evaluate_sensor(
         instance.report_runless_asset_event(asset_event)
 
     if sensor_runtime_data.dynamic_partitions_requests:
-        for request in sensor_runtime_data.dynamic_partitions_requests:
-            existent_partitions = []
-            nonexistent_partitions = []
-            for partition_key in request.partition_keys:
-                if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
-                    existent_partitions.append(partition_key)
-                else:
-                    nonexistent_partitions.append(partition_key)
-
-            if isinstance(request, AddDynamicPartitionsRequest):
-                if nonexistent_partitions:
-                    instance.add_dynamic_partitions(
-                        request.partitions_def_name,
-                        nonexistent_partitions,
-                    )
-                    context.logger.info(
-                        "Added partition keys to dynamic partitions definition"
-                        f" '{request.partitions_def_name}': {nonexistent_partitions}"
-                    )
-
-                if existent_partitions:
-                    context.logger.info(
-                        "Skipping addition of partition keys for dynamic partitions definition"
-                        f" '{request.partitions_def_name}' that already exist:"
-                        f" {existent_partitions}"
-                    )
-
-                context.add_dynamic_partitions_request_result(
-                    DynamicPartitionsRequestResult(
-                        request.partitions_def_name,
-                        added_partitions=nonexistent_partitions,
-                        deleted_partitions=None,
-                        skipped_partitions=existent_partitions,
-                    )
-                )
-            elif isinstance(request, DeleteDynamicPartitionsRequest):
-                if existent_partitions:
-                    # TODO add a bulk delete method to the instance
-                    for partition in existent_partitions:
-                        instance.delete_dynamic_partition(request.partitions_def_name, partition)
-
-                    context.logger.info(
-                        "Deleted partition keys from dynamic partitions definition"
-                        f" '{request.partitions_def_name}': {existent_partitions}"
-                    )
-
-                if nonexistent_partitions:
-                    context.logger.info(
-                        "Skipping deletion of partition keys for dynamic partitions definition"
-                        f" '{request.partitions_def_name}' that do not exist:"
-                        f" {nonexistent_partitions}"
-                    )
-
-                context.add_dynamic_partitions_request_result(
-                    DynamicPartitionsRequestResult(
-                        request.partitions_def_name,
-                        added_partitions=None,
-                        deleted_partitions=existent_partitions,
-                        skipped_partitions=nonexistent_partitions,
-                    )
-                )
-            else:
-                check.failed(f"Unexpected action {request.action} for dynamic partition request")
+        _handle_dynamic_partitions_requests(
+            sensor_runtime_data.dynamic_partitions_requests, instance, context
+        )
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.dagster_run_reactions:
-            for run_reaction in sensor_runtime_data.dagster_run_reactions:
-                origin_run_id = check.not_none(run_reaction.dagster_run).run_id
-                if run_reaction.error:
-                    context.logger.error(
-                        f"Got a reaction request for run {origin_run_id} but execution errorred:"
-                        f" {run_reaction.error}"
-                    )
-                    context.update_state(
-                        TickStatus.FAILURE,
-                        cursor=sensor_runtime_data.cursor,
-                        error=run_reaction.error,
-                    )
-                    # Since run status sensors have side effects that we don't want to repeat,
-                    # we still want to update the cursor, even though the tick failed
-                    context.set_should_update_cursor_on_failure(True)
-                else:
-                    # Use status from the DagsterRunReaction object if it is from a new enough
-                    # version (0.14.4) to be set (the status on the DagsterRun object itself
-                    # may have since changed)
-                    status = (
-                        run_reaction.run_status.value
-                        if run_reaction.run_status
-                        else check.not_none(run_reaction.dagster_run).status.value
-                    )
-                    # log to the original dagster run
-                    message = (
-                        f'Sensor "{external_sensor.name}" acted on run status '
-                        f"{status} of run {origin_run_id}."
-                    )
-                    instance.report_engine_event(
-                        message=message, dagster_run=run_reaction.dagster_run
-                    )
-                    context.logger.info(
-                        f"Completed a reaction request for run {origin_run_id}: {message}"
-                    )
-                    context.update_state(
-                        TickStatus.SUCCESS,
-                        cursor=sensor_runtime_data.cursor,
-                        origin_run_id=origin_run_id,
-                    )
+            _handle_run_reactions(
+                sensor_runtime_data.dagster_run_reactions,
+                instance,
+                context,
+                sensor_runtime_data.cursor,
+                external_sensor,
+            )
         elif sensor_runtime_data.skip_message:
             context.logger.info(
                 f"Sensor {external_sensor.name} skipped: {sensor_runtime_data.skip_message}"
@@ -812,16 +720,152 @@ def _evaluate_sensor(
             context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
         yield
-        return  # Done with run status sensors
+    else:
+        yield from _handle_run_requests(
+            run_requests=sensor_runtime_data.run_requests,
+            cursor=sensor_runtime_data.cursor,
+            context=context,
+            instance=instance,
+            external_sensor=external_sensor,
+            workspace_process_context=workspace_process_context,
+            submit_threadpool_executor=submit_threadpool_executor,
+            sensor_debug_crash_flags=sensor_debug_crash_flags,
+        )
 
+
+def _handle_dynamic_partitions_requests(
+    dynamic_partitions_requests: Sequence[
+        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+    ],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+) -> None:
+    for request in dynamic_partitions_requests:
+        existent_partitions = []
+        nonexistent_partitions = []
+        for partition_key in request.partition_keys:
+            if instance.has_dynamic_partition(request.partitions_def_name, partition_key):
+                existent_partitions.append(partition_key)
+            else:
+                nonexistent_partitions.append(partition_key)
+
+        if isinstance(request, AddDynamicPartitionsRequest):
+            if nonexistent_partitions:
+                instance.add_dynamic_partitions(
+                    request.partitions_def_name,
+                    nonexistent_partitions,
+                )
+                context.logger.info(
+                    "Added partition keys to dynamic partitions definition"
+                    f" '{request.partitions_def_name}': {nonexistent_partitions}"
+                )
+
+            if existent_partitions:
+                context.logger.info(
+                    "Skipping addition of partition keys for dynamic partitions definition"
+                    f" '{request.partitions_def_name}' that already exist:"
+                    f" {existent_partitions}"
+                )
+
+            context.add_dynamic_partitions_request_result(
+                DynamicPartitionsRequestResult(
+                    request.partitions_def_name,
+                    added_partitions=nonexistent_partitions,
+                    deleted_partitions=None,
+                    skipped_partitions=existent_partitions,
+                )
+            )
+        elif isinstance(request, DeleteDynamicPartitionsRequest):
+            if existent_partitions:
+                # TODO add a bulk delete method to the instance
+                for partition in existent_partitions:
+                    instance.delete_dynamic_partition(request.partitions_def_name, partition)
+
+                context.logger.info(
+                    "Deleted partition keys from dynamic partitions definition"
+                    f" '{request.partitions_def_name}': {existent_partitions}"
+                )
+
+            if nonexistent_partitions:
+                context.logger.info(
+                    "Skipping deletion of partition keys for dynamic partitions definition"
+                    f" '{request.partitions_def_name}' that do not exist:"
+                    f" {nonexistent_partitions}"
+                )
+
+            context.add_dynamic_partitions_request_result(
+                DynamicPartitionsRequestResult(
+                    request.partitions_def_name,
+                    added_partitions=None,
+                    deleted_partitions=existent_partitions,
+                    skipped_partitions=nonexistent_partitions,
+                )
+            )
+        else:
+            check.failed(f"Unexpected action {request.action} for dynamic partition request")
+
+
+def _handle_run_reactions(
+    dagster_run_reactions: Sequence[DagsterRunReaction],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+    cursor: Optional[str],
+    external_sensor: ExternalSensor,
+) -> None:
+    for run_reaction in dagster_run_reactions:
+        origin_run_id = check.not_none(run_reaction.dagster_run).run_id
+        if run_reaction.error:
+            context.logger.error(
+                f"Got a reaction request for run {origin_run_id} but execution errorred:"
+                f" {run_reaction.error}"
+            )
+            context.update_state(
+                TickStatus.FAILURE,
+                cursor=cursor,
+                error=run_reaction.error,
+            )
+            # Since run status sensors have side effects that we don't want to repeat,
+            # we still want to update the cursor, even though the tick failed
+            context.set_should_update_cursor_on_failure(True)
+        else:
+            # Use status from the DagsterRunReaction object if it is from a new enough
+            # version (0.14.4) to be set (the status on the DagsterRun object itself
+            # may have since changed)
+            status = (
+                run_reaction.run_status.value
+                if run_reaction.run_status
+                else check.not_none(run_reaction.dagster_run).status.value
+            )
+            # log to the original dagster run
+            message = (
+                f'Sensor "{external_sensor.name}" acted on run status '
+                f"{status} of run {origin_run_id}."
+            )
+            instance.report_engine_event(message=message, dagster_run=run_reaction.dagster_run)
+            context.logger.info(f"Completed a reaction request for run {origin_run_id}: {message}")
+            context.update_state(
+                TickStatus.SUCCESS,
+                cursor=cursor,
+                origin_run_id=origin_run_id,
+            )
+
+
+def _handle_run_requests(
+    run_requests: Sequence[RunRequest],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+    external_sensor: ExternalSensor,
+    cursor: Optional[str],
+    workspace_process_context: IWorkspaceProcessContext,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
+    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+):
     skipped_runs = []
-    existing_runs_by_key = _fetch_existing_runs(
-        instance, external_sensor, sensor_runtime_data.run_requests
-    )
+    existing_runs_by_key = _fetch_existing_runs(instance, external_sensor, run_requests)
 
-    run_requests = []
+    resolved_run_requests = []
 
-    for raw_run_request in sensor_runtime_data.run_requests:
+    for raw_run_request in run_requests:
         run_request = raw_run_request.with_replaced_attrs(
             tags=merge_dicts(
                 raw_run_request.tags,
@@ -843,21 +887,24 @@ def _evaluate_sensor(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
 
-        run_requests.append(run_request)
+        resolved_run_requests.append(run_request)
 
-    submit_run_request = lambda run_request: _submit_run_request(
-        run_request,
-        workspace_process_context,
-        external_sensor,
-        existing_runs_by_key,
-        context.logger,
-        sensor_debug_crash_flags,
-    )
+    def submit_run_request(run_request) -> SubmitRunRequestResult:
+        return _submit_run_request(
+            run_request,
+            workspace_process_context,
+            external_sensor,
+            existing_runs_by_key,
+            context.logger,
+            sensor_debug_crash_flags,
+        )
 
     if submit_threadpool_executor:
-        gen_run_request_results = submit_threadpool_executor.map(submit_run_request, run_requests)
+        gen_run_request_results = submit_threadpool_executor.map(
+            submit_run_request, resolved_run_requests
+        )
     else:
-        gen_run_request_results = map(submit_run_request, run_requests)
+        gen_run_request_results = map(submit_run_request, resolved_run_requests)
 
     for run_request_result in gen_run_request_results:
         yield run_request_result.error_info
@@ -879,9 +926,9 @@ def _evaluate_sensor(
         )
 
     if context.run_count:
-        context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
+        context.update_state(TickStatus.SUCCESS, cursor=cursor)
     else:
-        context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
+        context.update_state(TickStatus.SKIPPED, cursor=cursor)
 
     yield
 
