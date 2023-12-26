@@ -1,96 +1,82 @@
 import {useLazyQuery} from '@apollo/client';
-import {
-  Alert,
-  Box,
-  Page,
-  Checkbox,
-  Spinner,
-  Subtitle2,
-  Heading,
-  PageHeader,
-  Table,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import React, {useLayoutEffect} from 'react';
-import {Redirect} from 'react-router-dom';
+import {Alert, Box, Spinner, Subtitle2, colorTextLight} from '@dagster-io/ui-components';
+import * as React from 'react';
 
-import {useConfirmation} from '../../app/CustomConfirmationProvider';
-import {useUnscopedPermissions} from '../../app/Permissions';
-import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {assertUnreachable} from '../../app/Util';
-import {useTrackPageView} from '../../app/analytics';
-import {InstigationTickStatus} from '../../graphql/types';
-import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
-import {isOldTickWithoutEndtimestamp} from '../../instigation/util';
-import {OverviewTabs} from '../../overview/OverviewTabs';
-import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
+import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
+import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
+import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
+import {InstigationTickStatus} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
+import {isOldTickWithoutEndtimestamp} from '../instigation/util';
+import {DagsterTag} from '../runs/RunTag';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 
-import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
-import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
-import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
-import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
+import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
+import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
 import {
-  AssetDaemonTicksQuery,
-  AssetDaemonTicksQueryVariables,
-  AssetDaemonTickFragment,
-} from './types/AssetDaemonTicksQuery.types';
+  AssetSensorTicksQuery,
+  AssetSensorTicksQueryVariables,
+} from './types/AssetSensorTicksQuery.types';
+import {SensorFragment} from './types/SensorFragment.types';
 
 const MINUTE = 60 * 1000;
 const THREE_MINUTES = 3 * MINUTE;
 const FIVE_MINUTES = 5 * MINUTE;
 const TWENTY_MINUTES = 20 * MINUTE;
 
-// Determine whether the user is flagged to see automaterialize policies as
-// sensors. If so, redirect to the Sensors overview.
-export const AutomaterializationRoot = () => {
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
-  switch (automaterializeSensorsFlagState) {
-    case 'unknown':
-      return <div />; // Waiting for result
-    case 'has-global-amp':
-      return <GlobalAutomaterializationRoot />;
-    case 'has-sensor-amp':
-      return <Redirect to="/overview/sensors" />;
-    default:
-      assertUnreachable(automaterializeSensorsFlagState);
-  }
-};
+interface Props {
+  repoAddress: RepoAddress;
+  sensor: SensorFragment;
+  loading: boolean;
+  daemonStatus: DaemonStatusForWarning;
+}
 
-const GlobalAutomaterializationRoot = () => {
-  useTrackPageView();
+export const SensorPageAutomaterialize = (props: Props) => {
+  const {repoAddress, sensor, loading, daemonStatus} = props;
 
-  const automaterialize = useAutomaterializeDaemonStatus();
-  const confirm = useConfirmation();
-
-  const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
-
-  const [fetch, queryResult] = useLazyQuery<AssetDaemonTicksQuery, AssetDaemonTicksQueryVariables>(
-    ASSET_DAEMON_TICKS_QUERY,
-  );
   const [isPaused, setIsPaused] = React.useState(false);
   const [statuses, setStatuses] = React.useState<undefined | InstigationTickStatus[]>(undefined);
   const [timeRange, setTimerange] = React.useState<undefined | [number, number]>(undefined);
-  const variables: AssetDaemonTicksQueryVariables = React.useMemo(() => {
+
+  const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
+    ASSET_SENSOR_TICKS_QUERY,
+  );
+
+  const variables: AssetSensorTicksQueryVariables = React.useMemo(() => {
     if (timeRange || statuses) {
       return {
+        sensorSelector: {
+          sensorName: sensor.name,
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+        },
         afterTimestamp: timeRange?.[0],
         beforeTimestamp: timeRange?.[1],
         statuses,
       };
     }
     return {
+      sensorSelector: {
+        sensorName: sensor.name,
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+      },
       afterTimestamp: (Date.now() - TWENTY_MINUTES) / 1000,
     };
-  }, [statuses, timeRange]);
+  }, [sensor, repoAddress, statuses, timeRange]);
+
   function fetchData() {
     fetch({
       variables,
     });
   }
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(fetchData, [variables]);
+  React.useLayoutEffect(fetchData, [variables]);
   useQueryRefreshAtInterval(queryResult, 2 * 1000, !isPaused && !timeRange && !statuses, fetchData);
 
   const [selectedTick, setSelectedTick] = React.useState<AssetDaemonTickFragment | null>(null);
@@ -110,7 +96,15 @@ const GlobalAutomaterializationRoot = () => {
 
   const data = queryResult.data ?? queryResult.previousData;
 
-  const ids = data ? data.autoMaterializeTicks.map((tick) => `${tick.id}:${tick.status}`) : [];
+  const allTicks = React.useMemo(() => {
+    if (data?.sensorOrError.__typename === 'Sensor') {
+      return data.sensorOrError.sensorState.ticks;
+    }
+    return [];
+  }, [data]);
+
+  const ids = React.useMemo(() => allTicks.map((tick) => `${tick.id}:${tick.status}`), [allTicks]);
+
   while (ids.length < 100) {
     // Super hacky but we need to keep the memo args length the same...
     // And the memo below prevents us from changing the ticks reference every second
@@ -120,9 +114,8 @@ const GlobalAutomaterializationRoot = () => {
 
   const ticks = React.useMemo(
     () => {
-      const ticks = data?.autoMaterializeTicks;
       return (
-        ticks?.map((tick, index) => {
+        allTicks.map((tick, index) => {
           // For ticks that get stuck in "Started" state without an endTimestamp.
           if (index !== 0 && !isOldTickWithoutEndtimestamp(tick) && !tick.endTimestamp) {
             const copy = {...tick};
@@ -145,9 +138,18 @@ const GlobalAutomaterializationRoot = () => {
     [setIsPaused],
   );
 
+  const runTableFilterTags = React.useMemo(() => {
+    return [
+      {
+        key: DagsterTag.RepositoryLabelTag,
+        value: repoAddressAsTag(repoAddress),
+      },
+      {key: DagsterTag.SensorName, value: sensor.name},
+    ];
+  }, [repoAddress, sensor]);
+
   return (
-    <Page>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="amp" />} />
+    <>
       <Box padding={{vertical: 12, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
         <Alert
           intent="info"
@@ -169,43 +171,11 @@ const GlobalAutomaterializationRoot = () => {
           }
         />
       </Box>
-      <Table>
-        <tbody>
-          <tr>
-            <td>Running</td>
-            <td>
-              {automaterialize.loading ? (
-                <Spinner purpose="body-text" />
-              ) : (
-                <Checkbox
-                  format="switch"
-                  checked={!automaterialize.paused}
-                  disabled={!canToggleAutoMaterialize}
-                  onChange={async (e) => {
-                    const checked = e.target.checked;
-                    if (!checked) {
-                      await confirm({
-                        title: 'Pause Auto-materializing?',
-                        description:
-                          'Pausing Auto-materializing will prevent new materializations triggered by an Auto-materializing policy.',
-                      });
-                    }
-                    automaterialize.setPaused(!checked);
-                  }}
-                />
-              )}
-            </td>
-          </tr>
-          <tr>
-            <td>Evaluation frequency</td>
-            <td>~30s</td>
-          </tr>
-        </tbody>
-      </Table>
+      <SensorInfo assetDaemonHealth={daemonStatus} padding={{vertical: 16, horizontal: 24}} />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
         <Subtitle2>Evaluation timeline</Subtitle2>
       </Box>
-      {!data ? (
+      {!sensor && loading ? (
         <Box
           padding={{vertical: 48}}
           flex={{direction: 'row', justifyContent: 'center', gap: 12, alignItems: 'center'}}
@@ -232,17 +202,22 @@ const GlobalAutomaterializationRoot = () => {
             }}
           />
           {tableView === 'evaluations' ? (
-            <InstanceAutomaterializationEvaluationHistoryTable
+            <SensorAutomaterializationEvaluationHistoryTable
+              repoAddress={repoAddress}
+              sensor={sensor}
               setSelectedTick={setSelectedTick}
               setTableView={setTableView}
               setParentStatuses={setStatuses}
               setTimerange={setTimerange}
             />
           ) : (
-            <AutomaterializeRunHistoryTable setTableView={setTableView} />
+            <AutomaterializeRunHistoryTable
+              filterTags={runTableFilterTags}
+              setTableView={setTableView}
+            />
           )}
         </>
       )}
-    </Page>
+    </>
   );
 };

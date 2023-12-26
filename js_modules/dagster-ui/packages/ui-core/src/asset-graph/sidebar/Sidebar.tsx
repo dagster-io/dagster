@@ -102,7 +102,11 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
+<<<<<<< HEAD
     const {folderNodes: renderedNodes, groupsCount} = React.useMemo(() => {
+=======
+    const renderedNodes = React.useMemo(() => {
+>>>>>>> 9d0ceeed5d179a50bd25a0a687495f6dc0a1002c
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets

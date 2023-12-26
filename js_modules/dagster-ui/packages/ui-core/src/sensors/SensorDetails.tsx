@@ -173,29 +173,31 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
-          <tr>
-            <td>
-              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
-                Cursor
-              </Box>
-            </td>
-            <td>
-              <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-                <span style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-                  {cursor ? cursor : 'None'}
-                </span>
-                <Button icon={<Icon name="edit" />} onClick={() => setCursorEditing(true)}>
-                  Edit
-                </Button>
-              </Box>
-              <EditCursorDialog
-                isOpen={isCursorEditing}
-                sensorSelector={sensorSelector}
-                cursor={cursor ? cursor : ''}
-                onClose={() => setCursorEditing(false)}
-              />
-            </td>
-          </tr>
+          {sensor.sensorType !== SensorType.AUTOMATION_POLICY ? (
+            <tr>
+              <td>
+                <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
+                  Cursor
+                </Box>
+              </td>
+              <td>
+                <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+                  <span style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+                    {cursor ? cursor : 'None'}
+                  </span>
+                  <Button icon={<Icon name="edit" />} onClick={() => setCursorEditing(true)}>
+                    Edit
+                  </Button>
+                </Box>
+                <EditCursorDialog
+                  isOpen={isCursorEditing}
+                  sensorSelector={sensorSelector}
+                  cursor={cursor ? cursor : ''}
+                  onClose={() => setCursorEditing(false)}
+                />
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </MetadataTableWIP>
     </>
