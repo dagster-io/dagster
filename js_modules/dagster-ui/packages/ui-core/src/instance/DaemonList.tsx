@@ -7,7 +7,7 @@ import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
 import {AutoMaterializeExperimentalTag} from '../assets/AutoMaterializePolicyPage/AutoMaterializeExperimentalBanner';
-import {useAutomaterializeDaemonStatus} from '../assets/AutomaterializeDaemonStatusTag';
+import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 import {DaemonHealth} from './DaemonHealth';

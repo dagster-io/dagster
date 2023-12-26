@@ -1,5 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui-components';
+import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -9,11 +10,14 @@ import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {
   ExplorerPath,
   explorerPathFromString,
   explorerPathToString,
 } from '../pipelines/PipelinePathUtils';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
@@ -22,6 +26,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
   AssetGroupMetadataQuery,
@@ -123,37 +128,69 @@ export const AssetGroupRoot = ({
   );
 };
 
-const ASSET_GROUP_METADATA_QUERY = gql`
+export const ASSET_GROUP_METADATA_QUERY = gql`
   query AssetGroupMetadataQuery($selector: AssetGroupSelector!) {
     assetNodes(group: $selector) {
       id
       autoMaterializePolicy {
         policyType
       }
+      automationPolicySensor {
+        id
+        ...SensorSwitchFragment
+      }
     }
   }
+
+  ${SENSOR_SWITCH_FRAGMENT}
 `;
 
-const AssetGroupTags = ({
+export const AssetGroupTags = ({
   repoAddress,
   groupSelector,
 }: {
   groupSelector: AssetGroupSelector;
   repoAddress: RepoAddress;
 }) => {
+  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
   const {data} = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
     ASSET_GROUP_METADATA_QUERY,
     {variables: {selector: groupSelector}},
   );
+
+  const sensorTag = () => {
+    const assetNodes = data?.assetNodes;
+    if (!assetNodes || assetNodes.length === 0) {
+      return null;
+    }
+
+    if (
+      automaterializeSensorsFlagState === 'has-global-amp' &&
+      assetNodes.some((a) => !!a.autoMaterializePolicy)
+    ) {
+      return <AutomaterializeDaemonStatusTag />;
+    }
+
+    if (automaterializeSensorsFlagState === 'has-sensor-amp') {
+      const sensors = assetNodes
+        .map((node) => node.automationPolicySensor)
+        .filter((sensor): sensor is SensorSwitchFragment => !!sensor);
+      const uniqueSensors = uniqBy(sensors, 'id');
+
+      if (sensors.length) {
+        return <ScheduleOrSensorTag repoAddress={repoAddress} sensors={uniqueSensors} />;
+      }
+    }
+
+    return null;
+  };
 
   return (
     <>
       <Tag icon="asset_group">
         Asset Group in <RepositoryLink repoAddress={repoAddress} />
       </Tag>
-      {data?.assetNodes?.some((a) => !!a.autoMaterializePolicy) && (
-        <AutomaterializeDaemonStatusTag />
-      )}
+      {sensorTag()}
     </>
   );
 };
