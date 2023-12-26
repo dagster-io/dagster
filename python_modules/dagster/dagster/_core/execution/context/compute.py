@@ -568,6 +568,19 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @public
     @property
+    def observable_asset_key(self) -> AssetKey:
+        """If the current step corresponds to an observable asset, returns the AssetKey for the
+        observable asset.
+        """
+        asset_key = self.job_def.asset_layer.observable_asset_key_for_node(self.node_handle)
+        if not asset_key:
+            raise DagsterInvariantViolationError(
+                "Cannot call `context.observable_asset_key` in a non-observable asset."
+            )
+        return asset_key
+
+    @public
+    @property
     def assets_def(self) -> AssetsDefinition:
         """The backing AssetsDefinition for what is currently executing, errors if not available."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)

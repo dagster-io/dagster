@@ -7,6 +7,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.io_manager import io_manager
 
 
@@ -107,3 +108,28 @@ def test_key_and_name_args():
         @observable_source_asset(name=["peach"], key=["peach", "nectarine"])
         def name_and_key_specified():
             ...
+
+
+def test_get_observable_asset_key_from_context() -> None:
+    executed = {}
+
+    @observable_source_asset(
+        name="alpha",
+        description="beta",
+        key_prefix="delta",
+        group_name="rho",
+    )
+    def foo_source_asset(context: OpExecutionContext) -> DataVersion:
+        assert context.observable_asset_key == AssetKey(["delta", "alpha"])
+        executed["yes"] = True
+        return DataVersion("version-string")
+
+    asset_job = build_assets_job("source_job", source_assets=[foo_source_asset], assets=[])
+
+    defs = Definitions(jobs=[asset_job], assets=[foo_source_asset])
+
+    job_def = defs.get_job_def("source_job")
+
+    assert job_def.execute_in_process().success
+
+    assert executed["yes"]

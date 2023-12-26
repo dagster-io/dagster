@@ -636,6 +636,13 @@ class AssetLayer(NamedTuple):
         check.invariant(len(matching_handles) == 1)
         return matching_handles[0]
 
+    def observable_asset_key_for_node(self, node_handle: NodeHandle) -> Optional[AssetKey]:
+        result = self.asset_info_by_node_output_handle.get(NodeOutputHandle(node_handle, "result"))
+        if not result:
+            return None
+
+        return result.key
+
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self.assets_defs_by_node_handle.get(node_handle)
 
