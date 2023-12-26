@@ -77,9 +77,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
     expect(state).toEqual(new Set(['test']));
 
     act(() => {
-      // Typescript doesnt realize the array being returned is a constant tuple and not an array that contains both state/setters
-      // so cast this to any
-      (setter as any)!(new Set(['test', 'test2']));
+      setter(new Set(['test', 'test2']));
     });
 
     [state, setter] = hookResult.result.current;
@@ -96,8 +94,6 @@ describe('useQueryAndLocalStoragePersistedState', () => {
   });
 
   test('uses queryString as source of truth if query string is present and localStorage data is also present', async () => {
-    let querySearch: string | undefined;
-
     const localStorageKey = 'asset-graph-open-nodes';
 
     localStorageMock.setItem(localStorageKey, JSON.stringify({'open-nodes': ['test']}));
@@ -123,10 +119,6 @@ describe('useQueryAndLocalStoragePersistedState', () => {
               ]}
             >
               {children}
-              <Route
-                path="*"
-                render={({location}) => (querySearch = location.search) && <span />}
-              />
             </MemoryRouter>
           );
         },

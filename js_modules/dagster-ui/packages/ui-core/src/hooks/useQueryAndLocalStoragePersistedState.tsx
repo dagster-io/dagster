@@ -14,7 +14,7 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
     localStorageKey: string;
     isEmptyState: (state: T) => boolean;
   },
-) => {
+): [T, (setterOrState: React.SetStateAction<T>) => void] => {
   // Grab state from localStorage as "initialState"
   const initialState = React.useMemo(() => {
     try {
