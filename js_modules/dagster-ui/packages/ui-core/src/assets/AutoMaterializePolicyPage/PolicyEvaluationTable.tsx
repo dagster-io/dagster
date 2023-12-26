@@ -1,10 +1,6 @@
 import {
   Box,
   Table,
-  Tag,
-  colorAccentGray,
-  colorAccentGreen,
-  colorAccentYellow,
   colorBackgroundDefault,
   colorBackgroundDefaultHover,
   colorBackgroundLightHover,
@@ -13,10 +9,11 @@ import {
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {assertUnreachable} from '../../app/Util';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 
+import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
+import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
 import {flattenEvaluations} from './flattenEvaluations';
 import {
   AssetConditionEvaluation,
@@ -78,7 +75,7 @@ const UnpartitionedPolicyEvaluationTable = ({
                 />
               </td>
               <td>
-                <EvaluationStatusTag status={status} />
+                <PolicyEvaluationStatusTag status={status} />
               </td>
               <td>
                 <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
@@ -90,27 +87,6 @@ const UnpartitionedPolicyEvaluationTable = ({
       </tbody>
     </VeryCompactTable>
   );
-};
-
-const EvaluationStatusTag = ({status}: {status: AssetConditionEvaluationStatus}) => {
-  switch (status) {
-    case AssetConditionEvaluationStatus.FALSE:
-      return (
-        <Tag intent="warning" icon="cancel">
-          False
-        </Tag>
-      );
-    case AssetConditionEvaluationStatus.TRUE:
-      return (
-        <Tag intent="success" icon="check_circle">
-          True
-        </Tag>
-      );
-    case AssetConditionEvaluationStatus.SKIPPED:
-      return <Tag intent="none">Skipped</Tag>;
-    default:
-      return assertUnreachable(status);
-  }
 };
 
 const FULL_SEGMENTS_WIDTH = 200;
@@ -133,8 +109,17 @@ const PartitionedPolicyEvaluationTable = ({
       </thead>
       <tbody>
         {flattened.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, endTimestamp, startTimestamp, numTrue, numFalse, numSkipped} =
-            evaluation;
+          const {
+            description,
+            endTimestamp,
+            startTimestamp,
+            numTrue,
+            numFalse,
+            numSkipped,
+            trueSubset,
+            falseSubset,
+            candidateSubset,
+          } = evaluation;
           const total = numTrue + numFalse + numSkipped;
 
           return (
@@ -160,21 +145,27 @@ const PartitionedPolicyEvaluationTable = ({
                   style={{width: FULL_SEGMENTS_WIDTH}}
                 >
                   {numTrue > 0 ? (
-                    <PartitionSegment
-                      $color={colorAccentGreen()}
-                      $width={Math.ceil((numTrue / total) * FULL_SEGMENTS_WIDTH)}
+                    <PartitionSegmentWithPopover
+                      description={description}
+                      status={AssetConditionEvaluationStatus.TRUE}
+                      subset={trueSubset}
+                      width={Math.ceil((numTrue / total) * FULL_SEGMENTS_WIDTH)}
                     />
                   ) : null}
                   {numFalse > 0 ? (
-                    <PartitionSegment
-                      $color={colorAccentYellow()}
-                      $width={Math.ceil((numFalse / total) * FULL_SEGMENTS_WIDTH)}
+                    <PartitionSegmentWithPopover
+                      status={AssetConditionEvaluationStatus.FALSE}
+                      description={description}
+                      subset={falseSubset}
+                      width={Math.ceil((numFalse / total) * FULL_SEGMENTS_WIDTH)}
                     />
                   ) : null}
                   {numSkipped > 0 ? (
-                    <PartitionSegment
-                      $color={colorAccentGray()}
-                      $width={Math.ceil((numSkipped / total) * FULL_SEGMENTS_WIDTH)}
+                    <PartitionSegmentWithPopover
+                      status={AssetConditionEvaluationStatus.SKIPPED}
+                      description={description}
+                      subset={candidateSubset}
+                      width={Math.ceil((numSkipped / total) * FULL_SEGMENTS_WIDTH)}
                     />
                   ) : null}
                 </Box>
@@ -245,19 +236,4 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
     }
     return '';
   }}
-`;
-
-interface PartitionSegmentProps {
-  $color: string;
-  $width: number;
-}
-
-const PartitionSegment = styled.div.attrs<PartitionSegmentProps>(({$width}) => ({
-  style: {
-    flexBasis: `${$width}px`,
-  },
-}))<PartitionSegmentProps>`
-  background-color: ${({$color}) => $color};
-  border-radius: 2px;
-  height: 20px;
 `;

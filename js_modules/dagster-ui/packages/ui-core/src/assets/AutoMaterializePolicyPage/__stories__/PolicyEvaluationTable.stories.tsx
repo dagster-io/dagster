@@ -97,6 +97,25 @@ export const Partitioned = () => {
     numTrue: 0,
     numFalse: 100,
     numSkipped: 0,
+    trueSubset: {
+      assetKey: {path: ['foo']},
+      subsetValue: {
+        boolValue: true,
+        partitionKeys: [],
+        partitionKeyRanges: null,
+        isPartitioned: true,
+      },
+    },
+    falseSubset: {
+      assetKey: {path: ['foo']},
+      subsetValue: {
+        boolValue: false,
+        partitionKeys: new Array(100).fill(null).map((_, ii) => `false-${ii}`),
+        partitionKeyRanges: null,
+        isPartitioned: true,
+      },
+    },
+    candidateSubset: null,
     childEvaluations: [
       {
         __typename: 'PartitionedAssetConditionEvaluation' as const,
@@ -106,6 +125,25 @@ export const Partitioned = () => {
         numTrue: 30,
         numFalse: 70,
         numSkipped: 0,
+        trueSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: true,
+            partitionKeys: new Array(30).fill(null).map((_, ii) => `true-${ii}`),
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        falseSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: false,
+            partitionKeys: new Array(70).fill(null).map((_, ii) => `false-${ii}`),
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        candidateSubset: null,
         childEvaluations: [
           {
             __typename: 'PartitionedAssetConditionEvaluation' as const,
@@ -116,6 +154,33 @@ export const Partitioned = () => {
             numTrue: 30,
             numFalse: 20,
             numSkipped: 50,
+            trueSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: true,
+                partitionKeys: new Array(30).fill(null).map((_, ii) => `true-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
+            falseSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: false,
+                partitionKeys: new Array(20).fill(null).map((_, ii) => `false-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
+            candidateSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: null,
+                partitionKeys: new Array(50).fill(null).map((_, ii) => `true-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
             childEvaluations: null,
           },
           {
@@ -127,6 +192,33 @@ export const Partitioned = () => {
             numTrue: 0,
             numFalse: 30,
             numSkipped: 70,
+            trueSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: true,
+                partitionKeys: new Array(30).fill(null).map((_, ii) => `true-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
+            falseSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: false,
+                partitionKeys: new Array(30).fill(null).map((_, ii) => `false-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
+            candidateSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: null,
+                partitionKeys: new Array(70).fill(null).map((_, ii) => `true-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
             childEvaluations: null,
           },
         ],
@@ -139,6 +231,25 @@ export const Partitioned = () => {
         numTrue: 30,
         numFalse: 70,
         numSkipped: 0,
+        trueSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: true,
+            partitionKeys: new Array(30).fill(null).map((_, ii) => `true-${ii}`),
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        falseSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: false,
+            partitionKeys: new Array(70).fill(null).map((_, ii) => `false-${ii}`),
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        candidateSubset: null,
         childEvaluations: [
           {
             __typename: 'PartitionedAssetConditionEvaluation' as const,
@@ -149,6 +260,25 @@ export const Partitioned = () => {
             numTrue: 80,
             numFalse: 20,
             numSkipped: 0,
+            trueSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: true,
+                partitionKeys: new Array(80).fill(null).map((_, ii) => `true-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
+            falseSubset: {
+              assetKey: {path: ['foo']},
+              subsetValue: {
+                boolValue: false,
+                partitionKeys: new Array(20).fill(null).map((_, ii) => `false-${ii}`),
+                partitionKeyRanges: null,
+                isPartitioned: true,
+              },
+            },
+            candidateSubset: null,
             childEvaluations: null,
           },
         ],
@@ -161,6 +291,25 @@ export const Partitioned = () => {
         numTrue: 0,
         numFalse: 100,
         numSkipped: 0,
+        trueSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: true,
+            partitionKeys: [],
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        falseSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: false,
+            partitionKeys: new Array(100).fill(null).map((_, ii) => `false-${ii}`),
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        candidateSubset: null,
         childEvaluations: null,
       },
       {
@@ -171,6 +320,33 @@ export const Partitioned = () => {
         numTrue: 0,
         numFalse: 0,
         numSkipped: 100,
+        trueSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: true,
+            partitionKeys: [],
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        falseSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: false,
+            partitionKeys: [],
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
+        candidateSubset: {
+          assetKey: {path: ['foo']},
+          subsetValue: {
+            boolValue: null,
+            partitionKeys: new Array(100).fill(null).map((_, ii) => `true-${ii}`),
+            partitionKeyRanges: null,
+            isPartitioned: true,
+          },
+        },
         childEvaluations: null,
       },
     ],
