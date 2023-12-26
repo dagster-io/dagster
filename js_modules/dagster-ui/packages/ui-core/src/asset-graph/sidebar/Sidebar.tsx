@@ -179,8 +179,9 @@ export const AssetGraphExplorerSidebar = React.memo(
     const {nav} = React.useContext(LayoutContext);
 
     React.useEffect(() => {
-      if (groupsCount === 1) {
-        // Close the left sidebar if there's only 1 group and this is the first render
+      if (groupsCount > 1) {
+        // Close the left sidebar if there's more than 1 group (if viewing more than 1 group then this is the global asset graph)
+        // to avoid duplication between the global left sidebar and the graph's left sidebar.
         nav.close();
       }
       // Exclude groupsCount so that we don't close the left nav due to filtering changing
