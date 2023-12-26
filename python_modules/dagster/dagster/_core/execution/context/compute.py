@@ -557,6 +557,11 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 "Cannot call `context.asset_key` in a multi_asset with more than one asset. Use"
                 " `context.asset_key_for_output` instead."
             )
+        observable_asset_key = self.job_def.asset_layer.observable_asset_key_for_node(
+            self.node_handle
+        )
+        if observable_asset_key:
+            return observable_asset_key
         return next(iter(self.assets_def.keys_by_output_name.values()))
 
     @public

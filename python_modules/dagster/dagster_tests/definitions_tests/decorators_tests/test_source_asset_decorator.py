@@ -121,6 +121,7 @@ def test_get_observable_asset_key_from_context() -> None:
     )
     def foo_source_asset(context: OpExecutionContext) -> DataVersion:
         assert context.observable_asset_key == AssetKey(["delta", "alpha"])
+        assert context.asset_key == AssetKey(["delta", "alpha"])
         executed["yes"] = True
         return DataVersion("version-string")
 
