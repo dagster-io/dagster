@@ -691,3 +691,92 @@ def test_late_binding_with_resource_defs_override() -> None:
     assert defs.get_job_def("do_database_stuff").execute_in_process().success
 
     assert queries == ["foo"]
+
+
+def test_late_binding_with_resource_defs_partial() -> None:
+    queries = []
+    submissions = []
+
+    class DummyDB(ConfigurableResource):
+        def execute_query(self, query):
+            queries.append(query)
+
+    class DummyAPI(ConfigurableResource):
+        def submit(self, data):
+            submissions.append(data)
+
+    @op(required_resource_keys={"database", "api"})
+    def op_requires_resources(context):
+        context.resources.database.execute_query("foo")
+        context.resources.api.submit("bar")
+
+    @job(resource_defs={"database": DummyDB()})
+    def do_stuff():
+        op_requires_resources()
+
+    @op
+    def simple_op():
+        pass
+
+    @job()
+    def simple_job():
+        simple_op()
+
+    # dummy_api_resource will be bound late
+    defs = Definitions(
+        jobs=[do_stuff, simple_job],
+        resources={"io_manager": FilesystemIOManager(), "api": DummyAPI()},
+    )
+
+    assert defs.get_job_def("do_stuff").execute_in_process().success
+
+    assert queries == ["foo"]
+    assert submissions == ["bar"]
+
+
+def test_late_binding_with_resource_defs_partial_override() -> None:
+    queries = []
+    submissions = []
+
+    class DummyDB(ConfigurableResource):
+        comment: str
+
+        def execute_query(self, query):
+            queries.append(f"{query} #{self.comment}")
+
+    class DummyAPI(ConfigurableResource):
+        def submit(self, data):
+            submissions.append(data)
+
+    @op(required_resource_keys={"database", "api"})
+    def op_requires_resources(context):
+        context.resources.database.execute_query("foo")
+        context.resources.api.submit("bar")
+
+    @job(resource_defs={"database": DummyDB(comment="this is my override")})
+    def do_stuff():
+        op_requires_resources()
+
+    @op(required_resource_keys={"database"})
+    def another_op_requires_db(context):
+        context.resources.database.execute_query("baz")
+
+    @job()
+    def do_stuff_2():
+        another_op_requires_db()
+
+    # dummy_api_resource will be bound late
+    defs = Definitions(
+        jobs=[do_stuff, do_stuff_2],
+        resources={
+            "io_manager": FilesystemIOManager(),
+            "api": DummyAPI(),
+            "database": DummyDB(comment="this is not overridden"),
+        },
+    )
+
+    assert defs.get_job_def("do_stuff").execute_in_process().success
+    assert defs.get_job_def("do_stuff_2").execute_in_process().success
+
+    assert queries == ["foo #this is my override", "baz #this is not overridden"]
+    assert submissions == ["bar"]

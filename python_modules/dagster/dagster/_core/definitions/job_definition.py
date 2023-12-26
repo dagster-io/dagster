@@ -200,11 +200,19 @@ class JobDefinition(IHasInternalInit):
             if _was_explicitly_provided_resources is None
             else _was_explicitly_provided_resources
         )
+
         self._resource_defs = {
             DEFAULT_IO_MANAGER_KEY: default_job_io_manager,
             **resource_defs,
         }
-        self._required_resource_keys = self._get_required_resource_keys(was_provided_resources)
+
+        # We only want to validate resources if we are certain no more are going to be bound, e.g.
+        # top-level resources attached at Definitions time. This allows the user to provide a partial
+        # set of resources at job definition time, and then provide the rest at the Definitions layer.
+        should_validate_resources = (
+            was_provided_resources and _was_explicitly_provided_resources is True
+        )
+        self._required_resource_keys = self._get_required_resource_keys(should_validate_resources)
 
         self._config_mapping = None
         self._partitioned_config = None

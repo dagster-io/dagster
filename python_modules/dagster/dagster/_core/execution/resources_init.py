@@ -114,8 +114,9 @@ def get_dependencies(
 
     # adds dependencies for a given resource key to reqd_resources
     def _get_deps_helper(resource_key):
-        for reqd_resource_key in resource_deps[resource_key]:
-            _get_deps_helper(reqd_resource_key)
+        if resource_key in resource_deps:
+            for reqd_resource_key in resource_deps[resource_key]:
+                _get_deps_helper(reqd_resource_key)
         reqd_resources.add(resource_key)
 
     _get_deps_helper(resource_name)
