@@ -85,6 +85,7 @@ Modify `topstory_ids` to use an I/O manager:
 
 ```python file=/tutorial/saving/update_assets_to_use_io.py startafter=start_topstory_ids_asset endbefore=end_topstory_ids_asset
 from typing import Dict, List  # add imports to the top of `assets.py`
+from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult, get_dagster_logger
 
 
 @asset

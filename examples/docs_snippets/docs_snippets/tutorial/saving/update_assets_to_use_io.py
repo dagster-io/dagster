@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 
-from dagster import AssetExecutionContext, MetadataValue, asset, get_dagster_logger
-
 
 # start_topstory_ids_asset
+
+
 from typing import Dict, List  # add imports to the top of `assets.py`
+from dagster import AssetExecutionContext, MetadataValue, asset, MaterializeResult, get_dagster_logger
 
 
 @asset
