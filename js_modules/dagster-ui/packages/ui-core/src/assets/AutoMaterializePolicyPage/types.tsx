@@ -1,3 +1,6 @@
+import {PartitionKeyRange} from '../../graphql/types';
+import {AssetKey} from '../types';
+
 import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 
 export type NoConditionsMetEvaluation = {
@@ -29,6 +32,18 @@ export type AssetConditionEvaluation =
   | UnpartitionedAssetConditionEvaluation
   | PartitionedAssetConditionEvaluation;
 
+export type AssetSubset = {
+  assetKey: AssetKey;
+  subsetValue: AssetSubsetValue;
+};
+
+export type AssetSubsetValue = {
+  boolValue: boolean | null;
+  partitionKeys: string[] | null;
+  partitionKeyRanges: PartitionKeyRange[] | null;
+  isPartitioned: boolean;
+};
+
 export type UnpartitionedAssetConditionEvaluation = {
   __typename: 'UnpartitionedAssetConditionEvaluation';
   description: string;
@@ -48,4 +63,9 @@ export type PartitionedAssetConditionEvaluation = {
   numFalse: number;
   numSkipped: number;
   childEvaluations: PartitionedAssetConditionEvaluation[] | null;
+
+  // We may want to query for these separately
+  trueSubset: AssetSubset;
+  falseSubset: AssetSubset;
+  candidateSubset: AssetSubset | null;
 };

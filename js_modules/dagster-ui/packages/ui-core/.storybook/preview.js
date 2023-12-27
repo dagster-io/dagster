@@ -7,6 +7,7 @@ import {
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
+  browserColorScheme,
   colorBackgroundDefault,
   colorTextDefault,
   colorLinkDefault,
@@ -25,6 +26,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body {
+    color-scheme: ${browserColorScheme()};
     background-color: ${colorBackgroundDefault()};
     color: ${colorTextDefault()};
     -webkit-font-smoothing: antialiased;
