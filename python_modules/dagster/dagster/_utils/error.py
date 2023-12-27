@@ -93,7 +93,7 @@ def _should_mask_user_code_error() -> bool:
     return os.getenv("DAGSTER_MASK_USER_CODE_ERRORS") == "1"
 
 
-def _get_masked_traceback_exception() -> traceback.TracebackException:
+def _get_masked_traceback_exception(with_instruction: bool) -> traceback.TracebackException:
     """Raises a DagsterMaskedUserCodeError and returns the traceback exception for it.
     Used to replace the traceback of a user code error with a generic message that they
     can search for in their own logs.
@@ -101,8 +101,8 @@ def _get_masked_traceback_exception() -> traceback.TracebackException:
     error_id = str(uuid.uuid4())
     try:
         raise DagsterMaskedUserCodeError(
-            f"Error occurred during user code execution, error ID {error_id}\n"
-            "Search in logs for this error ID for more details"
+            f"Error occurred during user code execution, error ID {error_id}"
+            + ("\nSearch in logs for this error ID for more details" if with_instruction else "")
         )
     except DagsterMaskedUserCodeError:
         # Get the stack trace from the masking exception we just raised, instead of
@@ -118,6 +118,7 @@ def serializable_error_info_from_exc_info(
     exc_info: ExceptionInfo,
     # Whether to forward serialized errors thrown from subprocesses
     hoist_user_code_error: Optional[bool] = True,
+    hoist_user_code_execution_error: Optional[bool] = False,
 ) -> SerializableErrorInfo:
     # `sys.exc_info() return Tuple[None, None, None] when there is no exception being processed. We accept this in
     # the type signature here since this function is meant to directly receive the return value of
@@ -131,8 +132,13 @@ def serializable_error_info_from_exc_info(
     from dagster._core.errors import DagsterUserCodeExecutionError, DagsterUserCodeProcessError
 
     if isinstance(e, DagsterUserCodeExecutionError) and _should_mask_user_code_error():
-        masked_tb_exc = _get_masked_traceback_exception()
-        print(_serializable_error_info_from_tb(masked_tb_exc).to_string(), file=sys.stderr)  # noqa: T201
+        masked_tb_exc = _get_masked_traceback_exception(with_instruction=True)
+        print(  # noqa: T201
+            _serializable_error_info_from_tb(
+                _get_masked_traceback_exception(with_instruction=False)
+            ).to_string(),
+            file=sys.stderr,
+        )
         return _serializable_error_info_from_tb(masked_tb_exc, no_cause=True)
 
     if (
@@ -141,6 +147,9 @@ def serializable_error_info_from_exc_info(
         and len(e.user_code_process_error_infos) == 1
     ):
         return e.user_code_process_error_infos[0]
+    elif hoist_user_code_execution_error and isinstance(e, DagsterUserCodeExecutionError):
+        tb_exc = traceback.TracebackException(type(e.user_exception), e.user_exception, tb.tb_next)
+        return _serializable_error_info_from_tb(tb_exc)
     else:
         tb_exc = traceback.TracebackException(exc_type, e, tb)
         return _serializable_error_info_from_tb(tb_exc)

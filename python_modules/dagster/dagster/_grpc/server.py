@@ -372,7 +372,9 @@ class DagsterApiServer(DagsterApiServicer):
             if not lazy_load_user_code:
                 raise
             self._loaded_repositories = None
-            self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
+            self._serializable_load_error = serializable_error_info_from_exc_info(
+                sys.exc_info(), hoist_user_code_execution_error=True
+            )
             self._logger.exception("Error while importing code")
 
         self.__last_heartbeat_time = time.time()

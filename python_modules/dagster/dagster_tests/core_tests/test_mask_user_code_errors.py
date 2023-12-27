@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import pytest
@@ -47,7 +48,10 @@ def test_masking_op_execution(enable_masking_user_code_errors) -> Any:
     )
 
 
-def test_masking_sensor_execution(instance, enable_masking_user_code_errors):
+ERROR_ID_REGEX = r"Error occurred during user code execution, error ID ([a-z0-9\-]+)"
+
+
+def test_masking_sensor_execution(instance, enable_masking_user_code_errors, capsys):
     from dagster._api.snapshot_sensor import (
         sync_get_external_sensor_execution_data_ephemeral_grpc,
     )
@@ -55,15 +59,22 @@ def test_masking_sensor_execution(instance, enable_masking_user_code_errors):
     with get_bar_repo_handle(instance) as repository_handle:
         try:
             sync_get_external_sensor_execution_data_ephemeral_grpc(
-                instance, repository_handle, "sensor_error", None, None, None
+                instance, repository_handle, "sensor_error", None, None, None, None
             )
             assert False, "Should have thrown an DagsterUserCodeProcessError!"
         except DagsterUserCodeProcessError as e:
             assert "womp womp" not in str(e)
             assert "Search in logs for this error ID for more details" in str(e)
+            error_id = re.search(ERROR_ID_REGEX, str(e)).group(1)
+
+            captured_stderr = capsys.readouterr().err
+            assert (
+                f"Error occurred during user code execution, error ID {error_id}" in captured_stderr
+            )
+            # assert "Search in logs for this error ID for more details" not in captured_stderr TODO: fix this
 
 
-def test_masking_schedule_execution(instance, enable_masking_user_code_errors):
+def test_masking_schedule_execution(instance, enable_masking_user_code_errors, capsys):
     from dagster._api.snapshot_schedule import (
         sync_get_external_schedule_execution_data_ephemeral_grpc,
     )
@@ -71,9 +82,21 @@ def test_masking_schedule_execution(instance, enable_masking_user_code_errors):
     with get_bar_repo_handle(instance) as repository_handle:
         try:
             sync_get_external_schedule_execution_data_ephemeral_grpc(
-                instance, repository_handle, "schedule_error", get_current_datetime_in_utc()
+                instance,
+                repository_handle,
+                "schedule_error",
+                get_current_datetime_in_utc(),
+                None,
+                None,
             )
             assert False, "Should have thrown an DagsterUserCodeProcessError!"
         except DagsterUserCodeProcessError as e:
             assert "womp womp" not in str(e)
             assert "Search in logs for this error ID for more details" in str(e)
+            error_id = re.search(ERROR_ID_REGEX, str(e)).group(1)
+
+            captured_stderr = capsys.readouterr().err
+            assert (
+                f"Error occurred during user code execution, error ID {error_id}" in captured_stderr
+            )
+            # assert "Search in logs for this error ID for more details" not in captured_stderr TODO: fix this
