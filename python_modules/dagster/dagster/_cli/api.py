@@ -477,6 +477,7 @@ def _execute_step_command_body(
     required=False,
     default=None,
     help="Maximum number of (threaded) workers to use in the GRPC server",
+    envvar="DAGSTER_GRPC_MAX_WORKERS",
 )
 @click.option(
     "--heartbeat",
