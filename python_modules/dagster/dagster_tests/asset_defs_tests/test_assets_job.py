@@ -2352,7 +2352,7 @@ def test_build_subset_job_errors(job_selection, use_multi, expected_error):
     if expected_error:
         expected_class, expected_message = expected_error
         with pytest.raises(expected_class, match=expected_message):
-            Definitions(assets=assets, jobs=[asset_job])
+            Definitions(assets=assets, jobs=[asset_job]).get_all_job_defs()
     else:
         Definitions(assets=assets, jobs=[asset_job])
 
