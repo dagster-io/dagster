@@ -625,7 +625,7 @@ def multi_asset(
         additional_message="Only dicts are supported for asset config_schema.",
     )
 
-    bare_required_resource_keys = set(required_resource_keys)
+    bare_required_resource_keys = required_resource_keys.copy()
     resource_defs_keys = set(resource_defs.keys())
     required_resource_keys = bare_required_resource_keys | resource_defs_keys
 
