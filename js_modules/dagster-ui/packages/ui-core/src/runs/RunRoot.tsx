@@ -136,7 +136,6 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <AssetKeyTagCollection
                   useTags
                   assetKeys={
@@ -145,6 +144,7 @@ export const RunRoot = () => {
                       : run.assets.map((a) => a.key)
                   }
                 />
+                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation
