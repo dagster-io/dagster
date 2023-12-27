@@ -5,7 +5,7 @@ import React from 'react';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
-import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {ExplorerPath, explorerPathSeparator} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {GraphData, GraphNode, tokenForAssetKey} from '../Utils';
@@ -82,7 +82,11 @@ export const AssetGraphExplorerSidebar = React.memo(
       }
     };
     const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
-      localStorageKey: 'asset-graph-open-nodes',
+      // include pathname so that theres separate storage entries for graphs at different URLs
+      // eg. independent group graph should persist open nodes separately
+      localStorageKey: `asset-graph-open-nodes-${
+        location.pathname.split(explorerPathSeparator)[0]
+      }`,
       encode: (val) => {
         return {'open-nodes': Array.from(val)};
       },
