@@ -262,6 +262,7 @@ def _run_in_subprocess(
 def start_run_in_subprocess(
     serialized_execute_run_args, recon_pipeline, event_queue, termination_event
 ):
+    os.environ["DAGSTER_RUN_JOB_NAME"] = recon_pipeline.job_name
     with capture_interrupts():
         _run_in_subprocess(
             serialized_execute_run_args,

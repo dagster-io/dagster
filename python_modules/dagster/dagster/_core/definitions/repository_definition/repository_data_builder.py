@@ -109,6 +109,7 @@ def build_caching_repository_data_from_list(
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     resource_key_mapping: Optional[Mapping[int, str]] = None,
+    specific_job_name: Optional[str] = None,
 ) -> CachingRepositoryData:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
@@ -130,6 +131,8 @@ def build_caching_repository_data_from_list(
     asset_checks_defs: List[AssetChecksDefinition] = []
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
+            if specific_job_name and (definition.name != specific_job_name):
+                continue
             if (
                 definition.name in jobs and jobs[definition.name] != definition
             ) or definition.name in unresolved_jobs:
@@ -143,6 +146,8 @@ def build_caching_repository_data_from_list(
                 )
             jobs[definition.name] = definition
         elif isinstance(definition, SensorDefinition):
+            if specific_job_name:
+                continue
             if definition.name in schedule_and_sensor_names:
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate definition found for {definition.name}"
@@ -150,6 +155,8 @@ def build_caching_repository_data_from_list(
             schedule_and_sensor_names.add(definition.name)
             sensors[definition.name] = definition
         elif isinstance(definition, ScheduleDefinition):
+            if specific_job_name:
+                continue
             if definition.name in schedule_and_sensor_names:
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate definition found for {definition.name}"
@@ -159,6 +166,8 @@ def build_caching_repository_data_from_list(
             schedules[definition.name] = definition
 
         elif isinstance(definition, UnresolvedPartitionedAssetScheduleDefinition):
+            if specific_job_name:
+                continue
             if definition.name in schedule_and_sensor_names:
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate definition found for {definition.name}"
@@ -172,6 +181,9 @@ def build_caching_repository_data_from_list(
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate job definition found for graph '{coerced.name}'"
                 )
+            if specific_job_name and (coerced.name != specific_job_name):
+                continue
+
             jobs[coerced.name] = coerced
             coerced_graphs[coerced.name] = coerced
         elif isinstance(definition, UnresolvedAssetJobDefinition):
@@ -179,6 +191,8 @@ def build_caching_repository_data_from_list(
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate definition found for unresolved job '{definition.name}'"
                 )
+            if specific_job_name and (definition.name != specific_job_name):
+                continue
             # we can only resolve these once we have all assets
             unresolved_jobs[definition.name] = definition
         elif isinstance(definition, AssetsDefinition):
@@ -203,7 +217,8 @@ def build_caching_repository_data_from_list(
             resource_defs=top_level_resources,
             asset_checks=asset_checks_defs,
         ):
-            jobs[job_def.name] = job_def
+            if not specific_job_name or (job_def.name == specific_job_name):
+                jobs[job_def.name] = job_def
 
         source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
         assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}

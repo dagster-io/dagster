@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from types import FunctionType
 from typing import (
@@ -343,12 +344,18 @@ class CachingRepositoryData(RepositoryData):
         """
         from .repository_data_builder import build_caching_repository_data_from_list
 
+        # Detect the case where a specific job is all that we care about (using an environment
+        # variable that is set in every run worker and step worker where definitions are loaded)
+        # and pass that through to optimize performance by not loading other jobs
+        specific_job_name = os.getenv("DAGSTER_RUN_JOB_NAME")
+
         return build_caching_repository_data_from_list(
             repository_definitions=repository_definitions,
             default_executor_def=default_executor_def,
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
             resource_key_mapping=resource_key_mapping,
+            specific_job_name=specific_job_name,
         )
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:

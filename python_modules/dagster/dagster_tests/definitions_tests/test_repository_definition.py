@@ -36,7 +36,9 @@ from dagster._core.definitions.automation_policy_sensor_definition import (
 )
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.test_utils import environ
 from dagster._loggers import default_loggers
 
 
@@ -1500,3 +1502,72 @@ def test_invalid_asset_selection():
             assets=[source_asset, asset1],
             jobs=[define_asset_job("foo", selection=[source_asset, asset1])],
         )
+
+
+def test_load_specific_job():
+    @asset
+    def asset1():
+        pass
+
+    @asset
+    def asset2():
+        pass
+
+    @job
+    def my_job():
+        pass
+
+    @sensor(job=my_job)
+    def my_sensor():
+        pass
+
+    my_schedule = ScheduleDefinition(name="my_schedule", job=my_job, cron_schedule="* * * * *")
+
+    asset_job = define_asset_job(name="my_asset_job", selection="asset2")
+
+    defs = Definitions(
+        assets=[asset1, asset2],
+        schedules=[my_schedule],
+        sensors=[my_sensor],
+        jobs=[my_job, asset_job],
+    )
+
+    repo = defs.get_repository_def()
+
+    assert repo.has_job("my_job")
+    assert repo.has_job("my_asset_job")
+    assert repo.has_job("__ASSET_JOB")
+    assert repo.has_schedule_def("my_schedule")
+    assert repo.has_sensor_def("my_sensor")
+
+    with environ({"DAGSTER_RUN_JOB_NAME": "my_job"}):
+        defs = Definitions(
+            assets=[asset1, asset2],
+            schedules=[my_schedule],
+            sensors=[my_sensor],
+            jobs=[my_job, asset_job],
+        )
+
+        repo = defs.get_repository_def()
+
+        assert repo.has_job("my_job")
+        assert not repo.has_job("my_asset_job")
+        assert not repo.has_job("__ASSET_JOB")
+        assert not repo.has_schedule_def("my_schedule")
+        assert not repo.has_sensor_def("my_sensor")
+
+    with environ({"DAGSTER_RUN_JOB_NAME": "my_asset_job"}):
+        defs = Definitions(
+            assets=[asset1, asset2],
+            schedules=[my_schedule],
+            sensors=[my_sensor],
+            jobs=[my_job, asset_job],
+        )
+
+        repo = defs.get_repository_def()
+
+        assert not repo.has_job("my_job")
+        assert repo.has_job("my_asset_job")
+        assert not repo.has_job("__ASSET_JOB")
+        assert not repo.has_schedule_def("my_schedule")
+        assert not repo.has_sensor_def("my_sensor")
