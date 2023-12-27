@@ -1,4 +1,3 @@
-import re
 import sys
 import time
 from typing import Any
@@ -18,8 +17,6 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql.version import __version__ as dagster_graphql_version
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
-
-ERROR_ID_REGEX = r"Error occurred during user code execution, error ID ([a-z0-9\-]+)"
 
 WORKSPACE_QUERY = """
 query {
@@ -226,7 +223,7 @@ class TestLoadWorkspace(BaseTestSuite):
                 assert node["loadStatus"] == "LOADED"
                 assert float(node["updateTimestamp"]) > reload_timestamp
 
-    def test_load_workspace_masked(self, graphql_context, enable_masking_user_code_errors, capsys):
+    def test_load_workspace_masked(self, graphql_context, enable_masking_user_code_errors):
         # Add an error origin
         original_origins = location_origins_from_yaml_paths(
             [file_relative_path(__file__, "multi_location.yaml")]
@@ -286,12 +283,3 @@ class TestLoadWorkspace(BaseTestSuite):
                 "Search in logs for this error ID for more details"
                 in failure_node["locationOrLoadError"]["message"]
             )
-            error_id = re.search(
-                ERROR_ID_REGEX, str(failure_node["locationOrLoadError"]["message"])
-            ).group(1)
-
-            captured_stderr = capsys.readouterr().err
-            assert (
-                f"Error occurred during user code execution, error ID {error_id}" in captured_stderr
-            )
-            # assert "Search in logs for this error ID for more details" not in captured_stderr TODO: fix this

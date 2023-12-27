@@ -228,4 +228,4 @@ def test_sync_list_python_file_grpc_with_error():
             package_name=None,
         )
 
-    assert 'raise ValueError("User did something bad")' in e.value.args[0]
+    assert 'raise ValueError("User did something bad")' in str(e)

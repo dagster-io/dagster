@@ -148,7 +148,8 @@ def serializable_error_info_from_exc_info(
     ):
         return e.user_code_process_error_infos[0]
     elif hoist_user_code_execution_error and isinstance(e, DagsterUserCodeExecutionError):
-        tb_exc = traceback.TracebackException(type(e.user_exception), e.user_exception, tb.tb_next)
+        inner_exc_type, inner_e, inner_tb = e.original_exc_info
+        tb_exc = traceback.TracebackException(inner_exc_type, inner_e, inner_tb)
         return _serializable_error_info_from_tb(tb_exc)
     else:
         tb_exc = traceback.TracebackException(exc_type, e, tb)
