@@ -22,6 +22,7 @@ from ..implementation.fetch_sensors import (
     stop_sensor,
 )
 from .asset_key import GrapheneAssetKey
+from .asset_selections import GrapheneAssetSelection
 from .errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
@@ -73,6 +74,7 @@ class GrapheneSensor(graphene.ObjectType):
     nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     metadata = graphene.NonNull(GrapheneSensorMetadata)
     sensorType = graphene.NonNull(GrapheneSensorType)
+    assetSelection = graphene.Field(GrapheneAssetSelection)
 
     class Meta:
         name = "Sensor"
@@ -97,6 +99,9 @@ class GrapheneSensor(graphene.ObjectType):
                 assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
             ),
             sensorType=external_sensor.sensor_type.value,
+            assetSelection=GrapheneAssetSelection(str(external_sensor.asset_selection))
+            if external_sensor.asset_selection
+            else None,
         )
 
     def resolve_id(self, _):

@@ -149,6 +149,9 @@ query SensorQuery($sensorSelector: SensorSelector!) {
         }
       }
       sensorType
+      assetSelection {
+        assetSelectionString
+      }
     }
   }
 }
@@ -1280,3 +1283,19 @@ def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceReq
     assert results[1]["type"] == "DELETE_PARTITIONS"
     assert results[1]["partitionKeys"] == ["old_key"]
     assert results[1]["skippedPartitionKeys"] == ["nonexistent_key"]
+
+
+def test_asset_selection(graphql_context):
+    sensor_name = "my_automation_policy_sensor"
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    result = execute_dagster_graphql(
+        graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
+    )
+
+    assert result.data
+    assert result.data["sensorOrError"]["__typename"] == "Sensor"
+    assert (
+        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
+        == "fresh_diamond_bottom"
+    )
