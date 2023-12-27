@@ -11,6 +11,10 @@ from dagster._core.host_representation.origin import (
 )
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
+from dagster._grpc.types import (
+    SensorExecutionArgs,
+)
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -180,15 +184,17 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def _get_grpc_client(self):
         return self._client
 
-    def _query(self, api_name: str, request, _context):
+    def _query(self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT):
         if not self._client:
             raise Exception("No available client to code serer")
-        return check.not_none(self._client)._get_response(api_name, request)  # noqa
+        return check.not_none(self._client)._get_response(api_name, request, timeout)  # noqa
 
-    def _streaming_query(self, api_name: str, request, _context):
+    def _streaming_query(
+        self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT
+    ):
         if not self._client:
             raise Exception("No available client to code serer")
-        return check.not_none(self._client)._get_streaming_response(api_name, request)  # noqa
+        return check.not_none(self._client)._get_streaming_response(api_name, request, timeout)  # noqa
 
     def ExecutionPlanSnapshot(self, request, context):
         return self._query("ExecutionPlanSnapshot", request, context)
@@ -250,10 +256,28 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         return self._query("SyncExternalScheduleExecution", request, context)
 
     def ExternalSensorExecution(self, request, context):
-        return self._streaming_query("ExternalSensorExecution", request, context)
+        sensor_execution_args = deserialize_value(
+            request.serialized_external_sensor_execution_args,
+            SensorExecutionArgs,
+        )
+        return self._streaming_query(
+            "ExternalSensorExecution",
+            request,
+            context,
+            sensor_execution_args.timeout or DEFAULT_GRPC_TIMEOUT,
+        )
 
     def SyncExternalSensorExecution(self, request, context):
-        return self._query("SyncExternalSensorExecution", request, context)
+        sensor_execution_args = deserialize_value(
+            request.serialized_external_sensor_execution_args,
+            SensorExecutionArgs,
+        )
+        return self._query(
+            "SyncExternalSensorExecution",
+            request,
+            context,
+            sensor_execution_args.timeout or DEFAULT_GRPC_TIMEOUT,
+        )
 
     def ShutdownServer(self, request, context):
         try:
