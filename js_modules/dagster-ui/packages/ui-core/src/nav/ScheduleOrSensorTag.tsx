@@ -21,14 +21,14 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 
 export const ScheduleOrSensorTag = ({
-  schedules,
-  sensors,
   repoAddress,
+  schedules = [],
+  sensors = [],
   showSwitch = true,
 }: {
-  schedules: ScheduleSwitchFragment[];
-  sensors: SensorSwitchFragment[];
   repoAddress: RepoAddress;
+  schedules?: ScheduleSwitchFragment[];
+  sensors?: SensorSwitchFragment[];
   showSwitch?: boolean;
 }) => {
   const [open, setOpen] = React.useState(false);

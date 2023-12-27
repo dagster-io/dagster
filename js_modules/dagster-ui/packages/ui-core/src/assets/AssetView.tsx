@@ -31,6 +31,7 @@ import {AssetPlots} from './AssetPlots';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {OverdueTag} from './OverdueTag';
@@ -461,6 +462,7 @@ const AssetViewPageHeaderTags = ({
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
 }) => {
+  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
@@ -484,7 +486,9 @@ const AssetViewPageHeaderTags = ({
           </Link>
         </Tag>
       )}
-      {definition && definition.autoMaterializePolicy && <AutomaterializeDaemonStatusTag />}
+      {automaterializeSensorsFlagState === 'has-global-amp' && definition?.autoMaterializePolicy ? (
+        <AutomaterializeDaemonStatusTag />
+      ) : null}
       {definition && definition.freshnessPolicy && (
         <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
       )}

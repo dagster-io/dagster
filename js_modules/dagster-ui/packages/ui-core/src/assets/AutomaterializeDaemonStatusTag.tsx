@@ -1,14 +1,8 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {Tag, Tooltip} from '@dagster-io/ui-components';
-import React, {useCallback} from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {
-  GetAutoMaterializePausedQuery,
-  GetAutoMaterializePausedQueryVariables,
-  SetAutoMaterializePausedMutation,
-  SetAutoMaterializePausedMutationVariables,
-} from './types/AutomaterializeDaemonStatusTag.types';
+import {useAutomaterializeDaemonStatus} from './useAutomaterializeDaemonStatus';
 
 export const AutomaterializeDaemonStatusTag = () => {
   const {paused} = useAutomaterializeDaemonStatus();
@@ -30,48 +24,3 @@ export const AutomaterializeDaemonStatusTag = () => {
     </Tooltip>
   );
 };
-
-export function useAutomaterializeDaemonStatus() {
-  const {data, loading, refetch} = useQuery<
-    GetAutoMaterializePausedQuery,
-    GetAutoMaterializePausedQueryVariables
-  >(AUTOMATERIALIZE_PAUSED_QUERY);
-
-  const [setAutoMaterializePaused] = useMutation<
-    SetAutoMaterializePausedMutation,
-    SetAutoMaterializePausedMutationVariables
-  >(SET_AUTOMATERIALIZE_PAUSED_MUTATION, {
-    onCompleted: () => {
-      refetch();
-    },
-  });
-
-  const setPaused = useCallback(
-    (paused: boolean) => {
-      setAutoMaterializePaused({variables: {paused}});
-    },
-    [setAutoMaterializePaused],
-  );
-
-  return {
-    loading: !data && loading,
-    setPaused,
-    paused: data?.instance?.autoMaterializePaused,
-    refetch,
-  };
-}
-
-export const AUTOMATERIALIZE_PAUSED_QUERY = gql`
-  query GetAutoMaterializePausedQuery {
-    instance {
-      id
-      autoMaterializePaused
-    }
-  }
-`;
-
-export const SET_AUTOMATERIALIZE_PAUSED_MUTATION = gql`
-  mutation SetAutoMaterializePausedMutation($paused: Boolean!) {
-    setAutoMaterializePaused(paused: $paused)
-  }
-`;
