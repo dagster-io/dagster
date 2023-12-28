@@ -589,12 +589,12 @@ def _execute_step_command_body(
     envvar="DAGSTER_INSTANCE_REF",
 )
 @click.option(
-    "--enable-metrics",
+    "--enable-utilization-metrics",
     is_flag=True,
     required=False,
     default=False,
     help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
-    envvar="DAGSTER_ENABLE_SERVER_METRICS",
+    envvar="DAGSTER_ENABLE_SERVER_UTILIZATION_METRICS",
 )
 def grpc_command(
     port=None,

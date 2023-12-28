@@ -80,7 +80,7 @@ def test_ping_metrics_retrieval(provide_flag: bool):
         python_file,
     ]
     if provide_flag:
-        subprocess_args.append("--enable-metrics")
+        subprocess_args.append("--enable-utilization-metrics")
 
     process = subprocess.Popen(subprocess_args)
 
@@ -101,7 +101,7 @@ def test_ping_metrics_retrieval(provide_flag: bool):
                 ).start()
             time.sleep(2)  # wait for sensor execution to begin
             res = client.ping("blah")
-            metadata = json.loads(res["serialized_server_health_metadata"])
+            metadata = json.loads(res["serialized_server_utilization_metrics"])
             if provide_flag:
                 assert "resource_utilization" in metadata
                 assert "max_workers" in metadata["resource_utilization"]

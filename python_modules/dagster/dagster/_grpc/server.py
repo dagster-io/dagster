@@ -473,7 +473,7 @@ class DagsterApiServer(DagsterApiServicer):
     def Ping(self, request, _context: grpc.ServicerContext) -> api_pb2.PingReply:
         echo = request.echo
         return api_pb2.PingReply(
-            echo=echo, serialized_server_health_metadata=json.dumps(_UTILIZATION_METRICS)
+            echo=echo, serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
         )
 
     def StreamingPing(
