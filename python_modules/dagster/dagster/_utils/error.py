@@ -120,6 +120,16 @@ def serializable_error_info_from_exc_info(
     hoist_user_code_error: Optional[bool] = True,
     hoist_user_code_execution_error: Optional[bool] = False,
 ) -> SerializableErrorInfo:
+    """This function is used to turn an exception into a serializable object that can be passed
+    across process boundaries or sent over GraphQL.
+
+    Args:
+        exc_info (ExceptionInfo): The exception info to serialize
+        hoist_user_code_error (Optional[bool]): Whether to extract the inner user code error if the raised exception
+            is a DagsterUserCodeProcessError. Defaults to True.
+        hoist_user_code_execution_error (Optional[bool]): Whether to extract the inner user code error if the raised
+            exception is a DagsterUserCodeExecutionError. Defaults to False.
+    """
     # `sys.exc_info() return Tuple[None, None, None] when there is no exception being processed. We accept this in
     # the type signature here since this function is meant to directly receive the return value of
     # `sys.exc_info`, but the function should never be called when there is no exception to process.
