@@ -1055,19 +1055,16 @@ def get_canceling_asset_backfill_iteration_data(
             " AssetGraphSubset object"
         )
 
-    failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
-        backfill_id,
-        asset_backfill_data,
-        asset_graph,
-        instance_queryer,
-        backfill_start_time,
+    failed_subset = AssetGraphSubset.from_asset_partition_set(
+        set(_get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph)), asset_graph
     )
     updated_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
         latest_storage_id=asset_backfill_data.latest_storage_id,
         requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots,
         materialized_subset=updated_materialized_subset,
-        failed_and_downstream_subset=failed_and_downstream_subset,
+        failed_and_downstream_subset=asset_backfill_data.failed_and_downstream_subset
+        | failed_subset,
         requested_subset=asset_backfill_data.requested_subset,
         backfill_start_time=backfill_start_time,
     )
