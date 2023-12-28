@@ -401,9 +401,12 @@ class UPathIOManager(MemoizableIOManager):
             path = self._get_path(context)
             return self._load_single_input(path, context)
         else:
-            upstream_metadata = context.step_context._upstream_metadata.get(context.asset_key, {})
-            print(upstream_metadata)
-            if upstream_metadata.get("output_is_none", False):
+            latest_materialization = context.step_context.latest_materialization_event.get(
+                context.asset_key
+            )
+            if latest_materialization and latest_materialization.metadata.get(
+                "output_is_none", False
+            ):
                 return None
             asset_partition_keys = context.asset_partition_keys
             if len(asset_partition_keys) == 0:
