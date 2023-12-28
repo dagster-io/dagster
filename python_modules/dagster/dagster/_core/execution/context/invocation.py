@@ -65,7 +65,7 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     return f"The {prop_name} {method_name} is not set on the context when an asset or op is directly invoked."
 
 
-class BasDirectExecutionContext:
+class BaseDirectExecutionContext:
     @abstractmethod
     def bind(
         self,
@@ -75,21 +75,21 @@ class BasDirectExecutionContext:
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
     ):
-        """Instances of BasDirectExecutionContext must implement bind."""
+        """Instances of BaseDirectExecutionContext must implement bind."""
 
     @abstractmethod
     def unbind(self):
-        """Instances of BasDirectExecutionContext must implement unbind."""
+        """Instances of BaseDirectExecutionContext must implement unbind."""
 
     @property
     @abstractmethod
     def bound_properties(self) -> "BoundProperties":
-        """Instances of BasDirectExecutionContext must contain a BoundProperties object."""
+        """Instances of BaseDirectExecutionContext must contain a BoundProperties object."""
 
     @property
     @abstractmethod
     def execution_properties(self) -> "DirectExecutionProperties":
-        """Instances of BasDirectExecutionContext must contain a DirectExecutionProperties object."""
+        """Instances of BaseDirectExecutionContext must contain a DirectExecutionProperties object."""
 
     @abstractmethod
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
@@ -157,7 +157,7 @@ class DirectExecutionProperties:
         self.typed_event_stream_error_message: Optional[str] = None
 
 
-class DirectOpExecutionContext(OpExecutionContext, BasDirectExecutionContext):
+class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -736,7 +736,7 @@ class DirectOpExecutionContext(OpExecutionContext, BasDirectExecutionContext):
         self._execution_properties.typed_event_stream_error_message = error_message
 
 
-class DirectAssetExecutionContext(AssetExecutionContext, BasDirectExecutionContext):
+class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionContext):
     """The ``context`` object available as the first argument to an asset's compute function when
     being invoked directly. Can also be used as a context manager.
     """

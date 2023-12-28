@@ -33,7 +33,7 @@ from .result import MaterializeResult
 
 if TYPE_CHECKING:
     from ..execution.context.compute import OpExecutionContext
-    from ..execution.context.invocation import BaseRunlessContext
+    from ..execution.context.invocation import BaseDirectExecutionContext
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
     from .decorators.op_decorator import DecoratedOpFunction
@@ -120,7 +120,7 @@ def direct_invocation_result(
 ) -> Any:
     from dagster._config.pythonic_config import Config
     from dagster._core.execution.context.invocation import (
-        BaseRunlessContext,
+        BaseDirectExecutionContext,
         build_op_context,
     )
 
@@ -160,7 +160,7 @@ def direct_invocation_result(
                 " no context was provided when invoking."
             )
         if len(args) > 0:
-            if args[0] is not None and not isinstance(args[0], BaseRunlessContext):
+            if args[0] is not None and not isinstance(args[0], BaseDirectExecutionContext):
                 raise DagsterInvalidInvocationError(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
@@ -182,7 +182,7 @@ def direct_invocation_result(
                 kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
             }
     # allow passing context, even if the function doesn't have an arg for it
-    elif len(args) > 0 and isinstance(args[0], BaseRunlessContext):
+    elif len(args) > 0 and isinstance(args[0], BaseDirectExecutionContext):
         context = args[0]
         args = args[1:]
 
@@ -241,7 +241,7 @@ def direct_invocation_result(
 
 
 def _resolve_inputs(
-    op_def: "OpDefinition", args, kwargs, context: "BaseRunlessContext"
+    op_def: "OpDefinition", args, kwargs, context: "BaseDirectExecutionContext"
 ) -> Mapping[str, Any]:
     from dagster._core.execution.plan.execute_step import do_type_check
 
@@ -344,7 +344,7 @@ def _resolve_inputs(
     return input_dict
 
 
-def _key_for_result(result: MaterializeResult, context: "BaseRunlessContext") -> AssetKey:
+def _key_for_result(result: MaterializeResult, context: "BaseDirectExecutionContext") -> AssetKey:
     if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
             f"Op {context.per_invocation_properties.alias} does not have an assets definition."
@@ -366,7 +366,7 @@ def _key_for_result(result: MaterializeResult, context: "BaseRunlessContext") ->
 
 def _output_name_for_result_obj(
     event: MaterializeResult,
-    context: "BaseRunlessContext",
+    context: "BaseDirectExecutionContext",
 ):
     if not context.per_invocation_properties.assets_def:
         raise DagsterInvariantViolationError(
@@ -379,7 +379,7 @@ def _output_name_for_result_obj(
 def _handle_gen_event(
     event: T,
     op_def: "OpDefinition",
-    context: "BaseRunlessContext",
+    context: "BaseDirectExecutionContext",
     output_defs: Mapping[str, OutputDefinition],
     outputs_seen: Set[str],
 ) -> T:
@@ -413,7 +413,7 @@ def _handle_gen_event(
 
 
 def _type_check_output_wrapper(
-    op_def: "OpDefinition", result: Any, context: "BaseRunlessContext"
+    op_def: "OpDefinition", result: Any, context: "BaseDirectExecutionContext"
 ) -> Any:
     """Type checks and returns the result of a op.
 
@@ -507,7 +507,7 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    op_def: "OpDefinition", result: T, context: "BaseRunlessContext"
+    op_def: "OpDefinition", result: T, context: "BaseDirectExecutionContext"
 ) -> T:
     from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
 
@@ -527,14 +527,14 @@ def _type_check_function_output(
 def _type_check_output(
     output_def: "OutputDefinition",
     output: Union[Output, DynamicOutput],
-    context: "BaseRunlessContext",
+    context: "BaseDirectExecutionContext",
 ) -> None:
     """Validates and performs core type check on a provided output.
 
     Args:
         output_def (OutputDefinition): The output definition to validate against.
         output (Any): The output to validate.
-        context (BaseRunlessContext): Context containing resources to be used for type
+        context (BaseDirectExecutionContext): Context containing resources to be used for type
             check.
     """
     from ..execution.plan.execute_step import do_type_check
