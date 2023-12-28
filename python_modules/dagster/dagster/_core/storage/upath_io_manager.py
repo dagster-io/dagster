@@ -396,11 +396,11 @@ class UPathIOManager(MemoizableIOManager):
             }
 
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
-        # If no asset key, we are dealing with an op output which is always non-partitioned
-        if not context.has_asset_key or not context.has_asset_partitions:
-            path = self._get_path(context)
-            return self._load_single_input(path, context)
-        else:
+        if (
+            context.has_asset_key
+        ):  # TODO maybe need to include this as part of the following two cases,
+            # not its own case
+            # check if the corresponding output was not stored because it was None
             latest_materialization = context.step_context.latest_materialization_event.get(
                 context.asset_key
             )
@@ -408,6 +408,11 @@ class UPathIOManager(MemoizableIOManager):
                 "output_is_none", False
             ):
                 return None
+        # If no asset key, we are dealing with an op output which is always non-partitioned
+        if not context.has_asset_key or not context.has_asset_partitions:
+            path = self._get_path(context)
+            return self._load_single_input(path, context)
+        else:
             asset_partition_keys = context.asset_partition_keys
             if len(asset_partition_keys) == 0:
                 return None
