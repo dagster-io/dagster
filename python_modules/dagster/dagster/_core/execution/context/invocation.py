@@ -57,17 +57,15 @@ from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .compute import AssetExecutionContext, OpExecutionContext, RunProperties
+from .compute import AssetExecutionContext, OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
-    # TODO - update to handle assets too
-    return (
-        f"The {prop_name} {method_name} is not set on the context when an op is directly invoked."
-    )
+    return f"The {prop_name} {method_name} is not set on the context when an asset or op is directly invoked."
 
-class BaseRunlessContext:
+
+class BasDirectExecutionContext:
     @abstractmethod
     def bind(
         self,
@@ -77,21 +75,21 @@ class BaseRunlessContext:
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
     ):
-        """Instances of BsaeRunlessContest must implement bind."""
+        """Instances of BasDirectExecutionContext must implement bind."""
 
     @abstractmethod
     def unbind(self):
-        """Instances of BsaeRunlessContest must implement unbind."""
+        """Instances of BasDirectExecutionContext must implement unbind."""
 
     @property
     @abstractmethod
     def bound_properties(self) -> "BoundProperties":
-        """Instances of BaseRunlessContext must contain a BoundProperties object."""
+        """Instances of BasDirectExecutionContext must contain a BoundProperties object."""
 
     @property
     @abstractmethod
-    def execution_properties(self) -> "RunlessExecutionProperties":
-        """Instances of BaseRunlessContext must contain a RunlessExecutionProperties object."""
+    def execution_properties(self) -> "DirectExecutionProperties":
+        """Instances of BasDirectExecutionContext must contain a DirectExecutionProperties object."""
 
     @abstractmethod
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
@@ -159,13 +157,7 @@ class DirectExecutionProperties:
         self.typed_event_stream_error_message: Optional[str] = None
 
 
-class RunlessRunProperties(RunProperties):
-    @property
-    def dagster_run(self):
-        raise DagsterInvalidPropertyError(_property_msg("dagster_run", "property"))
-
-
-class DirectOpExecutionContext(OpExecutionContext, BaseRunlessContext):
+class DirectOpExecutionContext(OpExecutionContext, BasDirectExecutionContext):
     """The ``context`` object available as the first argument to an op's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -744,12 +736,12 @@ class DirectOpExecutionContext(OpExecutionContext, BaseRunlessContext):
         self._execution_properties.typed_event_stream_error_message = error_message
 
 
-class RunlessAssetExecutionContext(AssetExecutionContext, BaseRunlessContext):
+class DirectAssetExecutionContext(AssetExecutionContext, BasDirectExecutionContext):
     """The ``context`` object available as the first argument to an asset's compute function when
     being invoked directly. Can also be used as a context manager.
     """
 
-    def __init__(self, op_execution_context: RunlessOpExecutionContext):
+    def __init__(self, op_execution_context: DirectOpExecutionContext):
         self._op_execution_context = op_execution_context
 
         self._run_props = None
@@ -775,10 +767,10 @@ class RunlessAssetExecutionContext(AssetExecutionContext, BaseRunlessContext):
         assets_def: Optional[AssetsDefinition],
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
-    ) -> "RunlessAssetExecutionContext":
+    ) -> "DirectAssetExecutionContext":
         if assets_def is None:
             raise DagsterInvariantViolationError(
-                "RunlessAssetExecutionContext can only being used to invoke an asset."
+                "DirectAssetExecutionContext can only being used to invoke an asset."
             )
         if self._op_execution_context._bound_properties is not None:  # noqa: SLF001
             raise DagsterInvalidInvocationError(
@@ -809,38 +801,18 @@ class RunlessAssetExecutionContext(AssetExecutionContext, BaseRunlessContext):
         return self.op_execution_context.is_bound
 
     @property
-    def execution_properties(self) -> RunlessExecutionProperties:
+    def execution_properties(self) -> DirectExecutionProperties:
         return self.op_execution_context.execution_properties
 
     @property
-    def op_execution_context(self) -> RunlessOpExecutionContext:
+    def op_execution_context(self) -> DirectOpExecutionContext:
         return self._op_execution_context
 
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
-        self._check_bound(fn_name="for_type", fn_type="method")
-        resources = cast(NamedTuple, self.resources)
-        return TypeCheckContext(
-            self.run_properties.run_id,
-            self.log,
-            ScopedResourcesBuilder(resources._asdict()),
-            dagster_type,
-        )
+        return self.op_execution_context.for_type(dagster_type)
 
     def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
         self.op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
-
-    @property
-    def run_properties(self) -> RunProperties:
-        self._check_bound(fn_name="run_properties", fn_type="property")
-        if self._run_props is None:
-            self._run_props = RunlessRunProperties(
-                run_id=self.op_execution_context.run_id,
-                run_config=self.op_execution_context.run_config,
-                # pass None for dagster_run, since RunlessRunProperties raises an exception for this attr
-                dagster_run=None,  # type: ignore
-                retry_number=0,
-            )
-        return self._run_props
 
 
 def _validate_resource_requirements(
@@ -933,7 +905,7 @@ def build_asset_context(
     instance: Optional[DagsterInstance] = None,
     partition_key: Optional[str] = None,
     partition_key_range: Optional[PartitionKeyRange] = None,
-):
+) -> DirectAssetExecutionContext:
     """Builds asset execution context from provided parameters.
 
     ``build_asset_context`` can be used as either a function or context manager. If there is a
@@ -969,4 +941,4 @@ def build_asset_context(
         instance=instance,
     )
 
-    return RunlessAssetExecutionContext(op_execution_context=op_context)
+    return DirectAssetExecutionContext(op_execution_context=op_context)
