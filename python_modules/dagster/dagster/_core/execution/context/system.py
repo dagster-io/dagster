@@ -23,7 +23,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster import AssetMaterialization
 from dagster._annotations import public
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
@@ -31,7 +30,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.dependency import OpNode
-from dagster._core.definitions.events import AssetKey, AssetLineageInfo
+from dagster._core.definitions.events import AssetKey, AssetLineageInfo, AssetMaterialization
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
