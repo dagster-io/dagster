@@ -2,7 +2,7 @@ import os
 import sys
 from contextlib import contextmanager
 from threading import Event
-from typing import Any, Iterator, NoReturn, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Dict, Iterator, NoReturn, Optional, Sequence, Tuple, Type, cast
 
 import google.protobuf.message
 import grpc
@@ -201,10 +201,13 @@ class DagsterGrpcClient:
                 e, timeout=timeout, custom_timeout_message=custom_timeout_message
             )
 
-    def ping(self, echo: str) -> str:
+    def ping(self, echo: str) -> Dict[str, Any]:
         check.str_param(echo, "echo")
         res = self._query("Ping", api_pb2.PingRequest, echo=echo)
-        return res.echo
+        return {
+            "echo": res.echo,
+            "serialized_server_health_metadata": res.serialized_server_health_metadata,
+        }
 
     def heartbeat(self, echo: str = "") -> str:
         check.str_param(echo, "echo")
