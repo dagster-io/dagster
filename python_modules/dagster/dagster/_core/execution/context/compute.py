@@ -1359,8 +1359,12 @@ class AssetExecutionContext(OpExecutionContext):
     def get_op_execution_context(self) -> "OpExecutionContext":
         return OpExecutionContext(self._step_execution_context)
 
-    def get_metadata_for_asset(self, key: CoercibleToAssetKey):
-        return self._step_execution_context._upstream_metadata.get(AssetKey.from_coercible(key), {})  # noqa: SLF001
+    def latest_materialization_event(
+        self, key: CoercibleToAssetKey
+    ) -> Optional[AssetMaterialization]:
+        return self._step_execution_context.latest_materialization_event.get(
+            AssetKey.from_coercible(key)
+        )
 
 
 @contextmanager
