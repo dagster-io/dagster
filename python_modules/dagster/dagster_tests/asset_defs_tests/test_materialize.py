@@ -268,12 +268,12 @@ def test_materialize_multi_asset():
 def test_materialize_tags():
     @asset
     def the_asset(context):
-        assert context.get_tag("key1") == "value1"
+        assert context.run.tags.get("key1") == "value1"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], instance=instance, tags={"key1": "value1"})
         assert result.success
-        assert result.dagster_run.tags == {"key1": "value1"}
+        assert result.run.tags == {"key1": "value1"}
 
 
 def test_materialize_partition_key():
