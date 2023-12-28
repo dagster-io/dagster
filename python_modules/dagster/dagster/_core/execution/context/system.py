@@ -77,6 +77,7 @@ if TYPE_CHECKING:
         DataVersion,
     )
     from dagster._core.definitions.dependency import NodeHandle
+    from dagster._core.definitions.metadata import MetadataValue
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -571,6 +572,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
+        self._upstream_metadata: Dict[AssetKey, Mapping[str, MetadataValue]] = {}
+
         self._input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
         self._is_external_input_asset_version_info_loaded = False
         self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
@@ -955,11 +958,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def get_input_asset_version_info(self, key: AssetKey) -> Optional["InputAssetVersionInfo"]:
         if key not in self._input_asset_version_info:
-            self._fetch_input_asset_version_info(key)
+            self._fetch_input_asset_metadata_and_version_info(key)
         return self._input_asset_version_info[key]
 
     # "external" refers to records for inputs generated outside of this step
-    def fetch_external_input_asset_version_info(self) -> None:
+    def fetch_external_input_asset_version_info_and_metadata(self) -> None:
         output_keys = self.get_output_asset_keys()
 
         all_dep_keys: List[AssetKey] = []
@@ -973,10 +976,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_version_info = {}
         for key in all_dep_keys:
-            self._fetch_input_asset_version_info(key)
+            self._fetch_input_asset_metadata_and_version_info(key)
         self._is_external_input_asset_version_info_loaded = True
 
-    def _fetch_input_asset_version_info(self, key: AssetKey) -> None:
+    def _fetch_input_asset_metadata_and_version_info(self, key: AssetKey) -> None:
         from dagster._core.definitions.data_version import (
             extract_data_version_from_entry,
         )
@@ -984,7 +987,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         event = self._get_input_asset_event(key)
         if event is None:
             self._input_asset_version_info[key] = None
+            self._upstream_metadata[key] = {}
         else:
+            self._upstream_metadata[key] = (
+                event.asset_materialization.metadata if event.asset_materialization else {}
+            )
             storage_id = event.storage_id
             # Input name will be none if this is an internal dep
             input_name = self.job_def.asset_layer.input_for_asset_key(self.node_handle, key)

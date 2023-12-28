@@ -32,6 +32,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
     ExpectationResult,
     UserEvent,
 )
@@ -1357,6 +1358,9 @@ class AssetExecutionContext(OpExecutionContext):
     @cached_method
     def get_op_execution_context(self) -> "OpExecutionContext":
         return OpExecutionContext(self._step_execution_context)
+
+    def get_metadata_for_asset(self, key: CoercibleToAssetKey):
+        return self._step_execution_context._upstream_metadata.get(AssetKey.from_coercible(key), {})  # noqa: SLF001
 
 
 @contextmanager
