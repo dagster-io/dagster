@@ -1,11 +1,10 @@
 import memoize from 'lodash/memoize';
 
 import {DarkPalette} from '../palettes/DarkPalette';
-import {LegacyPalette} from '../palettes/LegacyPalette';
 import {LightPalette} from '../palettes/LightPalette';
+import {assertUnreachable} from '../util/assertUnreachable';
 
 export enum DagsterTheme {
-  Legacy = 'Legacy',
   Light = 'Light',
   Dark = 'Dark',
   System = 'System',
@@ -29,23 +28,16 @@ export const getTheme = memoize(() => {
   }
 
   // Allow setting the theme as an override.
-  if (
-    value === DagsterTheme.Light ||
-    value === DagsterTheme.Dark ||
-    value === DagsterTheme.Legacy
-  ) {
+  if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
     return value;
   }
 
-  if (value === DagsterTheme.System) {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return DagsterTheme.Dark;
-    }
-    return DagsterTheme.Light;
+  // Use system preference if no choice has been made explicitly.
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return DagsterTheme.Dark;
   }
 
-  // If no value set, use Legacy. todo dish: Remove this in favor of defaulting to "System"
-  return DagsterTheme.Legacy;
+  return DagsterTheme.Light;
 });
 
 export const getPaletteForTheme = () => {
@@ -55,8 +47,7 @@ export const getPaletteForTheme = () => {
       return DarkPalette;
     case DagsterTheme.Light:
       return LightPalette;
-    case DagsterTheme.Legacy:
     default:
-      return LegacyPalette;
+      return assertUnreachable(theme);
   }
 };
