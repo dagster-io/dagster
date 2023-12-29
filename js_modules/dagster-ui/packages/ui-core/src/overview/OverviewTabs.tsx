@@ -3,8 +3,8 @@ import {Box, Spinner, Tabs, colorAccentBlue, colorAccentGray} from '@dagster-io/
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {useAutomaterializeDaemonStatus} from '../assets/AutomaterializeDaemonStatusTag';
 import {useAutomationPolicySensorFlag} from '../assets/AutomationPolicySensorFlag';
+import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {TabLink} from '../ui/TabLink';
 
 interface Props<TData> {

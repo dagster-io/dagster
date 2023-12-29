@@ -141,6 +141,10 @@ class AssetChecksDefinition(ResourceAddable, RequiresResources):
         """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition."""
         return {requirement.key for requirement in self.get_resource_requirements()}
 
+    @property
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self._resource_defs
+
     def with_resources(
         self, resource_defs: Mapping[str, ResourceDefinition]
     ) -> "AssetChecksDefinition":

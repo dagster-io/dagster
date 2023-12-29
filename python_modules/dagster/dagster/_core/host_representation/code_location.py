@@ -20,6 +20,7 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -37,6 +38,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
+    external_partition_set_name_for_job_name,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
@@ -220,6 +222,26 @@ class CodeLocation(AbstractContextManager):
         last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         pass
+
+    def get_asset_job_partitions_def(
+        self, external_job: ExternalJob
+    ) -> Optional[PartitionsDefinition]:
+        external_repository_data = self.get_repository(
+            external_job.repository_handle.repository_name
+        ).external_repository_data
+        external_partition_set_name = external_partition_set_name_for_job_name(external_job.name)
+
+        if external_repository_data.has_external_partition_set_data(external_partition_set_name):
+            external_partitions_def_data = external_repository_data.get_external_partition_set_data(
+                external_partition_set_name
+            ).external_partitions_data
+            return (
+                external_partitions_def_data.get_partitions_definition()
+                if external_partitions_def_data
+                else None
+            )
+
+        return None
 
     @abstractmethod
     def get_external_notebook_data(self, notebook_path: str) -> bytes:

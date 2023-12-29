@@ -89,7 +89,10 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
   if (!data && loading) {
     return (
-      <Box margin={{top: 32}} flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+      <Box
+        margin={{top: 32}}
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'center', gap: 16}}
+      >
         <Spinner purpose="body-text" />
         <div style={{color: colorTextLight()}}>Loading sensor…</div>
       </Box>
