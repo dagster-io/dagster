@@ -9,6 +9,7 @@ import {
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
+import {assertUnreachable} from '../../app/Util';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
@@ -19,6 +20,7 @@ import {
   AssetConditionEvaluation,
   AssetConditionEvaluationStatus,
   PartitionedAssetConditionEvaluation,
+  SpecificPartitionAssetConditionEvaluation,
   UnpartitionedAssetConditionEvaluation,
 } from './types';
 
@@ -29,33 +31,38 @@ interface Props<T> {
 export const PolicyEvaluationTable = <T extends AssetConditionEvaluation>({
   rootEvaluation,
 }: Props<T>) => {
-  if (rootEvaluation.__typename === 'UnpartitionedAssetConditionEvaluation') {
-    return <UnpartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
+  switch (rootEvaluation.__typename) {
+    case 'UnpartitionedAssetConditionEvaluation':
+    case 'SpecificPartitionAssetConditionEvaluation':
+      return <UnpartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
+    case 'PartitionedAssetConditionEvaluation':
+      return <PartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
+    default:
+      return assertUnreachable(rootEvaluation);
   }
-
-  return <PartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
   rootEvaluation,
 }: {
-  rootEvaluation: UnpartitionedAssetConditionEvaluation;
+  rootEvaluation: UnpartitionedAssetConditionEvaluation | SpecificPartitionAssetConditionEvaluation;
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
   const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+  const showDuration = rootEvaluation.__typename === 'UnpartitionedAssetConditionEvaluation';
   return (
     <VeryCompactTable>
       <thead>
         <tr>
           <th>Condition</th>
           <th>Result</th>
-          <th>Duration</th>
+          {showDuration ? <th>Duration</th> : null}
           <th>Details</th>
         </tr>
       </thead>
       <tbody>
         {flattened.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, endTimestamp, startTimestamp, status} = evaluation;
+          const {description, status} = evaluation;
           return (
             <EvaluationRow
               key={id}
@@ -77,9 +84,16 @@ const UnpartitionedPolicyEvaluationTable = ({
               <td>
                 <PolicyEvaluationStatusTag status={status} />
               </td>
-              <td>
-                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
-              </td>
+              {showDuration ? (
+                <td>
+                  {evaluation.__typename === 'UnpartitionedAssetConditionEvaluation' ? (
+                    <TimeElapsed
+                      startUnix={evaluation.startTimestamp}
+                      endUnix={evaluation.endTimestamp}
+                    />
+                  ) : null}
+                </td>
+              ) : null}
               <td></td>
             </EvaluationRow>
           );
