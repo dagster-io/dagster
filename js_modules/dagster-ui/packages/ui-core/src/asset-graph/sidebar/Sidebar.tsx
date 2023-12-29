@@ -104,7 +104,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const {folderNodes: renderedNodes, groupsCount} = React.useMemo(() => {
+    const renderedNodes = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -164,18 +164,15 @@ export const AssetGraphExplorerSidebar = React.memo(
       });
 
       if (groupsCount === 1) {
-        return {
-          folderNodes: folderNodes
-            .filter((node) => node.level === 3)
-            .map((node) => ({
-              ...node,
-              level: 1,
-            })),
-          groupsCount,
-        };
+        return folderNodes
+          .filter((node) => node.level === 3)
+          .map((node) => ({
+            ...node,
+            level: 1,
+          }));
       }
 
-      return {folderNodes, groupsCount};
+      return folderNodes;
     }, [graphData.nodes, openNodes]);
 
     const {nav} = React.useContext(LayoutContext);

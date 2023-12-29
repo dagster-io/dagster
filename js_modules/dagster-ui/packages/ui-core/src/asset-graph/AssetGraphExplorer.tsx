@@ -181,7 +181,7 @@ type WithDataProps = Props & {
 
   filterButton?: React.ReactNode;
   filterBar?: React.ReactNode;
-  isGlobalGraph: boolean;
+  isGlobalGraph?: boolean;
 };
 
 const AssetGraphExplorerWithData = ({
