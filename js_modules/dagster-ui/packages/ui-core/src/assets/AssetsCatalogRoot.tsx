@@ -6,6 +6,7 @@ import {useHistory, useParams} from 'react-router-dom';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useStartTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
@@ -41,6 +42,10 @@ export const AssetsCatalogRoot = () => {
       : 'Assets',
   );
 
+  const trace = useStartTrace(
+    currentPath && currentPath.length === 0 ? 'AssetsCatalogRoot' : 'AssetCatalogAssetView',
+  );
+
   if (queryResult.loading) {
     return (
       <Page>
@@ -73,12 +78,13 @@ export const AssetsCatalogRoot = () => {
         <AssetsCatalogTable
           prefixPath={currentPath}
           setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
+          trace={trace}
         />
       </Box>
     );
   }
 
-  return <AssetView assetKey={{path: currentPath}} />;
+  return <AssetView assetKey={{path: currentPath}} trace={trace} />;
 };
 
 // Imported via React.lazy, which requires a default export.
