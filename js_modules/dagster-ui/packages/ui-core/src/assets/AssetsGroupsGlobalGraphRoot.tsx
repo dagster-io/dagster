@@ -9,6 +9,7 @@ import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useStartTrace} from '../performance';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -44,6 +45,7 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   });
 
   useDocumentTitle(`Global Asset Lineage`);
+  const trace = useStartTrace('GlobalAssetGraph');
 
   const onChangeExplorerPath = React.useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
@@ -103,6 +105,7 @@ export const AssetsGroupsGlobalGraphRoot = () => {
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
         isGlobalGraph
+        trace={trace}
       />
     </Page>
   );

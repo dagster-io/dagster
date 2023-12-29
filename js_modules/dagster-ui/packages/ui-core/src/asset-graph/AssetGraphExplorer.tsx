@@ -30,6 +30,7 @@ import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useStartTrace} from '../performance';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -90,6 +91,7 @@ type Props = {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onNavigateToSourceAssetNode: (node: AssetLocation) => void;
   isGlobalGraph?: boolean;
+  trace?: ReturnType<typeof useStartTrace>;
 } & OptionalFilters;
 
 export const MINIMAL_SCALE = 0.6;
@@ -182,6 +184,7 @@ type WithDataProps = Props & {
   filterButton?: React.ReactNode;
   filterBar?: React.ReactNode;
   isGlobalGraph?: boolean;
+  trace?: ReturnType<typeof useStartTrace>;
 };
 
 const AssetGraphExplorerWithData = ({
@@ -200,6 +203,7 @@ const AssetGraphExplorerWithData = ({
   filters,
   setFilters,
   isGlobalGraph = false,
+  trace,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const {flagDAGSidebar} = useFeatureFlags();
@@ -228,6 +232,13 @@ const AssetGraphExplorerWithData = ({
     assetGraphData,
     flagDAGSidebar ? expandedGroups : allGroups,
   );
+
+  React.useEffect(() => {
+    if (!loading) {
+      trace?.endTrace();
+    }
+  }, [loading, trace]);
+
   const viewportEl = React.useRef<SVGViewport>();
 
   const selectedTokens = explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',');
