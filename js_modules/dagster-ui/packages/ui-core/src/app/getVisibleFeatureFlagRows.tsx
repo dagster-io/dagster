@@ -26,10 +26,6 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDAGSidebar,
   },
   {
-    key: 'Experimental schedule/sensor logging view',
-    flagType: FeatureFlag.flagSensorScheduleLogging,
-  },
-  {
     key: 'Display resources in navigation sidebar',
     flagType: FeatureFlag.flagSidebarResources,
   },
