@@ -16,7 +16,7 @@ The best way to apply what you’ve learned is to use your own organization’s 
 
 If using NYC OpenData, we recommend using the **311 Service Requests from 2010 to Present** dataset. The data is downloadable as a CSV and you’re welcome to view [details about it here](https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9).
 
-Whatever data you decide to use, we choose something that sparks your interest!
+Whatever data you decide to use, choose something that sparks your interest!
 
 You can also continue to use DuckDB if needed.
 
