@@ -5,6 +5,7 @@ import * as yaml from 'yaml';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {useStartTrace} from '../performance';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {useRepository, isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -50,6 +51,7 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
 
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
+  const trace = useStartTrace('LaunchpadAllowedRoot');
 
   const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
@@ -86,6 +88,12 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     const opNames = new Set(opNameList);
     return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
   }, [runConfigSchemaOrError, sessionPresets]);
+
+  React.useEffect(() => {
+    if (!result.loading) {
+      trace.endTrace();
+    }
+  }, [trace, result.loading]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
