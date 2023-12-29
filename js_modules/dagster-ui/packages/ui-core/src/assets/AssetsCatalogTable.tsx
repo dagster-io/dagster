@@ -77,7 +77,7 @@ interface AssetCatalogTableProps {
   prefixPath: string[];
   setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
-  trace: ReturnType<typeof useStartTrace>;
+  trace?: ReturnType<typeof useStartTrace>;
 }
 
 export const AssetsCatalogTable = ({
@@ -122,7 +122,7 @@ export const AssetsCatalogTable = ({
   const loaded = !!assets;
   React.useEffect(() => {
     if (loaded) {
-      trace.endTrace();
+      trace?.endTrace();
     }
   }, [loaded, trace]);
 
