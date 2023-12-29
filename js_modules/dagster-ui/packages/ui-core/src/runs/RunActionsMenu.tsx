@@ -13,7 +13,6 @@ import {
   JoinedButtons,
   DialogBody,
   Box,
-  StyledRawCodeMirror,
   colorBackgroundLight,
   colorTextLight,
 } from '@dagster-io/ui-components';
@@ -36,6 +35,7 @@ import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
+import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
@@ -64,6 +64,15 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
   const {rootServerURI} = React.useContext(AppContext);
 
   const copyConfig = useCopyToClipboard();
+  const onCopy = async () => {
+    copyConfig(runConfigYaml || '');
+    await showSharedToaster({
+      intent: 'success',
+      icon: 'copy_to_clipboard_done',
+      message: 'Copied!',
+    });
+  };
+
   const reexecute = useJobReexecution({onCompleted: refetch});
 
   const [loadEnv, {called, loading, data}] = useLazyQuery<
@@ -273,36 +282,14 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
           </Button>
         </DialogFooter>
       </Dialog>
-      <Dialog
+      <RunConfigDialog
         isOpen={visibleDialog === 'config'}
-        title="Config"
-        canOutsideClickClose
-        canEscapeKeyClose
         onClose={closeDialogs}
-      >
-        <StyledRawCodeMirror
-          value={runConfigYaml || ''}
-          options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
-        />
-        <DialogFooter topBorder>
-          <Button
-            intent="none"
-            onClick={async () => {
-              copyConfig(runConfigYaml || '');
-              await showSharedToaster({
-                intent: 'success',
-                icon: 'copy_to_clipboard_done',
-                message: 'Copied!',
-              });
-            }}
-          >
-            Copy config
-          </Button>
-          <Button intent="primary" onClick={closeDialogs}>
-            OK
-          </Button>
-        </DialogFooter>
-      </Dialog>
+        copyConfig={onCopy}
+        mode={run.mode}
+        runConfigYaml={runConfigYaml || ''}
+        isJob={isJob}
+      />
     </>
   );
 });

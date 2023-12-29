@@ -24,8 +24,8 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isOldTickWithoutEndtimestamp} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
-import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag';
 import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
+import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';

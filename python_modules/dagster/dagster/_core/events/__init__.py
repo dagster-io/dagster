@@ -1451,6 +1451,24 @@ class DagsterEvent(
             ),
         )
 
+    @staticmethod
+    def build_asset_materialization_planned_event(
+        job_name: str,
+        step_key: str,
+        asset_materialization_planned_data: "AssetMaterializationPlannedData",
+    ) -> "DagsterEvent":
+        """Constructs an asset materialization planned event, to be logged by the caller."""
+        event = DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+            job_name=job_name,
+            message=(
+                f"{job_name} intends to materialize asset {asset_materialization_planned_data.asset_key.to_string()}"
+            ),
+            event_specific_data=asset_materialization_planned_data,
+            step_key=step_key,
+        )
+        return event
+
 
 def get_step_output_event(
     events: Sequence[DagsterEvent], step_key: str, output_name: Optional[str] = "result"

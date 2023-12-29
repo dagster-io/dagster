@@ -942,23 +942,18 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     # this key was annotated with a typing.Annotated annotation (which we use for resource/resource deps),
     # since Pydantic 2.0 strips that info out and sticks any Annotated metadata in the
     # metadata field
+
+    resources = {}
+    non_resources = {}
+    for d in data_with_annotation:
+        if _is_annotated_as_resource_type(d.annotation, d.annotation_metadata):
+            resources[d.key] = d.value
+        else:
+            non_resources[d.key] = d.value
+
     out = SeparatedResourceParams(
-        resources={
-            d.key: d.value
-            for d in data_with_annotation
-            if _is_annotated_as_resource_type(
-                d.annotation,
-                d.annotation_metadata,
-            )
-        },
-        non_resources={
-            d.key: d.value
-            for d in data_with_annotation
-            if not _is_annotated_as_resource_type(
-                d.annotation,
-                d.annotation_metadata,
-            )
-        },
+        resources=resources,
+        non_resources=non_resources,
     )
     return out
 

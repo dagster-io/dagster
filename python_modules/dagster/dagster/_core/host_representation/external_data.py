@@ -226,7 +226,15 @@ class ExternalRepositoryData(
 
         check.failed("Could not find external schedule data named " + name)
 
-    def get_external_partition_set_data(self, name):
+    def has_external_partition_set_data(self, name) -> bool:
+        check.str_param(name, "name")
+        for external_partition_set_data in self.external_partition_set_datas:
+            if external_partition_set_data.name == name:
+                return True
+
+        return False
+
+    def get_external_partition_set_data(self, name) -> "ExternalPartitionSetData":
         check.str_param(name, "name")
 
         for external_partition_set_data in self.external_partition_set_datas:

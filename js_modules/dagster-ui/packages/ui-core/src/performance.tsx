@@ -44,6 +44,9 @@ class PointToPointInstrumentation {
         detail: trace,
       }),
     );
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Finished trace ${traceId}`);
+    }
   }
 }
 

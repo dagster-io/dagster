@@ -17,6 +17,7 @@ import {StaleReasonsTags} from '../assets/Stale';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {useStartTrace} from '../performance';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -31,6 +32,7 @@ import {AssetPlots} from './AssetPlots';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {OverdueTag} from './OverdueTag';
@@ -47,9 +49,10 @@ import {useReportEventsModal} from './useReportEventsModal';
 
 interface Props {
   assetKey: AssetKey;
+  trace?: ReturnType<typeof useStartTrace>;
 }
 
-export const AssetView = ({assetKey}: Props) => {
+export const AssetView = ({assetKey, trace}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {tabBuilder, renderFeatureView} = React.useContext(AssetFeatureContext);
 
@@ -88,6 +91,12 @@ export const AssetView = ({assetKey}: Props) => {
   const dataRefreshHint = liveData
     ? healthRefreshHintFromLiveData(liveData)
     : lastMaterialization?.timestamp;
+
+  React.useEffect(() => {
+    if (!definitionQueryResult.loading && liveData) {
+      trace?.endTrace();
+    }
+  }, [definitionQueryResult, liveData, trace]);
 
   const renderDefinitionTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
@@ -461,6 +470,7 @@ const AssetViewPageHeaderTags = ({
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
 }) => {
+  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
@@ -484,7 +494,9 @@ const AssetViewPageHeaderTags = ({
           </Link>
         </Tag>
       )}
-      {definition && definition.autoMaterializePolicy && <AutomaterializeDaemonStatusTag />}
+      {automaterializeSensorsFlagState === 'has-global-amp' && definition?.autoMaterializePolicy ? (
+        <AutomaterializeDaemonStatusTag />
+      ) : null}
       {definition && definition.freshnessPolicy && (
         <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
       )}

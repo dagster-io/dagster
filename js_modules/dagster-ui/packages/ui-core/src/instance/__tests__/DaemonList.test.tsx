@@ -4,11 +4,11 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
+import {GetAutoMaterializePausedQuery} from '../../assets/types/useAutomaterializeDaemonStatus.types';
 import {
   AUTOMATERIALIZE_PAUSED_QUERY,
   SET_AUTOMATERIALIZE_PAUSED_MUTATION,
-} from '../../assets/AutomaterializeDaemonStatusTag';
-import {GetAutoMaterializePausedQuery} from '../../assets/types/AutomaterializeDaemonStatusTag.types';
+} from '../../assets/useAutomaterializeDaemonStatus';
 import {buildDaemonStatus, buildInstance} from '../../graphql/types';
 import {DaemonList} from '../DaemonList';
 

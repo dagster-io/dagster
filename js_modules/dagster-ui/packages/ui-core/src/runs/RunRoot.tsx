@@ -15,8 +15,8 @@ import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryF
 
 import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
-import {RunConfigDialog} from './RunConfigDialog';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
+import {RunHeaderActions} from './RunHeaderActions';
 import {RunRootTrace, useRunRootTrace} from './RunRootTrace';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
@@ -136,7 +136,6 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <AssetKeyTagCollection
                   useTags
                   assetKeys={
@@ -145,6 +144,7 @@ export const RunRoot = () => {
                       : run.assets.map((a) => a.key)
                   }
                 />
+                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation
@@ -155,7 +155,7 @@ export const RunRoot = () => {
               </Box>
             ) : null
           }
-          right={run ? <RunConfigDialog run={run} isJob={isJob} /> : null}
+          right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
         />
       </Box>
       <RunById data={data} runId={runId} trace={trace} />

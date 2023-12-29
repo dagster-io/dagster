@@ -59,7 +59,10 @@ def test_server_socket():
         with safe_tempfile_path() as skt:
             server_process = open_server_process(instance.get_ref(), port=None, socket=skt)
             try:
-                assert DagsterGrpcClient(socket=skt).ping("foobar") == "foobar"
+                assert DagsterGrpcClient(socket=skt).ping("foobar") == {
+                    "echo": "foobar",
+                    "serialized_server_utilization_metrics": "{}",
+                }
             finally:
                 interrupt_ipc_subprocess_pid(server_process.pid)
                 server_process.terminate()
@@ -99,7 +102,10 @@ def test_server_port():
         assert server_process is not None
 
         try:
-            assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+            assert DagsterGrpcClient(port=port).ping("foobar") == {
+                "echo": "foobar",
+                "serialized_server_utilization_metrics": "{}",
+            }
         finally:
             _cleanup_process(server_process)
 
@@ -155,7 +161,10 @@ def test_client_port_and_socket():
 
 def test_ephemeral_client():
     with ephemeral_grpc_api_client() as api_client:
-        assert api_client.ping("foo") == "foo"
+        assert api_client.ping("foo") == {
+            "echo": "foo",
+            "serialized_server_utilization_metrics": "{}",
+        }
 
 
 def test_streaming():
@@ -219,3 +228,18 @@ def test_detect_server_restart():
         _cleanup_process(server_process)
 
     assert server_id_one != server_id_two
+
+
+def test_ping_metrics_retrieval():
+    with instance_for_test() as instance:
+        port = find_free_port()
+        server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+        assert server_process is not None
+
+        try:
+            assert DagsterGrpcClient(port=port).ping("foobar") == {
+                "echo": "foobar",
+                "serialized_server_utilization_metrics": "{}",
+            }
+        finally:
+            _cleanup_process(server_process)
