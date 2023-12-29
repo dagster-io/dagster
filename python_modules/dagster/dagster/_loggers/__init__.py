@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
 
 import coloredlogs
@@ -7,7 +8,7 @@ from dagster import _seven
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import coerce_valid_log_level
-from dagster._utils.log import create_console_logger
+from dagster._utils.log import configure_loggers, create_console_logger
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.logger import InitLoggerContext
@@ -42,6 +43,11 @@ def colored_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
         name=init_context.logger_config["name"],
         level=coerce_valid_log_level(init_context.logger_config["log_level"]),
     )
+
+
+@logger
+def default_logger(init_context: "InitLoggerContext") -> logging.Logger:
+    return logging.getLogger("dagster")
 
 
 @logger(
@@ -110,9 +116,21 @@ def default_system_loggers(
     Returns:
         List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs.
     """
+    log_format = os.getenv("DAGSTER_LOG_FORMAT", "colored")
     log_level = instance.python_log_level if (instance and instance.python_log_level) else "DEBUG"
-    return [(colored_console_logger, {"name": "dagster", "log_level": log_level})]
+    if log_format == "colored":
+        return [(colored_console_logger, {"name": "dagster", "log_level": log_level})]
+
+    configure_loggers(formatter=log_format, log_level=log_level)
+
+    return [(default_logger, {})]
 
 
 def default_loggers() -> Mapping[str, "LoggerDefinition"]:
-    return {"console": colored_console_logger}
+    log_format = os.getenv("DAGSTER_LOG_FORMAT", "colored")
+    if log_format == "colored":
+        return {"console": colored_console_logger}
+
+    configure_loggers(formatter=log_format, log_level="INFO")
+
+    return {"console": default_logger}
