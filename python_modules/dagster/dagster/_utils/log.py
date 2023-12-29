@@ -5,15 +5,13 @@ import traceback
 from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
+import structlog
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import deprecated
-from dagster._config import Enum, EnumValue
 from dagster._core.definitions.logger_definition import logger
-from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
-
-LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
+from dagster._core.utils import coerce_valid_log_level
 
 
 class JsonFileHandler(logging.Handler):
@@ -217,12 +215,44 @@ def define_default_formatter():
     return logging.Formatter(default_format_string(), default_date_format_string())
 
 
+def get_structlog_shared_processors():
+    timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
+
+    shared_processors = [
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        timestamper,
+        structlog.processors.StackInfoRenderer(),
+    ]
+
+    return shared_processors
+
+
+def get_structlog_json_formatter() -> structlog.stdlib.ProcessorFormatter:
+    return structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=get_structlog_shared_processors(),
+        processors=[
+            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            structlog.processors.JSONRenderer(),
+        ],
+    )
+
+
 @deprecated(
     breaking_version="2.0",
     subject="loggers.dagit",
     emit_runtime_warning=False,
 )
-def configure_loggers(handler="default", log_level="INFO"):
+def configure_loggers(handler="default", formatter="colored", log_level="INFO"):
+    structlog.configure(
+        processors=[
+            *get_structlog_shared_processors(),
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+    )
+    json_formatter = get_structlog_json_formatter()
+
     LOGGING_CONFIG = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -234,10 +264,15 @@ def configure_loggers(handler="default", log_level="INFO"):
                 "field_styles": {"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
                 "level_styles": {"debug": {}, "error": {"color": "red"}},
             },
+            "json": {
+                "()": json_formatter.__class__,
+                "foreign_pre_chain": json_formatter.foreign_pre_chain,
+                "processors": json_formatter.processors,
+            },
         },
         "handlers": {
             "default": {
-                "formatter": "colored",
+                "formatter": formatter,
                 "class": "logging.StreamHandler",
                 "stream": sys.stdout,
                 "level": log_level,

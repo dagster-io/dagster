@@ -54,6 +54,14 @@ def _get_heartbeat_tolerance():
     envvar="DAGSTER_DAEMON_LOG_LEVEL",
 )
 @click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from the webserver",
+)
+@click.option(
     "--instance-ref",
     type=click.STRING,
     required=False,
@@ -63,6 +71,7 @@ def _get_heartbeat_tolerance():
 def run_command(
     code_server_log_level: str,
     log_level: str,
+    log_format: str,
     instance_ref: Optional[str],
     **kwargs: ClickArgValue,
 ) -> None:
@@ -71,14 +80,18 @@ def run_command(
             with get_instance_for_cli(
                 instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None
             ) as instance:
-                _daemon_run_command(instance, log_level, code_server_log_level, kwargs)
+                _daemon_run_command(instance, log_level, code_server_log_level, log_format, kwargs)
     except KeyboardInterrupt:
         return  # Exit cleanly on interrupt
 
 
 @telemetry_wrapper(metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()})
 def _daemon_run_command(
-    instance: DagsterInstance, log_level: str, code_server_log_level: str, kwargs: ClickArgMapping
+    instance: DagsterInstance,
+    log_level: str,
+    code_server_log_level: str,
+    log_format: str,
+    kwargs: ClickArgMapping,
 ) -> None:
     workspace_load_target = get_workspace_load_target(kwargs)
 
@@ -88,6 +101,7 @@ def _daemon_run_command(
         heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
         log_level=log_level,
         code_server_log_level=code_server_log_level,
+        log_format=log_format,
     ) as controller:
         controller.check_daemon_loop()
 

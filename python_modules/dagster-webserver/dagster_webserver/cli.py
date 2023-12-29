@@ -152,6 +152,14 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     envvar="DAGSTER_WEBSERVER_LOG_LEVEL",
 )
 @click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from the webserver",
+)
+@click.option(
     "--code-server-log-level",
     help="Set the log level for any code servers spun up by the webserver.",
     show_default=True,
@@ -183,6 +191,7 @@ def dagster_webserver(
     suppress_warnings: bool,
     uvicorn_log_level: str,
     dagster_log_level: str,
+    log_format: str,
     code_server_log_level: str,
     instance_ref: Optional[str],
     live_data_poll_rate: int,
@@ -191,7 +200,7 @@ def dagster_webserver(
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
-    configure_loggers(log_level=dagster_log_level.upper())
+    configure_loggers(formatter=log_format, log_level=dagster_log_level.upper())
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     if sys.argv[0].endswith("dagit"):

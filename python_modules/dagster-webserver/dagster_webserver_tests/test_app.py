@@ -10,6 +10,7 @@ from dagster._core.telemetry import START_DAGSTER_WEBSERVER, UPDATE_REPO_STATS, 
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path
+from dagster._utils.log import get_structlog_json_formatter
 from dagster_webserver.app import create_app_from_workspace_process_context
 from dagster_webserver.cli import (
     DEFAULT_WEBSERVER_PORT,
@@ -337,3 +338,30 @@ def test_dagster_webserver_logs(_, caplog):
 
             assert actions == set([START_DAGSTER_WEBSERVER, UPDATE_REPO_STATS])
             assert len(records) == 3
+
+
+@mock.patch("uvicorn.run")
+def test_dagster_webserver_json_logs(
+    _: mock.Mock,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # https://github.com/pytest-dev/pytest/issues/2987#issuecomment-1460509126
+    #
+    # pytest captures log records using their handler. However, as a side-effect, this prevents
+    # Dagster's log formatting from being applied in a unit test.
+    #
+    # To test the formatting, we monkeypatch the handler's formatter to use the same formatter as
+    # the one used by Dagster when enabling JSON log format.
+    monkeypatch.setattr(caplog.handler, "formatter", get_structlog_json_formatter())
+
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(dagster_webserver, ["--log-format=json", "--empty-workspace"])
+
+        assert result.exit_code == 0, str(result.exception)
+
+        lines = [line for line in caplog.text.split("\n") if line]
+
+        assert lines
+        assert [json.loads(line) for line in lines]
