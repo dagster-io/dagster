@@ -275,6 +275,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             candidate_subset=HistoricalAllPartitionsSubsetSentinel()
             if is_partitioned
             else AssetSubset.empty(asset_key, None),
+            start_timestamp=None,
+            end_timestamp=None,
             subsets_with_metadata=subsets_with_metadata,
         )
 
@@ -340,6 +342,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 else AssetSubset.all(asset_key, None),
                 subsets_with_metadata=[],
                 child_evaluations=child_evaluations,
+                start_timestamp=None,
+                end_timestamp=None,
             )
 
         if decision_type == AutoMaterializeDecisionType.MATERIALIZE:
@@ -365,6 +369,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             else AssetSubset.all(asset_key, None),
             subsets_with_metadata=[],
             child_evaluations=[evaluation],
+            start_timestamp=None,
+            end_timestamp=None,
         )
 
     def unpack(
@@ -437,6 +443,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             else AssetSubset.all(asset_key, None),
             subsets_with_metadata=[],
             child_evaluations=child_evaluations,
+            start_timestamp=None,
+            end_timestamp=None,
         ).with_run_ids(cast(AbstractSet[str], unpacked_dict.get("run_ids", set())))
 
 

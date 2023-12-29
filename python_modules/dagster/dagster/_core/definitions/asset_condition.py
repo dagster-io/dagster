@@ -15,6 +15,8 @@ from typing import (
     Union,
 )
 
+import pendulum
+
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
@@ -112,6 +114,8 @@ class AssetConditionEvaluation(NamedTuple):
     condition_snapshot: AssetConditionSnapshot
     true_subset: AssetSubset
     candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
+    start_timestamp: Optional[float]
+    end_timestamp: Optional[float]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = []
     child_evaluations: Sequence["AssetConditionEvaluation"] = []
 
@@ -195,6 +199,8 @@ class AssetConditionEvaluationResult(NamedTuple):
                 context.condition.snapshot,
                 true_subset=true_subset,
                 candidate_subset=context.candidate_subset,
+                start_timestamp=context.start_timestamp,
+                end_timestamp=pendulum.now("UTC").timestamp(),
                 subsets_with_metadata=[],
                 child_evaluations=[child_result.evaluation for child_result in child_results],
             ),
@@ -218,6 +224,8 @@ class AssetConditionEvaluationResult(NamedTuple):
             evaluation=AssetConditionEvaluation(
                 context.condition.snapshot,
                 true_subset=true_subset,
+                start_timestamp=context.start_timestamp,
+                end_timestamp=pendulum.now("UTC").timestamp(),
                 candidate_subset=context.candidate_subset,
                 subsets_with_metadata=subsets_with_metadata,
             ),
