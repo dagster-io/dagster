@@ -61,7 +61,7 @@ def test_server_socket():
             try:
                 assert DagsterGrpcClient(socket=skt).ping("foobar") == {
                     "echo": "foobar",
-                    "serialized_server_health_metadata": "{}",
+                    "serialized_server_utilization_metrics": "{}",
                 }
             finally:
                 interrupt_ipc_subprocess_pid(server_process.pid)
@@ -104,7 +104,7 @@ def test_server_port():
         try:
             assert DagsterGrpcClient(port=port).ping("foobar") == {
                 "echo": "foobar",
-                "serialized_server_health_metadata": "{}",
+                "serialized_server_utilization_metrics": "{}",
             }
         finally:
             _cleanup_process(server_process)
@@ -163,7 +163,7 @@ def test_ephemeral_client():
     with ephemeral_grpc_api_client() as api_client:
         assert api_client.ping("foo") == {
             "echo": "foo",
-            "serialized_server_health_metadata": "{}",
+            "serialized_server_utilization_metrics": "{}",
         }
 
 
@@ -239,7 +239,7 @@ def test_ping_metrics_retrieval():
         try:
             assert DagsterGrpcClient(port=port).ping("foobar") == {
                 "echo": "foobar",
-                "serialized_server_health_metadata": "{}",
+                "serialized_server_utilization_metrics": "{}",
             }
         finally:
             _cleanup_process(server_process)
