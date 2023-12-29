@@ -49,7 +49,7 @@ import {useReportEventsModal} from './useReportEventsModal';
 
 interface Props {
   assetKey: AssetKey;
-  trace: ReturnType<typeof useStartTrace>;
+  trace?: ReturnType<typeof useStartTrace>;
 }
 
 export const AssetView = ({assetKey, trace}: Props) => {
@@ -94,7 +94,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
 
   React.useEffect(() => {
     if (!definitionQueryResult.loading && liveData) {
-      trace.endTrace();
+      trace?.endTrace();
     }
   }, [definitionQueryResult, liveData, trace]);
 
