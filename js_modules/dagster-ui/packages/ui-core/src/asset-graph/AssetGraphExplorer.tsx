@@ -89,6 +89,7 @@ type Props = {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onNavigateToSourceAssetNode: (node: AssetLocation) => void;
+  isGlobalGraph?: boolean;
 } & OptionalFilters;
 
 export const MINIMAL_SCALE = 0.6;
@@ -180,6 +181,7 @@ type WithDataProps = Props & {
 
   filterButton?: React.ReactNode;
   filterBar?: React.ReactNode;
+  isGlobalGraph?: boolean;
 };
 
 const AssetGraphExplorerWithData = ({
@@ -197,6 +199,7 @@ const AssetGraphExplorerWithData = ({
   filterBar,
   filters,
   setFilters,
+  isGlobalGraph = false,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const {flagDAGSidebar} = useFeatureFlags();
@@ -769,6 +772,7 @@ const AssetGraphExplorerWithData = ({
         first={
           showSidebar ? (
             <AssetGraphExplorerSidebar
+              isGlobalGraph={isGlobalGraph}
               allAssetKeys={allAssetKeys}
               assetGraphData={assetGraphData}
               fullAssetGraphData={fullAssetGraphData}

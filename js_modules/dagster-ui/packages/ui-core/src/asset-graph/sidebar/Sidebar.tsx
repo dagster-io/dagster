@@ -2,6 +2,7 @@ import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
+import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
@@ -24,6 +25,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
+    isGlobalGraph,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -35,6 +37,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     expandedGroups: string[];
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
+    isGlobalGraph: boolean;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -171,6 +174,15 @@ export const AssetGraphExplorerSidebar = React.memo(
 
       return folderNodes;
     }, [graphData.nodes, openNodes]);
+
+    const {nav} = React.useContext(LayoutContext);
+
+    React.useEffect(() => {
+      if (isGlobalGraph) {
+        nav.close();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isGlobalGraph]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 
