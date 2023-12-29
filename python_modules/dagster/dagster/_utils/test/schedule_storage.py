@@ -741,11 +741,15 @@ class TestScheduleStorage:
                         condition_snapshot=condition_snapshot,
                         true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
                         candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
+                        start_timestamp=0,
+                        end_timestamp=1,
                     ).with_run_ids(set()),
                     AssetConditionEvaluation(
                         condition_snapshot=condition_snapshot,
                         true_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
                         candidate_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                        start_timestamp=0,
+                        end_timestamp=1,
                         subsets_with_metadata=[
                             AssetSubsetWithMetadata(
                                 AssetSubset(asset_key=AssetKey("asset_two"), value=True),
@@ -796,6 +800,8 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AssetConditionEvaluation(
                     condition_snapshot=condition_snapshot,
+                    start_timestamp=0,
+                    end_timestamp=1,
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                 ).with_run_ids(set()),
@@ -825,12 +831,16 @@ class TestScheduleStorage:
 
         eval_one = AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            start_timestamp=0,
+            end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
             candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
         ).with_run_ids(set())
 
         eval_asset_three = AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+            start_timestamp=0,
+            end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
             candidate_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
         ).with_run_ids(set())
@@ -875,6 +885,8 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AssetConditionEvaluation(
                     condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    start_timestamp=0,
+                    end_timestamp=1,
                     true_subset=asset_subset,
                     candidate_subset=asset_subset,
                     subsets_with_metadata=[asset_subset_with_metadata],
@@ -906,6 +918,8 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AssetConditionEvaluation(
                     condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                    start_timestamp=0,
+                    end_timestamp=1,
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     subsets_with_metadata=[],

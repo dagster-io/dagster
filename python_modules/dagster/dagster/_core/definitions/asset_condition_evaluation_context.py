@@ -16,6 +16,8 @@ from typing import (
     Tuple,
 )
 
+import pendulum
+
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -63,6 +65,7 @@ class AssetConditionEvaluationContext:
     evaluation_results_by_key: Mapping[AssetKey, "AssetConditionEvaluation"]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
+    start_timestamp: float
     root_ref: Optional["AssetConditionEvaluationContext"] = None
 
     @staticmethod
@@ -94,6 +97,7 @@ class AssetConditionEvaluationContext:
             daemon_context=daemon_context,
             evaluation_results_by_key=evaluation_results_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
+            start_timestamp=pendulum.now("UTC").timestamp(),
         )
 
     def for_child(
@@ -107,6 +111,7 @@ class AssetConditionEvaluationContext:
             else None,
             candidate_subset=candidate_subset,
             root_ref=self.root_context,
+            start_timestamp=pendulum.now("UTC").timestamp(),
         )
 
     @property
