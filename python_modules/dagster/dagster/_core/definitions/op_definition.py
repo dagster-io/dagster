@@ -555,6 +555,7 @@ def _resolve_output_defs_from_outs(
 def _validate_context_type_hint(fn):
     from inspect import _empty as EmptyAnnotation
 
+    from dagster._config.pythonic_config.typing_utils import safe_is_subclass
     from dagster._core.decorator_utils import get_function_params
     from dagster._core.definitions.decorators.op_decorator import is_context_provided
     from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
@@ -562,8 +563,8 @@ def _validate_context_type_hint(fn):
     params = get_function_params(fn)
     if is_context_provided(params):
         if (
-            params[0].annotation is not AssetExecutionContext
-            and params[0].annotation is not OpExecutionContext
+            not safe_is_subclass(params[0].annotation, AssetExecutionContext)
+            and not safe_is_subclass(params[0].annotation, OpExecutionContext)
             and params[0].annotation is not EmptyAnnotation
         ):
             raise DagsterInvalidDefinitionError(

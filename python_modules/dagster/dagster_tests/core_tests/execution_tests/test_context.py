@@ -407,6 +407,22 @@ def test_error_on_invalid_context_annotation():
             pass
 
 
+def test_no_error_on_subclass_context_annotation() -> None:
+    class MyOpExecutionContext(OpExecutionContext):
+        ...
+
+    @op
+    def the_op(context: MyOpExecutionContext):
+        pass
+
+    class MyAssetExecutionContext(AssetExecutionContext):
+        ...
+
+    @asset
+    def the_asset(context: MyAssetExecutionContext):
+        pass
+
+
 def test_get_context():
     with pytest.raises(DagsterInvariantViolationError):
         OpExecutionContext.get()
