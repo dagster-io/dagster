@@ -44,22 +44,22 @@ class PingReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     ECHO_FIELD_NUMBER: builtins.int
-    SERIALIZED_SERVER_HEALTH_METADATA_FIELD_NUMBER: builtins.int
+    SERIALIZED_SERVER_UTILIZATION_METRICS_FIELD_NUMBER: builtins.int
     echo: builtins.str
-    serialized_server_health_metadata: builtins.str
+    serialized_server_utilization_metrics: builtins.str
     def __init__(
         self,
         *,
         echo: builtins.str = ...,
-        serialized_server_health_metadata: builtins.str = ...,
+        serialized_server_utilization_metrics: builtins.str = ...,
     ) -> None: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
             "echo",
             b"echo",
-            "serialized_server_health_metadata",
-            b"serialized_server_health_metadata",
+            "serialized_server_utilization_metrics",
+            b"serialized_server_utilization_metrics",
         ],
     ) -> None: ...
 
