@@ -78,3 +78,13 @@ def test_daemon_json_logs(
 
         assert lines
         assert [json.loads(line) for line in lines]
+
+
+def test_daemon_rich_logs() -> None:
+    # Test that the daemon can be started with rich formatting.
+    with instance_for_test() as instance:
+        daemon_controller_from_instance(
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+            log_format="rich",
+        )

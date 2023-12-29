@@ -69,7 +69,7 @@ def dev_command_options(f):
 )
 @click.option(
     "--log-format",
-    type=click.Choice(["colored", "json"], case_sensitive=False),
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
     show_default=True,
     required=False,
     default="colored",

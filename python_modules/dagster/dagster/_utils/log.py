@@ -269,6 +269,14 @@ def configure_loggers(handler="default", formatter="colored", log_level="INFO"):
                 "foreign_pre_chain": json_formatter.foreign_pre_chain,
                 "processors": json_formatter.processors,
             },
+            "rich": {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "foreign_pre_chain": get_structlog_shared_processors(),
+                "processors": [
+                    structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                    structlog.dev.ConsoleRenderer(),
+                ],
+            },
         },
         "handlers": {
             "default": {
