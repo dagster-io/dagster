@@ -407,7 +407,7 @@ const AssetGraphExplorerWithData = ({
   const allowGroupsOnlyZoomLevel =
     !flagDAGSidebar && !!(layout && Object.keys(layout.groups).length);
 
-  const [showSidebar, setShowSidebar] = React.useState(allGroups.length > 1);
+  const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
 
   const toggleGroupsButton = flagDAGSidebar && allGroups.length > 1 && (
     <ShortcutHandler
