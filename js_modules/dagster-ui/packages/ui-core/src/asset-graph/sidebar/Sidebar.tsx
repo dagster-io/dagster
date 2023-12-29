@@ -25,6 +25,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
+    isGlobalGraph,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -36,6 +37,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     expandedGroups: string[];
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
+    isGlobalGraph: boolean;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -179,14 +181,14 @@ export const AssetGraphExplorerSidebar = React.memo(
     const {nav} = React.useContext(LayoutContext);
 
     React.useEffect(() => {
-      if (groupsCount > 1) {
+      if (isGlobalGraph) {
         // Close the left sidebar if there's more than 1 group (if viewing more than 1 group then this is the global asset graph)
         // to avoid duplication between the global left sidebar and the graph's left sidebar.
         nav.close();
       }
       // Exclude groupsCount so that we don't close the left nav due to filtering changing
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [nav.close]);
+    }, [isGlobalGraph]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 

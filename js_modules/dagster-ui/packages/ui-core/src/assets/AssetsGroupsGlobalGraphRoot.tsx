@@ -102,6 +102,7 @@ export const AssetsGroupsGlobalGraphRoot = () => {
         explorerPath={globalAssetGraphPathFromString(path)}
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
+        isGlobalGraph
       />
     </Page>
   );
