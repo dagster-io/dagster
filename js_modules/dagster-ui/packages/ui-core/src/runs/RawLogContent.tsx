@@ -166,13 +166,17 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
       return false;
     }
     const {scrollHeight, scrollTop, offsetHeight} = this.container.current;
-    const shouldScroll = offsetHeight + scrollTop >= scrollHeight;
+
+    // Note: The +1 here accounts for these numbers occasionally being off by 0.5px in FF
+    const shouldScroll = offsetHeight + scrollTop + 1 >= scrollHeight;
     return shouldScroll;
   }
 
   componentDidUpdate(_props: any, _state: any, shouldScroll: boolean) {
     if (shouldScroll) {
-      this.scrollToBottom();
+      window.requestAnimationFrame(() => {
+        this.scrollToBottom();
+      });
     }
     if (this.props.isSelected && !_props.isSelected) {
       this.container.current && this.container.current.focus();
@@ -235,11 +239,34 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
       );
     }
 
+    const onSelectAll = (e: React.KeyboardEvent) => {
+      const range = document.createRange();
+      const sel = document.getSelection();
+      const contentEl = e.currentTarget.querySelector('[data-content]');
+      if (!sel || !contentEl) {
+        return;
+      }
+      range.selectNode(contentEl);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      e.preventDefault();
+    };
+
     return (
-      <div className={className} style={{outline: 'none'}} ref={this.container} tabIndex={0}>
+      <div
+        className={className}
+        style={{outline: 'none'}}
+        ref={this.container}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+            onSelectAll(e);
+          }
+        }}
+      >
         <ContentContainer>
           <LineNumbers content={content} />
-          <Content>
+          <Content data-content={true}>
             <SolarizedColors />
             <Ansi linkify={false} useClasses>
               {content}
@@ -297,6 +324,7 @@ const LineNumberContainer = styled.div`
   opacity: 0.8;
   color: ${colorTextLighter()};
   min-height: 100%;
+  user-select: none;
 
   & > div {
     text-align: right;
