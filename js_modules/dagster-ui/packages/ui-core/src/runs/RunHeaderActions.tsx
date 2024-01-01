@@ -70,12 +70,12 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
       <Group direction="row" spacing={8}>
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason} useDisabledButtonTooltipFix>
-            <Button icon={<Icon name="edit" />} disabled>
+            <Button icon={<Icon name={jobLink.icon} />} disabled>
               {jobLink.label}
             </Button>
           </Tooltip>
         ) : (
-          <AnchorButton icon={<Icon name="edit" />} to={jobLink.to}>
+          <AnchorButton icon={<Icon name={jobLink.icon} />} to={jobLink.to}>
             {jobLink.label}
           </AnchorButton>
         )}

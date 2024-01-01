@@ -1,3 +1,5 @@
+import {IconName} from '@dagster-io/ui-components';
+
 import {isHiddenAssetGroupJob, tokenForAssetKey} from '../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToString';
 import {Run} from '../graphql/types';
@@ -68,6 +70,7 @@ export const workspacePipelineLinkForRun = ({
     return {
       disabledReason: null,
       label: `View asset graph`,
+      icon: 'schema' as IconName,
       to: globalAssetGraphPathToString({opsQuery, opNames: []}),
     };
   }
@@ -88,6 +91,7 @@ export const workspacePipelineLinkForRun = ({
   return {
     to,
     label: isAssetJob ? 'View job' : 'Open in Launchpad',
+    icon: isAssetJob ? ('job' as IconName) : ('edit' as IconName),
     disabledReason: isAssetJob || run.hasReExecutePermission ? null : NO_LAUNCH_PERMISSION_MESSAGE,
   };
 };

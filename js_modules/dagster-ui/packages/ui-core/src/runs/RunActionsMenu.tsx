@@ -183,7 +183,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                   <MenuLink
                     text={jobLink.label}
                     disabled={!infoReady || !!jobLink.disabledReason}
-                    icon="edit"
+                    icon={jobLink.icon}
                     to={jobLink.to}
                   />
                 </Tooltip>
