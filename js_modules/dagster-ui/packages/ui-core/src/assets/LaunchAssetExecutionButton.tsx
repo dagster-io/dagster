@@ -163,10 +163,10 @@ export const LaunchAssetExecutionButton = ({
   preferredJobName,
   additionalDropdownOptions,
   intent = 'primary',
-  scopeAlwaysSingleAsset,
+  showChangedAndMissingOption = true,
 }: {
   scope: AssetsInScope;
-  scopeAlwaysSingleAsset?: boolean;
+  showChangedAndMissingOption?: boolean;
   intent?: 'primary' | 'none';
   preferredJobName?: string;
   additionalDropdownOptions?: {
@@ -256,7 +256,7 @@ export const LaunchAssetExecutionButton = ({
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
-              {!scopeAlwaysSingleAsset ? (
+              {showChangedAndMissingOption ? (
                 <MenuItem
                   text="Materialize changed and missing"
                   icon="changes_present"
