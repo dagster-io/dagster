@@ -25,13 +25,12 @@ import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
-import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
-import {workspacePathFromRunDetails} from '../workspace/workspacePath';
+import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
@@ -118,6 +117,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
     return {disabled: false};
   }, [run.hasReExecutePermission, jobError, infoReady]);
 
+  const jobLink = workspacePipelineLinkForRun({
+    run,
+    repositoryName: repoMatch?.match.repository.name,
+    repositoryLocationName: repoMatch?.match.repositoryLocation.name,
+    isJob,
+  });
+
   return (
     <>
       <JoinedButtons>
@@ -169,26 +175,16 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
               <MenuDivider />
               <>
                 <Tooltip
-                  content={
-                    run.hasReExecutePermission
-                      ? OPEN_LAUNCHPAD_UNKNOWN
-                      : NO_LAUNCH_PERMISSION_MESSAGE
-                  }
+                  content={jobLink.disabledReason || OPEN_LAUNCHPAD_UNKNOWN}
                   position="left"
-                  disabled={infoReady && run.hasReExecutePermission}
+                  disabled={infoReady && !jobLink.disabledReason}
                   targetTagName="div"
                 >
                   <MenuLink
-                    text="Open in Launchpad..."
-                    disabled={!infoReady || !run.hasReExecutePermission}
-                    icon="edit"
-                    to={workspacePathFromRunDetails({
-                      id: run.id,
-                      pipelineName: run.pipelineName,
-                      repositoryName: repoMatch?.match.repository.name,
-                      repositoryLocationName: repoMatch?.match.repositoryLocation.name,
-                      isJob,
-                    })}
+                    text={jobLink.label}
+                    disabled={!infoReady || !!jobLink.disabledReason}
+                    icon={jobLink.icon}
+                    to={jobLink.to}
                   />
                 </Tooltip>
                 <Tooltip
