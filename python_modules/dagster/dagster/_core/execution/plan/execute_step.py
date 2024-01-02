@@ -440,7 +440,7 @@ def core_dagster_event_sequence_for_step(
     inputs = {}
 
     if step_context.is_sda_step:
-        step_context.fetch_external_input_asset_version_info()
+        step_context.fetch_external_input_asset_materialization_and_version_info()
 
     for step_input in step_context.step.step_inputs:
         input_def = step_context.op_def.input_def_named(step_input.name)
