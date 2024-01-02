@@ -40,6 +40,7 @@
     "eslint-plugin-jest": "^26.4.6",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-webpack-plugin": "3.1.1",
+    "file-loader": "^6.2.0",
     "prettier": "^3.0.3",
     "typescript": "5.3.2",
     "webpack": "^5.88.1",

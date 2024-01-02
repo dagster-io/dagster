@@ -2364,6 +2364,7 @@ __metadata:
     eslint-plugin-jest: "npm:^26.4.6"
     eslint-plugin-prettier: "npm:^5.0.0"
     eslint-webpack-plugin: "npm:3.1.1"
+    file-loader: "npm:^6.2.0"
     graphql: "npm:^16.8.1"
     next: "npm:^13.5.4"
     prettier: "npm:^3.0.3"
@@ -13198,6 +13199,18 @@ __metadata:
   dependencies:
     flat-cache: "npm:^3.0.4"
   checksum: 099bb9d4ab332cb93c48b14807a6918a1da87c45dce91d4b61fd40e6505d56d0697da060cb901c729c90487067d93c9243f5da3dc9c41f0358483bfdebca736b
+  languageName: node
+  linkType: hard
+
+"file-loader@npm:^6.2.0":
+  version: 6.2.0
+  resolution: "file-loader@npm:6.2.0"
+  dependencies:
+    loader-utils: "npm:^2.0.0"
+    schema-utils: "npm:^3.0.0"
+  peerDependencies:
+    webpack: ^4.0.0 || ^5.0.0
+  checksum: 3a854be3a7501bdb0fd8a1c0d45c156c0dc8f0afced07cbdac0b13a79c2f2a03f7770d68cb555ff30b5ea7c20719df34e1b2bd896c93e3138ee31f0bdc560310
   languageName: node
   linkType: hard
 
