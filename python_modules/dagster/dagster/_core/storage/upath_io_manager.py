@@ -9,13 +9,13 @@ from fsspec.implementations.local import LocalFileSystem
 
 from dagster import (
     DagsterEventType,
-    HandledOutputData,
     InputContext,
     MetadataValue,
     MultiPartitionKey,
     OutputContext,
     _check as check,
 )
+from dagster._core.events import HandledOutputData
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 if TYPE_CHECKING:
