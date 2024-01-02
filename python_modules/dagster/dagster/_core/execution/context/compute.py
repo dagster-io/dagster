@@ -38,6 +38,7 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    CoercibleToAssetKey,
     ExpectationResult,
     UserEvent,
 )
@@ -1478,6 +1479,14 @@ class AssetExecutionContext(OpExecutionContext):
         """
         return self.op_execution_context.job_def
 
+    @public
+    def latest_materialization_event(
+        self, key: CoercibleToAssetKey
+    ) -> Optional[AssetMaterialization]:
+        return self._step_execution_context.latest_materialization_event.get(
+            AssetKey.from_coercible(key)
+        )
+
     ######## Deprecated methods
 
     @deprecated(**_get_deprecation_kwargs("dagster_run"))
@@ -1926,6 +1935,3 @@ def enter_execution_context(
 _current_asset_execution_context: ContextVar[Optional[AssetExecutionContext]] = ContextVar(
     "_current_asset_execution_context", default=None
 )
-
-
-# TODO - remove
