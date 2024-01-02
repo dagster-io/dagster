@@ -337,7 +337,7 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
     if daemon_type == SchedulerDaemon.daemon_type():
         return SchedulerDaemon()
     elif daemon_type == SensorDaemon.daemon_type():
-        return SensorDaemon()
+        return SensorDaemon(settings=instance.get_sensor_settings())
     elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
         return QueuedRunCoordinatorDaemon(
             interval_seconds=instance.run_coordinator.dequeue_interval_seconds  # type: ignore  # (??)
@@ -447,7 +447,7 @@ def get_daemon_statuses(
 
 
 def debug_daemon_heartbeats(instance: DagsterInstance) -> None:
-    daemon = SensorDaemon()
+    daemon = SensorDaemon(settings=instance.get_sensor_settings())
     timestamp = pendulum.now("UTC").float_timestamp
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))
     returned_timestamp = instance.get_daemon_heartbeats()[daemon.daemon_type()].timestamp

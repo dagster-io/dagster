@@ -3,7 +3,7 @@ import sys
 import threading
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
-from contextlib import AbstractContextManager, ExitStack
+from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -54,7 +54,6 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
-from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
@@ -253,6 +252,8 @@ def execute_sensor_iteration_loop(
     logger: logging.Logger,
     shutdown_event: threading.Event,
     until: Optional[float] = None,
+    threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> TDaemonGenerator:
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -261,67 +262,47 @@ def execute_sensor_iteration_loop(
     """
     sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
-    submit_threadpool_executor = None
-    threadpool_executor = None
-    with ExitStack() as stack:
-        settings = workspace_process_context.instance.get_sensor_settings()
-        if settings.get("use_threads"):
-            threadpool_executor = stack.enter_context(
-                InheritContextThreadPoolExecutor(
-                    max_workers=settings.get("num_workers"),
-                    thread_name_prefix="sensor_daemon_worker",
-                )
-            )
-            num_submit_workers = settings.get("num_submit_workers")
-            if num_submit_workers:
-                submit_threadpool_executor = stack.enter_context(
-                    InheritContextThreadPoolExecutor(
-                        max_workers=settings.get("num_submit_workers"),
-                        thread_name_prefix="sensor_submit_worker",
-                    )
-                )
+    last_verbose_time = None
+    while True:
+        start_time = pendulum.now("UTC").timestamp()
+        if until and start_time >= until:
+            # provide a way of organically ending the loop to support test environment
+            break
 
-        last_verbose_time = None
-        while True:
-            start_time = pendulum.now("UTC").timestamp()
-            if until and start_time >= until:
-                # provide a way of organically ending the loop to support test environment
-                break
+        # occasionally enable verbose logging (doing it always would be too much)
+        verbose_logs_iteration = (
+            last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
+        )
+        yield from execute_sensor_iteration(
+            workspace_process_context,
+            logger,
+            threadpool_executor=threadpool_executor,
+            submit_threadpool_executor=submit_threadpool_executor,
+            sensor_tick_futures=sensor_tick_futures,
+            sensor_state_lock=sensor_state_lock,
+            log_verbose_checks=verbose_logs_iteration,
+        )
+        # Yield to check for heartbeats in case there were no yields within
+        # execute_sensor_iteration
+        yield None
 
-            # occasionally enable verbose logging (doing it always would be too much)
-            verbose_logs_iteration = (
-                last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
-            )
-            yield from execute_sensor_iteration(
-                workspace_process_context,
-                logger,
-                threadpool_executor=threadpool_executor,
-                submit_threadpool_executor=submit_threadpool_executor,
-                sensor_tick_futures=sensor_tick_futures,
-                sensor_state_lock=sensor_state_lock,
-                log_verbose_checks=verbose_logs_iteration,
-            )
-            # Yield to check for heartbeats in case there were no yields within
-            # execute_sensor_iteration
-            yield None
+        end_time = pendulum.now("UTC").timestamp()
 
-            end_time = pendulum.now("UTC").timestamp()
+        if verbose_logs_iteration:
+            last_verbose_time = end_time
 
-            if verbose_logs_iteration:
-                last_verbose_time = end_time
+        loop_duration = end_time - start_time
+        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+        shutdown_event.wait(sleep_time)
 
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            shutdown_event.wait(sleep_time)
-
-            yield None
+        yield None
 
 
 def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    threadpool_executor: Optional[ThreadPoolExecutor],
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
     sensor_state_lock: Optional[threading.Lock] = None,
     log_verbose_checks: bool = True,

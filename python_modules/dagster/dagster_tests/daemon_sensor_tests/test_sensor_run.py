@@ -3280,6 +3280,7 @@ def test_stale_request_context(instance, workspace_context, external_repo):
                 workspace_context,
                 get_default_daemon_logger("SensorDaemon"),
                 threadpool_executor=executor,
+                submit_threadpool_executor=None,
                 sensor_tick_futures=futures,
             )
         )
