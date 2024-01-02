@@ -743,7 +743,6 @@ const AssetGraphExplorerWithData = ({
                       ? {selected: selectedDefinitions}
                       : {all: allDefinitionsForMaterialize}
                   }
-                  showChangedAndMissingOption
                 />
               </Box>
               {filterBar}

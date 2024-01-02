@@ -274,6 +274,7 @@ export const AssetView = ({assetKey, trace}: Props) => {
             ) : definition && definition.jobNames.length > 0 && upstream ? (
               <LaunchAssetExecutionButton
                 scope={{all: [definition]}}
+                showChangedAndMissingOption={false}
                 additionalDropdownOptions={reportEvents.dropdownOptions}
               />
             ) : undefined}
