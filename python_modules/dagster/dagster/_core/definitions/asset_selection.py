@@ -605,7 +605,7 @@ class KeysAssetSelection(
 @whitelist_for_serdes
 class KeyPrefixesAssetSelection(
     NamedTuple(
-        "_KeysAssetSelection",
+        "_KeyPrefixesAssetSelection",
         [("selected_key_prefixes", Sequence[Sequence[str]]), ("include_sources", bool)],
     ),
     AssetSelection,
