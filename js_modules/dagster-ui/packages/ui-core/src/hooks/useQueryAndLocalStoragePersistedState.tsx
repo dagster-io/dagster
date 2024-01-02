@@ -29,8 +29,17 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
 
   const [state, setter] = useQueryPersistedState(props);
 
+  const isFirstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (initialState && props.isEmptyState(state)) {
+      setter(initialState);
+    }
+    isFirstRender.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return [
-    initialState && props.isEmptyState(state) ? initialState : state,
+    isFirstRender.current && initialState && props.isEmptyState(state) ? initialState : state,
     useSetStateUpdateCallback(state, (nextState) => {
       setter(nextState);
 

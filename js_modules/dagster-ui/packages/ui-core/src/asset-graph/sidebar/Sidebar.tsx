@@ -84,7 +84,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
       // include pathname so that theres separate storage entries for graphs at different URLs
       // eg. independent group graph should persist open nodes separately
-      localStorageKey: `asset-graph-open-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
+      localStorageKey: `asset-graph-open-sidebar-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
       encode: (val) => {
         return {'open-nodes': Array.from(val)};
       },
