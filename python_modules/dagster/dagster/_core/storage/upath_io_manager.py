@@ -235,15 +235,11 @@ class UPathIOManager(MemoizableIOManager):
         self, path: "UPath", context: InputContext, backcompat_path: Optional["UPath"] = None
     ) -> Any:
         context.log.debug(self.get_loading_input_log_message(path))
-        if not path.exists() and (backcompat_path is None or not backcompat_path.exists()):
-            # if none of the paths exist, then we assume the handle_output was skipped. This would
-            # happen if the output was None, so we provide a None.
-            return None
         try:
             obj = self.load_from_path(context=context, path=path)
             if asyncio.iscoroutine(obj):
                 obj = asyncio.run(obj)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             if backcompat_path is not None:
                 try:
                     obj = self.load_from_path(context=context, path=backcompat_path)
@@ -255,9 +251,13 @@ class UPathIOManager(MemoizableIOManager):
                         f" {backcompat_path}"
                     )
                 except FileNotFoundError:
-                    raise e
+                    # if none of the paths exist, then we assume the handle_output was skipped. This would
+                    # happen if the output was None, so we provide a None.
+                    return None
             else:
-                raise e
+                # if none of the paths exist, then we assume the handle_output was skipped. This would
+                # happen if the output was None, so we provide a None.
+                return None
 
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
