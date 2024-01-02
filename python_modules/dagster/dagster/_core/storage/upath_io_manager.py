@@ -2,12 +2,14 @@ import asyncio
 import inspect
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union, cast
 
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
 
 from dagster import (
+    DagsterEventType,
+    HandledOutputData,
     InputContext,
     MetadataValue,
     MultiPartitionKey,
@@ -258,6 +260,38 @@ class UPathIOManager(MemoizableIOManager):
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
 
+    def _should_load_none(self, context) -> bool:
+        if context.has_asset_key:
+            # check if the corresponding output was not stored because it was None
+            latest_materialization = context.step_context.latest_materialization_event.get(
+                context.asset_key
+            )
+            if latest_materialization and latest_materialization.metadata.get(
+                "output_is_none", False
+            ):
+                return True
+        else:
+            if context.upstream_output:
+                handled_output_events = context.instance.all_logs(
+                    run_id=context.upstream_output.run_id,
+                    of_type=DagsterEventType.HANDLED_OUTPUT,
+                )
+
+                upstream_output_event = None
+                for e in handled_output_events:
+                    if e.step_key == context.upstream_output.step_key:
+                        upstream_output_event = e.get_dagster_event()
+                        break
+
+                if upstream_output_event:
+                    event_specific_data = cast(
+                        HandledOutputData, upstream_output_event.event_specific_data
+                    )
+                    if event_specific_data.metadata.get("output_is_none", False):
+                        return True
+
+        return False
+
     def _load_partition_from_path(
         self,
         context: InputContext,
@@ -396,18 +430,6 @@ class UPathIOManager(MemoizableIOManager):
             }
 
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
-        if (
-            context.has_asset_key
-        ):  # TODO maybe need to include this as part of the following two cases,
-            # not its own case
-            # check if the corresponding output was not stored because it was None
-            latest_materialization = context.step_context.latest_materialization_event.get(
-                context.asset_key
-            )
-            if latest_materialization and latest_materialization.metadata.get(
-                "output_is_none", False
-            ):
-                return None
         # If no asset key, we are dealing with an op output which is always non-partitioned
         if not context.has_asset_key or not context.has_asset_partitions:
             path = self._get_path(context)
