@@ -195,8 +195,8 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_Dags
             target=_upload_partial_logs,
             args=(self, log_key, thread_exit, self.upload_interval),
             name="upload-watch",
+            daemon=True,
         )
-        thread.daemon = True
         thread.start()
         yield
         thread_exit.set()
@@ -315,8 +315,8 @@ class PollingComputeLogSubscriptionManager:
             target=self._poll,
             args=[self._shutdown_event],
             name="polling-compute-log-subscription",
+            daemon=True,
         )
-        self._polling_thread.daemon = True
         self._polling_thread.start()
 
     def _stop_polling_thread(self) -> None:

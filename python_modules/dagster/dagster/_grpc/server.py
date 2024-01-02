@@ -373,16 +373,18 @@ class DagsterApiServer(DagsterApiServicer):
                 target=self._heartbeat_thread,
                 args=(heartbeat_timeout,),
                 name="grpc-server-heartbeat",
+                daemon=True,
             )
-            self.__heartbeat_thread.daemon = True
             self.__heartbeat_thread.start()
         else:
             self.__heartbeat_thread = None
 
         self.__cleanup_thread = threading.Thread(
-            target=self._cleanup_thread, args=(), name="grpc-server-cleanup"
+            target=self._cleanup_thread,
+            args=(),
+            name="grpc-server-cleanup",
+            daemon=True,
         )
-        self.__cleanup_thread.daemon = True
 
         self.__cleanup_thread.start()
 
@@ -1188,9 +1190,9 @@ class DagsterGrpcServer:
             target=server_termination_target,
             args=[self._server_termination_event, self.server, self._logger],
             name="grpc-server-termination",
+            daemon=True,
         )
 
-        server_termination_thread.daemon = True
         server_termination_thread.start()
 
         try:
