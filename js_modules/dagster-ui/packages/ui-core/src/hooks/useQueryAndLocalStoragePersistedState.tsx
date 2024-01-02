@@ -29,17 +29,8 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
 
   const [state, setter] = useQueryPersistedState(props);
 
-  React.useEffect(() => {
-    // If there was state in local storage and the state is currently empty then use the state
-    // we retrieved from localStorage
-    if (initialState && props.isEmptyState(state)) {
-      setter(initialState);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setter, initialState]);
-
   return [
-    state,
+    initialState && props.isEmptyState(state) ? initialState : state,
     useSetStateUpdateCallback(state, (nextState) => {
       setter(nextState);
 
