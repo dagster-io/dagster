@@ -571,7 +571,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self.latest_materialization_event: Dict[AssetKey, Optional[AssetMaterialization]] = {}
+        self._upstream_asset_materialization_events: Dict[
+            AssetKey, Optional[AssetMaterialization]
+        ] = {}
 
         self._input_asset_version_info: Dict[AssetKey, Optional["InputAssetVersionInfo"]] = {}
         self._is_external_input_asset_version_info_loaded = False
@@ -952,6 +954,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._input_asset_version_info
 
     @property
+    def upstream_asset_materialization_events(
+        self,
+    ) -> Dict[AssetKey, Optional[AssetMaterialization]]:
+        return self._upstream_asset_materialization_events
+
+    @property
     def is_external_input_asset_version_info_loaded(self) -> bool:
         return self._is_external_input_asset_version_info_loaded
 
@@ -991,9 +999,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         event = self._get_input_asset_event(key)
         if event is None:
             self._input_asset_version_info[key] = None
-            self.latest_materialization_event[key] = None
+            self._upstream_asset_materialization_events[key] = None
         else:
-            self.latest_materialization_event[key] = (
+            self._upstream_asset_materialization_events[key] = (
                 event.asset_materialization if event.asset_materialization else None
             )
             storage_id = event.storage_id

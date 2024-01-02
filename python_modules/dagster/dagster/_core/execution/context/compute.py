@@ -1464,7 +1464,13 @@ class AssetExecutionContext(OpExecutionContext):
     def latest_materialization_event(
         self, key: CoercibleToAssetKey
     ) -> Optional[AssetMaterialization]:
-        return self._step_execution_context.latest_materialization_event.get(
+        """Get the most recent AssetMaterialization event for the key. Information like metadata and tags
+        can be found on the AssetMaterialization. If the key is not an upstream asset of the currently
+        materializing asset, None will be returned.
+
+        Returns: Optional[AssetMaterialization]
+        """
+        return self._step_execution_context.upstream_asset_materialization_events.get(
             AssetKey.from_coercible(key)
         )
 
