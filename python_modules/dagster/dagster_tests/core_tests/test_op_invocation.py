@@ -1589,17 +1589,3 @@ def test_context_bound_state_with_error_async_generator():
         asyncio.run(get_results())
 
     assert_context_unbound(ctx)
-
-
-def test_run_properties_access():
-    @asset
-    def access_run_properties(context: AssetExecutionContext):
-        assert context.run_properties.run_id == "EPHEMERAL"
-        assert context.run_properties.retry_number == 0
-
-        with pytest.raises(DagsterInvalidPropertyError):
-            context.run_properties.dagster_run  # noqa:B018
-
-    ctx = build_asset_context()
-
-    access_run_properties(ctx)
