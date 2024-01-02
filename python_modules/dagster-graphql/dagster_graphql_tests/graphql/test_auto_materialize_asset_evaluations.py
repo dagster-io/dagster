@@ -19,6 +19,9 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.run_request import (
     InstigatorType,
 )
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
@@ -344,7 +347,8 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 InstigatorType.SENSOR,
                 status=InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
-                    cursor=AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize()
+                    cursor=AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize(),
+                    sensor_type=SensorType.AUTOMATION_POLICY,
                 ),
             )
         )

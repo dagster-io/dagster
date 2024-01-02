@@ -47,6 +47,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     RunRequest,
     SensorEvaluationContext,
+    SensorType,
     SkipReason,
 )
 from dagster._core.events import DagsterEventType
@@ -1224,6 +1225,7 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
         state = instance.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
+        assert state.instigator_data.sensor_type == SensorType.STANDARD
         assert state.instigator_data.cursor is None
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
 

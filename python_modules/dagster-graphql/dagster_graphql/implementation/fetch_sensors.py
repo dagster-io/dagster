@@ -238,6 +238,7 @@ def set_sensor_cursor(
             last_run_key=instigator_data.last_run_key,
             min_interval=external_sensor.min_interval_seconds,
             cursor=cursor,
+            sensor_type=external_sensor.sensor_type,
         )
     )
     if not stored_state:

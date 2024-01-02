@@ -207,6 +207,7 @@ class SensorLaunchContext(AbstractContextManager):
                         cursor=cursor,
                         last_tick_start_timestamp=marked_timestamp,
                         last_sensor_start_timestamp=last_sensor_start_timestamp,
+                        sensor_type=self._external_sensor.sensor_type,
                     )
                 )
             )
@@ -417,6 +418,7 @@ def execute_sensor_iteration(
                 SensorInstigatorData(
                     min_interval=external_sensor.min_interval_seconds,
                     last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    sensor_type=external_sensor.sensor_type,
                 ),
             )
             instance.add_instigator_state(sensor_state)
@@ -578,6 +580,7 @@ def _mark_sensor_state_for_tick(
                 min_interval=external_sensor.min_interval_seconds,
                 cursor=instigator_data.cursor if instigator_data else None,
                 last_tick_start_timestamp=now.timestamp(),
+                sensor_type=external_sensor.sensor_type,
             )
         )
     )
