@@ -75,24 +75,30 @@ class BaseDirectExecutionContext:
         config_from_args: Optional[Mapping[str, Any]],
         resources_from_args: Optional[Mapping[str, Any]],
     ):
-        """Instances of BaseDirectExecutionContext must implement bind."""
+        """Subclasses of BaseDirectExecutionContext must implement bind."""
 
     @abstractmethod
     def unbind(self):
-        """Instances of BaseDirectExecutionContext must implement unbind."""
+        """Subclasses of BaseDirectExecutionContext must implement unbind."""
 
     @property
     @abstractmethod
     def bound_properties(self) -> "BoundProperties":
-        """Instances of BaseDirectExecutionContext must contain a BoundProperties object."""
+        """Subclasses of BaseDirectExecutionContext must contain a BoundProperties object."""
 
     @property
     @abstractmethod
     def execution_properties(self) -> "DirectExecutionProperties":
-        """Instances of BaseDirectExecutionContext must contain a DirectExecutionProperties object."""
+        """Subclasses of BaseDirectExecutionContext must contain a DirectExecutionProperties object."""
 
     @abstractmethod
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        """Subclasses of BaseDirectExecutionContext must implement for_type."""
+        pass
+
+    @abstractmethod
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        """Subclasses of BaseDirectExecutionContext must implement observe_output."""
         pass
 
 
