@@ -235,6 +235,10 @@ class UPathIOManager(MemoizableIOManager):
         self, path: "UPath", context: InputContext, backcompat_path: Optional["UPath"] = None
     ) -> Any:
         context.log.debug(self.get_loading_input_log_message(path))
+        if not path.exists() and (backcompat_path is None or not backcompat_path.exists()):
+            # if none of the paths exist, then we assume the handle_output was skipped. This would
+            # happen if the output was None, so we provide a None.
+            return None
         try:
             obj = self.load_from_path(context=context, path=path)
             if asyncio.iscoroutine(obj):
@@ -426,6 +430,8 @@ class UPathIOManager(MemoizableIOManager):
                 return self._load_multiple_inputs(context)
 
     def handle_output(self, context: OutputContext, obj: Any):
+        if obj is None:
+            return
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
 
