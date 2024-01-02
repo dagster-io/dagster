@@ -32,7 +32,10 @@ from dagster._core.definitions.run_request import (
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorType,
+)
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation.code_location import CodeLocation
@@ -349,6 +352,9 @@ def execute_sensor_iteration(
         if code_location:
             for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
+                    if sensor.sensor_type == SensorType.AUTOMATION_POLICY:
+                        continue
+
                     selector_id = sensor.selector_id
                     if sensor.get_current_instigator_state(
                         all_sensor_states.get(selector_id)
