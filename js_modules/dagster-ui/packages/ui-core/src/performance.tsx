@@ -6,6 +6,8 @@ type TraceData = {
   endTime: number | null;
 };
 
+// @ts-expect-error - exposing a global for cypress test to access traces
+window.__traceBuffer = [];
 class PointToPointInstrumentation {
   private traces: {[traceId: string]: TraceData} = {};
 
@@ -39,11 +41,8 @@ class PointToPointInstrumentation {
     }
 
     trace.endTime = performance.now();
-    document.dispatchEvent(
-      new CustomEvent('PerformanceTrace', {
-        detail: trace,
-      }),
-    );
+    // @ts-expect-error - exposing global for cypress
+    window.__traceBuffer.push(trace);
     if (process.env.NODE_ENV === 'development') {
       console.log(`Finished trace ${traceId}`);
     }
