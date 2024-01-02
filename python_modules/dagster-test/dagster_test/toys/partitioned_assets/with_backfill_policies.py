@@ -6,7 +6,7 @@ from dagster import BackfillPolicy, DailyPartitionsDefinition, MaterializeResult
     backfill_policy=BackfillPolicy.single_run(),
     group_name="with_backfill_policy",
 )
-def successful_daily_asset() -> MaterializeResult:
+def successful_single_run_backfill_policy() -> MaterializeResult:
     return MaterializeResult()
 
 
@@ -15,5 +15,5 @@ def successful_daily_asset() -> MaterializeResult:
     backfill_policy=BackfillPolicy.single_run(),
     group_name="with_backfill_policy",
 )
-def failing_daily_asset() -> None:
+def failure_single_run_backfill_policy() -> None:
     raise Exception("This asset failed")
