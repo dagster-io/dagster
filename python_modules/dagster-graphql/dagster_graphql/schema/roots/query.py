@@ -36,8 +36,8 @@ from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 from dagster_graphql.schema.asset_condition_evaluations import (
+    GrapheneAssetConditionEvaluation,
     GrapheneAssetConditionEvaluationRecordsOrError,
-    GrapheneSpecificPartitionAssetConditionEvaluation,
 )
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
@@ -512,7 +512,7 @@ class GrapheneQuery(graphene.ObjectType):
     )
 
     assetConditionEvaluationForPartition = graphene.Field(
-        GrapheneSpecificPartitionAssetConditionEvaluation,
+        GrapheneAssetConditionEvaluation,
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
         partition=graphene.Argument(graphene.NonNull(graphene.String)),

@@ -169,10 +169,7 @@ class AssetConditionEvaluation(NamedTuple):
         return (
             other is not None
             and self.condition_snapshot == other.condition_snapshot
-            # if any partitions are requested, then the state of the world must have meaninfully
-            # changed since the previous evaluation
-            and self.true_subset.size == 0
-            and other.true_subset.size == 0
+            and self.true_subset == other.true_subset
             # the candidate subset gets modified during serialization
             and get_serializable_candidate_subset(self.candidate_subset)
             == get_serializable_candidate_subset(other.candidate_subset)
