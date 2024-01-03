@@ -166,9 +166,7 @@ def test_manifest_argument(manifest: DbtManifestParam):
     ],
 )
 def test_selections(
-    select: Optional[str],
-    exclude: Optional[str],
-    expected_asset_names: AbstractSet[str],
+    select: Optional[str], exclude: Optional[str], expected_asset_names: AbstractSet[str]
 ) -> None:
     @dbt_assets(
         manifest=manifest,

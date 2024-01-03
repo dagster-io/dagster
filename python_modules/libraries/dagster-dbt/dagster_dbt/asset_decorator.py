@@ -36,11 +36,7 @@ from .asset_utils import (
     get_deps,
     has_self_dependency,
 )
-from .dagster_dbt_translator import (
-    DagsterDbtTranslator,
-    DbtManifestWrapper,
-    validate_translator,
-)
+from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, validate_translator
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
@@ -376,10 +372,7 @@ def get_dbt_multi_asset_args(
         for test_unique_id in test_unique_ids:
             test_resource_props = manifest["nodes"][test_unique_id]
             check_spec = default_asset_check_fn(
-                asset_key,
-                unique_id,
-                dagster_dbt_translator.settings,
-                test_resource_props,
+                asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
             )
 
             if check_spec:
