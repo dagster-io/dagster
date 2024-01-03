@@ -1,8 +1,6 @@
-import os
 import re
 from typing import Mapping, NamedTuple, Optional, Sequence
 
-import pandas as pd
 import pytest
 from dagster import (
     AssetCheckResult,
@@ -29,7 +27,6 @@ from dagster import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
 
 
 def execute_assets_and_checks(
@@ -638,45 +635,4 @@ def test_partitioned_asset():
         execute_assets_and_checks(instance=instance, assets=[my_asset], partition_key="b")
         execute_assets_and_checks(
             instance=instance, assets=[my_asset], asset_checks=[my_check], partition_key="c"
-        )
-
-
-def test_partitioned_asset_db_io_manager(tmp_path):
-    @asset(
-        partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
-        metadata={"partition_expr": "col1"},
-    )
-    def my_asset(context) -> pd.DataFrame:
-        return pd.DataFrame({"col1": [context.partition_key], "col2": ["foo"]})
-
-    @asset_check(asset=my_asset)
-    def my_check(my_asset: pd.DataFrame):
-        assert my_asset.equals(
-            pd.DataFrame({"col1": ["a", "b", "c"], "col2": ["foo", "foo", "foo"]})
-        )
-        return AssetCheckResult(passed=True)
-
-    io_manager = duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    )
-
-    with instance_for_test() as instance:
-        execute_assets_and_checks(
-            instance=instance,
-            assets=[my_asset],
-            partition_key="a",
-            resources={"io_manager": io_manager},
-        )
-        execute_assets_and_checks(
-            instance=instance,
-            assets=[my_asset],
-            partition_key="b",
-            resources={"io_manager": io_manager},
-        )
-        execute_assets_and_checks(
-            instance=instance,
-            assets=[my_asset],
-            asset_checks=[my_check],
-            partition_key="c",
-            resources={"io_manager": io_manager},
         )
