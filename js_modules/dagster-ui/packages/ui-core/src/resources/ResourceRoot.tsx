@@ -19,14 +19,12 @@ import {
   Tooltip,
   colorAccentBlue,
   colorAccentGray,
-  colorBackgroundDefault,
   colorBackgroundLight,
   colorLinkDefault,
   colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useParams, useRouteMatch} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -34,8 +32,8 @@ import {useTrackPageView} from '../app/analytics';
 import {AssetLink} from '../assets/AssetLink';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {SidebarSection} from '../pipelines/SidebarComponents';
 import {Loading} from '../ui/Loading';
+import {Markdown} from '../ui/Markdown';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -85,6 +83,13 @@ const SectionHeader = (props: {children: React.ReactNode}) => {
   );
 };
 
+// Strip leading tabs from the lines produced for the resource description, since they
+// break markdown formatting.
+const removeLeadingTabs = (input: string) => {
+  const lines = input.split('\n');
+  return lines.map((line) => line.replace(/^    /, '')).join('\n');
+};
+
 export const ResourceRoot = (props: Props) => {
   useTrackPageView();
 
@@ -124,6 +129,11 @@ export const ResourceRoot = (props: Props) => {
     <Page style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={<Heading>{displayName}</Heading>}
+        tags={
+          <Tag icon="resource">
+            Resource in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
+        }
         tabs={
           <ResourceTabs repoAddress={repoAddress} resourceName={resourceName} numUses={numUses} />
         }
@@ -187,36 +197,34 @@ export const ResourceRoot = (props: Props) => {
                   </Box>
                 }
                 second={
-                  <RightInfoPanel>
-                    <RightInfoPanelContent>
-                      <Box
-                        flex={{gap: 4, direction: 'column'}}
-                        margin={{left: 24, right: 12, vertical: 16}}
-                      >
-                        <Heading>{displayName}</Heading>
-
-                        <Tooltip content={topLevelResourceDetailsOrError.resourceType || ''}>
-                          <Mono>{resourceTypeSuccinct}</Mono>
-                        </Tooltip>
-                      </Box>
-
-                      <SidebarSection title="Definition">
-                        <Box padding={{vertical: 16, horizontal: 24}}>
-                          <Tag icon="resource">
-                            Resource in{' '}
-                            <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
-                          </Tag>
-                        </Box>
-                      </SidebarSection>
+                  <Box padding={{bottom: 48}} style={{overflowY: 'auto'}}>
+                    <Box
+                      flex={{gap: 4, direction: 'column'}}
+                      margin={{left: 24, right: 12, vertical: 16}}
+                    >
+                      <Heading>{displayName}</Heading>
+                      <Tooltip content={topLevelResourceDetailsOrError.resourceType || ''}>
+                        <Mono>{resourceTypeSuccinct}</Mono>
+                      </Tooltip>
+                    </Box>
+                    <Box
+                      border="top-and-bottom"
+                      background={colorBackgroundLight()}
+                      padding={{vertical: 8, horizontal: 24}}
+                      style={{fontSize: '12px', fontWeight: 500}}
+                    >
+                      Description
+                    </Box>
+                    <Box padding={{horizontal: 24, vertical: 16}}>
                       {topLevelResourceDetailsOrError.description ? (
-                        <SidebarSection title="Description">
-                          <Box padding={{vertical: 16, horizontal: 24}}>
-                            {topLevelResourceDetailsOrError.description}
-                          </Box>
-                        </SidebarSection>
-                      ) : null}
-                    </RightInfoPanelContent>
-                  </RightInfoPanel>
+                        <Markdown>
+                          {removeLeadingTabs(topLevelResourceDetailsOrError.description)}
+                        </Markdown>
+                      ) : (
+                        'None'
+                      )}
+                    </Box>
+                  </Box>
                 }
               />
             </div>
@@ -586,22 +594,6 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
     </Box>
   );
 };
-
-const RightInfoPanel = styled.div`
-  position: relative;
-
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: ${colorBackgroundDefault()};
-`;
-
-const RightInfoPanelContent = styled.div`
-  flex: 1;
-  overflow-y: auto;
-`;
 
 const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {
