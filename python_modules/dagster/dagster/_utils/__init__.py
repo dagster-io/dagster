@@ -447,9 +447,11 @@ def start_termination_thread(termination_event):
     check.inst_param(termination_event, "termination_event", ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
-        target=_kill_on_event, args=(termination_event,), name="kill-on-event"
+        target=_kill_on_event,
+        args=(termination_event,),
+        name="kill-on-event",
+        daemon=True,
     )
-    int_thread.daemon = True
     int_thread.start()
 
 
