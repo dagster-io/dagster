@@ -10,7 +10,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 
-from ..asset_daemon_scenario import AssetDaemonScenarioState
+from ..asset_daemon_scenario import AssetDaemonScenarioState, MultiAssetSpec
 
 ############
 # PARTITIONS
@@ -60,6 +60,14 @@ diamond = AssetDaemonScenarioState(
         AssetSpec(key="B", deps=["A"]),
         AssetSpec(key="C", deps=["A"]),
         AssetSpec(key="D", deps=["B", "C"]),
+    ]
+)
+
+three_assets_not_subsettable = AssetDaemonScenarioState(
+    asset_specs=[
+        MultiAssetSpec(
+            specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C")],
+        )
     ]
 )
 

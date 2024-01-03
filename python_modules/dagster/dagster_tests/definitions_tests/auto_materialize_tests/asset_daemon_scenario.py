@@ -58,8 +58,10 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.automation_policy_sensor_definition import (
     AutomationPolicySensorDefinition,
 )
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -195,6 +197,12 @@ class AssetSpecWithPartitionsDef(
     ...
 
 
+class MultiAssetSpec(NamedTuple):
+    specs: Sequence[AssetSpec]
+    partitions_def: Optional[PartitionsDefinition] = None
+    can_subset: bool = False
+
+
 class AssetDaemonScenarioState(NamedTuple):
     """Specifies the state of a given AssetDaemonScenario. This state can be modified by changing
     the set of asset definitions it contains, executing runs, updating the time, evaluating ticks, etc.
@@ -209,7 +217,7 @@ class AssetDaemonScenarioState(NamedTuple):
         current_time (datetime): The current time of the scenario.
     """
 
-    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
+    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
     current_time: datetime.datetime = pendulum.now("UTC")
     run_requests: Sequence[RunRequest] = []
     serialized_cursor: str = serialize_value(AssetDaemonCursor.empty(0))
@@ -233,26 +241,35 @@ class AssetDaemonScenarioState(NamedTuple):
                 AssetKey.from_coercible(s)
                 for s in json.loads(context.run.tags.get(FAIL_TAG) or "[]")
             }
-            if context.asset_key in fail_keys:
-                raise Exception("Asset failed")
+            for asset_key in context.selected_asset_keys:
+                if asset_key in fail_keys:
+                    raise Exception("Asset failed")
 
         assets = []
-        params = {
-            "key",
-            "deps",
-            "group_name",
-            "code_version",
-            "auto_materialize_policy",
-            "freshness_policy",
-            "partitions_def",
-        }
         for spec in self.asset_specs:
-            assets.append(
-                asset(
-                    compute_fn=compute_fn,
-                    **{k: v for k, v in spec._asdict().items() if k in params},
+            if isinstance(spec, MultiAssetSpec):
+
+                @multi_asset(**spec._asdict())
+                def _multi_asset(context: AssetExecutionContext):
+                    return compute_fn(context)
+
+                assets.append(_multi_asset)
+            else:
+                params = {
+                    "key",
+                    "deps",
+                    "group_name",
+                    "code_version",
+                    "auto_materialize_policy",
+                    "freshness_policy",
+                    "partitions_def",
+                }
+                assets.append(
+                    asset(
+                        compute_fn=compute_fn,
+                        **{k: v for k, v in spec._asdict().items() if k in params},
+                    )
                 )
-            )
         return assets
 
     @property
@@ -269,16 +286,28 @@ class AssetDaemonScenarioState(NamedTuple):
         """Convenience method to update the properties of one or more assets in the scenario state."""
         new_asset_specs = []
         for spec in self.asset_specs:
-            if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
-                if "partitions_def" in kwargs:
-                    # partitions_def is not a field on AssetSpec, so we need to do this hack
-                    new_asset_specs.append(
-                        AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
-                    )
-                else:
-                    new_asset_specs.append(spec._replace(**kwargs))
+            if isinstance(spec, MultiAssetSpec):
+                partitions_def = kwargs.get("partitions_def", spec.partitions_def)
+                new_multi_specs = [
+                    s._replace(**{k: v for k, v in kwargs.items() if k != "partitions_def"})
+                    if keys is None or s.key in keys
+                    else s
+                    for s in spec.specs
+                ]
+                new_asset_specs.append(
+                    spec._replace(partitions_def=partitions_def, specs=new_multi_specs)
+                )
             else:
-                new_asset_specs.append(spec)
+                if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
+                    if "partitions_def" in kwargs:
+                        # partitions_def is not a field on AssetSpec, so we need to do this hack
+                        new_asset_specs.append(
+                            AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
+                        )
+                    else:
+                        new_asset_specs.append(spec._replace(**kwargs))
+                else:
+                    new_asset_specs.append(spec)
         return self._replace(asset_specs=new_asset_specs)
 
     def with_automation_policy_sensors(
