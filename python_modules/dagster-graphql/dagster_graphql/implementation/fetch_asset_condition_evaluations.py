@@ -10,7 +10,6 @@ from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluationRecord,
     GrapheneAssetConditionEvaluationRecords,
     GrapheneAssetConditionEvaluationRecordsOrError,
-    GrapheneSpecificPartitionAssetConditionEvaluation,
 )
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
@@ -86,8 +85,11 @@ def fetch_asset_condition_evaluation_record_for_partition(
         if asset_node and asset_node.external_asset_node.partitions_def_data
         else None
     )
-    return GrapheneSpecificPartitionAssetConditionEvaluation(
-        record.get_evaluation_with_run_ids(partitions_def).evaluation, partition_key
+    return GrapheneAssetConditionEvaluation(
+        record.get_evaluation_with_run_ids(partitions_def).evaluation,
+        partitions_def,
+        graphene_info.context.instance,
+        partition_key,
     )
 
 
