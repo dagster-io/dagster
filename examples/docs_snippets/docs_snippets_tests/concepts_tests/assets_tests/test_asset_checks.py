@@ -1,8 +1,12 @@
 import pytest
+from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (
+    execute_assets_and_checks,
+)
 from mock import MagicMock
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.assets.asset_checks.asset_with_check import (
     defs as asset_with_check_defs,
 )
@@ -13,6 +17,10 @@ from docs_snippets.concepts.assets.asset_checks.factory import (
 )
 from docs_snippets.concepts.assets.asset_checks.metadata import defs as metadata_defs
 from docs_snippets.concepts.assets.asset_checks.orders_check import defs as orders_defs
+from docs_snippets.concepts.assets.asset_checks.partitions import (
+    no_nones,
+    partitioned_asset,
+)
 from docs_snippets.concepts.assets.asset_checks.severity import defs as severity_defs
 
 
@@ -53,3 +61,19 @@ def test_factory_execute():
         m.execute.call_args_list[1][0][0]
         == "select * from orders where order_id is null"
     )
+
+
+def test_partitions():
+    with instance_for_test() as instance:
+        execute_assets_and_checks(
+            instance=instance, assets=[partitioned_asset], partition_key="a"
+        )
+        execute_assets_and_checks(
+            instance=instance, assets=[partitioned_asset], partition_key="b"
+        )
+        execute_assets_and_checks(
+            instance=instance,
+            assets=[partitioned_asset],
+            asset_checks=[no_nones],
+            partition_key="c",
+        )
