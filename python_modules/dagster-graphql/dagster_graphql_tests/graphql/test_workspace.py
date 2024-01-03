@@ -88,7 +88,7 @@ query {
 
 @pytest.fixture(scope="function")
 def enable_masking_user_code_errors() -> Any:
-    with environ({"DAGSTER_MASK_USER_CODE_ERRORS": "1"}):
+    with environ({"DAGSTER_REDACT_USER_CODE_ERRORS": "1"}):
         yield
 
 
