@@ -255,7 +255,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
         previous_evaluation_state.append(backcompat_evaluation_state)
 
     return AssetDaemonCursor(
-        evaluation_id=default_evaluation_id,
+        evaluation_id=data.get("evaluation_id") or default_evaluation_id,
         previous_evaluation_state=previous_evaluation_state,
         last_observe_request_timestamp_by_asset_key=last_observe_request_timestamp_by_asset_key,
     )
