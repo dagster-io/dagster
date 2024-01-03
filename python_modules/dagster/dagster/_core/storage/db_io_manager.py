@@ -122,8 +122,9 @@ class DbIOManager(IOManager):
             self._default_load_type = default_load_type
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
-        # Nones cannot be stored by DB I/O managers. If the output type is set to None/Nothing,
-        # the handle_output will not be called
+        # If the output type is set to Nothing, handle_output will not be
+        # called. We still need to raise an error when the return value
+        # is None, but the typing type is not Nothing
         if obj is None:
             raise DagsterInvariantViolationError(
                 "Unexpected 'None' output value. If a 'None' value is intentional, set the output type to None.",
