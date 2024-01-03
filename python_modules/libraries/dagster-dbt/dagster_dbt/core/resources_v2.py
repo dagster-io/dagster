@@ -2,6 +2,7 @@ import atexit
 import contextlib
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import uuid
@@ -294,7 +295,7 @@ class DbtCliInvocation:
                     "The main process is being terminated, but the dbt command has not yet"
                     " completed. Terminating the execution of dbt command."
                 )
-                process.terminate()
+                process.send_signal(signal.SIGINT)
                 process.wait()
 
         atexit.register(cleanup_dbt_subprocess, process)
