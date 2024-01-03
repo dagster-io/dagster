@@ -20,6 +20,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Nothing,
     PartitionsDefinition,
+    RetryPolicy,
     multi_asset,
 )
 from dagster._utils.warnings import (
@@ -35,7 +36,11 @@ from .asset_utils import (
     get_deps,
     has_self_dependency,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper, validate_translator
+from .dagster_dbt_translator import (
+    DagsterDbtTranslator,
+    DbtManifestWrapper,
+    validate_translator,
+)
 from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
@@ -55,6 +60,7 @@ def dbt_assets(
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
     backfill_policy: Optional[BackfillPolicy] = None,
+    retry_policy: Optional[RetryPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
@@ -81,6 +87,7 @@ def dbt_assets(
             dbt models, seeds, etc. to asset keys and asset metadata.
         backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
             how to execute backfills that target multiple partitions.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the underlying asset function.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the assets.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
@@ -311,6 +318,7 @@ def dbt_assets(
             op_tags=resolved_op_tags,
             check_specs=check_specs,
             backfill_policy=backfill_policy,
+            retry_policy=retry_policy,
         )(fn)
 
         return asset_definition
@@ -368,7 +376,10 @@ def get_dbt_multi_asset_args(
         for test_unique_id in test_unique_ids:
             test_resource_props = manifest["nodes"][test_unique_id]
             check_spec = default_asset_check_fn(
-                asset_key, unique_id, dagster_dbt_translator.settings, test_resource_props
+                asset_key,
+                unique_id,
+                dagster_dbt_translator.settings,
+                test_resource_props,
             )
 
             if check_spec:

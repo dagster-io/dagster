@@ -17,6 +17,7 @@ from dagster import (
     NodeInvocation,
     PartitionMapping,
     PartitionsDefinition,
+    RetryPolicy,
     TimeWindowPartitionMapping,
     asset,
 )
@@ -165,7 +166,9 @@ def test_manifest_argument(manifest: DbtManifestParam):
     ],
 )
 def test_selections(
-    select: Optional[str], exclude: Optional[str], expected_asset_names: AbstractSet[str]
+    select: Optional[str],
+    exclude: Optional[str],
+    expected_asset_names: AbstractSet[str],
 ) -> None:
     @dbt_assets(
         manifest=manifest,
@@ -229,6 +232,19 @@ def test_backfill_policy():
         ...
 
     assert my_dbt_assets.backfill_policy == backfill_policy
+
+
+def test_retry_policy():
+    retry_policy = RetryPolicy(max_retries=2)
+
+    @dbt_assets(
+        manifest=manifest,
+        retry_policy=retry_policy,
+    )
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.op.retry_policy == retry_policy
 
 
 def test_op_tags():
