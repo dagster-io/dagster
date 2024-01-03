@@ -50,7 +50,7 @@ def test_default():
     )
     assert result.success
     mats = result.asset_materializations_for_node(number_x.op.name)
-    assert mats[0].metadata["path"]
+    assert mats[0].metadata["is_even"] is True
 
 
 @pytest.mark.integration
@@ -115,7 +115,7 @@ def test_file_io():
         )
         assert result.success
         mats = result.asset_materializations_for_node(number_x.op.name)
-        assert mats[0].metadata["path"]
+        assert mats[0].metadata["is_even"] is True
 
 
 _print_script = """

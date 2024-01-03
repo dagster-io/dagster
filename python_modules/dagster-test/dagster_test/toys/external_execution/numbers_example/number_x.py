@@ -10,4 +10,7 @@ with open_dagster_pipes() as context:
     store_asset_value("number_x", storage_root, value)
 
     context.log.info(f"{context.asset_key}: {2} * {multiplier} = {value}")
-    context.report_asset_materialization(data_version=compute_data_version(value))
+    context.report_asset_materialization(
+        data_version=compute_data_version(value),
+        metadata={"is_even": value % 2 == 0},
+    )
