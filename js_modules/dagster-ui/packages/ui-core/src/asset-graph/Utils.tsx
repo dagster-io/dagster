@@ -1,7 +1,6 @@
-import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
 
-import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
   AssetGraphLiveQuery,
@@ -123,19 +122,12 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = featureEnabled(FeatureFlag.flagDAGSidebar)
-  ? pathHorizontalDiagonal({
-      source: (s: any) => s.source,
-      target: (s: any) => s.target,
-      x: (s: any) => s.x,
-      y: (s: any) => s.y,
-    })
-  : pathVerticalDiagonal({
-      source: (s: any) => s.source,
-      target: (s: any) => s.target,
-      x: (s: any) => s.x,
-      y: (s: any) => s.y,
-    });
+export const buildSVGPath = pathHorizontalDiagonal({
+  source: (s: any) => s.source,
+  target: (s: any) => s.target,
+  x: (s: any) => s.x,
+  y: (s: any) => s.y,
+});
 
 export interface LiveDataForNode {
   stepKey: string;
