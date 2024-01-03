@@ -8,7 +8,7 @@ from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.errors import DagsterMaskedUserCodeError
+from dagster._core.errors import DagsterRedactedUserCodeError
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -94,17 +94,17 @@ def _should_redact_user_code_error() -> bool:
 
 
 def _get_masked_traceback_exception(with_instruction: bool) -> traceback.TracebackException:
-    """Raises a DagsterMaskedUserCodeError and returns the traceback exception for it.
+    """Raises a DagsterRedactedUserCodeError and returns the traceback exception for it.
     Used to replace the traceback of a user code error with a generic message that they
     can search for in their own logs.
     """
     error_id = str(uuid.uuid4())
     try:
-        raise DagsterMaskedUserCodeError(
+        raise DagsterRedactedUserCodeError(
             f"Error occurred during user code execution, error ID {error_id}"
             + ("\nSearch in logs for this error ID for more details" if with_instruction else "")
         )
-    except DagsterMaskedUserCodeError:
+    except DagsterRedactedUserCodeError:
         # Get the stack trace from the masking exception we just raised, instead of
         # the underlying user code exception
         exc_type, e, tb = sys.exc_info()

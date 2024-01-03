@@ -507,7 +507,7 @@ class DagsterCodeLocationNotFoundError(DagsterError):
     pass
 
 
-class DagsterMaskedUserCodeError(DagsterError):
+class DagsterRedactedUserCodeError(DagsterError):
     """Error used to mask user code errors to prevent leaking sensitive information. Contains an error ID that can be
     used to look up the original error in the user code error log.
     """

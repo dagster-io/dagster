@@ -46,7 +46,7 @@ def test_masking_op_execution(enable_masking_user_code_errors) -> Any:
     step_error = next(event for event in result.all_events if event.is_step_failure)
     assert (
         step_error.step_failure_data.error
-        and step_error.step_failure_data.error.cls_name == "DagsterMaskedUserCodeError"
+        and step_error.step_failure_data.error.cls_name == "DagsterRedactedUserCodeError"
     )
 
 
@@ -144,7 +144,7 @@ def test_config_mapping_error(enable_masking_user_code_errors, capsys) -> None:
         err_info = serializable_error_info_from_exc_info(sys.exc_info())
 
     assert err_info
-    assert err_info.cls_name == "DagsterMaskedUserCodeError"
+    assert err_info.cls_name == "DagsterRedactedUserCodeError"
     assert "hunter2" not in str(err_info.message)
     assert "Search in logs for this error ID for more details" in str(err_info.message)
 
