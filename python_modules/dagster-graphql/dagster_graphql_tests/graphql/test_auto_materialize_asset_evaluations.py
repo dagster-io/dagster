@@ -1,4 +1,5 @@
-from typing import Optional, Sequence
+import random
+from typing import Any, Mapping, Optional, Sequence
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
@@ -8,6 +9,7 @@ from dagster._core.definitions.asset_condition import (
     AssetConditionEvaluation,
     AssetConditionEvaluationWithRunIds,
     AssetConditionSnapshot,
+    HistoricalAllPartitionsSubset,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -212,63 +214,44 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
 
 
 FRAGMENTS = """
-fragment unpartitionedEvaluationFields on UnpartitionedAssetConditionEvaluation {
-    description
-    startTimestamp
-    endTimestamp
-    status
-}
-
-fragment partitionedEvaluationFields on PartitionedAssetConditionEvaluation {
-    description
-    startTimestamp
-    endTimestamp
-    numTrue
-    numFalse
-    numSkipped
-    trueSubset {
-        subsetValue {
-            isPartitioned
-            partitionKeys
-        }
-    }
-    falseSubset {
-        subsetValue {
-            isPartitioned
-            partitionKeys
-        }
-    }
-}
-
 fragment evaluationFields on AssetConditionEvaluation {
-    ... on UnpartitionedAssetConditionEvaluation {
-        ...unpartitionedEvaluationFields
-        childEvaluations {
-            ...unpartitionedEvaluationFields
-            childEvaluations {
-                ...unpartitionedEvaluationFields
-                childEvaluations {
-                    ...unpartitionedEvaluationFields
-                    childEvaluations {
-                        ...unpartitionedEvaluationFields
-                    }
-                }
-            }
+    rootUniqueId
+    evaluationNodes {
+        ... on UnpartitionedAssetConditionEvaluationNode {
+            description
+            startTimestamp
+            endTimestamp
+            status
+            uniqueId
+            childUniqueIds
         }
-    }
-    ... on PartitionedAssetConditionEvaluation {
-        ...partitionedEvaluationFields
-        childEvaluations {
-            ...partitionedEvaluationFields
-            childEvaluations {
-                ...partitionedEvaluationFields
-                childEvaluations {
-                    ...partitionedEvaluationFields
-                    childEvaluations {
-                        ...partitionedEvaluationFields
-                    }
+        ... on PartitionedAssetConditionEvaluationNode {
+            description
+            startTimestamp
+            endTimestamp
+            numTrue
+            numFalse
+            numSkipped
+            trueSubset {
+                subsetValue {
+                    isPartitioned
+                    partitionKeys
                 }
             }
+            falseSubset {
+                subsetValue {
+                    isPartitioned
+                    partitionKeys
+                }
+            }
+            uniqueId
+            childUniqueIds
+        }
+        ... on SpecificPartitionAssetConditionEvaluationNode {
+            description
+            status
+            uniqueId
+            childUniqueIds
         }
     }
 }
@@ -303,29 +286,16 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 """
 )
 
-QUERY_FOR_SPECIFIC_PARTITION = """
-fragment specificPartitionEvaluationFields on SpecificPartitionAssetConditionEvaluation {
-    description
-    status
-}
+QUERY_FOR_SPECIFIC_PARTITION = (
+    FRAGMENTS
+    + """
 query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: Int!) {
     assetConditionEvaluationForPartition(assetKey: $assetKey, partition: $partition, evaluationId: $evaluationId) {
-        ...specificPartitionEvaluationFields
-        childEvaluations {
-            ...specificPartitionEvaluationFields
-            childEvaluations {
-                ...specificPartitionEvaluationFields
-                childEvaluations {
-                    ...specificPartitionEvaluationFields
-                    childEvaluations {
-                        ...specificPartitionEvaluationFields
-                    }
-                }
-            }
-        }
+        ...evaluationFields
     }
 }
 """
+)
 
 QUERY_FOR_EVALUATION_ID = (
     FRAGMENTS
@@ -418,7 +388,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert len(results.data["assetConditionEvaluationRecordsOrError"]["records"]) == 1
         asset_one_record = results.data["assetConditionEvaluationRecordsOrError"]["records"][0]
         assert asset_one_record["assetKey"] == {"path": ["asset_one"]}
-        assert asset_one_record["evaluation"]["status"] == "SKIPPED"
+        assert asset_one_record["evaluation"]["evaluationNodes"][0]["status"] == "SKIPPED"
 
         results = execute_dagster_graphql(
             graphql_context,
@@ -427,16 +397,22 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert len(results.data["assetConditionEvaluationRecordsOrError"]["records"]) == 1
         asset_two_record = results.data["assetConditionEvaluationRecordsOrError"]["records"][0]
-        assert asset_two_record["evaluation"]["description"] == "All of"
-        assert asset_two_record["evaluation"]["status"] == "SKIPPED"
-        asset_two_children = asset_two_record["evaluation"]["childEvaluations"]
-        assert len(asset_two_children) == 2
-        assert asset_two_children[0]["description"] == "Any of"
-        assert asset_two_children[0]["status"] == "SKIPPED"
-        assert (
-            asset_two_children[0]["childEvaluations"][0]["description"]
-            == "materialization is missing"
+        asset_two_root = asset_two_record["evaluation"]["evaluationNodes"][0]
+
+        assert asset_two_root["description"] == "All of"
+        assert asset_two_root["status"] == "SKIPPED"
+        assert len(asset_two_root["childUniqueIds"]) == 2
+
+        asset_two_child = self._get_node(
+            asset_two_root["childUniqueIds"][0], asset_two_record["evaluation"]["evaluationNodes"]
         )
+        assert asset_two_child["description"] == "Any of"
+        assert asset_two_child["status"] == "SKIPPED"
+
+        asset_two_missing_node = self._get_node(
+            asset_two_child["childUniqueIds"][0], asset_two_record["evaluation"]["evaluationNodes"]
+        )
+        assert asset_two_missing_node["description"] == "materialization is missing"
 
         results = execute_dagster_graphql(
             graphql_context,
@@ -452,6 +428,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert any(record == asset_one_record for record in records)
         assert any(record == asset_two_record for record in records)
 
+        # this evaluationId doesn't exist
         results = execute_dagster_graphql(
             graphql_context,
             QUERY_FOR_EVALUATION_ID,
@@ -490,17 +467,24 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
         assert len(records) == 1
+
         evaluation = records[0]["evaluation"]
-        assert evaluation["numTrue"] == 0
-        assert evaluation["numFalse"] == 6
-        assert evaluation["numSkipped"] == 0
-        assert len(evaluation["childEvaluations"]) == 2
-        not_skip_evaluation = evaluation["childEvaluations"][1]
-        assert not_skip_evaluation["description"] == "Not"
-        assert not_skip_evaluation["numTrue"] == 1
-        assert len(not_skip_evaluation["childEvaluations"]) == 1
-        assert not_skip_evaluation["childEvaluations"][0]["description"] == "Any of"
-        assert len(not_skip_evaluation["childEvaluations"][0]["childEvaluations"]) == 2
+        rootNode = evaluation["evaluationNodes"][0]
+        assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
+
+        assert rootNode["numTrue"] == 0
+        assert rootNode["numFalse"] == 6
+        assert rootNode["numSkipped"] == 0
+        assert len(rootNode["childUniqueIds"]) == 2
+
+        notSkipNode = self._get_node(rootNode["childUniqueIds"][0], evaluation["evaluationNodes"])
+        assert notSkipNode["description"] == "Not"
+        assert notSkipNode["numTrue"] == 1
+        assert len(notSkipNode["childUniqueIds"]) == 1
+
+        skipNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
+        assert skipNode["description"] == "Any of"
+        assert len(skipNode["childUniqueIds"]) == 2
 
     def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(
@@ -645,6 +629,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         }
 
+    def _get_node(
+        self, unique_id: str, evaluations: Sequence[Mapping[str, Any]]
+    ) -> Mapping[str, Any]:
+        return next(iter([node for node in evaluations if node["uniqueId"] == unique_id]))
+
     def _get_condition_evaluation(
         self,
         asset_key: AssetKey,
@@ -655,7 +644,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         child_evaluations: Optional[Sequence[AssetConditionEvaluation]] = None,
     ) -> AssetConditionEvaluation:
         return AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("...", description, "a1b2"),
+            condition_snapshot=AssetConditionSnapshot(
+                "...", description, str(random.randint(0, 100000000))
+            ),
             true_subset=AssetSubset(
                 asset_key=asset_key,
                 value=partitions_def.subset_with_partition_keys(true_partition_keys),
@@ -665,7 +656,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 value=partitions_def.subset_with_partition_keys(candidate_partition_keys),
             )
             if candidate_partition_keys
-            else None,
+            else HistoricalAllPartitionsSubset(),
             start_timestamp=123,
             end_timestamp=456,
             child_evaluations=child_evaluations or [],
@@ -769,26 +760,32 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         assert records[0]["numRequested"] == 2
         evaluation = records[0]["evaluation"]
-        assert evaluation["description"] == "All of"
-        assert evaluation["numTrue"] == 2
-        assert evaluation["numFalse"] == 4
-        assert evaluation["numSkipped"] == 0
-        assert set(evaluation["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
-        assert len(evaluation["childEvaluations"]) == 2
 
-        not_evaluation = evaluation["childEvaluations"][1]
-        assert not_evaluation["description"] == "Not"
-        assert not_evaluation["numTrue"] == 2
-        assert not_evaluation["numFalse"] == 1
-        assert not_evaluation["numSkipped"] == 3
-        assert set(not_evaluation["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
+        # all nodes in the tree
+        assert len(evaluation["evaluationNodes"]) == 9
 
-        skip_evaluation = not_evaluation["childEvaluations"][0]
-        assert skip_evaluation["description"] == "Any of"
-        assert skip_evaluation["numTrue"] == 1
-        assert skip_evaluation["numFalse"] == 2
-        assert skip_evaluation["numSkipped"] == 3
-        assert set(skip_evaluation["trueSubset"]["subsetValue"]["partitionKeys"]) == {"c"}
+        rootNode = evaluation["evaluationNodes"][0]
+        assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
+        assert rootNode["description"] == "All of"
+        assert rootNode["numTrue"] == 2
+        assert rootNode["numFalse"] == 4
+        assert rootNode["numSkipped"] == 0
+        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
+        assert len(rootNode["childUniqueIds"]) == 2
+
+        notNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
+        assert notNode["description"] == "Not"
+        assert notNode["numTrue"] == 2
+        assert notNode["numFalse"] == 1
+        assert notNode["numSkipped"] == 3
+        assert set(notNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
+
+        skipNode = self._get_node(notNode["childUniqueIds"][0], evaluation["evaluationNodes"])
+        assert skipNode["description"] == "Any of"
+        assert skipNode["numTrue"] == 1
+        assert skipNode["numFalse"] == 2
+        assert skipNode["numSkipped"] == 3
+        assert set(skipNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"c"}
 
         # test one of the true partitions
         specific_result = execute_dagster_graphql(
@@ -802,17 +799,22 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
 
         evaluation = specific_result.data["assetConditionEvaluationForPartition"]
-        assert evaluation["description"] == "All of"
-        assert evaluation["status"] == "TRUE"
-        assert len(evaluation["childEvaluations"]) == 2
+        assert len(evaluation["evaluationNodes"]) == 9
 
-        not_evaluation = evaluation["childEvaluations"][1]
-        assert not_evaluation["description"] == "Not"
-        assert not_evaluation["status"] == "TRUE"
+        rootNode = evaluation["evaluationNodes"][0]
+        assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
 
-        skip_evaluation = not_evaluation["childEvaluations"][0]
-        assert skip_evaluation["description"] == "Any of"
-        assert skip_evaluation["status"] == "FALSE"
+        assert rootNode["description"] == "All of"
+        assert rootNode["status"] == "TRUE"
+        assert len(rootNode["childUniqueIds"]) == 2
+
+        notNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
+        assert notNode["description"] == "Not"
+        assert notNode["status"] == "TRUE"
+
+        skipNode = self._get_node(notNode["childUniqueIds"][0], evaluation["evaluationNodes"])
+        assert skipNode["description"] == "Any of"
+        assert skipNode["status"] == "FALSE"
 
         # test one of the false partitions
         specific_result = execute_dagster_graphql(
@@ -826,17 +828,22 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
 
         evaluation = specific_result.data["assetConditionEvaluationForPartition"]
-        assert evaluation["description"] == "All of"
-        assert evaluation["status"] == "FALSE"
-        assert len(evaluation["childEvaluations"]) == 2
+        assert len(evaluation["evaluationNodes"]) == 9
 
-        not_evaluation = evaluation["childEvaluations"][1]
-        assert not_evaluation["description"] == "Not"
-        assert not_evaluation["status"] == "SKIPPED"
+        rootNode = evaluation["evaluationNodes"][0]
+        assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
 
-        skip_evaluation = not_evaluation["childEvaluations"][0]
-        assert skip_evaluation["description"] == "Any of"
-        assert skip_evaluation["status"] == "SKIPPED"
+        assert rootNode["description"] == "All of"
+        assert rootNode["status"] == "FALSE"
+        assert len(rootNode["childUniqueIds"]) == 2
+
+        notNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
+        assert notNode["description"] == "Not"
+        assert notNode["status"] == "SKIPPED"
+
+        skipNode = self._get_node(notNode["childUniqueIds"][0], evaluation["evaluationNodes"])
+        assert skipNode["description"] == "Any of"
+        assert skipNode["status"] == "SKIPPED"
 
     def _test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
