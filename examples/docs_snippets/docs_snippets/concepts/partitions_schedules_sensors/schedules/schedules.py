@@ -4,6 +4,7 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    SkipReason,
     asset,
     job,
     op,
@@ -75,3 +76,13 @@ my_running_schedule = ScheduleDefinition(
 )
 
 # end_running_in_code
+
+
+# start_schedule_logging
+@schedule(job=my_job, cron_schedule="* * * * *")
+def logs_then_skips(context):
+    context.log.info("Logging from a schedule!")
+    return SkipReason("Nothing to do")
+
+
+# end_schedule_logging
