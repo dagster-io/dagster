@@ -10,6 +10,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInstance,
     DagsterInvariantViolationError,
+    DagsterTypeCheckDidNotPass,
     Definitions,
     DynamicOut,
     DynamicOutput,
@@ -1022,6 +1023,15 @@ def test_nothing_output_something_input():
             my_io_manager.handle_output_calls == 0
         )  # Nothing return type for op1 skips I/O manager
         assert my_io_manager.handle_input_calls == 1
+
+
+def test_nothing_typing_type_non_none_return():
+    @asset
+    def returns_1() -> None:
+        return 1  # type: ignore
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        materialize([returns_1])
 
 
 def test_instance_set_on_input_context():
