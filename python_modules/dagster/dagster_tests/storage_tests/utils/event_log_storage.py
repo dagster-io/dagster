@@ -455,6 +455,12 @@ class TestEventLogStorage:
     def has_asset_partitions_table(self) -> bool:
         return False
 
+    def can_set_concurrency_defaults(self):
+        return False
+
+    def set_default_op_concurrency(self, instance, storage, limit):
+        pass
+
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         storage.store_event(
@@ -4353,6 +4359,29 @@ class TestEventLogStorage:
         assert info.active_slot_count == 0
         assert info.pending_step_count == 1
         assert info.assigned_step_count == 0
+
+    def test_default_concurrency(self, storage, instance):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_set_concurrency_defaults():
+            pytest.skip("storage does not support setting global op concurrency defaults")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        self.set_default_op_concurrency(instance, storage, 1)
+
+        # initially there are no concurrency limited keys
+        assert storage.get_concurrency_keys() == set()
+
+        # initialize with default concurrency
+        assert storage.initialize_concurrency_limit_to_default("foo")
+
+        # initially there are no concurrency limited keys
+        assert storage.get_concurrency_keys() == set(["foo"])
+        assert storage.get_concurrency_info("foo").slot_count == 1
 
     def test_asset_checks(self, storage):
         if self.can_wipe():
