@@ -2381,6 +2381,7 @@ __metadata:
     web-vitals: "npm:^2.1.3"
     webpack: "npm:^5.88.1"
     webpack-bundle-analyzer: "npm:^4.7.0"
+    webpack-stats-plugin: "npm:^1.1.3"
   languageName: unknown
   linkType: soft
 
@@ -23540,6 +23541,13 @@ __metadata:
   version: 3.2.3
   resolution: "webpack-sources@npm:3.2.3"
   checksum: a661f41795d678b7526ae8a88cd1b3d8ce71a7d19b6503da8149b2e667fc7a12f9b899041c1665d39e38245ed3a59ab68de648ea31040c3829aa695a5a45211d
+  languageName: node
+  linkType: hard
+
+"webpack-stats-plugin@npm:^1.1.3":
+  version: 1.1.3
+  resolution: "webpack-stats-plugin@npm:1.1.3"
+  checksum: 31cf10e0ee4ffe72a876785248805b5bd4ae68eb1fa546a0b3cd3c9f651054eb119903cc021829bef6e50f9108639bd2b985cbbfe3b72ca916650733c1840e5a
   languageName: node
   linkType: hard
 
