@@ -102,6 +102,7 @@ from .schema import (
     AssetCheckExecutionsTable,
     AssetEventTagsTable,
     AssetKeyTable,
+    ConcurrencyLimitsTable,
     ConcurrencySlotsTable,
     DynamicPartitionsTable,
     PendingStepsTable,
@@ -2118,6 +2119,77 @@ class SqlEventLogStorage(EventLogStorage):
     def supports_global_concurrency_limits(self) -> bool:
         return self.has_table(ConcurrencySlotsTable.name)
 
+    def _reconcile_concurrency_limits_from_slots(self) -> None:
+        """Helper function that can be reconciles the concurrency limits table from the concurrency
+        slots table.  This should only run when the concurrency limits table exists and is empty,
+        since all of the slot configuration operations should keep them in sync.  We reconcile from
+        the slots table because the initial implementation did not have the limits table.
+        """
+        if not self.has_table(ConcurrencyLimitsTable.name):
+            return
+
+        if not self._has_rows(ConcurrencySlotsTable) or self._has_rows(ConcurrencyLimitsTable):
+            return
+
+        with self.index_transaction() as conn:
+            rows = conn.execute(
+                db_select(
+                    [
+                        ConcurrencySlotsTable.c.concurrency_key,
+                        db.func.count().label("count"),
+                    ]
+                )
+                .where(
+                    ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                )
+                .group_by(
+                    ConcurrencySlotsTable.c.concurrency_key,
+                )
+            ).fetchall()
+            conn.execute(
+                ConcurrencyLimitsTable.insert().values(
+                    [
+                        {
+                            "concurrency_key": row[0],
+                            "limit": row[1],
+                        }
+                        for row in rows
+                    ]
+                )
+            )
+
+    def _has_rows(self, table) -> bool:
+        with self.index_connection() as conn:
+            row = conn.execute(db_select([True]).select_from(table).limit(1)).fetchone()
+        return bool(row[0]) if row else False
+
+    def _upsert_and_lock_limit_row(self, conn, concurrency_key: str, num: int):
+        """Helper function that can be overridden by each implementing sql variant which obtains a
+        lock on the concurrency limits row for the given key and updates it to the given value.
+        """
+        if not self.has_table(ConcurrencyLimitsTable.name):
+            # no need to grab the lock on the concurrency limits row if the table does not exist
+            return None
+
+        row = conn.execute(
+            db_select([ConcurrencyLimitsTable.c.id])
+            .select_from(ConcurrencyLimitsTable)
+            .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
+            .with_for_update()
+            .limit(1)
+        ).fetchone()
+
+        if not row:
+            conn.execute(
+                ConcurrencyLimitsTable.insert().values(concurrency_key=concurrency_key, limit=num)
+            )
+        else:
+            conn.execute(
+                ConcurrencyLimitsTable.update()
+                .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
+                .values(limit=num)
+            )
+
     def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
         """Allocate a set of concurrency slots.
 
@@ -2132,10 +2204,36 @@ class SqlEventLogStorage(EventLogStorage):
         if num < 0:
             raise DagsterInvalidInvocationError("Cannot have a negative number of slots.")
 
-        keys_to_assign = None
-        with self.index_connection() as conn:
-            count_row = conn.execute(
-                db_select([db.func.count()])
+        # ensure that we have concurrency limits set for all keys
+        self._reconcile_concurrency_limits_from_slots()
+
+        with self.index_transaction() as conn:
+            self._upsert_and_lock_limit_row(conn, concurrency_key, num)
+            keys_to_assign = self._allocate_concurrency_slots(conn, concurrency_key, num)
+
+        if keys_to_assign:
+            # we've added some slots... if there are any pending steps, we can assign them now or
+            # they will be unutilized until free_concurrency_slots is called
+            self.assign_pending_steps(keys_to_assign)
+
+    def _allocate_concurrency_slots(self, conn, concurrency_key: str, num: int) -> List[str]:
+        keys_to_assign = []
+        count_row = conn.execute(
+            db_select([db.func.count()])
+            .select_from(ConcurrencySlotsTable)
+            .where(
+                db.and_(
+                    ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                    ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                )
+            )
+        ).fetchone()
+        existing = cast(int, count_row[0]) if count_row else 0
+
+        if existing > num:
+            # need to delete some slots, favoring ones where the slot is unallocated
+            rows = conn.execute(
+                db_select([ConcurrencySlotsTable.c.id])
                 .select_from(ConcurrencySlotsTable)
                 .where(
                     db.and_(
@@ -2143,63 +2241,45 @@ class SqlEventLogStorage(EventLogStorage):
                         ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
                     )
                 )
-            ).fetchone()
-            existing = cast(int, count_row[0]) if count_row else 0
+                .order_by(
+                    db_case([(ConcurrencySlotsTable.c.run_id.is_(None), 1)], else_=0).desc(),
+                    ConcurrencySlotsTable.c.id.desc(),
+                )
+                .limit(existing - num)
+            ).fetchall()
 
-            if existing > num:
-                # need to delete some slots, favoring ones where the slot is unallocated
-                rows = conn.execute(
-                    db_select([ConcurrencySlotsTable.c.id])
-                    .select_from(ConcurrencySlotsTable)
-                    .where(
-                        db.and_(
-                            ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
-                            ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
-                        )
-                    )
-                    .order_by(
-                        db_case([(ConcurrencySlotsTable.c.run_id.is_(None), 1)], else_=0).desc(),
-                        ConcurrencySlotsTable.c.id.desc(),
-                    )
-                    .limit(existing - num)
-                ).fetchall()
-
-                if rows:
-                    # mark rows as deleted
-                    conn.execute(
-                        ConcurrencySlotsTable.update()
-                        .values(deleted=True)
-                        .where(ConcurrencySlotsTable.c.id.in_([row[0] for row in rows]))
-                    )
-
-                # actually delete rows that are marked as deleted and are not claimed... the rest
-                # will be deleted when the slots are released by the free_concurrency_slots
+            if rows:
+                # mark rows as deleted
                 conn.execute(
-                    ConcurrencySlotsTable.delete().where(
-                        db.and_(
-                            ConcurrencySlotsTable.c.deleted == True,  # noqa: E712
-                            ConcurrencySlotsTable.c.run_id == None,  # noqa: E711
-                        )
+                    ConcurrencySlotsTable.update()
+                    .values(deleted=True)
+                    .where(ConcurrencySlotsTable.c.id.in_([row[0] for row in rows]))
+                )
+
+            # actually delete rows that are marked as deleted and are not claimed... the rest
+            # will be deleted when the slots are released by the free_concurrency_slots
+            conn.execute(
+                ConcurrencySlotsTable.delete().where(
+                    db.and_(
+                        ConcurrencySlotsTable.c.deleted == True,  # noqa: E712
+                        ConcurrencySlotsTable.c.run_id == None,  # noqa: E711
                     )
                 )
-            elif num > existing:
-                # need to add some slots
-                rows = [
-                    {
-                        "concurrency_key": concurrency_key,
-                        "run_id": None,
-                        "step_key": None,
-                        "deleted": False,
-                    }
-                    for _ in range(existing, num)
-                ]
-                conn.execute(ConcurrencySlotsTable.insert().values(rows))
-                keys_to_assign = [concurrency_key for _ in range(existing, num)]
-
-        if keys_to_assign:
-            # we've added some slots... if there are any pending steps, we can assign them now or
-            # they will be unutilized until free_concurrency_slots is called
-            self.assign_pending_steps(keys_to_assign)
+            )
+        elif num > existing:
+            # need to add some slots
+            rows = [
+                {
+                    "concurrency_key": concurrency_key,
+                    "run_id": None,
+                    "step_key": None,
+                    "deleted": False,
+                }
+                for _ in range(existing, num)
+            ]
+            conn.execute(ConcurrencySlotsTable.insert().values(rows))
+            keys_to_assign.extend([concurrency_key for _ in range(existing, num)])
+        return keys_to_assign
 
     def has_unassigned_slots(self, concurrency_key: str) -> bool:
         with self.index_connection() as conn:
@@ -2483,14 +2563,22 @@ class SqlEventLogStorage(EventLogStorage):
             return ConcurrencySlotStatus.CLAIMED
 
     def get_concurrency_keys(self) -> Set[str]:
+        self._reconcile_concurrency_limits_from_slots()
+
         """Get the set of concurrency limited keys."""
         with self.index_connection() as conn:
-            rows = conn.execute(
-                db_select([ConcurrencySlotsTable.c.concurrency_key])
-                .select_from(ConcurrencySlotsTable)
-                .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
-                .distinct()
-            ).fetchall()
+            if self.has_table(ConcurrencyLimitsTable.name):
+                query = db_select([ConcurrencyLimitsTable.c.concurrency_key]).select_from(
+                    ConcurrencyLimitsTable
+                )
+            else:
+                query = (
+                    db_select([ConcurrencySlotsTable.c.concurrency_key])
+                    .select_from(ConcurrencySlotsTable)
+                    .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
+                    .distinct()
+                )
+            rows = conn.execute(query).fetchall()
             return {cast(str, row[0]) for row in rows}
 
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
