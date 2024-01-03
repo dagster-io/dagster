@@ -12,12 +12,16 @@ export interface ExplorerPath {
   opNames: string[];
 }
 
+export const explorerPathSeparator = '~';
+
 export function explorerPathToString(path: ExplorerPath) {
   const root = [
     path.pipelineName,
     path.snapshotId ? `@${path.snapshotId}` : ``,
     path.opsQuery
-      ? `~${path.explodeComposites ? '!' : ''}${encodeURIComponent(path.opsQuery)}`
+      ? `${explorerPathSeparator}${path.explodeComposites ? '!' : ''}${encodeURIComponent(
+          path.opsQuery,
+        )}`
       : ``,
   ].join('');
 

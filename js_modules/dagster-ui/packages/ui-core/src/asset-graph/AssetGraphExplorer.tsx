@@ -29,7 +29,7 @@ import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {useStartTrace} from '../performance';
 import {
   GraphExplorerOptions,
@@ -222,9 +222,11 @@ const AssetGraphExplorerWithData = ({
     return {allGroups: Object.keys(groupedAssets), allGroupCounts: counts, groupedAssets};
   }, [assetGraphData]);
 
-  const [expandedGroups, setExpandedGroups] = useQueryPersistedState<string[]>({
+  const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
+    localStorageKey: `asset-graph-open-graph-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
     encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
     decode: (qs) => (qs.expanded || '').split(',').filter(Boolean),
+    isEmptyState: (val) => val.length === 0,
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');
 
