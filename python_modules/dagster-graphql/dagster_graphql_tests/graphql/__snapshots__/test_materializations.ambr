@@ -8,7 +8,6 @@
     'ExecutionStepStartEvent',
     'MaterializationEvent',
     'ExecutionStepOutputEvent',
-    'LogMessageEvent',
     'HandledOutputEvent',
     'ExecutionStepSuccessEvent',
     'RunSuccessEvent',
