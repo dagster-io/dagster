@@ -324,6 +324,21 @@ Once the schedule is started, the schedule will begin executing immediately if y
 
 ---
 
+## Logging in schedules
+
+Any schedule can emit log messages during its evaluation function:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
+@schedule(job=my_job, cron_schedule="* * * * *")
+def logs_then_skips(context):
+    context.log.info("Logging from a schedule!")
+    return SkipReason("Nothing to do")
+```
+
+These logs can be viewed when inspecting a tick in the tick history view on the corresponding schedule page.
+
+---
+
 ## Testing schedules
 
 <TabGroup>
