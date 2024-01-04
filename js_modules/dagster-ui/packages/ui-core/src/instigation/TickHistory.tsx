@@ -382,9 +382,11 @@ export const TickHistoryTimeline = ({
 function TickRow({
   tick,
   instigationSelector,
+  index,
 }: {
   tick: HistoryTickFragment;
   instigationSelector: InstigationSelector;
+  index: number;
 }) {
   const copyToClipboard = useCopyToClipboard();
   const [showResults, setShowResults] = React.useState(false);
@@ -415,7 +417,7 @@ function TickRow({
         <TickStatusTag tick={tick} />
       </td>
       <td>
-        {isOldTickWithoutEndtimestamp(tick) ? (
+        {isOldTickWithoutEndtimestamp(tick, index) ? (
           '- '
         ) : (
           <TimeElapsed
