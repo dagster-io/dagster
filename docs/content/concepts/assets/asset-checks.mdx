@@ -228,11 +228,13 @@ defs = Definitions(
 
 ### Checks on partitioned assets
 
-Checks are supported per-asset, not per-partition. To write a check on a partitioned asset, you'll want to summarize the status of all the partitions in to one pass/fail for the asset.
+To write a check on a partitioned asset, summarize the status of all the partitions as a single pass/fail for the asset.
 
-See [this GitHub issue](https://github.com/dagster-io/dagster/issues/17005) for updates on per-partition checks.
+Here's an example that checks that no partitions are null.
 
 ```python file=/concepts/assets/asset_checks/partitions.py
+from typing import Dict
+
 from dagster import (
     AssetCheckResult,
     Definitions,
@@ -248,9 +250,8 @@ def partitioned_asset(context):
 
 
 @asset_check(asset=partitioned_asset)
-def no_nones(partitioned_asset):
-    # once all the partitions have been materialized, partitioned_asset will be a dict
-    # with the partition names as keys and the materialized values as values.
+def no_nones(partitioned_asset: Dict[str, str]):
+    # partitioned_asset will be a dict of partition keys to materialized values.
     # partitioned_asset = {"a": "sample_data", "b": "sample_data", "c": "sample_data"}
     return AssetCheckResult(
         passed=all([x is not None for x in partitioned_asset.values()])
@@ -259,6 +260,51 @@ def no_nones(partitioned_asset):
 
 defs = Definitions(assets=[partitioned_asset], asset_checks=[no_nones])
 ```
+
+This is slightly different with some dataframe based io managers, which combine multiple partitions in to one dataframe. Here's an example that uses the <PyObject module="dagster_duckdb_pandas" object="duckdb_pandas_io_manager"/>.
+
+```python file=/concepts/assets/asset_checks/db_partitions.py
+import os
+
+import pandas as pd
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
+
+from dagster import (
+    AssetCheckResult,
+    Definitions,
+    StaticPartitionsDefinition,
+    asset,
+    asset_check,
+)
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
+    metadata={"partition_expr": "col1"},
+)
+def partitioned_dataframe_asset(context) -> pd.DataFrame:
+    return pd.DataFrame({"col1": [context.partition_key], "col2": ["foo"]})
+
+
+@asset_check(asset=partitioned_dataframe_asset)
+def no_nones_in_dataframe(partitioned_dataframe_asset: pd.DataFrame):
+    # partitioned_dataframe_asset includes all the partitions that have been materialized:
+    # pd.DataFrame({"col1": ["a", "b", "c"], "col2": ["foo", "foo", "foo"]})
+    return AssetCheckResult(passed=all(partitioned_dataframe_asset["col2"].notna()))
+
+
+db_io_manager = duckdb_pandas_io_manager.configured(
+    {"database": os.path.join("tmp", "sample.duckdb")}
+)
+
+defs = Definitions(
+    assets=[partitioned_dataframe_asset],
+    asset_checks=[no_nones_in_dataframe],
+    resources={"io_manager": db_io_manager},
+)
+```
+
+Checks are currently supported per-asset, not per-partition. See [this GitHub issue](https://github.com/dagster-io/dagster/issues/17005) for updates on per-partition checks.
 
 ---
 

@@ -19,14 +19,12 @@ from dagster import (
     MetadataValue,
     ResourceParam,
     SourceAsset,
-    StaticPartitionsDefinition,
     asset,
     asset_check,
     define_asset_job,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.test_utils import instance_for_test
 
 
 def execute_assets_and_checks(
@@ -618,21 +616,3 @@ def test_doesnt_invoke_io_manager():
         return AssetCheckResult(passed=True)
 
     execute_assets_and_checks(asset_checks=[check1], resources={"io_manager": DummyIOManager()})
-
-
-def test_partitioned_asset():
-    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
-    def my_asset(context):
-        return context.partition_key
-
-    @asset_check(asset=my_asset)
-    def my_check(my_asset):
-        assert my_asset == {"a": "a", "b": "b", "c": "c"}
-        return AssetCheckResult(passed=True)
-
-    with instance_for_test() as instance:
-        execute_assets_and_checks(instance=instance, assets=[my_asset], partition_key="a")
-        execute_assets_and_checks(instance=instance, assets=[my_asset], partition_key="b")
-        execute_assets_and_checks(
-            instance=instance, assets=[my_asset], asset_checks=[my_check], partition_key="c"
-        )

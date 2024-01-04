@@ -1,3 +1,5 @@
+from typing import Dict
+
 from dagster import (
     AssetCheckResult,
     Definitions,
@@ -13,9 +15,8 @@ def partitioned_asset(context):
 
 
 @asset_check(asset=partitioned_asset)
-def no_nones(partitioned_asset):
-    # once all the partitions have been materialized, partitioned_asset will be a dict
-    # with the partition names as keys and the materialized values as values.
+def no_nones(partitioned_asset: Dict[str, str]):
+    # partitioned_asset will be a dict of partition keys to materialized values.
     # partitioned_asset = {"a": "sample_data", "b": "sample_data", "c": "sample_data"}
     return AssetCheckResult(
         passed=all([x is not None for x in partitioned_asset.values()])
