@@ -419,4 +419,5 @@ class PartitionBackfill(
             backfill_timestamp=backfill_timestamp,
             serialized_asset_backfill_data=None,
             asset_backfill_data=asset_backfill_data,
+            asset_selection=[selector.asset_key for selector in partitions_by_assets],
         )
