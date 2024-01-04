@@ -6,6 +6,7 @@ import pendulum
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
@@ -419,4 +420,27 @@ class PartitionBackfill(
             backfill_timestamp=backfill_timestamp,
             serialized_asset_backfill_data=None,
             asset_backfill_data=asset_backfill_data,
+        )
+
+    @classmethod
+    def from_asset_graph_subset(
+        cls,
+        backfill_id: str,
+        asset_graph_subset: AssetGraphSubset,
+        backfill_timestamp: float,
+        tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
+    ) -> "PartitionBackfill":
+        return cls(
+            backfill_id=backfill_id,
+            status=BulkActionStatus.REQUESTED,
+            from_failure=False,
+            tags=tags,
+            backfill_timestamp=backfill_timestamp,
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=AssetBackfillData.empty(
+                target_subset=asset_graph_subset,
+                backfill_start_time=pendulum.from_timestamp(backfill_timestamp, tz="UTC"),
+                dynamic_partitions_store=dynamic_partitions_store,
+            ),
         )

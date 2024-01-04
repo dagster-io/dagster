@@ -2,7 +2,9 @@ from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
+    Dict,
     List,
     Mapping,
     NamedTuple,
@@ -14,7 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
+from dagster._annotations import PublicAttr, experimental, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.utils import validate_tags
@@ -25,8 +27,10 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import PartitionsDefinition
+    from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
@@ -352,6 +356,55 @@ class DagsterRunReaction(
         )
 
 
+@whitelist_for_serdes
+@experimental
+class BackfillRequest(
+    NamedTuple(
+        "_BackfillRequest",
+        [
+            ("asset_partitions", "AssetGraphSubset"),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+        ],
+    )
+):
+    """Specifies a backfill that should run. Meant to be returned by a SensorDefinition's evaluation
+    function.
+
+    Should not be instantiated directly using the constructor. Instead, use a static method like
+    `BackfillRequest.from_asset_selection_and_partitions`.
+    """
+
+    @property
+    def asset_keys(self) -> AbstractSet[AssetKey]:
+        return self.asset_partitions.asset_keys
+
+    @classmethod
+    def from_asset_selection_and_partitions(
+        cls,
+        asset_selection: Sequence[AssetKey],
+        partition_keys: Optional[Sequence[str]],
+        asset_graph: "AssetGraph",
+        tags: Optional[Mapping[str, str]] = None,
+    ) -> "BackfillRequest":
+        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+
+        partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
+        non_partitioned_asset_keys: Set[AssetKey] = set()
+
+        for asset_key in asset_selection:
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+            if partitions_def:
+                partitions_subsets_by_asset_key[
+                    asset_key
+                ] = partitions_def.subset_with_partition_keys(partition_keys)
+            else:
+                non_partitioned_asset_keys.add(asset_key)
+
+        return cls(
+            AssetGraphSubset(partitions_subsets_by_asset_key, non_partitioned_asset_keys), tags
+        )
+
+
 @experimental_param(
     param="asset_events", additional_warn_text="Runless asset events are experimental"
 )
@@ -368,6 +421,7 @@ class SensorResult(
                     Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
                 ],
             ),
+            ("backfill_requests", Optional[Sequence[BackfillRequest]]),
             (
                 "asset_events",
                 List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
@@ -388,12 +442,12 @@ class SensorResult(
             AddDynamicPartitionsRequest]]]): A list of dynamic partition requests to request dynamic
             partition addition and deletion. Run requests will be evaluated using the state of the
             partitions with these changes applied.
+        backfill_requests (Optional[Sequence[BackfillRequest]]):
+            A list of backfills to be submitted.
         asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]):  (Experimental) A
             list of materializations, observations, and asset check evaluations that the system
             will persist on your behalf at the end of sensor evaluation. These events will be not
             be associated with any particular run, but will be queryable and viewable in the asset catalog.
-
-
     """
 
     def __new__(
@@ -407,6 +461,7 @@ class SensorResult(
         asset_events: Optional[
             Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]
         ] = None,
+        backfill_requests: Optional[Sequence[BackfillRequest]] = None,
     ):
         if skip_reason and len(run_requests if run_requests else []) > 0:
             check.failed(
@@ -434,5 +489,8 @@ class SensorResult(
                     "asset_check_evaluations",
                     (AssetObservation, AssetMaterialization, AssetCheckEvaluation),
                 )
+            ),
+            backfill_requests=check.opt_sequence_param(
+                backfill_requests, "backfill_requests", BackfillRequest
             ),
         )

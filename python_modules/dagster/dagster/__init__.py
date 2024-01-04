@@ -334,6 +334,7 @@ from dagster._core.definitions.result import MaterializeResult as MaterializeRes
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
+    BackfillRequest as BackfillRequest,
     DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
     RunRequest as RunRequest,
     SensorResult as SensorResult,

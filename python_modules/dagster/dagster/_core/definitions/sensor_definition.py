@@ -65,6 +65,7 @@ from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
+    BackfillRequest,
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     RunRequest,
@@ -784,15 +785,19 @@ class SensorDefinition(IHasInternalInit):
         ] = []
         updated_cursor = context.cursor
         asset_events = []
+        backfill_requests: Sequence[BackfillRequest] = []
 
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
+            check.inst(
+                item, (SkipReason, RunRequest, DagsterRunReaction, SensorResult, BackfillRequest)
+            )
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
+                backfill_requests = list(item.backfill_requests) if item.backfill_requests else []
                 skip_message = (
                     item.skip_reason.skip_message
                     if item.skip_reason
@@ -815,6 +820,8 @@ class SensorDefinition(IHasInternalInit):
 
             elif isinstance(item, RunRequest):
                 run_requests = [item]
+            elif isinstance(item, BackfillRequest):
+                backfill_requests = [item]
             elif isinstance(item, SkipReason):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
             elif isinstance(item, DagsterRunReaction):
@@ -856,6 +863,22 @@ class SensorDefinition(IHasInternalInit):
             run_requests, context, self._asset_selection, dynamic_partitions_requests
         )
 
+        for backfill_request in backfill_requests:
+            asset_selection = check.not_none(
+                self._asset_selection,
+                "Can only yield BackfillRequests for sensors with an asset_selection",
+            )
+            asset_keys = backfill_request.asset_keys
+
+            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
+                check.not_none(context.repository_def).asset_graph
+            )
+            if unexpected_asset_keys:
+                raise DagsterInvalidSubsetError(
+                    "BackfillRequest includes asset keys that are not part of sensor's asset_selection:"
+                    f" {unexpected_asset_keys}"
+                )
+
         return SensorExecutionData(
             resolved_run_requests,
             skip_message,
@@ -864,6 +887,7 @@ class SensorDefinition(IHasInternalInit):
             log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events,
+            backfill_requests=backfill_requests,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -1011,6 +1035,7 @@ class SensorExecutionData(
                 "asset_events",
                 Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
             ),
+            ("backfill_requests", Optional[Sequence[BackfillRequest]]),
         ],
     )
 ):
@@ -1029,6 +1054,7 @@ class SensorExecutionData(
         asset_events: Optional[
             Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
         ] = None,
+        backfill_requests: Optional[Sequence[BackfillRequest]] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -1057,6 +1083,9 @@ class SensorExecutionData(
             log_key=log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events or [],
+            backfill_requests=check.opt_sequence_param(
+                backfill_requests, "backfill_requests", BackfillRequest
+            ),
         )
 
 
@@ -1078,13 +1107,13 @@ def wrap_sensor_evaluation(
         raw_evaluation_result = fn(**context_param, **resource_args_populated)
 
         def check_returned_scalar(scalar):
-            if isinstance(scalar, (SkipReason, RunRequest, SensorResult)):
+            if isinstance(scalar, (SkipReason, RunRequest, SensorResult, BackfillRequest)):
                 return scalar
             elif scalar is not None:
                 raise Exception(
                     f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason or "
-                    "RunRequest objects."
+                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason, "
+                    "RunRequest, SensorResult, or BackfillRequest objects."
                 )
 
         if inspect.isgenerator(raw_evaluation_result):
