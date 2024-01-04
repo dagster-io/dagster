@@ -327,7 +327,10 @@ class SqlRunStorage(RunStorage):
             expressions = []
             for key, value in tags.items():
                 expression = RunTagsTable.c.key == key
-                expression &= RunTagsTable.c.value == value
+                if isinstance(value, str):
+                    expression &= RunTagsTable.c.value == value
+                else:
+                    expression &= RunTagsTable.c.value.in_(value)
                 expressions.append(expression)
             subquery = subquery.where(db.or_(*expressions))
             subquery = subquery.group_by(RunTagsTable.c.run_id)
