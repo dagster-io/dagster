@@ -68,6 +68,14 @@ def dev_command_options(f):
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the logs for dagster services",
+)
+@click.option(
     "--port",
     "--dagit-port",
     "-p",
@@ -94,6 +102,7 @@ def dev_command_options(f):
 def dev_command(
     code_server_log_level: str,
     log_level: str,
+    log_format: str,
     port: Optional[str],
     host: Optional[str],
     live_data_poll_rate: Optional[str],
@@ -109,7 +118,7 @@ def dev_command(
             ' running "pip install dagster-webserver" in your Python environment.'
         )
 
-    configure_loggers(log_level=log_level.upper())
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 
     # Sanity check workspace args
@@ -171,11 +180,22 @@ def dev_command(
             + (["--port", port] if port else [])
             + (["--host", host] if host else [])
             + (["--dagster-log-level", log_level])
+            + (["--log-format", log_format])
             + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
             + args
         )
         daemon_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagster._daemon", "run", "--log-level", log_level] + args
+            [
+                sys.executable,
+                "-m",
+                "dagster._daemon",
+                "run",
+                "--log-level",
+                log_level,
+                "--log-format",
+                log_format,
+            ]
+            + args
         )
         try:
             while True:

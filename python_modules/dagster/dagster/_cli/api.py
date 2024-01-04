@@ -550,6 +550,14 @@ def _execute_step_command_body(
     help="Level at which to log output from the code server process",
 )
 @click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from the code server process",
+)
+@click.option(
     "--container-image",
     type=click.STRING,
     required=False,
@@ -606,6 +614,7 @@ def grpc_command(
     lazy_load_user_code=False,
     fixed_server_id=None,
     log_level="INFO",
+    log_format="colored",
     use_python_environment_entry_point=False,
     container_image=None,
     container_context=None,
@@ -632,7 +641,7 @@ def grpc_command(
 
     setup_interrupt_handlers()
 
-    configure_loggers(log_level=log_level.upper())
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
