@@ -26,12 +26,16 @@ from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .asset_daemon_cursor import AssetConditionCursor
 from .asset_graph import AssetGraph
 from .asset_subset import AssetSubset
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetCondition, AssetConditionEvaluation, AssetSubsetWithMetadata
+    from .asset_condition import (
+        AssetCondition,
+        AssetConditionEvaluation,
+        AssetConditionEvaluationState,
+        AssetSubsetWithMetadata,
+    )
     from .asset_daemon_context import AssetDaemonContext
 
 
@@ -54,15 +58,15 @@ class AssetConditionEvaluationContext:
 
     asset_key: AssetKey
     condition: "AssetCondition"
-    cursor: AssetConditionCursor
-    previous_condition_evaluation: Optional["AssetConditionEvaluation"]
+    previous_evaluation_state: Optional["AssetConditionEvaluationState"]
+    previous_evaluation: Optional["AssetConditionEvaluation"]
     candidate_subset: AssetSubset
 
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
     daemon_context: "AssetDaemonContext"
 
-    evaluation_results_by_key: Mapping[AssetKey, "AssetConditionEvaluation"]
+    evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
@@ -72,11 +76,11 @@ class AssetConditionEvaluationContext:
     def create(
         asset_key: AssetKey,
         condition: "AssetCondition",
-        cursor: AssetConditionCursor,
+        previous_evaluation_state: Optional["AssetConditionEvaluationState"],
         instance_queryer: CachingInstanceQueryer,
         data_time_resolver: CachingDataTimeResolver,
         daemon_context: "AssetDaemonContext",
-        evaluation_results_by_key: Mapping[AssetKey, "AssetConditionEvaluation"],
+        evaluation_state_by_key: Mapping[AssetKey, "AssetConditionEvaluationState"],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> "AssetConditionEvaluationContext":
         partitions_def = instance_queryer.asset_graph.get_partitions_def(asset_key)
@@ -84,8 +88,10 @@ class AssetConditionEvaluationContext:
         return AssetConditionEvaluationContext(
             asset_key=asset_key,
             condition=condition,
-            cursor=cursor,
-            previous_condition_evaluation=cursor.previous_evaluation,
+            previous_evaluation_state=previous_evaluation_state,
+            previous_evaluation=previous_evaluation_state.evaluation
+            if previous_evaluation_state
+            else None,
             candidate_subset=AssetSubset.all(
                 asset_key,
                 partitions_def,
@@ -95,7 +101,7 @@ class AssetConditionEvaluationContext:
             data_time_resolver=data_time_resolver,
             instance_queryer=instance_queryer,
             daemon_context=daemon_context,
-            evaluation_results_by_key=evaluation_results_by_key,
+            evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
             start_timestamp=pendulum.now("UTC").timestamp(),
         )
@@ -106,8 +112,8 @@ class AssetConditionEvaluationContext:
         return dataclasses.replace(
             self,
             condition=condition,
-            previous_condition_evaluation=self.previous_condition_evaluation.for_child(condition)
-            if self.previous_condition_evaluation
+            previous_evaluation=self.previous_evaluation.for_child(condition)
+            if self.previous_evaluation
             else None,
             candidate_subset=candidate_subset,
             root_ref=self.root_context,
@@ -134,23 +140,31 @@ class AssetConditionEvaluationContext:
 
     @property
     def previous_max_storage_id(self) -> Optional[int]:
-        return self.cursor.previous_max_storage_id
+        return (
+            self.previous_evaluation_state.max_storage_id
+            if self.previous_evaluation_state
+            else None
+        )
 
     @property
     def previous_evaluation_timestamp(self) -> Optional[float]:
-        return self.cursor.previous_evaluation_timestamp
+        return (
+            self.previous_evaluation_state.evaluation_timestamp
+            if self.previous_evaluation_state
+            else None
+        )
 
     @property
     def previous_true_subset(self) -> AssetSubset:
-        if self.previous_condition_evaluation is None:
+        if self.previous_evaluation is None:
             return self.empty_subset()
-        return self.previous_condition_evaluation.true_subset
+        return self.previous_evaluation.true_subset
 
     @property
     def previous_subsets_with_metadata(self) -> Sequence["AssetSubsetWithMetadata"]:
-        if self.previous_condition_evaluation is None:
+        if self.previous_evaluation is None:
             return []
-        return self.previous_condition_evaluation.subsets_with_metadata
+        return self.previous_evaluation.subsets_with_metadata
 
     @functools.cached_property
     @root_property
@@ -162,10 +176,10 @@ class AssetConditionEvaluationContext:
         for parent_key in self.asset_graph.get_parents(self.asset_key):
             if not self.materializable_in_same_run(self.asset_key, parent_key):
                 continue
-            parent_result = self.evaluation_results_by_key.get(parent_key)
-            if not parent_result:
+            parent_info = self.evaluation_state_by_key.get(parent_key)
+            if not parent_info:
                 continue
-            parent_subset = parent_result.true_subset
+            parent_subset = parent_info.true_subset
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
 
@@ -179,7 +193,7 @@ class AssetConditionEvaluationContext:
             self.instance_queryer.get_asset_partitions_updated_after_cursor(
                 self.asset_key,
                 asset_partitions=None,
-                after_cursor=self.cursor.previous_max_storage_id,
+                after_cursor=self.previous_max_storage_id,
                 respect_materialization_data_versions=False,
             ),
         )
@@ -188,11 +202,15 @@ class AssetConditionEvaluationContext:
     @root_property
     def previous_tick_requested_subset(self) -> AssetSubset:
         """The set of asset partitions that were requested (or discarded) on the previous tick."""
-        previous_evaluation = self.cursor.previous_evaluation
-        if previous_evaluation is None:
+        if (
+            self.previous_evaluation_state is None
+            or self.previous_evaluation_state.evaluation is None
+        ):
             return self.empty_subset()
 
-        return previous_evaluation.get_requested_or_discarded_subset(self.condition)
+        return self.previous_evaluation_state.evaluation.get_requested_or_discarded_subset(
+            self.condition
+        )
 
     @property
     def materialized_requested_or_discarded_since_previous_tick_subset(self) -> AssetSubset:
@@ -211,7 +229,7 @@ class AssetConditionEvaluationContext:
             asset_partitions,
             cursor,
         ) = self.root_context.instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
-            latest_storage_id=self.cursor.previous_max_storage_id,
+            latest_storage_id=self.previous_max_storage_id,
             child_asset_key=self.root_context.asset_key,
             map_old_time_partitions=False,
         )
@@ -247,17 +265,16 @@ class AssetConditionEvaluationContext:
         """
         from .asset_condition import HistoricalAllPartitionsSubsetSentinel
 
-        if not self.previous_condition_evaluation:
+        if not self.previous_evaluation:
             return self.candidate_subset
         # when the candidate_subset is HistoricalAllPartitionsSubsetSentinel, this indicates that the
         # entire asset was evaluated for this condition on the previous tick, and so no candidates
         # were *not* evaluated on the previous tick
         elif isinstance(
-            self.previous_condition_evaluation.candidate_subset,
-            HistoricalAllPartitionsSubsetSentinel,
+            self.previous_evaluation.candidate_subset, HistoricalAllPartitionsSubsetSentinel
         ):
             return self.empty_subset()
-        return self.candidate_subset - self.previous_condition_evaluation.candidate_subset
+        return self.candidate_subset - self.previous_evaluation.candidate_subset
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
@@ -304,10 +321,10 @@ class AssetConditionEvaluationContext:
         }
 
     def will_update_asset_partition(self, asset_partition: AssetKeyPartitionKey) -> bool:
-        parent_evaluation = self.evaluation_results_by_key.get(asset_partition.asset_key)
-        if not parent_evaluation:
+        parent_evaluation_state = self.evaluation_state_by_key.get(asset_partition.asset_key)
+        if not parent_evaluation_state:
             return False
-        return asset_partition in parent_evaluation.true_subset
+        return asset_partition in parent_evaluation_state.true_subset
 
     def add_evaluation_data_from_previous_tick(
         self,

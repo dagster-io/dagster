@@ -34,11 +34,11 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_condition import AssetConditionEvaluation
+from .asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
 from .asset_condition_evaluation_context import (
     AssetConditionEvaluationContext,
 )
-from .asset_daemon_cursor import AssetConditionCursor, AssetDaemonCursor
+from .asset_daemon_cursor import AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -176,9 +176,9 @@ class AssetDaemonContext:
     def evaluate_asset(
         self,
         asset_key: AssetKey,
-        evaluation_results_by_key: Mapping[AssetKey, AssetConditionEvaluation],
+        evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> Tuple[AssetConditionEvaluation, AssetConditionCursor, Optional[datetime.datetime]]:
+    ) -> Tuple[AssetConditionEvaluationState, Optional[datetime.datetime]]:
         """Evaluates the auto materialize policy of a given asset key.
 
         Params:
@@ -196,48 +196,34 @@ class AssetDaemonContext:
             self.asset_graph.auto_materialize_policies_by_key.get(asset_key)
         ).to_asset_condition()
 
-        asset_cursor = self.cursor.get_asset_cursor(asset_key)
+        asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
 
         context = AssetConditionEvaluationContext.create(
             asset_key=asset_key,
-            cursor=asset_cursor,
+            previous_evaluation_state=asset_cursor,
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
             daemon_context=self,
-            evaluation_results_by_key=evaluation_results_by_key,
+            evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
         )
 
-        evaluation_result = asset_condition.evaluate(context)
-
-        new_asset_cursor = AssetConditionCursor(
-            asset_key=asset_key,
-            previous_max_storage_id=context.new_max_storage_id,
-            previous_evaluation_timestamp=context.evaluation_time.timestamp(),
-            previous_evaluation=evaluation_result.evaluation,
-            extra_values_by_unique_id=evaluation_result.extra_values_by_unique_id,
-        )
+        result = asset_condition.evaluate(context)
 
         expected_data_time = get_expected_data_time_for_asset_key(
-            context, will_materialize=evaluation_result.true_subset.size > 0
+            context, will_materialize=result.true_subset.size > 0
         )
-        return evaluation_result.evaluation, new_asset_cursor, expected_data_time
+        return AssetConditionEvaluationState.create(context, result), expected_data_time
 
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[
-        Sequence[AssetConditionEvaluation],
-        Sequence[AssetConditionCursor],
-        AbstractSet[AssetKeyPartitionKey],
-    ]:
+    ) -> Tuple[Sequence[AssetConditionEvaluationState], AbstractSet[AssetKeyPartitionKey]]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
         """
-        asset_cursors: List[AssetConditionCursor] = []
-
-        evaluation_results_by_key: Dict[AssetKey, AssetConditionEvaluation] = {}
+        evaluation_state_by_key: Dict[AssetKey, AssetConditionEvaluationState] = {}
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         to_request: Set[AssetKeyPartitionKey] = set()
 
@@ -256,14 +242,14 @@ class AssetDaemonContext:
                 f" {asset_key.to_user_string()} ({num_checked_assets}/{num_auto_materialize_asset_keys})"
             )
 
-            (evaluation, asset_cursor_for_asset, expected_data_time) = self.evaluate_asset(
-                asset_key, evaluation_results_by_key, expected_data_time_mapping
+            (evaluation_state, expected_data_time) = self.evaluate_asset(
+                asset_key, evaluation_state_by_key, expected_data_time_mapping
             )
 
-            num_requested = evaluation.true_subset.size
+            num_requested = evaluation_state.true_subset.size
             log_fn = self._logger.info if num_requested > 0 else self._logger.debug
 
-            to_request_asset_partitions = evaluation.true_subset.asset_partitions
+            to_request_asset_partitions = evaluation_state.true_subset.asset_partitions
             to_request_str = ",".join(
                 [(ap.partition_key or "No partition") for ap in to_request_asset_partitions]
             )
@@ -274,9 +260,8 @@ class AssetDaemonContext:
                 f" requested ({to_request_str}) ({format(time.time()-start_time, '.3f')} seconds)"
             )
 
-            evaluation_results_by_key[asset_key] = evaluation
+            evaluation_state_by_key[asset_key] = evaluation_state
             expected_data_time_mapping[asset_key] = expected_data_time
-            asset_cursors.append(asset_cursor_for_asset)
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
             # materialize all of them
@@ -285,18 +270,21 @@ class AssetDaemonContext:
                     expected_data_time_mapping[neighbor_key] = expected_data_time
 
                     # make sure that the true_subset of the neighbor is accurate
-                    if neighbor_key in evaluation_results_by_key:
-                        neighbor_evaluation = evaluation_results_by_key[neighbor_key]
-                        evaluation_results_by_key[neighbor_key] = neighbor_evaluation._replace(
-                            true_subset=neighbor_evaluation.true_subset
-                            | evaluation.true_subset._replace(asset_key=neighbor_key)
+                    if neighbor_key in evaluation_state_by_key:
+                        neighbor_evaluation = evaluation_state_by_key[neighbor_key]
+                        evaluation_state_by_key[neighbor_key] = neighbor_evaluation._replace(
+                            evaluation=neighbor_evaluation.evaluation._replace(
+                                true_subset=neighbor_evaluation.true_subset._replace(
+                                    asset_key=neighbor_key
+                                )
+                            )
                         )
                     to_request |= {
                         ap._replace(asset_key=neighbor_key)
-                        for ap in evaluation.true_subset.asset_partitions
+                        for ap in evaluation_state.true_subset.asset_partitions
                     }
 
-        return (list(evaluation_results_by_key.values()), asset_cursors, to_request)
+        return (list(evaluation_state_by_key.values()), to_request)
 
     def evaluate(
         self,
@@ -314,7 +302,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluations, asset_cursors, to_request = self.get_asset_condition_evaluations()
+        evaluation_state, to_request = self.get_asset_condition_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -329,7 +317,7 @@ class AssetDaemonContext:
             run_requests,
             self.cursor.with_updates(
                 evaluation_id=self._evaluation_id,
-                asset_cursors=asset_cursors,
+                evaluation_state=evaluation_state,
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests
@@ -337,12 +325,12 @@ class AssetDaemonContext:
                 ],
                 evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
             ),
-            # only record evaluations where something changed
+            # only record evaluation results where something changed
             [
-                evaluation
-                for evaluation in evaluations
-                if not evaluation.equivalent_to_stored_evaluation(
-                    self.cursor.get_previous_evaluation(evaluation.asset_key)
+                es.evaluation
+                for es in evaluation_state
+                if not es.evaluation.equivalent_to_stored_evaluation(
+                    self.cursor.get_previous_evaluation(es.asset_key)
                 )
             ],
         )
