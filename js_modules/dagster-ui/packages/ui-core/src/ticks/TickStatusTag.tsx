@@ -32,7 +32,7 @@ export const TickStatusTag = ({
     switch (tick.status) {
       case InstigationTickStatus.STARTED:
         return (
-          <Tag intent="primary" icon="spinner">
+          <Tag intent="primary" icon={isStuckStarted ? undefined : 'spinner'}>
             {isStuckStarted ? 'Started' : 'Evaluating'}
           </Tag>
         );

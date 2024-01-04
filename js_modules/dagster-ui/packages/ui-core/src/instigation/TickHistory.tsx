@@ -220,6 +220,8 @@ export const TicksTable = ({
     />
   );
 
+  console.log({ticks}, isOldTickWithoutEndtimestamp(ticks[0], 0));
+  debugger;
   return (
     <>
       {logTick ? (
@@ -254,8 +256,13 @@ export const TicksTable = ({
             </tr>
           </thead>
           <tbody>
-            {ticks.map((tick) => (
-              <TickRow key={tick.id} tick={tick} instigationSelector={instigationSelector} />
+            {ticks.map((tick, index) => (
+              <TickRow
+                key={tick.id}
+                tick={tick}
+                instigationSelector={instigationSelector}
+                index={index}
+              />
             ))}
           </tbody>
         </TableWrapper>
@@ -405,6 +412,8 @@ function TickRow({
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
+  const isOldTick = isOldTickWithoutEndtimestamp(tick, index);
+
   return (
     <tr>
       <td>
@@ -414,10 +423,10 @@ function TickRow({
         />
       </td>
       <td>
-        <TickStatusTag tick={tick} />
+        <TickStatusTag tick={tick} isStuckStarted={isOldTick} />
       </td>
       <td>
-        {isOldTickWithoutEndtimestamp(tick, index) ? (
+        {isOldTick ? (
           '- '
         ) : (
           <TimeElapsed
