@@ -1,5 +1,8 @@
 import pytest
 
+from docs_snippets.guides.dagster.dagster_pipes.subprocess.custom_messages.dagster_code import (
+    defs as custom_msg_defs,
+)
 from docs_snippets.guides.dagster.dagster_pipes.subprocess.part_1.dagster_code import (
     defs as part_1_defs,
 )
@@ -37,9 +40,11 @@ from docs_snippets.guides.dagster.dagster_pipes.subprocess.with_multi_asset.dags
         with_asset_check_defs,
         with_extras_env_defs,
         with_multi_asset_defs,
+        custom_msg_defs,
     ],
 )
 def test_execute(defs):
-    job_def = defs.get_implicit_global_asset_job_def()
-    result = job_def.execute_in_process()
-    assert result.success
+    job_defs = defs.get_all_job_defs()
+    for job_def in job_defs:
+        result = job_def.execute_in_process()
+        assert result.success

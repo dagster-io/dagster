@@ -15,10 +15,10 @@ apidoc-watch-build:
 next-dev-install:
 	cd next; yarn install
 
-next-watch-build:
+next-watch-build dev:
 	cd next; yarn dev
 
-mdx-format: 
+mdx-format:
 	cd next; yarn mdx-format
 
 mdx-full-format: docs_ruff mdx-format
