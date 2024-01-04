@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from typing import Any, Dict, Optional, Sequence, Type, cast
 
 import duckdb
-from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster import IOManagerDefinition, OutputContext, InputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -251,6 +251,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
             io_manager_name="DuckDBIOManager",
+            connect_kwargs=lambda context: { "read_only": isinstance(context, InputContext) }
         )
 
 
@@ -279,13 +280,16 @@ class DuckDbClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, _, **kwargs):
+        defaultKwargs = { "read_only": False}
+        kwargs = { **defaultKwargs, **kwargs }
+        
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
             kwargs={
                 "database": context.resource_config["database"],
-                "read_only": False,
+                "read_only": kwargs["read_only"],
                 "config": context.resource_config["connection_config"],
             },
             max_retries=10,
