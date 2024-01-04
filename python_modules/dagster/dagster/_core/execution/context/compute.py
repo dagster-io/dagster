@@ -1470,7 +1470,7 @@ class AssetExecutionContext(OpExecutionContext):
 
         Returns: Optional[AssetMaterialization]
         """
-        return self._step_execution_context.upstream_asset_materialization_events.get(
+        return self.op_execution_context._step_execution_context.upstream_asset_materialization_events.get(  # noqa: SLF001
             AssetKey.from_coercible(key)
         )
 
