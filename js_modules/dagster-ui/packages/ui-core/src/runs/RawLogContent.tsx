@@ -166,13 +166,17 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
       return false;
     }
     const {scrollHeight, scrollTop, offsetHeight} = this.container.current;
-    const shouldScroll = offsetHeight + scrollTop >= scrollHeight;
+
+    // Note: The +1 here accounts for these numbers occasionally being off by 0.5px in FF
+    const shouldScroll = offsetHeight + scrollTop + 1 >= scrollHeight;
     return shouldScroll;
   }
 
   componentDidUpdate(_props: any, _state: any, shouldScroll: boolean) {
     if (shouldScroll) {
-      this.scrollToBottom();
+      window.requestAnimationFrame(() => {
+        this.scrollToBottom();
+      });
     }
     if (this.props.isSelected && !_props.isSelected) {
       this.container.current && this.container.current.focus();
@@ -235,11 +239,34 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
       );
     }
 
+    const onSelectAll = (e: React.KeyboardEvent) => {
+      const range = document.createRange();
+      const sel = document.getSelection();
+      const contentEl = e.currentTarget.querySelector('[data-content]');
+      if (!sel || !contentEl) {
+        return;
+      }
+      range.selectNode(contentEl);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      e.preventDefault();
+    };
+
     return (
-      <div className={className} style={{outline: 'none'}} ref={this.container} tabIndex={0}>
+      <div
+        className={className}
+        style={{outline: 'none'}}
+        ref={this.container}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+            onSelectAll(e);
+          }
+        }}
+      >
         <ContentContainer>
           <LineNumbers content={content} />
-          <Content>
+          <Content data-content={true}>
             <SolarizedColors />
             <Ansi linkify={false} useClasses>
               {content}
@@ -253,18 +280,35 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
 
 const LineNumbers = (props: IScrollContainerProps) => {
   const {content} = props;
-  if (!content) {
-    return null;
-  }
-  const matches = content.match(/\n/g);
+  const lastCount = React.useRef(0);
+  const container = React.createRef<HTMLDivElement>();
+
+  const matches = (content || '').match(/\n/g);
   const count = matches ? matches.length : 0;
-  return (
-    <LineNumberContainer>
-      {Array.from(Array(count), (_, i) => (
-        <div key={i}>{String(i + 1)}</div>
-      ))}
-    </LineNumberContainer>
-  );
+
+  // The common case here is 1+ new line numbers appearing on each render. Until we fully
+  // virtualize this UI, a good solution is to append a new div containing just the added
+  // line numbers. This avoids repaint + relayout of the existing line numbers, which takes
+  // 100ms per 100k lines of logs.
+  React.useLayoutEffect(() => {
+    const containerEl = container.current;
+    if (!containerEl) {
+      return;
+    }
+    if (count < lastCount.current) {
+      containerEl.textContent = '';
+      lastCount.current = 0;
+    }
+    const div = document.createElement('div');
+    const addedCount = count - lastCount.current;
+    div.textContent = Array.from(Array(addedCount), (_, i) =>
+      String(lastCount.current + i + 1),
+    ).join('\n');
+    containerEl.appendChild(div);
+    lastCount.current = count;
+  }, [container, count]);
+
+  return <LineNumberContainer ref={container} />;
 };
 
 const Content = styled.div`
@@ -273,9 +317,6 @@ const Content = styled.div`
 `;
 
 const LineNumberContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
   border-right: 1px solid ${colorKeylineDefault()};
   padding: 10px 10px 10px 20px;
   margin-right: 5px;
@@ -283,6 +324,11 @@ const LineNumberContainer = styled.div`
   opacity: 0.8;
   color: ${colorTextLighter()};
   min-height: 100%;
+  user-select: none;
+
+  & > div {
+    text-align: right;
+  }
 `;
 
 const SolarizedColors = createGlobalStyle`
