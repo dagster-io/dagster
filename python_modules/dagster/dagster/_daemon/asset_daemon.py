@@ -9,7 +9,10 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+    BackcompatAssetDaemonEvaluationInfo,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -109,9 +112,14 @@ def get_current_evaluation_id(
         instigator_state = check.not_none(instance.schedule_storage).get_instigator_state(
             sensor_origin.get_id(), sensor_origin.get_selector().get_id()
         )
-        raw_cursor = (
+        compressed_cursor = (
             cast(SensorInstigatorData, instigator_state.instigator_data).cursor
             if instigator_state
+            else None
+        )
+        raw_cursor = (
+            BackcompatAssetDaemonEvaluationInfo.from_compressed(compressed_cursor).serialized_cursor
+            if compressed_cursor
             else None
         )
 
@@ -516,15 +524,19 @@ class AssetDaemon(DagsterDaemon):
         )
 
         if sensor:
-            raw_cursor = cast(
+            compressed_cursor = cast(
                 SensorInstigatorData,
                 check.not_none(auto_materialize_instigator_state).instigator_data,
             ).cursor
+
             stored_cursor = (
-                AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
-                if raw_cursor
+                BackcompatAssetDaemonEvaluationInfo.from_compressed(
+                    compressed_cursor
+                ).get_asset_daemon_cursor(asset_graph)
+                if compressed_cursor
                 else AssetDaemonCursor.empty()
             )
+
             instigator_origin_id = sensor.get_external_origin().get_id()
             instigator_selector_id = sensor.get_external_origin().get_selector().get_id()
             instigator_name = sensor.name
