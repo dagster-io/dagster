@@ -127,7 +127,8 @@ class DbIOManager(IOManager):
         # is None, but the typing type is not Nothing
         if obj is None:
             raise DagsterInvariantViolationError(
-                "Unexpected 'None' output value. If a 'None' value is intentional, set the output type to None by adding return type annotation '-> None'.",
+                "Unexpected 'None' output value. If a 'None' value is intentional, set the output"
+                " type to None by adding return type annotation '-> None'.",
             )
 
         obj_type = type(obj)
