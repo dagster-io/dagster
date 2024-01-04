@@ -1,11 +1,18 @@
 ---
 title: "Logging | Dagster Docs"
-description: "Dagster includes a rich and extensible logging system"
+description: "Dagster includes a rich and extensible logging system."
 ---
 
 # Logging
 
-Dagster supports a variety of built-in logging options, as well as the ability to extend and customize them. By default, Dagster automatically tracks and captures all execution events, such as those during an asset materialization. During these events, logs like the following are generated:
+Dagster supports a variety of built-in logging options, as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/concepts/webserver/ui) and daemon.
+
+By default, Dagster automatically tracks and captures all execution events, which includes:
+
+- **Information about what Dagster is doing**, such as events that occur while Dagster executes a run to materialize an asset.
+- **Events produced by user code**, such as a custom message showing how many records were processed to create an asset.
+
+During these events, logs like the following are generated:
 
 ```bash
 12:40:05 - DEBUG - RUN_START - Started execution of run for "__ASSET_JOB_0".
@@ -25,15 +32,21 @@ Dagster supports a variety of built-in logging options, as well as the ability t
 12:40:09 - DEBUG - RUN_SUCCESS - Finished execution of run for "__ASSET_JOB_0".
 ```
 
-These logs can be exported to a local file or viewed in the [Dagster UI](#logs-in-the-dagster-ui).
+These logs can be exported to a local file or viewed in the [Dagster UI](#log-types).
 
 ---
 
-## Benefits
+## Log types
 
-- Increased visibility into data pipelines
-- Easier debugging
-- Simplified identification of performance issues
+When jobs are run, the logs stream back to the UI's [**Run details** page](/concepts/webserver/ui#run-details) in real time. The UI contains two types of logs - **structured event** and **raw compute** - which you can learn about below.
+
+### Structured event logs
+
+<StructuredEventLogs />
+
+### Raw compute logs
+
+<RawComputeLogs />
 
 ---
 
@@ -42,8 +55,7 @@ These logs can be exported to a local file or viewed in the [Dagster UI](#logs-i
 To utilize logging in Dagster, you can:
 
 - [Extend and customize Dagster's built-in loggers](#built-in-loggers)
-- [Use Python's logging module](#python-logging)
-- [View and download logs in the Dagster UI](#dagster-ui)
+- [Integrate external loggers](#external-loggers)
 
 ### Built-in loggers
 
@@ -55,17 +67,11 @@ Dagster's [built-in loggers](/concepts/logging/loggers):
 
 **Loggers can also be customized**. Refer to the [Customizing loggers guide](/concepts/logging/custom-loggers) for more information and examples.
 
-### Python logging
+### External loggers
 
-In addition to built-in loggers, Dagster is also compatible with [Python's logging module](https://docs.python.org/3/library/logging.html).
-
-Python logs can be used to augment Dagster's default logs and configured to display in the UI. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
+In addition to built-in loggers, you can also integrate external loggers to augment Dagster's default logs and configure them to display in the UI. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
 
 Refer to the [Python logging guide](/concepts/logging/python-logging) for more information and examples.
-
-### Logs in the Dagster UI
-
-<LoggingInDagsterUI />
 
 ---
 
