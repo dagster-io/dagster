@@ -36,6 +36,6 @@ setup(
         ]
     },
     include_package_data=True,
-    install_requires=[f"dagster{pin}", "mysql-connector-python"],
+    install_requires=["dagster==1.5.14rc0", "mysql-connector-python"],
     zip_safe=False,
 )
