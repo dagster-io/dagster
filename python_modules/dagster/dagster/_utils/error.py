@@ -118,7 +118,6 @@ def serializable_error_info_from_exc_info(
     exc_info: ExceptionInfo,
     # Whether to forward serialized errors thrown from subprocesses
     hoist_user_code_error: Optional[bool] = True,
-    hoist_user_code_execution_error: Optional[bool] = False,
 ) -> SerializableErrorInfo:
     """This function is used to turn an exception into a serializable object that can be passed
     across process boundaries or sent over GraphQL.
@@ -127,8 +126,6 @@ def serializable_error_info_from_exc_info(
         exc_info (ExceptionInfo): The exception info to serialize
         hoist_user_code_error (Optional[bool]): Whether to extract the inner user code error if the raised exception
             is a DagsterUserCodeProcessError. Defaults to True.
-        hoist_user_code_execution_error (Optional[bool]): Whether to extract the inner user code error if the raised
-            exception is a DagsterUserCodeExecutionError. Defaults to False.
     """
     # `sys.exc_info() return Tuple[None, None, None] when there is no exception being processed. We accept this in
     # the type signature here since this function is meant to directly receive the return value of
@@ -156,10 +153,6 @@ def serializable_error_info_from_exc_info(
         and len(e.user_code_process_error_infos) == 1
     ):
         return e.user_code_process_error_infos[0]
-    elif hoist_user_code_execution_error and isinstance(e, DagsterUserCodeExecutionError):
-        inner_exc_type, inner_e, inner_tb = e.original_exc_info
-        tb_exc = traceback.TracebackException(inner_exc_type, inner_e, inner_tb)
-        return _serializable_error_info_from_tb(tb_exc)
     else:
         tb_exc = traceback.TracebackException(exc_type, e, tb)
         return _serializable_error_info_from_tb(tb_exc)

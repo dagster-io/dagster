@@ -43,6 +43,13 @@ query {
             }
             ... on PythonError {
               message
+              stack
+              errorChain {
+                error {
+                  message
+                  stack
+                }
+              }
             }
           }
           loadStatus
@@ -60,6 +67,12 @@ query {
       ... on PythonError {
           message
           stack
+          errorChain {
+            error {
+                message
+                stack
+            }
+          }
       }
     }
 }
@@ -155,7 +168,10 @@ class TestLoadWorkspace(BaseTestSuite):
 
             assert failure_node["name"] == "error_location"
             assert failure_node["loadStatus"] == "LOADED"
-            assert "No such file or directory" in failure_node["locationOrLoadError"]["message"]
+
+            assert "No such file or directory" in str(
+                failure_node["locationOrLoadError"]
+            ), failure_node
 
             for node in nodes:
                 assert node["loadStatus"] == "LOADED"
@@ -278,8 +294,8 @@ class TestLoadWorkspace(BaseTestSuite):
 
             assert failure_node["name"] == "error_location"
             assert failure_node["loadStatus"] == "LOADED"
-            assert (
-                "No such file or directory" not in failure_node["locationOrLoadError"]["message"]
+            assert "No such file or directory" not in str(
+                failure_node["locationOrLoadError"]
             ), failure_node["locationOrLoadError"]["message"]
             assert (
                 "Search in logs for this error ID for more details"
