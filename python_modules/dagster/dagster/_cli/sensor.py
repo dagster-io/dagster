@@ -283,6 +283,7 @@ def execute_preview_command(
                         since,
                         last_run_key,
                         cursor,
+                        log_key=None,
                         last_sensor_start_time=None,
                     )
                 except Exception:
@@ -362,7 +363,9 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                         InstigatorType.SENSOR,
                         InstigatorStatus.STOPPED,
                         SensorInstigatorData(
-                            min_interval=external_sensor.min_interval_seconds, cursor=cursor_value
+                            min_interval=external_sensor.min_interval_seconds,
+                            cursor=cursor_value,
+                            sensor_type=external_sensor.sensor_type,
                         ),
                     )
                 )
@@ -376,6 +379,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                             cursor=cursor_value,
                             last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,
                             last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,
+                            sensor_type=external_sensor.sensor_type,
                         ),
                     )
                 )

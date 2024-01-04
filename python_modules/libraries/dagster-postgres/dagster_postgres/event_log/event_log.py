@@ -1,4 +1,5 @@
-from typing import Any, ContextManager, Mapping, Optional, Sequence
+from contextlib import contextmanager
+from typing import Any, ContextManager, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
 import sqlalchemy as db
@@ -108,8 +109,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            SqlEventLogStorageMetadata.create_all(conn)
-            stamp_alembic_rev(pg_alembic_config(__file__), conn)
+            with conn.begin():
+                SqlEventLogStorageMetadata.create_all(conn)
+                stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
@@ -285,6 +287,17 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def index_connection(self) -> ContextManager[Connection]:
         return self._connect()
+
+    @contextmanager
+    def index_transaction(self) -> Iterator[Connection]:
+        """Context manager yielding a connection to the index shard that has begun a transaction."""
+        with self.index_connection() as conn:
+            if conn.in_transaction():
+                yield conn
+            else:
+                conn = conn.execution_options(isolation_level="READ COMMITTED")  # noqa: PLW2901
+                with conn.begin():
+                    yield conn
 
     def has_table(self, table_name: str) -> bool:
         return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))

@@ -1,4 +1,4 @@
-import {MenuItem, Menu, Select, ButtonLink} from '@dagster-io/ui-components';
+import {MenuItem, Menu, Select, Button, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {HourCycle} from './HourCycle';
@@ -75,8 +75,7 @@ export const HourCycleSelect = () => {
   return (
     <Select<(typeof items)[0]>
       popoverProps={{
-        position: 'bottom-left',
-        modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
+        position: 'bottom-right',
       }}
       filterable={false}
       activeItem={items.find((item) => item.key === hourCycle)}
@@ -99,9 +98,12 @@ export const HourCycleSelect = () => {
       }}
       onItemSelect={(item) => setHourCycle(item.key as HourCycle)}
     >
-      <ButtonLink>
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
         {hourCycle === 'Automatic' || !hourCycle ? labels.automatic : labels[hourCycle]}
-      </ButtonLink>
+      </Button>
     </Select>
   );
 };

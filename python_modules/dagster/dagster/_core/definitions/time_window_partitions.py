@@ -742,7 +742,22 @@ class TimeWindowPartitionsDefinition(
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
         start_time = self.start_time_for_partition_key(partition_key_range.start)
+        check.invariant(
+            start_time.timestamp() >= self.start.timestamp(),
+            (
+                f"Partition key range start {partition_key_range.start} is before "
+                f"the partitions definition start time {self.start}"
+            ),
+        )
         end_time = self.end_time_for_partition_key(partition_key_range.end)
+        if self.end:
+            check.invariant(
+                end_time.timestamp() <= self.end.timestamp(),
+                (
+                    f"Partition key range end {partition_key_range.end} is after the "
+                    f"partitions definition end time {self.end}"
+                ),
+            )
 
         return self.get_partition_keys_in_time_window(TimeWindow(start_time, end_time))
 

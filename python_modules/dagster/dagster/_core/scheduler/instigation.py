@@ -17,6 +17,7 @@ from dagster._core.definitions.run_request import (
     SkipReason as SkipReason,
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
@@ -91,6 +92,7 @@ class SensorInstigatorData(
             ("last_tick_start_timestamp", Optional[float]),
             # the last time the sensor was started
             ("last_sensor_start_timestamp", Optional[float]),
+            ("sensor_type", Optional[SensorType]),
         ],
     )
 ):
@@ -102,6 +104,7 @@ class SensorInstigatorData(
         cursor: Optional[str] = None,
         last_tick_start_timestamp: Optional[float] = None,
         last_sensor_start_timestamp: Optional[float] = None,
+        sensor_type: Optional[SensorType] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -111,6 +114,7 @@ class SensorInstigatorData(
             check.opt_str_param(cursor, "cursor"),
             check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
             check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
+            check.opt_inst_param(sensor_type, "sensor_type", SensorType),
         )
 
     def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
@@ -122,6 +126,7 @@ class SensorInstigatorData(
             self.cursor,
             self.last_tick_start_timestamp,
             start_timestamp,
+            self.sensor_type,
         )
 
 
@@ -410,10 +415,6 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     @property
     def requested_asset_materialization_count(self) -> int:
-        check.invariant(
-            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
-            "Only auto-materialize ticks set requested_asset_materialization_count",
-        )
         if self.tick_data.status != TickStatus.SUCCESS:
             return 0
 
@@ -425,11 +426,6 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     @property
     def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
-        check.invariant(
-            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
-            "Only auto-materialize ticks set requested_asset_keys",
-        )
-
         if self.tick_data.status != TickStatus.SUCCESS:
             return {}
 
@@ -446,11 +442,6 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     @property
     def requested_asset_keys(self) -> AbstractSet[AssetKey]:
-        check.invariant(
-            self.tick_data.instigator_type == InstigatorType.AUTO_MATERIALIZE,
-            "Only auto-materialize ticks set requested_asset_keys",
-        )
-
         if self.tick_data.status != TickStatus.SUCCESS:
             return set()
 

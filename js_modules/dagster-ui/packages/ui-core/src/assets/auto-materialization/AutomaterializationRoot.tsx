@@ -9,24 +9,28 @@ import {
   Heading,
   PageHeader,
   Table,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import React, {useLayoutEffect} from 'react';
+import {Redirect} from 'react-router-dom';
 
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {assertUnreachable} from '../../app/Util';
 import {useTrackPageView} from '../../app/analytics';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isOldTickWithoutEndtimestamp} from '../../instigation/util';
 import {OverviewTabs} from '../../overview/OverviewTabs';
-import {useAutomaterializeDaemonStatus} from '../AutomaterializeDaemonStatusTag';
+import {useAutomationPolicySensorFlag} from '../AutomationPolicySensorFlag';
+import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
-import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
+import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
 import {
   AssetDaemonTicksQuery,
   AssetDaemonTicksQueryVariables,
@@ -38,8 +42,25 @@ const THREE_MINUTES = 3 * MINUTE;
 const FIVE_MINUTES = 5 * MINUTE;
 const TWENTY_MINUTES = 20 * MINUTE;
 
+// Determine whether the user is flagged to see automaterialize policies as
+// sensors. If so, redirect to the Sensors overview.
 export const AutomaterializationRoot = () => {
+  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
+  switch (automaterializeSensorsFlagState) {
+    case 'unknown':
+      return <div />; // Waiting for result
+    case 'has-global-amp':
+      return <GlobalAutomaterializationRoot />;
+    case 'has-sensor-amp':
+      return <Redirect to="/overview/sensors" />;
+    default:
+      assertUnreachable(automaterializeSensorsFlagState);
+  }
+};
+
+const GlobalAutomaterializationRoot = () => {
   useTrackPageView();
+
   const automaterialize = useAutomaterializeDaemonStatus();
   const confirm = useConfirmation();
 
@@ -96,6 +117,7 @@ export const AutomaterializationRoot = () => {
     // which avoids a bunch of re-rendering
     ids.push('');
   }
+
   const ticks = React.useMemo(
     () => {
       const ticks = data?.autoMaterializeTicks;
@@ -115,6 +137,7 @@ export const AutomaterializationRoot = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...ids.slice(0, 100)],
   );
+
   const onHoverTick = React.useCallback(
     (tick: AssetDaemonTickFragment | undefined) => {
       setIsPaused(!!tick);
@@ -183,8 +206,12 @@ export const AutomaterializationRoot = () => {
         <Subtitle2>Evaluation timeline</Subtitle2>
       </Box>
       {!data ? (
-        <Box padding={{vertical: 48}}>
-          <Spinner purpose="page" />
+        <Box
+          padding={{vertical: 48}}
+          flex={{direction: 'row', justifyContent: 'center', gap: 12, alignItems: 'center'}}
+        >
+          <Spinner purpose="body-text" />
+          <div style={{color: colorTextLight()}}>Loading evaluations…</div>
         </Box>
       ) : (
         <>
@@ -198,7 +225,6 @@ export const AutomaterializationRoot = () => {
             timeAfter={THREE_MINUTES}
           />
           <AutomaterializationTickDetailDialog
-            key={selectedTick?.id}
             tick={selectedTick}
             isOpen={!!selectedTick}
             close={() => {
@@ -206,7 +232,7 @@ export const AutomaterializationRoot = () => {
             }}
           />
           {tableView === 'evaluations' ? (
-            <AutomaterializationEvaluationHistoryTable
+            <InstanceAutomaterializationEvaluationHistoryTable
               setSelectedTick={setSelectedTick}
               setTableView={setTableView}
               setParentStatuses={setStatuses}

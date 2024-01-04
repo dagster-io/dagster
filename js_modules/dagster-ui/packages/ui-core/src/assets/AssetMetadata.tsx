@@ -31,7 +31,7 @@ export const AssetMetadataTable = ({
     };
   });
   return (
-    <Box padding={{vertical: 16, horizontal: 24}}>
+    <Box padding={{vertical: 16, horizontal: 24}} style={{overflowX: 'auto'}}>
       <MetadataTable rows={rows} />
     </Box>
   );

@@ -16,6 +16,7 @@ from dagster._config import (
     StringSource,
     validate_config,
 )
+from dagster._config.source import BoolSource
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
@@ -114,6 +115,20 @@ def dagster_instance_config(
                 [],
                 dagster_config_dict["storage"],
             )
+
+    # validate default op concurrency limits
+    if "concurrency" in dagster_config_dict:
+        default_concurrency_limit = dagster_config_dict["concurrency"].get(
+            "default_op_concurrency_limit"
+        )
+        if default_concurrency_limit is not None:
+            if default_concurrency_limit < 0 or default_concurrency_limit > 1000:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
+                    "Expected value between 0-1000.",
+                    [],
+                    None,
+                )
 
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
@@ -363,10 +378,10 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "schedules": schedules_daemon_config(),
         "auto_materialize": Field(
             {
-                "enabled": Field(Bool, is_required=False),
-                "minimum_interval_seconds": Field(int, is_required=False),
+                "enabled": Field(BoolSource, is_required=False),
+                "minimum_interval_seconds": Field(IntSource, is_required=False),
                 "run_tags": Field(dict, is_required=False),
-                "respect_materialization_data_versions": Field(Bool, is_required=False),
+                "respect_materialization_data_versions": Field(BoolSource, is_required=False),
                 "max_tick_retries": Field(
                     IntSource,
                     default_value=3,
@@ -374,6 +389,16 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                     description=(
                         "For each auto-materialize tick that raises an error, how many times to retry that tick"
                     ),
+                ),
+                "use_automation_policy_sensors": Field(BoolSource, is_required=False),
+            }
+        ),
+        "concurrency": Field(
+            {
+                "default_op_concurrency_limit": Field(
+                    int,
+                    is_required=False,
+                    description="The default maximum number of concurrent operations for an unconfigured concurrency key",
                 ),
             }
         ),

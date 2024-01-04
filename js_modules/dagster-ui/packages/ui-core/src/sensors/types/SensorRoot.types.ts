@@ -93,7 +93,18 @@ export type SensorRootQuery = {
     daemonHealth: {
       __typename: 'DaemonHealth';
       id: string;
-      daemonStatus: {__typename: 'DaemonStatus'; id: string; healthy: boolean | null};
+      sensorDaemonStatus: {
+        __typename: 'DaemonStatus';
+        id: string;
+        healthy: boolean | null;
+        required: boolean;
+      };
+      ampDaemonStatus: {
+        __typename: 'DaemonStatus';
+        id: string;
+        healthy: boolean | null;
+        required: boolean;
+      };
       allDaemonStatuses: Array<{
         __typename: 'DaemonStatus';
         id: string;

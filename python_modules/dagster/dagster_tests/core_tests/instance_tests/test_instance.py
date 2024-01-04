@@ -9,6 +9,7 @@ import yaml
 from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
     _check as check,
     _seven,
     asset,
@@ -254,7 +255,7 @@ def noop_job():
     noop_op()
 
 
-@asset
+@asset(partitions_def=StaticPartitionsDefinition(["bar", "baz", "foo"]))
 def noop_asset():
     pass
 
@@ -339,6 +340,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
+                asset_job_partitions_def=noop_asset_job.partitions_def,
             )
 
         with pytest.raises(
@@ -354,6 +356,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
+                asset_job_partitions_def=noop_asset_job.partitions_def,
             )
 
         create_run_for_test(
@@ -362,6 +365,7 @@ def test_create_run_with_asset_partitions():
             execution_plan_snapshot=ep_snapshot,
             job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
+            asset_job_partitions_def=noop_asset_job.partitions_def,
         )
 
 

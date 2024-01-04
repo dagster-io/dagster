@@ -75,16 +75,52 @@ export const TickLogDialog = ({
   );
 };
 
+interface TickLogTableProps {
+  tick: HistoryTickFragment;
+  instigationSelector: InstigationSelector;
+}
+
+export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableProps) => {
+  const {data, loading} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(
+    TICK_LOG_EVENTS_QUERY,
+    {
+      variables: {instigationSelector, tickId: Number(tick.tickId)},
+    },
+  );
+
+  const events =
+    data?.instigationStateOrError.__typename === 'InstigationState' &&
+    data?.instigationStateOrError.tick
+      ? data?.instigationStateOrError.tick.logEvents.events
+      : undefined;
+
+  if (events && events.length) {
+    return <TickLogsTable events={events} />;
+  }
+
+  return (
+    <Box
+      style={{height: 500}}
+      flex={{justifyContent: 'center', alignItems: 'center'}}
+      padding={{vertical: 48}}
+    >
+      {loading ? 'Loading logs…' : 'No logs available'}
+    </Box>
+  );
+};
+
 const TickLogsTable = ({events}: {events: TickLogEventFragment[]}) => {
   return (
-    <div style={{overflow: 'hidden', borderBottom: '0.5px solid #ececec', flex: 1}}>
-      <ColumnWidthsProvider onWidthsChanged={() => {}}>
+    <ColumnWidthsProvider onWidthsChanged={() => {}}>
+      <div style={{height: 500, position: 'relative', zIndex: 0}}>
         <Headers />
-        {events.map((event, idx) => (
-          <TickLogRow event={event} key={idx} />
-        ))}
-      </ColumnWidthsProvider>
-    </div>
+        <div style={{height: 468, overflowY: 'auto'}}>
+          {events.map((event, idx) => (
+            <TickLogRow event={event} key={idx} />
+          ))}
+        </div>
+      </div>
+    </ColumnWidthsProvider>
   );
 };
 
@@ -112,7 +148,7 @@ const Headers = () => {
 
 const TickLogRow = ({event}: {event: TickLogEventFragment}) => {
   return (
-    <Row level={event.level} highlighted={false}>
+    <Row level={event.level} highlighted={false} style={{height: 'auto'}}>
       <EventTypeColumn>
         <span style={{marginLeft: 8}}>{event.level}</span>
       </EventTypeColumn>

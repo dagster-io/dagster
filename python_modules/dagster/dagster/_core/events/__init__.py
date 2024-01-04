@@ -52,7 +52,7 @@ from dagster._serdes import (
     NamedTupleSerializer,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import UnpackContext, is_whitelisted_for_serdes_namedtuple
+from dagster._serdes.serdes import UnpackContext, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -1451,6 +1451,24 @@ class DagsterEvent(
             ),
         )
 
+    @staticmethod
+    def build_asset_materialization_planned_event(
+        job_name: str,
+        step_key: str,
+        asset_materialization_planned_data: "AssetMaterializationPlannedData",
+    ) -> "DagsterEvent":
+        """Constructs an asset materialization planned event, to be logged by the caller."""
+        event = DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+            job_name=job_name,
+            message=(
+                f"{job_name} intends to materialize asset {asset_materialization_planned_data.asset_key.to_string()}"
+            ),
+            event_specific_data=asset_materialization_planned_data,
+            step_key=step_key,
+        )
+        return event
+
 
 def get_step_output_event(
     events: Sequence[DagsterEvent], step_key: str, output_name: Optional[str] = "result"
@@ -1532,7 +1550,7 @@ class AssetMaterializationPlannedData(
         if partitions_subset:
             check.opt_inst_param(partitions_subset, "partitions_subset", PartitionsSubset)
             check.invariant(
-                is_whitelisted_for_serdes_namedtuple(partitions_subset),
+                is_whitelisted_for_serdes_object(partitions_subset),
                 "partitions_subset must be serializable",
             )
 

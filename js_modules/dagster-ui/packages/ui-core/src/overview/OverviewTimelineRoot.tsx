@@ -6,6 +6,7 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
+import {useStartTrace} from '../performance';
 import {RunTimeline} from '../runs/RunTimeline';
 import {useHourWindow, HourWindow} from '../runs/useHourWindow';
 import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
@@ -36,6 +37,7 @@ type Props = {
 export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
+  const trace = useStartTrace('OverviewTimelineRoot');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
@@ -80,6 +82,12 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
 
   const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
+
+  React.useEffect(() => {
+    if (!initialLoading) {
+      trace.endTrace();
+    }
+  }, [initialLoading, trace]);
 
   const visibleJobKeys = React.useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase().trim();

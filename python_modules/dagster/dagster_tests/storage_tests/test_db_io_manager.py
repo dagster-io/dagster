@@ -5,6 +5,7 @@ from dagster import AssetKey, InputContext, OutputContext, asset, build_output_c
 from dagster._check import CheckError
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -483,15 +484,17 @@ def test_handle_none_output():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
+
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(
         asset_key=asset_key,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(type(None)),
+        name="result",
     )
-    manager.handle_output(output_context, None)
 
-    assert len(handler.handle_output_calls) == 0
+    with pytest.raises(DagsterInvariantViolationError):
+        manager.handle_output(output_context, None)
 
 
 def test_non_supported_type():

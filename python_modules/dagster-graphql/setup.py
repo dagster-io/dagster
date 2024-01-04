@@ -35,8 +35,8 @@ setup(
     include_package_data=True,
     install_requires=[
         f"dagster{pin}",
-        "graphene>=3",
-        "gql[requests]>=3.0.0",
+        "graphene>=3,<4",
+        "gql[requests]>=3,<4",
         "requests",
         "starlette",  # used for run_in_threadpool utility fn
     ],

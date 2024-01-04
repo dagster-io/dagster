@@ -9,11 +9,8 @@ export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 export const FeatureFlag = {
   flagDebugConsoleLogging: 'flagDebugConsoleLogging' as const,
   flagDisableWebsockets: 'flagDisableWebsockets' as const,
-  flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
-  flagDAGSidebar: 'flagDAGSidebar' as const,
-  flagDisableDAGCache: 'flagDisableDAGCache' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 

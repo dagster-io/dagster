@@ -11,7 +11,7 @@ from typing import Iterator, Literal, Mapping, Optional, Sequence, TextIO
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterPipesExecutionError
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
@@ -34,10 +34,6 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field
 
-# Number of seconds between status checks on Databricks jobs launched by the
-# `PipesDatabricksClient`.
-_RUN_POLL_INTERVAL = 5
-
 
 @experimental
 class _PipesDatabricksClient(PipesClient):
@@ -51,6 +47,10 @@ class _PipesDatabricksClient(PipesClient):
             context into the k8s container process. Defaults to :py:class:`PipesDbfsContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the databricks job. Defaults to :py:class:`PipesDbfsMessageReader`.
+        poll_interval_seconds (float): How long to sleep between checking the status of the job run.
+            Defaults to 5.
+        forward_termination (bool): Whether to cancel the Databricks job if the orchestration process
+            is interrupted or canceled. Defaults to True.
     """
 
     env: Optional[Mapping[str, str]] = Field(
@@ -64,6 +64,8 @@ class _PipesDatabricksClient(PipesClient):
         env: Optional[Mapping[str, str]] = None,
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
+        poll_interval_seconds: float = 5,
+        forward_termination: bool = True,
     ):
         self.client = client
         self.env = env
@@ -77,6 +79,10 @@ class _PipesDatabricksClient(PipesClient):
             "message_reader",
             PipesMessageReader,
         )
+        self.poll_interval_seconds = check.numeric_param(
+            poll_interval_seconds, "poll_interval_seconds"
+        )
+        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -146,27 +152,59 @@ class _PipesDatabricksClient(PipesClient):
                 **(submit_args or {}),
             ).bind()["run_id"]
 
-            while True:
-                run = self.client.jobs.get_run(run_id)
+            try:
+                self._poll_til_success(context, run_id)
+            except DagsterExecutionInterruptedError:
+                if self.forward_termination:
+                    context.log.info("[pipes] execution interrupted, canceling Databricks job.")
+                    self.client.jobs.cancel_run(run_id)
+                    self._poll_til_terminating(run_id)
+
+        return PipesClientCompletedInvocation(pipes_session)
+
+    def _poll_til_success(self, context: OpExecutionContext, run_id: str) -> None:
+        # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
+
+        last_observed_state = None
+        while True:
+            run = self.client.jobs.get_run(run_id)
+            if run.state.life_cycle_state != last_observed_state:
                 context.log.info(
-                    f"Databricks run {run_id} current state: {run.state.life_cycle_state}"
+                    f"[pipes] Databricks run {run_id} observed state transition to {run.state.life_cycle_state}"
                 )
-                if run.state.life_cycle_state in (
-                    jobs.RunLifeCycleState.TERMINATED,
-                    jobs.RunLifeCycleState.SKIPPED,
-                ):
-                    if run.state.result_state == jobs.RunResultState.SUCCESS:
-                        break
-                    else:
-                        raise DagsterPipesExecutionError(
-                            f"Error running Databricks job: {run.state.state_message}"
-                        )
-                elif run.state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
+            last_observed_state = run.state.life_cycle_state
+
+            if run.state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+            ):
+                if run.state.result_state == jobs.RunResultState.SUCCESS:
+                    break
+                else:
                     raise DagsterPipesExecutionError(
                         f"Error running Databricks job: {run.state.state_message}"
                     )
-                time.sleep(_RUN_POLL_INTERVAL)
-        return PipesClientCompletedInvocation(pipes_session)
+            elif run.state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
+                raise DagsterPipesExecutionError(
+                    f"Error running Databricks job: {run.state.state_message}"
+                )
+
+            time.sleep(self.poll_interval_seconds)
+
+    def _poll_til_terminating(self, run_id: str) -> None:
+        # Wait to see the job enters a state that indicates the underlying task is no longer executing
+        # TERMINATING: "The task of this run has completed, and the cluster and execution context are being cleaned up."
+        while True:
+            run = self.client.jobs.get_run(run_id)
+            if run.state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATING,
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+                jobs.RunLifeCycleState.INTERNAL_ERROR,
+            ):
+                return
+
+            time.sleep(self.poll_interval_seconds)
 
 
 PipesDatabricksClient = ResourceParam[_PipesDatabricksClient]

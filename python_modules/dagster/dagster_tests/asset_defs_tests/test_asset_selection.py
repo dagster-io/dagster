@@ -15,9 +15,12 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    asset_check,
     multi_asset,
 )
 from dagster._core.definitions import AssetSelection, asset
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AndAssetSelection, OrAssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import _WHITELIST_MAP
@@ -378,6 +381,24 @@ def test_from_coercible_tuple():
     }
 
 
+def test_multi_operand_selection():
+    foo = AssetSelection.keys("foo")
+    bar = AssetSelection.keys("bar")
+    baz = AssetSelection.keys("baz")
+
+    assert foo & bar & baz == AndAssetSelection([foo, bar, baz])
+    assert (foo & bar) & baz == AndAssetSelection([foo, bar, baz])
+    assert foo & (bar & baz) == AndAssetSelection([foo, bar, baz])
+    assert foo | bar | baz == OrAssetSelection([foo, bar, baz])
+    assert (foo | bar) | baz == OrAssetSelection([foo, bar, baz])
+    assert foo | (bar | baz) == OrAssetSelection([foo, bar, baz])
+
+    assert (foo & bar) | baz == OrAssetSelection([AndAssetSelection([foo, bar]), baz])
+    assert foo & (bar | baz) == AndAssetSelection([foo, OrAssetSelection([bar, baz])])
+    assert (foo | bar) & baz == AndAssetSelection([OrAssetSelection([foo, bar]), baz])
+    assert foo | (bar & baz) == OrAssetSelection([foo, AndAssetSelection([bar, baz])])
+
+
 def test_all_asset_selection_subclasses_serializable():
     from dagster._core.definitions import asset_selection as asset_selection_module
 
@@ -391,4 +412,101 @@ def test_all_asset_selection_subclasses_serializable():
 
     for asset_selection_subclass in asset_selection_subclasses:
         if asset_selection_subclass != AssetSelection:
-            assert _WHITELIST_MAP.has_tuple_serializer(asset_selection_subclass.__name__)
+            assert _WHITELIST_MAP.has_object_serializer(asset_selection_subclass.__name__)
+
+
+def test_to_serializable_asset_selection():
+    class UnserializableAssetSelection(AssetSelection):
+        def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+            return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
+
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @asset_check(asset=asset1)
+    def check1():
+        ...
+
+    asset_graph = AssetGraph.from_assets([asset1, asset2], asset_checks=[check1])
+
+    def assert_serializable_same(asset_selection: AssetSelection) -> None:
+        assert asset_selection.to_serializable_asset_selection(asset_graph) == asset_selection
+
+    assert_serializable_same(AssetSelection.groups("a"))
+    assert_serializable_same(AssetSelection.key_prefixes(["foo", "bar"]))
+    assert_serializable_same(AssetSelection.all())
+    assert_serializable_same(AssetSelection.all_asset_checks())
+    assert_serializable_same(AssetSelection.keys("asset1"))
+    assert_serializable_same(AssetSelection.checks_for_assets(asset1))
+    assert_serializable_same(AssetSelection.checks(check1))
+
+    assert_serializable_same(AssetSelection.sinks(AssetSelection.groups("a")))
+    assert_serializable_same(AssetSelection.downstream(AssetSelection.groups("a"), depth=1))
+    assert_serializable_same(AssetSelection.upstream(AssetSelection.groups("a"), depth=1))
+    assert_serializable_same(
+        AssetSelection.required_multi_asset_neighbors(AssetSelection.groups("a"))
+    )
+    assert_serializable_same(AssetSelection.roots(AssetSelection.groups("a")))
+    assert_serializable_same(AssetSelection.sources(AssetSelection.groups("a")))
+    assert_serializable_same(AssetSelection.upstream_source_assets(AssetSelection.groups("a")))
+
+    assert_serializable_same(AssetSelection.groups("a") & AssetSelection.groups("b"))
+    assert_serializable_same(AssetSelection.groups("a") | AssetSelection.groups("b"))
+    assert_serializable_same(AssetSelection.groups("a") - AssetSelection.groups("b"))
+
+    asset1_selection = AssetSelection.keys("asset1")
+    assert (
+        UnserializableAssetSelection().to_serializable_asset_selection(asset_graph)
+        == asset1_selection
+    )
+
+    assert AssetSelection.sinks(UnserializableAssetSelection()).to_serializable_asset_selection(
+        asset_graph
+    ) == AssetSelection.sinks(asset1_selection)
+    assert AssetSelection.downstream(
+        UnserializableAssetSelection(), depth=1
+    ).to_serializable_asset_selection(asset_graph) == AssetSelection.downstream(
+        asset1_selection, depth=1
+    )
+    assert AssetSelection.upstream(
+        UnserializableAssetSelection(), depth=1
+    ).to_serializable_asset_selection(asset_graph) == AssetSelection.upstream(
+        asset1_selection, depth=1
+    )
+    assert AssetSelection.required_multi_asset_neighbors(
+        UnserializableAssetSelection()
+    ).to_serializable_asset_selection(asset_graph) == AssetSelection.required_multi_asset_neighbors(
+        asset1_selection
+    )
+    assert AssetSelection.roots(UnserializableAssetSelection()).to_serializable_asset_selection(
+        asset_graph
+    ) == AssetSelection.roots(asset1_selection)
+    assert AssetSelection.sources(UnserializableAssetSelection()).to_serializable_asset_selection(
+        asset_graph
+    ) == AssetSelection.sources(asset1_selection)
+    assert AssetSelection.upstream_source_assets(
+        UnserializableAssetSelection()
+    ).to_serializable_asset_selection(asset_graph) == AssetSelection.upstream_source_assets(
+        asset1_selection
+    )
+
+    assert (
+        UnserializableAssetSelection() & AssetSelection.groups("b")
+    ).to_serializable_asset_selection(asset_graph) == (
+        asset1_selection & AssetSelection.groups("b")
+    )
+    assert (
+        UnserializableAssetSelection() | AssetSelection.groups("b")
+    ).to_serializable_asset_selection(asset_graph) == (
+        asset1_selection | AssetSelection.groups("b")
+    )
+    assert (
+        UnserializableAssetSelection() - AssetSelection.groups("b")
+    ).to_serializable_asset_selection(asset_graph) == (
+        asset1_selection - AssetSelection.groups("b")
+    )

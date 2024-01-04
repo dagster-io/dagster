@@ -2,7 +2,9 @@ import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
+import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
+import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
@@ -24,6 +26,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
+    isGlobalGraph,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -35,6 +38,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     expandedGroups: string[];
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
+    isGlobalGraph: boolean;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -77,7 +81,18 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
     };
-    const [openNodes, setOpenNodes] = React.useState<Set<string>>(new Set());
+    const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
+      // include pathname so that theres separate storage entries for graphs at different URLs
+      // eg. independent group graph should persist open nodes separately
+      localStorageKey: `asset-graph-open-sidebar-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
+      encode: (val) => {
+        return {'open-nodes': Array.from(val)};
+      },
+      decode: (qs) => {
+        return new Set(qs['open-nodes']);
+      },
+      isEmptyState: (val) => val.size === 0,
+    });
     const [selectedNode, setSelectedNode] = React.useState<
       null | {id: string; path: string} | {id: string}
     >(null);
@@ -101,7 +116,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const {folderNodes: renderedNodes, codeLocationNodes} = React.useMemo(() => {
+    const renderedNodes = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -118,6 +133,8 @@ export const AssetGraphExplorerSidebar = React.memo(
           >;
         }
       > = {};
+
+      let groupsCount = 0;
       Object.entries(graphData.nodes).forEach(([id, node]) => {
         const locationName = node.definition.repository.location.name;
         const repositoryName = node.definition.repository.name;
@@ -127,6 +144,9 @@ export const AssetGraphExplorerSidebar = React.memo(
           locationName: codeLocation,
           groups: {},
         };
+        if (!codeLocationNodes[codeLocation]!.groups[groupName]!) {
+          groupsCount += 1;
+        }
         codeLocationNodes[codeLocation]!.groups[groupName] = codeLocationNodes[codeLocation]!
           .groups[groupName] || {
           groupName,
@@ -136,11 +156,11 @@ export const AssetGraphExplorerSidebar = React.memo(
       });
       Object.entries(codeLocationNodes).forEach(([locationName, locationNode]) => {
         folderNodes.push({locationName, id: locationName, level: 1});
-        if (openNodes.has(locationName)) {
+        if (openNodes.has(locationName) || groupsCount === 1) {
           Object.entries(locationNode.groups).forEach(([groupName, groupNode]) => {
             const groupId = locationName + ':' + groupName;
             folderNodes.push({groupName, id: groupId, level: 2});
-            if (openNodes.has(groupId)) {
+            if (openNodes.has(groupId) || groupsCount === 1) {
               groupNode.assets
                 .sort((a, b) => COLLATOR.compare(a, b))
                 .forEach((assetKey) => {
@@ -155,8 +175,26 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       });
 
-      return {folderNodes, codeLocationNodes};
+      if (groupsCount === 1) {
+        return folderNodes
+          .filter((node) => node.level === 3)
+          .map((node) => ({
+            ...node,
+            level: 1,
+          }));
+      }
+
+      return folderNodes;
     }, [graphData.nodes, openNodes]);
+
+    const {nav} = React.useContext(LayoutContext);
+
+    React.useEffect(() => {
+      if (isGlobalGraph) {
+        nav.close();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isGlobalGraph]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -171,24 +209,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     React.useLayoutEffect(() => {
-      if (renderedNodes.length === 1) {
-        // If there's a single code location and a single group in it then just open them
-        setOpenNodes((prevOpenNodes) => {
-          const nextOpenNodes = new Set(prevOpenNodes);
-          const locations = Object.keys(codeLocationNodes);
-          if (locations.length === 1) {
-            const location = codeLocationNodes[locations[0]!]!;
-            nextOpenNodes.add(location.locationName);
-            const groups = Object.keys(location.groups);
-            if (groups.length === 1) {
-              nextOpenNodes.add(
-                location.locationName + ':' + location.groups[groups[0]!]!.groupName,
-              );
-            }
-          }
-          return nextOpenNodes;
-        });
-      }
       if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
           const nextOpenNodes = new Set(prevOpenNodes);
@@ -245,7 +265,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       if (indexOfLastSelectedNode !== -1) {
         rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
           align: 'center',
-          behavior: 'auto',
+          behavior: 'smooth',
         });
       }
       // Only scroll if the rootNodes changes or the selected node changes
@@ -253,12 +273,6 @@ export const AssetGraphExplorerSidebar = React.memo(
       // if we toggle a node above the selected node
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedNode, rootNodes, rowVirtualizer]);
-
-    React.useLayoutEffect(() => {
-      // Fix a weird issue where the sidebar doesn't measure the full height.
-      const id = setInterval(rowVirtualizer.measure, 1000);
-      return () => clearInterval(id);
-    }, [rowVirtualizer.measure]);
 
     return (
       <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
@@ -323,47 +337,38 @@ export const AssetGraphExplorerSidebar = React.memo(
                 const isGroupNode = 'groupName' in node;
                 const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                 return (
-                  <Row
-                    $height={size}
-                    $start={start}
-                    key={key}
-                    data-key={key}
-                    style={{overflow: 'visible'}}
-                    ref={rowVirtualizer.measureElement}
-                  >
-                    {row ? (
-                      <AssetSidebarNode
-                        isOpen={openNodes.has(nodePathKey(node))}
-                        fullAssetGraphData={fullAssetGraphData}
-                        node={row}
-                        level={node.level}
-                        isLastSelected={lastSelectedNode?.id === node.id}
-                        isSelected={
-                          selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
-                        }
-                        toggleOpen={() => {
-                          setOpenNodes((nodes) => {
-                            const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodePathKey(node));
-                            if (isOpen) {
-                              openNodes.delete(nodePathKey(node));
-                            } else {
-                              openNodes.add(nodePathKey(node));
-                            }
-                            return openNodes;
-                          });
-                        }}
-                        selectNode={(e, id) => {
-                          selectNode(e, id);
-                        }}
-                        selectThisNode={(e) => {
-                          setSelectedNode(node);
-                          selectNode(e, node.id);
-                        }}
-                        explorerPath={explorerPath}
-                        onChangeExplorerPath={onChangeExplorerPath}
-                      />
-                    ) : null}
+                  <Row $height={size} $start={start} key={key} data-key={key}>
+                    <AssetSidebarNode
+                      isOpen={openNodes.has(nodePathKey(node))}
+                      fullAssetGraphData={fullAssetGraphData}
+                      node={row!}
+                      level={node.level}
+                      isLastSelected={lastSelectedNode?.id === node.id}
+                      isSelected={
+                        selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
+                      }
+                      toggleOpen={() => {
+                        setOpenNodes((nodes) => {
+                          const openNodes = new Set(nodes);
+                          const isOpen = openNodes.has(nodePathKey(node));
+                          if (isOpen) {
+                            openNodes.delete(nodePathKey(node));
+                          } else {
+                            openNodes.add(nodePathKey(node));
+                          }
+                          return openNodes;
+                        });
+                      }}
+                      selectNode={(e, id) => {
+                        selectNode(e, id);
+                      }}
+                      selectThisNode={(e) => {
+                        setSelectedNode(node);
+                        selectNode(e, node.id);
+                      }}
+                      explorerPath={explorerPath}
+                      onChangeExplorerPath={onChangeExplorerPath}
+                    />
                   </Row>
                 );
               })}

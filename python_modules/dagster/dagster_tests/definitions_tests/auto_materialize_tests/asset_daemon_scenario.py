@@ -476,7 +476,7 @@ class AssetDaemonScenarioState(NamedTuple):
         """Additional assertions for daemon mode. Checks that the evaluation for the given asset
         contains the expected run ids.
         """
-        current_evaluation_id = check.not_none(get_current_evaluation_id(self.instance))
+        current_evaluation_id = check.not_none(get_current_evaluation_id(self.instance, None))
         new_run_ids_for_asset = {
             run.run_id
             for run in self.instance.get_runs(

@@ -2,7 +2,7 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple
+from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple, cast
 
 import pendulum
 import pytest
@@ -12,12 +12,15 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+)
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
-from dagster._core.scheduler.instigation import TickStatus
+from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -132,6 +135,14 @@ def test_run_status_sensor(
 
         started_sensor = external_repo.get_external_sensor("my_job_started_sensor")
         instance.start_sensor(started_sensor)
+
+        state = instance.get_instigator_state(
+            started_sensor.get_external_origin_id(), started_sensor.selector_id
+        )
+        assert (
+            cast(SensorInstigatorData, check.not_none(state).instigator_data).sensor_type
+            == SensorType.RUN_STATUS
+        )
 
         evaluate_sensors(workspace_context, executor)
 

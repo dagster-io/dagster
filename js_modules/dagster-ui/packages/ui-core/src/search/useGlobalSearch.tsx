@@ -142,15 +142,17 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}) => {
   }
 
   const {nodes} = data.assetsOrError;
-  return nodes.map(({key}) => {
-    return {
-      label: displayNameForAssetKey(key),
-      href: assetDetailsPathForKey(key),
-      segments: key.path,
-      description: 'Asset',
-      type: SearchResultType.Asset,
-    };
-  });
+  return nodes
+    .filter(({definition}) => definition !== null)
+    .map(({key}) => {
+      return {
+        label: displayNameForAssetKey(key),
+        href: assetDetailsPathForKey(key),
+        segments: key.path,
+        description: 'Asset',
+        type: SearchResultType.Asset,
+      };
+    });
 };
 
 const fuseOptions = {
@@ -306,6 +308,9 @@ export const SEARCH_SECONDARY_QUERY = gql`
           id
           key {
             path
+          }
+          definition {
+            id
           }
         }
       }

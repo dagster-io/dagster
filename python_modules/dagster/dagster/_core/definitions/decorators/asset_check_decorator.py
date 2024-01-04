@@ -14,9 +14,11 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.execution.build_resources import wrap_resources_for_execution
 
 from ..input import In
 from .asset_decorator import (
@@ -124,6 +126,8 @@ def asset_check(
                 num_rows = my_asset.shape[0]
                 return AssetCheckResult(passed=num_rows > 5, metadata={"num_rows": num_rows})
     """
+    check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
+    dict(check.opt_mapping_param(resource_defs, "resource_defs", key_type=str))
 
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
         check.callable_param(fn, "fn")
@@ -151,13 +155,26 @@ def asset_check(
             asset=resolved_asset_key,
         )
 
+        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+
+        check.param_invariant(
+            len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
+            "Cannot specify resource requirements in both @asset_check decorator and as arguments"
+            " to the decorated function",
+        )
+
+        resource_defs_keys = set(resource_defs.keys() if resource_defs else [])
+        decorator_resource_keys = (required_resource_keys or set()) | resource_defs_keys
+
+        op_required_resource_keys = decorator_resource_keys - arg_resource_keys
+
         op_def = _Op(
             name=spec.get_python_identifier(),
             ins=dict(input_tuples_by_asset_key.values()),
             out=out,
             # Any resource requirements specified as arguments will be identified as
             # part of the Op definition instantiation
-            required_resource_keys=required_resource_keys,
+            required_resource_keys=op_required_resource_keys,
             tags={
                 **({"kind": compute_kind} if compute_kind else {}),
                 **(op_tags or {}),
@@ -168,7 +185,7 @@ def asset_check(
 
         checks_def = AssetChecksDefinition(
             node_def=op_def,
-            resource_defs={},
+            resource_defs=wrap_resources_for_execution(resource_defs),
             specs=[spec],
             input_output_props=AssetChecksDefinitionInputOutputProps(
                 asset_keys_by_input_name={

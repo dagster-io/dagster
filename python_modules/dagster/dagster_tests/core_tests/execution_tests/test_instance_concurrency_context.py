@@ -138,3 +138,35 @@ def test_custom_interval(concurrency_custom_sleep_instance):
         time.sleep(interval_to_custom)
         context.claim("foo", "b")
         assert storage.get_check_calls("b") == call_count + 1
+
+
+def test_unset_concurrency_default(concurrency_instance):
+    run_id = make_new_run_id()
+
+    assert concurrency_instance.event_log_storage.get_concurrency_keys() == set()
+
+    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+        assert context.claim("foo", "a")
+        assert context.claim("foo", "b")
+
+
+def test_default_concurrency_key(concurrency_instance_with_default_one):
+    run_id = make_new_run_id()
+
+    assert concurrency_instance_with_default_one.event_log_storage.get_concurrency_keys() == set()
+    assert concurrency_instance_with_default_one.global_op_concurrency_default_limit == 1
+
+    with InstanceConcurrencyContext(concurrency_instance_with_default_one, run_id) as context:
+        assert context.claim("foo", "a")
+        assert not context.claim("foo", "b")
+
+
+def test_zero_concurrency_key(concurrency_instance):
+    run_id = make_new_run_id()
+
+    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 0)
+    assert concurrency_instance.event_log_storage.get_concurrency_keys() == set(["foo"])
+
+    with InstanceConcurrencyContext(concurrency_instance, run_id) as context:
+        assert not context.claim("foo", "a")
+        assert not context.claim("foo", "b")

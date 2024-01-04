@@ -2,6 +2,32 @@ import {gql} from '@apollo/client';
 
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 
+export const ASSET_DAEMON_TICK_FRAGMENT = gql`
+  fragment AssetDaemonTickFragment on InstigationTick {
+    id
+    timestamp
+    endTimestamp
+    status
+    instigationType
+    error {
+      ...PythonErrorFragment
+    }
+    requestedAssetKeys {
+      path
+    }
+    requestedAssetMaterializationCount
+    autoMaterializeAssetEvaluationId
+    requestedMaterializationsForAssets {
+      assetKey {
+        path
+      }
+      partitionKeys
+    }
+  }
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
 export const ASSET_DAEMON_TICKS_QUERY = gql`
   query AssetDaemonTicksQuery(
     $dayRange: Int
@@ -26,26 +52,5 @@ export const ASSET_DAEMON_TICKS_QUERY = gql`
     }
   }
 
-  fragment AssetDaemonTickFragment on InstigationTick {
-    id
-    timestamp
-    endTimestamp
-    status
-    instigationType
-    error {
-      ...PythonErrorFragment
-    }
-    requestedAssetKeys {
-      path
-    }
-    requestedAssetMaterializationCount
-    autoMaterializeAssetEvaluationId
-    requestedMaterializationsForAssets {
-      assetKey {
-        path
-      }
-      partitionKeys
-    }
-  }
-  ${PYTHON_ERROR_FRAGMENT}
+  ${ASSET_DAEMON_TICK_FRAGMENT}
 `;

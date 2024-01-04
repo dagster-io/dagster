@@ -247,7 +247,9 @@ def build_assets_job(
         observable_source_assets_by_node_handle=observable_source_assets_by_node_handle,
     )
 
-    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
+    all_resource_defs = get_all_resource_defs(
+        assets, asset_checks, resolved_source_assets, wrapped_resource_defs
+    )
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
@@ -528,6 +530,7 @@ def _ensure_resources_dont_conflict(
 def check_resources_satisfy_requirements(
     assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
+    asset_checks: Iterable[AssetChecksDefinition],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
     """Ensures that between the provided resources on an asset and the resource_defs mapping, that all resource requirements are satisfied.
@@ -541,18 +544,28 @@ def check_resources_satisfy_requirements(
         ensure_requirements_satisfied(
             merge_dicts(resource_defs, asset.resource_defs), list(asset.get_resource_requirements())
         )
+    for asset_check in asset_checks:
+        ensure_requirements_satisfied(
+            merge_dicts(resource_defs, asset_check.resource_defs),
+            list(asset_check.get_resource_requirements()),
+        )
 
 
 def get_all_resource_defs(
     assets: Iterable[AssetsDefinition],
+    asset_checks: Iterable[AssetChecksDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, ResourceDefinition]:
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
-    check_resources_satisfy_requirements(assets, source_assets, resource_defs)
+    check_resources_satisfy_requirements(assets, source_assets, asset_checks, resource_defs)
 
     all_resource_defs = dict(resource_defs)
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
     for asset in all_assets:
         all_resource_defs = merge_dicts(all_resource_defs, asset.resource_defs)
+
+    for asset_check in asset_checks:
+        all_resource_defs = merge_dicts(all_resource_defs, asset_check.resource_defs)
+
     return all_resource_defs

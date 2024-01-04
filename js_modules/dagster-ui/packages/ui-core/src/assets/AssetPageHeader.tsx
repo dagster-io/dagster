@@ -26,7 +26,7 @@ export const AssetPageHeader = ({assetKey, ...extra}: Props) => {
   const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
   const [didCopy, setDidCopy] = React.useState(false);
-  const iconTimeout = React.useRef<NodeJS.Timeout>();
+  const iconTimeout = React.useRef<ReturnType<typeof setTimeout>>();
 
   const performCopy = React.useCallback(async () => {
     if (iconTimeout.current) {

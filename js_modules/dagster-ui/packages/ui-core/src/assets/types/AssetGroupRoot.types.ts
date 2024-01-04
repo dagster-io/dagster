@@ -15,5 +15,17 @@ export type AssetGroupMetadataQuery = {
       __typename: 'AutoMaterializePolicy';
       policyType: Types.AutoMaterializePolicyType;
     } | null;
+    automationPolicySensor: {
+      __typename: 'Sensor';
+      id: string;
+      jobOriginId: string;
+      name: string;
+      sensorState: {
+        __typename: 'InstigationState';
+        id: string;
+        selectorId: string;
+        status: Types.InstigationStatus;
+      };
+    } | null;
   }>;
 };

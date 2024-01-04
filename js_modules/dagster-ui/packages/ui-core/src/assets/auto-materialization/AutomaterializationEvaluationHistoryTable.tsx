@@ -5,107 +5,39 @@ import {
   ButtonLink,
   Checkbox,
   CursorHistoryControls,
+  CursorPaginationProps,
   Spinner,
   Table,
 } from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 
-import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {Timestamp} from '../../app/time/Timestamp';
 import {InstigationTickStatus} from '../../graphql/types';
-import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {TimeElapsed} from '../../runs/TimeElapsed';
-import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TickStatusTag} from '../../ticks/TickStatusTag';
 
-import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
-import {
-  AssetDaemonTicksQuery,
-  AssetDaemonTicksQueryVariables,
-  AssetDaemonTickFragment,
-} from './types/AssetDaemonTicksQuery.types';
+import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 
-const PAGE_SIZE = 15;
-
-export const AutomaterializationEvaluationHistoryTable = ({
-  setSelectedTick,
-  setTableView,
-  setTimerange,
-  setParentStatuses,
-}: {
+interface Props {
+  loading: boolean;
+  ticks: AssetDaemonTickFragment[];
+  statuses: Set<InstigationTickStatus>;
+  setStatuses: (statuses: Set<InstigationTickStatus>) => void;
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
   setTableView: (view: 'evaluations' | 'runs') => void;
-  setTimerange: (range?: [number, number]) => void;
-  setParentStatuses: (statuses?: InstigationTickStatus[]) => void;
-}) => {
-  const [statuses, setStatuses] = useQueryPersistedState<Set<InstigationTickStatus>>({
-    queryKey: 'statuses',
-    decode: React.useCallback(({statuses}: {statuses?: string}) => {
-      return new Set<InstigationTickStatus>(
-        statuses
-          ? JSON.parse(statuses)
-          : [
-              InstigationTickStatus.STARTED,
-              InstigationTickStatus.SUCCESS,
-              InstigationTickStatus.FAILURE,
-            ],
-      );
-    }, []),
-    encode: React.useCallback((raw: Set<InstigationTickStatus>) => {
-      return {statuses: JSON.stringify(Array.from(raw))};
-    }, []),
-  });
+  paginationProps: CursorPaginationProps;
+}
 
-  const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    AssetDaemonTicksQuery,
-    AssetDaemonTicksQueryVariables
-  >({
-    query: ASSET_DAEMON_TICKS_QUERY,
-    variables: {
-      statuses: React.useMemo(() => Array.from(statuses), [statuses]),
-    },
-    nextCursorForResult: (data) => {
-      const ticks = data.autoMaterializeTicks;
-      if (!ticks.length) {
-        return undefined;
-      }
-      return ticks[PAGE_SIZE - 1]?.id;
-    },
-    getResultArray: (data) => {
-      if (!data?.autoMaterializeTicks) {
-        return [];
-      }
-      return data.autoMaterializeTicks;
-    },
-    pageSize: PAGE_SIZE,
-  });
-  // Only refresh if we're on the first page
-  useQueryRefreshAtInterval(queryResult, 10000, !paginationProps.hasPrevCursor);
-
-  React.useEffect(() => {
-    if (paginationProps.hasPrevCursor) {
-      const ticks = queryResult.data?.autoMaterializeTicks;
-      if (ticks && ticks.length) {
-        const start = ticks[ticks.length - 1]?.timestamp;
-        const end = ticks[0]?.endTimestamp;
-        if (start && end) {
-          setTimerange([start, end]);
-        }
-      }
-    } else {
-      setTimerange(undefined);
-    }
-  }, [paginationProps.hasPrevCursor, queryResult.data?.autoMaterializeTicks, setTimerange]);
-
-  React.useEffect(() => {
-    if (paginationProps.hasPrevCursor) {
-      setParentStatuses(Array.from(statuses));
-    } else {
-      setParentStatuses(undefined);
-    }
-  }, [paginationProps.hasPrevCursor, setParentStatuses, statuses]);
-
+export const AutomaterializationEvaluationHistoryTable = ({
+  loading,
+  ticks,
+  statuses,
+  setStatuses,
+  setSelectedTick,
+  setTableView,
+  paginationProps,
+}: Props) => {
   return (
     <Box>
       <Box
@@ -125,7 +57,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
               setTableView(id);
             }}
           />
-          {!queryResult.data ? <Spinner purpose="body-text" /> : null}
+          {loading && !ticks?.length ? <Spinner purpose="body-text" /> : null}
         </Box>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
           <StatusCheckbox
@@ -161,53 +93,48 @@ export const AutomaterializationEvaluationHistoryTable = ({
         </thead>
         <tbody>
           {/* Use previous data to stop page from jumping while new data loads */}
-          {(queryResult.data || queryResult.previousData)?.autoMaterializeTicks.map(
-            (tick, index) => {
-              // This is a hack for ticks that get stuck in started
-              const isTickStuckInStartedState =
-                index !== 0 &&
-                tick.status === InstigationTickStatus.STARTED &&
-                !paginationProps.hasPrevCursor;
+          {ticks.map((tick, index) => {
+            // This is a hack for ticks that get stuck in started
+            const isTickStuckInStartedState =
+              index !== 0 &&
+              tick.status === InstigationTickStatus.STARTED &&
+              !paginationProps.hasPrevCursor;
 
-              return (
-                <tr key={tick.id}>
-                  <td>
-                    <Timestamp
-                      timestamp={{unix: tick.timestamp}}
-                      timeFormat={{showTimezone: true}}
-                    />
-                  </td>
-                  <td>
-                    <TickStatusTag tick={tick} isStuckStarted={isTickStuckInStartedState} />
-                  </td>
-                  <td>
-                    {isTickStuckInStartedState ? (
-                      ' - '
-                    ) : (
-                      <TimeElapsed startUnix={tick.timestamp} endUnix={tick.endTimestamp} />
-                    )}
-                  </td>
-                  <td>
-                    {[InstigationTickStatus.SKIPPED, InstigationTickStatus.SUCCESS].includes(
-                      tick.status,
-                    ) ? (
-                      <ButtonLink
-                        onClick={() => {
-                          setSelectedTick(tick);
-                        }}
-                      >
-                        <Body2>
-                          {tick.requestedAssetMaterializationCount} materializations requested
-                        </Body2>
-                      </ButtonLink>
-                    ) : (
-                      ' - '
-                    )}
-                  </td>
-                </tr>
-              );
-            },
-          )}
+            return (
+              <tr key={tick.id}>
+                <td>
+                  <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
+                </td>
+                <td>
+                  <TickStatusTag tick={tick} isStuckStarted={isTickStuckInStartedState} />
+                </td>
+                <td>
+                  {isTickStuckInStartedState ? (
+                    ' - '
+                  ) : (
+                    <TimeElapsed startUnix={tick.timestamp} endUnix={tick.endTimestamp} />
+                  )}
+                </td>
+                <td>
+                  {[InstigationTickStatus.SKIPPED, InstigationTickStatus.SUCCESS].includes(
+                    tick.status,
+                  ) ? (
+                    <ButtonLink
+                      onClick={() => {
+                        setSelectedTick(tick);
+                      }}
+                    >
+                      <Body2>
+                        {tick.requestedAssetMaterializationCount} materializations requested
+                      </Body2>
+                    </ButtonLink>
+                  ) : (
+                    ' - '
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </TableWrapper>
       <div style={{paddingBottom: '16px'}}>

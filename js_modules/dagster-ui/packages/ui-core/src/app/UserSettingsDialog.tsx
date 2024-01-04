@@ -1,13 +1,12 @@
 import {
   Box,
   Button,
-  ButtonLink,
   Checkbox,
   Dialog,
   DialogBody,
   DialogFooter,
-  MetadataTable,
   Subheading,
+  Icon,
 } from '@dagster-io/ui-components';
 import {DAGSTER_THEME_KEY, DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
 import * as React from 'react';
@@ -62,15 +61,10 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   );
 
   const [theme, setTheme] = useStateWithStorage(DAGSTER_THEME_KEY, (value: any) => {
-    if (
-      value === DagsterTheme.Light ||
-      value === DagsterTheme.Dark ||
-      value === DagsterTheme.System ||
-      value === DagsterTheme.Legacy
-    ) {
+    if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
       return value;
     }
-    return DagsterTheme.Legacy;
+    return DagsterTheme.System;
   });
 
   const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
@@ -87,7 +81,12 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
 
   const trigger = React.useCallback(
     (timezone: string) => (
-      <ButtonLink>{timezone === 'Automatic' ? automaticLabel() : timezone}</ButtonLink>
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
+        {timezone === 'Automatic' ? automaticLabel() : timezone}
+      </Button>
     ),
     [],
   );
@@ -114,79 +113,52 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   return (
     <>
       <DialogBody>
-        <Box padding={{bottom: 8}}>
-          <Box padding={{bottom: 8}}>
+        <Box padding={{bottom: 8}} flex={{direction: 'column', gap: 4}}>
+          <Box padding={{bottom: 4}}>
             <Subheading>Preferences</Subheading>
           </Box>
-          <MetadataTable
-            rows={[
-              {
-                key: 'Timezone',
-                value: (
-                  <Box margin={{bottom: 4}}>
-                    <TimezoneSelect trigger={trigger} />
-                  </Box>
-                ),
-              },
-              {
-                key: 'Hour format',
-                value: (
-                  <Box margin={{bottom: 4}}>
-                    <HourCycleSelect />
-                  </Box>
-                ),
-              },
-              {
-                key: 'Theme',
-                label: (
-                  <div>
-                    Theme (
-                    <a
-                      href="https://github.com/dagster-io/dagster/discussions/18439"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Learn more
-                    </a>
-                    )
-                  </div>
-                ),
-                value: (
-                  <Box margin={{bottom: 4}}>
-                    <ThemeSelect theme={theme} onChange={setTheme} />
-                  </Box>
-                ),
-              },
-              {
-                key: 'Enable keyboard shortcuts',
-                value: (
-                  <Checkbox
-                    checked={shortcutsEnabled}
-                    format="switch"
-                    onChange={toggleKeyboardShortcuts}
-                  />
-                ),
-              },
-            ]}
-          />
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>Timezone</div>
+            <TimezoneSelect trigger={trigger} />
+          </Box>
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>Hour format</div>
+            <HourCycleSelect />
+          </Box>
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>Theme</div>
+            <ThemeSelect theme={theme} onChange={setTheme} />
+          </Box>
+          <Box
+            padding={{vertical: 8}}
+            flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          >
+            <div>Enable keyboard shortcuts</div>
+            <Checkbox
+              checked={shortcutsEnabled}
+              format="switch"
+              onChange={toggleKeyboardShortcuts}
+            />
+          </Box>
         </Box>
         <Box padding={{top: 16}} border="top">
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
-          <MetadataTable
-            rows={visibleFlags.map(({key, label, flagType}) => ({
-              key,
-              label,
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(flagType)}
-                  onChange={() => toggleFlag(flagType)}
-                />
-              ),
-            }))}
-          />
+          {visibleFlags.map(({key, label, flagType}) => (
+            <Box
+              padding={{vertical: 8}}
+              flex={{justifyContent: 'space-between', alignItems: 'center'}}
+              key={key}
+            >
+              <div>{label || key}</div>
+              <Checkbox
+                format="switch"
+                checked={flags.includes(flagType)}
+                onChange={() => toggleFlag(flagType)}
+              />
+            </Box>
+          ))}
         </Box>
       </DialogBody>
       <DialogFooter topBorder>

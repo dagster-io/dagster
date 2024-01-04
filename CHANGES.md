@@ -1,5 +1,89 @@
 # Changelog
 
+# 1.5.14 / 0.21.14 (libraries)
+
+### New
+
+- Viewing logs for a sensor or schedule tick is now a generally available feature.
+  - The feature flag to view sensor or schedule tick logs has been removed, as the feature is now enabled by default.
+  - Logs can now be viewed even when the sensor or schedule tick fails.
+  - The logs are now viewable in the sensor or schedule tick modal.
+- `graph_multi_asset`s can now accept inputs as `kwargs`.
+- [ui] The tick timeline for schedules and sensors now defaults to showing all ticks, instead of excluding skipped ticks. The previous behavior can be enabled by unchecking the “Skipped” checkbox below the timeline view.
+- [ui] The updated asset graph is no longer behind an experimental flag. The new version features a searchable left sidebar, a horizontal DAG layout, context menus and collapsible groups!
+
+### Bugfixes
+
+- [ui] Fix layout and scrolling issues that arise when a global banner alert is displayed in the app.
+- [ui] Use a larger version of the run config dialog in the Runs list in order to maximize the amount of visible config yaml.
+- [ui] When a software-defined asset is removed from a code location, it will now also be removed from global search.
+- [ui] When selecting assets in the catalog, you can now opt to materialize only “changed and missing” items in your selection.
+- [ui] The “Open in Launchpad” option on asset run pages has been updated to link to the graph of assets or asset job instead of an unusable launchpad page.
+- [ui] Partition status dots of multi-dimensional assets no longer wrap on the Asset > Partitions page.
+- [asset checks] Fixed a bug that caused the `resource_defs` parameter of `@asset_check` to not be respected
+- [ui] Fixed an issue where schedules or sensors with the same name in two different code locations sometimes showed each others runs in the list of runs for that schedule or sensor.
+- [pipes] Fixed an issue with the `PipesFileMessageReader` that could cause a crash on Windows.
+- Previously, calling `context.log` in different threads within a single op could result in some of those log messages being dropped. This has been fixed (thanks [@quantum-byte](https://github.com/quantum-byte)!)
+- [dagster-dbt] On Dagster run termination, the dbt subprocess now exits gracefully to terminate any inflight queries that are materializing models.
+
+### Breaking Changes
+
+- The `file_manager` property on `OpExecutionContext` and `AssetExecutionContext` has been removed. This is an ancient property that was deprecated prior to Dagster 1.0, and since then had been raising a `NotImplementedError` whenever invoked.
+
+### Community Contributions
+
+- Added the Hashicorp Nomad integration to the documentation’s list of [community integrations](https://docs.dagster.io/integrations#community-supported-libraries). Thanks, [@ThomAub](https://github.com/ThomAub)!
+- [dagster-deltalake] Fixed an error when passing non-string valued options and extended the supported data types by the arrow type handler to support pyarrow datasets which allows for lazily loading delta tables. Thanks [@roeap](https://github.com/roeap)!
+
+### Experimental
+
+- [dagster-pipes] The subprocess and databricks clients now forward termination to the external process if the orchestration process is terminated. A `forward_termination` argument is available for opting out.
+
+### Documentation
+
+- Fixed an error in the asset checks factory code example.
+
+### Dagster Cloud
+
+- The UI now correctly displays failed partitions after a single-run backfill occurs. Previously, if a single-run backfill failed, the corresponding partitions would not display as failed.
+- Several performance improvements when submitting Snowflake metrics to Dagster Cloud Insights.
+- Fixed an error which would occur when submitting Snowflake metrics for a removed or renamed asset to Dagster Cloud Insights.
+
+# 1.5.13 / 0.21.13 (libraries)
+
+### New
+
+- The `SensorEvaluationContext` object has two new properties: `last_sensor_start_time` and `is_first_tick_since_sensor_start`. This enables sensor evaluation functions to vary behavior on the first tick vs subsequent ticks after the sensor has started.
+- The `asset_selection` argument to `@sensor` and `SensorDefinition` now accepts sequence of `AssetsDefinitions`, a sequences of strings, or a sequence of `AssetKey`s, in addition to `AssetSelection`s.
+- [dagster-dbt] Support for `dbt-core==1.3.*` has been removed.
+- [ui] In code locations view, link to git repo when it’s a valid URL.
+- [ui] To improve consistency and legibility, when displaying elapsed time, most places in the app will now no longer show milliseconds.
+- [ui] Runs that were launched by schedules or sensors now show information about the relevant schedule or sensor in the header, with a link to view other runs associated with the same tick.
+- [dagster-gcp] Added a `show_url_only` parameter to `GCSComputeLogManager` that allows you to configure the compute log manager so that it displays a link to the GCS console rather than loading the logs from GCS, which can be useful if giving Dagster access to GCS credentials is undesirable.
+
+### Bugfixes
+
+- Fixed behavior of loading partitioned parent assets when using the `BranchingIOManager`
+- [ui] Fixed an unwanted scrollbar that sometimes appears on the code location list.
+
+### Community Contributions
+
+- Fixed a bug where dagster would error on FIPS-enabled systems by explicitly marking callsites of `hashlib.md5` as not used for security purposes (Thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!)
+- [dagster-k8s] Changed `execute_k8s_job` to be aware of run-termination and op failure by deleting the executing k8s job (Thanks [@Taadas](https://github.com/Taadas)!).
+- [dagstermill] Fixed dagstermill integration with the Dagster web UI to allow locally-scoped static resources (required to show certain frontend-components like `plotly` graphs) when viewing dagstermill notebooks (Thanks [@aebrahim](https://github.com/aebrahim)!).
+- [dagster-dbt] Fixed type annotation typo in the `DbtCliResource` API docs (Thanks [@akan72](https://github.com/akan72)!)
+
+### Experimental
+
+- [pipes] Methods have been added to facilitate passing non-Dagster data back from the external process (`report_custom_message` ) to the orchestration process (`get_custom_messages`).
+- [ui] Added a “System settings” option for UI theming, which will use your OS preference to set light or dark mode.
+
+### Documentation
+
+- [graphql] - Removed experimental marker that was missed when the GraphQL client was fully released
+- [assets] - Add an example for using retries with assets to the SDA concept page
+- [general] - Fixed some typos and formatting issues
+
 # 1.5.12 / 0.21.12 (libraries)
 
 ### Bugfixes

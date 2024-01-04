@@ -61,6 +61,7 @@ def code_server_cli():
     required=False,
     default=None,
     help="Maximum number of (threaded) workers to use in the code server",
+    envvar="DAGSTER_CODE_SERVER_MAX_WORKERS",
 )
 @python_origin_target_argument
 @click.option(
@@ -186,6 +187,23 @@ def start_command(
         python_file=python_file,
         package_name=kwargs["package_name"],
     )
+
+    code_desc = " "
+    if loadable_target_origin.python_file:
+        code_desc = f" for file {loadable_target_origin.python_file} "
+    elif loadable_target_origin.package_name:
+        code_desc = f" for package {loadable_target_origin.package_name} "
+    elif loadable_target_origin.module_name:
+        code_desc = f" for module {loadable_target_origin.module_name} "
+
+    server_desc = (
+        f"Dagster code proxy server{code_desc}on port {port} in process {os.getpid()}"
+        if port
+        else f"Dagster code proxy server{code_desc}in process {os.getpid()}"
+    )
+
+    logger.info("Starting %s", server_desc)
+
     server_termination_event = threading.Event()
 
     api_servicer = DagsterProxyApiServicer(
@@ -211,20 +229,6 @@ def start_command(
         host=host,
         max_workers=max_workers,
         logger=logger,
-    )
-
-    code_desc = " "
-    if loadable_target_origin.python_file:
-        code_desc = f" for file {loadable_target_origin.python_file} "
-    elif loadable_target_origin.package_name:
-        code_desc = f" for package {loadable_target_origin.package_name} "
-    elif loadable_target_origin.module_name:
-        code_desc = f" for module {loadable_target_origin.module_name} "
-
-    server_desc = (
-        f"Dagster code proxy server{code_desc}on port {port} in process {os.getpid()}"
-        if port
-        else f"Dagster code proxy server{code_desc}in process {os.getpid()}"
     )
 
     logger.info("Started %s", server_desc)

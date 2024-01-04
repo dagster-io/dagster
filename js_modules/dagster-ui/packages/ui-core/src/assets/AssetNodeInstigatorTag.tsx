@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import flatMap from 'lodash/flatMap';
+import uniqBy from 'lodash/uniqBy';
 import React from 'react';
 
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -7,6 +8,7 @@ import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RepoAddress} from '../workspace/types';
 
+import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 
 export const AssetNodeInstigatorTag = ({
@@ -16,8 +18,26 @@ export const AssetNodeInstigatorTag = ({
   assetNode: AssetNodeInstigatorsFragment;
   repoAddress: RepoAddress;
 }) => {
-  const schedules = flatMap(assetNode.jobs, (j) => j.schedules);
-  const sensors = flatMap(assetNode.jobs, (j) => j.sensors);
+  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
+  const {schedules, sensors} = React.useMemo(() => {
+    const schedules = uniqBy(
+      flatMap(assetNode.jobs, (j) => j.schedules),
+      'id',
+    );
+    const sensors = uniqBy(
+      flatMap(assetNode.jobs, (j) => j.sensors),
+      'id',
+    );
+
+    if (automaterializeSensorsFlagState === 'has-sensor-amp') {
+      const ampSensor = assetNode.automationPolicySensor;
+      if (ampSensor) {
+        sensors.push(ampSensor);
+      }
+    }
+
+    return {schedules, sensors};
+  }, [assetNode, automaterializeSensorsFlagState]);
 
   return (
     <ScheduleOrSensorTag
@@ -37,14 +57,16 @@ export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
       name
       schedules {
         id
-
         ...ScheduleSwitchFragment
       }
       sensors {
         id
-
         ...SensorSwitchFragment
       }
+    }
+    automationPolicySensor {
+      id
+      ...SensorSwitchFragment
     }
   }
 

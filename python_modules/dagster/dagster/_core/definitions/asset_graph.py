@@ -760,6 +760,14 @@ class InternalAssetGraph(AssetGraph):
     def asset_checks(self) -> Sequence[AssetChecksDefinition]:
         return self._asset_checks
 
+    def includes_materializable_and_source_assets(self, asset_keys: AbstractSet[AssetKey]) -> bool:
+        """Returns true if the given asset keys contains at least one materializable asset and
+        at least one source asset.
+        """
+        selected_source_assets = self.source_asset_keys & asset_keys
+        selected_regular_assets = asset_keys - self.source_asset_keys
+        return len(selected_source_assets) > 0 and len(selected_regular_assets) > 0
+
 
 def sort_key_for_asset_partition(
     asset_graph: AssetGraph, asset_partition: AssetKeyPartitionKey

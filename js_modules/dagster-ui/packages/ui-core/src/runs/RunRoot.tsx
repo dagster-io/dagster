@@ -15,8 +15,9 @@ import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryF
 
 import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
-import {RunConfigDialog} from './RunConfigDialog';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
+import {RunHeaderActions} from './RunHeaderActions';
+import {RunRootTrace, useRunRootTrace} from './RunRootTrace';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
@@ -27,6 +28,7 @@ import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 export const RunRoot = () => {
   useTrackPageView();
 
+  const trace = useRunRootTrace();
   const {runId} = useParams<{runId: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
@@ -51,6 +53,12 @@ export const RunRoot = () => {
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
     [run],
   );
+
+  React.useLayoutEffect(() => {
+    if (!loading) {
+      trace.onRunLoaded();
+    }
+  }, [loading, trace]);
 
   const tickDetails = React.useMemo(() => {
     if (repoAddress) {
@@ -128,7 +136,6 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <AssetKeyTagCollection
                   useTags
                   assetKeys={
@@ -137,6 +144,7 @@ export const RunRoot = () => {
                       : run.assets.map((a) => a.key)
                   }
                 />
+                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation
@@ -147,10 +155,10 @@ export const RunRoot = () => {
               </Box>
             ) : null
           }
-          right={run ? <RunConfigDialog run={run} isJob={isJob} /> : null}
+          right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
         />
       </Box>
-      <RunById data={data} runId={runId} />
+      <RunById data={data} runId={runId} trace={trace} />
     </div>
   );
 };
@@ -159,11 +167,11 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
-  const {data, runId} = props;
+const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: RunRootTrace}) => {
+  const {data, runId, trace} = props;
 
   if (!data || !data.pipelineRunOrError) {
-    return <Run run={undefined} runId={runId} />;
+    return <Run run={undefined} runId={runId} trace={trace} />;
   }
 
   if (data.pipelineRunOrError.__typename !== 'Run') {
@@ -178,7 +186,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
     );
   }
 
-  return <Run run={data.pipelineRunOrError} runId={runId} />;
+  return <Run run={data.pipelineRunOrError} runId={runId} trace={trace} />;
 };
 
 const RUN_ROOT_QUERY = gql`

@@ -1,13 +1,15 @@
 import React from 'react';
 
-type Trace = {
+type TraceData = {
   name: string;
   startTime: number;
   endTime: number | null;
 };
 
+// @ts-expect-error - exposing a global for cypress test to access traces
+window.__traceBuffer = [];
 class PointToPointInstrumentation {
-  private traces: {[traceId: string]: Trace} = {};
+  private traces: {[traceId: string]: TraceData} = {};
 
   startTrace(traceId: string, name: string): void {
     if (!traceId) {
@@ -39,11 +41,11 @@ class PointToPointInstrumentation {
     }
 
     trace.endTime = performance.now();
-    document.dispatchEvent(
-      new CustomEvent('PerformanceTrace', {
-        detail: trace,
-      }),
-    );
+    // @ts-expect-error - exposing global for cypress
+    window.__traceBuffer.push(trace);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Finished trace ${traceId}`);
+    }
   }
 }
 
@@ -62,3 +64,5 @@ export function useStartTrace(name: string) {
     [traceId],
   );
 }
+
+export type Trace = ReturnType<typeof useStartTrace>;

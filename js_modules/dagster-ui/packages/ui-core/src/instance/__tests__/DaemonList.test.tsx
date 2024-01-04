@@ -4,11 +4,11 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
+import {GetAutoMaterializePausedQuery} from '../../assets/types/useAutomaterializeDaemonStatus.types';
 import {
   AUTOMATERIALIZE_PAUSED_QUERY,
   SET_AUTOMATERIALIZE_PAUSED_MUTATION,
-} from '../../assets/AutomaterializeDaemonStatusTag';
-import {GetAutoMaterializePausedQuery} from '../../assets/types/AutomaterializeDaemonStatusTag.types';
+} from '../../assets/useAutomaterializeDaemonStatus';
 import {buildDaemonStatus, buildInstance} from '../../graphql/types';
 import {DaemonList} from '../DaemonList';
 
@@ -16,6 +16,10 @@ jest.mock('../../app/Permissions', () => ({
   useUnscopedPermissions: () => {
     return {permissions: {canToggleAutoMaterialize: true}};
   },
+}));
+
+jest.mock('../../assets/AutomationPolicySensorFlag', () => ({
+  useAutomationPolicySensorFlag: jest.fn().mockReturnValue('has-global-amp'),
 }));
 
 const mockDaemons = [
@@ -91,7 +95,13 @@ describe('DaemonList', () => {
     };
 
     render(
-      <MockedProvider mocks={[autoMaterializePausedMock(false), setAutoMaterializePausedMock]}>
+      <MockedProvider
+        mocks={[
+          autoMaterializePausedMock(false),
+          setAutoMaterializePausedMock,
+          autoMaterializePausedMock(true),
+        ]}
+      >
         <CustomConfirmationProvider>
           <DaemonList daemonStatuses={mockDaemons} />
         </CustomConfirmationProvider>
@@ -123,7 +133,13 @@ describe('DaemonList', () => {
     };
 
     render(
-      <MockedProvider mocks={[autoMaterializePausedMock(true), setAutoMaterializePausedMock]}>
+      <MockedProvider
+        mocks={[
+          autoMaterializePausedMock(true),
+          setAutoMaterializePausedMock,
+          autoMaterializePausedMock(false),
+        ]}
+      >
         <CustomConfirmationProvider>
           <DaemonList daemonStatuses={mockDaemons} />
         </CustomConfirmationProvider>

@@ -83,7 +83,7 @@ export {GanttChartMode} from './Constants';
 
 const HIGHLIGHT_TIME_EVENT = 'gantt-highlight-time';
 
-let highlightTimer: NodeJS.Timeout;
+let highlightTimer: ReturnType<typeof setTimeout>;
 
 /**
  * Set or clear the highlighted time on the Gantt chart. Goal of this convenience

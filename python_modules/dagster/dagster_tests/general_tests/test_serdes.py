@@ -1,9 +1,11 @@
+import dataclasses
 import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
+import pydantic
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
@@ -89,8 +91,8 @@ def test_forward_compat_serdes_new_field_with_default():
             def __new__(cls, foo, bar):
                 return super(Quux, cls).__new__(cls, foo, bar)
 
-        assert test_map.has_tuple_serializer("Quux")
-        serializer = test_map.get_tuple_serializer("Quux")
+        assert test_map.has_object_serializer("Quux")
+        serializer = test_map.get_object_serializer("Quux")
         assert serializer.klass is Quux
         return Quux("zip", "zow")
 
@@ -102,8 +104,8 @@ def test_forward_compat_serdes_new_field_with_default():
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
-    assert test_map.has_tuple_serializer("Quux")
-    serializer_v2 = test_map.get_tuple_serializer("Quux")
+    assert test_map.has_object_serializer("Quux")
+    serializer_v2 = test_map.get_object_serializer("Quux")
     assert serializer_v2.klass is Quux
 
     deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
@@ -776,3 +778,76 @@ def test_serializable_non_scalar_key_mapping_in_named_tuple():
         )
         == named_tuple
     )
+
+
+def test_objects():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    class SomeNT(NamedTuple):
+        nums: List[int]
+
+    @_whitelist_for_serdes(test_env)
+    @dataclasses.dataclass
+    class InnerDataclass:
+        f: float
+
+    @_whitelist_for_serdes(test_env)
+    class SomeModel(pydantic.BaseModel):
+        id: int
+        name: str
+
+    @_whitelist_for_serdes(test_env)
+    @pydantic.dataclasses.dataclass
+    class DataclassObj:
+        s: str
+        i: int
+        d: InnerDataclass
+        nt: SomeNT
+        m: SomeModel
+
+    o = DataclassObj("woo", 4, InnerDataclass(1.2), SomeNT([1, 2, 3]), SomeModel(id=4, name="zuck"))
+    ser_o = serialize_value(o, whitelist_map=test_env)
+    assert deserialize_value(ser_o, whitelist_map=test_env) == o
+
+    packed_o = pack_value(o, whitelist_map=test_env)
+    assert unpack_value(packed_o, whitelist_map=test_env, as_type=DataclassObj) == o
+
+
+def test_object_migration():
+    nt_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(nt_env)
+    class MyEnt(NamedTuple):  # type: ignore
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    nt_ent = MyEnt("dad", 40, [MyEnt("sis", 4, [])])
+    ser_nt_ent = serialize_value(nt_ent, whitelist_map=nt_env)
+    assert deserialize_value(ser_nt_ent, whitelist_map=nt_env) == nt_ent
+
+    py_dc_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(py_dc_env)
+    @pydantic.dataclasses.dataclass
+    class MyEnt:  # type: ignore
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    # can deserialize previous NamedTuples in to future dataclasses
+    py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_dc_env)
+    assert py_dc_ent
+
+    py_m_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(py_m_env)
+    class MyEnt(pydantic.BaseModel):
+        name: str
+        age: int
+        children: List["MyEnt"]
+
+    # can deserialize previous NamedTuples in to future pydantic models
+    py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_m_env)
+    assert py_dc_ent

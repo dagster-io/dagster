@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
 import pendulum
@@ -18,8 +19,17 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.run_request import (
     InstigatorType,
 )
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.host_representation.origin import (
+    ExternalInstigatorOrigin,
+)
 from dagster._core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorStatus,
+    SensorInstigatorData,
     TickData,
     TickStatus,
 )
@@ -30,7 +40,7 @@ from dagster._daemon.asset_daemon import (
     FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
     FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
 )
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -210,6 +220,9 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
     assetNodeOrError(assetKey: $assetKey) {
         ... on AssetNode {
             currentAutoMaterializeEvaluationId
+            automationPolicySensor {
+                name
+            }
         }
     }
     autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
@@ -322,6 +335,45 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
 
 
 class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
+    def test_automation_policy_sensor(self, graphql_context: WorkspaceRequestContext):
+        sensor_origin = ExternalInstigatorOrigin(
+            external_repository_origin=infer_repository(graphql_context).get_external_origin(),
+            instigator_name="my_automation_policy_sensor",
+        )
+
+        check.not_none(graphql_context.instance.schedule_storage).add_instigator_state(
+            InstigatorState(
+                sensor_origin,
+                InstigatorType.SENSOR,
+                status=InstigatorStatus.RUNNING,
+                instigator_data=SensorInstigatorData(
+                    cursor=AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize(),
+                    sensor_type=SensorType.AUTOMATION_POLICY,
+                ),
+            )
+        )
+
+        with patch(
+            "dagster._core.instance.DagsterInstance.auto_materialize_use_automation_policy_sensors",
+            new_callable=PropertyMock,
+        ) as mock_my_property:
+            mock_my_property.return_value = True
+
+            results = execute_dagster_graphql(
+                graphql_context,
+                QUERY,
+                variables={
+                    "assetKey": {"path": ["fresh_diamond_bottom"]},
+                    "limit": 10,
+                    "cursor": None,
+                },
+            )
+            assert (
+                results.data["assetNodeOrError"]["automationPolicySensor"]["name"]
+                == "my_automation_policy_sensor"
+            )
+            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
+
     def test_get_historic_rules(self, graphql_context: WorkspaceRequestContext):
         check.not_none(
             graphql_context.instance.schedule_storage
@@ -464,6 +516,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -574,6 +627,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -595,6 +649,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -626,6 +681,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -659,6 +715,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -698,6 +755,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
         }
@@ -814,6 +872,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -868,6 +927,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": 0,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [],
@@ -892,6 +952,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": 42,
+                "automationPolicySensor": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [],
