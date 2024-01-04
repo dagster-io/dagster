@@ -949,7 +949,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
 
         """
-        return self._step_execution_context.asset_partition_key_range_for_input(input_name)
+        upstream_asset_key = self.asset_key_for_input(input_name)
+        return self._step_execution_context.asset_partition_key_range_for_upstream(
+            upstream_asset_key
+        )
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
@@ -992,7 +995,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 #   "2023-08-20"
 
         """
-        return self._step_execution_context.asset_partition_key_for_input(input_name)
+        upstream_asset_key = self.asset_key_for_input(input_name)
+        return self._step_execution_context.asset_partition_key_for_upstream(upstream_asset_key)
 
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
@@ -1208,9 +1212,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
         """
+        upstream_asset_key = self.asset_key_for_input(input_name)
         return list(
-            self._step_execution_context.asset_partitions_subset_for_input(
-                input_name
+            self._step_execution_context.asset_partitions_subset_for_upstream(
+                upstream_asset_key
             ).get_partition_keys()
         )
 
@@ -1288,7 +1293,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 #   TimeWindow("2023-08-20", "2023-08-25")
 
         """
-        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
+        upstream_asset_key = self.asset_key_for_input(input_name)
+        return self._step_execution_context.asset_partitions_time_window_for_upstream(
+            upstream_asset_key
+        )
 
     @public
     @experimental
