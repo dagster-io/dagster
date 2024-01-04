@@ -367,7 +367,7 @@ class SnowflakeDbClient(DbClient):
         try:
             connection.execute(_get_cleanup_statement(table_slice))
         except ProgrammingError as e:
-            if "does not exist" in e._message():  # noqa: SLF001
+            if "does not exist" in e._message():  # type: ignore # noqa: SLF001
                 # table doesn't exist yet, so ignore the error
                 return
             else:
