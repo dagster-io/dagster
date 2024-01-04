@@ -551,7 +551,7 @@ def _execute_step_command_body(
 )
 @click.option(
     "--log-format",
-    type=click.Choice(["colored", "json"], case_sensitive=False),
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
     show_default=True,
     required=False,
     default="colored",

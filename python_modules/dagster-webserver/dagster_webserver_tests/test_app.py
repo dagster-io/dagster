@@ -355,13 +355,21 @@ def test_dagster_webserver_json_logs(
     # the one used by Dagster when enabling JSON log format.
     monkeypatch.setattr(caplog.handler, "formatter", get_structlog_json_formatter())
 
-    with instance_for_test():
-        runner = CliRunner()
-        result = runner.invoke(dagster_webserver, ["--log-format=json", "--empty-workspace"])
+    runner = CliRunner()
+    result = runner.invoke(dagster_webserver, ["--log-format", "json", "--empty-workspace"])
 
-        assert result.exit_code == 0, str(result.exception)
+    assert result.exit_code == 0, str(result.exception)
 
-        lines = [line for line in caplog.text.split("\n") if line]
+    lines = [line for line in caplog.text.split("\n") if line]
 
-        assert lines
-        assert [json.loads(line) for line in lines]
+    assert lines
+    assert [json.loads(line) for line in lines]
+
+
+@mock.patch("uvicorn.run")
+def test_dagster_webserver_rich_logs(_: mock.Mock) -> None:
+    runner = CliRunner()
+    result = runner.invoke(dagster_webserver, ["--log-format", "rich", "--empty-workspace"])
+
+    # Test that the webserver can be started with rich formatting.
+    assert result.exit_code == 0, str(result.exception)

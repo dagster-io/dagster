@@ -108,6 +108,7 @@ setup(
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic>1.10.0,!= 1.10.7,<3",
+        "rich",
         f"dagster-pipes{pin}",
     ],
     extras_require={
