@@ -409,7 +409,7 @@ def execute_sensor_iteration(
                 ),
             )
             instance.add_instigator_state(sensor_state)
-        elif _is_under_min_interval(sensor_state, external_sensor):
+        elif is_under_min_interval(sensor_state, external_sensor):
             continue
 
         if threadpool_executor:
@@ -500,11 +500,11 @@ def _process_tick_generator(
                 external_sensor.get_external_origin_id(), external_sensor.selector_id
             )
         )
-        if _is_under_min_interval(sensor_state, external_sensor):
+        if is_under_min_interval(sensor_state, external_sensor):
             # check the since we might have been queued before processing
             return
         else:
-            _mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
+            mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
 
     try:
         tick = instance.create_tick(
@@ -550,7 +550,7 @@ def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigator
         check.failed(f"Expected SensorInstigatorData, got {instigator_data}")
 
 
-def _mark_sensor_state_for_tick(
+def mark_sensor_state_for_tick(
     instance: DagsterInstance,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
@@ -923,7 +923,7 @@ def _handle_run_requests(
     yield
 
 
-def _is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
+def is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
     instigator_data = _sensor_instigator_data(state)
     if not instigator_data:
         return False

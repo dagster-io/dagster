@@ -1103,16 +1103,18 @@ class GrapheneQuery(graphene.ObjectType):
         beforeTimestamp=None,
         afterTimestamp=None,
     ):
+        # Only valid for ticks from before auto-materialize was moved to be powered by multiple
+        # sensors
         from dagster._daemon.asset_daemon import (
-            FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         )
 
         return get_instigation_ticks(
             graphene_info=graphene_info,
             instigator_type=InstigatorType.AUTO_MATERIALIZE,
-            instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
             batch_loader=None,
             dayRange=dayRange,
             dayOffset=dayOffset,

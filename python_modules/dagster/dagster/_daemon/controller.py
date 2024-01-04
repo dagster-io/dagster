@@ -353,7 +353,7 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
         return EventLogConsumerDaemon()
     elif daemon_type == AssetDaemon.daemon_type():
         return AssetDaemon(
-            interval_seconds=(
+            pre_sensor_interval_seconds=(
                 instance.auto_materialize_minimum_interval_seconds
                 if instance.auto_materialize_minimum_interval_seconds is not None
                 else DEFAULT_DAEMON_INTERVAL_SECONDS

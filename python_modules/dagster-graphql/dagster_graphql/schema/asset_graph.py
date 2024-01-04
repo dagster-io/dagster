@@ -896,7 +896,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             if not external_sensor:
                 return None
 
-            return get_current_evaluation_id(graphene_info.context.instance, external_sensor)
+            return get_current_evaluation_id(
+                graphene_info.context.instance, external_sensor.get_external_origin()
+            )
         else:
             return get_current_evaluation_id(graphene_info.context.instance, None)
 

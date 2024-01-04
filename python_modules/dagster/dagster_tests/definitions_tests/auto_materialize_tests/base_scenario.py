@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import sys
+import threading
 from typing import (
     AbstractSet,
     Iterable,
@@ -529,8 +530,10 @@ class AssetReconciliationScenario(
 
                 try:
                     list(
-                        AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
-                            workspace_context, debug_crash_flags or {}
+                        AssetDaemon(pre_sensor_interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                            workspace_context,
+                            debug_crash_flags=(debug_crash_flags or {}),
+                            sensor_state_lock=threading.Lock(),
                         )
                     )
 
