@@ -30,6 +30,7 @@ def test_no_selection():
                 "asset1",
                 "differently_partitioned_asset",
                 "downstream_asset",
+                "fail_asset",
                 "partitioned_asset",
                 "some/key/prefix/asset_with_prefix",
             ]

@@ -38,6 +38,7 @@ def test_single_asset():
         result = invoke_materialize("asset1")
         assert "RUN_SUCCESS" in result.output
         assert instance.get_latest_materialization_event(AssetKey("asset1")) is not None
+        assert result.exit_code == 0
 
 
 def test_multi_segment_asset_key():
@@ -112,3 +113,8 @@ def test_conflicting_partitions():
             "All selected assets must share the same PartitionsDefinition or have no"
             " PartitionsDefinition" in str(result.exception)
         )
+
+
+def test_failure():
+    result = invoke_materialize("fail_asset")
+    assert result.exit_code == 1
