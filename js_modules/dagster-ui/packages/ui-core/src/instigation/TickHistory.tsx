@@ -220,8 +220,6 @@ export const TicksTable = ({
     />
   );
 
-  console.log({ticks}, isOldTickWithoutEndtimestamp(ticks[0], 0));
-  debugger;
   return (
     <>
       {logTick ? (
