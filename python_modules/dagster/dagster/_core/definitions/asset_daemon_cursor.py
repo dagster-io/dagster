@@ -6,14 +6,11 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Type,
-    TypeVar,
 )
 
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._serdes.serdes import (
     FieldSerializer,
     JsonSerializableValue,
@@ -29,9 +26,11 @@ from dagster._serdes.serdes import (
 from .asset_graph import AssetGraph
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetCondition, AssetConditionEvaluation, AssetConditionSnapshot
-
-T = TypeVar("T")
+    from .asset_condition import (
+        AssetConditionEvaluation,
+        AssetConditionEvaluationState,
+        AssetConditionSnapshot,
+    )
 
 
 @whitelist_for_serdes
@@ -42,46 +41,6 @@ class AssetConditionCursorExtras(NamedTuple):
 
     condition_snapshot: "AssetConditionSnapshot"
     extras: Mapping[str, PackableValue]
-
-
-@whitelist_for_serdes
-class AssetConditionCursor(NamedTuple):
-    """Represents the evaluated state of an AssetConditionCursor at a certain point in time. This
-    information can be used to make future evaluations more efficient.
-    """
-
-    asset_key: AssetKey
-    previous_evaluation: Optional["AssetConditionEvaluation"]
-    previous_max_storage_id: Optional[int]
-    previous_evaluation_timestamp: Optional[float]
-
-    extra_values_by_unique_id: Mapping[str, PackableValue]
-
-    @staticmethod
-    def empty(asset_key: AssetKey) -> "AssetConditionCursor":
-        return AssetConditionCursor(
-            asset_key=asset_key,
-            previous_evaluation=None,
-            previous_max_storage_id=None,
-            previous_evaluation_timestamp=None,
-            extra_values_by_unique_id={},
-        )
-
-    def get_extras_value(self, condition: "AssetCondition", as_type: Type[T]) -> Optional[T]:
-        """Returns the value from the extras dict for the given condition, if it exists and is of
-        the expected type. Otherwise, returns None.
-        """
-        extras_value = self.extra_values_by_unique_id.get(condition.unique_id)
-        if isinstance(extras_value, as_type):
-            return extras_value
-        return None
-
-    def get_previous_requested_or_discarded_subset(
-        self, condition: "AssetCondition", partitions_def: Optional[PartitionsDefinition]
-    ) -> AssetSubset:
-        if not self.previous_evaluation:
-            return AssetSubset.empty(self.asset_key, partitions_def)
-        return self.previous_evaluation.get_requested_or_discarded_subset(condition)
 
 
 class ObserveRequestTimestampSerializer(FieldSerializer):
@@ -112,12 +71,12 @@ class AssetDaemonCursor(NamedTuple):
 
     Attributes:
         evaluation_id (int): The ID of the evaluation that produced this cursor.
-        asset_cursors (Sequence[AssetConditionCursor]): The state of each asset that the daemon
-            is responsible for handling.
+        previous_evaluation_state (Sequence[AssetConditionEvaluationInfo]): The evaluation info
+            recorded for each asset on the previous tick.
     """
 
     evaluation_id: int
-    asset_cursors: Sequence[AssetConditionCursor]
+    previous_evaluation_state: Sequence["AssetConditionEvaluationState"]
 
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
@@ -125,37 +84,44 @@ class AssetDaemonCursor(NamedTuple):
     def empty(evaluation_id: int = 0) -> "AssetDaemonCursor":
         return AssetDaemonCursor(
             evaluation_id=evaluation_id,
-            asset_cursors=[],
+            previous_evaluation_state=[],
             last_observe_request_timestamp_by_asset_key={},
         )
 
     @property
     @functools.lru_cache(maxsize=1)
-    def asset_cursors_by_key(self) -> Mapping[AssetKey, AssetConditionCursor]:
-        """Efficient lookup of asset cursors by asset key."""
-        return {cursor.asset_key: cursor for cursor in self.asset_cursors}
+    def previous_evaluation_state_by_key(
+        self,
+    ) -> Mapping[AssetKey, "AssetConditionEvaluationState"]:
+        """Efficient lookup of previous evaluation info by asset key."""
+        return {
+            evaluation_state.asset_key: evaluation_state
+            for evaluation_state in self.previous_evaluation_state
+        }
 
-    def get_asset_cursor(self, asset_key: AssetKey) -> AssetConditionCursor:
+    def get_previous_evaluation_state(
+        self, asset_key: AssetKey
+    ) -> Optional["AssetConditionEvaluationState"]:
         """Returns the AssetConditionCursor associated with the given asset key. If no stored
         cursor exists, returns an empty cursor.
         """
-        return self.asset_cursors_by_key.get(asset_key) or AssetConditionCursor.empty(asset_key)
+        return self.previous_evaluation_state_by_key.get(asset_key)
 
     def get_previous_evaluation(self, asset_key: AssetKey) -> Optional["AssetConditionEvaluation"]:
         """Returns the previous AssetConditionEvaluation for a given asset key, if it exists."""
-        cursor = self.get_asset_cursor(asset_key)
-        return cursor.previous_evaluation if cursor else None
+        previous_evaluation_state = self.get_previous_evaluation_state(asset_key)
+        return previous_evaluation_state.previous_evaluation if previous_evaluation_state else None
 
     def with_updates(
         self,
         evaluation_id: int,
         evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
-        asset_cursors: Sequence[AssetConditionCursor],
+        evaluation_state: Sequence["AssetConditionEvaluationState"],
     ) -> "AssetDaemonCursor":
         return self._replace(
             evaluation_id=evaluation_id,
-            asset_cursors=asset_cursors,
+            previous_evaluation_state=evaluation_state,
             last_observe_request_timestamp_by_asset_key={
                 **self.last_observe_request_timestamp_by_asset_key,
                 **{
@@ -172,24 +138,25 @@ class AssetDaemonCursor(NamedTuple):
 # BACKCOMPAT
 
 
-def get_backcompat_asset_condition_cursor(
-    asset_key: AssetKey,
+def get_backcompat_asset_condition_evaluation_state(
+    latest_evaluation: "AssetConditionEvaluation",
     latest_storage_id: Optional[int],
     latest_timestamp: Optional[float],
-    latest_evaluation: Optional["AssetConditionEvaluation"],
     handled_root_subset: Optional[AssetSubset],
-) -> AssetConditionCursor:
+) -> "AssetConditionEvaluationState":
     """Generates an AssetDaemonCursor from information available on the old cursor format."""
-    from dagster._core.definitions.asset_condition import RuleCondition
+    from dagster._core.definitions.asset_condition import (
+        AssetConditionEvaluationState,
+        RuleCondition,
+    )
     from dagster._core.definitions.auto_materialize_rule import MaterializeOnMissingRule
 
-    return AssetConditionCursor(
-        asset_key=asset_key,
+    return AssetConditionEvaluationState(
         previous_evaluation=latest_evaluation,
-        previous_evaluation_timestamp=latest_timestamp,
-        previous_max_storage_id=latest_storage_id,
+        previous_tick_evaluation_timestamp=latest_timestamp,
+        max_storage_id=latest_storage_id,
         # the only information we need to preserve from the previous cursor is the handled subset
-        extra_values_by_unique_id={
+        extra_state_by_unique_id={
             RuleCondition(MaterializeOnMissingRule()).unique_id: handled_root_subset,
         }
         if handled_root_subset and handled_root_subset.size > 0
@@ -203,6 +170,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     """This serves as a backcompat layer for deserializing the old cursor format. Some information
     is impossible to fully recover, this will recover enough to continue operating as normal.
     """
+    from .asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
     from .auto_materialize_rule_evaluation import (
         deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
     )
@@ -256,29 +224,39 @@ def backcompat_deserialize_asset_daemon_cursor_str(
 
         latest_evaluation_by_asset_key[key] = evaluation
 
-    asset_cursors = []
+    previous_evaluation_state = []
     cursor_keys = (
         asset_graph.auto_materialize_policies_by_key.keys()
         if asset_graph
         else latest_evaluation_by_asset_key.keys()
     )
     for asset_key in cursor_keys:
-        latest_evaluation = latest_evaluation_by_asset_key.get(asset_key)
-        asset_cursors.append(
-            get_backcompat_asset_condition_cursor(
-                asset_key,
-                data.get("latest_storage_id"),
-                data.get("latest_evaluation_timestamp"),
-                latest_evaluation,
-                handled_root_asset_graph_subset.get_asset_subset(asset_key, asset_graph)
-                if asset_graph
-                else None,
+        latest_evaluation_result = latest_evaluation_by_asset_key.get(asset_key)
+        # create a placeholder evaluation result if we don't have one
+        if not latest_evaluation_result:
+            partitions_def = asset_graph.get_partitions_def(asset_key) if asset_graph else None
+            latest_evaluation_result = AssetConditionEvaluation(
+                condition_snapshot=AssetConditionSnapshot("", "", ""),
+                true_subset=AssetSubset.empty(asset_key, partitions_def),
+                candidate_subset=AssetSubset.empty(asset_key, partitions_def),
+                start_timestamp=None,
+                end_timestamp=None,
+                subsets_with_metadata=[],
+                child_evaluations=[],
             )
+        backcompat_evaluation_state = get_backcompat_asset_condition_evaluation_state(
+            latest_evaluation_result,
+            data.get("latest_storage_id"),
+            data.get("latest_evaluation_timestamp"),
+            handled_root_asset_graph_subset.get_asset_subset(asset_key, asset_graph)
+            if asset_graph
+            else None,
         )
+        previous_evaluation_state.append(backcompat_evaluation_state)
 
     return AssetDaemonCursor(
         evaluation_id=default_evaluation_id,
-        asset_cursors=asset_cursors,
+        previous_evaluation_state=previous_evaluation_state,
         last_observe_request_timestamp_by_asset_key=last_observe_request_timestamp_by_asset_key,
     )
 

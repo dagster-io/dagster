@@ -743,6 +743,8 @@ class TestScheduleStorage:
                         candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
                         start_timestamp=0,
                         end_timestamp=1,
+                        subsets_with_metadata=[],
+                        child_evaluations=[],
                     ).with_run_ids(set()),
                     AssetConditionEvaluation(
                         condition_snapshot=condition_snapshot,
@@ -756,6 +758,7 @@ class TestScheduleStorage:
                                 {"foo": MetadataValue.text("bar")},
                             )
                         ],
+                        child_evaluations=[],
                     ).with_run_ids(set()),
                 ],
             )
@@ -804,6 +807,8 @@ class TestScheduleStorage:
                     end_timestamp=1,
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    subsets_with_metadata=[],
+                    child_evaluations=[],
                 ).with_run_ids(set()),
             ],
         )
@@ -835,6 +840,8 @@ class TestScheduleStorage:
             end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
             candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+            subsets_with_metadata=[],
+            child_evaluations=[],
         ).with_run_ids(set())
 
         eval_asset_three = AssetConditionEvaluation(
@@ -843,6 +850,8 @@ class TestScheduleStorage:
             end_timestamp=1,
             true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
             candidate_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
+            subsets_with_metadata=[],
+            child_evaluations=[],
         ).with_run_ids(set())
 
         storage.add_auto_materialize_asset_evaluations(
@@ -890,6 +899,7 @@ class TestScheduleStorage:
                     true_subset=asset_subset,
                     candidate_subset=asset_subset,
                     subsets_with_metadata=[asset_subset_with_metadata],
+                    child_evaluations=[],
                 ).with_run_ids(set()),
             ],
         )
@@ -923,6 +933,7 @@ class TestScheduleStorage:
                     true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
                     subsets_with_metadata=[],
+                    child_evaluations=[],
                 ).with_run_ids(set()),
             ],
         )
