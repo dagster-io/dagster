@@ -274,10 +274,11 @@ class AssetDaemon(DagsterDaemon):
                     continue
                 raw_cursor = instigator_data.cursor
                 if raw_cursor:
-                    stored_evaluation_id = AssetDaemonCursor.from_serialized(
-                        raw_cursor,
-                        asset_graph,
-                    ).evaluation_id
+                    stored_evaluation_id = (
+                        BackcompatAssetDaemonEvaluationInfo.from_compressed(raw_cursor)
+                        .get_asset_daemon_cursor(asset_graph)
+                        .evaluation_id
+                    )
                     self._next_evaluation_id = max(self._next_evaluation_id, stored_evaluation_id)
 
             raw_cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
@@ -711,7 +712,9 @@ class AssetDaemon(DagsterDaemon):
                                 SensorInstigatorData(
                                     last_tick_timestamp=tick.timestamp,
                                     min_interval=sensor.min_interval_seconds,
-                                    cursor=new_cursor.serialize(),
+                                    cursor=BackcompatAssetDaemonEvaluationInfo(
+                                        new_cursor.serialize()
+                                    ).to_compressed(),
                                     sensor_type=SensorType.AUTOMATION_POLICY,
                                 )
                             )
