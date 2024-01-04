@@ -81,7 +81,7 @@ export const ScheduleOrSensorTag = ({
     );
   }
 
-  return null;
+  return <div style={{display: 'none'}}>No schedules or sensors</div>;
 };
 
 const MatchingSchedule = ({

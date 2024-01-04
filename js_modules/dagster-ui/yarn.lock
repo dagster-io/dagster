@@ -2587,7 +2587,7 @@ __metadata:
     faker: "npm:5.5.3"
     fuse.js: "npm:^6.4.2"
     graphql: "npm:^16.8.1"
-    graphql-codegen-typescript-mock-data: "npm:^3.3.0"
+    graphql-codegen-typescript-mock-data: "npm:^3.7.1"
     graphql-config: "npm:^4.5.0"
     graphql-tag: "npm:^2.10.1"
     highlight.js: "npm:11.6.0"
@@ -13934,9 +13934,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"graphql-codegen-typescript-mock-data@npm:^3.3.0":
-  version: 3.5.0
-  resolution: "graphql-codegen-typescript-mock-data@npm:3.5.0"
+"graphql-codegen-typescript-mock-data@npm:^3.7.1":
+  version: 3.7.1
+  resolution: "graphql-codegen-typescript-mock-data@npm:3.7.1"
   dependencies:
     "@faker-js/faker": "npm:^7.5.0"
     "@graphql-codegen/plugin-helpers": "npm:^2.7.2"
@@ -13949,7 +13949,7 @@ __metadata:
     upper-case: "npm:^2.0.1"
   peerDependencies:
     graphql: ^14.6.0 || ^15.0.0 || ^16.0.0
-  checksum: fe52ee4d7b9834504ee4a5d1405c759e6034a37fbae273b86bce098a3a77d6db4e1bc107da6c65bd9eb4e7d4e858c08877b8aee28e885066172d42be23e92cf6
+  checksum: 605a183f576ae1558828f1c9394ae340def163ae6f89af9af0a0f646035a870e4607e2eeaecc36bdf6f691ff103afaf56d6aa1b5eafdb747a185ad2483b2723d
   languageName: node
   linkType: hard
 
