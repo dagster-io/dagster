@@ -202,7 +202,7 @@ class LoadedRepositories:
 
         with user_code_error_boundary(
             DagsterUserCodeLoadError,
-            lambda: "Error occurred during the loading of repository",
+            lambda: "Error occurred assembling repositories to load",
         ):
             loadable_targets = get_loadable_targets(
                 loadable_target_origin.python_file,
@@ -211,29 +211,33 @@ class LoadedRepositories:
                 loadable_target_origin.working_directory,
                 loadable_target_origin.attribute,
             )
-            for loadable_target in loadable_targets:
-                pointer = _get_code_pointer(loadable_target_origin, loadable_target)
-                recon_repo = ReconstructableRepository(
-                    pointer,
-                    container_image,
-                    sys.executable,
-                    entry_point=entry_point,
-                )
+        for loadable_target in loadable_targets:
+            pointer = _get_code_pointer(loadable_target_origin, loadable_target)
+            recon_repo = ReconstructableRepository(
+                pointer,
+                container_image,
+                sys.executable,
+                entry_point=entry_point,
+            )
+            with user_code_error_boundary(
+                DagsterUserCodeLoadError,
+                lambda: "Error occurred during the loading of repository " + pointer.describe(),
+            ):
                 repo_def = recon_repo.get_definition()
                 # force load of all lazy constructed code artifacts to prevent
                 # any thread-safety issues loading them later on when serving
                 # definitions from multiple threads
                 repo_def.load_all_definitions()
 
-                self._code_pointers_by_repo_name[repo_def.name] = pointer
-                self._recon_repos_by_name[repo_def.name] = recon_repo
-                self._repo_defs_by_name[repo_def.name] = repo_def
-                self._loadable_repository_symbols.append(
-                    LoadableRepositorySymbol(
-                        attribute=loadable_target.attribute,
-                        repository_name=repo_def.name,
-                    )
+            self._code_pointers_by_repo_name[repo_def.name] = pointer
+            self._recon_repos_by_name[repo_def.name] = recon_repo
+            self._repo_defs_by_name[repo_def.name] = repo_def
+            self._loadable_repository_symbols.append(
+                LoadableRepositorySymbol(
+                    attribute=loadable_target.attribute,
+                    repository_name=repo_def.name,
                 )
+            )
 
     @property
     def loadable_repository_symbols(self) -> Sequence[LoadableRepositorySymbol]:
@@ -373,7 +377,7 @@ class DagsterApiServer(DagsterApiServicer):
                 raise
             self._loaded_repositories = None
             self._serializable_load_error = serializable_error_info_from_exc_info(
-                sys.exc_info(), hoist_user_code_execution_error=True
+                sys.exc_info(),  # hoist_user_code_execution_error=True
             )
             self._logger.exception("Error while importing code")
 

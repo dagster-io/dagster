@@ -90,7 +90,7 @@ ExceptionInfo: TypeAlias = Union[
 
 
 def _should_redact_user_code_error() -> bool:
-    return os.getenv("DAGSTER_REDACT_USER_CODE_ERRORS") == "1"
+    return str(os.getenv("DAGSTER_REDACT_USER_CODE_ERRORS")).lower() in ("1", "true", "t")
 
 
 def _get_masked_traceback_exception(with_instruction: bool) -> traceback.TracebackException:
@@ -143,11 +143,10 @@ def serializable_error_info_from_exc_info(
 
     if isinstance(e, DagsterUserCodeExecutionError) and _should_redact_user_code_error():
         masked_tb_exc = _get_masked_traceback_exception(with_instruction=True)
-        print(  # noqa: T201
+        sys.stderr.write(
             _serializable_error_info_from_tb(
                 _get_masked_traceback_exception(with_instruction=False)
             ).to_string(),
-            file=sys.stderr,
         )
         return _serializable_error_info_from_tb(masked_tb_exc, no_cause=True)
 

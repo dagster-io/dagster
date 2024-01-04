@@ -278,7 +278,9 @@ class TestLoadWorkspace(BaseTestSuite):
 
             assert failure_node["name"] == "error_location"
             assert failure_node["loadStatus"] == "LOADED"
-            assert "No such file or directory" not in failure_node["locationOrLoadError"]["message"]
+            assert (
+                "No such file or directory" not in failure_node["locationOrLoadError"]["message"]
+            ), failure_node["locationOrLoadError"]["message"]
             assert (
                 "Search in logs for this error ID for more details"
                 in failure_node["locationOrLoadError"]["message"]
