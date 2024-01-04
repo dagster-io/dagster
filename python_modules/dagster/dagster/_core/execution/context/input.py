@@ -405,7 +405,7 @@ class InputContext:
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        return self.step_context.asset_partitions_time_window_for_input(self.name)
+        return self.step_context.asset_partitions_time_window_for_upstream(self.asset_key)
 
     @public
     def get_identifier(self) -> Sequence[str]:
