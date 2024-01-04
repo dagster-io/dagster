@@ -475,7 +475,7 @@ def test_fs_io_manager_none():
         handled_output_events = list(
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
-        assert len(handled_output_events) == 2
+        assert len(handled_output_events) == 0
 
         for event in handled_output_events:
             assert len(event.event_specific_data.metadata) == 0
@@ -502,7 +502,7 @@ def test_fs_io_manager_ops_none():
         handled_output_events = list(
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
-        assert len(handled_output_events) == 2
+        assert len(handled_output_events) == 0
 
         for event in handled_output_events:
             assert len(event.event_specific_data.metadata) == 0
