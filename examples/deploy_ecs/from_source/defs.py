@@ -1,6 +1,6 @@
 import time
 
-from dagster import graph, op, repository
+from dagster import graph, op, Definitions
 
 
 @op
@@ -17,6 +17,6 @@ def my_graph():
 my_job = my_graph.to_job()
 
 
-@repository
-def repo():
-    return [my_job]
+defs = Definitions(
+    jobs=[my_job]
+)
