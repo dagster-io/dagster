@@ -62,7 +62,7 @@ OpOutputUnion: TypeAlias = Union[
 
 
 def _get_op_context(
-    context: Union[OpExecutionContext, AssetExecutionContext]
+    context: Union[OpExecutionContext, AssetExecutionContext],
 ) -> OpExecutionContext:
     if isinstance(context, AssetExecutionContext):
         return context.op_execution_context
