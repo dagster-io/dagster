@@ -499,16 +499,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch_planned_materializations(
-        self,
-        records_filter: Union[AssetKey, AssetRecordsFilter],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> EventRecordsResult:
-        raise NotImplementedError()
-
-    @abstractmethod
     def fetch_run_status_changes(
         self,
         records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],

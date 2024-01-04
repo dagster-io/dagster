@@ -477,17 +477,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_observations(filters, limit, cursor, ascending)
 
-    def fetch_planned_materializations(
-        self,
-        filters: Union[AssetKey, "AssetRecordsFilter"],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> EventRecordsResult:
-        return self._storage.event_log_storage.fetch_planned_materializations(
-            filters, limit, cursor, ascending
-        )
-
     def fetch_run_status_changes(
         self,
         filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],

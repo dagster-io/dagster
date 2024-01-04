@@ -34,7 +34,7 @@ import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
@@ -48,6 +48,7 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster._core.event_api import EventLogCursor
 from dagster._core.log_manager import DagsterLogRecord
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
@@ -2009,8 +2010,8 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
 
-    @public
     @traced
+    @deprecated(breaking_version="2.0")
     def fetch_planned_materializations(
         self,
         records_filter: Union[AssetKey, "AssetRecordsFilter"],
@@ -2031,9 +2032,30 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.fetch_planned_materializations(
-            records_filter, limit, cursor, ascending
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import (
+            EventRecordsFilter,
+            EventRecordsResult,
         )
+
+        event_records_filter = (
+            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, records_filter)
+            if isinstance(records_filter, AssetKey)
+            else records_filter.to_event_records_filter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED, cursor=cursor, ascending=ascending
+            )
+        )
+        records = self._event_storage.get_event_records(
+            event_records_filter, limit=limit, ascending=ascending
+        )
+        if records:
+            new_cursor = EventLogCursor.from_storage_id(records[-1].storage_id).to_string()
+        elif cursor:
+            new_cursor = cursor
+        else:
+            new_cursor = EventLogCursor.from_storage_id(-1).to_string()
+        has_more = len(records) == limit
+        return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
 
     @public
     @traced
