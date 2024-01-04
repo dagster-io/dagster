@@ -5,9 +5,9 @@
 ### New
 
 - Viewing logs for a sensor or schedule tick is now a generally available feature.
-    - The feature flag to view sensor or schedule tick logs has been removed, as the feature is now enabled by default.
-    - Logs can now be viewed even when the sensor or schedule tick fails.
-    - The logs are now viewable in the sensor or schedule tick modal.
+  - The feature flag to view sensor or schedule tick logs has been removed, as the feature is now enabled by default.
+  - Logs can now be viewed even when the sensor or schedule tick fails.
+  - The logs are now viewable in the sensor or schedule tick modal.
 - `graph_multi_asset`s can now accept inputs as `kwargs`.
 - [ui] The tick timeline for schedules and sensors now defaults to showing all ticks, instead of excluding skipped ticks. The previous behavior can be enabled by unchecking the “Skipped” checkbox below the timeline view.
 - [ui] The updated asset graph is no longer behind an experimental flag. The new version features a searchable left sidebar, a horizontal DAG layout, context menus and collapsible groups!
