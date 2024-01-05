@@ -28,7 +28,6 @@ export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   if (!minIntervalSeconds) {
     minIntervalSeconds = 30; // should query sensor interval config when available
   }
-  minIntervalSeconds = Math.max(30, minIntervalSeconds);
   if (minIntervalSeconds < 60 || minIntervalSeconds % 60) {
     return `~${minIntervalSeconds} sec`;
   }
