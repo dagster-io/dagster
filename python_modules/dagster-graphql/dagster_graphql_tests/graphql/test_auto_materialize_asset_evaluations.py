@@ -4,7 +4,10 @@ from unittest.mock import PropertyMock, patch
 import dagster._check as check
 import pendulum
 from dagster import AssetKey, RunRequest
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+    BackcompatAssetDaemonEvaluationInfo,
+)
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeAssetEvaluation,
@@ -347,8 +350,10 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 InstigatorType.SENSOR,
                 status=InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
-                    cursor=AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize(),
                     sensor_type=SensorType.AUTOMATION_POLICY,
+                    cursor=BackcompatAssetDaemonEvaluationInfo(
+                        AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize()
+                    ).to_compressed(),
                 ),
             )
         )
