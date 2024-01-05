@@ -4,6 +4,7 @@ import ssl
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 from dagster._annotations import deprecated_param
+from dagster._core.definitions.run_request import SkipReason
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -49,6 +50,7 @@ Subject: {email_subject}
 
 def send_email_via_ssl(
     email_from: str,
+    email_user: str,
     email_password: str,
     email_to: Sequence[str],
     message: str,
@@ -57,12 +59,13 @@ def send_email_via_ssl(
 ):
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
-        server.login(email_from, email_password)
+        server.login(email_user, email_password)
         server.sendmail(email_from, email_to, message)
 
 
 def send_email_via_starttls(
     email_from: str,
+    email_user: str,
     email_password: str,
     email_to: Sequence[str],
     message: str,
@@ -72,7 +75,7 @@ def send_email_via_starttls(
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls(context=context)
-        server.login(email_from, email_password)
+        server.login(email_user, email_password)
         server.sendmail(email_from, email_to, message)
 
 
@@ -90,6 +93,7 @@ def make_email_on_run_failure_sensor(
     smtp_host: str = "smtp.gmail.com",
     smtp_type: str = "SSL",
     smtp_port: Optional[int] = None,
+    email_user: Optional[str] = None,
     name: Optional[str] = None,
     webserver_base_url: Optional[str] = None,
     monitored_jobs: Optional[
@@ -132,6 +136,7 @@ def make_email_on_run_failure_sensor(
         smtp_host (str): The hostname of the SMTP server. Defaults to "smtp.gmail.com".
         smtp_type (str): The protocol; either "SSL" or "STARTTLS". Defaults to SSL.
         smtp_port (Optional[int]): The SMTP port. Defaults to 465 for SSL, 587 for STARTTLS.
+        email_user (Optional[str]): The user to authenticate with the SMTP server. Defaults to email_from.
         name: (Optional[str]): The name of the sensor. Defaults to "email_on_job_failure".
         webserver_base_url: (Optional[str]): The base url of your dagster-webserver instance. Specify this to allow
             messages to include deeplinks to the failed run.
@@ -211,13 +216,15 @@ def make_email_on_run_failure_sensor(
 
         if smtp_type == "SSL":
             send_email_via_ssl(
-                email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 465
+                email_from, email_user or email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 465
             )
         elif smtp_type == "STARTTLS":
             send_email_via_starttls(
-                email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 587
+                email_from, email_user or email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 587
             )
         else:
             raise DagsterInvalidDefinitionError(f'smtp_type "{smtp_type}" is not supported.')
+
+        return SkipReason()
 
     return email_on_run_failure
