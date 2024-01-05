@@ -1,4 +1,4 @@
-from ..repo import my_job
+from ..defs import my_job
 
 
 def test_repo():
