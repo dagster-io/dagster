@@ -2,20 +2,18 @@ import asyncio
 import inspect
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
 
 from dagster import (
-    DagsterEventType,
     InputContext,
     MetadataValue,
     MultiPartitionKey,
     OutputContext,
     _check as check,
 )
-from dagster._core.events import HandledOutputData
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 if TYPE_CHECKING:
@@ -237,6 +235,17 @@ class UPathIOManager(MemoizableIOManager):
         self, path: "UPath", context: InputContext, backcompat_path: Optional["UPath"] = None
     ) -> Any:
         context.log.debug(self.get_loading_input_log_message(path))
+        if context.upstream_output and context.upstream_output.has_asset_key:
+            # If the upstream step is an asset and the output value was None, then there will
+            # be metadata marking that. If that metadata exists, we want to provide None to the
+            # materializing asset.
+            latest_materialization = context.step_context.latest_materialization_event.get(
+                context.asset_key
+            )
+            if latest_materialization and latest_materialization.metadata.get(
+                "output_is_none", False
+            ):
+                return None
         try:
             obj = self.load_from_path(context=context, path=path)
             if asyncio.iscoroutine(obj):
@@ -259,38 +268,6 @@ class UPathIOManager(MemoizableIOManager):
 
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
-
-    def _should_load_none(self, context) -> bool:
-        if context.has_asset_key:
-            # check if the corresponding output was not stored because it was None
-            latest_materialization = context.step_context.latest_materialization_event.get(
-                context.asset_key
-            )
-            if latest_materialization and latest_materialization.metadata.get(
-                "output_is_none", False
-            ):
-                return True
-        else:
-            if context.upstream_output:
-                handled_output_events = context.instance.all_logs(
-                    run_id=context.upstream_output.run_id,
-                    of_type=DagsterEventType.HANDLED_OUTPUT,
-                )
-
-                upstream_output_event = None
-                for e in handled_output_events:
-                    if e.step_key == context.upstream_output.step_key:
-                        upstream_output_event = e.get_dagster_event()
-                        break
-
-                if upstream_output_event:
-                    event_specific_data = cast(
-                        HandledOutputData, upstream_output_event.event_specific_data
-                    )
-                    if event_specific_data.metadata.get("output_is_none", False):
-                        return True
-
-        return False
 
     def _load_partition_from_path(
         self,
@@ -457,12 +434,14 @@ class UPathIOManager(MemoizableIOManager):
                         f" Any: is '{type_annotation}'."
                     )
 
-                return self._load_multiple_inputs(context)
+                return self._load_multiple_inputs(context)  # TODO - make this support Nones
 
     def handle_output(self, context: OutputContext, obj: Any):
         if obj is None:
-            # add some marker that the output was None
-            context.add_output_metadata({"output_is_none": True})
+            if context.has_asset_key:
+                # If the step is an asset, mark via metadata so that we can check this metadata
+                # at load time to know to provide None
+                context.add_output_metadata({"output_is_none": True})
             return
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
