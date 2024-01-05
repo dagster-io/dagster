@@ -324,5 +324,4 @@ class BackcompatAssetDaemonEvaluationInfo(NamedTuple):
         serialized_bytes = serialize_value(self).encode("utf-8")
         compressed_bytes = zlib.compress(serialized_bytes)
         encoded_str = base64.b64encode(compressed_bytes)
-        print("ENCODED", encoded_str)
         return encoded_str.decode("utf-8")
