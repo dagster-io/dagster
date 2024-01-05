@@ -31,7 +31,6 @@ import DockerEnvVarsConfiguration from './includes/dagster-cloud/agents/DockerEn
 import K8sEnvVarsConfiguration from './includes/dagster-cloud/agents/K8sEnvVarsConfiguration.mdx';
 import DagsterDevTabs from './includes/dagster/DagsterDevTabs.mdx';
 import DagsterVersion from './includes/dagster/DagsterVersion.mdx';
-import LoggingInDagsterUI from './includes/dagster/concepts/logging/LoggingInDagsterUI.mdx';
 import RawComputeLogs from './includes/dagster/concepts/logging/RawComputeLogs.mdx';
 import StructuredEventLogs from './includes/dagster/concepts/logging/StructuredEventLogs.mdx';
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
@@ -853,7 +852,6 @@ export default {
   ReferenceTableItem,
   DagsterVersion,
   DagsterDevTabs,
-  LoggingInDagsterUI,
   StructuredEventLogs,
   RawComputeLogs,
   AddGitlabVariable,
