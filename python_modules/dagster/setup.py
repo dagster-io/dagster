@@ -97,6 +97,7 @@ setup(
         "tomli<3",
         "tqdm<5",
         "typing_extensions>=4.4.0,<5",
+        "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
         "watchdog>=0.8.3",
@@ -107,6 +108,7 @@ setup(
         "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic>1.10.0,!= 1.10.7,<3",
+        "rich",
         f"dagster-pipes{pin}",
     ],
     extras_require={

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+import threading
 from collections import namedtuple
 from typing import (
     Any,
@@ -57,9 +58,9 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import (
-    CURSOR_KEY,
-    FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-    FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
     get_current_evaluation_id,
 )
@@ -364,14 +365,17 @@ class AssetDaemonScenarioState(NamedTuple):
             ), workspace.get_code_location_error("test_location")
 
             list(
-                AssetDaemon(interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
+                AssetDaemon(pre_sensor_interval_seconds=42)._run_iteration_impl(  # noqa: SLF001
                     workspace_context,
-                    {},
+                    debug_crash_flags={},
+                    sensor_state_lock=threading.Lock(),
                 )
             )
             new_cursor = AssetDaemonCursor.from_serialized(
-                self.instance.daemon_cursor_storage.get_cursor_values({CURSOR_KEY}).get(
-                    CURSOR_KEY, AssetDaemonCursor.empty().serialize()
+                self.instance.daemon_cursor_storage.get_cursor_values(
+                    {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY}
+                ).get(
+                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY, AssetDaemonCursor.empty().serialize()
                 ),
                 self.asset_graph,
             )
@@ -419,8 +423,8 @@ class AssetDaemonScenarioState(NamedTuple):
         """
         latest_tick = sorted(
             self.instance.get_ticks(
-                origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-                selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+                origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+                selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
             ),
             key=lambda tick: tick.tick_id,
         )[-1]

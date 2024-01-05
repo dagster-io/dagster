@@ -18,13 +18,12 @@ if TYPE_CHECKING:
 @experimental
 @whitelist_for_serdes
 class AssetCheckSeverity(Enum):
-    """Severity level for an asset check.
+    """Severity level for an AssetCheckResult.
 
-    Severities:
+    - WARN: a potential issue with the asset
+    - ERROR: a definite issue with the asset
 
-    - WARN: If the check fails, don't fail the step.
-    - ERROR: If the check fails, fail the step and, within the run, skip materialization of any
-      assets that are downstream of the asset being checked.
+    Severity does not impact execution of the asset or downstream assets.
     """
 
     WARN = "WARN"

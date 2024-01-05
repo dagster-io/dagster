@@ -1155,6 +1155,7 @@ def test_asset_backfill_with_single_run_backfill_policy(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.asset_selection == [asset_with_single_run_backfill_policy.key]
 
     assert all(
         not error

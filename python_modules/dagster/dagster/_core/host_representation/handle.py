@@ -85,10 +85,10 @@ class InstigatorHandle(
         "_InstigatorHandle", [("instigator_name", str), ("repository_handle", RepositoryHandle)]
     )
 ):
-    def __new__(cls, job_name: str, repository_handle: RepositoryHandle):
+    def __new__(cls, instigator_name: str, repository_handle: RepositoryHandle):
         return super(InstigatorHandle, cls).__new__(
             cls,
-            check.str_param(job_name, "job_name"),
+            check.str_param(instigator_name, "instigator_name"),
             check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
         )
 

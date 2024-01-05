@@ -16,7 +16,11 @@ from typing import (
 import grpc
 
 import dagster._check as check
-from dagster._core.definitions.selector import PartitionSetSelector, RepositorySelector
+from dagster._core.definitions.selector import (
+    InstigatorSelector,
+    PartitionSetSelector,
+    RepositorySelector,
+)
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
@@ -490,6 +494,13 @@ class ExternalInstigatorOrigin(
                 ExternalRepositoryOrigin,
             ),
             check.str_param(instigator_name, "instigator_name"),
+        )
+
+    def get_selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            self.external_repository_origin.code_location_origin.location_name,
+            self.external_repository_origin.repository_name,
+            self.instigator_name,
         )
 
     def get_id(self) -> str:
