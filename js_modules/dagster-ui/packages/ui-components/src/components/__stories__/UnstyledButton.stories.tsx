@@ -44,11 +44,3 @@ export const UnstyledWithLargerClickArea = () => {
     </Box>
   );
 };
-
-export const UnstyledWithFocusOutline = () => {
-  return (
-    <UnstyledButton $showFocusOutline $expandedClickPx={4}>
-      Click me to see focus
-    </UnstyledButton>
-  );
-};

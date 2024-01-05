@@ -227,9 +227,9 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
 };
 const AssetCatalogLink = styled(Link)`
   display: flex;
-  gap: 5px;
-  padding: 6px;
-  margin: -6px;
+  gap: 4px;
+  padding: 2px;
+  margin: -2px;
   align-items: center;
   white-space: nowrap;
 `;
