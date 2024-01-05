@@ -1,303 +1,127 @@
-import {render, screen, waitFor} from '@testing-library/react';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
+import {render, screen} from '@testing-library/react';
 import * as React from 'react';
+import {MemoryRouter} from 'react-router';
 
-import * as Flags from '../../app/Flags';
-import {TestProvider} from '../../testing/TestProvider';
+import {RunStatus, buildPipeline, buildRun, buildRuns, buildSchedule} from '../../graphql/types';
+import {DagsterTag} from '../../runs/RunTag';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
-import {JobMetadata} from '../JobMetadata';
+import {repoAddressAsTag} from '../../workspace/repoAddressAsString';
+import {JOB_METADATA_QUERY, JobMetadata} from '../JobMetadata';
+import {LATEST_RUN_TAG_QUERY} from '../LatestRunTag';
+import {JobMetadataQuery, JobMetadataQueryVariables} from '../types/JobMetadata.types';
+import {LatestRunTagQuery, LatestRunTagQueryVariables} from '../types/LatestRunTag.types';
 
 jest.mock('../../app/Flags');
+
+jest.mock('../ScheduleOrSensorTag', () => ({
+  ScheduleOrSensorTag: () => <div>Schedule/sensor tag</div>,
+}));
 
 // Jan 1, 2020
 const START_TIME = 1577858400;
 
 describe('JobMetadata', () => {
   const PIPELINE_NAME = 'my_pipeline';
-  const PIPELINE_MODE = 'my_mode';
   const REPO_ADDRESS = buildRepoAddress('foo', 'bar');
 
-  const defaultMocks = {
-    Pipeline: () => ({
-      name: () => 'my_pipeline',
-      schedules: () => [],
-      sensors: () => [],
-    }),
-    Run: () => ({
-      id: () => 'abc',
-      startTime: () => START_TIME,
-      updateTime: () => START_TIME,
-      endTime: () => START_TIME + 1,
-    }),
-    PipelineRun: () => ({
-      id: () => 'abc',
-      startTime: () => START_TIME,
-      updateTime: () => START_TIME,
-      endTime: () => START_TIME + 1,
-    }),
-    PipelineRunStatsSnapshot: () => ({
-      startTime: () => START_TIME,
-      launchTime: () => START_TIME,
-      endTime: () => START_TIME + 1,
-    }),
-    RunStatsSnapshot: () => ({
-      startTime: () => START_TIME,
-      launchTime: () => START_TIME,
-      endTime: () => START_TIME + 1,
-    }),
-    Mode: () => ({
-      name: () => 'my_mode',
-    }),
-    Repository: () => ({
-      name: () => 'foo',
-    }),
-    RepositoryLocation: () => ({
-      name: () => 'bar',
-    }),
-    Schedule: () => ({
-      name: () => 'cool_schedule',
-      mode: () => 'my_mode',
-      cronSchedule: () => '(*/5 * * * *)',
-    }),
-    Sensor: () => ({
-      name: () => 'cool_sensor',
-      targets: () => [...new Array(1)],
-    }),
-    Target: () => ({
-      pipelineName: () => PIPELINE_NAME,
-      mode: () => PIPELINE_MODE,
-    }),
-  };
-
-  const JobMetadataContainer = () => {
-    return <JobMetadata pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />;
-  };
-
-  const renderWithMocks = (mocks?: any) => {
-    render(
-      <TestProvider apolloProps={{mocks: mocks ? [defaultMocks, mocks] : defaultMocks}}>
-        <JobMetadataContainer />
-      </TestProvider>,
-    );
-  };
-
-  describe('Schedules/sensors', () => {
-    describe('Crag flag OFF', () => {
-      const useFeatureFlags = Flags.useFeatureFlags;
-      beforeAll(() => {
-        Object.defineProperty(Flags, 'useFeatureFlags', {
-          value: jest.fn().mockImplementation(() => ({flagPipelineModeTuples: false})),
-        });
-      });
-
-      afterAll(() => {
-        Object.defineProperty(Flags, 'useFeatureFlags', useFeatureFlags);
-      });
-
-      it('renders empty state', async () => {
-        renderWithMocks();
-        await waitFor(() => {
-          expect(screen.getByText(/latest run:/i)).toBeVisible();
-          expect(screen.getByRole('link', {name: /jan 1/i})).toBeVisible();
-        });
-      });
-
-      it('renders single schedule', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [...new Array(1)],
-            sensors: () => [],
-          }),
-        };
-
-        renderWithMocks(mocks);
-
-        await waitFor(() => {
-          expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
-        });
-      });
-
-      it('renders multiple schedules', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [...new Array(2)],
-            sensors: () => [],
-          }),
-        };
-
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('button', {name: /2 schedules/i})).toBeVisible();
-        });
-      });
-
-      it('renders single sensor', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [],
-            sensors: () => [...new Array(1)],
-          }),
-        };
-
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
-        });
-      });
-
-      it('renders multiple sensors', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [],
-            sensors: () => [...new Array(2)],
-          }),
-        };
-
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('button', {name: /2 sensors/i})).toBeVisible();
-        });
-      });
-
-      it('renders multiple of each', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [...new Array(2)],
-            sensors: () => [...new Array(2)],
-          }),
-        };
-
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('button', {name: /4 schedules\/sensors/i})).toBeVisible();
-        });
-      });
-    });
-
-    describe('Crag flag ON', () => {
-      const useFeatureFlags = Flags.useFeatureFlags;
-      beforeAll(() => {
-        Object.defineProperty(Flags, 'useFeatureFlags', {
-          value: jest.fn().mockImplementation(() => ({flagPipelineModeTuples: true})),
-        });
-      });
-
-      afterAll(() => {
-        Object.defineProperty(Flags, 'useFeatureFlags', useFeatureFlags);
-      });
-
-      it('renders empty state', async () => {
-        renderWithMocks();
-        await waitFor(() => {
-          expect(screen.getByText(/latest run:/i)).toBeVisible();
-          expect(screen.getByRole('link', {name: /jan 1/i})).toBeVisible();
-        });
-      });
-
-      it('renders empty if no matching mode', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [...new Array(1)],
-            sensors: () => [...new Array(1)],
-          }),
-          Schedule: () => ({
-            mode: () => 'mismatching_mode',
-          }),
-          Sensor: () => ({
-            targets: () => [
+  const buildJobMetadataQuery = (): MockedResponse<JobMetadataQuery, JobMetadataQueryVariables> => {
+    return {
+      request: {
+        query: JOB_METADATA_QUERY,
+        variables: {
+          runsFilter: {
+            pipelineName: PIPELINE_NAME,
+            tags: [
               {
-                pipelineName: PIPELINE_NAME,
-                mode: 'mistmatching_mode',
+                key: DagsterTag.RepositoryLabelTag,
+                value: repoAddressAsTag(REPO_ADDRESS),
               },
             ],
+          },
+          params: {
+            pipelineName: PIPELINE_NAME,
+            repositoryName: REPO_ADDRESS.name,
+            repositoryLocationName: REPO_ADDRESS.location,
+          },
+        },
+      },
+      result: {
+        data: {
+          __typename: 'Query',
+          assetNodes: [],
+          pipelineOrError: buildPipeline({
+            name: PIPELINE_NAME,
+            schedules: [buildSchedule()],
           }),
-        };
-
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.queryByRole('link', {name: /every 5 minutes/i})).toBeNull();
-        });
-      });
-
-      it('renders single schedule with matching mode', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [...new Array(1)],
-            sensors: () => [],
+          pipelineRunsOrError: buildRuns({
+            results: [
+              buildRun({
+                status: RunStatus.SUCCESS,
+                pipelineName: PIPELINE_NAME,
+                startTime: START_TIME,
+                updateTime: START_TIME,
+                endTime: START_TIME + 1,
+              }),
+            ],
           }),
-        };
+        },
+      },
+    };
+  };
 
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
-        });
-      });
-
-      it('renders multiple schedules if matching mode', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [...new Array(2)],
-            sensors: () => [],
+  const buildLatestRunTagQuery = (): MockedResponse<
+    LatestRunTagQuery,
+    LatestRunTagQueryVariables
+  > => {
+    return {
+      request: {
+        query: LATEST_RUN_TAG_QUERY,
+        variables: {
+          runsFilter: {
+            pipelineName: PIPELINE_NAME,
+            tags: [
+              {
+                key: DagsterTag.RepositoryLabelTag,
+                value: repoAddressAsTag(REPO_ADDRESS),
+              },
+            ],
+          },
+        },
+      },
+      result: {
+        data: {
+          __typename: 'Query',
+          pipelineRunsOrError: buildRuns({
+            results: [
+              buildRun({
+                id: '0123',
+                status: RunStatus.SUCCESS,
+                pipelineName: PIPELINE_NAME,
+                startTime: START_TIME,
+                updateTime: START_TIME,
+                endTime: START_TIME + 1,
+              }),
+            ],
           }),
-        };
+        },
+      },
+    };
+  };
 
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('button', {name: /2 schedules/i})).toBeVisible();
-        });
-      });
+  it('renders latest run info and schedule/sensor', async () => {
+    render(
+      <MemoryRouter>
+        <MockedProvider mocks={[buildJobMetadataQuery(), buildLatestRunTagQuery()]}>
+          <JobMetadata pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />
+        </MockedProvider>
+      </MemoryRouter>,
+    );
 
-      it('renders single sensor if matching mode', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [],
-            sensors: () => [...new Array(1)],
-          }),
-        };
+    expect(await screen.findByText(/latest run:/i)).toBeVisible();
+    expect(await screen.findByRole('link', {name: /jan 1/i})).toBeVisible();
 
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
-        });
-      });
-
-      it('renders multiple sensors if matching mode', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [],
-            sensors: () => [...new Array(2)],
-          }),
-        };
-
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('button', {name: /2 sensors/i})).toBeVisible();
-        });
-      });
-
-      it('renders multiple of each if matching mode', async () => {
-        const mocks = {
-          Pipeline: () => ({
-            name: () => PIPELINE_NAME,
-            schedules: () => [...new Array(2)],
-            sensors: () => [...new Array(2)],
-          }),
-        };
-
-        renderWithMocks(mocks);
-        await waitFor(() => {
-          expect(screen.getByRole('button', {name: /4 schedules\/sensors/i})).toBeVisible();
-        });
-      });
-    });
+    // Render mocked schedule/sensor tag
+    expect(await screen.findByText(/schedule\/sensor tag/i)).toBeVisible();
   });
 });
