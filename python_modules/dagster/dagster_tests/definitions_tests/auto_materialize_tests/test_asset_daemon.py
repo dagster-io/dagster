@@ -22,6 +22,11 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.storage.tags import (
+    ASSET_EVALUATION_ID_TAG,
+    AUTO_MATERIALIZE_TAG,
+    SENSOR_NAME_TAG,
+)
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
     _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
@@ -230,6 +235,9 @@ daemon_sensor_scenario = AssetDaemonScenario(
                 name="automation_policy_sensor_a",
                 asset_selection=AssetSelection.keys("A"),
                 default_status=DefaultSensorStatus.RUNNING,
+                run_tags={
+                    "foo_tag": "bar_val",
+                },
             ),
             AutomationPolicySensorDefinition(
                 name="automation_policy_sensor_b",
@@ -287,6 +295,15 @@ def test_automation_policy_sensor_ticks():
         assert len(sensor_states) == 1
         # Only sensor that was set with default status RUNNING ran
         _assert_sensor_ran(instance, "automation_policy_sensor_a", expected_num_ticks=1)
+
+        runs = instance.get_runs()
+
+        assert len(runs) == 1
+        run = runs[0]
+        assert run.tags[AUTO_MATERIALIZE_TAG] == "true"
+        assert run.tags["foo_tag"] == "bar_val"
+        assert run.tags[SENSOR_NAME_TAG] == "automation_policy_sensor_a"
+        assert int(run.tags[ASSET_EVALUATION_ID_TAG]) > pre_sensor_evaluation_id
 
         # Starting a sensor causes it to make ticks too
         result = result.start_sensor("automation_policy_sensor_b")

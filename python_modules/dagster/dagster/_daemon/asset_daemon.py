@@ -661,7 +661,7 @@ class AssetDaemon(DagsterDaemon):
                 else:
                     evaluations_by_asset_key = {}
             else:
-                sensor_tags = {SENSOR_NAME_TAG: sensor.name} if sensor else {}
+                sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
                 run_requests, new_cursor, evaluations = AssetDaemonContext(
                     evaluation_id=evaluation_id,
