@@ -5,8 +5,10 @@ from dagster._core.definitions.automation_policy_sensor_definition import (
 )
 
 
-def test_constructor():
-    selection = AssetSelection.keys("asset1", "asset2")
+@pytest.mark.parametrize(
+    "selection", [AssetSelection.all(), AssetSelection.keys("asset1", "asset2")]
+)
+def test_constructor(selection):
     tags = {"apple": "banana", "orange": "kiwi"}
     automation_sensor = AutomationPolicySensorDefinition(
         "foo",

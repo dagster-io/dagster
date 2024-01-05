@@ -562,7 +562,7 @@ class ExternalSensorData(
                 )
             }
 
-        if asset_selection:
+        if asset_selection is not None:
             check.opt_inst_param(asset_selection, "asset_selection", AssetSelection)
             check.invariant(
                 is_whitelisted_for_serdes_object(asset_selection),
