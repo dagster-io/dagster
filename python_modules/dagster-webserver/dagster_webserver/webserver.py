@@ -40,6 +40,9 @@ from .external_assets import (
 from .graphql import GraphQLServer
 from .version import __version__
 
+import mimetypes
+mimetypes.init()
+
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
@@ -226,6 +229,9 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             with open(index_path, encoding="utf8") as f:
                 rendered_template = f.read()
                 nonce = uuid.uuid4().hex
+                mimetypes.add_type('application/javascript', '.js')
+                mimetypes.add_type('text/css', '.css')
+                mimetypes.add_type('image/svg+xml', '.svg')
                 headers = {
                     **{"Content-Security-Policy": self.make_csp_header(nonce)},
                     **self.make_security_headers(),
