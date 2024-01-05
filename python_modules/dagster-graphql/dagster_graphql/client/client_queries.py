@@ -38,6 +38,9 @@ mutation($executionParams: ExecutionParams!) {
     ... on PythonError {
       message
     }
+    ... on UnauthorizedError {
+      message
+    }
   }
 }
 """
