@@ -216,11 +216,23 @@ def make_email_on_run_failure_sensor(
 
         if smtp_type == "SSL":
             send_email_via_ssl(
-                email_from, email_user or email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 465
+                email_from,
+                email_user or email_from,
+                email_password,
+                email_to,
+                message,
+                smtp_host,
+                smtp_port=smtp_port or 465,
             )
         elif smtp_type == "STARTTLS":
             send_email_via_starttls(
-                email_from, email_user or email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 587
+                email_from,
+                email_user or email_from,
+                email_password,
+                email_to,
+                message,
+                smtp_host,
+                smtp_port=smtp_port or 587,
             )
         else:
             raise DagsterInvalidDefinitionError(f'smtp_type "{smtp_type}" is not supported.')
