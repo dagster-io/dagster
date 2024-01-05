@@ -650,7 +650,7 @@ class SensorDefinition(IHasInternalInit):
             default_status, "default_status", DefaultSensorStatus
         )
         self._asset_selection = (
-            AssetSelection.from_coercible(asset_selection) if asset_selection else None
+            AssetSelection.from_coercible(asset_selection) if asset_selection is not None else None
         )
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
@@ -912,7 +912,7 @@ class SensorDefinition(IHasInternalInit):
                 "decorator."
             )
 
-        if asset_selection:
+        if asset_selection is not None:
             run_requests = [
                 *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
             ]

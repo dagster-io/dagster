@@ -190,7 +190,7 @@ const RelatedAssetsTag = ({relatedAssets}: {relatedAssets: string[]}) => {
   );
 };
 
-const JOB_METADATA_QUERY = gql`
+export const JOB_METADATA_QUERY = gql`
   query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter!) {
     pipelineOrError(params: $params) {
       ... on Pipeline {

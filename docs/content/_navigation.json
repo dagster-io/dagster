@@ -195,6 +195,10 @@
         "title": "Logging",
         "children": [
           {
+            "title": "Overview",
+            "path": "/concepts/logging"
+          },
+          {
             "title": "Loggers",
             "path": "/concepts/logging/loggers"
           },
