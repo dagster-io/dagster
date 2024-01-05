@@ -202,7 +202,10 @@ class LoadedRepositories:
 
         with user_code_error_boundary(
             DagsterUserCodeLoadError,
-            lambda: "Error occurred assembling repositories to load",
+            lambda: "Error occurred during the loading of Dagster definitions in\n"
+            + ", ".join(
+                [f"{k}={v}" for k, v in loadable_target_origin._asdict().items() if v is not None]
+            ),
         ):
             loadable_targets = get_loadable_targets(
                 loadable_target_origin.python_file,
@@ -221,7 +224,8 @@ class LoadedRepositories:
             )
             with user_code_error_boundary(
                 DagsterUserCodeLoadError,
-                lambda: "Error occurred during the loading of repository " + pointer.describe(),
+                lambda: "Error occurred during the loading of Dagster definitions in "
+                + pointer.describe(),
             ):
                 repo_def = recon_repo.get_definition()
                 # force load of all lazy constructed code artifacts to prevent

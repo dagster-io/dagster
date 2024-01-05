@@ -101,7 +101,8 @@ def _get_masked_traceback_exception(with_instruction: bool) -> traceback.Traceba
     error_id = str(uuid.uuid4())
     try:
         raise DagsterRedactedUserCodeError(
-            f"Error occurred during user code execution, error ID {error_id}"
+            f"Error occurred during user code execution, error ID {error_id}. "
+            "The error has been masked to prevent leaking sensitive information."
             + ("\nSearch in logs for this error ID for more details" if with_instruction else "")
         )
     except DagsterRedactedUserCodeError:
