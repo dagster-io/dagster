@@ -219,7 +219,7 @@ class AssetReconciliationScenario(
             asset_graph = AssetGraph.from_assets(assets)
             auto_materialize_asset_keys = (
                 asset_selection.resolve(asset_graph)
-                if asset_selection
+                if asset_selection is not None
                 else asset_graph.materializable_asset_keys
             )
             assets_with_implicit_policies = with_implicit_auto_materialize_policies(
