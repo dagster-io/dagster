@@ -1,6 +1,6 @@
 import time
 
-from dagster import graph, op, Definitions
+from dagster import Definitions, graph, op
 
 
 @op
@@ -17,6 +17,4 @@ def my_graph():
 my_job = my_graph.to_job()
 
 
-defs = Definitions(
-    jobs=[my_job]
-)
+defs = Definitions(jobs=[my_job])

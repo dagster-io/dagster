@@ -1,4 +1,4 @@
-from ..defs import my_job, defs
+from ..defs import defs, my_job
 
 
 def test_defs():
