@@ -12,9 +12,9 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._daemon.asset_daemon import (
-    FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
-    FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-    FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     set_auto_materialize_paused,
 )
 
@@ -64,8 +64,8 @@ def _get_asset_daemon_ticks(instance: DagsterInstance) -> Sequence[InstigatorTic
     """Returns the set of ticks created by the asset daemon for the given instance."""
     return sorted(
         instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         ),
         key=lambda tick: tick.tick_id,
     )
@@ -74,12 +74,12 @@ def _get_asset_daemon_ticks(instance: DagsterInstance) -> Sequence[InstigatorTic
 def _create_tick(instance: DagsterInstance, status: TickStatus, timestamp: float) -> InstigatorTick:
     return instance.create_tick(
         TickData(
-            instigator_origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            instigator_name=FIXED_AUTO_MATERIALIZATION_INSTIGATOR_NAME,
+            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            instigator_name=_PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
             instigator_type=InstigatorType.AUTO_MATERIALIZE,
             status=status,
             timestamp=timestamp,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
             run_ids=[],
         )
     )

@@ -96,6 +96,14 @@ def code_server_cli():
     help="Level at which to log output from the code server process",
 )
 @click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from the code server process",
+)
+@click.option(
     "--container-image",
     type=click.STRING,
     required=False,
@@ -149,6 +157,7 @@ def start_command(
     max_workers: Optional[int] = None,
     fixed_server_id: Optional[str] = None,
     log_level: str = "INFO",
+    log_format: str = "colored",
     use_python_environment_entry_point: bool = False,
     container_image: Optional[str] = None,
     container_context: Optional[str] = None,
@@ -170,7 +179,7 @@ def start_command(
 
     setup_interrupt_handlers()
 
-    configure_loggers(log_level=log_level.upper())
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")

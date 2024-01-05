@@ -24,3 +24,8 @@ def partitioned_asset() -> None:
 @asset(partitions_def=StaticPartitionsDefinition(["apple", "banana", "pear"]))
 def differently_partitioned_asset() -> None:
     ...
+
+
+@asset
+def fail_asset() -> None:
+    raise Exception("failure")
