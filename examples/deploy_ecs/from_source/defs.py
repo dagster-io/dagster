@@ -1,6 +1,6 @@
 import time
 
-from dagster import Definitions, graph, op
+from dagster import Definitions, job, op
 
 
 @op
@@ -9,12 +9,9 @@ def my_op():
     return True
 
 
-@graph
-def my_graph():
+@job
+def my_job():
     my_op()
-
-
-my_job = my_graph.to_job()
 
 
 defs = Definitions(jobs=[my_job])
