@@ -1,43 +1,39 @@
-import {Box, Subheading, colorTextLight} from '@dagster-io/ui-components';
+import {Box, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {AssetKey} from '../types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
 import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';
-import {AutomaterializeRightPanel} from './AutomaterializeRightPanel';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 
 export const AssetAutomaterializePolicyPage = ({
   assetKey,
-  assetHasDefinedPartitions,
+  definition,
 }: {
   assetKey: AssetKey;
-  assetHasDefinedPartitions: boolean;
+  definition?: AssetViewDefinitionNodeFragment | null;
 }) => {
   const {queryResult, paginationProps} = useEvaluationsQueryResult({assetKey});
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const {evaluations} = React.useMemo(() => {
+  const evaluations = React.useMemo(() => {
     if (
-      queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
-        'AutoMaterializeAssetEvaluationRecords' &&
+      queryResult.data?.assetConditionEvaluationRecordsOrError?.__typename ===
+        'AssetConditionEvaluationRecords' &&
       queryResult.data?.assetNodeOrError?.__typename === 'AssetNode'
     ) {
-      return {
-        evaluations: queryResult.data?.autoMaterializeAssetEvaluationsOrError.records,
-        currentAutoMaterializeEvaluationId:
-          queryResult.data.assetNodeOrError.currentAutoMaterializeEvaluationId,
-      };
+      return queryResult.data?.assetConditionEvaluationRecordsOrError.records;
     }
-    return {evaluations: [], currentAutoMaterializeEvaluationId: null};
+    return [];
   }, [
-    queryResult.data?.autoMaterializeAssetEvaluationsOrError,
+    queryResult.data?.assetConditionEvaluationRecordsOrError,
     queryResult.data?.assetNodeOrError,
   ]);
 
@@ -73,39 +69,29 @@ export const AssetAutomaterializePolicyPage = ({
         <AutoMaterializeExperimentalBanner />
       </Box>
       <Box flex={{direction: 'row'}} style={{minHeight: 0, flex: 1}}>
-        <Box flex={{direction: 'column', grow: 1}}>
-          <Box
-            flex={{alignItems: 'center'}}
-            padding={{vertical: 16, horizontal: 24}}
-            border="bottom"
-          >
-            <Subheading>Evaluation history</Subheading>
+        <Box flex={{direction: 'row'}} style={{flex: 1, minHeight: 0}}>
+          <Box border="right" flex={{grow: 0, direction: 'column'}} style={{flex: '0 0 296px'}}>
+            <AutomaterializeLeftPanel
+              definition={definition}
+              evaluations={evaluations}
+              paginationProps={paginationProps}
+              onSelectEvaluation={(evaluation) => {
+                setSelectedEvaluationId(evaluation.evaluationId);
+              }}
+              selectedEvaluation={selectedEvaluation}
+            />
           </Box>
-          <Box flex={{direction: 'row'}} style={{flex: 1, minHeight: 0}}>
-            <Box border="right" flex={{grow: 0, direction: 'column'}} style={{flex: '0 0 296px'}}>
-              <AutomaterializeLeftPanel
-                assetHasDefinedPartitions={assetHasDefinedPartitions}
-                evaluations={evaluations}
-                paginationProps={paginationProps}
-                onSelectEvaluation={(evaluation) => {
-                  setSelectedEvaluationId(evaluation.evaluationId);
-                }}
-                selectedEvaluation={selectedEvaluation}
-              />
-            </Box>
-            <Box flex={{grow: 1}} style={{minHeight: 0, overflowY: 'auto'}}>
-              <AutomaterializeMiddlePanel
-                assetKey={assetKey}
-                assetHasDefinedPartitions={assetHasDefinedPartitions}
-                // Use the evaluation ID of the current evaluation object, if any. Otherwise
-                // fall back to the evaluation ID from the query parameter, if any.
-                selectedEvaluationId={selectedEvaluation?.evaluationId || selectedEvaluationId}
-              />
-            </Box>
+          <Box flex={{grow: 1}} style={{minHeight: 0, overflowY: 'auto'}}>
+            <AutomaterializeMiddlePanel
+              key={selectedEvaluation?.evaluationId || selectedEvaluationId}
+              assetKey={assetKey}
+              // Use the evaluation ID of the current evaluation object, if any. Otherwise
+              // fall back to the evaluation ID from the query parameter, if any.
+              selectedEvaluationId={selectedEvaluation?.evaluationId || selectedEvaluationId}
+              selectedEvaluation={selectedEvaluation}
+              definition={definition}
+            />
           </Box>
-        </Box>
-        <Box border="left">
-          <AutomaterializeRightPanel assetKey={assetKey} />
         </Box>
       </Box>
     </AutomaterializePage>

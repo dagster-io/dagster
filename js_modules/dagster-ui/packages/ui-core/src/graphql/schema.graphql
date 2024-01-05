@@ -3158,14 +3158,22 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
-  assetConditionEvaluationsOrError(
+  autoMaterializeEvaluationsForEvaluationId(
+    evaluationId: Int!
+  ): AutoMaterializeAssetEvaluationRecordsOrError
+  assetConditionEvaluationForPartition(
+    assetKey: AssetKeyInput!
+    evaluationId: Int!
+    partition: String!
+  ): AssetConditionEvaluation
+  assetConditionEvaluationRecordsOrError(
     assetKey: AssetKeyInput!
     limit: Int!
     cursor: String
   ): AssetConditionEvaluationRecordsOrError
-  autoMaterializeEvaluationsForEvaluationId(
+  assetConditionEvaluationsForEvaluationId(
     evaluationId: Int!
-  ): AutoMaterializeAssetEvaluationRecordsOrError
+  ): AssetConditionEvaluationRecordsOrError
   autoMaterializeTicks(
     dayRange: Int
     dayOffset: Int
@@ -3391,6 +3399,66 @@ type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
 
+type AssetConditionEvaluation {
+  rootUniqueId: String!
+  evaluationNodes: [AssetConditionEvaluationNode!]!
+}
+
+union AssetConditionEvaluationNode =
+    UnpartitionedAssetConditionEvaluationNode
+  | PartitionedAssetConditionEvaluationNode
+  | SpecificPartitionAssetConditionEvaluationNode
+
+type UnpartitionedAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  startTimestamp: Float
+  endTimestamp: Float
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childUniqueIds: [String!]!
+}
+
+enum AssetConditionEvaluationStatus {
+  TRUE
+  FALSE
+  SKIPPED
+}
+
+type PartitionedAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  startTimestamp: Float
+  endTimestamp: Float
+  trueSubset: AssetSubset!
+  falseSubset: AssetSubset!
+  candidateSubset: AssetSubset
+  numTrue: Int!
+  numFalse: Int!
+  numSkipped: Int!
+  childUniqueIds: [String!]!
+}
+
+type AssetSubset {
+  assetKey: AssetKey!
+  subsetValue: AssetSubsetValue!
+}
+
+type AssetSubsetValue {
+  boolValue: Boolean
+  partitionKeys: [String!]
+  partitionKeyRanges: [PartitionKeyRange!]
+  isPartitioned: Boolean!
+}
+
+type SpecificPartitionAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childUniqueIds: [String!]!
+}
+
 union AssetConditionEvaluationRecordsOrError =
     AssetConditionEvaluationRecords
   | AutoMaterializeAssetEvaluationNeedsMigrationError
@@ -3406,59 +3474,9 @@ type AssetConditionEvaluationRecord {
   timestamp: Float!
   assetKey: AssetKey!
   numRequested: Int!
+  startTimestamp: Float
+  endTimestamp: Float
   evaluation: AssetConditionEvaluation!
-}
-
-union AssetConditionEvaluation =
-    UnpartitionedAssetConditionEvaluation
-  | PartitionedAssetConditionEvaluation
-  | SpecificPartitionAssetConditionEvaluation
-
-type UnpartitionedAssetConditionEvaluation {
-  description: String!
-  startTimestamp: Float!
-  endTimestamp: Float!
-  metadataEntries: [MetadataEntry!]!
-  status: AssetConditionEvaluationStatus!
-  childEvaluations: [UnpartitionedAssetConditionEvaluation!]
-}
-
-enum AssetConditionEvaluationStatus {
-  TRUE
-  FALSE
-  SKIPPED
-}
-
-type PartitionedAssetConditionEvaluation {
-  description: String!
-  startTimestamp: Float!
-  endTimestamp: Float!
-  trueSubset: AssetSubset!
-  falseSubset: AssetSubset!
-  candidateSubset: AssetSubset
-  numTrue: Int!
-  numFalse: Int!
-  numSkipped: Int!
-  childEvaluations: [PartitionedAssetConditionEvaluation!]
-}
-
-type AssetSubset {
-  assetKey: AssetKey!
-  subsetValue: AssetSubsetValue!
-}
-
-type AssetSubsetValue {
-  boolValue: Boolean
-  partitionKeys: [String!]
-  partitionKeyRanges: [PartitionKeyRange!]
-  isPartitioned: Boolean!
-}
-
-type SpecificPartitionAssetConditionEvaluation {
-  description: String!
-  metadataEntries: [MetadataEntry!]!
-  status: AssetConditionEvaluationStatus!
-  childEvaluations: [UnpartitionedAssetConditionEvaluation!]
 }
 
 type Mutation {

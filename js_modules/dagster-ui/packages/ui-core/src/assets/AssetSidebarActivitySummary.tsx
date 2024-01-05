@@ -92,7 +92,7 @@ export const AssetSidebarActivitySummary = ({
             padding={{horizontal: 24, vertical: 12}}
             flex={{direction: 'row', gap: 4, alignItems: 'center'}}
           >
-            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'auto-materialize-history'})}>
+            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'automation'})}>
               View auto-materialize history
             </Link>
             <Icon name="open_in_new" color={colorLinkDefault()} />

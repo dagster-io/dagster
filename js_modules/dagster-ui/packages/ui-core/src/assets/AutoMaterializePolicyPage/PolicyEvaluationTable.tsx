@@ -1,3 +1,4 @@
+import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Table,
@@ -9,53 +10,84 @@ import {
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
-import {flattenEvaluations} from './flattenEvaluations';
+import {FlattenedConditionEvaluation, flattenEvaluations} from './flattenEvaluations';
 import {
-  AssetConditionEvaluation,
-  AssetConditionEvaluationStatus,
-  PartitionedAssetConditionEvaluation,
-  UnpartitionedAssetConditionEvaluation,
-} from './types';
+  AssetConditionEvaluationRecordFragment,
+  PartitionedAssetConditionEvaluationNodeFragment,
+  SpecificPartitionAssetConditionEvaluationNodeFragment,
+  UnpartitionedAssetConditionEvaluationNodeFragment,
+} from './types/GetEvaluationsQuery.types';
+import {
+  FullPartitionsQuery,
+  FullPartitionsQueryVariables,
+} from './types/PolicyEvaluationTable.types';
 
-interface Props<T> {
-  rootEvaluation: T;
+interface Props {
+  evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>;
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectPartition: (partitionKey: string | null) => void;
 }
 
-export const PolicyEvaluationTable = <T extends AssetConditionEvaluation>({
-  rootEvaluation,
-}: Props<T>) => {
-  if (rootEvaluation.__typename === 'UnpartitionedAssetConditionEvaluation') {
-    return <UnpartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
+export const PolicyEvaluationTable = ({evaluationRecord, definition, selectPartition}: Props) => {
+  const flattened = React.useMemo(() => flattenEvaluations(evaluationRecord), [evaluationRecord]);
+  if (flattened[0]?.evaluation.__typename === 'PartitionedAssetConditionEvaluationNode') {
+    return (
+      <PartitionedPolicyEvaluationTable
+        flattenedRecords={
+          flattened as FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[]
+        }
+        definition={definition}
+        selectPartition={selectPartition}
+      />
+    );
   }
 
-  return <PartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
+  return (
+    <UnpartitionedPolicyEvaluationTable
+      flattenedRecords={
+        flattened as
+          | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
+          | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[]
+      }
+    />
+  );
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
-  rootEvaluation,
+  flattenedRecords,
 }: {
-  rootEvaluation: UnpartitionedAssetConditionEvaluation;
+  flattenedRecords:
+    | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
+    | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[];
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+  const isSpecificPartitionAssetConditionEvaluations =
+    flattenedRecords[0]?.evaluation.__typename === 'SpecificPartitionAssetConditionEvaluationNode';
   return (
     <VeryCompactTable>
       <thead>
         <tr>
           <th>Condition</th>
           <th>Result</th>
-          <th>Duration</th>
+          {isSpecificPartitionAssetConditionEvaluations ? null : <th>Duration</th>}
           <th>Details</th>
         </tr>
       </thead>
       <tbody>
-        {flattened.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, endTimestamp, startTimestamp, status} = evaluation;
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
+          const {description, status} = evaluation;
+          let endTimestamp, startTimestamp;
+          if ('endTimestamp' in evaluation) {
+            endTimestamp = evaluation.endTimestamp;
+            startTimestamp = evaluation.startTimestamp;
+          }
           return (
             <EvaluationRow
               key={id}
@@ -77,9 +109,11 @@ const UnpartitionedPolicyEvaluationTable = ({
               <td>
                 <PolicyEvaluationStatusTag status={status} />
               </td>
-              <td>
-                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
-              </td>
+              {startTimestamp && endTimestamp ? (
+                <td>
+                  <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
+                </td>
+              ) : null}
               <td></td>
             </EvaluationRow>
           );
@@ -92,12 +126,34 @@ const UnpartitionedPolicyEvaluationTable = ({
 const FULL_SEGMENTS_WIDTH = 200;
 
 const PartitionedPolicyEvaluationTable = ({
-  rootEvaluation,
+  flattenedRecords,
+  definition,
+  selectPartition,
 }: {
-  rootEvaluation: PartitionedAssetConditionEvaluation;
+  flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectPartition: (partitionKey: string | null) => void;
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+
+  const {data} = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
+    FULL_PARTITIONS_QUERY,
+    {
+      variables: definition
+        ? {
+            assetKey: {path: definition.assetKey.path},
+          }
+        : undefined,
+      skip: !definition?.assetKey,
+    },
+  );
+
+  // let partitionKeys = null;
+  // if (data?.assetNodeOrError.__typename === 'AssetNode') {
+  //   partitionKeys = data.assetNodeOrError.partitionKeysByDimension;
+  // }
+
+  // Fetch partitions
   return (
     <VeryCompactTable>
       <thead>
@@ -108,7 +164,7 @@ const PartitionedPolicyEvaluationTable = ({
         </tr>
       </thead>
       <tbody>
-        {flattened.map(({evaluation, id, parentId, depth, type}) => {
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
           const {
             description,
             endTimestamp,
@@ -150,6 +206,7 @@ const PartitionedPolicyEvaluationTable = ({
                       status={AssetConditionEvaluationStatus.TRUE}
                       subset={trueSubset}
                       width={Math.ceil((numTrue / total) * FULL_SEGMENTS_WIDTH)}
+                      selectPartition={selectPartition}
                     />
                   ) : null}
                   {numFalse > 0 ? (
@@ -158,6 +215,7 @@ const PartitionedPolicyEvaluationTable = ({
                       description={description}
                       subset={falseSubset}
                       width={Math.ceil((numFalse / total) * FULL_SEGMENTS_WIDTH)}
+                      selectPartition={selectPartition}
                     />
                   ) : null}
                   {numSkipped > 0 ? (
@@ -166,6 +224,7 @@ const PartitionedPolicyEvaluationTable = ({
                       description={description}
                       subset={candidateSubset}
                       width={Math.ceil((numSkipped / total) * FULL_SEGMENTS_WIDTH)}
+                      selectPartition={selectPartition}
                     />
                   ) : null}
                 </Box>
@@ -236,4 +295,19 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
     }
     return '';
   }}
+`;
+
+const FULL_PARTITIONS_QUERY = gql`
+  query FullPartitionsQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        partitionKeysByDimension {
+          name
+          type
+          partitionKeys
+        }
+      }
+    }
+  }
 `;

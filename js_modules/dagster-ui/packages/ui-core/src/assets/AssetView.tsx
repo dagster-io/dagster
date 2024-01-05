@@ -178,12 +178,7 @@ export const AssetView = ({assetKey}: Props) => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
-    return (
-      <AssetAutomaterializePolicyPage
-        assetKey={assetKey}
-        assetHasDefinedPartitions={!!definition?.partitionDefinition}
-      />
-    );
+    return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
   };
 
   const renderChecksTab = () => {
@@ -210,7 +205,7 @@ export const AssetView = ({assetKey}: Props) => {
         return renderEventsTab();
       case 'plots':
         return renderPlotsTab();
-      case 'auto-materialize-history':
+      case 'automation':
         return renderAutomaterializeHistoryTab();
       case 'checks':
         return renderChecksTab();

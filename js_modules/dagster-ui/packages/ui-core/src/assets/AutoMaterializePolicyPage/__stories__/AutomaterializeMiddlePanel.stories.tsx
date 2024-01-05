@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import * as React from 'react';
 
-import {RunStatus} from '../../../graphql/types';
+import {RunStatus, buildAssetNode, buildPartitionDefinition} from '../../../graphql/types';
 import {
   AutomaterializeMiddlePanel,
   AutomaterializeMiddlePanelWithData,
@@ -23,11 +23,7 @@ export const Empty = () => {
       mocks={[Evaluations.Single(path), buildRunStatusOnlyQuery('abcdef12', RunStatus.STARTED)]}
     >
       <div style={{width: '800px'}}>
-        <AutomaterializeMiddlePanel
-          assetKey={{path}}
-          assetHasDefinedPartitions={false}
-          selectedEvaluationId={undefined}
-        />
+        <AutomaterializeMiddlePanel assetKey={{path}} selectedEvaluationId={undefined} />
       </div>
     </MockedProvider>
   );
@@ -42,11 +38,7 @@ export const WithoutPartitions = () => {
       ]}
     >
       <div style={{width: '800px'}}>
-        <AutomaterializeMiddlePanel
-          assetKey={{path}}
-          assetHasDefinedPartitions={false}
-          selectedEvaluationId={TEST_EVALUATION_ID}
-        />
+        <AutomaterializeMiddlePanel assetKey={{path}} selectedEvaluationId={TEST_EVALUATION_ID} />
       </div>
     </MockedProvider>
   );
@@ -63,7 +55,7 @@ export const WithPartitions = () => {
       <div style={{width: '800px'}}>
         <AutomaterializeMiddlePanel
           assetKey={{path}}
-          assetHasDefinedPartitions={true}
+          definition={buildAssetNode({partitionDefinition: buildPartitionDefinition()}) as any}
           selectedEvaluationId={TEST_EVALUATION_ID}
         />
       </div>

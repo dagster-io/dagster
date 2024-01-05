@@ -32,7 +32,7 @@ export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Prop
           >
             {sortedKeys.map((assetKey) => {
               const url = assetDetailsPathForKey(assetKey, {
-                view: 'auto-materialize-history',
+                view: 'automation',
                 evaluation: evaluationId,
               });
               return (

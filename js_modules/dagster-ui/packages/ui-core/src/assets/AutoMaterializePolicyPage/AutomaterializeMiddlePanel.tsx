@@ -1,60 +1,54 @@
 import {useQuery} from '@apollo/client';
-import {Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
+import {
+  Box,
+  Icon,
+  NonIdealState,
+  Subheading,
+  Subtitle2,
+  Tag,
+  colorAccentGray,
+  colorAccentGreen,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
-import {AutoMaterializeDecisionType, AutoMaterializeRule} from '../../graphql/types';
+import {formatElapsedTimeWithoutMsec} from '../../app/Util';
+import {Timestamp} from '../../app/time/Timestamp';
+import {numberFormatter} from '../../ui/formatters';
 import {AssetKey} from '../types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
-import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
-import {AutomaterializeRunTag} from './AutomaterializeRunTag';
-import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
-import {RuleEvaluationOutcomes} from './RuleEvaluationOutcomes';
-import {EvaluationOrEmpty, NoConditionsMetEvaluation} from './types';
+import {StatusDot} from './AutomaterializeLeftPanel';
+import {AutomaterializeRunsTable} from './AutomaterializeRunsTable';
 import {
+  GET_EVALUATIONS_QUERY,
+  GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY,
+} from './GetEvaluationsQuery';
+import {PolicyEvaluationTable} from './PolicyEvaluationTable';
+import {
+  AssetConditionEvaluationRecordFragment,
   GetEvaluationsQuery,
   GetEvaluationsQueryVariables,
-  RuleWithEvaluationsFragment,
-  AutoMaterializeEvaluationRecordItemFragment,
+  GetEvaluationsSpecificPartitionQuery,
+  GetEvaluationsSpecificPartitionQueryVariables,
 } from './types/GetEvaluationsQuery.types';
 
 interface Props {
   assetKey: AssetKey;
-  assetHasDefinedPartitions: boolean;
   selectedEvaluationId: number | undefined;
+  selectedEvaluation?: AssetConditionEvaluationRecordFragment;
+  definition?: AssetViewDefinitionNodeFragment | null;
 }
 
-const EMPTY: EvaluationOrEmpty = {
-  __typename: 'no_conditions_met',
-  evaluationId: 0,
-  amount: 0,
-  endTimestamp: 0,
-  startTimestamp: 0,
-};
-
-const extractRequestedPartitionKeys = (rulesWithEvaluations: RuleWithEvaluationsFragment[]) => {
-  let requested: string[] = [];
-  let skippedOrDiscarded: string[] = [];
-
-  rulesWithEvaluations.forEach(({rule, ruleEvaluations}) => {
-    const partitionKeys = ruleEvaluations.flatMap((e) =>
-      e.partitionKeysOrError?.__typename === 'PartitionKeys'
-        ? e.partitionKeysOrError.partitionKeys
-        : [],
-    );
-    if (rule.decisionType === AutoMaterializeDecisionType.MATERIALIZE) {
-      requested = requested.concat(partitionKeys);
-    } else {
-      skippedOrDiscarded = skippedOrDiscarded.concat(partitionKeys);
-    }
-  });
-
-  const skippedOrDiscardedSet = new Set(skippedOrDiscarded);
-  return new Set(requested.filter((partitionKey) => !skippedOrDiscardedSet.has(partitionKey)));
-};
-
 export const AutomaterializeMiddlePanel = (props: Props) => {
-  const {assetKey, assetHasDefinedPartitions, selectedEvaluationId} = props;
+  const {
+    assetKey,
+    selectedEvaluationId,
+    selectedEvaluation: _selectedEvaluation,
+    definition,
+  } = props;
+
+  const [selectedPartition, setSelectPartition] = React.useState<string | null>(null);
 
   // We receive the selected evaluation ID and retrieve it here because the middle panel
   // may be displaying an evaluation that was not retrieved at the page level for the
@@ -67,10 +61,23 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
         cursor: selectedEvaluationId ? `${selectedEvaluationId + 1}` : undefined,
         limit: 2,
       },
+      skip: !!_selectedEvaluation || !!selectedPartition,
     },
   );
 
-  if (loading && !data) {
+  const {data: specificPartitionData} = useQuery<
+    GetEvaluationsSpecificPartitionQuery,
+    GetEvaluationsSpecificPartitionQueryVariables
+  >(GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY, {
+    variables: {
+      assetKey,
+      evaluationId: selectedEvaluationId!,
+      partition: selectedPartition!,
+    },
+    skip: !selectedEvaluationId || !selectedPartition,
+  });
+
+  if (!_selectedEvaluation && loading && !data) {
     return (
       <Box flex={{direction: 'column', grow: 1}}>
         <Box
@@ -96,7 +103,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
   }
 
   if (
-    data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
+    data?.assetConditionEvaluationRecordsOrError?.__typename ===
     'AutoMaterializeAssetEvaluationNeedsMigrationError'
   ) {
     return (
@@ -105,69 +112,84 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
           <NonIdealState
             icon="error"
             title="Error"
-            description={data.autoMaterializeAssetEvaluationsOrError.message}
+            description={data.assetConditionEvaluationRecordsOrError.message}
           />
         </Box>
       </Box>
     );
   }
 
-  const currentRules =
-    (data?.assetNodeOrError.__typename === 'AssetNode' &&
-      data.assetNodeOrError.autoMaterializePolicy?.rules) ||
-    [];
-
-  const evaluations = data?.autoMaterializeAssetEvaluationsOrError?.records || [];
+  const evaluations = data?.assetConditionEvaluationRecordsOrError?.records || [];
   const selectedEvaluation =
-    evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId) || EMPTY;
+    _selectedEvaluation ??
+    evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
 
   return (
     <AutomaterializeMiddlePanelWithData
-      currentRules={currentRules}
-      assetHasDefinedPartitions={assetHasDefinedPartitions}
       selectedEvaluation={selectedEvaluation}
+      specificPartitionData={specificPartitionData}
+      definition={definition}
+      selectPartition={setSelectPartition}
+      selectedPartition={selectedPartition}
     />
   );
 };
 
 export const AutomaterializeMiddlePanelWithData = ({
-  currentRules,
   selectedEvaluation,
-  assetHasDefinedPartitions,
+  definition,
+  selectPartition,
+  specificPartitionData,
+  selectedPartition,
 }: {
-  currentRules: AutoMaterializeRule[];
-  selectedEvaluation: NoConditionsMetEvaluation | AutoMaterializeEvaluationRecordItemFragment;
-  assetHasDefinedPartitions: boolean;
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectedEvaluation?: AssetConditionEvaluationRecordFragment;
+  selectPartition: (partitionKey: string | null) => void;
+  specificPartitionData?: GetEvaluationsSpecificPartitionQuery;
+  selectedPartition: string | null;
 }) => {
-  const runIds =
-    selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
-      ? selectedEvaluation.runIds
-      : [];
-  const rulesWithRuleEvaluations =
-    selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
-      ? selectedEvaluation.rulesWithRuleEvaluations
-      : [];
-  const rules =
-    selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord' &&
-    selectedEvaluation.rules
-      ? selectedEvaluation.rules
-      : currentRules;
-
-  const headerRight = () => {
-    if (runIds.length === 0) {
-      return null;
-    }
-    if (assetHasDefinedPartitions) {
+  const statusTag = React.useMemo(() => {
+    if (selectedEvaluation?.numRequested) {
+      if (definition?.partitionDefinition) {
+        return (
+          <Tag intent="success">
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              <StatusDot $color={colorAccentGreen()} />
+              {selectedEvaluation.numRequested} Requested
+            </Box>
+          </Tag>
+        );
+      }
       return (
-        <AutomaterializeRequestedPartitionsLink
-          runIds={runIds}
-          partitionKeys={Array.from(extractRequestedPartitionKeys(rulesWithRuleEvaluations))}
-          intent="success"
-        />
+        <Tag intent="success">
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            <StatusDot $color={colorAccentGreen()} />
+            Requested
+          </Box>
+        </Tag>
       );
     }
-    return <AutomaterializeRunTag runId={runIds[0]!} />;
-  };
+    return (
+      <Tag>
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <StatusDot $color={colorAccentGray()} />
+          Not Requested
+        </Box>
+      </Tag>
+    );
+  }, [definition, selectedEvaluation]);
+
+  const evaluation = selectedEvaluation?.evaluation;
+  let partitionsEvaluated = 0;
+  if (evaluation) {
+    const rootEvaluationNode = evaluation.evaluationNodes.find(
+      (node) => node.uniqueId === evaluation.rootUniqueId,
+    )!;
+    if (rootEvaluationNode.__typename === 'PartitionedAssetConditionEvaluationNode') {
+      partitionsEvaluated =
+        rootEvaluationNode.numTrue + rootEvaluationNode.numFalse + rootEvaluationNode.numSkipped;
+    }
+  }
 
   return (
     <Box flex={{direction: 'column', grow: 1}}>
@@ -178,13 +200,75 @@ export const AutomaterializeMiddlePanelWithData = ({
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Subheading>Result</Subheading>
-        <div>{headerRight()}</div>
       </Box>
-      <RuleEvaluationOutcomes
-        rules={rules}
-        ruleEvaluations={rulesWithRuleEvaluations}
-        assetHasDefinedPartitions={assetHasDefinedPartitions}
-      />
+      {selectedEvaluation ? (
+        <Box padding={{horizontal: 24, vertical: 12}}>
+          <Box border="bottom" padding={{vertical: 12}} margin={{bottom: 12}}>
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24}}>
+              <Box flex={{direction: 'column', gap: 5}}>
+                <Subtitle2>Evaluation Result</Subtitle2>
+                <div>{statusTag}</div>
+              </Box>
+              {selectedEvaluation?.timestamp ? (
+                <Box flex={{direction: 'column', gap: 5}}>
+                  <Subtitle2>Timestamp</Subtitle2>
+                  <Timestamp timestamp={{unix: selectedEvaluation?.timestamp}} />
+                </Box>
+              ) : null}
+              <Box flex={{direction: 'column', gap: 5}}>
+                <Subtitle2>Duration</Subtitle2>
+                <div>
+                  {selectedEvaluation?.startTimestamp && selectedEvaluation?.endTimestamp
+                    ? formatElapsedTimeWithoutMsec(
+                        (selectedEvaluation.endTimestamp - selectedEvaluation.startTimestamp) *
+                          1000,
+                      )
+                    : '\u2013'}
+                </div>
+              </Box>
+            </div>
+          </Box>
+          <Box
+            border="bottom"
+            padding={{vertical: 12}}
+            margin={{top: 12, bottom: partitionsEvaluated ? undefined : 12}}
+          >
+            <Subtitle2>Policy evaluation</Subtitle2>
+          </Box>
+          {partitionsEvaluated ? (
+            <Box padding={{vertical: 12}} flex={{justifyContent: 'space-between'}}>
+              {numberFormatter.format(partitionsEvaluated)} partitions evaluated
+              {selectedPartition ? (
+                <Tag>
+                  <Box flex={{alignItems: 'center', gap: 4}}>
+                    {selectedPartition}
+                    <div
+                      onClick={() => {
+                        selectPartition(null);
+                      }}
+                    >
+                      <Icon name="close" />
+                    </div>
+                  </Box>
+                </Tag>
+              ) : null}
+            </Box>
+          ) : null}
+          <PolicyEvaluationTable
+            evaluationRecord={
+              specificPartitionData?.assetConditionEvaluationForPartition
+                ? {evaluation: specificPartitionData.assetConditionEvaluationForPartition}
+                : selectedEvaluation
+            }
+            definition={definition}
+            selectPartition={selectPartition}
+          />
+          <Box border="bottom" padding={{vertical: 12}} margin={{vertical: 12}}>
+            <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
+          </Box>
+          <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
+        </Box>
+      ) : null}
     </Box>
   );
 };

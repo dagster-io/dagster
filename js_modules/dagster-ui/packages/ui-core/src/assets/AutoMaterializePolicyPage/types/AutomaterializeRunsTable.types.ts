@@ -2,11 +2,11 @@
 
 import * as Types from '../../../graphql/types';
 
-export type RunStatusAndPartitionKeyQueryVariables = Types.Exact<{
+export type AutomaterializeRunsQueryVariables = Types.Exact<{
   filter?: Types.InputMaybe<Types.RunsFilter>;
 }>;
 
-export type RunStatusAndPartitionKeyQuery = {
+export type AutomaterializeRunsQuery = {
   __typename: 'Query';
   runsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'; message: string}
@@ -25,15 +25,21 @@ export type RunStatusAndPartitionKeyQuery = {
         results: Array<{
           __typename: 'Run';
           id: string;
+          runId: string;
           status: Types.RunStatus;
-          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          startTime: number | null;
+          endTime: number | null;
+          updateTime: number | null;
         }>;
       };
 };
 
-export type RunStatusAndTagsFragment = {
+export type AutomaterializeRunFragment = {
   __typename: 'Run';
   id: string;
+  runId: string;
   status: Types.RunStatus;
-  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 };

@@ -3,26 +3,19 @@ import {DocumentNode} from 'graphql';
 
 import {
   AutoMaterializeDecisionType,
-  AutoMaterializePolicyType,
+  buildAssetConditionEvaluationRecords,
   buildAssetKey,
   buildAssetNode,
-  buildAutoMaterializeAssetEvaluationNeedsMigrationError,
   buildAutoMaterializeAssetEvaluationRecord,
   buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
   buildAutoMaterializeRule,
   buildAutoMaterializeRuleEvaluation,
   buildAutoMaterializeRuleWithRuleEvaluations,
-  buildFreshnessPolicy,
   buildParentMaterializedRuleEvaluationData,
   buildPartitionKeys,
 } from '../../../graphql/types';
-import {GET_POLICY_INFO_QUERY} from '../AutomaterializeRightPanel';
 import {GET_EVALUATIONS_QUERY} from '../GetEvaluationsQuery';
-import {
-  GetPolicyInfoQuery,
-  GetPolicyInfoQueryVariables,
-} from '../types/AutomaterializeRightPanel.types';
 import {
   GetEvaluationsQuery,
   GetEvaluationsQueryVariables,
@@ -64,20 +57,6 @@ export const buildGetEvaluationsQuery = ({
 }): MockedResponse<GetEvaluationsQuery> => {
   return buildQueryMock({
     query: GET_EVALUATIONS_QUERY,
-    variables,
-    data,
-  });
-};
-
-export const buildGetPolicyInfoQuery = ({
-  variables,
-  data,
-}: {
-  variables: GetPolicyInfoQueryVariables;
-  data: Omit<GetPolicyInfoQuery, '__typename'>;
-}): MockedResponse<GetPolicyInfoQuery> => {
-  return buildQueryMock({
-    query: GET_POLICY_INFO_QUERY,
     variables,
     data,
   });
@@ -285,9 +264,7 @@ export const Evaluations = {
           }),
           currentAutoMaterializeEvaluationId: 1000,
         }),
-        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          records: [],
-        }),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -304,10 +281,7 @@ export const Evaluations = {
             rules: BASE_AUTOMATERIALIZE_RULES,
           }),
         }),
-        autoMaterializeAssetEvaluationsOrError:
-          buildAutoMaterializeAssetEvaluationNeedsMigrationError({
-            message: 'Test message',
-          }),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -324,9 +298,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          records: assetKeyPath ? [SINGLE_MATERIALIZE_RECORD_NO_PARTITIONS] : [],
-        }),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -343,9 +315,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          records: assetKeyPath ? [SINGLE_MATERIALIZE_RECORD_WITH_PARTITIONS] : [],
-        }),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },
@@ -362,74 +332,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          records: buildEvaluationRecordsWithPartitions(),
-        }),
-      },
-    });
-  },
-};
-
-export const Policies = {
-  YesAutomaterializeNoFreshnessPolicy: (
-    assetKeyPath: string[],
-    policyType: AutoMaterializePolicyType = AutoMaterializePolicyType.EAGER,
-  ) => {
-    return buildGetPolicyInfoQuery({
-      variables: {
-        assetKey: {path: assetKeyPath},
-      },
-      data: {
-        assetNodeOrError: buildAssetNode({
-          freshnessPolicy: null,
-          autoMaterializePolicy: buildAutoMaterializePolicy({
-            policyType,
-          }),
-        }),
-      },
-    });
-  },
-  YesAutomaterializeYesFreshnessPolicy: (
-    assetKeyPath: string[],
-    policyType: AutoMaterializePolicyType = AutoMaterializePolicyType.EAGER,
-  ) => {
-    return buildGetPolicyInfoQuery({
-      variables: {
-        assetKey: {path: assetKeyPath},
-      },
-      data: {
-        assetNodeOrError: buildAssetNode({
-          freshnessPolicy: buildFreshnessPolicy({}),
-          autoMaterializePolicy: buildAutoMaterializePolicy({
-            policyType,
-          }),
-        }),
-      },
-    });
-  },
-  NoAutomaterializeYesFreshnessPolicy: (assetKeyPath: string[]) => {
-    return buildGetPolicyInfoQuery({
-      variables: {
-        assetKey: {path: assetKeyPath},
-      },
-      data: {
-        assetNodeOrError: buildAssetNode({
-          freshnessPolicy: buildFreshnessPolicy(),
-          autoMaterializePolicy: null,
-        }),
-      },
-    });
-  },
-  NoAutomaterializeNoFreshnessPolicy: (assetKeyPath: string[]) => {
-    return buildGetPolicyInfoQuery({
-      variables: {
-        assetKey: {path: assetKeyPath},
-      },
-      data: {
-        assetNodeOrError: buildAssetNode({
-          freshnessPolicy: null,
-          autoMaterializePolicy: null,
-        }),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
       },
     });
   },

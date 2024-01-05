@@ -1,11 +1,11 @@
 import * as React from 'react';
 
-import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
 import {
   AssetConditionEvaluationStatus,
-  PartitionedAssetConditionEvaluation,
-  UnpartitionedAssetConditionEvaluation,
-} from '../types';
+  buildAssetConditionEvaluationRecord,
+  buildUnpartitionedAssetConditionEvaluationNode,
+} from '../../../graphql/types';
+import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -14,14 +14,13 @@ export default {
 };
 
 export const NonPartitioned = () => {
-  const evaluation: UnpartitionedAssetConditionEvaluation = {
-    __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+  const evaluation = buildAssetConditionEvaluationRecord({
     description: 'All are true:',
     startTimestamp: 1,
     endTimestamp: 200,
     status: AssetConditionEvaluationStatus.TRUE,
     childEvaluations: [
-      {
+      buildUnpartition{
         __typename: 'UnpartitionedAssetConditionEvaluation' as const,
         description: 'Any are true:',
         startTimestamp: 1,
@@ -83,7 +82,7 @@ export const NonPartitioned = () => {
         childEvaluations: null,
       },
     ],
-  };
+  });
 
   return <PolicyEvaluationTable rootEvaluation={evaluation} />;
 };

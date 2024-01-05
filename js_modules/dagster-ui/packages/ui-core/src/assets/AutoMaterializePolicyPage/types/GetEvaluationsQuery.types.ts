@@ -26,131 +26,417 @@ export type GetEvaluationsQuery = {
         } | null;
       }
     | {__typename: 'AssetNotFoundError'};
-  autoMaterializeAssetEvaluationsOrError:
-    | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
+  assetConditionEvaluationRecordsOrError:
     | {
-        __typename: 'AutoMaterializeAssetEvaluationRecords';
+        __typename: 'AssetConditionEvaluationRecords';
         records: Array<{
-          __typename: 'AutoMaterializeAssetEvaluationRecord';
+          __typename: 'AssetConditionEvaluationRecord';
           id: string;
           evaluationId: number;
           numRequested: number;
-          numSkipped: number;
-          numDiscarded: number;
-          timestamp: number;
           runIds: Array<string>;
-          rulesWithRuleEvaluations: Array<{
-            __typename: 'AutoMaterializeRuleWithRuleEvaluations';
-            rule: {
-              __typename: 'AutoMaterializeRule';
-              description: string;
-              decisionType: Types.AutoMaterializeDecisionType;
-              className: string;
-            };
-            ruleEvaluations: Array<{
-              __typename: 'AutoMaterializeRuleEvaluation';
-              evaluationData:
-                | {
-                    __typename: 'ParentMaterializedRuleEvaluationData';
-                    updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-                    willUpdateAssetKeys: Array<{
-                      __typename: 'AssetKey';
-                      path: Array<string>;
-                    }> | null;
-                  }
-                | {__typename: 'TextRuleEvaluationData'; text: string | null}
-                | {
-                    __typename: 'WaitingOnKeysRuleEvaluationData';
-                    waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-                  }
-                | null;
-              partitionKeysOrError:
-                | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-                | {__typename: 'PartitionSubsetDeserializationError'; message: string}
-                | null;
-            }>;
-          }>;
-          rules: Array<{
-            __typename: 'AutoMaterializeRule';
-            description: string;
-            decisionType: Types.AutoMaterializeDecisionType;
-            className: string;
-          }> | null;
+          timestamp: number;
+          startTimestamp: number | null;
+          endTimestamp: number | null;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          evaluation: {
+            __typename: 'AssetConditionEvaluation';
+            rootUniqueId: string;
+            evaluationNodes: Array<
+              | {
+                  __typename: 'PartitionedAssetConditionEvaluationNode';
+                  description: string;
+                  startTimestamp: number | null;
+                  endTimestamp: number | null;
+                  numTrue: number;
+                  numFalse: number;
+                  numSkipped: number;
+                  uniqueId: string;
+                  childUniqueIds: Array<string>;
+                  trueSubset: {
+                    __typename: 'AssetSubset';
+                    subsetValue: {
+                      __typename: 'AssetSubsetValue';
+                      isPartitioned: boolean;
+                      partitionKeys: Array<string> | null;
+                      partitionKeyRanges: Array<{
+                        __typename: 'PartitionKeyRange';
+                        start: string;
+                        end: string;
+                      }> | null;
+                    };
+                  };
+                  falseSubset: {
+                    __typename: 'AssetSubset';
+                    subsetValue: {
+                      __typename: 'AssetSubsetValue';
+                      isPartitioned: boolean;
+                      partitionKeys: Array<string> | null;
+                      partitionKeyRanges: Array<{
+                        __typename: 'PartitionKeyRange';
+                        start: string;
+                        end: string;
+                      }> | null;
+                    };
+                  };
+                  candidateSubset: {
+                    __typename: 'AssetSubset';
+                    subsetValue: {
+                      __typename: 'AssetSubsetValue';
+                      isPartitioned: boolean;
+                      partitionKeys: Array<string> | null;
+                      partitionKeyRanges: Array<{
+                        __typename: 'PartitionKeyRange';
+                        start: string;
+                        end: string;
+                      }> | null;
+                    };
+                  } | null;
+                }
+              | {
+                  __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+                  description: string;
+                  status: Types.AssetConditionEvaluationStatus;
+                  uniqueId: string;
+                  childUniqueIds: Array<string>;
+                }
+              | {
+                  __typename: 'UnpartitionedAssetConditionEvaluationNode';
+                  description: string;
+                  startTimestamp: number | null;
+                  endTimestamp: number | null;
+                  status: Types.AssetConditionEvaluationStatus;
+                  uniqueId: string;
+                  childUniqueIds: Array<string>;
+                }
+            >;
+          };
         }>;
       }
+    | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
     | null;
 };
 
-export type AutoMaterializeEvaluationRecordItemFragment = {
-  __typename: 'AutoMaterializeAssetEvaluationRecord';
+export type AssetConditionEvaluationRecordFragment = {
+  __typename: 'AssetConditionEvaluationRecord';
   id: string;
   evaluationId: number;
   numRequested: number;
-  numSkipped: number;
-  numDiscarded: number;
-  timestamp: number;
   runIds: Array<string>;
-  rulesWithRuleEvaluations: Array<{
-    __typename: 'AutoMaterializeRuleWithRuleEvaluations';
-    rule: {
-      __typename: 'AutoMaterializeRule';
-      description: string;
-      decisionType: Types.AutoMaterializeDecisionType;
-      className: string;
-    };
-    ruleEvaluations: Array<{
-      __typename: 'AutoMaterializeRuleEvaluation';
-      evaluationData:
-        | {
-            __typename: 'ParentMaterializedRuleEvaluationData';
-            updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-            willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-          }
-        | {__typename: 'TextRuleEvaluationData'; text: string | null}
-        | {
-            __typename: 'WaitingOnKeysRuleEvaluationData';
-            waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-          }
-        | null;
-      partitionKeysOrError:
-        | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-        | {__typename: 'PartitionSubsetDeserializationError'; message: string}
-        | null;
-    }>;
-  }>;
-  rules: Array<{
-    __typename: 'AutoMaterializeRule';
-    description: string;
-    decisionType: Types.AutoMaterializeDecisionType;
-    className: string;
-  }> | null;
+  timestamp: number;
+  startTimestamp: number | null;
+  endTimestamp: number | null;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  evaluation: {
+    __typename: 'AssetConditionEvaluation';
+    rootUniqueId: string;
+    evaluationNodes: Array<
+      | {
+          __typename: 'PartitionedAssetConditionEvaluationNode';
+          description: string;
+          startTimestamp: number | null;
+          endTimestamp: number | null;
+          numTrue: number;
+          numFalse: number;
+          numSkipped: number;
+          uniqueId: string;
+          childUniqueIds: Array<string>;
+          trueSubset: {
+            __typename: 'AssetSubset';
+            subsetValue: {
+              __typename: 'AssetSubsetValue';
+              isPartitioned: boolean;
+              partitionKeys: Array<string> | null;
+              partitionKeyRanges: Array<{
+                __typename: 'PartitionKeyRange';
+                start: string;
+                end: string;
+              }> | null;
+            };
+          };
+          falseSubset: {
+            __typename: 'AssetSubset';
+            subsetValue: {
+              __typename: 'AssetSubsetValue';
+              isPartitioned: boolean;
+              partitionKeys: Array<string> | null;
+              partitionKeyRanges: Array<{
+                __typename: 'PartitionKeyRange';
+                start: string;
+                end: string;
+              }> | null;
+            };
+          };
+          candidateSubset: {
+            __typename: 'AssetSubset';
+            subsetValue: {
+              __typename: 'AssetSubsetValue';
+              isPartitioned: boolean;
+              partitionKeys: Array<string> | null;
+              partitionKeyRanges: Array<{
+                __typename: 'PartitionKeyRange';
+                start: string;
+                end: string;
+              }> | null;
+            };
+          } | null;
+        }
+      | {
+          __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+          description: string;
+          status: Types.AssetConditionEvaluationStatus;
+          uniqueId: string;
+          childUniqueIds: Array<string>;
+        }
+      | {
+          __typename: 'UnpartitionedAssetConditionEvaluationNode';
+          description: string;
+          startTimestamp: number | null;
+          endTimestamp: number | null;
+          status: Types.AssetConditionEvaluationStatus;
+          uniqueId: string;
+          childUniqueIds: Array<string>;
+        }
+    >;
+  };
 };
 
-export type RuleWithEvaluationsFragment = {
-  __typename: 'AutoMaterializeRuleWithRuleEvaluations';
-  rule: {
-    __typename: 'AutoMaterializeRule';
-    description: string;
-    decisionType: Types.AutoMaterializeDecisionType;
-    className: string;
+export type UnpartitionedAssetConditionEvaluationNodeFragment = {
+  __typename: 'UnpartitionedAssetConditionEvaluationNode';
+  description: string;
+  startTimestamp: number | null;
+  endTimestamp: number | null;
+  status: Types.AssetConditionEvaluationStatus;
+  uniqueId: string;
+  childUniqueIds: Array<string>;
+};
+
+export type PartitionedAssetConditionEvaluationNodeFragment = {
+  __typename: 'PartitionedAssetConditionEvaluationNode';
+  description: string;
+  startTimestamp: number | null;
+  endTimestamp: number | null;
+  numTrue: number;
+  numFalse: number;
+  numSkipped: number;
+  uniqueId: string;
+  childUniqueIds: Array<string>;
+  trueSubset: {
+    __typename: 'AssetSubset';
+    subsetValue: {
+      __typename: 'AssetSubsetValue';
+      isPartitioned: boolean;
+      partitionKeys: Array<string> | null;
+      partitionKeyRanges: Array<{
+        __typename: 'PartitionKeyRange';
+        start: string;
+        end: string;
+      }> | null;
+    };
   };
-  ruleEvaluations: Array<{
-    __typename: 'AutoMaterializeRuleEvaluation';
-    evaluationData:
+  falseSubset: {
+    __typename: 'AssetSubset';
+    subsetValue: {
+      __typename: 'AssetSubsetValue';
+      isPartitioned: boolean;
+      partitionKeys: Array<string> | null;
+      partitionKeyRanges: Array<{
+        __typename: 'PartitionKeyRange';
+        start: string;
+        end: string;
+      }> | null;
+    };
+  };
+  candidateSubset: {
+    __typename: 'AssetSubset';
+    subsetValue: {
+      __typename: 'AssetSubsetValue';
+      isPartitioned: boolean;
+      partitionKeys: Array<string> | null;
+      partitionKeyRanges: Array<{
+        __typename: 'PartitionKeyRange';
+        start: string;
+        end: string;
+      }> | null;
+    };
+  } | null;
+};
+
+export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
+  __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+  description: string;
+  status: Types.AssetConditionEvaluationStatus;
+  uniqueId: string;
+  childUniqueIds: Array<string>;
+};
+
+export type AssetSubsetFragment = {
+  __typename: 'AssetSubset';
+  subsetValue: {
+    __typename: 'AssetSubsetValue';
+    isPartitioned: boolean;
+    partitionKeys: Array<string> | null;
+    partitionKeyRanges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
+  };
+};
+
+export type GetEvaluationsSpecificPartitionQueryVariables = Types.Exact<{
+  assetKey: Types.AssetKeyInput;
+  evaluationId: Types.Scalars['Int'];
+  partition: Types.Scalars['String'];
+}>;
+
+export type GetEvaluationsSpecificPartitionQuery = {
+  __typename: 'Query';
+  assetConditionEvaluationForPartition: {
+    __typename: 'AssetConditionEvaluation';
+    rootUniqueId: string;
+    evaluationNodes: Array<
       | {
-          __typename: 'ParentMaterializedRuleEvaluationData';
-          updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-          willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          __typename: 'PartitionedAssetConditionEvaluationNode';
+          description: string;
+          startTimestamp: number | null;
+          endTimestamp: number | null;
+          numTrue: number;
+          numFalse: number;
+          numSkipped: number;
+          uniqueId: string;
+          childUniqueIds: Array<string>;
+          trueSubset: {
+            __typename: 'AssetSubset';
+            subsetValue: {
+              __typename: 'AssetSubsetValue';
+              isPartitioned: boolean;
+              partitionKeys: Array<string> | null;
+              partitionKeyRanges: Array<{
+                __typename: 'PartitionKeyRange';
+                start: string;
+                end: string;
+              }> | null;
+            };
+          };
+          falseSubset: {
+            __typename: 'AssetSubset';
+            subsetValue: {
+              __typename: 'AssetSubsetValue';
+              isPartitioned: boolean;
+              partitionKeys: Array<string> | null;
+              partitionKeyRanges: Array<{
+                __typename: 'PartitionKeyRange';
+                start: string;
+                end: string;
+              }> | null;
+            };
+          };
+          candidateSubset: {
+            __typename: 'AssetSubset';
+            subsetValue: {
+              __typename: 'AssetSubsetValue';
+              isPartitioned: boolean;
+              partitionKeys: Array<string> | null;
+              partitionKeyRanges: Array<{
+                __typename: 'PartitionKeyRange';
+                start: string;
+                end: string;
+              }> | null;
+            };
+          } | null;
         }
-      | {__typename: 'TextRuleEvaluationData'; text: string | null}
       | {
-          __typename: 'WaitingOnKeysRuleEvaluationData';
-          waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+          description: string;
+          status: Types.AssetConditionEvaluationStatus;
+          uniqueId: string;
+          childUniqueIds: Array<string>;
         }
-      | null;
-    partitionKeysOrError:
-      | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-      | {__typename: 'PartitionSubsetDeserializationError'; message: string}
-      | null;
-  }>;
+      | {
+          __typename: 'UnpartitionedAssetConditionEvaluationNode';
+          description: string;
+          startTimestamp: number | null;
+          endTimestamp: number | null;
+          status: Types.AssetConditionEvaluationStatus;
+          uniqueId: string;
+          childUniqueIds: Array<string>;
+        }
+    >;
+  } | null;
+};
+
+export type UnpartitionedAssetConditionEvaluationNodeFragment = {
+  __typename: 'UnpartitionedAssetConditionEvaluationNode';
+  description: string;
+  startTimestamp: number | null;
+  endTimestamp: number | null;
+  status: Types.AssetConditionEvaluationStatus;
+  uniqueId: string;
+  childUniqueIds: Array<string>;
+};
+
+export type PartitionedAssetConditionEvaluationNodeFragment = {
+  __typename: 'PartitionedAssetConditionEvaluationNode';
+  description: string;
+  startTimestamp: number | null;
+  endTimestamp: number | null;
+  numTrue: number;
+  numFalse: number;
+  numSkipped: number;
+  uniqueId: string;
+  childUniqueIds: Array<string>;
+  trueSubset: {
+    __typename: 'AssetSubset';
+    subsetValue: {
+      __typename: 'AssetSubsetValue';
+      isPartitioned: boolean;
+      partitionKeys: Array<string> | null;
+      partitionKeyRanges: Array<{
+        __typename: 'PartitionKeyRange';
+        start: string;
+        end: string;
+      }> | null;
+    };
+  };
+  falseSubset: {
+    __typename: 'AssetSubset';
+    subsetValue: {
+      __typename: 'AssetSubsetValue';
+      isPartitioned: boolean;
+      partitionKeys: Array<string> | null;
+      partitionKeyRanges: Array<{
+        __typename: 'PartitionKeyRange';
+        start: string;
+        end: string;
+      }> | null;
+    };
+  };
+  candidateSubset: {
+    __typename: 'AssetSubset';
+    subsetValue: {
+      __typename: 'AssetSubsetValue';
+      isPartitioned: boolean;
+      partitionKeys: Array<string> | null;
+      partitionKeyRanges: Array<{
+        __typename: 'PartitionKeyRange';
+        start: string;
+        end: string;
+      }> | null;
+    };
+  } | null;
+};
+
+export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
+  __typename: 'SpecificPartitionAssetConditionEvaluationNode';
+  description: string;
+  status: Types.AssetConditionEvaluationStatus;
+  uniqueId: string;
+  childUniqueIds: Array<string>;
+};
+
+export type AssetSubsetFragment = {
+  __typename: 'AssetSubset';
+  subsetValue: {
+    __typename: 'AssetSubsetValue';
+    isPartitioned: boolean;
+    partitionKeys: Array<string> | null;
+    partitionKeyRanges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
+  };
 };
