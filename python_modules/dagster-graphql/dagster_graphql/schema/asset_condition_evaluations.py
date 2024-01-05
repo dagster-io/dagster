@@ -49,6 +49,7 @@ class GrapheneAssetSubsetValue(graphene.ObjectType):
                 GraphenePartitionKeyRange(start, end)
                 for start, end in value.get_partition_key_ranges(value.partitions_def)
             ]
+            partition_keys = value.get_partition_keys()
         else:
             partition_keys = value.get_partition_keys()
 
@@ -94,7 +95,10 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     def __init__(self, evaluation: AssetConditionEvaluation):
         if evaluation.true_subset.bool_value:
             status = AssetConditionEvaluationStatus.TRUE
-        elif evaluation.candidate_subset and evaluation.candidate_subset.bool_value:
+        elif (
+            isinstance(evaluation.candidate_subset, AssetSubset)
+            and evaluation.candidate_subset.bool_value
+        ):
             status = AssetConditionEvaluationStatus.FALSE
         else:
             status = AssetConditionEvaluationStatus.SKIPPED
@@ -153,8 +157,12 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             evaluation.asset_key, partitions_def, dynamic_partitions_store, pendulum.now("UTC")
         )
 
-        # if the candidate_subset is unset, then we evaluated all partitions
-        self._candidate_subset = evaluation.candidate_subset or self._all_subset
+        # if the candidate_subset is a HistoricalAssetSubset, then we evaluated all partitions
+        self._candidate_subset = (
+            evaluation.candidate_subset
+            if isinstance(evaluation.candidate_subset, AssetSubset)
+            else self._all_subset
+        )
 
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
@@ -200,7 +208,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
         if partition_key in evaluation.true_subset.subset_value:
             status = AssetConditionEvaluationStatus.TRUE
         elif (
-            evaluation.candidate_subset is None
+            not isinstance(evaluation.candidate_subset, AssetSubset)
             or partition_key in evaluation.candidate_subset.subset_value
         ):
             status = AssetConditionEvaluationStatus.FALSE

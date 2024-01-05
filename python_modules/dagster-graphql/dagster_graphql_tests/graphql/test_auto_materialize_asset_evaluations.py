@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_condition import (
     AssetConditionEvaluation,
     AssetConditionEvaluationWithRunIds,
     AssetConditionSnapshot,
+    HistoricalAllPartitionsSubset,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -655,7 +656,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 value=partitions_def.subset_with_partition_keys(candidate_partition_keys),
             )
             if candidate_partition_keys
-            else None,
+            else HistoricalAllPartitionsSubset(),
             start_timestamp=123,
             end_timestamp=456,
             child_evaluations=child_evaluations or [],
