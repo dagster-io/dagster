@@ -1,16 +1,13 @@
-import {useQuery} from '@apollo/client';
-import {render, screen, waitFor} from '@testing-library/react';
+import {MockedProvider} from '@apollo/client/testing';
+import {render, screen} from '@testing-library/react';
 import * as React from 'react';
+import {MemoryRouter} from 'react-router-dom';
 
-import {RunStatus} from '../../graphql/types';
-import {TestProvider} from '../../testing/TestProvider';
+import {RunStatus, buildRun} from '../../graphql/types';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {RunActionButtons} from '../RunActionButtons';
-
-import {RUN_ACTION_BUTTONS_TEST_QUERY} from './RunActionButtonsTestQuery';
-import {
-  RunActionButtonsTestQuery,
-  RunActionButtonsTestQueryVariables,
-} from './types/RunActionButtonsTestQuery.types';
+import {buildMockRootWorkspaceQuery} from '../__fixtures__/RunActionsMenu.fixtures';
+import {RunPageFragment} from '../types/RunFragments.types';
 
 describe('RunActionButtons', () => {
   const props = {
@@ -28,133 +25,50 @@ describe('RunActionButtons', () => {
     onLaunch: jest.fn(),
   };
 
-  const Test = () => {
-    const {data} = useQuery<RunActionButtonsTestQuery, RunActionButtonsTestQueryVariables>(
-      RUN_ACTION_BUTTONS_TEST_QUERY,
+  const Test = ({run}: {run: RunPageFragment}) => {
+    return (
+      <MockedProvider mocks={[buildMockRootWorkspaceQuery()]}>
+        <MemoryRouter>
+          <WorkspaceProvider>
+            <RunActionButtons {...props} run={run} />
+          </WorkspaceProvider>
+        </MemoryRouter>
+      </MockedProvider>
     );
-    if (data) {
-      const run = data.pipelineRunOrError;
-      if (run.__typename === 'Run') {
-        return <RunActionButtons {...props} run={run} />;
-      }
-      return <div>Error</div>;
-    }
-    return <div>Loading</div>;
-  };
-
-  const defaultMocks = {
-    RunConfigData: () => 'foo',
   };
 
   describe('`Terminate` button', () => {
     it('is visible for `STARTED` runs', async () => {
-      const mocks = {
-        Run: () => ({
-          status: () => RunStatus.STARTED,
-        }),
-      };
-
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-          <Test />
-        </TestProvider>,
-      );
-
-      await waitFor(() => {
-        expect(
-          screen.queryByRole('button', {
-            name: /terminate/i,
-          }),
-        ).toBeVisible();
-      });
+      const run = buildRun({status: RunStatus.STARTED});
+      render(<Test run={run} />);
+      expect(await screen.findByRole('button', {name: /terminate/i})).toBeVisible();
     });
 
     it('is visible for `STARTING` runs', async () => {
-      const mocks = {
-        Run: () => ({
-          status: () => RunStatus.STARTING,
-        }),
-      };
-
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-          <Test />
-        </TestProvider>,
-      );
-
-      await waitFor(() => {
-        expect(
-          screen.queryByRole('button', {
-            name: /terminate/i,
-          }),
-        ).toBeVisible();
-      });
+      const run = buildRun({status: RunStatus.STARTING});
+      render(<Test run={run} />);
+      expect(await screen.findByRole('button', {name: /terminate/i})).toBeVisible();
     });
 
     it('is NOT visible for `FAILURE` runs', async () => {
-      const mocks = {
-        Run: () => ({
-          status: () => RunStatus.FAILURE,
-        }),
-      };
-
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-          <Test />
-        </TestProvider>,
-      );
-
-      await waitFor(() => {
-        expect(
-          screen.queryByRole('button', {
-            name: /terminate/i,
-          }),
-        ).toBeNull();
-      });
+      const run = buildRun({status: RunStatus.FAILURE});
+      render(<Test run={run} />);
+      expect(await screen.findByRole('button', {name: /re-execute/i})).toBeVisible();
+      expect(screen.queryByRole('button', {name: /terminate/i})).toBeNull();
     });
 
     it('is NOT visible for `CANCELED` runs', async () => {
-      const mocks = {
-        Run: () => ({
-          status: () => RunStatus.CANCELED,
-        }),
-      };
-
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-          <Test />
-        </TestProvider>,
-      );
-
-      await waitFor(() => {
-        expect(
-          screen.queryByRole('button', {
-            name: /terminate/i,
-          }),
-        ).toBeNull();
-      });
+      const run = buildRun({status: RunStatus.CANCELED});
+      render(<Test run={run} />);
+      expect(await screen.findByRole('button', {name: /re-execute/i})).toBeVisible();
+      expect(screen.queryByRole('button', {name: /terminate/i})).toBeNull();
     });
 
     it('is NOT visible for `SUCCESS` runs', async () => {
-      const mocks = {
-        Run: () => ({
-          status: () => RunStatus.SUCCESS,
-        }),
-      };
-
-      render(
-        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-          <Test />
-        </TestProvider>,
-      );
-
-      await waitFor(() => {
-        expect(
-          screen.queryByRole('button', {
-            name: /terminate/i,
-          }),
-        ).toBeNull();
-      });
+      const run = buildRun({status: RunStatus.SUCCESS});
+      render(<Test run={run} />);
+      expect(await screen.findByRole('button', {name: /re-execute/i})).toBeVisible();
+      expect(screen.queryByRole('button', {name: /terminate/i})).toBeNull();
     });
   });
 });
