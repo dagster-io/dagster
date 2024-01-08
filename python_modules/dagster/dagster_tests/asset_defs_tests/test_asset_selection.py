@@ -510,3 +510,23 @@ def test_to_serializable_asset_selection():
     ).to_serializable_asset_selection(asset_graph) == (
         asset1_selection - AssetSelection.groups("b")
     )
+
+
+def test_to_string_basic():
+    assert str(AssetSelection.keys("foo")) == "foo"
+    assert str(AssetSelection.keys(AssetKey(["foo", "bar"]))) == "foo/bar"
+    assert str(AssetSelection.keys("foo", "bar")) == "foo or bar"
+    assert str(AssetSelection.keys(AssetKey(["foo", "bar"]), AssetKey("baz"))) == "foo/bar or baz"
+
+    assert str(AssetSelection.all()) == "all materializable assets"
+    assert str(AssetSelection.all_asset_checks()) == "all asset checks"
+
+    assert str(AssetSelection.groups("marketing")) == "group:marketing"
+    assert str(AssetSelection.groups("marketing", "finance")) == "group:(marketing or finance)"
+
+    assert str(AssetSelection.key_prefixes("marketing")) == "key_prefix:marketing"
+    assert str(AssetSelection.key_prefixes(["foo", "bar"])) == "key_prefix:foo/bar"
+    assert (
+        str(AssetSelection.key_prefixes("marketing", ["foo", "bar"]))
+        == "key_prefix:(marketing or foo/bar)"
+    )

@@ -401,6 +401,9 @@ class AllSelection(AssetSelection, NamedTuple("_AllSelection", [])):
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self
 
+    def __str__(self) -> str:
+        return "all materializable assets"
+
 
 @whitelist_for_serdes
 class AllAssetCheckSelection(AssetSelection, NamedTuple("_AllAssetChecksSelection", [])):
@@ -412,6 +415,9 @@ class AllAssetCheckSelection(AssetSelection, NamedTuple("_AllAssetChecksSelectio
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self
+
+    def __str__(self) -> str:
+        return "all asset checks"
 
 
 @whitelist_for_serdes
@@ -625,6 +631,12 @@ class GroupsAssetSelection(
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self
 
+    def __str__(self) -> str:
+        if len(self.selected_groups) == 1:
+            return f"group:{self.selected_groups[0]}"
+        else:
+            return f"group:({' or '.join(self.selected_groups)})"
+
 
 @whitelist_for_serdes
 class KeysAssetSelection(
@@ -644,6 +656,9 @@ class KeysAssetSelection(
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self
+
+    def __str__(self) -> str:
+        return f"{' or '.join(k.to_user_string() for k in self.selected_keys)}"
 
 
 @whitelist_for_serdes
@@ -668,6 +683,13 @@ class KeyPrefixesAssetSelection(
 
     def to_serializable_asset_selection(self, asset_graph: AssetGraph) -> "AssetSelection":
         return self
+
+    def __str__(self) -> str:
+        key_prefix_strs = ["/".join(key_prefix) for key_prefix in self.selected_key_prefixes]
+        if len(self.selected_key_prefixes) == 1:
+            return f"key_prefix:{key_prefix_strs[0]}"
+        else:
+            return f"key_prefix:({' or '.join(key_prefix_strs)})"
 
 
 def _fetch_all_upstream(
