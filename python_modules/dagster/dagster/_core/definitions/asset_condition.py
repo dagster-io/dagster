@@ -182,21 +182,19 @@ class AssetConditionEvaluation(NamedTuple):
             )
         )
 
-    def discarded_subset(self, condition: "AssetCondition") -> Optional[AssetSubset]:
+    def discarded_subset(self) -> Optional[AssetSubset]:
         """Returns the AssetSubset representing asset partitions that were discarded during this
         evaluation. Note that 'discarding' is a deprecated concept that is only used for backwards
         compatibility.
         """
-        not_discard_condition = condition.not_discard_condition
-        if not not_discard_condition or len(self.child_evaluations) != 3:
+        if len(self.child_evaluations) != 3:
             return None
-
-        not_discard_evaluation = self.child_evaluations[2]
+        not_discard_evaluation = self.child_evaluations[-1]
         discard_evaluation = not_discard_evaluation.child_evaluations[0]
         return discard_evaluation.true_subset
 
-    def get_requested_or_discarded_subset(self, condition: "AssetCondition") -> AssetSubset:
-        discarded_subset = self.discarded_subset(condition)
+    def get_requested_or_discarded_subset(self) -> AssetSubset:
+        discarded_subset = self.discarded_subset()
         if discarded_subset is None:
             return self.true_subset
         else:
@@ -215,6 +213,20 @@ class AssetConditionEvaluation(NamedTuple):
 
     def with_run_ids(self, run_ids: AbstractSet[str]) -> "AssetConditionEvaluationWithRunIds":
         return AssetConditionEvaluationWithRunIds(evaluation=self, run_ids=frozenset(run_ids))
+
+    def legacy_num_skipped(self) -> int:
+        if len(self.child_evaluations) < 2:
+            return 0
+
+        not_skip_evaluation = self.child_evaluations[-1]
+        skip_evaluation = not_skip_evaluation.child_evaluations[0]
+        return skip_evaluation.true_subset.size - self.legacy_num_discarded()
+
+    def legacy_num_discarded(self) -> int:
+        discarded_subset = self.discarded_subset()
+        if discarded_subset is None:
+            return 0
+        return discarded_subset.size
 
 
 @whitelist_for_serdes
@@ -350,6 +362,12 @@ class AssetCondition(ABC):
     @property
     def children(self) -> Sequence["AssetCondition"]:
         return []
+
+    @property
+    def not_skip_condition(self) -> Optional["AssetCondition"]:
+        if not self.is_legacy:
+            return None
+        return self.children[1]
 
     @property
     def not_discard_condition(self) -> Optional["AssetCondition"]:
