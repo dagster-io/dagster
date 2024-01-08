@@ -2326,6 +2326,8 @@ type Instance {
   hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
   supportsConcurrencyLimits: Boolean!
+  minConcurrencyLimitValue: Int!
+  maxConcurrencyLimitValue: Int!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutomationPolicySensors: Boolean!

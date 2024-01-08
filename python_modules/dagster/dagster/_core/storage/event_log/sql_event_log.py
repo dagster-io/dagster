@@ -84,6 +84,7 @@ from dagster._utils.concurrency import (
     ConcurrencyKeyInfo,
     ConcurrencySlotStatus,
     PendingStepInfo,
+    get_max_concurrency_limit_value,
 )
 
 from ..dagster_run import DagsterRunStatsSnapshot
@@ -113,7 +114,6 @@ from .schema import (
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
-MAX_CONCURRENCY_SLOTS = 1000
 MIN_ASSET_ROWS = 25
 DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
 
@@ -2226,9 +2226,10 @@ class SqlEventLogStorage(EventLogStorage):
             concurrency_key (str): The key to allocate the slots for.
             num (int): The number of slots to allocate.
         """
-        if num > MAX_CONCURRENCY_SLOTS:
+        max_limit = get_max_concurrency_limit_value()
+        if num > max_limit:
             raise DagsterInvalidInvocationError(
-                f"Cannot have more than {MAX_CONCURRENCY_SLOTS} slots per concurrency key."
+                f"Cannot have more than {max_limit} slots per concurrency key."
             )
         if num < 0:
             raise DagsterInvalidInvocationError("Cannot have a negative number of slots.")

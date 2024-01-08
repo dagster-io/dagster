@@ -1505,6 +1505,8 @@ export type Instance = {
   hasInfo: Scalars['Boolean'];
   id: Scalars['String'];
   info: Maybe<Scalars['String']>;
+  maxConcurrencyLimitValue: Scalars['Int'];
+  minConcurrencyLimitValue: Scalars['Int'];
   runLauncher: Maybe<RunLauncher>;
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean'];
@@ -7343,6 +7345,14 @@ export const buildInstance = (
     hasInfo: overrides && overrides.hasOwnProperty('hasInfo') ? overrides.hasInfo! : true,
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'deleniti',
     info: overrides && overrides.hasOwnProperty('info') ? overrides.info! : 'qui',
+    maxConcurrencyLimitValue:
+      overrides && overrides.hasOwnProperty('maxConcurrencyLimitValue')
+        ? overrides.maxConcurrencyLimitValue!
+        : 8998,
+    minConcurrencyLimitValue:
+      overrides && overrides.hasOwnProperty('minConcurrencyLimitValue')
+        ? overrides.minConcurrencyLimitValue!
+        : 4538,
     runLauncher:
       overrides && overrides.hasOwnProperty('runLauncher')
         ? overrides.runLauncher!

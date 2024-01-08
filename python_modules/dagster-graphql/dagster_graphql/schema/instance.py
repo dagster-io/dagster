@@ -9,9 +9,15 @@ import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher.base import RunLauncher
 from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._daemon.asset_daemon import get_auto_materialize_paused
 from dagster._daemon.types import DaemonStatus
-from dagster._utils.concurrency import ClaimedSlotInfo, ConcurrencyKeyInfo, PendingStepInfo
+from dagster._utils.concurrency import (
+    ClaimedSlotInfo,
+    ConcurrencyKeyInfo,
+    PendingStepInfo,
+    get_max_concurrency_limit_value,
+)
 
 from .errors import GraphenePythonError
 from .util import ResolveInfo, non_null_list
@@ -203,6 +209,8 @@ class GrapheneInstance(graphene.ObjectType):
     hasCapturedLogManager = graphene.NonNull(graphene.Boolean)
     autoMaterializePaused = graphene.NonNull(graphene.Boolean)
     supportsConcurrencyLimits = graphene.NonNull(graphene.Boolean)
+    minConcurrencyLimitValue = graphene.NonNull(graphene.Int)
+    maxConcurrencyLimitValue = graphene.NonNull(graphene.Int)
     concurrencyLimits = non_null_list(GrapheneConcurrencyKeyInfo)
     concurrencyLimit = graphene.Field(
         graphene.NonNull(GrapheneConcurrencyKeyInfo),
@@ -277,3 +285,13 @@ class GrapheneInstance(graphene.ObjectType):
     def resolve_concurrencyLimit(self, _graphene_info: ResolveInfo, concurrencyKey):
         key_info = self._instance.event_log_storage.get_concurrency_info(concurrencyKey)
         return GrapheneConcurrencyKeyInfo(key_info)
+
+    def resolve_minConcurrencyLimitValue(self, _graphene_info: ResolveInfo):
+        if isinstance(
+            self._instance.event_log_storage, SqlEventLogStorage
+        ) and not self._instance.event_log_storage.has_table("concurrency_limits"):
+            return 1
+        return 0
+
+    def resolve_maxConcurrencyLimitValue(self, _graphene_info: ResolveInfo):
+        return get_max_concurrency_limit_value()

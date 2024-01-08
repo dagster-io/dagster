@@ -59,6 +59,9 @@ import {
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
 
+const DEFAULT_MIN_VALUE = 1;
+const DEFAULT_MAX_VALUE = 1000;
+
 const InstanceConcurrencyPage = React.memo(() => {
   useTrackPageView();
   useDocumentTitle('Concurrency');
@@ -92,6 +95,8 @@ const InstanceConcurrencyPage = React.memo(() => {
             limits={data.instance.concurrencyLimits}
             hasSupport={data.instance.supportsConcurrencyLimits}
             refetch={queryResult.refetch}
+            minValue={data.instance.minConcurrencyLimitValue}
+            maxValue={data.instance.maxConcurrencyLimitValue}
           />
         </>
       ) : (
@@ -225,11 +230,15 @@ export const ConcurrencyLimits = ({
   hasSupport,
   limits,
   refetch,
+  minValue,
+  maxValue,
 }: {
   limits: ConcurrencyLimitFragment[];
   refetch: () => void;
   instanceConfig?: string | null;
   hasSupport?: boolean;
+  maxValue?: number;
+  minValue?: number;
 }) => {
   const [action, setAction] = React.useState<DialogAction>();
   const [selectedKey, setSelectedKey] = React.useState<string | undefined>(undefined);
@@ -354,6 +363,8 @@ export const ConcurrencyLimits = ({
         open={action?.actionType === 'add'}
         onClose={() => setAction(undefined)}
         onComplete={refetch}
+        minValue={minValue ?? DEFAULT_MIN_VALUE}
+        maxValue={maxValue ?? DEFAULT_MAX_VALUE}
       />
       <DeleteConcurrencyLimitDialog
         concurrencyKey={action && action.actionType === 'delete' ? action.concurrencyKey : ''}
@@ -366,6 +377,8 @@ export const ConcurrencyLimits = ({
         onClose={() => setAction(undefined)}
         onComplete={refetch}
         concurrencyKey={action?.actionType === 'edit' ? action.concurrencyKey : ''}
+        minValue={minValue ?? DEFAULT_MIN_VALUE}
+        maxValue={maxValue ?? DEFAULT_MAX_VALUE}
       />
       <ConcurrencyStepsDialog
         title={
@@ -430,7 +443,11 @@ const ConcurrencyLimitActionMenu = ({
   );
 };
 
-const isValidLimit = (concurrencyLimit?: string) => {
+const isValidLimit = (
+  concurrencyLimit?: string,
+  minLimitValue: number = DEFAULT_MIN_VALUE,
+  maxLimitValue: number = DEFAULT_MAX_VALUE,
+) => {
   if (!concurrencyLimit) {
     return false;
   }
@@ -441,17 +458,21 @@ const isValidLimit = (concurrencyLimit?: string) => {
   if (String(value) !== concurrencyLimit.trim()) {
     return false;
   }
-  return value > 0 && value < 1000;
+  return value >= minLimitValue && value <= maxLimitValue;
 };
 
 const AddConcurrencyLimitDialog = ({
   open,
   onClose,
   onComplete,
+  maxValue,
+  minValue,
 }: {
   open: boolean;
   onClose: () => void;
   onComplete: () => void;
+  maxValue: number;
+  minValue: number;
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [limitInput, setLimitInput] = React.useState('');
@@ -488,12 +509,14 @@ const AddConcurrencyLimitDialog = ({
             placeholder="Concurrency key"
           />
         </Box>
-        <Box margin={{bottom: 4}}>Concurrency limit (1-1000):</Box>
+        <Box margin={{bottom: 4}}>
+          Concurrency limit ({minValue}-{maxValue}):
+        </Box>
         <Box>
           <TextInput
             value={limitInput || ''}
             onChange={(e) => setLimitInput(e.target.value)}
-            placeholder="1 - 1000"
+            placeholder={`${minValue} - ${maxValue}`}
           />
         </Box>
       </DialogBody>
@@ -504,7 +527,9 @@ const AddConcurrencyLimitDialog = ({
         <Button
           intent="primary"
           onClick={save}
-          disabled={!isValidLimit(limitInput.trim()) || !keyInput || isSubmitting}
+          disabled={
+            !isValidLimit(limitInput.trim(), minValue, maxValue) || !keyInput || isSubmitting
+          }
         >
           {isSubmitting ? 'Adding...' : 'Add limit'}
         </Button>
@@ -518,11 +543,15 @@ const EditConcurrencyLimitDialog = ({
   open,
   onClose,
   onComplete,
+  minValue,
+  maxValue,
 }: {
   concurrencyKey: string;
   open: boolean;
   onClose: () => void;
   onComplete: () => void;
+  minValue: number;
+  maxValue: number;
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [limitInput, setLimitInput] = React.useState('');
@@ -559,12 +588,14 @@ const EditConcurrencyLimitDialog = ({
         <Box margin={{bottom: 16}}>
           <strong>{concurrencyKey}</strong>
         </Box>
-        <Box margin={{bottom: 4}}>Concurrency limit (1-1000):</Box>
+        <Box margin={{bottom: 4}}>
+          Concurrency limit ({minValue}-{maxValue}):
+        </Box>
         <Box>
           <TextInput
             value={limitInput || ''}
             onChange={(e) => setLimitInput(e.target.value)}
-            placeholder="1 - 1000"
+            placeholder={`${minValue} - ${maxValue}`}
           />
         </Box>
       </DialogBody>
@@ -577,7 +608,11 @@ const EditConcurrencyLimitDialog = ({
             Updating...
           </Button>
         ) : (
-          <Button intent="primary" onClick={save} disabled={!isValidLimit(limitInput.trim())}>
+          <Button
+            intent="primary"
+            onClick={save}
+            disabled={!isValidLimit(limitInput.trim(), minValue, maxValue)}
+          >
             Update limit
           </Button>
         )}
@@ -963,6 +998,8 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
       runQueueConfig {
         ...RunQueueConfigFragment
       }
+      minConcurrencyLimitValue
+      maxConcurrencyLimitValue
       concurrencyLimits {
         ...ConcurrencyLimitFragment
       }
