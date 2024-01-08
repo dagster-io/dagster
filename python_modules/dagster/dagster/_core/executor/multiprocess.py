@@ -221,10 +221,10 @@ class MultiprocessExecutor(Executor):
                         limit=(limit - len(active_iters)),
                     )
 
+                    yield from active_execution.concurrency_event_iterator(plan_context)
+
                     if not steps:
                         break
-
-                    yield from active_execution.concurrency_event_iterator(plan_context)
 
                     for step in steps:
                         step_context = plan_context.for_step(step)
