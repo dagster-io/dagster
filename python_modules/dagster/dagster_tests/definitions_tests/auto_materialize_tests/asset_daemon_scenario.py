@@ -79,7 +79,6 @@ from dagster._daemon.asset_daemon import (
     AssetDaemon,
     get_current_evaluation_id,
 )
-from dagster._daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
 
 from .base_scenario import FAIL_TAG, run_request
 
@@ -200,7 +199,6 @@ class AssetDaemonScenarioState(NamedTuple):
 
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef]]
     current_time: datetime.datetime = pendulum.now("UTC")
-    previous_tick_time: Optional[datetime.datetime] = None
     run_requests: Sequence[RunRequest] = []
     serialized_cursor: str = AssetDaemonCursor.empty().serialize()
     evaluations: Sequence[AutoMaterializeAssetEvaluation] = []
@@ -410,14 +408,11 @@ class AssetDaemonScenarioState(NamedTuple):
 
     def _evaluate_tick_daemon(
         self,
-        advance_time_to_next_tick: bool,
     ) -> Tuple[
         Sequence[RunRequest],
         AssetDaemonCursor,
         Sequence[AutoMaterializeAssetEvaluation],
-        datetime.datetime,
     ]:
-        new_current_time = self.current_time
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
             assert (
@@ -432,39 +427,19 @@ class AssetDaemonScenarioState(NamedTuple):
                 else None
             )
 
-            pre_sensor_interval_seconds = (
-                self.instance.auto_materialize_minimum_interval_seconds
-                or DEFAULT_DAEMON_INTERVAL_SECONDS
-            )
-
             if sensor:
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
-                interval = sensor.min_interval_seconds
-            else:
-                interval = pre_sensor_interval_seconds
 
-            if advance_time_to_next_tick:
-                if self.previous_tick_time:
-                    time_to_advance = (
-                        self.previous_tick_time.timestamp() + interval
-                    ) - self.current_time.timestamp()
-
-                    if time_to_advance > 0:
-                        new_current_time = new_current_time + datetime.timedelta(
-                            seconds=time_to_advance
-                        )
-
-            with pendulum.test(new_current_time):
-                list(
-                    AssetDaemon(  # noqa: SLF001
-                        pre_sensor_interval_seconds=pre_sensor_interval_seconds
-                    )._run_iteration_impl(
-                        workspace_context,
-                        debug_crash_flags={},
-                        sensor_state_lock=threading.Lock(),
-                    )
+            list(
+                AssetDaemon(  # noqa: SLF001
+                    pre_sensor_interval_seconds=42
+                )._run_iteration_impl(
+                    workspace_context,
+                    debug_crash_flags={},
+                    sensor_state_lock=threading.Lock(),
                 )
+            )
 
             if sensor:
                 auto_materialize_instigator_state = check.not_none(
@@ -508,27 +483,23 @@ class AssetDaemonScenarioState(NamedTuple):
                     self.instance.schedule_storage
                 ).get_auto_materialize_evaluations_for_evaluation_id(new_cursor.evaluation_id)
             ]
-        return new_run_requests, new_cursor, new_evaluations, new_current_time
+        return new_run_requests, new_cursor, new_evaluations
 
-    def evaluate_tick(self, advance_time_to_next_tick: bool = True) -> "AssetDaemonScenarioState":
-        if self.is_daemon:
-            (
-                new_run_requests,
-                new_cursor,
-                new_evaluations,
-                new_current_time,
-            ) = self._evaluate_tick_daemon(advance_time_to_next_tick=advance_time_to_next_tick)
-        else:
-            with pendulum.test(self.current_time):
+    def evaluate_tick(self) -> "AssetDaemonScenarioState":
+        with pendulum.test(self.current_time):
+            if self.is_daemon:
+                (
+                    new_run_requests,
+                    new_cursor,
+                    new_evaluations,
+                ) = self._evaluate_tick_daemon()
+            else:
                 new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_fast()
-                new_current_time = self.current_time
 
         return self._replace(
             run_requests=new_run_requests,
             serialized_cursor=new_cursor.serialize(),
             evaluations=new_evaluations,
-            current_time=new_current_time,
-            previous_tick_time=new_current_time,
         )
 
     def _log_assertion_error(self, expected: Sequence[Any], actual: Sequence[Any]) -> None:
