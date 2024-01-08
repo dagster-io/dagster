@@ -22,20 +22,8 @@ export type AssetNodeInstigatorsFragment = {
         status: Types.InstigationStatus;
       };
     }>;
-    sensors: Array<{
-      __typename: 'Sensor';
-      id: string;
-      jobOriginId: string;
-      name: string;
-      sensorState: {
-        __typename: 'InstigationState';
-        id: string;
-        selectorId: string;
-        status: Types.InstigationStatus;
-      };
-    }>;
   }>;
-  automationPolicySensor: {
+  targetingSensors: Array<{
     __typename: 'Sensor';
     id: string;
     jobOriginId: string;
@@ -46,5 +34,5 @@ export type AssetNodeInstigatorsFragment = {
       selectorId: string;
       status: Types.InstigationStatus;
     };
-  } | null;
+  }>;
 };

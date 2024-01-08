@@ -646,6 +646,19 @@ GET_ASSET_BACKFILL_POLICY = """
     }
 """
 
+GET_TARGETING_SENSORS = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                targetingSensors {
+                    id
+                    name
+                }
+            }
+        }
+    }
+"""
+
 GET_ASSET_DEPENDENCIES_PARTITION_MAPPING = """
     query AssetNodeQuery($assetKey: AssetKeyInput!) {
         assetNodeOrError(assetKey: $assetKey) {
@@ -2361,6 +2374,30 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 assert a["hasAssetChecks"] is True
             else:
                 assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"
+
+    def test_get_targeting_sensors(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_TARGETING_SENSORS,
+            variables={
+                "assetKey": {"path": ["fresh_diamond_bottom"]},
+            },
+        )
+
+        targeting_sensors = result.data["assetNodeOrError"]["targetingSensors"]
+        assert len(targeting_sensors) == 1
+        assert targeting_sensors[0]["name"] == "my_automation_policy_sensor"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_TARGETING_SENSORS,
+            variables={
+                "assetKey": {"path": ["upstream_dynamic_partitioned_asset"]},
+            },
+        )
+        targeting_sensors = result.data["assetNodeOrError"]["targetingSensors"]
+        assert len(targeting_sensors) == 1
+        assert targeting_sensors[0]["name"] == "dynamic_partition_requesting_sensor"
 
     def test_get_backfill_policy(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(

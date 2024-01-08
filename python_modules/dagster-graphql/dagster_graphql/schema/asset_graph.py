@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set, Union, cast
 
 import graphene
 from dagster import (
     AssetKey,
     _check as check,
 )
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
@@ -305,7 +306,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         pipeline=graphene.Argument(GraphenePipelineSelector),
     )
     currentAutoMaterializeEvaluationId = graphene.Int()
-    automationPolicySensor = graphene.Field(GrapheneSensor)
+    targetingSensors = non_null_list(GrapheneSensor)
 
     class Meta:
         name = "AssetNode"
@@ -855,8 +856,42 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
         return None
 
+    def _sensor_targets_asset(
+        self, sensor: ExternalSensor, asset_graph: ExternalAssetGraph, job_names: Set[str]
+    ) -> bool:
+        asset_key = self._external_asset_node.asset_key
+
+        if sensor.asset_selection and (asset_key in sensor.asset_selection.resolve(asset_graph)):
+            return True
+
+        return any(target.job_name in job_names for target in sensor.get_external_targets())
+
+    def resolve_targetingSensors(self, graphene_info) -> Sequence[GrapheneSensor]:
+        external_sensors = self._external_repository.get_external_sensors()
+        asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
+
+        job_names = {
+            job_name
+            for job_name in self._external_asset_node.job_names
+            if not job_name.startswith(ASSET_BASE_JOB_PREFIX)
+        }
+
+        results = []
+        for external_sensor in external_sensors:
+            if not self._sensor_targets_asset(external_sensor, asset_graph, job_names):
+                continue
+
+            sensor_state = graphene_info.context.instance.get_instigator_state(
+                external_sensor.get_external_origin_id(),
+                external_sensor.selector_id,
+            )
+            results.append(GrapheneSensor(external_sensor, sensor_state))
+
+        return results
+
     def _get_automation_policy_external_sensor(self) -> Optional[ExternalSensor]:
         asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
+
         asset_key = self._external_asset_node.asset_key
         matching_sensors = [
             sensor
@@ -872,18 +907,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             return None
 
         return matching_sensors[0]
-
-    def resolve_automationPolicySensor(self, graphene_info) -> Optional[GrapheneSensor]:
-        external_sensor = self._get_automation_policy_external_sensor()
-        if not external_sensor:
-            return None
-
-        sensor_state = graphene_info.context.instance.get_instigator_state(
-            external_sensor.get_external_origin_id(),
-            external_sensor.selector_id,
-        )
-
-        return GrapheneSensor(external_sensor, sensor_state)
 
     def resolve_currentAutoMaterializeEvaluationId(self, graphene_info):
         from dagster._daemon.asset_daemon import (

@@ -59,20 +59,8 @@ export type AssetViewDefinitionQuery = {
                 status: Types.InstigationStatus;
               };
             }>;
-            sensors: Array<{
-              __typename: 'Sensor';
-              id: string;
-              jobOriginId: string;
-              name: string;
-              sensorState: {
-                __typename: 'InstigationState';
-                id: string;
-                selectorId: string;
-                status: Types.InstigationStatus;
-              };
-            }>;
           }>;
-          automationPolicySensor: {
+          targetingSensors: Array<{
             __typename: 'Sensor';
             id: string;
             jobOriginId: string;
@@ -83,7 +71,7 @@ export type AssetViewDefinitionQuery = {
               selectorId: string;
               status: Types.InstigationStatus;
             };
-          } | null;
+          }>;
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
             policyType: Types.AutoMaterializePolicyType;
@@ -15895,20 +15883,8 @@ export type AssetViewDefinitionNodeFragment = {
         status: Types.InstigationStatus;
       };
     }>;
-    sensors: Array<{
-      __typename: 'Sensor';
-      id: string;
-      jobOriginId: string;
-      name: string;
-      sensorState: {
-        __typename: 'InstigationState';
-        id: string;
-        selectorId: string;
-        status: Types.InstigationStatus;
-      };
-    }>;
   }>;
-  automationPolicySensor: {
+  targetingSensors: Array<{
     __typename: 'Sensor';
     id: string;
     jobOriginId: string;
@@ -15919,7 +15895,7 @@ export type AssetViewDefinitionNodeFragment = {
       selectorId: string;
       status: Types.InstigationStatus;
     };
-  } | null;
+  }>;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;

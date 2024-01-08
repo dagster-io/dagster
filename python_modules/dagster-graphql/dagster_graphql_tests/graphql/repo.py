@@ -1191,6 +1191,10 @@ def define_sensors():
         context.log.info("hello hello")
         return SkipReason()
 
+    @sensor(asset_selection=AssetSelection.all())
+    def every_asset_sensor(_):
+        return SkipReason("just kidding")
+
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_job)
     def run_status(_):
         return SkipReason("always skip")
@@ -1233,6 +1237,7 @@ def define_sensors():
         fresh_sensor,
         the_failure_sensor,
         automation_policy_sensor,
+        every_asset_sensor,
     ]
 
 

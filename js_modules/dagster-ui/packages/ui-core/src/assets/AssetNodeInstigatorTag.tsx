@@ -8,7 +8,6 @@ import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RepoAddress} from '../workspace/types';
 
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 
 export const AssetNodeInstigatorTag = ({
@@ -18,26 +17,16 @@ export const AssetNodeInstigatorTag = ({
   assetNode: AssetNodeInstigatorsFragment;
   repoAddress: RepoAddress;
 }) => {
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
   const {schedules, sensors} = React.useMemo(() => {
     const schedules = uniqBy(
       flatMap(assetNode.jobs, (j) => j.schedules),
       'id',
     );
-    const sensors = uniqBy(
-      flatMap(assetNode.jobs, (j) => j.sensors),
-      'id',
-    );
 
-    if (automaterializeSensorsFlagState === 'has-sensor-amp') {
-      const ampSensor = assetNode.automationPolicySensor;
-      if (ampSensor) {
-        sensors.push(ampSensor);
-      }
-    }
+    const sensors = assetNode.targetingSensors;
 
     return {schedules, sensors};
-  }, [assetNode, automaterializeSensorsFlagState]);
+  }, [assetNode]);
 
   return (
     <ScheduleOrSensorTag
@@ -59,12 +48,8 @@ export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
         id
         ...ScheduleSwitchFragment
       }
-      sensors {
-        id
-        ...SensorSwitchFragment
-      }
     }
-    automationPolicySensor {
+    targetingSensors {
       id
       ...SensorSwitchFragment
     }

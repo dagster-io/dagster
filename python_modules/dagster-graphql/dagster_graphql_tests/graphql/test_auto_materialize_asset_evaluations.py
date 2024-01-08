@@ -223,7 +223,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
     assetNodeOrError(assetKey: $assetKey) {
         ... on AssetNode {
             currentAutoMaterializeEvaluationId
-            automationPolicySensor {
+            targetingSensors {
                 name
             }
         }
@@ -374,7 +374,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 },
             )
             assert (
-                results.data["assetNodeOrError"]["automationPolicySensor"]["name"]
+                results.data["assetNodeOrError"]["targetingSensors"][0]["name"]
                 == "my_automation_policy_sensor"
             )
             assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
@@ -521,7 +521,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -632,7 +632,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -654,7 +654,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -686,7 +686,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -720,7 +720,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -760,7 +760,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
         }
@@ -877,7 +877,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": None,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -932,7 +932,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": 0,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [],
@@ -957,7 +957,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "assetNodeOrError": {
                 "currentAutoMaterializeEvaluationId": 42,
-                "automationPolicySensor": None,
+                "targetingSensors": [],
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [],
