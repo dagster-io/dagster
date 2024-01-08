@@ -208,8 +208,8 @@ class AssetConditionEvaluationContext:
         ):
             return self.empty_subset()
 
-        return self.previous_evaluation_state.previous_evaluation.get_requested_or_discarded_subset(
-            self.condition
+        return (
+            self.previous_evaluation_state.previous_evaluation.get_requested_or_discarded_subset()
         )
 
     @property
