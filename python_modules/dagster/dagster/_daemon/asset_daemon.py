@@ -11,7 +11,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
-    BackcompatAssetDaemonEvaluationInfo,
+    LegacyAssetDaemonCursorWrapper,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -118,7 +118,7 @@ def get_current_evaluation_id(
             else None
         )
         serialized_cursor = (
-            BackcompatAssetDaemonEvaluationInfo.from_compressed(compressed_cursor).serialized_cursor
+            LegacyAssetDaemonCursorWrapper.from_compressed(compressed_cursor).serialized_cursor
             if compressed_cursor
             else None
         )
@@ -279,7 +279,7 @@ class AssetDaemon(DagsterDaemon):
                 compressed_cursor = instigator_data.cursor
                 if compressed_cursor:
                     stored_evaluation_id = (
-                        BackcompatAssetDaemonEvaluationInfo.from_compressed(compressed_cursor)
+                        LegacyAssetDaemonCursorWrapper.from_compressed(compressed_cursor)
                         .get_asset_daemon_cursor(asset_graph)
                         .evaluation_id
                     )
@@ -535,7 +535,7 @@ class AssetDaemon(DagsterDaemon):
             ).cursor
 
             stored_cursor = (
-                BackcompatAssetDaemonEvaluationInfo.from_compressed(
+                LegacyAssetDaemonCursorWrapper.from_compressed(
                     compressed_cursor
                 ).get_asset_daemon_cursor(asset_graph)
                 if compressed_cursor
@@ -716,7 +716,7 @@ class AssetDaemon(DagsterDaemon):
                                 SensorInstigatorData(
                                     last_tick_timestamp=tick.timestamp,
                                     min_interval=sensor.min_interval_seconds,
-                                    cursor=BackcompatAssetDaemonEvaluationInfo(
+                                    cursor=LegacyAssetDaemonCursorWrapper(
                                         new_cursor.serialize()
                                     ).to_compressed(),
                                     sensor_type=SensorType.AUTOMATION_POLICY,

@@ -301,21 +301,23 @@ class AssetDaemonCursor(NamedTuple):
 
 
 @whitelist_for_serdes
-class BackcompatAssetDaemonEvaluationInfo(NamedTuple):
+class LegacyAssetDaemonCursorWrapper(NamedTuple):
+    """Wrapper class for the legacy AssetDaemonCursor object, which is not a serializable NamedTuple."""
+
     serialized_cursor: str
 
     def get_asset_daemon_cursor(self, asset_graph: AssetGraph) -> AssetDaemonCursor:
         return AssetDaemonCursor.from_serialized(self.serialized_cursor, asset_graph)
 
     @staticmethod
-    def from_compressed(compressed: str) -> "BackcompatAssetDaemonEvaluationInfo":
+    def from_compressed(compressed: str) -> "LegacyAssetDaemonCursorWrapper":
         """This method takes a b64 encoded, zlib compressed string and returns the original
         BackcompatAssetDaemonEvaluationInfo object.
         """
         decoded_bytes = base64.b64decode(compressed)
         decompressed_bytes = zlib.decompress(decoded_bytes)
         decoded_str = decompressed_bytes.decode("utf-8")
-        return deserialize_value(decoded_str, BackcompatAssetDaemonEvaluationInfo)
+        return deserialize_value(decoded_str, LegacyAssetDaemonCursorWrapper)
 
     def to_compressed(self) -> str:
         """This method compresses the serialized cursor and returns a b64 encoded string to be

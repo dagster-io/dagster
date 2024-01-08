@@ -6,7 +6,7 @@ import pendulum
 from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
-    BackcompatAssetDaemonEvaluationInfo,
+    LegacyAssetDaemonCursorWrapper,
 )
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -351,7 +351,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 status=InstigatorStatus.RUNNING,
                 instigator_data=SensorInstigatorData(
                     sensor_type=SensorType.AUTOMATION_POLICY,
-                    cursor=BackcompatAssetDaemonEvaluationInfo(
+                    cursor=LegacyAssetDaemonCursorWrapper(
                         AssetDaemonCursor.empty()._replace(evaluation_id=12345).serialize()
                     ).to_compressed(),
                 ),
