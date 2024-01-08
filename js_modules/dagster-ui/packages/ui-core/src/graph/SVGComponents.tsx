@@ -89,32 +89,3 @@ export class SVGMonospaceText extends React.PureComponent<
     );
   }
 }
-
-export const SVGLabeledRect = ({
-  minified,
-  label,
-  fill,
-  className,
-  ...rect
-}: {
-  x: number;
-  y: number;
-  minified: boolean;
-  width: number;
-  height: number;
-  label: string;
-  fill: string;
-  className?: string;
-}) => (
-  <g>
-    <rect {...rect} fill={fill} stroke="#979797" strokeWidth={1} className={className} />
-    <SVGMonospaceText
-      x={rect.x + (minified ? 10 : 5)}
-      y={rect.y + (minified ? 10 : 5)}
-      height={undefined}
-      size={minified ? 30 : 16}
-      text={label}
-      fill="#979797"
-    />
-  </g>
-);
