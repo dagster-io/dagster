@@ -50,7 +50,7 @@ import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
-import {isOldTickWithoutEndtimestamp, truncate} from './util';
+import {isStuckStartedTickWithoutEndtimestamp, truncate} from './util';
 
 Chart.register(zoomPlugin);
 
@@ -410,7 +410,7 @@ function TickRow({
     return [added, deleted];
   }, [tick?.dynamicPartitionsRequestResults]);
 
-  const isOldTick = isOldTickWithoutEndtimestamp(tick, index);
+  const isStuckStarted = isStuckStartedTickWithoutEndtimestamp(tick, index);
 
   return (
     <tr>
@@ -421,10 +421,10 @@ function TickRow({
         />
       </td>
       <td>
-        <TickStatusTag tick={tick} isStuckStarted={isOldTick} />
+        <TickStatusTag tick={tick} isStuckStarted={isStuckStarted} />
       </td>
       <td>
-        {isOldTick ? (
+        {isStuckStarted ? (
           '- '
         ) : (
           <TimeElapsed

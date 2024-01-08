@@ -10,7 +10,7 @@ export const truncate = (str: string) =>
     ? `${str.slice(0, TRUNCATION_THRESHOLD - TRUNCATION_BUFFER)}…`
     : str;
 
-export function isOldTickWithoutEndtimestamp(
+export function isStuckStartedTickWithoutEndtimestamp(
   tick: Pick<InstigationTick, 'timestamp' | 'endTimestamp' | 'status'>,
   index: number,
 ) {
