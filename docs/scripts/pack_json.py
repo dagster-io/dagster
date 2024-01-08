@@ -103,23 +103,23 @@ def copy_searchindex(
 
 
 def main() -> None:
-    sphinx_out_dir = os.path.join(os.path.dirname(__file__), "../sphinx/_build/json")
-    saved_copy_dir = os.path.join(os.path.dirname(__file__), "../content/api")
+    sphinx_src_dir = os.path.join(os.path.dirname(__file__), "../sphinx/_build/json")
+    docs_dest_dir = os.path.join(os.path.dirname(__file__), "../content/api")
 
     directories_to_pack = {
-        os.path.join(saved_copy_dir, "sections"): "sections.json.gz",
-        os.path.join(saved_copy_dir, "_modules"): "modules.json.gz",
+        os.path.join(sphinx_src_dir, "sections"): "sections.json.gz",
+        os.path.join(sphinx_src_dir, "_modules"): "modules.json.gz",
     }
 
     for directory, output_file in directories_to_pack.items():
         data = pack_directory_json(directory)
-        write_json_gz(os.path.join(sphinx_out_dir, output_file), data)
+        write_json_gz(os.path.join(docs_dest_dir, output_file), data)
 
-    copy_searchindex(src_dir=sphinx_out_dir, dest_dir=saved_copy_dir)
+    copy_searchindex(src_dir=sphinx_src_dir, dest_dir=docs_dest_dir)
 
     # objects.inv
     shutil.copyfile(
-        os.path.join(sphinx_out_dir, "objects.inv"),
+        os.path.join(sphinx_src_dir, "objects.inv"),
         os.path.join(os.path.dirname(__file__), "../next/public/objects.inv"),
     )
 
