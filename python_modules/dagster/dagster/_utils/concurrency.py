@@ -7,7 +7,7 @@ from dagster import _check as check
 
 
 def get_max_concurrency_limit_value() -> int:
-    return int(os.getenv("MAX_GLOBAL_OP_CONCURRENCY_LIMIT_VALUE", "1000"))
+    return int(os.getenv("DAGSTER_MAX_GLOBAL_OP_CONCURRENCY_LIMIT", "1000"))
 
 
 class ConcurrencySlotStatus(Enum):

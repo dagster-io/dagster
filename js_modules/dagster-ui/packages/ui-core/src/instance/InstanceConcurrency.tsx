@@ -377,8 +377,8 @@ export const ConcurrencyLimits = ({
         onClose={() => setAction(undefined)}
         onComplete={refetch}
         concurrencyKey={action?.actionType === 'edit' ? action.concurrencyKey : ''}
-        minValue={minValue || DEFAULT_MIN_VALUE}
-        maxValue={maxValue || DEFAULT_MAX_VALUE}
+        minValue={minValue ?? DEFAULT_MIN_VALUE}
+        maxValue={maxValue ?? DEFAULT_MAX_VALUE}
       />
       <ConcurrencyStepsDialog
         title={
