@@ -727,6 +727,11 @@ class AssetDaemon(DagsterDaemon):
 
             updated_evaluation_asset_keys = set()
 
+            # here, we make sure to re-fetch the asset graph to ensure that these runs are submitted
+            # against the latest version of the graph, which may have changed since the tick started
+            workspace = workspace_process_context.create_request_context()
+            asset_graph = ExternalAssetGraph.from_workspace(workspace)
+
             for i in range(len(run_requests)):
                 reserved_run_id = reserved_run_ids[i]
                 run_request = run_requests[i]
