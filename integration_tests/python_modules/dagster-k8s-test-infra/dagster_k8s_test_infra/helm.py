@@ -331,7 +331,7 @@ def create_cluster_admin_role_binding(namespace, service_account_name, should_cl
 
     kube_api = kubernetes.client.RbacAuthorizationV1Api()
 
-    subject = kubernetes.client.V1Subject(
+    subject = kubernetes.client.RbacV1Subject(
         namespace=namespace, name=service_account_name, kind="ServiceAccount"
     )
 
