@@ -8,7 +8,6 @@ from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.errors import DagsterRedactedUserCodeError
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -93,28 +92,6 @@ def _should_redact_user_code_error() -> bool:
     return str(os.getenv("DAGSTER_REDACT_USER_CODE_ERRORS")).lower() in ("1", "true", "t")
 
 
-def _get_masked_traceback_exception(with_instruction: bool) -> traceback.TracebackException:
-    """Raises a DagsterRedactedUserCodeError and returns the traceback exception for it.
-    Used to replace the traceback of a user code error with a generic message that they
-    can search for in their own logs.
-    """
-    error_id = str(uuid.uuid4())
-    try:
-        raise DagsterRedactedUserCodeError(
-            f"Error occurred during user code execution, error ID {error_id}. "
-            "The error has been masked to prevent leaking sensitive information."
-            + ("\nSearch in logs for this error ID for more details" if with_instruction else "")
-        )
-    except DagsterRedactedUserCodeError:
-        # Get the stack trace from the masking exception we just raised, instead of
-        # the underlying user code exception
-        exc_type, e, tb = sys.exc_info()
-        tb_exc = traceback.TracebackException(
-            check.not_none(exc_type), check.not_none(e), check.not_none(tb)
-        )
-        return tb_exc
-
-
 def serializable_error_info_from_exc_info(
     exc_info: ExceptionInfo,
     # Whether to forward serialized errors thrown from subprocesses
@@ -140,13 +117,25 @@ def serializable_error_info_from_exc_info(
     from dagster._core.errors import DagsterUserCodeExecutionError, DagsterUserCodeProcessError
 
     if isinstance(e, DagsterUserCodeExecutionError) and _should_redact_user_code_error():
-        masked_tb_exc = _get_masked_traceback_exception(with_instruction=True)
+        error_id = str(uuid.uuid4())
+
+        sys.stderr.write(f"Error occurred during user code execution, error ID {error_id}.\n")
         sys.stderr.write(
             _serializable_error_info_from_tb(
-                _get_masked_traceback_exception(with_instruction=False)
+                traceback.TracebackException(exc_type, e, tb)
             ).to_string(),
         )
-        return _serializable_error_info_from_tb(masked_tb_exc, no_cause=True)
+        return SerializableErrorInfo(
+            message=(
+                f"Error occurred during user code execution, error ID {error_id}. "
+                "The error has been masked to prevent leaking sensitive information. "
+                "Search in logs for this error ID for more details."
+            ),
+            stack=[],
+            cls_name="DagsterRedactedUserCodeError",
+            cause=None,
+            context=None,
+        )
 
     if (
         hoist_user_code_error
