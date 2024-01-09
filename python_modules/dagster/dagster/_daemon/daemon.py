@@ -30,8 +30,6 @@ from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
-    from concurrent.futures import ThreadPoolExecutor
-
     from pendulum.datetime import DateTime
 
 
@@ -266,8 +264,8 @@ class SensorDaemon(DagsterDaemon):
     def __init__(self, settings: Mapping[str, Any]) -> None:
         super().__init__()
         self._exit_stack = ExitStack()
-        self._threadpool_executor: Optional[ThreadPoolExecutor] = None
-        self._submit_threadpool_executor: Optional[ThreadPoolExecutor] = None
+        self._threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
+        self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
 
         if settings.get("use_threads"):
             self._threadpool_executor = self._exit_stack.enter_context(
