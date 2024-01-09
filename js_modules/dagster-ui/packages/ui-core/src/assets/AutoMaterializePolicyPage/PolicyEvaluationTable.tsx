@@ -1,5 +1,8 @@
+import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Button,
+  Dialog,
   Table,
   colorBackgroundDefault,
   colorBackgroundDefaultHover,
@@ -9,25 +12,43 @@ import {
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
+<<<<<<< Updated upstream
 import {assertUnreachable} from '../../app/Util';
+=======
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
+>>>>>>> Stashed changes
 import {TimeElapsed} from '../../runs/TimeElapsed';
+import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
-import {flattenEvaluations} from './flattenEvaluations';
+import {FlattenedConditionEvaluation, flattenEvaluations} from './flattenEvaluations';
 import {
+<<<<<<< Updated upstream
   AssetConditionEvaluation,
   AssetConditionEvaluationStatus,
   PartitionedAssetConditionEvaluation,
   SpecificPartitionAssetConditionEvaluation,
   UnpartitionedAssetConditionEvaluation,
 } from './types';
+=======
+  AssetConditionEvaluationRecordFragment,
+  PartitionedAssetConditionEvaluationNodeFragment,
+  SpecificPartitionAssetConditionEvaluationNodeFragment,
+  UnpartitionedAssetConditionEvaluationNodeFragment,
+} from './types/GetEvaluationsQuery.types';
+>>>>>>> Stashed changes
 
-interface Props<T> {
-  rootEvaluation: T;
+interface Props {
+  evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>;
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectPartition: (partitionKey: string | null) => void;
 }
 
+<<<<<<< Updated upstream
 export const PolicyEvaluationTable = <T extends AssetConditionEvaluation>({
   rootEvaluation,
 }: Props<T>) => {
@@ -40,29 +61,79 @@ export const PolicyEvaluationTable = <T extends AssetConditionEvaluation>({
     default:
       return assertUnreachable(rootEvaluation);
   }
+=======
+export const PolicyEvaluationTable = ({evaluationRecord, definition, selectPartition}: Props) => {
+  const flattened = React.useMemo(() => flattenEvaluations(evaluationRecord), [evaluationRecord]);
+  if (flattened[0]?.evaluation.__typename === 'PartitionedAssetConditionEvaluationNode') {
+    return (
+      <PartitionedPolicyEvaluationTable
+        flattenedRecords={
+          flattened as FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[]
+        }
+        definition={definition}
+        selectPartition={selectPartition}
+      />
+    );
+  }
+
+  return (
+    <UnpartitionedPolicyEvaluationTable
+      flattenedRecords={
+        flattened as
+          | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
+          | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[]
+      }
+    />
+  );
+>>>>>>> Stashed changes
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
-  rootEvaluation,
+  flattenedRecords,
 }: {
+<<<<<<< Updated upstream
   rootEvaluation: UnpartitionedAssetConditionEvaluation | SpecificPartitionAssetConditionEvaluation;
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
   const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
   const showDuration = rootEvaluation.__typename === 'UnpartitionedAssetConditionEvaluation';
+=======
+  flattenedRecords:
+    | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
+    | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[];
+}) => {
+  const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
+  const isSpecificPartitionAssetConditionEvaluations =
+    flattenedRecords[0]?.evaluation.__typename === 'SpecificPartitionAssetConditionEvaluationNode';
+
+>>>>>>> Stashed changes
   return (
     <VeryCompactTable>
       <thead>
         <tr>
           <th>Condition</th>
           <th>Result</th>
+<<<<<<< Updated upstream
           {showDuration ? <th>Duration</th> : null}
+=======
+          {isSpecificPartitionAssetConditionEvaluations ? null : <th>Duration</th>}
+>>>>>>> Stashed changes
           <th>Details</th>
         </tr>
       </thead>
       <tbody>
+<<<<<<< Updated upstream
         {flattened.map(({evaluation, id, parentId, depth, type}) => {
           const {description, status} = evaluation;
+=======
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
+          const {description, status} = evaluation;
+          let endTimestamp, startTimestamp;
+          if ('endTimestamp' in evaluation) {
+            endTimestamp = evaluation.endTimestamp;
+            startTimestamp = evaluation.startTimestamp;
+          }
+>>>>>>> Stashed changes
           return (
             <EvaluationRow
               key={id}
@@ -84,6 +155,7 @@ const UnpartitionedPolicyEvaluationTable = ({
               <td>
                 <PolicyEvaluationStatusTag status={status} />
               </td>
+<<<<<<< Updated upstream
               {showDuration ? (
                 <td>
                   {evaluation.__typename === 'UnpartitionedAssetConditionEvaluation' ? (
@@ -95,6 +167,16 @@ const UnpartitionedPolicyEvaluationTable = ({
                 </td>
               ) : null}
               <td></td>
+=======
+              {startTimestamp && endTimestamp ? (
+                <td>
+                  <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
+                </td>
+              ) : null}
+              <td>
+                {evaluation.metadataEntries ? <ViewDetailsButton evaluation={evaluation} /> : null}
+              </td>
+>>>>>>> Stashed changes
             </EvaluationRow>
           );
         })}
@@ -103,15 +185,40 @@ const UnpartitionedPolicyEvaluationTable = ({
   );
 };
 
+const ViewDetailsButton = ({
+  evaluation,
+}: {
+  evaluation: {metadataEntries: MetadataEntryFragment[]; timestamp: string};
+}) => {
+  const [showDetails, setShowDetails] = React.useState(false);
+  return (
+    <>
+      <Dialog title="Evaluation metadata" isOpen={showDetails}>
+        <AssetEventMetadataEntriesTable event={evaluation} />
+      </Dialog>
+      <Button
+        onClick={() => {
+          setShowDetails(true);
+        }}
+      >
+        View details
+      </Button>
+    </>
+  );
+};
+
 const FULL_SEGMENTS_WIDTH = 200;
 
 const PartitionedPolicyEvaluationTable = ({
-  rootEvaluation,
+  flattenedRecords,
+  selectPartition,
 }: {
-  rootEvaluation: PartitionedAssetConditionEvaluation;
+  flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectPartition: (partitionKey: string | null) => void;
 }) => {
   const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
+
   return (
     <VeryCompactTable>
       <thead>
@@ -122,7 +229,7 @@ const PartitionedPolicyEvaluationTable = ({
         </tr>
       </thead>
       <tbody>
-        {flattened.map(({evaluation, id, parentId, depth, type}) => {
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
           const {
             description,
             endTimestamp,
@@ -134,7 +241,6 @@ const PartitionedPolicyEvaluationTable = ({
             falseSubset,
             candidateSubset,
           } = evaluation;
-          const total = numTrue + numFalse + numSkipped;
 
           return (
             <EvaluationRow
@@ -163,7 +269,7 @@ const PartitionedPolicyEvaluationTable = ({
                       description={description}
                       status={AssetConditionEvaluationStatus.TRUE}
                       subset={trueSubset}
-                      width={Math.ceil((numTrue / total) * FULL_SEGMENTS_WIDTH)}
+                      selectPartition={selectPartition}
                     />
                   ) : null}
                   {numFalse > 0 ? (
@@ -171,7 +277,7 @@ const PartitionedPolicyEvaluationTable = ({
                       status={AssetConditionEvaluationStatus.FALSE}
                       description={description}
                       subset={falseSubset}
-                      width={Math.ceil((numFalse / total) * FULL_SEGMENTS_WIDTH)}
+                      selectPartition={selectPartition}
                     />
                   ) : null}
                   {numSkipped > 0 ? (
@@ -179,13 +285,13 @@ const PartitionedPolicyEvaluationTable = ({
                       status={AssetConditionEvaluationStatus.SKIPPED}
                       description={description}
                       subset={candidateSubset}
-                      width={Math.ceil((numSkipped / total) * FULL_SEGMENTS_WIDTH)}
+                      selectPartition={selectPartition}
                     />
                   ) : null}
                 </Box>
               </td>
               <td>
-                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
+                <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} msec />
               </td>
             </EvaluationRow>
           );
