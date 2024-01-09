@@ -12,8 +12,6 @@ import {
 } from '@dagster-io/ui-components';
 import animate from 'amator';
 import * as React from 'react';
-import ReactDOM from 'react-dom';
-import {MemoryRouter} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {IBounds} from './common';
@@ -52,6 +50,7 @@ interface SVGViewportState {
   scale: number;
   minScale: number;
   isClickHeld: boolean;
+  isExporting: boolean;
 }
 
 interface Point {
@@ -318,6 +317,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     scale: DETAIL_ZOOM,
     minScale: 0,
     isClickHeld: false,
+    isExporting: false,
   };
 
   resizeObserver: any | undefined;
@@ -573,40 +573,12 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   };
 
   onExportToSVG = async () => {
-    const unclippedViewport = {
-      top: 0,
-      left: 0,
-      right: this.props.graphWidth,
-      bottom: this.props.graphHeight,
-    };
-
-    const div = document.createElement('div');
-    document.getElementById('root')!.appendChild(div);
-
-    // TODO fix this!
-    // eslint-disable-next-line
-    ReactDOM.render(
-      <MemoryRouter>{this.props.children(this.state, unclippedViewport)}</MemoryRouter>,
-      div,
-    );
-    const svg = div.querySelector('svg') as SVGElement;
-    await makeSVGPortable(svg);
-
-    const text = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([text], {type: 'image/svg+xml'});
-    const a = document.createElement('a');
-    a.setAttribute(
-      'download',
-      `${document.title.replace(/[: \/]/g, '_').replace(/__+/g, '_')}.svg`,
-    );
-    a.setAttribute('href', URL.createObjectURL(blob));
-    a.click();
-    div.remove();
+    this.setState({isExporting: true});
   };
 
   render() {
     const {children, onClick, interactor} = this.props;
-    const {x, y, scale, isClickHeld} = this.state;
+    const {x, y, scale, isClickHeld, isExporting} = this.state;
     const dotsize = Math.max(7, 22 * scale);
 
     return (
@@ -631,7 +603,23 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
             transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`,
           }}
         >
-          {children(this.state, this.getViewport())}
+          {children(
+            this.state,
+            isExporting
+              ? {
+                  top: 0,
+                  left: 0,
+                  right: this.props.graphWidth,
+                  bottom: this.props.graphHeight,
+                }
+              : this.getViewport(),
+          )}
+          {isExporting ? (
+            <SVGExporter
+              element={this.element}
+              onDone={() => this.setState({isExporting: false})}
+            />
+          ) : undefined}
         </div>
         {interactor.render && interactor.render(this)}
       </div>
@@ -713,3 +701,46 @@ const WheelInstructionTooltipContainer = styled.div`
   color: ${CoreColors.Gray50};
   padding: 8px 16px;
 `;
+
+const SVGExporter = ({
+  element,
+  onDone,
+}: {
+  element: React.RefObject<HTMLDivElement>;
+  onDone: () => void;
+}) => {
+  React.useLayoutEffect(() => {
+    const ready = async () => {
+      // Find the rendered SVG node
+      const svgOriginal = element.current?.querySelector('svg') as SVGElement;
+      if (!svgOriginal) {
+        onDone();
+        return;
+      }
+
+      // Copy the node rendered by React, attach it and inline all the styles
+      // (this mutates the DOM so it must be a copy of the element!)
+      const svg = svgOriginal.cloneNode(true) as SVGElement;
+      svgOriginal.parentElement?.appendChild(svg);
+      await makeSVGPortable(svg);
+      const text = new XMLSerializer().serializeToString(svg);
+      svg.remove();
+
+      // Trigger a file download
+      const blob = new Blob([text], {type: 'image/svg+xml'});
+      const a = document.createElement('a');
+      a.setAttribute(
+        'download',
+        `${document.title.replace(/[: \/]/g, '_').replace(/__+/g, '_')}.svg`,
+      );
+      a.setAttribute('href', URL.createObjectURL(blob));
+      a.click();
+
+      onDone();
+    };
+    void ready();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <> </>;
+};
