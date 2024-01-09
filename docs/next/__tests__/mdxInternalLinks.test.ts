@@ -126,6 +126,9 @@ function isLinkLegit(
   const targetFilePath = getMatchCandidates(target).find((name) => allMdxFileSet.has(name));
   if (targetFilePath) {
     const allAnchors = collectHeadingsAsAnchors(astStore[targetFilePath]);
+    if (!allAnchors.includes(anchor)) {
+      console.log('allAnchors', allAnchors, anchor);
+    }
     return allAnchors.includes(anchor);
   }
   console.log('rawTarget', rawTarget, path);
