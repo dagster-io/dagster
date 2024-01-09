@@ -68,10 +68,6 @@ If using the CloudFormation template provided by Dagster, the number of replicas
 
 If you want to run multiple agents in an environment where each agent can not access the others' resources (for example, multiple kubernetes namespaces or different clusters), you need to enable the `isolated_agents` option. This is supported for all agent types.
 
-<Note>
-  It is not currently possible to control which agent a request goes to.
-</Note>
-
 ### In Docker
 
 Add the following to the `dagster.yaml` file:
@@ -109,3 +105,55 @@ dagsterCloud:
 ### In Amazon ECS
 
 The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#per-deployment-configuration) guide for more information.
+
+## Routing requests to specific agents
+
+You can route all requests for a given code location to a specific set of agents using agent queues.
+
+When configuring your code location, set an agent queue:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: data-eng-pipeline
+    code_source:
+      package_name: quickstart_etl
+    executable_path: venvs/path/to/dataengineering_spark_team/bin/python
+    agent_queue: special-queue
+```
+
+Next, configure an agent to handle your agent queue.
+
+### In Docker
+Add the following to the `dagster.yaml` file:
+
+```yaml
+agent_queues:
+   include_default_queue: True # Continue to handle requests for code locations that aren't annotated with a specific queue
+   additional_queues:
+    - special-queue 
+```
+
+### In Kubernetes
+
+Add the following options to your Helm command:
+
+```shell
+helm upgrade \
+    ...
+    --set dagsterCloud.agentQueues.additionalQueues={"special-queue"}
+```
+
+Or if you're using a `values.yaml` file:
+
+```yaml
+dagsterCloued
+  agentQueues:
+    # Continue to handle requests for code locations that aren't
+    # assigned to a specific agent queue
+    includeDefaultQueue: true
+    additionalQueues:
+      - special-queue
+```
+
