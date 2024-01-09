@@ -15,8 +15,7 @@
       },
       {
         "title": "Installation",
-        "path": "/getting-started/install",
-        "nonMdx": true
+        "path": "/getting-started/install"
       },
       {
         "title": "Creating a new project",
