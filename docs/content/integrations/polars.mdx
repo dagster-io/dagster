@@ -8,8 +8,8 @@ Here you should include one short sentence about the guide .
 
 ## Relevant APIs
 
-| Name                                                   | Description            |
-| ------------------------------------------------------ | ---------------------- |
+| Name                                                                 | Description                  |
+| -------------------------------------------------------------------- | ---------------------------- |
 | <PyObject module="dagster_polars" object="PolarsParquetIOManager" /> | IOManager for Parquet format |
 
 ---
@@ -82,6 +82,7 @@ definitions = Definitions(
 ```
 
 ### Reading specific columns
+
 ```python
 import polars as pl
 from dagster import AssetIn, asset
@@ -115,6 +116,7 @@ def downstream(
 ```
 
 ### Reading multiple partitions
+
 ```python
 import polars as pl
 from dagster import asset, StaticPartitionsDefinition
@@ -168,7 +170,6 @@ def downstream(upstream: Optional[pl.DataFrame]) -> Optional[pl.DataFrame]:
 
 It's possible to write any custom metadata dict into storage for some IOManagers. For example, `PolarsParquetIOManager` supports this feature.
 
-
 ```python
 import polars as pl
 from dagster import asset
@@ -213,28 +214,6 @@ from dagster_polars import PolarsParquetIOManager
 from upath import UPath
 
 metadata = PolarsParquetIOManager.read_parquet_metadata(UPath("/asset/key.parquet"))
-```
-
-
-### Append to DeltaLake table
-```python
-import polars as pl
-from dagster import asset
-
-
-@asset(io_manager_key="polars_parquet_io_manager")
-def upstream() -> pl.DataFrame:
-    return pl.DataFrame({"a": [1, 2, 3], "b": ["a", "b", "c"]})
-
-
-@asset(
-    io_manager_key="polars_delta_io_manager",
-    metadata={
-        "mode": "append"  # append to the existing table instead of overwriting it
-    },
-)
-def downstream_append(upstream: pl.DataFrame) -> pl.DataFrame:
-    return upstream
 ```
 
 ## Conclusion

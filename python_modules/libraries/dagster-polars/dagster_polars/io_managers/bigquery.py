@@ -2,6 +2,7 @@ from typing import Optional, Sequence, Type
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
+from dagster._annotations import experimental
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 try:
@@ -11,8 +12,6 @@ except ImportError as e:
     raise ImportError("Install 'dagster-polars[gcp]' to use BigQuery functionality") from e
 from dagster_polars.io_managers.utils import get_polars_metadata
 
-# The code below is mostly copied from `dagster-gcp-pandas`
-# with a few improvements
 
 
 class BigQueryPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
