@@ -17,7 +17,8 @@ import {flatten} from '../util/navigation';
 // remark
 
 const ROOT_DIR = path.resolve(__dirname, '../../');
-const DOCS_DIR = path.resolve(ROOT_DIR, 'content');
+const LEGACY_DOCS_DIR = path.resolve(ROOT_DIR, 'content'); // legacy MDX docs files
+const DOCS_DIR = path.resolve(ROOT_DIR, 'next/pages'); // Markdown docs files
 interface LinkElement extends Node {
   type: 'link' | 'image' | 'html';
   url: string;
@@ -33,12 +34,7 @@ test('No dead navs', async () => {
       // TODO: Validate links to API Docs
       return;
     }
-    if (
-      elem.path &&
-      !fileExists(path.join(DOCS_DIR, elem.path) + '.mdx') &&
-      !elem.isExternalLink &&
-      !elem.isNotDynamic
-    ) {
+    if (elem.path && !pageExists(elem.path) && !elem.isExternalLink && !elem.isNotDynamic) {
       deadNavLinks.push({
         title: elem.title,
         deadLink: elem.path,
@@ -49,8 +45,9 @@ test('No dead navs', async () => {
   expect(deadNavLinks).toEqual([]);
 });
 
-test('No dead MDX links', async () => {
-  const allMdxFilePaths = await fg(['**/*.mdx'], {cwd: DOCS_DIR});
+test('No dead page links', async () => {
+  const allMdxFilePaths = await fg(['**/*.mdx'], {cwd: LEGACY_DOCS_DIR});
+  const allMdFilePaths = await fg(['**/*.md'], {cwd: DOCS_DIR});
 
   const astStore: {[filePath: string]: Node} = {};
   const allInternalLinksStore: {[filePath: string]: Array<string>} = {};
@@ -58,11 +55,22 @@ test('No dead MDX links', async () => {
   // Parse mdx files to find all internal links and populate the store
   await Promise.all(
     allMdxFilePaths.map(async (relativeFilePath) => {
-      const absolutePath = path.resolve(DOCS_DIR, relativeFilePath);
+      const absolutePath = path.resolve(LEGACY_DOCS_DIR, relativeFilePath);
       const fileContent = await fs.promises.readFile(absolutePath, 'utf-8');
       // separate content and front matter data
       const {content} = matter(fileContent);
       astStore[relativeFilePath] = remark().use(mdx).parse(content);
+    }),
+  );
+  // Parse md files to find all internal links and populate the store
+  await Promise.all(
+    allMdFilePaths.map(async (relativeFilePath) => {
+      const absolutePath = path.resolve(DOCS_DIR, relativeFilePath);
+      const fileContent = await fs.promises.readFile(absolutePath, 'utf-8');
+      // separate content and front matter data
+      const {content} = matter(fileContent);
+      // console.log(relativeFilePath, remark().use(mdx).parse(content));
+      astStore[relativeFilePath] = remark().use(mdx).parse(content); // TODO: mdx -> md??????????
     }),
   );
 
@@ -72,6 +80,7 @@ test('No dead MDX links', async () => {
   }
 
   const allMdxFileSet = new Set(allMdxFilePaths);
+  const allMdFileSet = new Set(allMdFilePaths);
   const deadLinks: Array<{sourceFile: string; deadLink: string}> = [];
 
   let linkCount = 0;
@@ -81,7 +90,7 @@ test('No dead MDX links', async () => {
 
     for (const link of linkList) {
       linkCount++;
-      if (!isLinkLegit(link, allMdxFileSet, astStore)) {
+      if (!isLinkLegit(link, allMdxFileSet, allMdFileSet, astStore)) {
         deadLinks.push({
           sourceFile: path.resolve(DOCS_DIR, source),
           deadLink: link,
@@ -97,14 +106,17 @@ test('No dead MDX links', async () => {
 });
 
 function getMatchCandidates(targetPath: string): Array<string> {
-  return [`${targetPath}.mdx`, `${targetPath}/index.mdx`];
+  // the file path can be any of the following
+  return [`${targetPath}.mdx`, `${targetPath}/index.mdx`, `${targetPath}.md`];
 }
 
 function isLinkLegit(
   rawTarget: string,
   allMdxFileSet: Set<string>,
+  allMdFileSet: Set<string>,
   astStore: {[filePath: string]: Node},
 ): boolean {
+  const allFileSet = new Set([...allMdxFileSet, ...allMdFileSet]);
   // TODO: Validate links to API Docs
   if (rawTarget.startsWith('_apidocs/')) {
     return true;
@@ -118,18 +130,16 @@ function isLinkLegit(
   // Validate regular content links
   if (!rawTarget.includes('#')) {
     // the link target doesn't have a "#" anchor
-    return getMatchCandidates(rawTarget).some((name) => allMdxFileSet.has(name));
+    return getMatchCandidates(rawTarget).some((name) => allFileSet.has(name));
   }
 
   // Validate links with anchors
   const [target, anchor] = rawTarget.split('#');
-  const targetFilePath = getMatchCandidates(target).find((name) => allMdxFileSet.has(name));
+  const targetFilePath = getMatchCandidates(target).find((name) => allFileSet.has(name));
   if (targetFilePath) {
     const allAnchors = collectHeadingsAsAnchors(astStore[targetFilePath]);
     return allAnchors.includes(anchor);
   }
-  console.log('rawTarget', rawTarget, path);
-
   return false;
 }
 
@@ -180,6 +190,14 @@ function collectInternalLinks(tree: Node, currentFilePath: string): Array<string
   });
 
   return result;
+}
+
+function pageExists(pagePath: string): boolean {
+  // TODO: remove this once all legacy MDX docs are migrated to Markdown
+  return (
+    fileExists(path.join(LEGACY_DOCS_DIR, pagePath) + '.mdx') ||
+    fileExists(path.join(DOCS_DIR, pagePath) + '.md')
+  );
 }
 
 function fileExists(filePath: string): boolean {

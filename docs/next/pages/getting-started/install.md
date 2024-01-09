@@ -70,7 +70,7 @@ poetry add dagster dagster-webserver
 ---
 
 - [Creating a new Dagster project](/getting-started/create-new-project)
-- [Dagster project files](/getting-started/project-file-reference)
+- [Dagster project files](/guides/understanding-dagster-project-files)
 
 ---
 
