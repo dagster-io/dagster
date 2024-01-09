@@ -13,8 +13,10 @@ from dagster import (
     AssetIn,
     AssetKey,
     AssetsDefinition,
+    DagsterEventType,
     DagsterInstance,
     DailyPartitionsDefinition,
+    EventRecordsFilter,
     Field,
     In,
     Nothing,
@@ -1493,3 +1495,68 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
     assert "DefaultPartitionsSubset(subset={'foo_b'})" in logs
     assert "latest_storage_id=None" in logs
     assert "AssetBackfillData" in logs
+
+
+def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
+    caplog,
+    instance: DagsterInstance,
+    base_job_name_changes_location_1_workspace_context,
+    base_job_name_changes_location_2_workspace_context,
+):
+    location_1_asset_graph = ExternalAssetGraph.from_workspace(
+        base_job_name_changes_location_1_workspace_context.create_request_context()
+    )
+    location_2_asset_graph = ExternalAssetGraph.from_workspace(
+        base_job_name_changes_location_2_workspace_context.create_request_context()
+    )
+
+    backfill_id = "hourly_asset_backfill"
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=location_1_asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=[AssetKey(["hourly_asset"])],
+        partition_names=["2023-01-01-00:00"],
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    with mock.patch(
+        "dagster._core.execution.asset_backfill.ExternalAssetGraph.from_workspace",
+        side_effect=[
+            location_2_asset_graph,
+            location_1_asset_graph,
+        ],  # On first fetch, return location 2 asset graph, then return location 1 asset graph for subsequent fetch
+    ):
+        assert all(
+            not error
+            for error in list(
+                execute_backfill_iteration(
+                    base_job_name_changes_location_1_workspace_context,
+                    get_default_daemon_logger("BackfillDaemon"),
+                )
+            )
+        )
+
+    logs = caplog.text
+    assert "Execution plan is out of sync with the workspace" in logs
+
+    assert instance.get_runs_count() == 1
+    assert (
+        len(
+            instance.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=AssetKey(["hourly_asset"]),
+                )
+            )
+        )
+        == 1
+    )

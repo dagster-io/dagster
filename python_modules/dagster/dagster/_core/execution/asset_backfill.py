@@ -675,8 +675,10 @@ def _submit_runs_and_update_backfill_in_chunks(
     previous_asset_backfill_data: AssetBackfillData,
     asset_graph: ExternalAssetGraph,
     instance_queryer: CachingInstanceQueryer,
+    logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillData]]:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._daemon.controller import RELOAD_WORKSPACE_INTERVAL
 
     run_requests = asset_backfill_iteration_result.run_requests
     submitted_partitions = previous_asset_backfill_data.requested_subset
@@ -735,8 +737,13 @@ def _submit_runs_and_update_backfill_in_chunks(
                 run_requests_i += 1
 
             elif num_retries_allowed > 0:
-                # Sleep 60s since the workspace can be refreshed at most one every 60s
-                time.sleep(60)
+                logger.warning(
+                    "Execution plan is out of sync with the workspace. Pausing the backfill for "
+                    "60s to allow the execution plan to rebuild with the updated workspace."
+                )
+                # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
+                # at most once every interval
+                time.sleep(RELOAD_WORKSPACE_INTERVAL)
                 # Clear the execution plan cache as this data is no longer valid
                 run_request_execution_data_cache = {}
                 num_retries_allowed -= 1
@@ -965,6 +972,7 @@ def execute_asset_backfill_iteration(
                 previous_asset_backfill_data,
                 asset_graph,
                 instance_queryer,
+                logger,
             ):
                 yield None
 
