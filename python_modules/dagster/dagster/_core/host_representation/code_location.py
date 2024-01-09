@@ -115,7 +115,7 @@ class CodeLocation(AbstractContextManager):
     def name(self) -> str:
         return self.origin.location_name
 
-    def can_create_snapshots_in_run_worker(self) -> bool:
+    def can_create_snapshots_in_run_worker(self, repo_name: str) -> bool:
         return False
 
     @abstractmethod
@@ -623,7 +623,7 @@ class GrpcServerCodeLocation(CodeLocation):
         self._container_context = None
         self._repository_code_pointer_dict = None
         self._entry_point = None
-        self._can_create_snapshots_in_run_worker = False
+        self._can_create_snapshots_in_run_worker = {}
 
         try:
             self.client = DagsterGrpcClient(
@@ -691,8 +691,8 @@ class GrpcServerCodeLocation(CodeLocation):
             self.cleanup()
             raise
 
-    def can_create_snapshots_in_run_worker(self) -> bool:
-        return self._can_create_snapshots_in_run_worker
+    def can_create_snapshots_in_run_worker(self, repo_name: str) -> bool:
+        return self._can_create_snapshots_in_run_worker.get(repo_name, False)
 
     @property
     def origin(self) -> CodeLocationOrigin:

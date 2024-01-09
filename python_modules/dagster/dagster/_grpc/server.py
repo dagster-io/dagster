@@ -191,6 +191,7 @@ class LoadedRepositories:
         self._recon_repos_by_name: Dict[str, ReconstructableRepository] = {}
         self._repo_defs_by_name: Dict[str, RepositoryDefinition] = {}
         self._loadable_repository_symbols: List[LoadableRepositorySymbol] = []
+        self._has_repository_data_by_name: Dict[str, bool] = {}
 
         if not loadable_target_origin:
             # empty workspace
@@ -540,7 +541,10 @@ class DagsterApiServer(DagsterApiServicer):
                     container_image=self._container_image,
                     container_context=self._container_context,
                     dagster_library_versions=DagsterLibraryRegistry.get(),
-                    can_create_snapshots_in_run_worker=True,
+                    can_create_snapshots_in_run_worker={
+                        repo_name: repo_def.repository_load_data is None
+                        for repo_name, repo_def in loaded_repositories.definitions_by_name.items()
+                    },
                 )
             )
         except Exception:

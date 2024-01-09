@@ -845,7 +845,7 @@ def submit_asset_run(
             )
         )
 
-        if not code_location.can_create_snapshots_in_run_worker():
+        if not code_location.can_create_snapshots_in_run_worker(repository_name):
             job_selector = JobSubsetSelector(
                 location_name=location_name,
                 repository_name=repository_name,

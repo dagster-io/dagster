@@ -1097,7 +1097,7 @@ def submit_run_request(
 
     code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
 
-    if not code_location.can_create_snapshots_in_run_worker():
+    if not code_location.can_create_snapshots_in_run_worker(repo_handle.repository_name):
         pipeline_selector = JobSubsetSelector(
             location_name=location_name,
             repository_name=repo_handle.repository_name,
