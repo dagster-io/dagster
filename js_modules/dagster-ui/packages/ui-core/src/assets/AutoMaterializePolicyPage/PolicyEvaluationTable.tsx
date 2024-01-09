@@ -12,12 +12,8 @@ import {
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-<<<<<<< Updated upstream
-import {assertUnreachable} from '../../app/Util';
-=======
 import {AssetConditionEvaluationStatus} from '../../graphql/types';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
->>>>>>> Stashed changes
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
@@ -27,20 +23,11 @@ import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
 import {FlattenedConditionEvaluation, flattenEvaluations} from './flattenEvaluations';
 import {
-<<<<<<< Updated upstream
-  AssetConditionEvaluation,
-  AssetConditionEvaluationStatus,
-  PartitionedAssetConditionEvaluation,
-  SpecificPartitionAssetConditionEvaluation,
-  UnpartitionedAssetConditionEvaluation,
-} from './types';
-=======
   AssetConditionEvaluationRecordFragment,
   PartitionedAssetConditionEvaluationNodeFragment,
   SpecificPartitionAssetConditionEvaluationNodeFragment,
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
->>>>>>> Stashed changes
 
 interface Props {
   evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>;
@@ -48,20 +35,6 @@ interface Props {
   selectPartition: (partitionKey: string | null) => void;
 }
 
-<<<<<<< Updated upstream
-export const PolicyEvaluationTable = <T extends AssetConditionEvaluation>({
-  rootEvaluation,
-}: Props<T>) => {
-  switch (rootEvaluation.__typename) {
-    case 'UnpartitionedAssetConditionEvaluation':
-    case 'SpecificPartitionAssetConditionEvaluation':
-      return <UnpartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
-    case 'PartitionedAssetConditionEvaluation':
-      return <PartitionedPolicyEvaluationTable rootEvaluation={rootEvaluation} />;
-    default:
-      return assertUnreachable(rootEvaluation);
-  }
-=======
 export const PolicyEvaluationTable = ({evaluationRecord, definition, selectPartition}: Props) => {
   const flattened = React.useMemo(() => flattenEvaluations(evaluationRecord), [evaluationRecord]);
   if (flattened[0]?.evaluation.__typename === 'PartitionedAssetConditionEvaluationNode') {
@@ -85,19 +58,11 @@ export const PolicyEvaluationTable = ({evaluationRecord, definition, selectParti
       }
     />
   );
->>>>>>> Stashed changes
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
   flattenedRecords,
 }: {
-<<<<<<< Updated upstream
-  rootEvaluation: UnpartitionedAssetConditionEvaluation | SpecificPartitionAssetConditionEvaluation;
-}) => {
-  const [hoveredKey, setHoveredKey] = React.useState<number | null>(null);
-  const flattened = React.useMemo(() => flattenEvaluations(rootEvaluation), [rootEvaluation]);
-  const showDuration = rootEvaluation.__typename === 'UnpartitionedAssetConditionEvaluation';
-=======
   flattenedRecords:
     | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
     | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[];
@@ -106,26 +71,17 @@ const UnpartitionedPolicyEvaluationTable = ({
   const isSpecificPartitionAssetConditionEvaluations =
     flattenedRecords[0]?.evaluation.__typename === 'SpecificPartitionAssetConditionEvaluationNode';
 
->>>>>>> Stashed changes
   return (
     <VeryCompactTable>
       <thead>
         <tr>
           <th>Condition</th>
           <th>Result</th>
-<<<<<<< Updated upstream
-          {showDuration ? <th>Duration</th> : null}
-=======
           {isSpecificPartitionAssetConditionEvaluations ? null : <th>Duration</th>}
->>>>>>> Stashed changes
           <th>Details</th>
         </tr>
       </thead>
       <tbody>
-<<<<<<< Updated upstream
-        {flattened.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, status} = evaluation;
-=======
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
           const {description, status} = evaluation;
           let endTimestamp, startTimestamp;
@@ -133,7 +89,6 @@ const UnpartitionedPolicyEvaluationTable = ({
             endTimestamp = evaluation.endTimestamp;
             startTimestamp = evaluation.startTimestamp;
           }
->>>>>>> Stashed changes
           return (
             <EvaluationRow
               key={id}
@@ -155,19 +110,6 @@ const UnpartitionedPolicyEvaluationTable = ({
               <td>
                 <PolicyEvaluationStatusTag status={status} />
               </td>
-<<<<<<< Updated upstream
-              {showDuration ? (
-                <td>
-                  {evaluation.__typename === 'UnpartitionedAssetConditionEvaluation' ? (
-                    <TimeElapsed
-                      startUnix={evaluation.startTimestamp}
-                      endUnix={evaluation.endTimestamp}
-                    />
-                  ) : null}
-                </td>
-              ) : null}
-              <td></td>
-=======
               {startTimestamp && endTimestamp ? (
                 <td>
                   <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} />
@@ -176,7 +118,6 @@ const UnpartitionedPolicyEvaluationTable = ({
               <td>
                 {evaluation.metadataEntries ? <ViewDetailsButton evaluation={evaluation} /> : null}
               </td>
->>>>>>> Stashed changes
             </EvaluationRow>
           );
         })}
@@ -188,12 +129,18 @@ const UnpartitionedPolicyEvaluationTable = ({
 const ViewDetailsButton = ({
   evaluation,
 }: {
-  evaluation: {metadataEntries: MetadataEntryFragment[]; timestamp: string};
+  evaluation: {metadataEntries: MetadataEntryFragment[]};
 }) => {
   const [showDetails, setShowDetails] = React.useState(false);
   return (
     <>
-      <Dialog title="Evaluation metadata" isOpen={showDetails}>
+      <Dialog
+        title="Evaluation metadata"
+        isOpen={showDetails}
+        onClose={() => {
+          setShowDetails(false);
+        }}
+      >
         <AssetEventMetadataEntriesTable event={evaluation} />
       </Dialog>
       <Button

@@ -2,17 +2,10 @@ import * as React from 'react';
 
 import {
   AssetConditionEvaluationStatus,
-<<<<<<< Updated upstream
   PartitionedAssetConditionEvaluation,
   SpecificPartitionAssetConditionEvaluation,
   UnpartitionedAssetConditionEvaluation,
 } from '../types';
-=======
-  buildAssetConditionEvaluationRecord,
-  buildUnpartitionedAssetConditionEvaluationNode,
-} from '../../../graphql/types';
-import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
->>>>>>> Stashed changes
 
 // eslint-disable-next-line import/no-default-export
 export default {
