@@ -38,39 +38,39 @@ export const HoursMinuteSecondsMsec = Template.bind({});
 HoursMinuteSecondsMsec.args = {
   startUnix: 1,
   endUnix: 1 + HOUR + MINUTE + SECOND + 0.069,
-  msec: true,
+  showMsec: true,
 };
 
 export const HoursSecondsMsec = Template.bind({});
 HoursSecondsMsec.args = {
   startUnix: 1,
   endUnix: 1 + HOUR + SECOND + 0.069,
-  msec: true,
+  showMsec: true,
 };
 
 export const HoursMsec = Template.bind({});
 HoursMsec.args = {
   startUnix: 1,
   endUnix: 1 + HOUR + 0.069,
-  msec: true,
+  showMsec: true,
 };
 
 export const MinutesMsec = Template.bind({});
 MinutesMsec.args = {
   startUnix: 1,
   endUnix: 1 + MINUTE + 0.069,
-  msec: true,
+  showMsec: true,
 };
 export const SecMsec = Template.bind({});
 SecMsec.args = {
   startUnix: 1,
   endUnix: 1 + SECOND + 0.069,
-  msec: true,
+  showMsec: true,
 };
 
 export const Msec = Template.bind({});
 Msec.args = {
   startUnix: 1,
   endUnix: 1 + 0.069,
-  msec: true,
+  showMsec: true,
 };
