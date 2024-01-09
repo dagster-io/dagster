@@ -36,48 +36,48 @@ def _build_asset_check_input(
     name: str,
     asset_key: AssetKey,
     fn: Callable,
-    secondary_ins: Mapping[str, AssetIn],
-    secondary_deps: Optional[AbstractSet[AssetKey]],
+    additional_ins: Mapping[str, AssetIn],
+    additional_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     fn_params = get_function_params_without_context_or_config_or_resources(fn)
 
-    if asset_key in (secondary_deps or []):
+    if asset_key in (additional_deps or []):
         raise DagsterInvalidDefinitionError(
-            f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `secondary_deps`."
+            f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `additional_deps`."
             " It can only be passed to one of these parameters."
         )
-    if asset_key in [asset_in.key for asset_in in secondary_ins.values()]:
+    if asset_key in [asset_in.key for asset_in in additional_ins.values()]:
         raise DagsterInvalidDefinitionError(
-            f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `secondary_ins`."
+            f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `additional_ins`."
             " It can only be passed to one of these parameters."
         )
 
     fn_param_names = {param.name for param in fn_params}
-    for in_name in secondary_ins.keys():
+    for in_name in additional_ins.keys():
         if in_name not in fn_param_names:
             raise DagsterInvalidDefinitionError(
-                f"'{in_name}' is specified in 'secondary_ins' but isn't a parameter."
+                f"'{in_name}' is specified in 'additional_ins' but isn't a parameter."
             )
 
-    # if all the fn_params are in secondary_ins, then we add the prmary asset as a dep
-    if len(fn_params) == len(secondary_ins):
-        all_deps = {*(secondary_deps if secondary_deps else set()), asset_key}
-        all_ins = secondary_ins
+    # if all the fn_params are in additional_ins, then we add the prmary asset as a dep
+    if len(fn_params) == len(additional_ins):
+        all_deps = {*(additional_deps if additional_deps else set()), asset_key}
+        all_ins = additional_ins
     # otherwise there should be one extra fn_param, which is the primary asset. Add that as an input
-    elif len(fn_params) == len(secondary_ins) + 1:
+    elif len(fn_params) == len(additional_ins) + 1:
         primary_asset_param_name = next(
-            param.name for param in fn_params if param.name not in secondary_ins.keys()
+            param.name for param in fn_params if param.name not in additional_ins.keys()
         )
-        all_ins = {**secondary_ins, primary_asset_param_name: AssetIn(asset_key)}
-        all_deps = secondary_deps
+        all_ins = {**additional_ins, primary_asset_param_name: AssetIn(asset_key)}
+        all_deps = additional_deps
     else:
-        param_names_not_in_secondary_ins = sorted(
-            [f"'{name}'" for name in (fn_param_names - set(secondary_ins.keys()))]
+        param_names_not_in_additional_ins = sorted(
+            [f"'{name}'" for name in (fn_param_names - set(additional_ins.keys()))]
         )
         raise DagsterInvalidDefinitionError(
             f"When defining check '{name}', multiple assets provided as parameters:"
-            f" [{', '.join(param_names_not_in_secondary_ins)}]. These should either match"
-            " the target asset or be specified in 'secondary_ins'."
+            f" [{', '.join(param_names_not_in_additional_ins)}]. These should either match"
+            " the target asset or be specified in 'additional_ins'."
         )
 
     return build_asset_ins(
@@ -91,8 +91,8 @@ def _build_asset_check_input(
 def asset_check(
     *,
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
-    secondary_ins: Optional[Mapping[str, AssetIn]] = None,
-    secondary_deps: Optional[Iterable[CoercibleToAssetDep]] = None,
+    additional_ins: Optional[Mapping[str, AssetIn]] = None,
+    additional_deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -107,11 +107,11 @@ def asset_check(
     Args:
         asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]): The
             asset that the check applies to.
-        secondary_ins (Optional[Mapping[str, AssetIn]]): A mapping from input name to
+        additional_ins (Optional[Mapping[str, AssetIn]]): A mapping from input name to
             information about the input. These inputs will apply to the underlying op that
             executes the check. These should not include the `asset` parameter, which is
             always included as a dependency.
-        secondary_deps (Optional[Iterable[CoercibleToAssetDep]]): Assets that are upstream
+        additional_deps (Optional[Iterable[CoercibleToAssetDep]]): Assets that are upstream
             dependencies, but do not correspond to a parameter of the decorated function. These
             dependencies will apply to the underlying op that executes the check. These should not
             include the `asset` parameter, which is always included as a dependency.
@@ -179,8 +179,8 @@ def asset_check(
             resolved_name,
             asset_key,
             fn,
-            secondary_ins=secondary_ins or {},
-            secondary_deps={dep.asset_key for dep in make_asset_deps(secondary_deps) or set()},
+            additional_ins=additional_ins or {},
+            additional_deps={dep.asset_key for dep in make_asset_deps(additional_deps) or set()},
         )
 
         spec = AssetCheckSpec(

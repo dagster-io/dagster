@@ -570,7 +570,7 @@ def test_multiple_managed_inputs():
         match=re.escape(
             "When defining check 'check1', multiple assets provided as parameters:"
             " ['asset1', 'asset2']. These should either match the target asset or be specified "
-            "in 'secondary_ins'."
+            "in 'additional_ins'."
         ),
     ):
 

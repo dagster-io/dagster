@@ -22,8 +22,8 @@ def asset2() -> int:
     return 5
 
 
-def test_secondary_deps():
-    @asset_check(asset=asset1, secondary_deps=[asset2])
+def test_additional_deps():
+    @asset_check(asset=asset1, additional_deps=[asset2])
     def check1():
         return AssetCheckResult(passed=True)
 
@@ -32,8 +32,8 @@ def test_secondary_deps():
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
 
-def test_secondary_deps_with_managed_input():
-    @asset_check(asset=asset1, secondary_deps=[asset2])
+def test_additional_deps_with_managed_input():
+    @asset_check(asset=asset1, additional_deps=[asset2])
     def check1(asset_1):
         assert asset_1 == 4
         return AssetCheckResult(passed=True)
@@ -43,16 +43,16 @@ def test_secondary_deps_with_managed_input():
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
 
-def test_secondary_deps_overlap():
+def test_additional_deps_overlap():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
             "When defining check 'check1', asset 'asset1' was passed to `asset` and "
-            "`secondary_deps`. It can only be passed to one of these parameters."
+            "`additional_deps`. It can only be passed to one of these parameters."
         ),
     ):
 
-        @asset_check(asset=asset1, secondary_deps=[asset1])
+        @asset_check(asset=asset1, additional_deps=[asset1])
         def check1(asset_1):
             pass
 
@@ -60,52 +60,52 @@ def test_secondary_deps_overlap():
         DagsterInvalidDefinitionError,
         match=re.escape(
             "When defining check 'check2', asset 'asset1' was passed to `asset` and "
-            "`secondary_deps`. It can only be passed to one of these parameters."
+            "`additional_deps`. It can only be passed to one of these parameters."
         ),
     ):
 
-        @asset_check(asset=asset1, secondary_deps=[asset1])
+        @asset_check(asset=asset1, additional_deps=[asset1])
         def check2():
             pass
 
 
-def test_secondary_ins_overlap():
+def test_additional_ins_overlap():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
             "When defining check 'check1', asset 'asset1' was passed to `asset` and "
-            "`secondary_ins`. It can only be passed to one of these parameters."
+            "`additional_ins`. It can only be passed to one of these parameters."
         ),
     ):
 
-        @asset_check(asset=asset1, secondary_ins={"asset_1": AssetIn("asset1")})
+        @asset_check(asset=asset1, additional_ins={"asset_1": AssetIn("asset1")})
         def check1(asset_1):
             pass
 
 
-def test_secondary_ins_and_deps_overlap():
+def test_additional_ins_and_deps_overlap():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape("deps value AssetKey(['asset2']) also declared as input/AssetIn"),
     ):
 
         @asset_check(
-            asset=asset1, secondary_ins={"asset_2": AssetIn("asset2")}, secondary_deps=[asset2]
+            asset=asset1, additional_ins={"asset_2": AssetIn("asset2")}, additional_deps=[asset2]
         )
         def check1(asset_2):
             pass
 
 
-def test_secondary_ins_must_correspond_to_params():
+def test_additional_ins_must_correspond_to_params():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @asset_check(asset=asset1, secondary_ins={"foo": AssetIn("asset2")})
+        @asset_check(asset=asset1, additional_ins={"foo": AssetIn("asset2")})
         def check1():
             return AssetCheckResult(passed=True)
 
 
-def test_secondary_ins():
-    @asset_check(asset=asset1, secondary_ins={"foo": AssetIn("asset2")})
+def test_additional_ins():
+    @asset_check(asset=asset1, additional_ins={"foo": AssetIn("asset2")})
     def check1(asset1, foo):
         assert asset1 == 4
         assert foo == 5
@@ -116,8 +116,8 @@ def test_secondary_ins():
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
 
-def test_secondary_ins_primary_asset_not_a_param():
-    @asset_check(asset=asset1, secondary_ins={"foo": AssetIn("asset2")})
+def test_additional_ins_primary_asset_not_a_param():
+    @asset_check(asset=asset1, additional_ins={"foo": AssetIn("asset2")})
     def check1(foo):
         assert foo == 5
         return AssetCheckResult(passed=True)
@@ -127,7 +127,7 @@ def test_secondary_ins_primary_asset_not_a_param():
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
 
-def test_check_waits_for_secondary():
+def test_check_waits_for_additional_deps():
     @asset
     def my_asset():
         pass
@@ -136,7 +136,7 @@ def test_check_waits_for_secondary():
     def my_fail_asset():
         raise Exception("foobar")
 
-    @asset_check(asset=asset1, secondary_deps=[my_fail_asset])
+    @asset_check(asset=asset1, additional_deps=[my_fail_asset])
     def check_with_dep():
         return AssetCheckResult(passed=True)
 
