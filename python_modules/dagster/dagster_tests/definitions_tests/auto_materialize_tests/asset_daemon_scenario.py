@@ -41,7 +41,10 @@ from dagster import (
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
 )
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+    LegacyAssetDaemonCursorWrapper,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -73,10 +76,10 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import (
-    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
+    _get_pre_sensor_auto_materialize_serialized_cursor,
     get_current_evaluation_id,
 )
 
@@ -447,25 +450,30 @@ class AssetDaemonScenarioState(NamedTuple):
                         sensor.get_external_origin_id(), sensor.selector_id
                     )
                 )
-                raw_cursor = (
+                compressed_cursor = (
                     cast(
                         SensorInstigatorData,
                         check.not_none(auto_materialize_instigator_state).instigator_data,
                     ).cursor
                     or AssetDaemonCursor.empty().serialize()
                 )
-            else:
-                raw_cursor = self.instance.daemon_cursor_storage.get_cursor_values(
-                    {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY}
-                ).get(
-                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
-                    AssetDaemonCursor.empty().serialize(),
+                new_cursor = (
+                    LegacyAssetDaemonCursorWrapper.from_compressed(
+                        compressed_cursor
+                    ).get_asset_daemon_cursor(self.asset_graph)
+                    if compressed_cursor
+                    else AssetDaemonCursor.empty()
                 )
-
-            new_cursor = AssetDaemonCursor.from_serialized(
-                raw_cursor,
-                self.asset_graph,
-            )
+            else:
+                raw_cursor = _get_pre_sensor_auto_materialize_serialized_cursor(self.instance)
+                new_cursor = (
+                    AssetDaemonCursor.from_serialized(
+                        raw_cursor,
+                        self.asset_graph,
+                    )
+                    if raw_cursor
+                    else AssetDaemonCursor.empty()
+                )
             new_run_requests = [
                 run_request(
                     list(run.asset_selection or []),
