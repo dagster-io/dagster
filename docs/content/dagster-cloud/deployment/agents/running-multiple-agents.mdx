@@ -128,13 +128,14 @@ locations:
 Next, configure an agent to handle your agent queue.
 
 ### In Docker
+
 Add the following to the `dagster.yaml` file:
 
 ```yaml
 agent_queues:
-   include_default_queue: True # Continue to handle requests for code locations that aren't annotated with a specific queue
-   additional_queues:
-    - special-queue 
+  include_default_queue: True # Continue to handle requests for code locations that aren't annotated with a specific queue
+  additional_queues:
+    - special-queue
 ```
 
 ### In Kubernetes
@@ -158,4 +159,3 @@ dagsterCloued
     additionalQueues:
       - special-queue
 ```
-
