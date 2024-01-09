@@ -97,6 +97,7 @@ from .base import (
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
+    PlannedMaterializationInfo,
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import (
@@ -2931,6 +2932,28 @@ class SqlEventLogStorage(EventLogStorage):
     @property
     def supports_asset_checks(self):
         return self.has_table(AssetCheckExecutionsTable.name)
+
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional[PlannedMaterializationInfo]:
+        records = self._get_event_records(
+            event_records_filter=EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+                asset_partitions=[partition] if partition else None,
+            ),
+            limit=1,
+            ascending=False,
+        )
+        if not records:
+            return None
+
+        return PlannedMaterializationInfo(
+            storage_id=records[0].storage_id,
+            run_id=records[0].run_id,
+        )
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

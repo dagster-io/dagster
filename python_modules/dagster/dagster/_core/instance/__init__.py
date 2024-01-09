@@ -48,7 +48,6 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster._core.event_api import EventLogCursor
 from dagster._core.log_manager import DagsterLogRecord
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
@@ -165,6 +164,7 @@ if TYPE_CHECKING:
         EventLogRecord,
         EventRecordsFilter,
         EventRecordsResult,
+        PlannedMaterializationInfo,
     )
     from dagster._core.storage.partition_status_cache import (
         AssetPartitionStatus,
@@ -2032,6 +2032,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
+        from dagster._core.event_api import EventLogCursor
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import (
             EventRecordsFilter,
@@ -2226,6 +2227,14 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns a mapping of partition to storage id.
         """
         return self._event_storage.get_latest_storage_id_by_partition(asset_key, event_type)
+
+    @traced
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional["PlannedMaterializationInfo"]:
+        return self._event_storage.get_latest_planned_materialization_info(asset_key, partition)
 
     @public
     @traced
