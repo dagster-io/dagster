@@ -206,7 +206,7 @@ class DagsterGrpcClient:
         res = self._query("Ping", api_pb2.PingRequest, echo=echo)
         return {
             "echo": res.echo,
-            "serialized_server_health_metadata": res.serialized_server_health_metadata,
+            "serialized_server_utilization_metrics": res.serialized_server_utilization_metrics,
         }
 
     def heartbeat(self, echo: str = "") -> str:

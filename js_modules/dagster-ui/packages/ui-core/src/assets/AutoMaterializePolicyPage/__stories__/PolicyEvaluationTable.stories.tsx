@@ -4,6 +4,7 @@ import {PolicyEvaluationTable} from '../PolicyEvaluationTable';
 import {
   AssetConditionEvaluationStatus,
   PartitionedAssetConditionEvaluation,
+  SpecificPartitionAssetConditionEvaluation,
   UnpartitionedAssetConditionEvaluation,
 } from '../types';
 
@@ -347,6 +348,79 @@ export const Partitioned = () => {
             isPartitioned: true,
           },
         },
+        childEvaluations: null,
+      },
+    ],
+  };
+
+  return <PolicyEvaluationTable rootEvaluation={evaluation} />;
+};
+
+export const SpecificPartition = () => {
+  const evaluation: SpecificPartitionAssetConditionEvaluation = {
+    __typename: 'SpecificPartitionAssetConditionEvaluation' as const,
+    description: 'All are true:',
+    status: AssetConditionEvaluationStatus.TRUE,
+    childEvaluations: [
+      {
+        __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+        description: 'Any are true:',
+        startTimestamp: 1,
+        endTimestamp: 4,
+        status: AssetConditionEvaluationStatus.TRUE,
+        childEvaluations: [
+          {
+            __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+            description: 'parent_updated',
+            startTimestamp: 1,
+            endTimestamp: 2,
+            // metadataEntries: [MetadataEntry!]!
+            status: AssetConditionEvaluationStatus.TRUE,
+            childEvaluations: null,
+          },
+          {
+            __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+            description: 'is_missing',
+            startTimestamp: 1,
+            endTimestamp: 2,
+            // metadataEntries: [MetadataEntry!]!
+            status: AssetConditionEvaluationStatus.SKIPPED,
+            childEvaluations: null,
+          },
+        ],
+      },
+      {
+        __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+        description: 'Not:',
+        startTimestamp: 6,
+        endTimestamp: 12,
+        status: AssetConditionEvaluationStatus.TRUE,
+        childEvaluations: [
+          {
+            __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+            description: 'parent_updated',
+            startTimestamp: 6,
+            endTimestamp: 12,
+            // metadataEntries: [MetadataEntry!]!
+            status: AssetConditionEvaluationStatus.FALSE,
+            childEvaluations: null,
+          },
+        ],
+      },
+      {
+        __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+        description: 'all_parents_up_to_date',
+        startTimestamp: 12,
+        endTimestamp: 14,
+        status: AssetConditionEvaluationStatus.TRUE,
+        childEvaluations: null,
+      },
+      {
+        __typename: 'UnpartitionedAssetConditionEvaluation' as const,
+        description: 'not_any_parent_missing',
+        startTimestamp: 14,
+        endTimestamp: 28,
+        status: AssetConditionEvaluationStatus.TRUE,
         childEvaluations: null,
       },
     ],

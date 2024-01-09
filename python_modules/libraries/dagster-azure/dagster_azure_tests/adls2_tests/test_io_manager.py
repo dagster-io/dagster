@@ -17,10 +17,8 @@ from dagster import (
     build_input_context,
     build_output_context,
     graph,
-    materialize,
     op,
     resource,
-    with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -34,9 +32,8 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.fake_adls2_resource import FakeADLS2Resource, fake_adls2_resource
+from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
 from dagster_azure.adls2.io_manager import (
-    ADLS2PickleIOManager,
     PickledObjectADLS2IOManager,
     adls2_pickle_io_manager,
 )
@@ -333,59 +330,3 @@ def test_with_fake_adls2_resource():
 
     result = job.execute_in_process(run_config=run_config)
     assert result.success
-
-
-def test_nothing():
-    @asset
-    def asset1() -> None:
-        ...
-
-    @asset(deps=[asset1])
-    def asset2() -> None:
-        ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": adls2_pickle_io_manager.configured(
-                    {"adls2_file_system": "fake_file_system"}
-                ),
-                "adls2": fake_adls2_resource.configured({"account_name": "my_account"}),
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata) == 0
-
-
-def test_nothing_pythonic() -> None:
-    @asset
-    def asset1() -> None:
-        ...
-
-    @asset(deps=[asset1])
-    def asset2() -> None:
-        ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": ADLS2PickleIOManager(
-                    adls2=FakeADLS2Resource(account_name="my_account"),
-                    adls2_file_system="fake_file_system",
-                )
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata) == 0  # type: ignore[attr-defined]

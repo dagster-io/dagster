@@ -129,7 +129,7 @@ export function usePartitionStepQuery({
       // Note: this timer is canceled when a subsequent invocation of the useEffect updates `version.current`,
       // because we don't want to create this interval until the initial load completes.
 
-      const timer: NodeJS.Timeout = setInterval(async () => {
+      const timer: ReturnType<typeof setInterval> = setInterval(async () => {
         if (version.current !== v) {
           return clearInterval(timer);
         }

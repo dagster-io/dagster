@@ -79,18 +79,16 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
   const activeItems = React.useMemo(() => new Set([logType]), [logType]);
 
   return (
-    <OptionsContainer>
-      <Box margin={{right: 12}}>
-        <ButtonGroup
-          activeItems={activeItems}
-          buttons={[
-            {id: LogType.structured, icon: 'view_list', label: 'Events'},
-            {id: LogType.stdout, icon: 'console', label: 'stdout'},
-            {id: LogType.stderr, icon: 'warning', label: 'stderr'},
-          ]}
-          onClick={(id) => onSetLogType(id)}
-        />
-      </Box>
+    <OptionsContainer style={{gap: 12}}>
+      <ButtonGroup
+        activeItems={activeItems}
+        buttons={[
+          {id: LogType.structured, icon: 'view_list', label: 'Events'},
+          {id: LogType.stdout, icon: 'console', label: 'stdout'},
+          {id: LogType.stderr, icon: 'warning', label: 'stderr'},
+        ]}
+        onClick={(id) => onSetLogType(id)}
+      />
       {logType === 'structured' ? (
         <StructuredLogToolbar
           counts={counts}

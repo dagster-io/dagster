@@ -3,10 +3,8 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useFeatureFlags} from '../app/Flags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
-import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode, AssetNodeContextMenuWrapper} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
@@ -31,8 +29,6 @@ export const AssetNodeLineageGraph = ({
   assetGraphData: GraphData;
   params: AssetViewParams;
 }) => {
-  const {flagDAGSidebar} = useFeatureFlags();
-
   const assetGraphId = toGraphId(assetKey);
 
   const {allGroups, groupedAssets} = React.useMemo(() => {
@@ -96,17 +92,13 @@ export const AssetNodeLineageGraph = ({
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
               <foreignObject {...group.bounds} key={group.id}>
-                {flagDAGSidebar ? (
-                  <ExpandedGroupNode
-                    group={{
-                      ...group,
-                      assets: groupedAssets[group.id]!,
-                    }}
-                    minimal={scale < MINIMAL_SCALE}
-                  />
-                ) : (
-                  <AssetGroupNode group={group} scale={scale} />
-                )}
+                <ExpandedGroupNode
+                  group={{
+                    ...group,
+                    assets: groupedAssets[group.id]!,
+                  }}
+                  minimal={scale < MINIMAL_SCALE}
+                />
               </foreignObject>
             ))}
 

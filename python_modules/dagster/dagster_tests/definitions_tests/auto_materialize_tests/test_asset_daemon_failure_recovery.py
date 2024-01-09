@@ -16,10 +16,10 @@ from dagster._core.test_utils import (
     cleanup_test_instance,
 )
 from dagster._daemon.asset_daemon import (
-    FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-    FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     MAX_TIME_TO_RESUME_TICK_SECONDS,
-    _get_raw_cursor,
+    _get_pre_sensor_auto_materialize_raw_cursor,
     set_auto_materialize_paused,
 )
 from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
@@ -100,8 +100,8 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
             )
 
         ticks = instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         )
 
         assert len(ticks) == 1
@@ -119,8 +119,8 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
             )
 
         ticks = instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         )
 
         assert len(ticks) == 2
@@ -137,8 +137,8 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
             )
 
         ticks = instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         )
 
         assert len(ticks) == 3
@@ -173,8 +173,8 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
                 )
 
             ticks = instance.get_ticks(
-                origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-                selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+                origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+                selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
             )
 
             assert len(ticks) == trial_num + 1
@@ -196,7 +196,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             )
 
             # Cursor never writes since failure happens before cursor write
-            cursor = _get_raw_cursor(instance)
+            cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
             assert not cursor
 
     test_time = test_time.add(seconds=45)
@@ -208,8 +208,8 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             debug_crash_flags={},
         )
     ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     )
 
     assert len(ticks) == 4
@@ -258,8 +258,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
                 debug_crash_flags=debug_crash_flags,
             )
         ticks = instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         )
 
         assert len(ticks) == 1
@@ -282,7 +282,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             error_asset_scenario.expected_run_requests, ticks[0].tick_data.run_requests
         )
 
-        cursor = _get_raw_cursor(instance)
+        cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
         # Same cursor due to the retry
         assert cursor is not None
         last_cursor = cursor
@@ -300,8 +300,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
                 )
 
             ticks = instance.get_ticks(
-                origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-                selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+                origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+                selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
             )
 
             assert len(ticks) == trial_num + 2
@@ -323,7 +323,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             )
 
             # Same cursor due to the retry
-            retry_cursor = _get_raw_cursor(instance)
+            retry_cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
             assert retry_cursor == last_cursor
 
     # Next tick moves on to use the new cursor / evaluation ID since we have passed the maximum
@@ -339,8 +339,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             )
 
         ticks = instance.get_ticks(
-            origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-            selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+            origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
         )
 
         assert len(ticks) == 5
@@ -354,7 +354,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         assert ticks[0].tick_data.failure_count == 1  # starts over
 
         # Cursor has moved on
-        moved_on_cursor = _get_raw_cursor(instance)
+        moved_on_cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
         assert moved_on_cursor != last_cursor
 
     test_time = test_time.add(seconds=45)
@@ -367,8 +367,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         )
 
     ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     )
 
     assert len(ticks) == 6
@@ -432,8 +432,8 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     asset_daemon_process.join(timeout=60)
 
     ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     )
 
     assert len(ticks) == 1
@@ -461,8 +461,8 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     asset_daemon_process.join(timeout=60)
 
     ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     )
 
     cursor_written = crash_location not in (
@@ -540,8 +540,8 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     asset_daemon_process.join(timeout=60)
 
     ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     )
 
     assert len(ticks) == 1
@@ -565,7 +565,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     else:
         assert len(ticks[0].tick_data.reserved_run_ids) == 5
 
-    cursor = _get_raw_cursor(instance)
+    cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
     assert bool(cursor) == cursor_written
 
     freeze_datetime = scenario.current_time.add(seconds=1)
@@ -584,8 +584,8 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     asset_daemon_process.join(timeout=60)
 
     ticks = instance.get_ticks(
-        origin_id=FIXED_AUTO_MATERIALIZATION_ORIGIN_ID,
-        selector_id=FIXED_AUTO_MATERIALIZATION_SELECTOR_ID,
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     )
 
     assert len(ticks) == 2
@@ -614,5 +614,5 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     assert evaluations[0].evaluation.asset_key == AssetKey("hourly")
     assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}
 
-    cursor = _get_raw_cursor(instance)
+    cursor = _get_pre_sensor_auto_materialize_raw_cursor(instance)
     assert cursor

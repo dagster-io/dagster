@@ -61,6 +61,7 @@ from dagster._utils import (
     get_run_crash_explanation,
     safe_tempfile_path_unmanaged,
 )
+from dagster._utils.container import retrieve_containerized_utilization_metrics
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import api_pb2
@@ -116,16 +117,30 @@ CLEANUP_TICK = 0.5
 
 STREAMING_CHUNK_SIZE = 4000000
 
+UTILIZATION_METRICS_RETRIEVAL_INTERVAL = 30
+
 _UTILIZATION_METRICS = defaultdict(dict)
 _METRICS_LOCK = threading.Lock()
 METRICS_RETRIEVAL_FUNCTIONS = set()
 
 
-def _record_max_workers(max_workers: Optional[int]) -> None:
+def _record_max_concurrent_requests(max_workers: Optional[int]) -> None:
     with _METRICS_LOCK:
-        _UTILIZATION_METRICS["general_info"]["max_workers"] = (
+        _UTILIZATION_METRICS["resource_utilization"]["max_concurrent_requests"] = (
             max_workers if max_workers is not None else -1
         )
+
+
+def _record_utilization_metrics(logger: logging.Logger) -> None:
+    with _METRICS_LOCK:
+        last_cpu_measurement_time = _UTILIZATION_METRICS["resource_utilization"].get(
+            "measurement_timestamp"
+        )
+        last_cpu_measurement = _UTILIZATION_METRICS["resource_utilization"].get("cpu_time")
+        utilization_metrics = retrieve_containerized_utilization_metrics(
+            logger, last_cpu_measurement_time, last_cpu_measurement
+        )
+        _UTILIZATION_METRICS["resource_utilization"].update(utilization_metrics)
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -142,15 +157,18 @@ def retrieve_metrics():
                 if not self._enable_metrics:
                     # If metrics retrieval is disabled, short circuit to just calling the underlying function.
                     return fn(self, request, context)
+                # Only record utilization metrics on ping, so as to not over-burden with IO.
+                if fn.__name__ == "Ping":
+                    _record_utilization_metrics(self._logger)
                 with _METRICS_LOCK:
-                    if "current_count" not in _UTILIZATION_METRICS[api_call]:
-                        _UTILIZATION_METRICS[api_call]["current_count"] = 0
-                    _UTILIZATION_METRICS[api_call]["current_count"] += 1
+                    if "current_request_count" not in _UTILIZATION_METRICS[api_call]:
+                        _UTILIZATION_METRICS[api_call]["current_request_count"] = 0
+                    _UTILIZATION_METRICS[api_call]["current_request_count"] += 1
 
                 res = fn(self, request, context)
 
                 with _METRICS_LOCK:
-                    _UTILIZATION_METRICS[api_call]["current_count"] -= 1
+                    _UTILIZATION_METRICS[api_call]["current_request_count"] -= 1
 
                 return res
 
@@ -355,16 +373,18 @@ class DagsterApiServer(DagsterApiServicer):
                 target=self._heartbeat_thread,
                 args=(heartbeat_timeout,),
                 name="grpc-server-heartbeat",
+                daemon=True,
             )
-            self.__heartbeat_thread.daemon = True
             self.__heartbeat_thread.start()
         else:
             self.__heartbeat_thread = None
 
         self.__cleanup_thread = threading.Thread(
-            target=self._cleanup_thread, args=(), name="grpc-server-cleanup"
+            target=self._cleanup_thread,
+            args=(),
+            name="grpc-server-cleanup",
+            daemon=True,
         )
-        self.__cleanup_thread.daemon = True
 
         self.__cleanup_thread.start()
 
@@ -452,10 +472,11 @@ class DagsterApiServer(DagsterApiServicer):
 
         return api_pb2.ReloadCodeReply()
 
+    @retrieve_metrics()
     def Ping(self, request, _context: grpc.ServicerContext) -> api_pb2.PingReply:
         echo = request.echo
         return api_pb2.PingReply(
-            echo=echo, serialized_server_health_metadata=json.dumps(_UTILIZATION_METRICS)
+            echo=echo, serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
         )
 
     def StreamingPing(
@@ -1100,7 +1121,7 @@ class DagsterGrpcServer:
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
 
         if self._enable_metrics:
-            _record_max_workers(max_workers)
+            _record_max_concurrent_requests(max_workers)
         self.server = grpc.server(
             ThreadPoolExecutor(
                 max_workers=max_workers,
@@ -1169,9 +1190,9 @@ class DagsterGrpcServer:
             target=server_termination_target,
             args=[self._server_termination_event, self.server, self._logger],
             name="grpc-server-termination",
+            daemon=True,
         )
 
-        server_termination_thread.daemon = True
         server_termination_thread.start()
 
         try:

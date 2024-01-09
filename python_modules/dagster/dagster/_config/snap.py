@@ -52,6 +52,10 @@ class ConfigSchemaSnapshot(
         return key in self.all_config_snaps_by_key
 
 
+def _ct_name(ct):
+    return ct.name
+
+
 @whitelist_for_serdes(skip_when_empty_fields={"field_aliases"})
 class ConfigTypeSnap(
     NamedTuple(
@@ -105,7 +109,7 @@ class ConfigTypeSnap(
                 if fields is None
                 else sorted(
                     check.list_param(fields, "field", of_type=ConfigFieldSnap),
-                    key=lambda ct: ct.name,
+                    key=_ct_name,
                 )
             ),
             description=check.opt_str_param(description, "description"),

@@ -61,15 +61,10 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   );
 
   const [theme, setTheme] = useStateWithStorage(DAGSTER_THEME_KEY, (value: any) => {
-    if (
-      value === DagsterTheme.Light ||
-      value === DagsterTheme.Dark ||
-      value === DagsterTheme.System ||
-      value === DagsterTheme.Legacy
-    ) {
+    if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
       return value;
     }
-    return DagsterTheme.Legacy;
+    return DagsterTheme.System;
   });
 
   const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
@@ -118,35 +113,22 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   return (
     <>
       <DialogBody>
-        <Box padding={{bottom: 8}}>
-          <Box padding={{bottom: 8}}>
+        <Box padding={{bottom: 8}} flex={{direction: 'column', gap: 4}}>
+          <Box padding={{bottom: 4}}>
             <Subheading>Preferences</Subheading>
           </Box>
-          <Box padding={{bottom: 4}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <div>Timezone</div>
             <TimezoneSelect trigger={trigger} />
           </Box>
-
-          <Box padding={{bottom: 4}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <div>Hour format</div>
             <HourCycleSelect />
           </Box>
-
-          <Box padding={{bottom: 4}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <div>
-              <span>Theme (</span>
-              <a
-                href="https://github.com/dagster-io/dagster/discussions/18439"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Learn more
-              </a>
-              )
-            </div>
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>Theme</div>
             <ThemeSelect theme={theme} onChange={setTheme} />
           </Box>
-
           <Box
             padding={{vertical: 8}}
             flex={{justifyContent: 'space-between', alignItems: 'center'}}
@@ -163,7 +145,6 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
-
           {visibleFlags.map(({key, label, flagType}) => (
             <Box
               padding={{vertical: 8}}

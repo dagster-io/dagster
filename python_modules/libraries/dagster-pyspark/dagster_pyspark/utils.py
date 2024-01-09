@@ -8,6 +8,9 @@ DEFAULT_EXCLUDE = [
     r".*pytest.*",
     r".*__pycache__.*",
     r".*pyc$",
+    r".*\/venv\/.*",
+    r".*\.egg-info$",
+    r".*\/logs\/.*",
 ]
 
 

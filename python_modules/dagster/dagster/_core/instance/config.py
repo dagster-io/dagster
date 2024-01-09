@@ -20,6 +20,7 @@ from dagster._config.source import BoolSource
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
+from dagster._utils.concurrency import get_max_concurrency_limit_value
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_globs
 
@@ -115,6 +116,21 @@ def dagster_instance_config(
                 [],
                 dagster_config_dict["storage"],
             )
+
+    # validate default op concurrency limits
+    if "concurrency" in dagster_config_dict:
+        default_concurrency_limit = dagster_config_dict["concurrency"].get(
+            "default_op_concurrency_limit"
+        )
+        if default_concurrency_limit is not None:
+            max_limit = get_max_concurrency_limit_value()
+            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
+                    f"Expected value between 0-{max_limit}.",
+                    [],
+                    None,
+                )
 
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
@@ -377,6 +393,15 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                     ),
                 ),
                 "use_automation_policy_sensors": Field(BoolSource, is_required=False),
+            }
+        ),
+        "concurrency": Field(
+            {
+                "default_op_concurrency_limit": Field(
+                    int,
+                    is_required=False,
+                    description="The default maximum number of concurrent operations for an unconfigured concurrency key",
+                ),
             }
         ),
     }

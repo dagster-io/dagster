@@ -22,10 +22,6 @@
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0"
   },
-  "devDependencies": {
-    "@types/dagre": "^0",
-    "file-loader": "^6.2.0"
-  },
   "packageManager": "yarn@4.0.2",
   "engines": {
     "node": "20.x"

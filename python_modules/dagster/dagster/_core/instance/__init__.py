@@ -934,6 +934,10 @@ class DagsterInstance(DynamicPartitionsStore):
     def auto_materialize_use_automation_policy_sensors(self) -> int:
         return self.get_settings("auto_materialize").get("use_automation_policy_sensors", False)
 
+    @property
+    def global_op_concurrency_default_limit(self) -> Optional[int]:
+        return self.get_settings("concurrency").get("default_op_concurrency_limit")
+
     # python logs
 
     @property
@@ -2689,6 +2693,7 @@ class DagsterInstance(DynamicPartitionsStore):
                     SensorInstigatorData(
                         min_interval=external_sensor.min_interval_seconds,
                         last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                        sensor_type=external_sensor.sensor_type,
                     ),
                 )
             )
@@ -2730,7 +2735,10 @@ class DagsterInstance(DynamicPartitionsStore):
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.STOPPED,
-                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
+                    SensorInstigatorData(
+                        min_interval=external_sensor.min_interval_seconds,
+                        sensor_type=external_sensor.sensor_type,
+                    ),
                 )
             )
         else:
@@ -2881,7 +2889,7 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(MonitoringDaemon.daemon_type())
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
-        if self.auto_materialize_enabled:
+        if self.auto_materialize_enabled or self.auto_materialize_use_automation_policy_sensors:
             daemons.append(AssetDaemon.daemon_type())
         return daemons
 

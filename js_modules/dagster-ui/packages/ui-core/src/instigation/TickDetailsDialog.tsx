@@ -12,6 +12,8 @@ import {
   ButtonLink,
   Tag,
   MiddleTruncate,
+  Tabs,
+  Tab,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -28,6 +30,7 @@ import {
   InstigationTickStatus,
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {QueryfulTickLogsTable} from '../ticks/TickLogDialog';
 
 import {FailedRunList, RunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
@@ -47,9 +50,13 @@ export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}
       style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
     >
       <TickDetailsDialogImpl tickId={tickId} instigationSelector={instigationSelector} />
-      <DialogFooter>
-        <Button onClick={onClose}>Close</Button>
-      </DialogFooter>
+      {/* The logs table uses z-index for the column lines. Create a new stacking index
+      for the footer so that the lines don't sit above it. */}
+      <div style={{zIndex: 1}}>
+        <DialogFooter topBorder>
+          <Button onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </div>
     </Dialog>
   );
 };
@@ -60,6 +67,8 @@ interface InnerProps {
 }
 
 const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
+  const [activeTab, setActiveTab] = React.useState<'result' | 'logs'>('result');
+
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, tickId: tickId || 0},
     skip: !tickId,
@@ -105,33 +114,56 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
         <TickDetailSummary tick={tick} />
       </Box>
-      {tick.runIds.length || tick.originRunIds.length ? (
-        <>
-          <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-            <Subtitle2>Runs requested</Subtitle2>
-          </Box>
-          {tick.runIds.length ? (
-            <RunList runIds={tick.runIds} />
-          ) : (
-            <FailedRunList originRunIds={tick.originRunIds} />
-          )}
-        </>
+      <Box padding={{horizontal: 24}} border="bottom">
+        <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
+          <Tab id="result" title="Result" />
+          <Tab id="logs" title="Logs" />
+        </Tabs>
+      </Box>
+      {activeTab === 'result' ? (
+        <div style={{height: '500px', overflowY: 'auto'}}>
+          {tick.runIds.length || tick.originRunIds.length ? (
+            <>
+              <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
+                <Subtitle2>Requested</Subtitle2>
+              </Box>
+              {tick.runIds.length ? (
+                <RunList runIds={tick.runIds} />
+              ) : (
+                <FailedRunList originRunIds={tick.originRunIds} />
+              )}
+            </>
+          ) : null}
+          {addedPartitions?.length ? (
+            <>
+              <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
+                <Subtitle2>Added partitions</Subtitle2>
+              </Box>
+              <PartitionsTable partitions={addedPartitions} />
+            </>
+          ) : null}
+          {deletedPartitions?.length ? (
+            <>
+              <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
+                <Subtitle2>Deleted partitions</Subtitle2>
+              </Box>
+              <PartitionsTable partitions={deletedPartitions} />
+            </>
+          ) : null}
+          {tick.error ? (
+            <Box padding={24}>
+              <PythonErrorInfo error={tick.error} />
+            </Box>
+          ) : null}
+          {tick.skipReason ? (
+            <Box padding={24}>
+              <strong>Skip reason:</strong> {tick.skipReason}
+            </Box>
+          ) : null}
+        </div>
       ) : null}
-      {addedPartitions?.length ? (
-        <>
-          <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-            <Subtitle2>Added partitions</Subtitle2>
-          </Box>
-          <PartitionsTable partitions={addedPartitions} />
-        </>
-      ) : null}
-      {deletedPartitions?.length ? (
-        <>
-          <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-            <Subtitle2>Deleted partitions</Subtitle2>
-          </Box>
-          <PartitionsTable partitions={deletedPartitions} />
-        </>
+      {activeTab === 'logs' ? (
+        <QueryfulTickLogsTable instigationSelector={instigationSelector} tick={tick} />
       ) : null}
     </>
   );

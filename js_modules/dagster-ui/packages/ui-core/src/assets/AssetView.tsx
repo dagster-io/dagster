@@ -17,6 +17,7 @@ import {StaleReasonsTags} from '../assets/Stale';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {useStartTrace} from '../performance';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -48,9 +49,10 @@ import {useReportEventsModal} from './useReportEventsModal';
 
 interface Props {
   assetKey: AssetKey;
+  trace?: ReturnType<typeof useStartTrace>;
 }
 
-export const AssetView = ({assetKey}: Props) => {
+export const AssetView = ({assetKey, trace}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {tabBuilder, renderFeatureView} = React.useContext(AssetFeatureContext);
 
@@ -89,6 +91,12 @@ export const AssetView = ({assetKey}: Props) => {
   const dataRefreshHint = liveData
     ? healthRefreshHintFromLiveData(liveData)
     : lastMaterialization?.timestamp;
+
+  React.useEffect(() => {
+    if (!definitionQueryResult.loading && liveData) {
+      trace?.endTrace();
+    }
+  }, [definitionQueryResult, liveData, trace]);
 
   const renderDefinitionTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
@@ -266,6 +274,7 @@ export const AssetView = ({assetKey}: Props) => {
             ) : definition && definition.jobNames.length > 0 && upstream ? (
               <LaunchAssetExecutionButton
                 scope={{all: [definition]}}
+                showChangedAndMissingOption={false}
                 additionalDropdownOptions={reportEvents.dropdownOptions}
               />
             ) : undefined}

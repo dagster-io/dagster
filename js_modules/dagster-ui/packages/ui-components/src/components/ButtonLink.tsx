@@ -36,13 +36,6 @@ const fontColor = (color: Color) => {
   `;
 };
 
-const outlineColor = (color: Color) => {
-  if (typeof color === 'string') {
-    return color;
-  }
-  return color.link;
-};
-
 const textDecoration = (underline: Underline) => {
   switch (underline) {
     case 'always':
@@ -74,19 +67,13 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
   margin: -8px;
   text-align: left;
 
-  &:active,
-  &:focus {
-    outline: none;
-  }
-
-  &:focus-visible {
-    outline: 1px auto ${({color}) => outlineColor(color)};
-    outline-offset: 2px;
-  }
-
   &:disabled {
     cursor: default;
     opacity: 0.7;
+  }
+
+  &:focus:not(:focus-visible) {
+    outline: none;
   }
 
   transition: 30ms color linear;

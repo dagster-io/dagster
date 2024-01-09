@@ -4,6 +4,9 @@ import sys
 import pendulum
 import pytest
 from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+)
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
@@ -904,6 +907,7 @@ def _create_tick(graphql_context):
             graphql_context.process_context,
             logger,
             threadpool_executor=SingleThreadPoolExecutor(),
+            submit_threadpool_executor=None,
             sensor_tick_futures=futures,
         )
     )
@@ -1167,7 +1171,7 @@ def test_unloadable_sensor(graphql_context: WorkspaceRequestContext):
         running_origin,
         InstigatorType.SENSOR,
         InstigatorStatus.RUNNING,
-        SensorInstigatorData(min_interval=30, cursor=None),
+        SensorInstigatorData(min_interval=30, cursor=None, sensor_type=SensorType.STANDARD),
     )
 
     stopped_origin = _get_unloadable_sensor_origin("unloadable_stopped")
@@ -1179,7 +1183,7 @@ def test_unloadable_sensor(graphql_context: WorkspaceRequestContext):
             stopped_origin,
             InstigatorType.SENSOR,
             InstigatorStatus.STOPPED,
-            SensorInstigatorData(min_interval=30, cursor=None),
+            SensorInstigatorData(min_interval=30, cursor=None, sensor_type=SensorType.STANDARD),
         )
     )
 

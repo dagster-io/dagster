@@ -20,7 +20,6 @@ import {
   colorPopoverBackground,
   colorPopoverBackgroundHover,
   colorBackgroundBlue,
-  colorFocusRing,
 } from '../theme/color';
 
 import {IconName, Icon, IconWrapper} from './Icon';
@@ -188,9 +187,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
     color: ${({$textColor}) => $textColor};
   }
 
-  &:focus {
-    color: ${({$textColor}) => $textColor};
-    box-shadow: ${colorFocusRing()} 0 0 0 2px;
-    outline: none;
+  &:focus-visible {
+    z-index: 1;
   }
 `;

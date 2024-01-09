@@ -1,0 +1,97 @@
+---
+title: "Logging | Dagster Docs"
+description: "Dagster includes a rich and extensible logging system."
+---
+
+# Logging
+
+Dagster supports a variety of built-in logging options, as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/concepts/webserver/ui) and daemon.
+
+By default, Dagster automatically tracks and captures all execution events, which includes:
+
+- **Information about what Dagster is doing**, such as events that occur while Dagster executes a run to materialize an asset.
+- **Events produced by user code**, such as a custom message showing how many records were processed to create an asset.
+
+During these events, logs like the following are generated:
+
+```bash
+12:40:05 - DEBUG - RUN_START - Started execution of run for "__ASSET_JOB_0".
+12:40:05 - DEBUG - ENGINE_EVENT - Executing steps using multiprocess executor: parent process (pid: 86387)
+12:40:05 - DEBUG - taxi_zones_file - STEP_WORKER_STARTING - Launching subprocess for "taxi_zones_file".
+12:40:07 - DEBUG - STEP_WORKER_STARTED - Executing step "taxi_zones_file" in subprocess.
+12:40:07 - DEBUG - taxi_zones_file - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+12:40:07 - DEBUG - taxi_zones_file - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+12:40:07 - DEBUG - LOGS_CAPTURED - Started capturing logs in process (pid: 86390).
+12:40:07 - DEBUG - taxi_zones_file - STEP_START - Started execution of step "taxi_zones_file".
+12:40:09 - DEBUG - taxi_zones_file - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+12:40:09 - DEBUG - __ASSET_JOB_0 - taxi_zones_file - Writing file at: /Users/erincochran/Desktop/dagster-examples/project-dagster-university/tmpfxsoltsc/storage/taxi_zones_file using PickledObjectFilesystemIOManager...
+12:40:09 - DEBUG - taxi_zones_file - ASSET_MATERIALIZATION - Materialized value taxi_zones_file.
+12:40:09 - DEBUG - taxi_zones_file - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+12:40:09 - DEBUG - taxi_zones_file - STEP_SUCCESS - Finished execution of step "taxi_zones_file" in 1.17s.
+12:40:09 - DEBUG - ENGINE_EVENT - Multiprocess executor: parent process exiting after 4.38s (pid: 86387)
+12:40:09 - DEBUG - RUN_SUCCESS - Finished execution of run for "__ASSET_JOB_0".
+```
+
+These logs can be exported to a local file or viewed in the [Dagster UI](#log-types).
+
+---
+
+## Log types
+
+When jobs are run, the logs stream back to the UI's [**Run details** page](/concepts/webserver/ui#run-details) in real time. The UI contains two types of logs - **structured event** and **raw compute** - which you can learn about below.
+
+### Structured event logs
+
+<StructuredEventLogs />
+
+### Raw compute logs
+
+<RawComputeLogs />
+
+---
+
+## Uses
+
+To utilize logging in Dagster, you can:
+
+- [Extend and customize Dagster's built-in loggers](#built-in-loggers)
+- [Integrate external loggers](#external-loggers-)
+
+### Built-in loggers
+
+Dagster's [built-in loggers](/concepts/logging/loggers):
+
+- Support all levels of Python logs, such as `INFO`, `DEBUG`, `ERROR`, etc.
+- Can be configured to capture only specified levels, such as `ERROR`
+- Can include manually-defined messages produced inside certain Dagster definitions like assets, ops, and sensors
+
+**Loggers can also be customized**. Refer to the [Customizing loggers guide](/concepts/logging/custom-loggers) for more information and examples.
+
+### External loggers <Experimental />
+
+In addition to built-in loggers, you can also integrate external loggers to augment Dagster's default logs and configure them to display in the UI. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
+
+Refer to the [Python logging guide](/concepts/logging/python-logging) for more information and examples.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Loggers"
+    href="/concepts/logging/loggers"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Python logging"
+    href="/concepts/logging/python-logging"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Customizing loggers"
+    href="/concepts/logging/custom-loggers"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster instance (dagster.yaml)"
+    href="/deployment/dagster-instance"
+  ></ArticleListItem>
+</ArticleList>

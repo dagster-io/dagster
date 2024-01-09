@@ -46,5 +46,5 @@ const CombinedStatusIcon = React.memo(() => {
     );
   }
 
-  return null;
+  return <div style={{display: 'none'}}>No errors</div>;
 });

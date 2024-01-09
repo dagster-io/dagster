@@ -269,6 +269,9 @@ class InstigatorSelector(
             name=graphql_data["name"],
         )
 
+    def get_id(self) -> str:
+        return create_snapshot_id(self)
+
 
 class GraphSelector(
     NamedTuple(

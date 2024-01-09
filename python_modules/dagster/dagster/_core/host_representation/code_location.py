@@ -646,8 +646,8 @@ class GrpcServerCodeLocation(CodeLocation):
                         self._heartbeat_shutdown_event,
                     ),
                     name="grpc-client-heartbeat",
+                    daemon=True,
                 )
-                self._heartbeat_thread.daemon = True
                 self._heartbeat_thread.start()
 
             self._executable_path = list_repositories_response.executable_path

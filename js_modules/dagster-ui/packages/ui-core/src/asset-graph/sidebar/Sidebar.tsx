@@ -2,7 +2,9 @@ import {Button, Icon, Tooltip, Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 
+import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
+import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
@@ -24,6 +26,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
+    isGlobalGraph,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -35,6 +38,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     expandedGroups: string[];
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
+    isGlobalGraph: boolean;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -77,7 +81,18 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
     };
-    const [openNodes, setOpenNodes] = React.useState<Set<string>>(new Set());
+    const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
+      // include pathname so that theres separate storage entries for graphs at different URLs
+      // eg. independent group graph should persist open nodes separately
+      localStorageKey: `asset-graph-open-sidebar-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
+      encode: (val) => {
+        return {'open-nodes': Array.from(val)};
+      },
+      decode: (qs) => {
+        return new Set(qs['open-nodes']);
+      },
+      isEmptyState: (val) => val.size === 0,
+    });
     const [selectedNode, setSelectedNode] = React.useState<
       null | {id: string; path: string} | {id: string}
     >(null);
@@ -171,6 +186,15 @@ export const AssetGraphExplorerSidebar = React.memo(
 
       return folderNodes;
     }, [graphData.nodes, openNodes]);
+
+    const {nav} = React.useContext(LayoutContext);
+
+    React.useEffect(() => {
+      if (isGlobalGraph) {
+        nav.close();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isGlobalGraph]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 

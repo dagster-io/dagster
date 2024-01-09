@@ -281,6 +281,21 @@ For more information on resources, refer to the [Resources documentation](/conce
 
 ---
 
+## Logging in sensors
+
+Any sensor can emit log messages during its evaluation function:
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
+@sensor(job=the_job)
+def logs_then_skips(context):
+    context.log.info("Logging from a sensor!")
+    return SkipReason("Nothing to do")
+```
+
+These logs can be viewed when inspecting a tick in the tick history view on the corresponding sensor page.
+
+---
+
 ## Testing sensors
 
 <TabGroup>
@@ -419,25 +434,6 @@ def test_process_new_users_sensor():
 
 </TabItem>
 </TabGroup>
-
----
-
-## Logging in sensors
-
-<Note>
-  This feature is <strong>experimental</strong>.
-</Note>
-
-Any sensor can emit log messages during its evaluation function:
-
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
-@sensor(job=the_job)
-def logs_then_skips(context):
-    context.log.info("Logging from a sensor!")
-    return SkipReason("Nothing to do")
-```
-
-These logs can be viewed in the UI on the corresponding sensor page, after first enabling the **Experimental schedule/sensor logging view** option in **User Settings**.
 
 ---
 

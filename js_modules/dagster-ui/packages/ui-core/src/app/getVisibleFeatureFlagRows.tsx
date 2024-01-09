@@ -1,6 +1,3 @@
-import {Box} from '@dagster-io/ui-components';
-import React from 'react';
-
 import {FeatureFlag} from './Flags';
 
 /**
@@ -8,34 +5,8 @@ import {FeatureFlag} from './Flags';
  */
 export const getVisibleFeatureFlagRows = () => [
   {
-    key: 'Experimental asset graph experience',
-    label: (
-      <Box flex={{direction: 'column'}}>
-        Experimental asset graph experience
-        <div>
-          <a
-            href="https://github.com/dagster-io/dagster/discussions/16657"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Learn more
-          </a>
-        </div>
-      </Box>
-    ),
-    flagType: FeatureFlag.flagDAGSidebar,
-  },
-  {
-    key: 'Experimental schedule/sensor logging view',
-    flagType: FeatureFlag.flagSensorScheduleLogging,
-  },
-  {
     key: 'Display resources in navigation sidebar',
     flagType: FeatureFlag.flagSidebarResources,
-  },
-  {
-    key: 'Disable Asset Graph caching',
-    flagType: FeatureFlag.flagDisableDAGCache,
   },
   {
     key: 'Disable WebSockets',

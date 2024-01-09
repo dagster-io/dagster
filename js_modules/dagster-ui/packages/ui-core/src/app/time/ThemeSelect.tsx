@@ -10,16 +10,12 @@ interface Props {
 export const ThemeSelect = ({theme, onChange}: Props) => {
   const items = [
     {
-      key: DagsterTheme.Legacy,
-      label: 'Legacy',
-    },
-    {
       key: DagsterTheme.Light,
-      label: 'Light (experimental)',
+      label: 'Light',
     },
     {
       key: DagsterTheme.Dark,
-      label: 'Dark (experimental)',
+      label: 'Dark',
     },
     {
       key: DagsterTheme.System,

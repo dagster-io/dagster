@@ -26,7 +26,7 @@ const SHORTCUT_VISIBLITY_DELAY = 800;
 // implemented inside a React component.
 //
 let shortcutsVisible = false;
-let shortcutsTimer: NodeJS.Timeout | null = null;
+let shortcutsTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getShortcutsVisible() {
   return shortcutsVisible;

@@ -42,6 +42,8 @@ export type InstanceConcurrencyLimitsQuery = {
     info: string | null;
     supportsConcurrencyLimits: boolean;
     runQueuingSupported: boolean;
+    minConcurrencyLimitValue: number;
+    maxConcurrencyLimitValue: number;
     runQueueConfig: {
       __typename: 'RunQueueConfig';
       maxConcurrentRuns: number;

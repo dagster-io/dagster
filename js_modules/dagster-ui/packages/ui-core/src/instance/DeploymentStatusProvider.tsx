@@ -7,7 +7,7 @@ import {useDaemonStatus} from './useDaemonStatus';
 
 export type DeploymentStatusType = 'code-locations' | 'daemons';
 
-type DeploymentStatus = {
+export type DeploymentStatus = {
   codeLocations: StatusAndMessage | null;
   daemons: StatusAndMessage | null;
 };

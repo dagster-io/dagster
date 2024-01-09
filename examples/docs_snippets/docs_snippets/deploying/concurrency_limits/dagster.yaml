@@ -25,3 +25,10 @@ run_monitoring:
   free_slots_after_run_end_seconds: 300 # free any hanging concurrency slots after 5 minutes from the end of a run
 
 # end_free_slots
+
+# start_default_value
+
+concurrency:
+  default_op_concurrency_limit: 1
+
+# end_default_value

@@ -1,4 +1,5 @@
-import {timestampToString} from '../time/timestampToString';
+import {DEFAULT_TIME_FORMAT} from '../time/TimestampFormat';
+import {resolveTimestampKey, timestampToString} from '../time/timestampToString';
 
 const DEC_1_2020 = 1606824000; // Dec 1, 2020 00:00 UTC
 const JAN_1_2021 = 1609459200; // Jan 1, 2021 00:00 UTC
@@ -90,5 +91,45 @@ describe('timestampToString', () => {
         timeFormat: {showSeconds: true, showTimezone: true},
       }),
     ).toBe('Mar 14, 9:00:00 AM GMT+1');
+  });
+
+  it('resolves to the same memoization key for the same config', () => {
+    const expectedKey =
+      '1615708800000-en-US-America/Chicago-{"showTimezone":false,"showSeconds":false}-Automatic';
+
+    expect(
+      resolveTimestampKey({
+        timestamp: {unix: MAR_14_2021},
+        locale: 'en-US',
+        timezone: 'America/Chicago',
+      }),
+    ).toBe(expectedKey);
+
+    expect(
+      resolveTimestampKey({
+        timestamp: {ms: MAR_14_2021 * 1000},
+        locale: 'en-US',
+        timezone: 'America/Chicago',
+      }),
+    ).toBe(expectedKey);
+
+    expect(
+      resolveTimestampKey({
+        timestamp: {unix: MAR_14_2021},
+        locale: 'en-US',
+        timezone: 'America/Chicago',
+        timeFormat: DEFAULT_TIME_FORMAT,
+        hourCycle: 'Automatic',
+      }),
+    ).toBe(expectedKey);
+
+    // Now let's try a different config. It should *not* match the key above.
+    expect(
+      resolveTimestampKey({
+        timestamp: {unix: MAR_14_2021},
+        locale: 'de-DE',
+        timezone: 'America/Chicago',
+      }),
+    ).not.toBe(expectedKey);
   });
 });

@@ -16,7 +16,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
-import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components';
 
 import {TimeContext} from '../../app/time/TimeContext';
@@ -25,11 +24,10 @@ import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
+const DateRangePicker = React.lazy(() => import('./DateRangePickerWrapper'));
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-import 'react-dates/initialize';
-import 'react-dates/lib/css/_datepicker.css';
 
 export type TimeRangeState = [number | null, number | null];
 
@@ -300,23 +298,25 @@ export function CustomTimeRangeFilterDialog({
     >
       <Container>
         <Box flex={{direction: 'row', gap: 8}} padding={16}>
-          <DateRangePicker
-            onDatesChange={({startDate, endDate}) => {
-              setStartDate(startDate);
-              setEndDate(endDate);
-            }}
-            onFocusChange={(focusedInput) => {
-              focusedInput && setFocusedInput(focusedInput);
-            }}
-            startDate={startDate}
-            endDate={endDate}
-            startDateId="start"
-            endDateId="end"
-            focusedInput={focusedInput}
-            withPortal={false}
-            keepOpenOnDateSelect
-            isOutsideRange={() => false}
-          />
+          <React.Suspense fallback={<div />}>
+            <DateRangePicker
+              onDatesChange={({startDate, endDate}) => {
+                setStartDate(startDate);
+                setEndDate(endDate);
+              }}
+              onFocusChange={(focusedInput) => {
+                focusedInput && setFocusedInput(focusedInput);
+              }}
+              startDate={startDate}
+              endDate={endDate}
+              startDateId="start"
+              endDateId="end"
+              focusedInput={focusedInput}
+              withPortal={false}
+              keepOpenOnDateSelect
+              isOutsideRange={() => false}
+            />
+          </React.Suspense>
         </Box>
       </Container>
       <DialogFooter topBorder>

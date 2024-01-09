@@ -3,7 +3,9 @@ import qs from 'qs';
 import React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 
-type QueryPersistedDataType =
+import {useSetStateUpdateCallback} from './useSetStateUpdateCallback';
+
+export type QueryPersistedDataType =
   | {[key: string]: any}
   | Array<any>
   | (string | undefined | number)
@@ -107,7 +109,7 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
   if (!isEqual(valueRef.current, qsDecoded)) {
     valueRef.current = qsDecoded;
   }
-  return [valueRef.current, onChangeRef];
+  return [valueRef.current, useSetStateUpdateCallback(valueRef.current, onChangeRef)];
 }
 
 function inferTypeOfQueryParam<T>(q: any): T {

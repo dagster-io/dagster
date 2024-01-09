@@ -421,9 +421,21 @@ To specify limits on the number of ops/assets tagged with a particular concurren
   dagster instance concurrency set <concurrency_key> <limit>
   ```
 
-- To specify a global concurrency limit using the Dagster UI, navigate to the **Concurrency limits** tab on the Deployment page, after first enabling the **Experimental instance-level concurrency limits** option in **User Settings**.
+- To specify a global concurrency limit using the Dagster UI, navigate to the **Concurrency limits** tab on the Deployment page.
 
 The concurrency key should match the name that the op/asset is tagged with. For example, if the op/asset is tagged with `dagster/concurrency_key: redshift`, then the concurrency key should be `redshift`.
+
+A default concurrency limit can be configured for the instance, for any concurrency keys that do not have an explicit limit set:
+
+- **Dagster Cloud**: Use the [Dagster Cloud UI or the dagster-cloud CLI][cloud-deployment-settings]
+- **Dagster Open Source**: Use your instance's `dagster.yaml`
+
+To enable this default value, use `concurrency.default_op_concurrency_limit`. For example, the following would set the default concurrency value for the deployment to 1:
+
+```yaml file=/deploying/concurrency_limits/dagster.yaml startafter=start_default_value endbefore=end_default_value
+concurrency:
+  default_op_concurrency_limit: 1
+```
 
 #### Freeing concurrency slots
 

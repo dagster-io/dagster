@@ -664,7 +664,7 @@ const ZoomSliderContainer = styled.div`
 const WheelInstructionTooltip = () => {
   const [usedMeta, setUsedMeta] = React.useState(false);
   const [wheeling, setWheeling] = React.useState(false);
-  const timeout = React.useRef<NodeJS.Timeout>();
+  const timeout = React.useRef<ReturnType<typeof setTimeout>>();
 
   React.useEffect(() => {
     const listener = (e: WheelEvent) => {
