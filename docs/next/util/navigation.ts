@@ -3,6 +3,7 @@ import navigation from '../../content/_navigation.json';
 type NavEntry = {
   title: string;
   path: string;
+  nonMdx?: boolean;
   children?: NavEntry[];
   icon?: string;
   isNotDynamic?: boolean;
@@ -49,10 +50,16 @@ export const latestAllPaths = () => {
     });
 };
 
-export const latestAllDynamicPaths = () => {
+export const latestAllDynamicPaths = (excludeNonMdx = false) => {
   // only include paths that will be dynamically generated
   return flatten(navigation)
-    .filter((n: NavEntry) => n.path && !n.isExternalLink && !n.isNotDynamic)
+    .filter((n: NavEntry) => {
+      // exclude non-mdx pages in dynamic routes. we'll use the static routes instead for .md files
+      if (excludeNonMdx && n.nonMdx) {
+        return false;
+      }
+      return n.path && !n.isExternalLink && !n.isNotDynamic;
+    })
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
       return {

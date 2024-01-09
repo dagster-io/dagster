@@ -5,7 +5,7 @@ import path from 'path';
 import {usePath} from 'util/usePath';
 
 import {PersistentTabProvider} from 'components/PersistentTabContext';
-import {collectHeadings, RightSidebar} from 'components/SidebarNavigation';
+import {RightSidebar} from 'components/SidebarNavigation';
 import {DefaultSeo} from 'next-seo';
 import {AppProps} from 'next/app';
 import {useRouter} from 'next/router';

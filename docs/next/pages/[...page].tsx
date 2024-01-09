@@ -3,7 +3,6 @@ import path from 'path';
 import {latestAllDynamicPaths} from 'util/navigation';
 import zlib from 'zlib';
 
-import FeedbackModal from 'components/FeedbackModal';
 import {Shimmer} from 'components/Shimmer';
 import {getMDXItems} from 'components/SidebarNavigation';
 import rehypePlugins from 'components/mdx/rehypePlugins';
@@ -216,7 +215,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: latestAllDynamicPaths(),
+    paths: latestAllDynamicPaths(true),
     fallback: true,
   };
 }
