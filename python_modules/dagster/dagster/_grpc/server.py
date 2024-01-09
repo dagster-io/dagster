@@ -136,7 +136,7 @@ def _record_utilization_metrics(logger: logging.Logger) -> None:
         last_cpu_measurement_time = _UTILIZATION_METRICS["resource_utilization"].get(
             "measurement_timestamp"
         )
-        last_cpu_measurement = _UTILIZATION_METRICS["resource_utilization"].get("cpu_time")
+        last_cpu_measurement = _UTILIZATION_METRICS["resource_utilization"].get("cpu_usage")
         utilization_metrics = retrieve_containerized_utilization_metrics(
             logger, last_cpu_measurement_time, last_cpu_measurement
         )
