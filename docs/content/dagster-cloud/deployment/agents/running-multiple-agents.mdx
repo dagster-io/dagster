@@ -110,6 +110,8 @@ The `isolated_agents` option can be set as per-deployment configuration on the `
 
 You can route all requests for a given code location to a specific set of agents using agent queues.
 
+Agent queues are annotations on code locations and agents. Requests related to code locations without annotations will be put in a default queue. By default, all agents handle requests for default queue. Agents can optionally be configured to handle requests only for specific agent queues.
+
 When configuring your code location, set an agent queue:
 
 ```yaml
