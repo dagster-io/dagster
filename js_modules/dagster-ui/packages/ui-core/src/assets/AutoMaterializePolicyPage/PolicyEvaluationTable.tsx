@@ -116,7 +116,9 @@ const UnpartitionedPolicyEvaluationTable = ({
                 </td>
               ) : null}
               <td>
-                {evaluation.metadataEntries ? <ViewDetailsButton evaluation={evaluation} /> : null}
+                {evaluation.metadataEntries?.length ? (
+                  <ViewDetailsButton evaluation={evaluation} />
+                ) : null}
               </td>
             </EvaluationRow>
           );
