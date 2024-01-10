@@ -275,6 +275,8 @@ class AssetBackfillData(NamedTuple):
             asset_key
             for asset_key in self.target_subset.asset_keys
             if asset_graph.get_partitions_def(asset_key) is not None
+            # Check that the asset was partitioned at backfill creation time
+            and asset_key in self.target_subset.partitions_subsets_by_asset_key
         }
 
         root_partitioned_asset_keys = (
