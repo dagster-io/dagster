@@ -117,7 +117,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
       return (
         allTicks.map((tick, index) => {
           // For ticks that get stuck in "Started" state without an endTimestamp.
-          if (!isStuckStartedTick(tick, index) && !tick.endTimestamp) {
+          if (index !== 0 && !isStuckStartedTick(tick, index)) {
             const copy = {...tick};
             copy.endTimestamp = ticks[index - 1]!.timestamp;
             copy.status = InstigationTickStatus.FAILURE;
