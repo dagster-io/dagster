@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
@@ -18,7 +18,6 @@ CoercibleToAssetDep = Union[
 ]
 
 
-@experimental
 class AssetDep(
     NamedTuple(
         "_AssetDep",
