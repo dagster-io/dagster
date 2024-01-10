@@ -291,9 +291,10 @@ def user_code_error_boundary(
         except Exception as e:
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
-            raise error_cls(
+            new_error = error_cls(
                 msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs
-            ) from e
+            )
+            raise new_error from e
         finally:
             if log_manager:
                 log_manager.end_python_log_capture()
@@ -504,6 +505,16 @@ class DagsterMaxRetriesExceededError(DagsterError):
 
 class DagsterCodeLocationNotFoundError(DagsterError):
     pass
+
+
+class DagsterRedactedUserCodeError(DagsterError):
+    """Error used to mask user code errors to prevent leaking sensitive information. Contains an error ID that can be
+    used to look up the original error in the user code error log.
+    """
+
+
+class DagsterUserCodeLoadError(DagsterUserCodeExecutionError):
+    """Errors raised in a user process during the loading of user code."""
 
 
 class DagsterCodeLocationLoadError(DagsterError):

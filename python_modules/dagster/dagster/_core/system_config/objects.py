@@ -21,7 +21,11 @@ from dagster._core.definitions.executor_definition import (
 )
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterConfigMappingFunctionError,
+    DagsterInvalidConfigError,
+    user_code_error_boundary,
+)
 from dagster._utils import ensure_single_item
 
 
@@ -147,9 +151,16 @@ class ResolvedRunConfig(
         run_config_schema = job_def.run_config_schema
         if run_config_schema.config_mapping:
             # add user code boundary
-            run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
-                run_config
-            )
+            with user_code_error_boundary(
+                DagsterConfigMappingFunctionError,
+                lambda: (
+                    f"The config mapping function on job {job_def.name} has"
+                    " thrown an unexpected error during its execution."
+                ),
+            ):
+                run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
+                    run_config
+                )
 
         config_evr = process_config(
             run_config_schema.run_config_schema_type, check.not_none(run_config)
