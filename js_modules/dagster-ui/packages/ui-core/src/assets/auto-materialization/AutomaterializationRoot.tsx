@@ -123,10 +123,11 @@ const GlobalAutomaterializationRoot = () => {
       const ticks = data?.autoMaterializeTicks;
       return (
         ticks?.map((tick, index) => {
+          const nextTick = ticks[index - 1];
           // For ticks that get stuck in "Started" state without an endTimestamp.
-          if (!isStuckStartedTick(tick, index)) {
+          if (nextTick && isStuckStartedTick(tick, index)) {
             const copy = {...tick};
-            copy.endTimestamp = ticks[index - 1]!.timestamp;
+            copy.endTimestamp = nextTick.timestamp;
             copy.status = InstigationTickStatus.FAILURE;
             return copy;
           }
