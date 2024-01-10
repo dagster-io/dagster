@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
@@ -8,9 +8,11 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
@@ -59,6 +61,7 @@ class AssetCheckSpec(
             ("name", PublicAttr[str]),
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
+            ("additional_deps", PublicAttr[Optional[Iterable["AssetDep"]]]),
         ],
     )
 ):
@@ -73,6 +76,11 @@ class AssetCheckSpec(
         asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]): The asset that
             the check applies to.
         description (Optional[str]): Description for the check.
+        additional_deps (Optional[Iterable[AssetDep]]): Additional dependencies for the check. The
+            check relies on these assets in some way, but the result of the check only applies to
+            the asset specified by `asset`. For example, the check may test that `asset` has
+            matching data with an asset in `additional_deps`. This field holds both `additional_deps`
+            and `additional_ins` passed to @asset_check.
     """
 
     def __new__(
@@ -81,12 +89,33 @@ class AssetCheckSpec(
         *,
         asset: Union[CoercibleToAssetKey, "AssetsDefinition", "SourceAsset"],
         description: Optional[str] = None,
+        additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
     ):
+        from dagster._core.definitions.asset_dep import AssetDep
+
+        asset_key = AssetKey.from_coercible_or_definition(asset)
+
+        additional_dep_set = {}
+        if additional_deps:
+            for dep in additional_deps:
+                asset_dep = AssetDep.from_coercible(dep)
+
+                # we cannot do deduplication via a set because MultiPartitionMappings have an internal
+                # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
+                # for existing keys.
+                if asset_dep.asset_key in additional_dep_set.keys():
+                    raise DagsterInvariantViolationError(
+                        f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
+                        f" AssetCheckSpec {name} on asset {asset_key}"
+                    )
+                additional_dep_set[asset_dep.asset_key] = asset_dep
+
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),
-            asset_key=AssetKey.from_coercible_or_definition(asset),
+            asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
+            additional_deps=list(additional_dep_set.values()),
         )
 
     def get_python_identifier(self) -> str:

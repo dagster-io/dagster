@@ -3,6 +3,7 @@ import re
 import pytest
 from dagster import (
     AssetCheckResult,
+    AssetDep,
     AssetIn,
     DagsterInvalidDefinitionError,
     asset,
@@ -22,12 +23,18 @@ def asset2() -> int:
     return 5
 
 
+@asset
+def asset3() -> int:
+    return 6
+
+
 def test_additional_deps():
     @asset_check(asset=asset1, additional_deps=[asset2])
     def check1():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
+    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -39,6 +46,7 @@ def test_additional_deps_with_managed_input():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
+    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -112,6 +120,7 @@ def test_additional_ins():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
+    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -123,6 +132,20 @@ def test_additional_ins_primary_asset_not_a_param():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
+    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
+
+    execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
+
+
+def test_additional_ins_and_deps():
+    @asset_check(asset=asset1, additional_ins={"foo": AssetIn("asset2")}, additional_deps=[asset3])
+    def check1(asset1, foo):
+        assert asset1 == 4
+        assert foo == 5
+        return AssetCheckResult(passed=True)
+
+    assert len(check1.node_def.input_defs) == 3
+    assert sorted(check1.spec.additional_deps) == [AssetDep(asset2.key), AssetDep(asset3.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
