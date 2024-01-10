@@ -283,6 +283,15 @@ For more information on resources, refer to the [Resources documentation](/conce
 
 ## Logging in sensors
 
+<Note>
+  Sensor logs are stored in your{" "}
+  <a href="/deployment/dagster-instance#compute-log-storage">
+    Dagster instance's compute log storage
+  </a>
+  . You should ensure that your compute log storage is configured to view your sensor
+  logs.
+</Note>
+
 Any sensor can emit log messages during its evaluation function:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
