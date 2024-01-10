@@ -17,6 +17,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    TypedDict,
     Union,
     cast,
     overload,
@@ -274,7 +275,15 @@ def opt_dict_param(
 
     return _check_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
+_TypedDict = TypeVar("_TypedDict", bound=TypedDict)
+def opt_typed_dict_param(
+    obj: Optional[_TypedDict],
+    param_name: str,
+    klass: Type[_TypedDict],
+) -> _TypedDict:
+    pass
 
+    
 @overload
 def opt_nullable_dict_param(
     obj: None,
