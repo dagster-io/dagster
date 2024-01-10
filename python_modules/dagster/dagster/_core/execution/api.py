@@ -31,6 +31,8 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
+from dagster._core.snap import create_job_snapshot_id
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
@@ -684,7 +686,7 @@ def _get_execution_plan_from_run(
             execution_plan_snapshot,
         )
 
-    return create_execution_plan(
+    execution_plan = create_execution_plan(
         job,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
@@ -696,6 +698,23 @@ def _get_execution_plan_from_run(
             execution_plan_snapshot.initial_known_state if execution_plan_snapshot else None
         ),
     )
+
+    if not dagster_run.execution_plan_snapshot_id:
+        # Run was created without an execution plan snapshot - add one
+        job_snapshot_id = dagster_run.job_snapshot_id or create_job_snapshot_id(
+            job.get_definition().get_job_snapshot()
+        )
+
+        snapshot = snapshot_from_execution_plan(execution_plan, job_snapshot_id)
+        snapshot_id = instance._ensure_persisted_execution_plan_snapshot(
+            snapshot,
+            job_snapshot_id,
+            dagster_run.step_keys_to_execute,
+        )
+
+        instance.run_storage.add_execution_plan_snapshot_to_run(dagster_run.run_id, snapshot_id)
+
+    return execution_plan
 
 
 def create_execution_plan(

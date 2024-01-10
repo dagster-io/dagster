@@ -191,6 +191,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
             new_tags (Dict[string, string])
         """
 
+    # @abstractmethod
+    # Need to fill in the other storage impls
+    def add_execution_plan_snapshot_to_run(self, run_id: str, execution_plan_snapshot_id: str):
+        """Add an execution plan snapshot to a run.
+
+        Args:
+            run_id (str)
+            execution_plan_snapshot_id (str)
+        """
+
     @abstractmethod
     def has_run(self, run_id: str) -> bool:
         """Check if the storage contains a run.
