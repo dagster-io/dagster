@@ -9,7 +9,6 @@ import threading
 import time
 import uuid
 import warnings
-from collections import defaultdict
 from contextlib import ExitStack
 from functools import update_wrapper
 from threading import Event as ThreadingEventType
@@ -26,6 +25,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypedDict,
     cast,
 )
 
@@ -56,7 +56,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import FuturesAwareThreadPoolExecutor
+from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
@@ -65,8 +65,12 @@ from dagster._utils import (
     get_run_crash_explanation,
     safe_tempfile_path_unmanaged,
 )
-from dagster._utils.container import retrieve_containerized_utilization_metrics
+from dagster._utils.container import (
+    ContainerUtilizationMetrics,
+    retrieve_containerized_utilization_metrics,
+)
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.typed_dict import init_optional_typeddict
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
@@ -123,38 +127,59 @@ STREAMING_CHUNK_SIZE = 4000000
 
 UTILIZATION_METRICS_RETRIEVAL_INTERVAL = 30
 
-_UTILIZATION_METRICS = defaultdict(dict)
 _METRICS_LOCK = threading.Lock()
 METRICS_RETRIEVAL_FUNCTIONS = set()
 
 
+class GrpcApiMetrics(TypedDict):
+    current_request_count: Optional[int]
+
+
+class DagsterCodeServerUtilizationMetrics(TypedDict):
+    container_utilization: ContainerUtilizationMetrics
+    request_utilization: RequestUtilizationMetrics
+    per_api_metrics: Dict[str, GrpcApiMetrics]
+
+
+_UTILIZATION_METRICS = init_optional_typeddict(DagsterCodeServerUtilizationMetrics)
+
+
 def _update_threadpool_metrics(executor: FuturesAwareThreadPoolExecutor) -> None:
     with _METRICS_LOCK:
-        _UTILIZATION_METRICS["resource_utilization"][
-            "max_concurrent_requests"
-        ] = executor.max_workers
-        _UTILIZATION_METRICS["resource_utilization"][
-            "current_running_requests"
-        ] = executor.num_running_futures
-        _UTILIZATION_METRICS["resource_utilization"][
-            "current_queued_requests"
-        ] = executor.num_queued_futures
+        _UTILIZATION_METRICS.update(
+            {
+                "request_utilization": executor.get_current_utilization_metrics(),
+            }
+        )
 
 
 def _record_utilization_metrics(logger: logging.Logger) -> None:
     with _METRICS_LOCK:
-        last_cpu_measurement_time = _UTILIZATION_METRICS["resource_utilization"].get(
+        last_cpu_measurement_time = _UTILIZATION_METRICS["container_utilization"][
             "measurement_timestamp"
-        )
-        last_cpu_measurement = _UTILIZATION_METRICS["resource_utilization"].get("cpu_usage")
+        ]
+        last_cpu_measurement = _UTILIZATION_METRICS["container_utilization"]["cpu_usage"]
         utilization_metrics = retrieve_containerized_utilization_metrics(
             logger, last_cpu_measurement_time, last_cpu_measurement
         )
-        _UTILIZATION_METRICS["resource_utilization"].update(utilization_metrics)
+        for key, val in utilization_metrics.items():
+            _UTILIZATION_METRICS["container_utilization"][key] = val
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
     pass
+
+
+def _get_request_count(api_name: str) -> Optional[int]:
+    if api_name not in _UTILIZATION_METRICS["per_api_metrics"]:
+        return None
+    return _UTILIZATION_METRICS["per_api_metrics"][api_name]["current_request_count"]
+
+
+def _set_request_count(api_name: str, value: Any) -> None:
+    if api_name not in _UTILIZATION_METRICS["per_api_metrics"]:
+        _UTILIZATION_METRICS["per_api_metrics"][api_name] = init_optional_typeddict(GrpcApiMetrics)
+    _UTILIZATION_METRICS["per_api_metrics"][api_name]["current_request_count"] = value
 
 
 def retrieve_metrics():
@@ -172,14 +197,14 @@ def retrieve_metrics():
                     _update_threadpool_metrics(self._server_threadpool_executor)
                     _record_utilization_metrics(self._logger)
                 with _METRICS_LOCK:
-                    if "current_request_count" not in _UTILIZATION_METRICS[api_call]:
-                        _UTILIZATION_METRICS[api_call]["current_request_count"] = 0
-                    _UTILIZATION_METRICS[api_call]["current_request_count"] += 1
+                    cur_request_count = _get_request_count(api_call)
+                    _set_request_count(api_call, cur_request_count + 1 if cur_request_count else 1)
 
                 res = fn(self, request, context)
 
                 with _METRICS_LOCK:
-                    _UTILIZATION_METRICS[api_call]["current_request_count"] -= 1
+                    cur_request_count = _get_request_count(api_call)
+                    _set_request_count(api_call, cur_request_count - 1 if cur_request_count else 0)
 
                 return res
 
@@ -500,8 +525,12 @@ class DagsterApiServer(DagsterApiServicer):
     @retrieve_metrics()
     def Ping(self, request, _context: grpc.ServicerContext) -> api_pb2.PingReply:
         echo = request.echo
+
         return api_pb2.PingReply(
-            echo=echo, serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
+            echo=echo,
+            serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
+            if self._enable_metrics
+            else "",
         )
 
     def StreamingPing(
@@ -1278,6 +1307,7 @@ def open_server_process(
     inject_env_vars_from_instance: bool = True,
     container_image: Optional[str] = None,
     container_context: Optional[Dict[str, Any]] = None,
+    enable_metrics: bool = False,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1303,6 +1333,7 @@ def open_server_process(
         *(["--location-name", location_name] if location_name else []),
         *(["--container-image", container_image] if container_image else []),
         *(["--container-context", json.dumps(container_context)] if container_context else []),
+        *(["--enable-metrics"] if enable_metrics else []),
     ]
 
     if loadable_target_origin:
