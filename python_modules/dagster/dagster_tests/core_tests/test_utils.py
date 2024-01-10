@@ -1,3 +1,4 @@
+import time
 import warnings
 from concurrent.futures import as_completed
 from contextvars import ContextVar
@@ -119,3 +120,25 @@ def test_inherit_context_threadpool():
 
         for f in as_completed(futures):
             assert f.result()
+
+
+def test_inherit_context_threadpool_properties():
+    def sleepy_thread():
+        time.sleep(1)
+        return True
+
+    with InheritContextThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
+        for i in range(10):
+            futures.append(executor.submit(sleepy_thread))
+
+        time.sleep(0.1)
+        assert executor.max_workers == 5
+        assert executor.num_running_futures == 5
+        assert executor.num_queued_futures == 5
+
+        for f in as_completed(futures):
+            assert f.result()
+
+        assert executor.num_running_futures == 0
+        assert executor.num_queued_futures == 0
