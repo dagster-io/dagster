@@ -44,12 +44,14 @@ from dagster_graphql.implementation.fetch_assets import (
 )
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
+from dagster_graphql.schema.instigators import GrapheneInstigator
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
     GraphenePartitionDefinition,
     GraphenePartitionDefinitionType,
 )
+from dagster_graphql.schema.schedules import GrapheneSchedule
 from dagster_graphql.schema.sensors import GrapheneSensor
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
@@ -306,7 +308,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         pipeline=graphene.Argument(GraphenePipelineSelector),
     )
     currentAutoMaterializeEvaluationId = graphene.Int()
-    targetingSensors = non_null_list(GrapheneSensor)
+    targetingInstigators = non_null_list(GrapheneInstigator)
 
     class Meta:
         name = "AssetNode"
@@ -861,13 +863,17 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> bool:
         asset_key = self._external_asset_node.asset_key
 
-        if sensor.asset_selection and (asset_key in sensor.asset_selection.resolve(asset_graph)):
+        if sensor.asset_selection is not None and (
+            asset_key in sensor.asset_selection.resolve(asset_graph)
+        ):
             return True
 
         return any(target.job_name in job_names for target in sensor.get_external_targets())
 
-    def resolve_targetingSensors(self, graphene_info) -> Sequence[GrapheneSensor]:
+    def resolve_targetingInstigators(self, graphene_info) -> Sequence[GrapheneSensor]:
         external_sensors = self._external_repository.get_external_sensors()
+        external_schedules = self._external_repository.get_external_schedules()
+
         asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
 
         job_names = {
@@ -886,6 +892,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                 external_sensor.selector_id,
             )
             results.append(GrapheneSensor(external_sensor, sensor_state))
+
+        for external_schedule in external_schedules:
+            if external_schedule.job_name in job_names:
+                schedule_state = graphene_info.context.instance.get_instigator_state(
+                    external_schedule.get_external_origin_id(),
+                    external_schedule.selector_id,
+                )
+                results.append(GrapheneSchedule(external_schedule, schedule_state))
 
         return results
 

@@ -1,11 +1,11 @@
 import {gql} from '@apollo/client';
-import flatMap from 'lodash/flatMap';
-import uniqBy from 'lodash/uniqBy';
 import React from 'react';
 
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 
 import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
@@ -18,12 +18,13 @@ export const AssetNodeInstigatorTag = ({
   repoAddress: RepoAddress;
 }) => {
   const {schedules, sensors} = React.useMemo(() => {
-    const schedules = uniqBy(
-      flatMap(assetNode.jobs, (j) => j.schedules),
-      'id',
+    const instigators = assetNode.targetingInstigators;
+    const schedules = instigators.filter(
+      (instigator): instigator is ScheduleSwitchFragment => instigator.__typename === 'Schedule',
     );
-
-    const sensors = assetNode.targetingSensors;
+    const sensors = instigators.filter(
+      (instigator): instigator is SensorSwitchFragment => instigator.__typename === 'Sensor',
+    );
 
     return {schedules, sensors};
   }, [assetNode]);
@@ -41,20 +42,15 @@ export const AssetNodeInstigatorTag = ({
 export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
   fragment AssetNodeInstigatorsFragment on AssetNode {
     id
-    jobs {
-      id
-      name
-      schedules {
-        id
+    targetingInstigators {
+      ... on Schedule {
         ...ScheduleSwitchFragment
       }
-    }
-    targetingSensors {
-      id
-      ...SensorSwitchFragment
+      ... on Sensor {
+        ...SensorSwitchFragment
+      }
     }
   }
-
   ${SCHEDULE_SWITCH_FRAGMENT}
   ${SENSOR_SWITCH_FRAGMENT}
 `;

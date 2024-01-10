@@ -646,13 +646,19 @@ GET_ASSET_BACKFILL_POLICY = """
     }
 """
 
-GET_TARGETING_SENSORS = """
+GET_TARGETING_INSTIGATORS = """
     query AssetNodeQuery($assetKey: AssetKeyInput!) {
         assetNodeOrError(assetKey: $assetKey) {
             ...on AssetNode {
-                targetingSensors {
-                    id
-                    name
+                targetingInstigators {
+                    ... on Schedule {
+                        id
+                        name
+                    }
+                    ... on Sensor {
+                        id
+                        name
+                    }
                 }
             }
         }
@@ -2375,29 +2381,48 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             else:
                 assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"
 
-    def test_get_targeting_sensors(self, graphql_context: WorkspaceRequestContext):
+    def test_get_targeting_instigators(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context,
-            GET_TARGETING_SENSORS,
+            GET_TARGETING_INSTIGATORS,
             variables={
                 "assetKey": {"path": ["fresh_diamond_bottom"]},
             },
         )
 
-        targeting_sensors = result.data["assetNodeOrError"]["targetingSensors"]
-        assert len(targeting_sensors) == 1
-        assert targeting_sensors[0]["name"] == "my_automation_policy_sensor"
+        targeting_instigators = result.data["assetNodeOrError"]["targetingInstigators"]
+        assert len(targeting_instigators) == 2
+        assert set(
+            targeting_instigator["name"] for targeting_instigator in targeting_instigators
+        ) == {"my_automation_policy_sensor", "every_asset_sensor"}
 
         result = execute_dagster_graphql(
             graphql_context,
-            GET_TARGETING_SENSORS,
+            GET_TARGETING_INSTIGATORS,
             variables={
                 "assetKey": {"path": ["upstream_dynamic_partitioned_asset"]},
             },
         )
-        targeting_sensors = result.data["assetNodeOrError"]["targetingSensors"]
-        assert len(targeting_sensors) == 1
-        assert targeting_sensors[0]["name"] == "dynamic_partition_requesting_sensor"
+        targeting_instigators = result.data["assetNodeOrError"]["targetingInstigators"]
+        assert len(targeting_instigators) == 2
+
+        assert set(
+            targeting_instigator["name"] for targeting_instigator in targeting_instigators
+        ) == {"dynamic_partition_requesting_sensor", "every_asset_sensor"}
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_TARGETING_INSTIGATORS,
+            variables={
+                "assetKey": {"path": ["typed_asset"]},
+            },
+        )
+        targeting_instigators = result.data["assetNodeOrError"]["targetingInstigators"]
+        assert len(targeting_instigators) == 2
+
+        assert set(
+            targeting_instigator["name"] for targeting_instigator in targeting_instigators
+        ) == {"asset_job_schedule", "every_asset_sensor"}
 
     def test_get_backfill_policy(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(

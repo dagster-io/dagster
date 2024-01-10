@@ -691,7 +691,7 @@ type AssetNode {
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: Int
-  targetingSensors: [Sensor!]!
+  targetingInstigators: [Instigator!]!
 }
 
 type MaterializationUpstreamDataVersion {
@@ -933,6 +933,8 @@ type AssetCheckNeedsUserCodeUpgrade implements Error {
 type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
 }
+
+union Instigator = Schedule | Sensor
 
 enum EvaluationErrorReason {
   RUNTIME_TYPE_MISMATCH

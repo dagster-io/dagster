@@ -379,7 +379,7 @@ export type AssetNode = {
   staleCausesByPartition: Maybe<Array<Array<StaleCause>>>;
   staleStatus: Maybe<StaleStatus>;
   staleStatusByPartition: Array<StaleStatus>;
-  targetingSensors: Array<Sensor>;
+  targetingInstigators: Array<Instigator>;
   type: Maybe<DagsterType>;
 };
 
@@ -1638,6 +1638,8 @@ export enum InstigationType {
 }
 
 export type InstigationTypeSpecificData = ScheduleData | SensorData;
+
+export type Instigator = Schedule | Sensor;
 
 export type IntMetadataEntry = MetadataEntry & {
   __typename: 'IntMetadataEntry';
@@ -5311,8 +5313,10 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('staleStatusByPartition')
         ? overrides.staleStatusByPartition!
         : [],
-    targetingSensors:
-      overrides && overrides.hasOwnProperty('targetingSensors') ? overrides.targetingSensors! : [],
+    targetingInstigators:
+      overrides && overrides.hasOwnProperty('targetingInstigators')
+        ? overrides.targetingInstigators!
+        : [],
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
