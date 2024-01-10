@@ -22,7 +22,6 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.data_version import (
-    DATA_VERSION_TAG,
     DataVersion,
     extract_data_version_from_entry,
 )
@@ -698,12 +697,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 else {}
             )
         else:
-            query_result = self.instance._event_storage.get_latest_tags_by_partition(  # noqa
+            data_versions = self.instance._event_storage.get_latest_data_version_by_partition(  # noqa: SLF001
                 asset_key,
-                event_type=self._event_type_for_key(asset_key),
-                tag_keys=[DATA_VERSION_TAG],
-                after_cursor=after_cursor,
-                before_cursor=before_cursor,
+                after_storage_id=after_cursor,
+                before_storage_id=before_cursor,
                 asset_partitions=(
                     [
                         asset_partition.partition_key
@@ -714,11 +711,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     else None
                 ),
             )
+
             return {
                 AssetKeyPartitionKey(asset_key, partition_key): (
-                    DataVersion(tags[DATA_VERSION_TAG]) if tags.get(DATA_VERSION_TAG) else None
+                    DataVersion(version) if version else None
                 )
-                for partition_key, tags in query_result.items()
+                for partition_key, version in data_versions.items()
             }
 
     def _asset_partition_versions_updated_after_cursor(

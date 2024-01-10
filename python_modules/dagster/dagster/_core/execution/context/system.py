@@ -25,7 +25,6 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.data_version import (
-    DATA_VERSION_TAG,
     SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
     extract_data_version_from_entry,
 )
@@ -1056,16 +1055,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         from dagster._core.definitions.data_version import (
             DataVersion,
         )
-        from dagster._core.events import DagsterEventType
 
-        # TODO: this needs to account for observations also
-        event_type = DagsterEventType.ASSET_MATERIALIZATION
-        tags_by_partition = self.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
-            key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
+        data_version_by_partition = (
+            self.instance._event_storage.get_latest_data_version_by_partition(  # noqa: SLF001
+                key, asset_partitions=list(partition_keys)
+            )
         )
         partition_data_versions = [
-            pair[1][DATA_VERSION_TAG]
-            for pair in sorted(tags_by_partition.items(), key=lambda x: x[0])
+            data_version
+            for _, data_version in sorted(data_version_by_partition.items(), key=lambda x: x[0])
         ]
         hash_sig = sha256()
         hash_sig.update(bytearray("".join(partition_data_versions), "utf8"))
