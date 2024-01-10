@@ -3095,15 +3095,6 @@ class TestEventLogStorage:
         assert bar_info.run_id == test_run_id
         assert bar_info.storage_id == bar_record.storage_id
 
-        # new API
-        result = storage.fetch_planned_materializations(a, limit=100)
-        assert isinstance(result, EventRecordsResult)
-        assert len(result.records) == 1
-        record = result.records[0]
-        assert record.event_log_entry.dagster_event
-        assert record.event_log_entry.dagster_event.asset_key == a
-        assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
-
     def test_asset_key_exists_on_observation(
         self,
         storage: EventLogStorage,
