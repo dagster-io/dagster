@@ -9,7 +9,7 @@ platform_type: "cloud"
 
 Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
 
-It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents). Submitting runs to a specific agent isn't currently supported.
+It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents).
 
 ---
 
@@ -108,9 +108,9 @@ The `isolated_agents` option can be set as per-deployment configuration on the `
 
 ## Routing requests to specific agents
 
-You can route all requests for a given code location to a specific set of agents using agent queues.
+Every Dagster Cloud agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent reads requests only from that default queue. This default configuration is sufficient for most use cases.
 
-Agent queues are annotations on code locations and agents. Requests related to code locations without annotations will be put in a default queue. By default, all agents handle requests for default queue. Agents can optionally be configured to handle requests only for specific agent queues.
+In some cases, you might want to route requests for certain code locations to specific agents. For example, you might want to route requests for one code location to an agent running in an on-premise data center but requests for all other code locations to an agent running in AWS. To route requests for a code locations to a specific agent, you can annotate the code locations with the name of a custom queue and configure an agent to serve only requests for that queue.
 
 When configuring your code location, set an agent queue:
 
