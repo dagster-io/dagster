@@ -1093,7 +1093,9 @@ def test_asset_backfill_cancellation():
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
 
-    assert canceling_backfill_data.have_all_requested_runs_finished() is True
+    assert (
+        canceling_backfill_data.all_requested_partitions_marked_as_materialized_or_failed() is True
+    )
     assert (
         canceling_backfill_data.materialized_subset.get_partitions_subset(
             upstream_hourly_partitioned_asset.key, asset_graph

@@ -34,6 +34,7 @@ from dagster import (
 from dagster._core.definitions import (
     StaticPartitionsDefinition,
 )
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -1129,6 +1130,83 @@ def test_asset_backfill_mid_iteration_cancel(
 
     assert instance.get_runs_count() == RUN_CHUNK_SIZE
     assert instance.get_runs_count(RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)) == 0
+
+
+def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+):
+    asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
+    asset_graph = ExternalAssetGraph.from_workspace(workspace_context.create_request_context())
+
+    target_partitions = ["2023-01-01"]
+    backfill_id = "backfill_with_hanging_partitions"
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=pendulum.now().timestamp(),
+        asset_selection=asset_selection,
+        partition_names=target_partitions,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+    )
+    instance.add_backfill(backfill)
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 1
+
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    assert updated_backfill.asset_backfill_data
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
+    updated_backfill = instance.get_backfill(backfill_id)
+    assert updated_backfill
+    assert updated_backfill.asset_backfill_data
+    assert len(updated_backfill.asset_backfill_data.materialized_subset) == 2
+    # Replace materialized_subset with an empty subset to mock "hanging" partitions
+    # Mark the backfill as CANCELING
+    instance.update_backfill(
+        updated_backfill.with_asset_backfill_data(
+            updated_backfill.asset_backfill_data._replace(materialized_subset=AssetGraphSubset()),
+            dynamic_partitions_store=instance,
+            asset_graph=asset_graph,
+        ).with_status(BulkActionStatus.CANCELING)
+    )
+
+    errors = list(
+        filter(
+            lambda e: e is not None,
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            ),
+        )
+    )
+
+    assert len(errors) == 1
+    error_msg = check.not_none(errors[0]).message
+    assert (
+        "All runs have completed, but not all requested partitions have been marked as materialized or failed"
+    ) in error_msg
 
 
 def test_asset_backfill_with_single_run_backfill_policy(
