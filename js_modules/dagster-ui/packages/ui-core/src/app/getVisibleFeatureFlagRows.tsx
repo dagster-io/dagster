@@ -20,4 +20,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Debug console logging',
     flagType: FeatureFlag.flagDebugConsoleLogging,
   },
+  {
+    key: 'Use old asset auto-materialize history page',
+    flagType: FeatureFlag.flagUseOldAutomationPage,
+  },
 ];

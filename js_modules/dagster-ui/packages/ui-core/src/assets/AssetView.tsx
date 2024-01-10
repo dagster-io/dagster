@@ -3,6 +3,7 @@ import {Alert, Box, NonIdealState, Spinner, Tag, ErrorBoundary} from '@dagster-i
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefresh, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
@@ -31,6 +32,7 @@ import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
+import {AssetAutomaterializePolicyPageOld} from './AutoMaterializePolicyPageOld/AssetAutomaterializePolicyPage';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -182,9 +184,19 @@ export const AssetView = ({assetKey, trace}: Props) => {
     );
   };
 
+  const {flagUseOldAutomationPage} = useFeatureFlags();
+
   const renderAutomaterializeHistoryTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
+    }
+    if (flagUseOldAutomationPage) {
+      return (
+        <AssetAutomaterializePolicyPageOld
+          assetKey={assetKey}
+          assetHasDefinedPartitions={!!definition?.partitionDefinition}
+        />
+      );
     }
     return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
   };

@@ -12,7 +12,7 @@ import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';
 import {AutomaterializeRightPanel} from './AutomaterializeRightPanel';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 
-export const AssetAutomaterializePolicyPage = ({
+export const AssetAutomaterializePolicyPageOld = ({
   assetKey,
   assetHasDefinedPartitions,
 }: {

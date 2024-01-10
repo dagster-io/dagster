@@ -28,20 +28,28 @@ export const ParentUpdatedPartitionLink = ({updatedAssetKeys, willUpdateAssetKey
   const count = partitionNames.length;
   const filteredPartitionNames = useFilterPartitionNames(partitionNames, queryString);
 
+  console.log({filteredPartitionNames});
+
   const visiblePartitions = React.useMemo(() => {
     return Object.fromEntries(
       filteredPartitionNames.map((partitionName) => {
         return [
           partitionName,
           [
-            ...(updatedAssetKeys[partitionName] || []).sort(sortAssetKeys).map((assetKey) => ({
-              assetKey,
-              detailType: AssetDetailType.Updated,
-            })),
-            ...(willUpdateAssetKeys[partitionName] || []).sort(sortAssetKeys).map((assetKey) => ({
-              assetKey,
-              detailType: AssetDetailType.WillUpdate,
-            })),
+            ...(updatedAssetKeys[partitionName] || [])
+              .slice()
+              .sort(sortAssetKeys)
+              .map((assetKey) => ({
+                assetKey,
+                detailType: AssetDetailType.Updated,
+              })),
+            ...(willUpdateAssetKeys[partitionName] || [])
+              .slice()
+              .sort(sortAssetKeys)
+              .map((assetKey) => ({
+                assetKey,
+                detailType: AssetDetailType.WillUpdate,
+              })),
           ],
         ];
       }),
