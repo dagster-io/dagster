@@ -61,6 +61,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         dequeue_num_workers: Optional[int] = None,
         max_user_code_failure_retries: Optional[int] = None,
         user_code_failure_retry_delay: Optional[int] = None,
+        block_op_concurrency_limited_runs: Optional[bool] = None,
         inst_data: Optional[ConfigurableClassData] = None,
     ):
         self._inst_data: Optional[ConfigurableClassData] = check.opt_inst_param(
@@ -93,6 +94,10 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         self._user_code_failure_retry_delay: int = check.opt_int_param(
             user_code_failure_retry_delay, "user_code_failure_retry_delay", 60
         )
+        self._block_op_concurrency_limited_runs: bool = check.opt_bool_param(
+            block_op_concurrency_limited_runs, "block_op_concurrency_limited_runs", False
+        )
+
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
@@ -119,6 +124,10 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
     @property
     def dequeue_num_workers(self) -> Optional[int]:
         return self._dequeue_num_workers
+
+    @property
+    def block_op_concurrency_limited_runs(self) -> bool:
+        return self._block_op_concurrency_limited_runs
 
     @classmethod
     def config_type(cls) -> UserConfigSchema:
@@ -204,6 +213,14 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                     " launcher is being used."
                 ),
             ),
+            "block_op_concurrency_limited_runs": Field(
+                config=bool,
+                is_required=False,
+                description=(
+                    "Determines whether or not a run will be dequeued if it consists of ops that "
+                    "will all be blocked waiting for global op concurrency slot to be free."
+                ),
+            ),
         }
 
     @classmethod
@@ -219,6 +236,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             dequeue_num_workers=config_value.get("dequeue_num_workers"),
             max_user_code_failure_retries=config_value.get("max_user_code_failure_retries"),
             user_code_failure_retry_delay=config_value.get("user_code_failure_retry_delay"),
+            block_op_concurrency_limited_runs=config_value.get("block_op_concurrency_limited_runs"),
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:

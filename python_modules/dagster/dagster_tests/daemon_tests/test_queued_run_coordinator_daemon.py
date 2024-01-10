@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Iterator
 
 import pytest
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.host_representation.code_location import GrpcServerCodeLocation
 from dagster._core.host_representation.handle import JobHandle
@@ -14,10 +16,13 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
     instance_for_test,
 )
-from dagster._core.workspace.load_target import EmptyWorkspaceTarget
+from dagster._core.workspace.load_target import EmptyWorkspaceTarget, PythonFileTarget
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster._utils import file_relative_path
 
-from dagster_tests.api_tests.utils import get_foo_job_handle
+from dagster_tests.api_tests.utils import (
+    get_foo_job_handle,
+)
 
 
 class QueuedRunCoordinatorDaemonTests(ABC):
@@ -50,6 +55,21 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def job_handle(self) -> Iterator[JobHandle]:
         with get_foo_job_handle() as handle:
             yield handle
+
+    @pytest.fixture()
+    def concurrency_limited_workspace_context(self, instance):
+        with create_test_daemon_workspace_context(
+            workspace_load_target=PythonFileTarget(
+                python_file=file_relative_path(
+                    __file__, "test_locations/concurrency_limited_workspace.py"
+                ),
+                attribute=None,
+                working_directory=None,
+                location_name="test",
+            ),
+            instance=instance,
+        ) as workspace_context:
+            yield workspace_context
 
     @pytest.fixture(scope="module")
     def other_location_job_handle(self, job_handle: JobHandle) -> JobHandle:
@@ -902,6 +922,57 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
         list(daemon.run_iteration(workspace_context))
         assert self.get_run_ids(instance.run_launcher.queue()) == ["high-priority"]
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            dict(block_op_concurrency_limited_runs=True),
+        ],
+    )
+    def test_op_concurrency_aware_dequeuing(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        external_job = workspace.get_full_external_job(
+            JobSubsetSelector(
+                location_name="test",
+                repository_name="__repository__",
+                job_name="concurrency_limited_asset_job",
+                op_selection=None,
+            )
+        )
+        self.create_queued_run(
+            instance,
+            external_job.handle,
+            run_id="run-1",
+            asset_selection=set([AssetKey("concurrency_limited_asset")]),
+            job_snapshot=external_job.job_snapshot,
+        )
+
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set(["run-1"])
+
+        self.create_queued_run(
+            instance,
+            external_job.handle,
+            run_id="run-2",
+            asset_selection=set([AssetKey("concurrency_limited_asset")]),
+            job_snapshot=external_job.job_snapshot,
+        )
+        instance.event_log_storage.set_concurrency_slots("foo", 0)
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == {"run-1"}
+        assert any(
+            [
+                event
+                for event in instance.all_logs("run-2")
+                if "blocked waiting for op concurrency slots" in event.message
+            ]
+        )
 
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):

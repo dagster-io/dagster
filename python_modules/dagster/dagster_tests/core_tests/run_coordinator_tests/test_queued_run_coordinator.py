@@ -87,6 +87,7 @@ class TestQueuedRunCoordinator:
                             "dequeue_interval_seconds": {
                                 "env": "DEQUEUE_INTERVAL",
                             },
+                            "block_op_concurrency_limited_runs": True,
                         },
                     }
                 }
