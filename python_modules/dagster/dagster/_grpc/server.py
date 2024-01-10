@@ -10,7 +10,6 @@ import time
 import uuid
 import warnings
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from functools import update_wrapper
 from threading import Event as ThreadingEventType
@@ -57,6 +56,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._core.workspace.autodiscovery import LoadableTarget
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
@@ -128,11 +128,17 @@ _METRICS_LOCK = threading.Lock()
 METRICS_RETRIEVAL_FUNCTIONS = set()
 
 
-def _record_max_concurrent_requests(max_workers: Optional[int]) -> None:
+def _update_threadpool_metrics(executor: FuturesAwareThreadPoolExecutor) -> None:
     with _METRICS_LOCK:
-        _UTILIZATION_METRICS["resource_utilization"]["max_concurrent_requests"] = (
-            max_workers if max_workers is not None else -1
-        )
+        _UTILIZATION_METRICS["resource_utilization"][
+            "max_concurrent_requests"
+        ] = executor.max_workers
+        _UTILIZATION_METRICS["resource_utilization"][
+            "current_running_requests"
+        ] = executor.num_running_futures
+        _UTILIZATION_METRICS["resource_utilization"][
+            "current_queued_requests"
+        ] = executor.num_queued_futures
 
 
 def _record_utilization_metrics(logger: logging.Logger) -> None:
@@ -163,6 +169,7 @@ def retrieve_metrics():
                     return fn(self, request, context)
                 # Only record utilization metrics on ping, so as to not over-burden with IO.
                 if fn.__name__ == "Ping":
+                    _update_threadpool_metrics(self._server_threadpool_executor)
                     _record_utilization_metrics(self._logger)
                 with _METRICS_LOCK:
                     if "current_request_count" not in _UTILIZATION_METRICS[api_call]:
@@ -294,6 +301,7 @@ class DagsterApiServer(DagsterApiServicer):
         self,
         server_termination_event: ThreadingEventType,
         logger: logging.Logger,
+        server_threadpool_executor: FuturesAwareThreadPoolExecutor,
         loadable_target_origin: Optional[LoadableTargetOrigin] = None,
         heartbeat: bool = False,
         heartbeat_timeout: int = 30,
@@ -359,6 +367,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._exit_stack = ExitStack()
 
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
+        self._server_threadpool_executor = server_threadpool_executor
 
         try:
             if inject_env_vars_from_instance:
@@ -1113,10 +1122,10 @@ class DagsterGrpcServer:
         server_termination_event: threading.Event,
         dagster_api_servicer: DagsterApiServicer,
         logger: logging.Logger,
+        threadpool_executor: FuturesAwareThreadPoolExecutor,
         host="localhost",
         port: Optional[int] = None,
         socket: Optional[str] = None,
-        max_workers: Optional[int] = None,
         enable_metrics: bool = False,
     ):
         check.invariant(
@@ -1136,13 +1145,12 @@ class DagsterGrpcServer:
 
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
 
+        self._threadpool_executor = threadpool_executor
         if self._enable_metrics:
-            _record_max_concurrent_requests(max_workers)
+            _update_threadpool_metrics(self._threadpool_executor)
+
         self.server = grpc.server(
-            ThreadPoolExecutor(
-                max_workers=max_workers,
-                thread_name_prefix="grpc-server-rpc-handler",
-            ),
+            self._threadpool_executor,
             compression=grpc.Compression.Gzip,
             options=[
                 ("grpc.max_send_message_length", max_send_bytes()),

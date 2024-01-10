@@ -11,6 +11,7 @@ import dagster._seven as seven
 import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster._grpc.server import GrpcServerProcess, open_server_process
 from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
@@ -35,6 +36,7 @@ def test_server_socket_on_windows():
                 dagster_api_servicer=mock.MagicMock(),
                 logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
+                threadpool_executor=FuturesAwareThreadPoolExecutor(),
             )
 
 
@@ -50,6 +52,7 @@ def test_server_port_and_socket():
                 logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
                 port=find_free_port(),
+                threadpool_executor=FuturesAwareThreadPoolExecutor(),
             )
 
 
