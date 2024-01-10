@@ -38,7 +38,7 @@ class AvailablePythonVersion(str, Enum):
                 marker = f"test-{cls.to_tox_factor(version)}"
                 if any(marker in v for v in env_vars):
                     specified_versions.append(version)
-            if any("test-all" in v for v in env_vars):
+            if any("test-all" in v for v in env_vars) or True:
                 specified_versions += cls.get_all()
 
             return (
