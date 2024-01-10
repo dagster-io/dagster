@@ -386,13 +386,41 @@ const AssetGraphExplorerWithData = ({
     selectNodeById(e, nextId);
   };
 
+  const selectAllGroupNodesById = React.useCallback(
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, groupId: string) => {
+      const assets = groupedAssets[groupId] || [];
+      const childNodeTokens = assets.map((n) => tokenForAssetKey(n.assetKey));
+
+      const existing = explorerPath.opNames[0]!.split(',');
+
+      const nextOpsNameSelection = childNodeTokens.every((token) => existing.includes(token))
+        ? uniq(without(existing, ...childNodeTokens)).join(',')
+        : uniq([...existing, ...childNodeTokens]).join(',');
+
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opNames: [nextOpsNameSelection],
+        },
+        'replace',
+      );
+    },
+    [groupedAssets, explorerPath, onChangeExplorerPath],
+  );
+
   const selectNodeById = React.useCallback(
     (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
       if (!nodeId) {
         return;
       }
-      if (isGroupId(nodeId)) {
-        zoomToGroup(nodeId);
+      const modifiedNodeId = '__repository__@' + nodeId;
+      if (isGroupId(modifiedNodeId)) {
+        zoomToGroup(modifiedNodeId);
+
+        if (e.metaKey) {
+          selectAllGroupNodesById(e, modifiedNodeId);
+        }
+
         return;
       }
       const node = assetGraphData.nodes[nodeId];
@@ -409,7 +437,15 @@ const AssetGraphExplorerWithData = ({
         setExpandedGroups([...expandedGroups, groupIdForNode(node)]);
       }
     },
-    [assetGraphData.nodes, layout, onSelectNode, zoomToGroup, expandedGroups, setExpandedGroups],
+    [
+      assetGraphData.nodes,
+      onSelectNode,
+      layout,
+      zoomToGroup,
+      selectAllGroupNodesById,
+      setExpandedGroups,
+      expandedGroups,
+    ],
   );
 
   const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
@@ -514,9 +550,13 @@ const AssetGraphExplorerWithData = ({
                     assets: groupedAssets[group.id] || [],
                   }}
                   minimal={scale < MINIMAL_SCALE}
-                  onCollapse={() => {
-                    focusGroupIdAfterLayoutRef.current = group.id;
-                    setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
+                  onCollapse={(e) => {
+                    if (e.metaKey) {
+                      selectAllGroupNodesById(e, group.id);
+                    } else {
+                      focusGroupIdAfterLayoutRef.current = group.id;
+                      setExpandedGroups(expandedGroups.filter((g) => g !== group.id));
+                    }
                   }}
                 />
               </foreignObject>
@@ -562,9 +602,13 @@ const AssetGraphExplorerWithData = ({
                     assetCount: allGroupCounts[group.id] || 0,
                     assets: groupedAssets[group.id] || [],
                   }}
-                  onExpand={() => {
-                    focusGroupIdAfterLayoutRef.current = group.id;
-                    setExpandedGroups([...expandedGroups, group.id]);
+                  onExpand={(e) => {
+                    if (e.metaKey) {
+                      selectAllGroupNodesById(e, group.id);
+                    } else {
+                      focusGroupIdAfterLayoutRef.current = group.id;
+                      setExpandedGroups([...expandedGroups, group.id]);
+                    }
                   }}
                 />
               </foreignObject>

@@ -70,7 +70,7 @@ export const CollapsedGroupNode = ({
   onFilterToGroup,
 }: {
   minimal: boolean;
-  onExpand: () => void;
+  onExpand: (e: React.MouseEvent) => void;
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
   preferredJobName: string;
   onFilterToGroup: () => void;
@@ -84,7 +84,7 @@ export const CollapsedGroupNode = ({
     <ContextMenuWrapper menu={menu} stopPropagation>
       <CollapsedGroupNodeContainer
         onClick={(e) => {
-          onExpand();
+          onExpand(e);
           e.stopPropagation();
         }}
       >

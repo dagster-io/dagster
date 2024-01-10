@@ -337,6 +337,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                 const isCodelocationNode = 'locationName' in node;
                 const isGroupNode = 'groupName' in node;
                 const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
+                const isSelected =
+                  selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
                 return (
                   <Row $height={size} $start={start} key={key} data-key={key}>
                     <AssetSidebarNode
@@ -345,9 +347,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                       node={row!}
                       level={node.level}
                       isLastSelected={lastSelectedNode?.id === node.id}
-                      isSelected={
-                        selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode)
-                      }
+                      isSelected={isSelected}
                       toggleOpen={() => {
                         setOpenNodes((nodes) => {
                           const openNodes = new Set(nodes);
