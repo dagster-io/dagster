@@ -9,7 +9,6 @@ import threading
 import time
 import uuid
 import warnings
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from functools import update_wrapper
@@ -27,6 +26,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypedDict,
     cast,
 )
 
@@ -61,8 +61,9 @@ from dagster._utils import (
     get_run_crash_explanation,
     safe_tempfile_path_unmanaged,
 )
-from dagster._utils.container import retrieve_containerized_utilization_metrics
+from dagster._utils.container import UtilizationMetrics, retrieve_containerized_utilization_metrics
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.typed_dict import init_optional_typeddict
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
@@ -119,9 +120,24 @@ STREAMING_CHUNK_SIZE = 4000000
 
 UTILIZATION_METRICS_RETRIEVAL_INTERVAL = 30
 
-_UTILIZATION_METRICS = defaultdict(dict)
 _METRICS_LOCK = threading.Lock()
 METRICS_RETRIEVAL_FUNCTIONS = set()
+
+
+class CodeServerResourceUtilizationMetrics(UtilizationMetrics):
+    max_concurrent_requests: Optional[int]
+
+
+class RequestMetrics(TypedDict):
+    current_request_count: Optional[int]
+
+
+class DagsterCodeServerUtilizationMetrics(TypedDict):
+    resource_utilization: CodeServerResourceUtilizationMetrics
+    per_request_metrics: Dict[str, RequestMetrics]
+
+
+_UTILIZATION_METRICS = init_optional_typeddict(DagsterCodeServerUtilizationMetrics)
 
 
 def _record_max_concurrent_requests(max_workers: Optional[int]) -> None:
@@ -140,11 +156,20 @@ def _record_utilization_metrics(logger: logging.Logger) -> None:
         utilization_metrics = retrieve_containerized_utilization_metrics(
             logger, last_cpu_measurement_time, last_cpu_measurement
         )
-        _UTILIZATION_METRICS["resource_utilization"].update(utilization_metrics)
+        for key, val in utilization_metrics.items():
+            _UTILIZATION_METRICS["resource_utilization"][key] = val
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
     pass
+
+
+def _get_request_count(api_name: str) -> Optional[int]:
+    return _UTILIZATION_METRICS["per_request_metrics"][api_name]["current_request_count"]
+
+
+def _set_request_count(api_name: str, value: Any) -> None:
+    _UTILIZATION_METRICS["per_request_metrics"][api_name]["current_request_count"] = value
 
 
 def retrieve_metrics():
@@ -161,14 +186,14 @@ def retrieve_metrics():
                 if fn.__name__ == "Ping":
                     _record_utilization_metrics(self._logger)
                 with _METRICS_LOCK:
-                    if "current_request_count" not in _UTILIZATION_METRICS[api_call]:
-                        _UTILIZATION_METRICS[api_call]["current_request_count"] = 0
-                    _UTILIZATION_METRICS[api_call]["current_request_count"] += 1
+                    cur_request_count = _get_request_count(api_call)
+                    _set_request_count(api_call, cur_request_count + 1 if cur_request_count else 1)
 
                 res = fn(self, request, context)
 
                 with _METRICS_LOCK:
-                    _UTILIZATION_METRICS[api_call]["current_request_count"] -= 1
+                    cur_request_count = _get_request_count(api_call)
+                    _set_request_count(api_call, cur_request_count - 1 if cur_request_count else 0)
 
                 return res
 
