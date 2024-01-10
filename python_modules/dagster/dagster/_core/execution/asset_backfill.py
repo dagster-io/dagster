@@ -739,7 +739,7 @@ def _submit_runs_and_update_backfill_in_chunks(
             elif num_retries_allowed > 0:
                 logger.warning(
                     "Execution plan is out of sync with the workspace. Pausing the backfill for "
-                    "60s to allow the execution plan to rebuild with the updated workspace."
+                    f"{RELOAD_WORKSPACE_INTERVAL} to allow the execution plan to rebuild with the updated workspace."
                 )
                 # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
                 # at most once every interval
@@ -755,7 +755,7 @@ def _submit_runs_and_update_backfill_in_chunks(
 
             else:  # Already hit the max number of retries
                 check.failed(
-                    f"Failed to target asset selection {run_request.asset_selection} in run after {num_retries_allowed} retries."
+                    f"Failed to target asset selection {run_request.asset_selection} in run after retrying."
                 )
 
         unsubmitted_run_request_idx = chunk_end_idx
