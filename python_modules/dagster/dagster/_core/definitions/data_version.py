@@ -142,6 +142,13 @@ class DataProvenance(
             is_user_provided=check.bool_param(is_user_provided, "is_user_provided"),
         )
 
+    # In theory an asset key should always be absent/present in both input_data_versions and
+    # input_storage_ids, but in the wild we've observed at least one instance
+    # where this was not true, resulting in an error. This method can be used
+    # as a defensive check.
+    def has_input_asset(self, key: "AssetKey") -> bool:
+        return key in self.input_data_versions and key in self.input_storage_ids
+
     @staticmethod
     def from_tags(tags: Mapping[str, str]) -> Optional["DataProvenance"]:
         code_version = tags.get(CODE_VERSION_TAG)
@@ -511,7 +518,7 @@ class CachingStaleStatusResolver:
                     self._get_stale_causes(key=dep_key),
                 )
             elif provenance:
-                if dep_key.asset_key not in provenance.input_data_versions:
+                if not provenance.has_input_asset(dep_key.asset_key):
                     yield StaleCause(
                         key,
                         StaleCauseCategory.DEPENDENCIES,
