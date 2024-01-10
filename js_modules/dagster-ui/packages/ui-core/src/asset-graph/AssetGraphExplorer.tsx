@@ -203,7 +203,7 @@ const AssetGraphExplorerWithData = ({
   trace,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
-  const [highlighted, setHighlighted] = React.useState<string | null>(null);
+  const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
 
   const {allGroups, allGroupCounts, groupedAssets} = React.useMemo(() => {
     const groupedAssets: Record<string, GraphNode[]> = {};
@@ -485,6 +485,7 @@ const AssetGraphExplorerWithData = ({
                 }}
               >
                 <ExpandedGroupNode
+                  setHighlighted={setHighlighted}
                   preferredJobName={explorerPath.pipelineName}
                   onFilterToGroup={() => onFilterToGroup(group)}
                   group={{
@@ -517,6 +518,8 @@ const AssetGraphExplorerWithData = ({
                 key={group.id}
                 {...group.bounds}
                 className="group"
+                onMouseEnter={() => setHighlighted([group.id])}
+                onMouseLeave={() => setHighlighted(null)}
                 onDoubleClick={(e) => {
                   if (!viewportEl.current) {
                     return;
@@ -569,7 +572,7 @@ const AssetGraphExplorerWithData = ({
                 <foreignObject
                   {...bounds}
                   key={id}
-                  onMouseEnter={() => setHighlighted(id)}
+                  onMouseEnter={() => setHighlighted([id])}
                   onMouseLeave={() => setHighlighted(null)}
                   onClick={(e) => onSelectNode(e, {path}, graphNode)}
                   onDoubleClick={(e) => {
