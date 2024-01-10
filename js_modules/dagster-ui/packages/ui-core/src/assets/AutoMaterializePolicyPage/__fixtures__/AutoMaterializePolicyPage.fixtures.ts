@@ -3,17 +3,19 @@ import {DocumentNode} from 'graphql';
 
 import {
   AutoMaterializeDecisionType,
+  buildAssetConditionEvaluation,
+  buildAssetConditionEvaluationRecord,
   buildAssetConditionEvaluationRecords,
   buildAssetKey,
   buildAssetNode,
   buildAutoMaterializeAssetEvaluationRecord,
-  buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
   buildAutoMaterializeRule,
   buildAutoMaterializeRuleEvaluation,
   buildAutoMaterializeRuleWithRuleEvaluations,
   buildParentMaterializedRuleEvaluationData,
   buildPartitionKeys,
+  buildUnpartitionedAssetConditionEvaluationNode,
 } from '../../../graphql/types';
 import {GET_EVALUATIONS_QUERY} from '../GetEvaluationsQuery';
 import {
@@ -69,61 +71,52 @@ export const TEST_EVALUATION_ID = 27;
 export const buildEvaluationRecordsWithPartitions = () => {
   const now = Date.now();
   return [
-    buildAutoMaterializeAssetEvaluationRecord({
-      id: 'g',
-      evaluationId: TEST_EVALUATION_ID,
-      timestamp: (now - ONE_MINUTE * 6) / 1000,
+    buildAssetConditionEvaluationRecord({
       numRequested: 2,
-      numSkipped: 2,
-      numDiscarded: 2,
-    }),
-    buildAutoMaterializeAssetEvaluationRecord({
+      evaluation: buildAssetConditionEvaluation({
+        rootUniqueId: '1',
+        evaluationNodes: [
+          buildUnpartitionedAssetConditionEvaluationNode({
+            uniqueId: '1',
+          }),
+        ],
+      }),
+    }) as any,
+    buildAssetConditionEvaluationRecord({
       id: 'f',
       evaluationId: 24,
       timestamp: (now - ONE_MINUTE * 5) / 1000,
       numRequested: 2,
-      numSkipped: 2,
-      numDiscarded: 0,
     }),
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'e',
       evaluationId: 20,
       timestamp: (now - ONE_MINUTE * 4) / 1000,
       numRequested: 0,
-      numSkipped: 2410,
-      numDiscarded: 3560,
     }),
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'd',
       evaluationId: 13,
       timestamp: (now - ONE_MINUTE * 3) / 1000,
       numRequested: 2,
-      numSkipped: 0,
-      numDiscarded: 2,
     }),
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'c',
       timestamp: (now - ONE_MINUTE * 2) / 1000,
       evaluationId: 12,
       numRequested: 0,
-      numSkipped: 0,
-      numDiscarded: 2,
     }),
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'b',
       evaluationId: 4,
       timestamp: (now - ONE_MINUTE) / 1000,
       numRequested: 0,
-      numSkipped: 2,
-      numDiscarded: 0,
     }),
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'a',
       evaluationId: 0,
       timestamp: now / 1000,
       numRequested: 2,
-      numSkipped: 0,
-      numDiscarded: 0,
     }),
   ];
 };
@@ -131,29 +124,23 @@ export const buildEvaluationRecordsWithPartitions = () => {
 export const buildEvaluationRecordsWithoutPartitions = () => {
   const now = Date.now();
   return [
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'g',
       evaluationId: TEST_EVALUATION_ID,
       timestamp: (now - ONE_MINUTE * 6) / 1000,
       numRequested: 1,
-      numSkipped: 0,
-      numDiscarded: 0,
     }),
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'f',
       evaluationId: 24,
       timestamp: (now - ONE_MINUTE * 5) / 1000,
       numRequested: 0,
-      numSkipped: 1,
-      numDiscarded: 0,
     }),
-    buildAutoMaterializeAssetEvaluationRecord({
+    buildAssetConditionEvaluationRecord({
       id: 'e',
       evaluationId: 20,
       timestamp: (now - ONE_MINUTE * 4) / 1000,
       numRequested: 0,
-      numSkipped: 0,
-      numDiscarded: 1,
     }),
   ];
 };

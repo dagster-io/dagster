@@ -34,8 +34,8 @@ export const TruePartitions = () => {
       <PartitionSegmentWithPopover
         description="is_missing"
         status={AssetConditionEvaluationStatus.TRUE}
-        width={200}
         subset={subset}
+        selectPartition={() => {}}
       />
     </Box>
   );
@@ -62,8 +62,8 @@ export const FalsePartitions = () => {
       <PartitionSegmentWithPopover
         description="is_missing"
         status={AssetConditionEvaluationStatus.FALSE}
-        width={200}
         subset={subset}
+        selectPartition={() => {}}
       />
     </Box>
   );
@@ -90,8 +90,8 @@ export const SkippedPartitions = () => {
       <PartitionSegmentWithPopover
         description="is_missing"
         status={AssetConditionEvaluationStatus.SKIPPED}
-        width={200}
         subset={subset}
+        selectPartition={() => {}}
       />
     </Box>
   );
@@ -118,8 +118,8 @@ export const FewPartitions = () => {
       <PartitionSegmentWithPopover
         description="is_missing"
         status={AssetConditionEvaluationStatus.TRUE}
-        width={200}
         subset={subset}
+        selectPartition={() => {}}
       />
     </Box>
   );

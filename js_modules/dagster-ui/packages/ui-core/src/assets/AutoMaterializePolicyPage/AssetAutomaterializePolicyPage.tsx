@@ -1,4 +1,4 @@
-import {Box, colorTextLight} from '@dagster-io/ui-components';
+import {Box, Spinner, colorTextLight} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -59,6 +59,17 @@ export const AssetAutomaterializePolicyPage = ({
     }
     return evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
   }, [selectedEvaluationId, isFirstPage, evaluations]);
+
+  if (!queryResult.data && queryResult.loading) {
+    return (
+      <Box
+        style={{height: 390}}
+        flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+      >
+        <Spinner purpose="page" />
+      </Box>
+    );
+  }
 
   return (
     <AutomaterializePage

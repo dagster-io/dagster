@@ -93,7 +93,7 @@ export const AssetSidebarActivitySummary = ({
             flex={{direction: 'row', gap: 4, alignItems: 'center'}}
           >
             <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'automation'})}>
-              View auto-materialize history
+              View automation history
             </Link>
             <Icon name="open_in_new" color={colorLinkDefault()} />
           </Box>

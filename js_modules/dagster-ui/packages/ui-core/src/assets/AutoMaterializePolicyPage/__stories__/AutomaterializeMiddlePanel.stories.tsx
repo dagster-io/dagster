@@ -1,13 +1,21 @@
 import {MockedProvider} from '@apollo/client/testing';
 import * as React from 'react';
 
-import {RunStatus, buildAssetNode, buildPartitionDefinition} from '../../../graphql/types';
+import {
+  buildAsset,
+  buildAssetConditionEvaluation,
+  buildAssetConditionEvaluationRecord,
+  buildAssetNode,
+  buildDimensionPartitionKeys,
+  buildPartitionDefinition,
+  buildPartitionedAssetConditionEvaluationNode,
+  buildUnpartitionedAssetConditionEvaluationNode,
+} from '../../../graphql/types';
 import {
   AutomaterializeMiddlePanel,
   AutomaterializeMiddlePanelWithData,
 } from '../AutomaterializeMiddlePanel';
 import {Evaluations, TEST_EVALUATION_ID} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
-import {buildRunStatusOnlyQuery} from '../__fixtures__/RunStatusOnlyQuery.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -19,9 +27,7 @@ const path = ['test'];
 
 export const Empty = () => {
   return (
-    <MockedProvider
-      mocks={[Evaluations.Single(path), buildRunStatusOnlyQuery('abcdef12', RunStatus.STARTED)]}
-    >
+    <MockedProvider mocks={[Evaluations.Single(path)]}>
       <div style={{width: '800px'}}>
         <AutomaterializeMiddlePanel assetKey={{path}} selectedEvaluationId={undefined} />
       </div>
@@ -31,14 +37,33 @@ export const Empty = () => {
 
 export const WithoutPartitions = () => {
   return (
-    <MockedProvider
-      mocks={[
-        Evaluations.Single(path, `${TEST_EVALUATION_ID + 1}`),
-        buildRunStatusOnlyQuery('abcdef12', RunStatus.STARTED),
-      ]}
-    >
+    <MockedProvider mocks={[Evaluations.Single(path, `${TEST_EVALUATION_ID + 1}`)]}>
       <div style={{width: '800px'}}>
-        <AutomaterializeMiddlePanel assetKey={{path}} selectedEvaluationId={TEST_EVALUATION_ID} />
+        <AutomaterializeMiddlePanel
+          assetKey={{path}}
+          definition={
+            buildAssetNode({
+              partitionKeysByDimension: [
+                buildDimensionPartitionKeys({
+                  partitionKeys: ['testing', 'testing2'],
+                }),
+              ],
+            }) as any
+          }
+          selectedEvaluation={
+            buildAssetConditionEvaluationRecord({
+              evaluation: buildAssetConditionEvaluation({
+                rootUniqueId: '1',
+                evaluationNodes: [
+                  buildUnpartitionedAssetConditionEvaluationNode({
+                    uniqueId: '1',
+                  }),
+                ],
+              }),
+            }) as any
+          }
+          selectedEvaluationId={TEST_EVALUATION_ID}
+        />
       </div>
     </MockedProvider>
   );
@@ -46,16 +71,31 @@ export const WithoutPartitions = () => {
 
 export const WithPartitions = () => {
   return (
-    <MockedProvider
-      mocks={[
-        Evaluations.SinglePartitioned(path, `${TEST_EVALUATION_ID + 1}`),
-        buildRunStatusOnlyQuery('abcdef12', RunStatus.STARTED),
-      ]}
-    >
+    <MockedProvider mocks={[Evaluations.SinglePartitioned(path, `${TEST_EVALUATION_ID + 1}`)]}>
       <div style={{width: '800px'}}>
         <AutomaterializeMiddlePanel
           assetKey={{path}}
-          definition={buildAssetNode({partitionDefinition: buildPartitionDefinition()}) as any}
+          definition={
+            buildAssetNode({
+              partitionKeysByDimension: [
+                buildDimensionPartitionKeys({
+                  partitionKeys: ['testing', 'testing2'],
+                }),
+              ],
+            }) as any
+          }
+          selectedEvaluation={
+            buildAssetConditionEvaluationRecord({
+              evaluation: buildAssetConditionEvaluation({
+                rootUniqueId: '1',
+                evaluationNodes: [
+                  buildPartitionedAssetConditionEvaluationNode({
+                    uniqueId: '1',
+                  }),
+                ],
+              }),
+            }) as any
+          }
           selectedEvaluationId={TEST_EVALUATION_ID}
         />
       </div>

@@ -4,7 +4,7 @@ import React from 'react';
 
 import {AutoMaterializePolicyType} from '../../../graphql/types';
 import {AssetAutomaterializePolicyPage} from '../AssetAutomaterializePolicyPage';
-import {Evaluations, Policies} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
+import {Evaluations} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -16,24 +16,16 @@ const path = ['test'];
 
 export const EmptyState = () => {
   return (
-    <MockedProvider
-      mocks={[Policies.NoAutomaterializeNoFreshnessPolicy(path), Evaluations.None(path, true)]}
-    >
-      <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
+    <MockedProvider mocks={[Evaluations.None(path, true)]}>
+      <AssetAutomaterializePolicyPage assetKey={{path}} />
     </MockedProvider>
   );
 };
 
 export const Errors = () => {
   return (
-    <MockedProvider
-      mocks={[
-        Evaluations.Errors(path),
-        Evaluations.Errors(path, true),
-        Policies.NoAutomaterializeNoFreshnessPolicy(path),
-      ]}
-    >
-      <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
+    <MockedProvider mocks={[Evaluations.Errors(path), Evaluations.Errors(path, true)]}>
+      <AssetAutomaterializePolicyPage assetKey={{path}} />
     </MockedProvider>
   );
 };
@@ -42,23 +34,10 @@ export const Controlled = () => {
   const [policyType, setPolicyType] = React.useState<any>(AutoMaterializePolicyType.EAGER);
   const [freshnessPolicy, setFreshnessPolicy] = React.useState(true);
 
-  const policyMock = React.useMemo(() => {
-    if (policyType === 'None') {
-      return freshnessPolicy
-        ? Policies.NoAutomaterializeYesFreshnessPolicy(path)
-        : Policies.NoAutomaterializeNoFreshnessPolicy(path);
-    } else {
-      return freshnessPolicy
-        ? Policies.YesAutomaterializeYesFreshnessPolicy(path, policyType)
-        : Policies.NoAutomaterializeYesFreshnessPolicy(path);
-    }
-  }, [freshnessPolicy, policyType]);
-
   return (
-    <div key={policyType + freshnessPolicy.toString()}>
+    <div key={freshnessPolicy.toString()}>
       <MockedProvider
         mocks={[
-          policyMock,
           Evaluations.Some(path),
           Evaluations.SinglePartitioned(path, '9798'),
           Evaluations.SinglePartitioned(path, '28'),
@@ -88,7 +67,7 @@ export const Controlled = () => {
               />
             </JoinedButtons>
           </Box>
-          <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
+          <AssetAutomaterializePolicyPage assetKey={{path}} />
         </div>
       </MockedProvider>
     </div>
