@@ -23,7 +23,7 @@ class HNAPIClient(ConfigurableResource):
 
     @property
     def item_field_names(self) -> list:
-        # ommitted for brevity, see full code example for implementation
+        # omitted for brevity, see full code example for implementation
         return []
 
 
