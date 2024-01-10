@@ -125,9 +125,7 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         return (env_var_str, cast(str, env_var_value))
 
 
-class InheritContextThreadPoolExecutor(ThreadPoolExecutor):
-    """A ThreadPoolExecutor that copies over contextvars at submit time."""
-
+class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
     def __init__(
         self,
         max_workers: Optional[int] = None,
@@ -137,12 +135,11 @@ class InheritContextThreadPoolExecutor(ThreadPoolExecutor):
     ) -> None:
         super().__init__(max_workers, thread_name_prefix, initializer, initargs)
         # The default threadpool class doesn't track the futures it creates,
-        # so if we want to be able to count the number of running ftutures, we need to do it ourselves.
+        # so if we want to be able to count the number of running futures, we need to do it ourselves.
         self._all_futures = []
 
     def submit(self, fn, *args, **kwargs):
-        ctx = copy_context()
-        new_future = super().submit(ctx.run, fn, *args, **kwargs)
+        new_future = super().submit(fn, *args, **kwargs)
         self._all_futures = [
             future for future in self._all_futures if not future.done()
         ]  # clean up done futures
@@ -163,3 +160,11 @@ class InheritContextThreadPoolExecutor(ThreadPoolExecutor):
     @property
     def num_queued_futures(self) -> int:
         return self._work_queue.qsize()
+
+
+class InheritContextThreadPoolExecutor(FuturesAwareThreadPoolExecutor):
+    """A ThreadPoolExecutor that copies over contextvars at submit time."""
+
+    def submit(self, fn, *args, **kwargs):
+        ctx = copy_context()
+        return super().submit(ctx.run, fn, *args, **kwargs)
