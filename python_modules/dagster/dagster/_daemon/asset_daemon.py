@@ -412,7 +412,7 @@ class AssetDaemon(DagsterDaemon):
                         InstigatorStatus.AUTOMATICALLY_RUNNING,
                         SensorInstigatorData(
                             min_interval=sensor.min_interval_seconds,
-                            cursor=AssetDaemonCursor.empty().serialize(),
+                            cursor=None,
                             last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
                             sensor_type=SensorType.AUTOMATION_POLICY,
                         ),
@@ -534,7 +534,7 @@ class AssetDaemon(DagsterDaemon):
                 check.not_none(auto_materialize_instigator_state).instigator_data,
             ).cursor
 
-            stored_cursor = (
+            stored_cursor: AssetDaemonCursor = (
                 LegacyAssetDaemonCursorWrapper.from_compressed(
                     compressed_cursor
                 ).get_asset_daemon_cursor(asset_graph)
@@ -661,7 +661,7 @@ class AssetDaemon(DagsterDaemon):
                 else:
                     evaluations_by_asset_key = {}
             else:
-                sensor_tags = {SENSOR_NAME_TAG: sensor.name} if sensor else {}
+                sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
                 run_requests, new_cursor, evaluations = AssetDaemonContext(
                     evaluation_id=evaluation_id,

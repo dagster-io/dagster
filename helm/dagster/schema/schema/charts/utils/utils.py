@@ -47,7 +47,7 @@ class BaseModel(PydanticBaseModel):
                     value["anyOf"].append({"type": "null"})
 
 
-def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_18) -> str:
+def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_18.value) -> str:
     return (
         f"https://kubernetesjsonschema.dev/v{version}/_definitions.json#/definitions/{definition}"
     )
