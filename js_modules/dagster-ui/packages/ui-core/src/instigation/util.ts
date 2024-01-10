@@ -18,7 +18,7 @@ export function isStuckStartedTick(
     !tick.endTimestamp &&
     // If the index is 0 and the tick does have an end timestamp then we can't know if its actually stuck or still in progress
     // but if its older than three days then its very likely stuck
-    ((index !== 0 && tick.status !== InstigationTickStatus.STARTED) ||
-      tick.timestamp < Date.now() - THREE_DAYS)
+    ((index !== 0 && tick.status === InstigationTickStatus.STARTED) ||
+      tick.timestamp * 1000 < Date.now() - THREE_DAYS)
   );
 }
