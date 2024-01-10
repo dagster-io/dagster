@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {HourCycle} from './HourCycle';
 import {TimeContext} from './TimeContext';
+import {browserHourCycle} from './browserTimezone';
 
 /**
  * Show the "hour cycle" options available to the user:
@@ -30,16 +31,12 @@ export const HourCycleSelect = () => {
   }, []);
 
   const labels = React.useMemo(() => {
-    // Detect the hour cycle based on the presence of a dayPeriod in a formatted time string,
-    // since the `hourCycle` property on the Intl.Locale object may be undefined.
-    const parts = formats.automatic.formatToParts(new Date());
-    const partKeys = parts.map((part) => part.type);
     return {
-      automatic: `Automatic (${partKeys.includes('dayPeriod') ? '12-hour' : '24-hour'})`,
+      automatic: `Automatic (${browserHourCycle() === 'h12' ? '12-hour' : '24-hour'})`,
       h12: '12-hour',
       h23: '24-hour',
     };
-  }, [formats.automatic]);
+  }, []);
 
   React.useEffect(() => {
     const interval = setInterval(() => {

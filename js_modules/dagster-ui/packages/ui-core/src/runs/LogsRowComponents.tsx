@@ -19,8 +19,9 @@ import {Link, useLocation} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {formatElapsedTimeWithMsec} from '../app/Util';
+import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
-import {browserTimezone} from '../app/time/browserTimezone';
+import {browserHourCycle, browserTimezone} from '../app/time/browserTimezone';
 
 import {LogLevel} from './LogLevel';
 import {ColumnWidthsContext} from './LogsScrollingTableHeader';
@@ -125,22 +126,20 @@ const OpColumnTooltipStyle = JSON.stringify({
   left: 1,
 });
 
-const timestampFormat = memoize((timezone: string) => {
-  return new Intl.DateTimeFormat(navigator.language, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-    timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
-  });
-});
-
-const fractionalSecondFormat = memoize((locale: string) => {
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
-  });
-});
+const timestampFormat = memoize(
+  (timezone: string, hourCycle: HourCycle) => {
+    const evaluatedHourCycle = hourCycle === 'Automatic' ? browserHourCycle() : hourCycle;
+    return new Intl.DateTimeFormat(navigator.language, {
+      hour: evaluatedHourCycle === 'h23' ? '2-digit' : 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3,
+      hourCycle: evaluatedHourCycle,
+      timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
+    });
+  },
+  (timezone, hourCycle) => `${timezone}-${hourCycle}`,
+);
 
 // Timestamp Column
 
@@ -156,15 +155,14 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
   const widths = React.useContext(ColumnWidthsContext);
   const {
     timezone: [timezone],
+    hourCycle: [hourCycle],
   } = React.useContext(TimeContext);
   const canShowTooltip = typeof time === 'string' && typeof runStartTime === 'number';
 
   const timeString = () => {
     if (time) {
-      const timeNumber = Number(time);
-      const main = timestampFormat(timezone).format(new Date(timeNumber));
-      const fractionalSec = (timeNumber % 1000) / 1000;
-      return `${main}${fractionalSecondFormat(navigator.language).format(fractionalSec).slice(1)}`;
+      const date = new Date(Number(time));
+      return timestampFormat(timezone, hourCycle).format(date);
     }
     return '';
   };
@@ -185,18 +183,26 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
               {
                 key: 'Since start of run',
                 value: (
-                  <span style={{fontFamily: FontFamily.monospace, fontSize: '13px'}}>
+                  <div
+                    style={{textAlign: 'right', fontFamily: FontFamily.monospace, fontSize: '13px'}}
+                  >
                     {runElapsedTime}
-                  </span>
+                  </div>
                 ),
               },
               stepStartTime
                 ? {
                     key: 'Since start of step',
                     value: (
-                      <span style={{fontFamily: FontFamily.monospace, fontSize: '13px'}}>
+                      <div
+                        style={{
+                          textAlign: 'right',
+                          fontFamily: FontFamily.monospace,
+                          fontSize: '13px',
+                        }}
+                      >
                         {stepElapsedTime}
-                      </span>
+                      </div>
                     ),
                   }
                 : null,
