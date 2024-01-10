@@ -251,7 +251,7 @@ export const Evaluations = {
           }),
           currentAutoMaterializeEvaluationId: 1000,
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
       },
     });
   },
@@ -268,7 +268,7 @@ export const Evaluations = {
             rules: BASE_AUTOMATERIALIZE_RULES,
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
       },
     });
   },
@@ -285,7 +285,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
       },
     });
   },
@@ -302,7 +302,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
       },
     });
   },
@@ -319,7 +319,7 @@ export const Evaluations = {
             rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
           }),
         }),
-        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords(),
+        assetConditionEvaluationRecordsOrError: buildAssetConditionEvaluationRecords() as any,
       },
     });
   },

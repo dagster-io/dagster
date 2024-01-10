@@ -17,6 +17,7 @@ import {
   colorTextBlue,
   colorTextDefault,
   colorTextGreen,
+  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -87,6 +88,9 @@ export const AutomaterializeLeftList = (props: ListProps) => {
           </Link>
         </Box>
         <Box flex={{direction: 'column'}}>
+          {evaluations.length === 0 ? (
+            <Caption color={colorTextLight()}>No evaluations</Caption>
+          ) : null}
           {evaluations.map((evaluation) => {
             const isSelected = selectedEvaluation?.id === evaluation.id;
 
