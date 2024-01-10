@@ -15,7 +15,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
     cast,
 )
@@ -59,6 +58,7 @@ from dagster._core.host_representation import (
     ExternalJob,
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     DagsterRunStatus,
@@ -675,8 +675,10 @@ def _submit_runs_and_update_backfill_in_chunks(
     previous_asset_backfill_data: AssetBackfillData,
     asset_graph: ExternalAssetGraph,
     instance_queryer: CachingInstanceQueryer,
+    logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillData]]:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._daemon.controller import RELOAD_WORKSPACE_INTERVAL
 
     run_requests = asset_backfill_iteration_result.run_requests
     submitted_partitions = previous_asset_backfill_data.requested_subset
@@ -693,9 +695,8 @@ def _submit_runs_and_update_backfill_in_chunks(
     # In between each chunk, check that the backfill is still marked as 'requested',
     # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
     unsubmitted_run_request_idx = 0
-    pipeline_and_execution_plan_cache: Dict[
-        int, Tuple[ExternalJob, ExternalExecutionPlan, Optional[PartitionsDefinition]]
-    ] = {}
+    run_request_execution_data_cache: Dict[int, RunRequestExecutionData] = {}
+    num_retries_allowed = 1
     while unsubmitted_run_request_idx < len(run_requests):
         chunk_end_idx = min(unsubmitted_run_request_idx + RUN_CHUNK_SIZE, len(run_requests))
         run_requests_chunk = run_requests[unsubmitted_run_request_idx:chunk_end_idx]
@@ -707,17 +708,55 @@ def _submit_runs_and_update_backfill_in_chunks(
             break
 
         # Submit runs in the chunk
-        for run_request in run_requests_chunk:
+        run_requests_i = 0
+        while run_requests_i < len(run_requests_chunk):
+            run_request = run_requests_chunk[run_requests_i]
             yield None
-            submit_run_request(
-                run_request=run_request,
-                asset_graph=asset_graph,
-                # create a new request context for each run in case the code location server
-                # is swapped out in the middle of the backfill
-                workspace=workspace_process_context.create_request_context(),
-                instance=instance,
-                pipeline_and_execution_plan_cache=pipeline_and_execution_plan_cache,
+
+            # create a new request context for each run in case the code location server
+            # is swapped out in the middle of the backfill
+            workspace = workspace_process_context.create_request_context()
+            execution_data = get_job_execution_data_from_run_request(
+                asset_graph,
+                run_request,
+                instance,
+                workspace=workspace,
+                run_request_execution_data_cache=run_request_execution_data_cache,
             )
+
+            if _execution_plan_targets_asset_selection(
+                execution_data.external_execution_plan.execution_plan_snapshot,
+                check.not_none(run_request.asset_selection),
+            ):
+                submit_run_request(
+                    run_request=run_request,
+                    workspace=workspace,
+                    instance=instance,
+                    run_request_execution_data=execution_data,
+                )
+                run_requests_i += 1
+
+            elif num_retries_allowed > 0:
+                logger.warning(
+                    "Execution plan is out of sync with the workspace. Pausing the backfill for "
+                    f"{RELOAD_WORKSPACE_INTERVAL} to allow the execution plan to rebuild with the updated workspace."
+                )
+                # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
+                # at most once every interval
+                time.sleep(RELOAD_WORKSPACE_INTERVAL)
+                # Clear the execution plan cache as this data is no longer valid
+                run_request_execution_data_cache = {}
+                num_retries_allowed -= 1
+                # If the execution plan does not targets the asset selection, the asset graph
+                # likely is outdated and targeting the wrong job, refetch the asset
+                # graph from the workspace
+                workspace = workspace_process_context.create_request_context()
+                asset_graph = ExternalAssetGraph.from_workspace(workspace)
+
+            else:  # Already hit the max number of retries
+                check.failed(
+                    f"Failed to target asset selection {run_request.asset_selection} in run after retrying."
+                )
 
         unsubmitted_run_request_idx = chunk_end_idx
 
@@ -933,6 +972,7 @@ def execute_asset_backfill_iteration(
                 previous_asset_backfill_data,
                 asset_graph,
                 instance_queryer,
+                logger,
             ):
                 yield None
 
@@ -1069,15 +1109,19 @@ def get_canceling_asset_backfill_iteration_data(
     yield updated_backfill_data
 
 
-def submit_run_request(
+class RunRequestExecutionData(NamedTuple):
+    external_job: ExternalJob
+    external_execution_plan: ExternalExecutionPlan
+    partitions_def: Optional[PartitionsDefinition]
+
+
+def get_job_execution_data_from_run_request(
     asset_graph: ExternalAssetGraph,
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
-    pipeline_and_execution_plan_cache: Dict[
-        int, Tuple[ExternalJob, ExternalExecutionPlan, Optional[PartitionsDefinition]]
-    ],
-) -> None:
+    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
+) -> RunRequestExecutionData:
     """Creates and submits a run for the given run request."""
     repo_handle = asset_graph.get_repository_handle(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
@@ -1105,7 +1149,7 @@ def submit_run_request(
 
     selector_id = hash_collection(pipeline_selector)
 
-    if selector_id not in pipeline_and_execution_plan_cache:
+    if selector_id not in run_request_execution_data_cache:
         code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
         external_job = code_location.get_external_job(pipeline_selector)
 
@@ -1119,17 +1163,27 @@ def submit_run_request(
 
         partitions_def = code_location.get_asset_job_partitions_def(external_job)
 
-        pipeline_and_execution_plan_cache[selector_id] = (
+        run_request_execution_data_cache[selector_id] = RunRequestExecutionData(
             external_job,
             external_execution_plan,
             partitions_def,
         )
 
-    (
-        external_job,
-        external_execution_plan,
-        partitions_def,
-    ) = pipeline_and_execution_plan_cache[selector_id]
+    return run_request_execution_data_cache[selector_id]
+
+
+def submit_run_request(
+    run_request: RunRequest,
+    instance: DagsterInstance,
+    workspace: BaseWorkspaceRequestContext,
+    run_request_execution_data: RunRequestExecutionData,
+) -> None:
+    external_job = run_request_execution_data.external_job
+    external_execution_plan = run_request_execution_data.external_execution_plan
+    partitions_def = run_request_execution_data.partitions_def
+
+    if not run_request.asset_selection:
+        check.failed("Expected RunRequest to have an asset selection")
 
     run = instance.create_run(
         job_snapshot=external_job.job_snapshot,
@@ -1153,6 +1207,19 @@ def submit_run_request(
     )
 
     instance.submit_run(run.run_id, workspace)
+
+
+def _execution_plan_targets_asset_selection(
+    execution_plan_snapshot: ExecutionPlanSnapshot, asset_selection: Sequence[AssetKey]
+) -> bool:
+    output_asset_keys = set()
+    for step in execution_plan_snapshot.steps:
+        if step.key in execution_plan_snapshot.step_keys_to_execute:
+            for output in step.outputs:
+                asset_key = check.not_none(output.properties).asset_key
+                if asset_key:
+                    output_asset_keys.add(asset_key)
+    return all(key in output_asset_keys for key in asset_selection)
 
 
 def _get_implicit_job_name_for_assets(
