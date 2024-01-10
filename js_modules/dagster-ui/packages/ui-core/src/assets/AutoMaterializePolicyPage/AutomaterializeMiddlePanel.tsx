@@ -3,7 +3,6 @@ import {
   BaseTag,
   Body2,
   Box,
-  ButtonLink,
   Icon,
   MenuItem,
   MiddleTruncate,
@@ -26,6 +25,7 @@ import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {DimensionPartitionKeys} from '../../graphql/types';
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetKey} from '../types';
@@ -67,7 +67,9 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     definition,
   } = props;
 
-  const [selectedPartition, setSelectPartition] = React.useState<string | null>(null);
+  const [selectedPartition, setSelectedPartition] = useQueryPersistedState<string | null>({
+    queryKey: 'selectedPartition',
+  });
 
   // We receive the selected evaluation ID and retrieve it here because the middle panel
   // may be displaying an evaluation that was not retrieved at the page level for the
@@ -171,7 +173,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       selectedEvaluation={selectedEvaluation}
       specificPartitionData={specificPartitionData || previousSpecificPartitionData}
       definition={definition}
-      selectPartition={setSelectPartition}
+      selectPartition={setSelectedPartition}
       selectedPartition={selectedPartition}
     />
   );
