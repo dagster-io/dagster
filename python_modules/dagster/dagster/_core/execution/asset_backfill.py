@@ -271,14 +271,12 @@ class AssetBackfillData(NamedTuple):
         self, asset_graph: AssetGraph
     ) -> Optional[PartitionsSubset]:
         """Returns the most upstream partitions subset that was targeted by the backfill."""
-        partitioned_asset_keys = {
-            asset_key
-            for asset_key in self.target_subset.asset_keys
-            if asset_graph.get_partitions_def(asset_key) is not None
+        target_partitioned_asset_keys = {
+            asset_key for asset_key in self.target_subset.partitions_subsets_by_asset_key
         }
 
         root_partitioned_asset_keys = (
-            AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
+            AssetSelection.keys(*target_partitioned_asset_keys).sources().resolve(asset_graph)
         )
 
         # Return the targeted partitions for the root partitioned asset keys

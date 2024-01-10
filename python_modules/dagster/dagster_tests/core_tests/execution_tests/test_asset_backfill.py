@@ -1468,3 +1468,35 @@ def test_asset_backfill_serialization_deserialization():
         deserialize_value(serialize_value(asset_backfill_data), AssetBackfillData)
         == asset_backfill_data
     )
+
+
+def test_asset_backfill_unpartitioned_root_turned_to_partitioned():
+    @asset
+    def first():
+        return 1
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2024-01-01"),
+        ins={"first": AssetIn(key=AssetKey("first"))},
+    )
+    def second(first):
+        return 1
+
+    @asset(key=AssetKey("first"), partitions_def=DailyPartitionsDefinition("2024-01-01"))
+    def first_partitioned():
+        return 1
+
+    repo_with_unpartitioned_root = {"repo": [first, second]}
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=get_asset_graph(repo_with_unpartitioned_root),
+        partition_names=["2024-01-01"],
+        asset_selection=[first.key, second.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2024, 1, 9, 0, 0, 0),
+    )
+
+    repo_with_partitioned_root = {"repo": [first_partitioned, second]}
+    assert asset_backfill_data.get_target_root_partitions_subset(
+        get_asset_graph(repo_with_partitioned_root)
+    ).get_partition_keys() == ["2024-01-01"]
