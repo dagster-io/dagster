@@ -2,12 +2,10 @@ import {MockedProvider} from '@apollo/client/testing';
 import * as React from 'react';
 
 import {
-  buildAsset,
   buildAssetConditionEvaluation,
   buildAssetConditionEvaluationRecord,
   buildAssetNode,
   buildDimensionPartitionKeys,
-  buildPartitionDefinition,
   buildPartitionedAssetConditionEvaluationNode,
   buildUnpartitionedAssetConditionEvaluationNode,
 } from '../../../graphql/types';

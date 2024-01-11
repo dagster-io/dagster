@@ -188,41 +188,10 @@ const PartitionSubsetList = ({description, status, subset, selectPartition}: Lis
   );
 };
 
-const SegmentContainer = styled.div.attrs<{$width: number}>(({$width}) => ({
-  style: {
-    flexBasis: `${$width}px`,
-  },
-}))<{$width: number}>`
-  .bp4-popover2-target {
-    display: block;
-  }
-`;
-
 const SearchContainer = styled(Box)`
   display: flex;
   ${TextInputContainer} {
     flex: 1;
-  }
-`;
-
-interface PartitionSegmentProps {
-  $color: string;
-  $hoverColor: string;
-  $width: number;
-}
-
-const PartitionSegment = styled.div.attrs<PartitionSegmentProps>(({$width}) => ({
-  style: {
-    flexBasis: `${$width}px`,
-  },
-}))<PartitionSegmentProps>`
-  background-color: ${({$color}) => $color};
-  border-radius: 2px;
-  height: 20px;
-  transition: background-color 100ms linear;
-
-  :hover {
-    background-color: ${({$hoverColor}) => $hoverColor};
   }
 `;
 
