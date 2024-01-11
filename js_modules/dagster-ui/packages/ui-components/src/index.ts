@@ -55,6 +55,7 @@ export * from './components/StyledRawCodeMirror';
 export * from './components/useDelayedState';
 export * from './components/ifPlural';
 export * from './theme/color';
+export * from './theme/theme';
 
 // todo dish: Delete this
 export * from './palettes/Colors';
