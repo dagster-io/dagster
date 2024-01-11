@@ -1,11 +1,13 @@
 ---
-title: "Running assets on a schedule | Dagster Docs"
-description: ""
+title: "Automating assets using schedules and jobs | Dagster Docs"
+description: "Learn how to automate asset materialization using schedules and jobs."
 ---
 
-# Running assets on a schedule
+# Automating assets using schedules and jobs
 
-In this guide, we'll walk you through defining a schedule for [Software-defined Assets](/concepts/assets/software-defined-assets). If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/schedules/running-ops).
+After you've created some [Software-defined Assets](/concepts/assets/software-defined-assets), you'll likely want to automate their materialization.
+
+In this guide, we'll show you one method of accomplishing this by using schedules and jobs. If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/schedules/running-ops).
 
 By the end of this guide, you will:
 
@@ -30,13 +32,25 @@ To complete the steps in this guide, you'll need:
 
 ## Step 1: Create a job
 
-The first step in creating a schedule is to build a job that materializes some assets.
+The first step in creating a schedule is to build a job that materializes some assets. Let's assume we already have a few assets in our project, in a group named `ecommerce_assets`:
 
-Let's assume we already have a few assets in our project, in a group named `ecommerce_assets`. To create a job that materializes the assets in this group, we'll use <PyObject object="define_asset_job" />.
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_assets endbefore=end_assets
+from dagster import asset
+
+
+@asset(group_name="ecommerce_assets")
+def orders_asset():
+    return 1
+
+
+@asset(group_name="ecommerce_assets")
+def users_asset():
+    return 2
+```
+
+To create a job that materializes the assets in this group, we'll use <PyObject object="define_asset_job" />.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_job endbefore=end_job
-# jobs.py
-
 from dagster import AssetSelection, define_asset_job
 
 
@@ -60,10 +74,7 @@ Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more in
 Next, we'll use <PyObject object="ScheduleDefinition" /> to construct the schedule and attach it to the job we created in [Step 1](#step-1-create-the-job).
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_schedule endbefore=end_schedule
-# schedules.py
-
 from dagster import ScheduleDefinition
-from jobs import ecommerce_asset_job
 
 
 ecommerce_schedule = ScheduleDefinition(
@@ -89,12 +100,49 @@ In this example, we:
 Next, we'll update our project's <PyObject object="Definitions" /> object to include our new job and schedule. This ensures the job and schedule are available to Dagster processes like the Dagster UI.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_definitions endbefore=end_definitions
-# __init__.py
-
 from dagster import Definitions
-from assets import orders_asset, users_asset
-from jobs import ecommerce_asset_job
-from schedules import ecommerce_schedule
+
+
+defs = Definitions(
+    assets=[orders_asset, users_asset],
+    jobs=[ecommerce_asset_job],
+    schedules=[ecommerce_schedule],
+)
+```
+
+At this point, our code looks like this:
+
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=3-10,14-23,30-34,41-47,54-60
+from dagster import (
+    AssetSelection,
+    DefaultScheduleStatus,
+    Definitions,
+    ScheduleDefinition,
+    asset,
+    define_asset_job,
+)
+
+
+@asset(group_name="ecommerce_assets")
+def orders_asset():
+    return 1
+
+
+@asset(group_name="ecommerce_assets")
+def users_asset():
+    return 2
+
+
+ecommerce_asset_job = define_asset_job(
+    "ecommerce_asset_job", AssetSelection.groups("ecommerce_assets")
+)
+
+
+ecommerce_schedule = ScheduleDefinition(
+    job=ecommerce_asset_job,
+    cron_schedule="15 5 * * 1-5",
+    default_status=DefaultScheduleStatus.RUNNING,
+)
 
 
 defs = Definitions(
@@ -147,7 +195,7 @@ dagster schedule stop
 
 The default status can be set using `DefaultScheduleStatus.RUNNING` in the schedule's <PyObject object="ScheduleDefinition" />:
 
-```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=34-38
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=43-47
 ecommerce_schedule = ScheduleDefinition(
     job=ecommerce_asset_job,
     cron_schedule="15 5 * * 1-5",
