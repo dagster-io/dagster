@@ -1,0 +1,215 @@
+---
+title: "Running assets on a schedule | Dagster Docs"
+description: ""
+---
+
+# Running assets on a schedule
+
+In this guide, we'll walk you through defining a schedule for [Software-defined Assets](/concepts/assets/software-defined-assets). If you're looking to do this for ops, refer to the [Defining schedules for ops guide](/concepts/schedules/running-ops).
+
+By the end of this guide, you will:
+
+- Create a job that materializes some assets
+- Create a schedule
+- Add the new job and schedule to your project's <PyObject object="Definitions" /> object
+- Turn the schedule on
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- **To have Dagster and the Dagster UI installed.** Refer to the [Installation guide](/getting-started/install) for more info and instructions.
+- **Familiarity with**:
+  - [Software-defined Assets](/concepts/assets/software-defined-assets)
+  - [Jobs](/concepts/ops-jobs-graphs/jobs)
+  - [Code locations](/concepts/code-locations) (<PyObject object="Definitions" />)
+
+---
+
+## Step 1: Create a job
+
+The first step in creating a schedule is to build a job that materializes some assets.
+
+Let's assume we already have a few assets in our project, in a group named `ecommerce_assets`. To create a job that materializes the assets in this group, we'll use <PyObject object="define_asset_job" />.
+
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_job endbefore=end_job
+# jobs.py
+
+from dagster import AssetSelection, define_asset_job
+
+
+ecommerce_asset_job = define_asset_job(
+    "ecommerce_asset_job", AssetSelection.groups("ecommerce_assets")
+)
+```
+
+To do this, we:
+
+1. Imported <PyObject object="AssetSelection" /> and <PyObject object="define_asset_job" />
+2. Used <PyObject object="define_asset_job" /> to construct the job and name it `ecommerce_asset_job`
+3. Used <PyObject object="AssetSelection" /> to select all assets in the `ecommerce_assets` group. Only these assets will be materialized when the job runs.
+
+Refer to the [Asset jobs documentation](/concepts/assets/asset-jobs) for more info and examples.
+
+---
+
+## Step 2: Define the schedule
+
+Next, we'll use <PyObject object="ScheduleDefinition" /> to construct the schedule and attach it to the job we created in [Step 1](#step-1-create-the-job).
+
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_schedule endbefore=end_schedule
+# schedules.py
+
+from dagster import ScheduleDefinition
+from jobs import ecommerce_asset_job
+
+
+ecommerce_schedule = ScheduleDefinition(
+    job=ecommerce_asset_job,
+    cron_schedule="15 5 * * 1-5",
+    default_status=DefaultScheduleStatus.RUNNING,
+)
+```
+
+In this example, we:
+
+1. Imported <PyObject object="ScheduleDefinition" /> and the `ecommerce_asset_job`
+2. Uused <PyObject object="ScheduleDefinition" /> to create a schedule that:
+
+   - Is attached to the `ecommerce_assets_job` job
+   - Has a cron expression of `15 5 * * 1-5`, which translates to `Every Monday through Friday of every month at 5:15AM`
+   - Is turned on by default (`default_status`). We'll discuss this more in [Step 4](#step-4-turn-the-schedule-on).
+
+---
+
+## Step 3: Update the Definitions object
+
+Next, we'll update our project's <PyObject object="Definitions" /> object to include our new job and schedule. This ensures the job and schedule are available to Dagster processes like the Dagster UI.
+
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py startafter=start_definitions endbefore=end_definitions
+# __init__.py
+
+from dagster import Definitions
+from assets import orders_asset, users_asset
+from jobs import ecommerce_asset_job
+from schedules import ecommerce_schedule
+
+
+defs = Definitions(
+    assets=[orders_asset, users_asset],
+    jobs=[ecommerce_asset_job],
+    schedules=[ecommerce_schedule],
+)
+```
+
+---
+
+## Step 4: Turn the schedule on
+
+Schedules need to be turned on before can be used. In our case, we already turned the schedule on by using the `default_status` parameter in its <PyObject object="ScheduleDefinition" />, but there are a few other ways to do this:
+
+<TabGroup>
+<TabItem name="Dagster UI">
+
+<Note>
+  <strong>Heads up!</strong> Starting or stopping a schedule in the UI overrides
+  any default status set in code.
+</Note>
+
+In the Dagster UI using the **Schedules** tab:
+
+<Image
+alt="Schedules tab in the Dagster UI"
+src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
+width={1164}
+height={280}
+/>
+
+</TabItem>
+<TabItem name="CLI">
+
+Using the [dagster CLI](/\_apidocs/cli#dagster-schedule):
+
+```shell
+dagster schedule start
+dagster schedule stop
+```
+
+</TabItem>
+<TabItem name="Python code">
+
+<Note>
+  <strong>Heads up!</strong> Starting or stopping a schedule in the UI overrides
+  any default status set in code.
+</Note>
+
+The default status can be set using `DefaultScheduleStatus.RUNNING` in the schedule's <PyObject object="ScheduleDefinition" />:
+
+```python file=concepts/partitions_schedules_sensors/schedules/basic_asset_schedule.py lines=34-38
+ecommerce_schedule = ScheduleDefinition(
+    job=ecommerce_asset_job,
+    cron_schedule="15 5 * * 1-5",
+    default_status=DefaultScheduleStatus.RUNNING,
+)
+```
+
+</TabItem>
+</TabGroup>
+
+Once the schedule is started, it will begin executing immediately if the [dagster-daemon](/deployment/dagster-daemon) process is running - which is started automatically when `dagster dev` is run - as part of your deployoment.
+
+Refer to the [Troubleshooting schedules](/concepts/schedules/troubleshooting) guide if the schedule has been started but isn't submitting runs.
+
+---
+
+## What's next?
+
+That's it! At this point, you should have a working, running schedule in your Dagster project. From here, you can:
+
+- Check out the [Schedule examples](/concepts/schedules/examples) for ideas and inspiration
+- Create [tests for your schedules](/concepts/schedules/testing) to make sure things are running smoothly
+- Refer to the [Automating pipelines guide](/guides/dagster/automating-pipelines) for more pipeline automation ideas
+
+---
+
+## APIs in this guide
+
+| Name                                     | Description                                                                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="define_asset_job" />   | A function for defining a job from a selection of assets.                                                                                         |
+| <PyObject object="AssetSelection" />     | A class that defines a selection of assets. Typically used with <PyObject object="define_asset_job" />.                                           |
+| <PyObject object="ScheduleDefinition" /> | A class that defines a schedule and attaches it to a job.                                                                                         |
+| <PyObject object="Definitions" />        | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Defining schedules for ops"
+    href="/concepts/schedules/running-ops"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Testing schedules"
+    href="/concepts/schedules/testing"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset jobs"
+    href="/concepts/assets/asset-jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Automating data pipelines"
+    href="/guides/dagster/automating-pipelines"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Schedule examples"
+    href="/concepts/schedules/examples"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Troubleshooting schedules"
+    href="/concepts/schedules/troubleshooting"
+  ></ArticleListItem>
+</ArticleList>
