@@ -979,7 +979,7 @@ class ExecutionPlan(
                     resources=resources,
                     version=step_output_versions[step_output_handle],
                 )
-                if not io_manager.has_output(context):
+                if not io_manager.has_output(context):  # TODO - this is the problem.
                     unmemoized_step_keys.add(step_output_handle.step_key)
 
         if selected_step_keys is not None:
